@@ -1,3 +1,5 @@
+//#define TESTMODULE
+
 #include <stdio.h>
 #include "ob.h"
 
@@ -16,6 +18,7 @@ object consreal(real r){
 	object o;
 	o.tag = realtype;
 	o.real_.val = r;
+	return o;
 }
 
 void dumpcompobject(object o){
@@ -31,9 +34,10 @@ void dumpobject(object o){
 		default:
 		case invalidtype: printf("<invalid object>"); break;
 
+		case nulltype: printf("<null>"); break;
 		case marktype: printf("<mark>"); break;
 		case integertype: printf("<integer %d>", (int)o.int_.val); break;
-		case realtype: printf("<real %f>", (float)o.real_.val);
+		case realtype: printf("<real %f>", (float)o.real_.val); break;
 
 		case stringtype: printf("<string"); dumpcompobject(o); break;
 		case arraytype: printf("<array"); dumpcompobject(o); break;
@@ -41,3 +45,14 @@ void dumpobject(object o){
 	}
 }
 
+#ifdef TESTMODULE
+int main() {
+	object i = consint(5);
+	object r = consreal(12.0);
+	dumpobject(null);
+	dumpobject(mark);
+	dumpobject(i);
+	dumpobject(r);
+	return 0;
+} 
+#endif
