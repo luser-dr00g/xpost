@@ -5,6 +5,19 @@
 
 char *types[] = { TYPES(AS_STR) "invalid"};
 
+integer isx(object o) {
+	return !(o.tag &FLIT);
+}
+
+integer islist(object o) {
+	return o.tag & FLIT;
+}
+
+integer type(object o) {
+	return o.tag & TYPEMASK;
+}
+
+
 SINGLETONS(DEFINE_SINGLETON)
 
 object consint(integer i){
@@ -30,7 +43,7 @@ void dumpcompobject(object o){
 }
 
 void dumpobject(object o){
-	switch(o.tag) {
+	switch(type(o)) {
 		default:
 		case invalidtype: printf("<invalid object>"); break;
 
@@ -42,17 +55,21 @@ void dumpobject(object o){
 		case stringtype: printf("<string"); dumpcompobject(o); break;
 		case arraytype: printf("<array"); dumpcompobject(o); break;
 		case dicttype: printf("<dict"); dumpcompobject(o); break;
+
+		case nametype: printf("<name %u>\n", (int)o.mark_.padw); break;
 	}
 }
 
 #ifdef TESTMODULE
 int main() {
+	printf("\n^test ob module\n");
 	object i = consint(5);
 	object r = consreal(12.0);
 	dumpobject(null);
 	dumpobject(mark);
 	dumpobject(i);
 	dumpobject(r);
+	puts("");
 	return 0;
 } 
 #endif

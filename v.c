@@ -1,231 +1,151 @@
-//#define TESTMODULE
-
-/* define MMAP and MREMAP for Linux */
-/* define MMAP without MREMAP should work for Irix (using AUTOGROW) */
-/* no MREMAP under cygwin (we'll see how AUTOGROW handles...)*/
-/* define neither to use malloc/realloc/free */
-#define MMAP
-//#define MREMAP
-#define _GNU_SOURCE
-
-#include <stdlib.h>
-#include <stdio.h>
+#include <assert.h>
+#include <stdbool.h>
 #include <string.h>
-#include <unistd.h>
 
-#ifdef MMAP
-#include<sys/mman.h>
-#endif
+#include "m.h"
+#include "ob.h"
+#include "s.h"
+#include "itp.h"
+#include "gc.h"
 
-/* placeholder error function */
-/* ultimately, this will do a longjmp back to the central loop */
-void error(char *msg) {
-	fprintf(stderr, "%s\n", msg);
-	exit(EXIT_FAILURE);
-}
-
-unsigned pgsz /*= getpagesize()*/; /*=4096 (usually on 32bit)*/
+/*
+typedef struct {
+	word tag;
+	word lev;
+	unsigned stk;
+} save_;
 
 typedef struct {
-	unsigned char *base;
-	unsigned used;
-	unsigned max;
-} mfile;
+	unsigned src;
+	unsigned cpy;
+} saverec_;
+*/
 
-void dumpmfile(mfile *mem){
-	printf("{mfile: base = %p, "
-			"used = 0x%x (%u), "
-			"max = 0x%x (%u)}\n",
-			mem->base,
-			mem->used, mem->used,
-			mem->max, mem->max);
+/* create a stack in slot VS.
+   sz is 0 so gc will ignore it. */
+void initsave(mfile *mem) {
+	unsigned t;
+	unsigned ent = mtalloc(mem, 0, 0); /* allocate an entry of zero length */
+	assert(ent == VS);
+	t = initstack(mem);
+	mtab *tab = (void *)mem->base;
+	tab->tab[ent].adr = t;
 }
 
-/* initialize the memory file */
-void initmem(mfile *mem){
-#ifdef MMAP
-	mem->base = mmap(NULL, pgsz,
-			PROT_READ|PROT_WRITE,
-			MAP_PRIVATE
-# ifndef MREMAP
-			|MAP_AUTOGROW
-# endif
-			|MAP_ANONYMOUS, -1, 0);
-	if (mem->base == MAP_FAILED)
-#else
-	mem->base = malloc(pgsz);
-	if (mem->base == NULL)
-#endif
-		error("unable to initialize memory file");
-	mem->used = 0;
-	mem->max = pgsz;
+/* push a new save object on the save stack
+   this object is itself a stack (contains a stackadr) */
+object save(mfile *mem) {
+	object v;
+	v.tag = savetype;
+	v.save_.lev = count(mem, adrent(mem, VS));
+	v.save_.stk = initstack(mem);
+	push(mem, adrent(mem, VS), v);
+	return v;
 }
 
-/* destroy the memory file */
-void exitmem(mfile *mem){
-#ifdef MMAP
-	munmap(mem->base, mem->max);
-#else
-	free(mem->base);
-#endif
-	mem->base = NULL;
-	mem->used = 0;
-	mem->max = 0;
-}
-
-void growmem(mfile *mem, unsigned sz){
-	void *tmp;
-	if (sz < pgsz) sz = pgsz;
-	else sz = (sz/pgsz + 1) * pgsz;
-	sz += mem->max;
-#ifdef MMAP
-# ifdef MREMAP
-	tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
-# else
-	tmp = mem->base; /* without mremap, rely on MAP_AUTOGROW */
-# endif
-	if (tmp == MAP_FAILED)
-#else
-	tmp = realloc(mem->base, sz);
-	if (tmp == NULL)
-#endif
-		error("unable to grow memory");
-	mem->base = tmp;
-	mem->max = sz;
-}
-
-/* allocate memory, returns offset in memory file */
-unsigned mfalloc(mfile *mem, unsigned sz){
-	unsigned adr = mem->used;
-	if (sz + mem->used > //=
-			mem->max) growmem(mem,sz);
-	mem->used += sz;
-	bzero(mem->base+adr, sz);
-	/* bus error with mremap(SHARED,ANON)! */
-	return adr;
-}
-
-
-#define TABSZ 1000
-typedef struct {
-	unsigned nexttab; /* next table in chain */
-	unsigned nextent; /* next slot in table, or TABSZ if none */
-	struct {
-		unsigned adr;
-		unsigned sz;
-		/* add fields here for ref counts or marks */
-	} tab[TABSZ];
-} mtab;
-
-/* allocate and initialize a new table */
-unsigned initmtab(mfile *mem){
-	unsigned adr;
-	adr = mfalloc(mem, sizeof(mtab));
-	mtab *tab = (void *)(mem->base + adr);
-	tab->nexttab = 0;
-	tab->nextent = 0;
-	return adr;
-}
-
-/* allocate memory, returns table index */
-unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
-	mtab *tab = (void *)(mem->base + mtabadr);
-	if (tab->nextent >= TABSZ)
-		return mtalloc(mem, tab->nexttab, sz);
-	else {
-		unsigned ent = tab->nextent;
-		++tab->nextent;
-
-		tab->tab[ent].adr = mfalloc(mem, sz);
-		tab->tab[ent].sz = sz;
-
-		if (tab->nextent == TABSZ){
-			tab->nexttab = initmtab(mem);
-		}
-		return ent;
-	}
-}
-
-/* fetch a value from a composite object */
-void get(mfile *mem,
-		unsigned ent, unsigned offset, unsigned sz,
-		void *dest){
+/* check ent's tlev against current save level (save-stack count) */
+unsigned stashed(mfile *mem, unsigned ent) {
+	//object sav = top(mem, adrent(mem, VS), 0);
+	unsigned cnt = count(mem, adrent(mem, VS));
 	mtab *tab;
-	unsigned mtabadr = 0;
-	tab = (void *)(mem->base + mtabadr);
-	while (ent >= TABSZ) {
-		mtabadr = tab->nexttab;
-		tab = (void *)(mem->base + mtabadr);
-		ent -= TABSZ;
-	}
-
-	if (offset*sz + sz > tab->tab[ent].sz)
-		error("get: out of bounds");
-
-	memcpy(dest, mem->base + tab->tab[ent].adr + offset*sz, sz);
+	findtabent(mem, &tab, &ent);
+	unsigned tlev = (tab->tab[ent].mark & TLEVM) >> TLEVO;
+	return tlev == cnt;
 }
 
-/* put a value into a composite object */
-void put(mfile *mem,
-		unsigned ent, unsigned offset, unsigned sz,
-		void *src){
+/* make a clone of ent, return new ent */
+unsigned copy(mfile *mem, unsigned ent) {
 	mtab *tab;
-	unsigned mtabadr = 0;
-	tab = (void *)(mem->base + mtabadr);
-	while (ent >= TABSZ){
-		mtabadr = tab->nexttab;
-		tab = (void *)(mem->base + mtabadr);
-		ent -= TABSZ;
+	unsigned tent = ent;
+	findtabent(mem, &tab, &ent);
+	unsigned new = gballoc(mem, tab->tab[ent].sz);
+	ent = tent;
+	findtabent(mem, &tab, &ent); //recalc
+	memcpy(mem->base + adrent(mem, new),
+			mem->base + tab->tab[ent].adr,
+			tab->tab[ent].sz);
+	return new;
+}
+
+/* set tlev for ent to current save level
+   push saverec relating ent to saved copy */
+void stash(mfile *mem, unsigned ent) {
+	object sav = top(mem, adrent(mem, VS), 0);
+	mtab *tab;
+	unsigned rent = ent;
+	findtabent(mem, &tab, &rent);
+	unsigned tlev = sav.save_.lev;
+	tab->tab[rent].mark &= ~TLEVM; // clear TLEV field
+	tab->tab[rent].mark |= (tlev << TLEVO);  // set TLEV field
+	object o;
+	o.saverec_.src = ent;
+	o.saverec_.cpy = copy(mem, ent);
+	push(mem, sav.save_.stk, o);
+}
+
+/* for each saverec from current save stack
+   		exchange adrs between src and cpy
+		pop saverec
+	pop save stack */
+void restore(mfile *mem) {
+	unsigned v = adrent(mem, VS); // save-stack address
+	object sav = pop(mem, v); // save-object (stack of saverec_'s)
+	mtab *stab, *ctab;
+	unsigned cnt = count(mem, sav.save_.stk);
+	unsigned sent, cent;
+	while (cnt--) {
+		object rec = pop(mem, sav.save_.stk);
+		sent = rec.saverec_.src;
+		cent = rec.saverec_.cpy;
+		findtabent(mem, &stab, &sent);
+		findtabent(mem, &ctab, &cent);
+		unsigned hold;
+		hold = stab->tab[sent].adr;                 // tmp = src
+		stab->tab[sent].adr = ctab->tab[cent].adr;  // src = cpy
+		ctab->tab[cent].adr = hold;                 // cpy = tmp
 	}
-
-	if (offset*sz + sz > tab->tab[ent].sz)
-		error("put: out of bounds");
-
-	memcpy(mem->base + tab->tab[ent].adr + offset*sz, src, sz);
+	sfree(mem, sav.save_.stk);
 }
 
 #ifdef TESTMODULE
+#include "ar.h"
+#include <stdio.h>
 
-mfile mem;
+mfile mf;
 
-/* initialize everything */
-void init(void){
-	pgsz = getpagesize();
-	initmem(&mem);
-	(void)initmtab(&mem); /* create mtab at address zero */
+void init(mfile *mem) {
+	initmem(mem);
+	(void)initmtab(mem);
+	initfree(mem);
+	initsave(mem);
 }
 
-void xit(void){
-	exitmem(&mem);
+void show(char *msg, mfile *mem, object a) {
+	printf("%s ", msg);
+	printf("%d ", arrget(mem, a, 0).int_.val);
+	printf("%d\n", arrget(mem, a, 1).int_.val);
 }
 
-int main(){
-	init();
-	unsigned ent;
-	int seven = 7;
-	int ret;
-	ent = mtalloc(&mem, 0, sizeof seven);
-	put(&mem, ent, 0, sizeof seven, &seven);
-	get(&mem, ent, 0, sizeof seven, &ret);
-	printf("put %d, got %d\n", seven, ret);
+int main(void) {
+	mfile *mem = &mf;
+	init(mem);
 
-	unsigned ent2;
-	ent2 = mtalloc(&mem, 0, 8*sizeof seven);
-	put(&mem, ent2, 6, sizeof seven, &seven);
-	get(&mem, ent2, 6, sizeof seven, &ret);
-	printf("put %d in slot 7, got %d\n", seven, ret);
-	//get(&mem, ent2, 9, sizeof seven, &ret);
-	//printf("attempted to retrieve element 10 from an 8-element array, got %d\n", ret);
+	object a = consarr(mem, 2);
+	arrput(mem, a, 0, consint(33));
+	arrput(mem, a, 1, consint(66));
+	show("initial", mem, a);
 
-	unsigned ent3;
-	char str[] = "beads in buddha's necklace";
-	char sret[sizeof str];
-	ent3 = mtalloc(&mem, 0, strlen(str)+1);
-	put(&mem, ent3, 0, sizeof str, str);
-	get(&mem, ent3, 0, sizeof str, sret);
-	printf("stored and retrieved %s\n", sret);
+	//object v = 
+	(void)save(mem);
+	arrput(mem, a, 0, consint(77));
+	show("save and alter", mem, a);
 
-	xit();
+	restore(mem);
+	show("restored", mem, a);
+
 	return 0;
 }
+
 #endif
+
+
