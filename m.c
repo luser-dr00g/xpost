@@ -58,7 +58,9 @@ int getmemfile(char *fname){
 	int fd;
 	fd = open(
 			fname, //"x.mem",
-			O_RDWR);
+			O_RDWR | O_CREAT );
+	if (fd == -1)
+		perror(fname);
 	return fd;
 }
 
@@ -99,6 +101,7 @@ void initmem(mfile *mem, char *fname){
 
 /* destroy the memory file */
 void exitmem(mfile *mem){
+	msync(mem->base, mem->used, MS_SYNC);
 #ifdef MMAP
 	munmap(mem->base, mem->max);
 #else

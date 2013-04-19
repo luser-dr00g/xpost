@@ -32,7 +32,7 @@ void initglobal(context *ctx) {
 
 	/* allocate and initialize global vm */
 	ctx->gl = malloc(sizeof(mfile));
-	initmem(ctx->gl, "G.mem");
+	initmem(ctx->gl, "g.mem");
 	(void)initmtab(ctx->gl);
 	initfree(ctx->gl);
 	initsave(ctx->gl);
@@ -54,7 +54,7 @@ void initlocal(context *ctx) {
 
 	/* allocate and initialize local vm */
 	ctx->lo = malloc(sizeof(mfile));
-	initmem(ctx->lo, "L.mem");
+	initmem(ctx->lo, "l.mem");
 	(void)initmtab(ctx->lo);
 	initfree(ctx->lo);
 	initsave(ctx->lo);
@@ -79,6 +79,11 @@ void initcontext(context *ctx) {
 	ctx->vmmode = LOCAL;
 }
 
+/* destroy context */
+void exitcontext(context *ctx) {
+	exitmem(ctx->gl);
+	exitmem(ctx->lo);
+}
 
 /* function type for interpreter action pointers */
 typedef void evalfunc(context *ctx);
@@ -197,6 +202,10 @@ void init(void) {
 	push(ctx.lo, ctx.es, consoper(&ctx, "count", NULL,0,0));
 }
 
+void xit() {
+	exitcontext(&ctx);
+}
+
 int main(void) {
 	init();
 
@@ -215,6 +224,7 @@ int main(void) {
 	dumpmfile(ctx.gl);
 	dumpmtab(ctx.gl, 0);
 
+	xit();
 	return 0;
 }
 
