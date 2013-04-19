@@ -2,3 +2,45 @@ This is XPost3
 
 A work-in-progress Level-2 Postscript interpreter.
 
+XPost2 is available in the downloads as a .zip of the source directory.
+http://code.google.com/p/xpost/downloads/list
+
+This new one is being designed along different principles. 
+Transparency (of a sort), simplicity (from a certain point-of-view), 
+speed (choosing appropriate algorithms).
+
+The various modules were written and tested separately before being 
+coupled together to achieve the necessary basic functionality.
+
+At the heart is the "m" module: the memory-file and memory-tables.
+
+Patterned after the model of the memory-table chain is the "s" module: 
+the segmented stack.
+
+And making use of both of these is the "v" module: the *virtual* part
+of the virtual-memory, the save/restore stacks which live in the memory file.
+
+The three single-letter modules (m, s, & v) are considered the "core" of the whole thing.
+
+Arrays ("ar") and dictionaries ("di") are automatically copied before writing if the 
+save-level has risen, giving cheap 'save's. 'restore' has an easy job
+of popping the save-stack and exchanging the addresses in the memory-tables:
+cheap 'restore's!!
+
+Names use the same old ternary search tree, this time updated to live in the 
+memory file.
+
+And the garbage collector ("gc"). 
+It's there. We'll see how well it works as I keep building.
+
+ 
+
+
+ 
+
+
+
+
+
+
+
