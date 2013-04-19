@@ -1,6 +1,7 @@
 #include "m.h"
 
 
+#include <ctype.h> /* isprint */
 #include <stdlib.h> /* exit free malloc realloc */
 #include <stdio.h> /* fprintf printf perror */
 #include <string.h> /* memset */
@@ -39,7 +40,7 @@ void dumpmfile(mfile *mem){
 	for (u=0; u < mem->used; u++) {
 		if (u%16 == 0) {
 			if (u != 0) {
-				int v;
+				unsigned v;
 				for (v= u-16; v < u; v++) {
 					putchar( isprint(mem->base[v])?
 							mem->base[v] : '.');
@@ -53,21 +54,23 @@ void dumpmfile(mfile *mem){
 }
 
 /* memfile exists in path */
-int getmemfile(){
+int getmemfile(char *fname){
 	int fd;
 	fd = open(
-			"x.mem",
+			fname, //"x.mem",
 			O_RDWR);
 	return fd;
 }
 
 /* initialize the memory file */
-void initmem(mfile *mem){
-	int fd;
+void initmem(mfile *mem, char *fname){
+	int fd = -1;
 	struct stat buf;
 	size_t sz = pgsz;
 
-	fd = getmemfile();
+	if (fname) {
+		fd = getmemfile(fname);
+	}
 	mem->fd = fd;
 	if (fd != -1){
 		fstat(fd, &buf);
@@ -290,7 +293,7 @@ mfile mem;
 /* initialize everything */
 void init(void){
 	pgsz = getpagesize();
-	initmem(&mem);
+	initmem(&mem, "x.mem");
 	(void)initmtab(&mem); /* create mtab at address zero */
 }
 

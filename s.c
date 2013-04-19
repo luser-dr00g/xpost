@@ -168,7 +168,7 @@ unsigned s, t;
 /* initialize everything */
 void init(void) {
 	pgsz = getpagesize();
-	initmem(&mem);
+	initmem(&mem, "x.mem");
 	s = initstack(&mem);
 	t = initstack(&mem);
 }

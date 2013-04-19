@@ -51,7 +51,7 @@ integer bstget(context *ctx, object s, integer i) {
 mfile mem;
 
 int main(void) {
-	initmem(&mem);
+	initmem(&mem, "x.mem");
 	(void)initmtab(&mem);
 
 	object s = consstr(&mem, CNT_STR("This is a string"));

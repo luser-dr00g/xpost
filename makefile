@@ -6,6 +6,14 @@ SRC= README makefile *.h *.c
 count:
 	wc -l *.[ch]
 
+clean:
+	rm *.o *.exe
+
+m.ps:m.pic
+	pic m.pic|groff > m.ps
+s.ps:s.pic
+	pic s.pic|groff > s.ps
+
 m:m.c ob.h
 	cc $(CFLAGS) -DTESTMODULE -o $@ $<
 ob:ob.c ob.h
@@ -18,9 +26,13 @@ v:v.c s.o m.o ob.o gc.o ar.o
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o gc.o ar.o
 gc:gc.c s.o m.o ob.o gc.o ar.o st.o v.o
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o
-di:di.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o itp.o nm.o
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o gc.o itp.o nm.o
+ar:ar.c s.o m.o ob.o gc.o st.o v.o gc.o itp.o nm.o op.o ops.o di.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o st.o v.o gc.o itp.o nm.o op.o ops.o di.o
+di:di.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o itp.o nm.o op.o ops.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o gc.o itp.o nm.o op.o ops.o
+itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o op.o ops.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o gc.o nm.o di.o op.o ops.o
 	
 
-test: m ob s nm v gc di
-	./ob && ./m && ./s && ./nm && ./v && ./gc && ./di
+test: m ob s nm v gc ar di itp
+	./ob && ./m && ./s && ./nm && ./v && ./gc && ./ar && ./di && ./itp

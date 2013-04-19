@@ -197,20 +197,27 @@ void bdcput(context *ctx, object d, object k, object v) {
 
 
 #ifdef TESTMODULE
+#include <stdio.h>
 
 context ctx;
 
 int main(void) {
+	printf("\n^test di.c\n");
 	initcontext(&ctx);
 	object d;
 	d = consbdc(&ctx, 12);
+	printf("1 2 def\n");
 	bdcput(&ctx, d, consint(1), consint(2));
+	printf("3 4 def\n");
 	bdcput(&ctx, d, consint(3), consint(4));
 
+	printf("1 load =\n");
 	dumpobject(bdcget(&ctx, d, consint(1)));
 	//dumpobject(bdcget(&ctx, d, consint(2))); // error("undefined");
+	printf("\n3 load =\n");
 	dumpobject(bdcget(&ctx, d, consint(3)));
 
+	puts("");
 	return 0;
 }
 

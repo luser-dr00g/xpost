@@ -1,5 +1,6 @@
 //#define TESTMODULE
 
+#include <stdbool.h>
 #include <stdio.h>
 #include "ob.h"
 
@@ -20,9 +21,18 @@ integer type(object o) {
 
 SINGLETONS(DEFINE_SINGLETON)
 
+object consbool(bool b) {
+	object o;
+	o.tag = booleantype;
+	o.int_.pad = 0;
+	o.int_.val = b;
+	return o;
+}
+
 object consint(integer i){
 	object o;
 	o.tag = integertype;
+	o.int_.pad = 0;
 	o.int_.val = i;
 	return o;
 }
@@ -30,6 +40,7 @@ object consint(integer i){
 object consreal(real r){
 	object o;
 	o.tag = realtype;
+	o.real_.pad = 0;
 	o.real_.val = r;
 	return o;
 }
@@ -49,6 +60,7 @@ void dumpobject(object o){
 
 		case nulltype: printf("<null>"); break;
 		case marktype: printf("<mark>"); break;
+		case booleantype: printf("<boolean %s>", o.int_.val?"true":"false"); break;
 		case integertype: printf("<integer %d>", (int)o.int_.val); break;
 		case realtype: printf("<real %f>", (float)o.real_.val); break;
 
@@ -56,7 +68,8 @@ void dumpobject(object o){
 		case arraytype: printf("<array"); dumpcompobject(o); break;
 		case dicttype: printf("<dict"); dumpcompobject(o); break;
 
-		case nametype: printf("<name %u>\n", (int)o.mark_.padw); break;
+		case nametype: printf("<name %u>", (int)o.mark_.padw); break;
+		case operatortype: printf("<operator %u>", (int)o.mark_.padw); break;
 	}
 }
 

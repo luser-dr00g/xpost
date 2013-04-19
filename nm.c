@@ -104,7 +104,7 @@ object consname(context *ctx, char *s) {
 void init(context *ctx) {
 	pgsz = getpagesize();
 	ctx->gl = malloc(sizeof(mfile));
-	initmem(ctx->gl);
+	initmem(ctx->gl, "x.mem");
 	(void)initmtab(ctx->gl); /* create mtab at address zero */
 	(void)mtalloc(ctx->gl, 0, 0); //FREE
 	(void)mtalloc(ctx->gl, 0, 0); //VS

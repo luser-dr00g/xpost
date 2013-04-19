@@ -5,7 +5,7 @@
 #include "ob.h"
 #include "s.h"
 #include "gc.h"
-//#include "v.h"
+#include "v.h"
 #include "itp.h"
 
 /* Allocate an entity with gballoc,
@@ -83,7 +83,7 @@ object arrgetinterval(object a, integer s, integer n) {
 mfile mem;
 
 int main(void) {
-	initmem(&mem);
+	initmem(&mem, "x.mem");
 	(void)initmtab(&mem);
 	initfree(&mem);
 	initsave(&mem);

@@ -27,7 +27,7 @@ typedef struct {
 } mfile;
 
 void dumpmfile(mfile *mem);
-void initmem(mfile *mem); /* initialize the memory file */
+void initmem(mfile *mem, char *fname); /* initialize the memory file */
 void exitmem(mfile *mem); /* destroy the memory file */
 void growmem(mfile *mem, unsigned sz);
 

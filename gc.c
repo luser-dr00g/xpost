@@ -197,7 +197,7 @@ mfile mem;
 unsigned stac;
 
 void init(void) {
-	initmem(&mem);
+	initmem(&mem, "x.mem");
 	(void)initmtab(&mem);
 	initfree(&mem);
 	initsave(&mem);

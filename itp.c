@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "m.h"
 #include "ob.h"
@@ -14,7 +15,7 @@
 #include "nm.h"
 #include "di.h"
 //#include "f.h"
-//#include "op.h"
+#include "op.h"
 
 /* allocate a stack as a "special entry",
    and double-check that it's the right entry */
@@ -31,7 +32,7 @@ void initglobal(context *ctx) {
 
 	/* allocate and initialize global vm */
 	ctx->gl = malloc(sizeof(mfile));
-	initmem(ctx->gl);
+	initmem(ctx->gl, "G.mem");
 	(void)initmtab(ctx->gl);
 	initfree(ctx->gl);
 	initsave(ctx->gl);
@@ -39,12 +40,12 @@ void initglobal(context *ctx) {
 
 	initnames(ctx); /* NAMES NAMET */
 	ctx->gl->roots[1] = NAMES;
-	//initoptab(ctx);
+	initoptab(ctx);
 	ctx->gl->start = OPTAB + 1; /* so OPTAB is not collected and not scanned. */
 	(void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
 	(void)consname(ctx, "getinterval"); /* middle of the start */
 	(void)consname(ctx, "setmiterlimit"); /* middle of the end */
-	//initop(ctx);
+	initop(ctx);
 }
 
 /* set up local vm in the context */
@@ -53,7 +54,7 @@ void initlocal(context *ctx) {
 
 	/* allocate and initialize local vm */
 	ctx->lo = malloc(sizeof(mfile));
-	initmem(ctx->lo);
+	initmem(ctx->lo, "L.mem");
 	(void)initmtab(ctx->lo);
 	initfree(ctx->lo);
 	initsave(ctx->lo);
@@ -110,7 +111,7 @@ evalfunc *evalname = evalpush;
 
 void evaloperator(context *ctx) {
 	object op = pop(ctx->lo, ctx->es);
-	//opexec(ctx, op.mark_.padw);
+	opexec(ctx, op.mark_.padw);
 }
 
 void evalarray(context *ctx) {
@@ -193,20 +194,13 @@ void init(void) {
 	object d = consbdc(&ctx, 2);
 		bdcput(&ctx, d, consint(0), consint(1));
 		push(ctx.lo, ctx.es, d);
-	push(ctx.lo, ctx.es, consoper(&ctx, "count", NULL,0,0)));STR("01234567")));
-
-	object a = consbar(&ctx, 2);
-		barput(&ctx, a, 0, consint(6));
-		barput(&ctx, a, 1, consreal(7.0));
-		push(ctx.lo, ctx.es, a);
-	object d = consbdc(&ctx, 2);
-		bdcput(&ctx, d, consint(0), consint(1));
-		push(ctx.lo, ctx.es, d);
-	push(ctx.lo, ctx.es, consoper(&ctx, "count", NULL,0,0)));
+	push(ctx.lo, ctx.es, consoper(&ctx, "count", NULL,0,0));
 }
 
 int main(void) {
 	init();
+
+	printf("\n^test itp.c\n");
 	printf("initial es:\n");
 	dumpstack(ctx.lo, ctx.es);
 	puts("");
@@ -220,6 +214,9 @@ int main(void) {
 	printf("ctx.gl:\n");
 	dumpmfile(ctx.gl);
 	dumpmtab(ctx.gl, 0);
+
+	return 0;
+}
 
 #endif
 

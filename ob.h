@@ -1,6 +1,7 @@
 typedef unsigned char byte;
 typedef unsigned short word;
 typedef unsigned long dword;
+typedef unsigned long long qword;
 typedef int integer;
 typedef float real;
 typedef dword addr;
@@ -109,6 +110,7 @@ SINGLETONS(DECLARE_SINGLETON)
 //extern object mark /*= { marktype }*/;
 //extern object null /*= { nulltype }*/;
 
+object consbool(bool b);
 object consint(integer i);
 object consreal(real r);
 void dumpobject(object o);

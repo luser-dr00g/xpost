@@ -114,7 +114,7 @@ void restore(mfile *mem) {
 mfile mf;
 
 void init(mfile *mem) {
-	initmem(mem);
+	initmem(mem, "x.mem");
 	(void)initmtab(mem);
 	initfree(mem);
 	initsave(mem);
