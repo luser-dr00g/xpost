@@ -79,6 +79,7 @@ void push(mfile *mem, unsigned stackadr, object o) {
 	}
 }
 
+#if 0
 /* index the stack from top-down */
 /* n.b. this code can only reliably access
    STACKSEGSZ elements from the top */
@@ -102,6 +103,13 @@ object top(mfile *mem, unsigned stackadr, integer i) {
 			return invalid;
 	}
 	return s->data[s->top-1-i];
+}
+#endif
+
+/* index the stack from top-down */
+object top(mfile *mem, unsigned stacadr, integer i) {
+	int cnt = count(mem, stacadr);
+	return bot(mem, stacadr, cnt - 1 - i);
 }
 
 /* index from top-down and put item there.
