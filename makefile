@@ -9,10 +9,22 @@ count:
 clean:
 	rm *.o *.exe
 
+splint:
+	splint +posixlib -boolops -predboolint +ignoresigns \
+	-type -shiftimplementation -predboolothers -exportlocal ./*.c
+
 m.ps:m.pic
 	pic m.pic|groff > m.ps
+m.eps:m.ps
+	ps2eps m.ps
+m.png:m.eps
+	convert m.eps m.png
 s.ps:s.pic
 	pic s.pic|groff > s.ps
+s.eps:s.ps
+	ps2eps s.ps
+s.png:s.eps
+	convert s.eps s.png
 
 m:m.c ob.h
 	cc $(CFLAGS) -DTESTMODULE -o $@ $<

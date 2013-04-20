@@ -13,20 +13,24 @@
    set the current save level in the "mark" field,
    wrap it up in an object. */
 object consarr(mfile *mem, unsigned sz) {
+	unsigned ent;
+	unsigned rent;
+	unsigned cnt;
+	mtab *tab;
+	object o;
 	//unsigned ent = mtalloc(mem, 0, sz * sizeof(object));
-	unsigned ent = gballoc(mem, sz * sizeof(object));
-	mtab *tab = (void *)(mem->base);
-	unsigned rent = ent;
+	ent = gballoc(mem, (unsigned)(sz * sizeof(object)));
+	tab = (void *)(mem->base);
+	rent = ent;
 	findtabent(mem, &tab, &rent);
-	unsigned cnt = count(mem, adrent(mem, VS));
+	cnt = count(mem, adrent(mem, VS));
 	tab->tab[rent].mark = ( (0 << MARKO) | (0 << RFCTO) |
 			(cnt << LLEVO) | (cnt << TLEVO) );
 
 	//return (object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0};
-	object o;
 	o.tag = arraytype;
-	o.comp_.sz = sz;
-	o.comp_.ent = ent;
+	o.comp_.sz = (word)sz;
+	o.comp_.ent = (word)ent;
 	o.comp_.off = 0;
 	return o;
 } 
@@ -46,7 +50,7 @@ object consbar(context *ctx, unsigned sz) {
    call put. */
 void arrput(mfile *mem, object a, integer i, object o) {
 	if (!stashed(mem, a.comp_.ent)) stash(mem, a.comp_.ent);
-	put(mem, a.comp_.ent, a.comp_.off + i, sizeof(object), &o);
+	put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(object), &o);
 }
 
 /* Select mfile according to BANK flag,
@@ -58,7 +62,7 @@ void barput(context *ctx, object a, integer i, object o) {
 /* call get. */
 object arrget(mfile *mem, object a, integer i) {
 	object o;
-	get(mem, a.comp_.ent, a.comp_.off +i, sizeof(object), &o);
+	get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(object)), &o);
 	return o;
 }
 

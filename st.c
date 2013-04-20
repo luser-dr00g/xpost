@@ -6,10 +6,11 @@
 #include "itp.h"
 
 object consstr(mfile *mem, unsigned sz, char *ini) {
-	unsigned ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int));
+	unsigned ent;
+	object o;
+	ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int));
 	//unsigned ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int));
 	if (ini) put(mem, ent, 0, sz, ini);
-	object o;
 	o.tag = stringtype;
 	o.comp_.sz = sz;
 	o.comp_.ent = ent;
@@ -18,7 +19,8 @@ object consstr(mfile *mem, unsigned sz, char *ini) {
 }
 
 object consbst(context *ctx, unsigned sz, char *ini) {
-	object s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
+	object s;
+	s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
 	if (ctx->vmmode==GLOBAL)
 		s.tag |= FBANK;
 	return s;
@@ -51,11 +53,12 @@ integer bstget(context *ctx, object s, integer i) {
 mfile mem;
 
 int main(void) {
+	object s;
+	int i;
 	initmem(&mem, "x.mem");
 	(void)initmtab(&mem);
 
-	object s = consstr(&mem, CNT_STR("This is a string"));
-	int i;
+	s = consstr(&mem, CNT_STR("This is a string"));
 	for (i=0; i < s.comp_.sz; i++) {
 		putchar(strget(&mem, s, i);
 	}

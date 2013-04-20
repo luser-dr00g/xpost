@@ -41,9 +41,10 @@ void dumpstack(mfile *mem, unsigned stackadr) {
 /* free a stack segment */
 void sfree(mfile *mem, unsigned stackadr) {
 	stack *s = (void *)(mem->base + stackadr);
-	if (s->nextseg) sfree(mem, s->nextseg);
 	mtab *tab;
-	unsigned e = mtalloc(mem, 0, 0); /* allocate entry with 0 size */
+	unsigned e;
+	if (s->nextseg) sfree(mem, s->nextseg);
+	e = mtalloc(mem, 0, 0); /* allocate entry with 0 size */
 	findtabent(mem, &tab, &e);
 	tab->tab[e].adr = stackadr; /* insert address */
 	tab->tab[e].sz = sizeof(stack); /* insert size */

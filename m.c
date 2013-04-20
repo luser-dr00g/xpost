@@ -30,13 +30,13 @@ typedef struct {
 
 /* dump mfile details to stdout */
 void dumpmfile(mfile *mem){
+	unsigned u;
 	printf("{mfile: base = %p, "
 			"used = 0x%x (%u), "
 			"max = 0x%x (%u)}\n",
 			mem->base,
 			mem->used, mem->used,
 			mem->max, mem->max);
-	unsigned u;
 	for (u=0; u < mem->used; u++) {
 		if (u%16 == 0) {
 			if (u != 0) {
@@ -171,11 +171,12 @@ typedef struct {
 
 /* dump mtab details to stdout */
 void dumpmtab(mfile *mem, unsigned mtabadr){
+	unsigned i;
 	mtab *tab = (void *)(mem->base + mtabadr);
 	printf("nexttab: 0x%04x\n", tab->nexttab);
 	printf("nextent: %u\n", tab->nextent);
-	unsigned i;
 	for (i=0; i<tab->nextent; i++) {
+		unsigned u;
 		printf("%d: %u %04x [%u] %s %d %d %d\n",
 				i,
 				tab->tab[i].adr, tab->tab[i].adr,
@@ -184,7 +185,6 @@ void dumpmtab(mfile *mem, unsigned mtabadr){
 				(tab->tab[i].mark & RFCTM) >> RFCTO,
 				(tab->tab[i].mark & LLEVM) >> LLEVO,
 				(tab->tab[i].mark & TLEVM) >> TLEVO );
-		unsigned u;
 		for (u=0; u < tab->tab[i].sz; u++) {
 			printf(" %02x", (unsigned)mem->base[
 					tab->tab[i].adr + u ] );
@@ -197,9 +197,10 @@ void dumpmtab(mfile *mem, unsigned mtabadr){
 
 /* allocate and initialize a new table */
 unsigned initmtab(mfile *mem){
+	mtab *tab;
 	unsigned adr;
 	adr = mfalloc(mem, sizeof(mtab));
-	mtab *tab = (void *)(mem->base + adr);
+	tab = (void *)(mem->base + adr);
 	tab->nexttab = 0;
 	tab->nextent = 0;
 	return adr;
@@ -207,6 +208,7 @@ unsigned initmtab(mfile *mem){
 
 /* allocate memory, returns table index */
 unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
+	unsigned ent;
 	mtab *tab = (void *)(mem->base + mtabadr);
 	int ntab = 0;
 	while (tab->nextent >= TABSZ) {
@@ -214,7 +216,7 @@ unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
 		++ntab;
 	}
 
-	unsigned ent = tab->nextent;
+	ent = tab->nextent;
 	++tab->nextent;
 
 	tab->tab[ent].adr = mfalloc(mem, sz);

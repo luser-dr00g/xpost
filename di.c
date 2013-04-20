@@ -67,29 +67,36 @@ unsigned hash(object k) {
    Initialize a dichead in memory,
    just after the head, clear a table of pairs. */
 object consdic(mfile *mem, unsigned sz) {
+	mtab *tab;
 	object d;
+	unsigned rent;
+	unsigned cnt;
+	unsigned ad;
+	dichead *dp;
+	object *tp;
+	unsigned i;
+
 	d.tag = dicttype;
 	d.comp_.sz = sz;
 	d.comp_.off = 0;
 	//d.comp_.ent = mtalloc(mem, 0, sizeof(dichead) + DICTABSZ(sz) );
 	d.comp_.ent = gballoc(mem, sizeof(dichead) + DICTABSZ(sz) );
 
-	mtab *tab = (void *)(mem->base);
-	unsigned rent = d.comp_.ent;
+	tab = (void *)(mem->base);
+	rent = d.comp_.ent;
 	findtabent(mem, &tab, &rent);
-	unsigned cnt = count(mem, adrent(mem, VS));
+	cnt = count(mem, adrent(mem, VS));
 	tab->tab[rent].mark = ( (0 << MARKO) | (0 << RFCTO) |
 			(cnt << LLEVO) | (cnt << TLEVO) );
 
-	unsigned ad = adrent(mem, d.comp_.ent);
-	dichead *dp = (void *)(mem->base + ad); /* clear header */
+	ad = adrent(mem, d.comp_.ent);
+	dp = (void *)(mem->base + ad); /* clear header */
 	dp->tag = dicttype;
 	dp->sz = sz;
 	dp->nused = 0;
 	dp->pad = 0;
 
-	object *tp = (void *)(mem->base + ad + sizeof(dichead)); /* clear table */
-	unsigned i;
+	tp = (void *)(mem->base + ad + sizeof(dichead)); /* clear table */
 	for (i=0; i < DICTABN(sz); i++)
 		tp[i] = null; /* remember our null object is not all-zero! */
 	return d;
@@ -134,9 +141,11 @@ object *diclookup(context *ctx, mfile *mem, object d, object k) {
 	dichead *dp = (void *)(mem->base + ad);
 	object *tp = (void *)(mem->base + ad + sizeof(dichead));
 	unsigned sz = (dp->sz + 1);
-	unsigned
-		h = hash(k) % sz,
-		i = h;
+	unsigned h;
+	unsigned i;
+	h = hash(k) % sz;
+	i = h;
+
 	RETURN_TAB_I_IF_EQ_K_OR_NULL
 	for (++i; i < sz; i++) {
 		RETURN_TAB_I_IF_EQ_K_OR_NULL
@@ -176,13 +185,14 @@ object bdcget(context *ctx, object d, object k) {
 	   update value. */
 void dicput(context *ctx, mfile *mem, object d, object k, object v) {
 	object *e;
+	dichead *dp;
 	if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
 	e = diclookup(ctx, mem, d, k);
 	if (type(e[0]) == nulltype) {
 		if (dicfull(mem, d)) {
 			//grow dict!
 		}
-		dichead *dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
+		dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
 		++ dp->nused;
 		e[0] = k;
 	}

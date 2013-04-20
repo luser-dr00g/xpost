@@ -106,10 +106,6 @@ integer islit(object o);
 
 SINGLETONS(DECLARE_SINGLETON)
 
-//extern object invalid /*= { invalidtype }*/;
-//extern object mark /*= { marktype }*/;
-//extern object null /*= { nulltype }*/;
-
 object consbool(bool b);
 object consint(integer i);
 object consreal(real r);

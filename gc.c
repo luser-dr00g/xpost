@@ -108,10 +108,12 @@ void initfree(mfile *mem) {
 
 /* free this ent! */
 void mfree(mfile *mem, unsigned ent) {
-	unsigned a = adrent(mem, ent);
+	unsigned a;
+	unsigned z;
+	a = adrent(mem, ent);
 	if (szent(mem, ent) == 0) return; // ignore zero size allocs
-	unsigned z = adrent(mem, FREE);
-	//*(unsigned *)(mem->base + adrent(mem, ent)) = mem->avail;
+	z = adrent(mem, FREE);
+	// *(unsigned *)(mem->base + adrent(mem, ent)) = mem->avail;
 	memcpy(mem->base+a, mem->base+z, sizeof(unsigned));
 	//mem->avail = ent;
 	memcpy(mem->base+z, &ent, sizeof(ent));
@@ -122,11 +124,15 @@ void mfree(mfile *mem, unsigned ent) {
    		if element is unmarked and not zero-sized,
 			free it.  */
 void sweep(mfile *mem) {
-	unsigned z = adrent(mem, FREE);
-	memcpy(mem->base+z, &(unsigned){ 0 }, sizeof(unsigned));
-	mtab *tab = (void *)(mem->base);
-	int ntab = 0;
+	mtab *tab;
+	int ntab;
+	unsigned z;
 	unsigned i;
+
+	z = adrent(mem, FREE);
+	memcpy(mem->base+z, &(unsigned){ 0 }, sizeof(unsigned));
+	tab = (void *)(mem->base);
+	ntab = 0;
 	while (1) {
 		for (i = mem->start; i < tab->nextent; i++) {
 			if (tab->tab[i].mark == 0
@@ -143,8 +149,8 @@ void sweep(mfile *mem) {
    mark all root stacks,
    sweep. */
 void collect(mfile *mem) {
-	unmark(mem);
 	unsigned i;
+	unmark(mem);
 	for (i = mem->roots[0]; i<= mem->roots[1]; i++) {
 		markstack(mem, adrent(mem, i));
 	}
@@ -181,9 +187,11 @@ try_again:
 /* allocate new entry, copy data, steal its adr, stash old adr, free it */
 unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsize) {
 	mtab *tab = NULL;
-	unsigned ent = mtalloc(mem, 0, newsize);
+	unsigned newadr;
+	unsigned ent;
+	ent = mtalloc(mem, 0, newsize);
 	findtabent(mem, &tab, &ent);
-	unsigned newadr = tab->tab[ent].adr;
+	newadr = tab->tab[ent].adr;
 	memcpy(mem->base + newadr, mem->base + oldadr, oldsize);
 	tab->tab[ent].adr = oldadr;
 	tab->tab[ent].sz = oldsize;

@@ -20,9 +20,11 @@
 /* allocate a stack as a "special entry",
    and double-check that it's the right entry */
 void makestack(mfile *mem, unsigned stk) {
-	unsigned ent = mtalloc(mem, 0, 0); /* allocate an entry of zero length */
+	unsigned ent;
+	mtab *tab;
+	ent = mtalloc(mem, 0, 0); /* allocate an entry of zero length */
 	assert(ent == stk);
-	mtab *tab = (void *)mem->base;
+	tab = (void *)mem->base;
 	tab->tab[ent].adr = initstack(mem);
 }
 
@@ -124,8 +126,10 @@ void evalarray(context *ctx) {
 	switch (a.comp_.sz) {
 	default /* > 1 */: push(ctx->lo, ctx->es,
 							   arrgetinterval(a, 1, a.comp_.sz - 1) );
+					   /*@fallthrough@*/
 	case 1: push(ctx->lo, ctx->es,
 					barget(ctx, a, 0) );
+			/*@fallthrough@*/
 	case 0: /* drop */;
 	}
 }

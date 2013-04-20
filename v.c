@@ -25,10 +25,12 @@ typedef struct {
    sz is 0 so gc will ignore it. */
 void initsave(mfile *mem) {
 	unsigned t;
-	unsigned ent = mtalloc(mem, 0, 0); /* allocate an entry of zero length */
+	unsigned ent;
+	mtab *tab;
+	ent = mtalloc(mem, 0, 0); /* allocate an entry of zero length */
 	assert(ent == VS);
 	t = initstack(mem);
-	mtab *tab = (void *)mem->base;
+	tab = (void *)mem->base;
 	tab->tab[ent].adr = t;
 }
 
@@ -46,19 +48,22 @@ object save(mfile *mem) {
 /* check ent's tlev against current save level (save-stack count) */
 unsigned stashed(mfile *mem, unsigned ent) {
 	//object sav = top(mem, adrent(mem, VS), 0);
-	unsigned cnt = count(mem, adrent(mem, VS));
 	mtab *tab;
+	unsigned cnt;
+	unsigned tlev;
+	cnt = count(mem, adrent(mem, VS));
 	findtabent(mem, &tab, &ent);
-	unsigned tlev = (tab->tab[ent].mark & TLEVM) >> TLEVO;
+	tlev = (tab->tab[ent].mark & TLEVM) >> TLEVO;
 	return tlev == cnt;
 }
 
 /* make a clone of ent, return new ent */
 unsigned copy(mfile *mem, unsigned ent) {
 	mtab *tab;
+	unsigned new;
 	unsigned tent = ent;
 	findtabent(mem, &tab, &ent);
-	unsigned new = gballoc(mem, tab->tab[ent].sz);
+	new = gballoc(mem, tab->tab[ent].sz);
 	ent = tent;
 	findtabent(mem, &tab, &ent); //recalc
 	memcpy(mem->base + adrent(mem, new),
@@ -73,11 +78,12 @@ void stash(mfile *mem, unsigned ent) {
 	object sav = top(mem, adrent(mem, VS), 0);
 	mtab *tab;
 	unsigned rent = ent;
+	object o;
+	unsigned tlev;
 	findtabent(mem, &tab, &rent);
-	unsigned tlev = sav.save_.lev;
+	tlev = sav.save_.lev;
 	tab->tab[rent].mark &= ~TLEVM; // clear TLEV field
 	tab->tab[rent].mark |= (tlev << TLEVO);  // set TLEV field
-	object o;
 	o.saverec_.src = ent;
 	o.saverec_.cpy = copy(mem, ent);
 	push(mem, sav.save_.stk, o);
@@ -88,18 +94,22 @@ void stash(mfile *mem, unsigned ent) {
 		pop saverec
 	pop save stack */
 void restore(mfile *mem) {
-	unsigned v = adrent(mem, VS); // save-stack address
-	object sav = pop(mem, v); // save-object (stack of saverec_'s)
+	unsigned v;
+	object sav;
 	mtab *stab, *ctab;
-	unsigned cnt = count(mem, sav.save_.stk);
+	unsigned cnt;
 	unsigned sent, cent;
+	v = adrent(mem, VS); // save-stack address
+	sav = pop(mem, v); // save-object (stack of saverec_'s)
+	cnt = count(mem, sav.save_.stk);
 	while (cnt--) {
-		object rec = pop(mem, sav.save_.stk);
+		object rec;
+		unsigned hold;
+		rec = pop(mem, sav.save_.stk);
 		sent = rec.saverec_.src;
 		cent = rec.saverec_.cpy;
 		findtabent(mem, &stab, &sent);
 		findtabent(mem, &ctab, &cent);
-		unsigned hold;
 		hold = stab->tab[sent].adr;                 // tmp = src
 		stab->tab[sent].adr = ctab->tab[cent].adr;  // src = cpy
 		ctab->tab[cent].adr = hold;                 // cpy = tmp
@@ -128,9 +138,10 @@ void show(char *msg, mfile *mem, object a) {
 
 int main(void) {
 	mfile *mem = &mf;
+	object a;
 	init(mem);
 
-	object a = consarr(mem, 2);
+	a = consarr(mem, 2);
 	arrput(mem, a, 0, consint(33));
 	arrput(mem, a, 1, consint(66));
 	show("initial", mem, a);
