@@ -177,7 +177,7 @@ void dumpmtab(mfile *mem, unsigned mtabadr){
 	printf("nextent: %u\n", tab->nextent);
 	for (i=0; i<tab->nextent; i++) {
 		unsigned u;
-		printf("%d: %u %04x [%u] %s %d %d %d\n",
+		printf("ent %d: adr %u %04x, sz [%u], mark %s rfct %d llev %d tlev %d\n",
 				i,
 				tab->tab[i].adr, tab->tab[i].adr,
 				tab->tab[i].sz,

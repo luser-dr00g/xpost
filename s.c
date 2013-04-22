@@ -113,6 +113,7 @@ object top(mfile *mem, unsigned stacadr, integer i) {
 	return bot(mem, stacadr, cnt - 1 - i);
 }
 
+#if 0
 /* index from top-down and put item there.
    the inverse of top. */
 void pot(mfile *mem, unsigned stackadr, integer i, object o) {
@@ -135,17 +136,39 @@ void pot(mfile *mem, unsigned stackadr, integer i, object o) {
 	}
 	s->data[s->top-1-i] = o;
 }
+#endif
+
+/* index from top-down and put item there.
+   inverse of top. */
+void pot(mfile *mem, unsigned stacadr, integer i, object o) {
+	int cnt = count(mem, stacadr);
+	tob(mem, stacadr, cnt - 1 - i, o);
+}
 
 /* index from bottom up */
-object bot(mfile *mem, unsigned stackadr, integer i) {
-	stack *s = (void *)(mem->base + stackadr);
+object bot(mfile *mem, unsigned stacadr, integer i) {
+	stack *s = (void *)(mem->base + stacadr);
 
 	/* find desired segment */
-	while (i > STACKSEGSZ) {
+	while (i >= STACKSEGSZ) {
 		i -= STACKSEGSZ;
 		s = (void *)(mem->base + s->nextseg);
 	}
 	return s->data[i];
+}
+
+/* index from bottom-up and put item there.
+   inverse of bot. */
+void tob(mfile *mem, unsigned stacadr, integer i, object o) {
+	stack *s = (void *)(mem->base + stacadr);
+
+	/* find desired segment */
+	while (i >= STACKSEGSZ) {
+		i -= STACKSEGSZ;
+		if (s->nextseg == 0) error("stack underflow");
+		s = (void *)(mem->base + s->nextseg);
+	}
+	s->data[i] = o;
 }
 
 object pop(mfile *mem, unsigned stackadr) {
@@ -209,6 +232,16 @@ int main() {
 	z = pop(&mem, s); /* z = a */
 	push(&mem, t, z);
 	printf("x = %d, y = %d, z = %d\n", x.int_.val, y.int_.val, z.int_.val);
+	printf("top(0): %d\n", top(&mem, t, 0).int_.val);
+	printf("top(1): %d\n", top(&mem, t, 1).int_.val);
+	printf("top(2): %d\n", top(&mem, t, 2).int_.val);
+	printf("bot(0): %d\n", bot(&mem, t, 0).int_.val);
+	printf("bot(1): %d\n", bot(&mem, t, 1).int_.val);
+	printf("bot(2): %d\n", bot(&mem, t, 2).int_.val);
+	printf("tob(2, 55)\n");
+	tob(&mem, t, 2, consint(55));
+	printf("pot(1, 37)\n");
+	pot(&mem, t, 1, consint(37));
 
 	x = pop(&mem, t); /* x = a */
 	y = pop(&mem, t); /* y = b */

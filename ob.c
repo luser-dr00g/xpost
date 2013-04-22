@@ -23,7 +23,7 @@ SINGLETONS(DEFINE_SINGLETON)
 
 object consbool(bool b) {
 	object o;
-	o.tag = booleantype;
+	o.int_.tag = booleantype;
 	o.int_.pad = 0;
 	o.int_.val = b;
 	return o;
@@ -31,7 +31,7 @@ object consbool(bool b) {
 
 object consint(integer i){
 	object o;
-	o.tag = integertype;
+	o.int_.tag = integertype;
 	o.int_.pad = 0;
 	o.int_.val = i;
 	return o;
@@ -39,7 +39,7 @@ object consint(integer i){
 
 object consreal(real r){
 	object o;
-	o.tag = realtype;
+	o.real_.tag = realtype;
 	o.real_.pad = 0;
 	o.real_.val = r;
 	return o;

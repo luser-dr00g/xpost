@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include <stdbool.h>
 
 #include "m.h"
@@ -51,8 +52,24 @@ void Iindex (context *ctx, object n) {
 
 /* a(n-1)..a(0) n j  roll  a((j-1)mod n)..a(0) a(n-1)..a(j mod n)
    roll n elements j times */
-void IIroll (context *ctx, object n, object j) {
-	//?
+void IIroll (context *ctx, object N, object J) {
+	int n = N.int_.val;
+	int j = J.int_.val;
+	if (n < 0) error("rangecheck");
+	if (n == 0) return;
+	if (j < 0) j = n - ( (- j) % n);
+	j %= n;
+	if (j == 0) return;
+	
+	object *t = alloca((n-j) * sizeof(object));
+	int i;
+	for (i = 0; i < n-j; i++)
+		t[i] = top(ctx->lo, ctx->os, n - 1 - i);
+	for (i = 0; i < j; i++)
+		pot(ctx->lo, ctx->os, n - 1 - i,
+				top(ctx->lo, ctx->os, j - 1 - i));
+	for (i = 0; i < n-j; i++)
+		pot(ctx->lo, ctx->os, n - j - 1 - i, t[i]);
 }
 
 /* |- any1..anyN  clear  |-
@@ -109,6 +126,7 @@ void initops(context *ctx, object sd) {
 	op = consoper(ctx, "dup", Adup, 2, 1, anytype); INSTALL;
 	op = consoper(ctx, "copy", Icopy, 0, 1, integertype); INSTALL;
 	op = consoper(ctx, "index", Iindex, 1, 1, integertype); INSTALL;
+	op = consoper(ctx, "roll", IIroll, 0, 2, integertype, integertype); INSTALL;
 	op = consoper(ctx, "clear", Zclear, 0, 0); INSTALL;
 	op = consoper(ctx, "count", Zcount, 1, 0); INSTALL;
 	bdcput(ctx, sd, consname(ctx, "mark"), mark);
