@@ -33,10 +33,12 @@ void dumpmfile(mfile *mem){
 	unsigned u;
 	printf("{mfile: base = %p, "
 			"used = 0x%x (%u), "
-			"max = 0x%x (%u)}\n",
+			"max = 0x%x (%u), roots = [%d %d], start = %d}\n",
 			mem->base,
 			mem->used, mem->used,
-			mem->max, mem->max);
+			mem->max, mem->max,
+			mem->roots[0], mem->roots[1],
+			mem->start);
 	for (u=0; u < mem->used; u++) {
 		if (u%16 == 0) {
 			if (u != 0) {
@@ -172,13 +174,18 @@ typedef struct {
 /* dump mtab details to stdout */
 void dumpmtab(mfile *mem, unsigned mtabadr){
 	unsigned i;
-	mtab *tab = (void *)(mem->base + mtabadr);
+	unsigned e;
+	mtab *tab;
+	e = 0;
+
+next_table:
+	tab = (void *)(mem->base + mtabadr);
 	printf("nexttab: 0x%04x\n", tab->nexttab);
 	printf("nextent: %u\n", tab->nextent);
-	for (i=0; i<tab->nextent; i++) {
+	for (i=0; i<tab->nextent; i++, e++) {
 		unsigned u;
-		printf("ent %d: adr %u %04x, sz [%u], mark %s rfct %d llev %d tlev %d\n",
-				i,
+		printf("ent %d (%d): adr %u 0x%04x, sz [%u], mark %s rfct %d llev %d tlev %d\n",
+				e, i,
 				tab->tab[i].adr, tab->tab[i].adr,
 				tab->tab[i].sz,
 				tab->tab[i].mark & MARKM ?"#":"_",
@@ -191,7 +198,11 @@ void dumpmtab(mfile *mem, unsigned mtabadr){
 		}
 		puts("");
 	}
-	if (tab->nextent == TABSZ) dumpmtab(mem, tab->nexttab);
+	if (tab->nextent == TABSZ) {
+		mtabadr = tab->nexttab;
+		goto next_table;
+	}
+		//dumpmtab(mem, tab->nexttab);
 }
 
 
@@ -234,8 +245,11 @@ unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
 void findtabent(mfile *mem, mtab **atab, unsigned *aent) {
 	*atab = (void *)(mem->base);
 	while (*aent >= TABSZ) {
-		*atab = (void *)(mem->base + (*atab)->nexttab);
 		*aent -= TABSZ;
+		if ((*atab)->nexttab == 0) {
+			error("ent doesn't exist");
+		}
+		*atab = (void *)(mem->base + (*atab)->nexttab);
 	}
 }
 

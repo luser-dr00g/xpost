@@ -112,6 +112,7 @@ evalfunc *evalreal = evalpush;
 evalfunc *evalsave = evalpush;
 evalfunc *evaldict = evalpush;
 
+evalfunc *evalcontext = evalpush;
 evalfunc *evalfile = evalpush;
 evalfunc *evalstring = evalpush;
 evalfunc *evalname = evalpush;

@@ -8,8 +8,8 @@
 object consstr(mfile *mem, unsigned sz, char *ini) {
 	unsigned ent;
 	object o;
-	ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int));
-	//unsigned ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int));
+	//ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int));
+	ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int));
 	if (ini) put(mem, ent, 0, sz, ini);
 	o.tag = stringtype;
 	o.comp_.sz = sz;

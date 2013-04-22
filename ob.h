@@ -19,6 +19,7 @@ typedef dword addr;
 	_(save)	   \
 	_(name)	   \
 	_(boolean) \
+	_(context) \
 	_(string)  \
 /* #def TYPES */
 

@@ -5,6 +5,7 @@
 
 #include "m.h"
 #include "ob.h"
+#include "gc.h"
 #include "s.h"
 #include "itp.h"
 #include "st.h"
@@ -76,6 +77,8 @@ unsigned tstinsert(mfile *mem, unsigned tadr, char *s) {
 unsigned addname(context *ctx, char *s) {
 	unsigned names = adrent(ctx->gl, NAMES);
 	unsigned u = count(ctx->gl, names);
+	//dumpmfile(ctx->gl);
+	//dumpmtab(ctx->gl, 0);
 	push(ctx->gl, names, consstr(ctx->gl, strlen(s), s));
 	return u;
 }
@@ -106,7 +109,8 @@ void init(context *ctx) {
 	ctx->gl = malloc(sizeof(mfile));
 	initmem(ctx->gl, "x.mem");
 	(void)initmtab(ctx->gl); /* create mtab at address zero */
-	(void)mtalloc(ctx->gl, 0, 0); //FREE
+	//(void)mtalloc(ctx->gl, 0, 0); //FREE
+	initfree(ctx->gl);
 	(void)mtalloc(ctx->gl, 0, 0); //VS
 
 	initnames(ctx);

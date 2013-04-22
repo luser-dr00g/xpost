@@ -7,6 +7,7 @@
 #include "gc.h"
 #include "v.h"
 #include "itp.h"
+#include "ar.h"
 
 /* Allocate an entity with gballoc,
    find the appropriate mtab,

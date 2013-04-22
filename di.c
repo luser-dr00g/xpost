@@ -227,6 +227,9 @@ int main(void) {
 	printf("\n3 load =\n");
 	dumpobject(bdcget(&ctx, d, consint(3)));
 
+
+	//dumpmfile(ctx.gl);
+	//dumpmtab(ctx.gl, 0);
 	puts("");
 	return 0;
 }

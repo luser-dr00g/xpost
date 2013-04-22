@@ -53,6 +53,8 @@ void Iindex (context *ctx, object n) {
 /* a(n-1)..a(0) n j  roll  a((j-1)mod n)..a(0) a(n-1)..a(j mod n)
    roll n elements j times */
 void IIroll (context *ctx, object N, object J) {
+	object *t;
+	int i;
 	int n = N.int_.val;
 	int j = J.int_.val;
 	if (n < 0) error("rangecheck");
@@ -61,8 +63,7 @@ void IIroll (context *ctx, object N, object J) {
 	j %= n;
 	if (j == 0) return;
 	
-	object *t = alloca((n-j) * sizeof(object));
-	int i;
+	t = alloca((n-j) * sizeof(object));
 	for (i = 0; i < n-j; i++)
 		t[i] = top(ctx->lo, ctx->os, n - 1 - i);
 	for (i = 0; i < j; i++)
@@ -88,7 +89,7 @@ void Zcount (context *ctx) {
 
 /*
    -  currentcontext  context
-   return curent context identifier
+   return current context identifier
 
    mark obj1..objN proc  fork  context
    create context executing proc with obj1..objN as operands

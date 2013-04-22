@@ -18,12 +18,14 @@
 void unmark(mfile *mem) {
 	mtab *tab = (void *)(mem->base);
 	unsigned i;
-	while (1) {
-		for (i = mem->start; i < tab->nextent; i++) {
+	for (i = mem->start; i < tab->nextent; i++) {
+		tab->tab[i].mark &= ~MARKM;
+	}
+	while (tab->nexttab != 0) {
+		tab = (void *)(mem->base + tab->nexttab);
+		for (i = 0; i < tab->nextent; i++) {
 			tab->tab[i].mark &= ~MARKM;
 		}
-		if (i != TABSZ) break;
-		tab = (void *)(mem->base + tab->nexttab);
 	}
 }
 
@@ -94,7 +96,7 @@ next:
 	}
 }
 
-/* free list head is in slow zero
+/* free list head is in slot zero
    sz is 0 so gc will ignore it */
 void initfree(mfile *mem) {
 	(void)mtalloc(mem, 0, sizeof(unsigned));
@@ -130,18 +132,22 @@ void sweep(mfile *mem) {
 	unsigned i;
 
 	z = adrent(mem, FREE);
-	memcpy(mem->base+z, &(unsigned){ 0 }, sizeof(unsigned));
+	//memcpy(mem->base+z, &(unsigned){ 0 }, sizeof(unsigned));
+	*(unsigned *)(mem->base+z) = 0;
 	tab = (void *)(mem->base);
 	ntab = 0;
-	while (1) {
+	for (i = mem->start; i < tab->nextent; i++) {
+		if ((tab->tab[i].mark & MARKM) == 0 && tab->tab[i].sz != 0)
+			mfree(mem, i + ntab*TABSZ);
+	}
+	while (tab->nexttab != 0) {
+		tab = (void *)(mem->base + tab->nexttab);
+		++ntab;
 		for (i = mem->start; i < tab->nextent; i++) {
-			if (tab->tab[i].mark == 0
-			&& tab->tab[i].sz != 0)
+			if ((tab->tab[i].mark & MARKM) == 0 && tab->tab[i].sz != 0)
 				mfree(mem, i + ntab*TABSZ);
 		}
 		if (i!=TABSZ) break;
-		tab = (void *)(mem->base + tab->nexttab);
-		++ntab;
 	}
 }
 
@@ -163,12 +169,12 @@ enum { PERIOD = 10 };
    if the allocator falls back to fresh memory 10 times,
    		it triggers a collection. */
 unsigned gballoc(mfile *mem, unsigned sz) {
-	unsigned z = adrent(mem, FREE);
-	unsigned e;
+	unsigned z = adrent(mem, FREE); // free pointer
+	unsigned e;                     // working pointer
 	static int period = PERIOD;
-	memcpy(&e, mem->base+z, sizeof(e));
+	memcpy(&e, mem->base+z, sizeof(e)); // e = *z
 try_again:
-	while (e) {
+	while (e) { // e is not zero
 		if (szent(mem,e) >= sz) {
 			memcpy(mem->base+z, mem->base+adrent(mem,e), sizeof(unsigned));
 			return e;

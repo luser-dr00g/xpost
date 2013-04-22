@@ -48,6 +48,7 @@ void sfree(mfile *mem, unsigned stackadr) {
 	findtabent(mem, &tab, &e);
 	tab->tab[e].adr = stackadr; /* insert address */
 	tab->tab[e].sz = sizeof(stack); /* insert size */
+	/* discard */
 }
 
 unsigned count(mfile *mem, unsigned stackadr) {
