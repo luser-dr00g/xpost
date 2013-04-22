@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "m.h"
@@ -164,116 +165,53 @@ void mainloop(context *ctx) {
 
 #ifdef TESTMODULE
 
-context ctx;
+context *ctx;
 #define CNT_STR(s) sizeof(s), s
 
 void init(void) {
 	pgsz = getpagesize();
 	initevaltype();
-	initcontext(&ctx);
-
-#if 0
-	push(ctx.lo, adrent(ctx.lo, ES), invalid); /* schedule a quit */
-	push(ctx.lo, ctx.es, consoper(&ctx, "count", NULL,0,0));
-
-	push(ctx.lo, ctx.es, consoper(&ctx, "pop", NULL,0,0));
-	push(ctx.lo, ctx.es, consoper(&ctx, "pop", NULL,0,0));
-	push(ctx.lo, ctx.es, consoper(&ctx, "pop", NULL,0,0));
-
-	push(ctx.lo, ctx.es, consint(1));
-	push(ctx.lo, ctx.es, consoper(&ctx, "dup", NULL,0,0));
-	push(ctx.lo, ctx.es, consint(2));
-	push(ctx.lo, ctx.es, consint(3));
-
-	push(ctx.lo, ctx.es, consoper(&ctx, "exch", NULL,0,0));
-
-	push(ctx.lo, ctx.es, consreal(4.0));
-	push(ctx.lo, ctx.es, consreal(42.0));
-
-	push(ctx.lo, ctx.es, consname(&ctx, "pop"));
-	push(ctx.lo, ctx.es, consname(&ctx, "potato"));
-	push(ctx.lo, ctx.es, consbool(true));
-
-	push(ctx.lo, ctx.es, consbst(&ctx, CNT_STR("abcdefgh")));
-	push(ctx.lo, ctx.es, consbst(&ctx, CNT_STR("abracadavra")));
-	push(ctx.lo, ctx.es, consbst(&ctx, CNT_STR("01234567")));
-
-	object a = consbar(&ctx, 2);
-		barput(&ctx, a, 0, consint(6));
-		barput(&ctx, a, 1, consreal(7.0));
-		push(ctx.lo, ctx.es, a);
-	object d = consbdc(&ctx, 2);
-		bdcput(&ctx, d, consint(0), consint(1));
-		push(ctx.lo, ctx.es, d);
-	push(ctx.lo, ctx.es, consoper(&ctx, "count", NULL,0,0));
-#endif
+	ctx = malloc(sizeof *ctx);
+	memset(ctx, 0, sizeof ctx);
+	initcontext(ctx);
 }
 
 void xit() {
-	exitcontext(&ctx);
+	exitcontext(ctx);
 }
 
 int main(void) {
 	init();
-	context *ct = &ctx;
 
-#if 0
 	printf("\n^test itp.c\n");
-	printf("initial es:\n");
-	dumpstack(ctx.lo, ctx.es); puts("");
-	mainloop(&ctx);
-	printf("final os:\n");
-	dumpstack(ctx.lo, ctx.os); puts("");
-	return 0;
 
-	printf("ctx.lo:\n");
-	dumpmfile(ctx.lo);
-	dumpmtab(ctx.lo, 0);
-	printf("ctx.gl:\n");
-	dumpmfile(ctx.gl);
-	dumpmtab(ctx.gl, 0);
+	push(ctx->lo, ctx->es, invalid);
 
-#endif
+	int i;
+	for (i = 8; i >= 0; i--)
+		push(ctx->lo, ctx->os, consint(i));
 
-	{
-		context *ctx = ct;
-		printf("\n^test itp.c\n");
+	push(ctx->lo, ctx->os, consint(9));
+	push(ctx->lo, ctx->os, consint(-4));
+	dumpstack(ctx->lo, ctx->os); puts("");
 
-		push(ctx->lo, ctx->es, invalid);
+	push(ctx->lo, ctx->es, consoper(ctx,"roll",NULL,0,0));
 
-		int i;
-		for (i = 8; i >= 0; i--)
-			push(ctx->lo, ctx->os, consint(i));
+	ctx->quit = 0;
+	mainloop(ctx);
 
-		push(ctx->lo, ctx->os, consint(9));
-		push(ctx->lo, ctx->os, consint(-4));
-		dumpstack(ctx->lo, ctx->os); puts("");
+	dumpstack(ctx->lo, ctx->os); puts("");
 
-		push(ctx->lo, ctx->es, consoper(ctx,"roll",NULL,0,0));
+	printf("ctx->lo:\n");
+	dumpmfile(ctx->lo);
+	dumpmtab(ctx->lo, 0);
+	printf("ctx->gl:\n");
+	dumpmfile(ctx->gl);
+	dumpmtab(ctx->gl, 0);
 
-		mainloop(ctx);
-
-		dumpstack(ctx->lo, ctx->os); puts("");
-
-		printf("ctx->lo:\n");
-		dumpmfile(ctx->lo);
-		dumpmtab(ctx->lo, 0);
-		printf("ctx->gl:\n");
-		dumpmfile(ctx->gl);
-		dumpmtab(ctx->gl, 0);
-
-	}
 
 	xit();
 	return 0;
 }
 
-#endif
-
-#if 0
-output:
-initial es:
-<invalid object><operator 6><operator 0><operator 0><operator 0><integer 1><operator 2><integer 2><integer 3><operator 1><real 4.000000><real 42.000000><name 4><name 12><boolean true><string 12 9 6 0><string 12 12 7 0><string 12 9 8 0><array 5 2 9 0><dict 6 2 10 0><operator 6>
-final os:
-<dict 6 2 10 0><integer 6><real 7.000000><string 12 9 8 0><string 12 12 7 0><string 12 9 6 0><boolean true><name 12><name 4><real 42.000000>
 #endif
