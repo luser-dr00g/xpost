@@ -38,12 +38,12 @@ v:v.c s.o m.o ob.o gc.o ar.o
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o gc.o ar.o
 gc:gc.c s.o m.o ob.o gc.o ar.o st.o v.o
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o
-ar:ar.c s.o m.o ob.o gc.o st.o v.o gc.o itp.o nm.o op.o ops.o di.o
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o st.o v.o gc.o itp.o nm.o op.o ops.o di.o
-di:di.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o itp.o nm.o op.o ops.o
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o gc.o itp.o nm.o op.o ops.o
-itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o op.o ops.o
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o gc.o nm.o di.o op.o ops.o
+ar:ar.c s.o m.o ob.o gc.o st.o v.o gc.o itp.o nm.o op.o ops.o di.o opst.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o st.o v.o gc.o itp.o nm.o op.o ops.o di.o opst.o
+di:di.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o itp.o nm.o op.o ops.o opst.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o gc.o itp.o nm.o op.o ops.o opst.o
+itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o op.o ops.o opst.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o gc.o nm.o di.o op.o ops.o opst.o
 	
 
 test: m ob s nm v gc ar di itp

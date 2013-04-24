@@ -188,7 +188,8 @@ void dicput(context *ctx, mfile *mem, object d, object k, object v) {
 	dichead *dp;
 	if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
 	e = diclookup(ctx, mem, d, k);
-	if (type(e[0]) == nulltype) {
+	//if (type(e[0]) == nulltype) {
+	if (e == NULL) {
 		if (dicfull(mem, d)) {
 			//grow dict!
 		}

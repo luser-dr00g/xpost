@@ -205,6 +205,7 @@ call:
 }
 
 #include "ops.h"
+#include "opst.h"
 
 void initop(context *ctx) {
 	//oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
@@ -220,4 +221,5 @@ void initop(context *ctx) {
 	tab->tab[ent].sz = 0; // make systemdict immune to collection
 
 	initops(ctx, sd);
+	initopst(ctx, sd);
 }
