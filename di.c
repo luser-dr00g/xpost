@@ -188,9 +188,12 @@ void dicput(context *ctx, mfile *mem, object d, object k, object v) {
 	dichead *dp;
 	if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
 	e = diclookup(ctx, mem, d, k);
-	//if (type(e[0]) == nulltype) {
 	if (e == NULL) {
+		error("dict overfull");
+	}
+	if (type(e[0]) == nulltype) {
 		if (dicfull(mem, d)) {
+			error("dict full");
 			//grow dict!
 		}
 		dp = (void *)(mem->base + adrent(mem, d.comp_.ent));

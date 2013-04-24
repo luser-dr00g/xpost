@@ -39,7 +39,6 @@ void Icopy (context *ctx, object n) {
 	if ((unsigned)n.int_.val >= count(ctx->lo, ctx->os)) error("stackunderflow");
 	for (i=0; i < n.int_.val; i++)
 		push(ctx->lo, ctx->os, top(ctx->lo, ctx->os, n.int_.val - 1));
-	//TODO limited to stack segment
 }
 
 /* anyN..any0 N  index  anyN..any0 anyN
@@ -86,6 +85,33 @@ void Zcount (context *ctx) {
 	push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->os)));
 }
 
+/* -  mark  mark
+   push mark on stack */
+/* the name "mark" is defined in systemdict as a marktype object */
+
+/* mark obj1..objN  cleartomark  -
+   discard elements down through mark */
+void Zcleartomark (context *ctx) {
+	object o;
+	do {
+		o = pop(ctx->lo, ctx->os);
+	} while (o.tag != marktype);
+}
+
+/* mark obj1..objN  counttomark  N
+   count elements down to mark */
+void Zcounttomark (context *ctx) {
+	unsigned i;
+	unsigned z;
+	z = count(ctx->lo, ctx->os);
+	for (i = 0; i < z; i++) {
+		if (top(ctx->lo, ctx->os, i).tag == marktype) {
+			push(ctx->lo, ctx->os, consint(i));
+			return;
+		}
+	}
+	error("unmatchedmark");
+}
 
 /*
    -  currentcontext  context
@@ -131,4 +157,6 @@ void initops(context *ctx, object sd) {
 	op = consoper(ctx, "clear", Zclear, 0, 0); INSTALL;
 	op = consoper(ctx, "count", Zcount, 1, 0); INSTALL;
 	bdcput(ctx, sd, consname(ctx, "mark"), mark);
+	op = consoper(ctx, "cleartomark", Zcleartomark, 0, 0); INSTALL;
+	op = consoper(ctx, "counttomark", Zcounttomark, 1, 0); INSTALL;
 }

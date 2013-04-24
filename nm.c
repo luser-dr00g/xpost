@@ -129,19 +129,19 @@ int main(void) {
 	printf("apple ");
 	dumpobject(consname(&ctx, "apple"));
 	dumpobject(consname(&ctx, "apple"));
-	printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
+	//printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
 	dumpstack(ctx.gl, adrent(ctx.gl, NAMES)); puts("");
 
 	printf("banana ");
 	dumpobject(consname(&ctx, "banana"));
 	dumpobject(consname(&ctx, "banana"));
-	printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
+	//printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
 	dumpstack(ctx.gl, adrent(ctx.gl, NAMES)); puts("");
 
 	printf("currant ");
 	dumpobject(consname(&ctx, "currant"));
 	dumpobject(consname(&ctx, "currant"));
-	printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
+	//printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
 	dumpstack(ctx.gl, adrent(ctx.gl, NAMES)); puts("");
 
 	printf("apple ");
@@ -151,11 +151,11 @@ int main(void) {
 	printf("currant ");
 	dumpobject(consname(&ctx, "currant"));
 	printf("date ");
-	printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
+	//printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
 	dumpobject(consname(&ctx, "date"));
-	printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
+	//printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
 	dumpstack(ctx.gl, adrent(ctx.gl, NAMES)); puts("");
-	printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
+	//printf("NAMES at %u\n", adrent(ctx.gl, NAMES));
 	printf("elderberry ");
 	dumpobject(consname(&ctx, "elderberry"));
 
