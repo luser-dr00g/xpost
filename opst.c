@@ -46,18 +46,76 @@ void Sputinterval(context *ctx, object D, object I, object S) {
 	s_copy(ctx, S, arrgetinterval(D, I.int_.val, S.comp_.sz));
 }
 
+int ancsearch(char *str, char *seek, int seekn) {
+	int i;
+	for (i = 0; i < seekn; i++)
+		if (str[i] != seek[i])
+			return false;
+	return true;
+}
+
+void Sanchorsearch(context *ctx, object str, object seek) {
+	char *s, *k;
+	if (seek.comp_.sz > str.comp_.sz) error("rangecheck");
+	s = charstr(ctx, str);
+	k = charstr(ctx, seek);
+	if (ancsearch(s, k, seek.comp_.sz)) {
+		push(ctx->lo, ctx->os,
+				arrgetinterval(str, seek.comp_.sz, 
+					str.comp_.sz - seek.comp_.sz)); /* post */
+		push(ctx->lo, ctx->os,
+				arrgetinterval(str, 0, seek.comp_.sz)); /* match */
+		push(ctx->lo, ctx->os, consbool(true));
+	} else {
+		push(ctx->lo, ctx->os, str);
+		push(ctx->lo, ctx->os, consbool(false));
+	}
+}
+
+void Ssearch(context *ctx, object str, object seek) {
+	int i;
+	char *s, *k;
+	if (seek.comp_.sz > str.comp_.sz) error("rangecheck");
+	s = charstr(ctx, str);
+	k = charstr(ctx, seek);
+	for (i = 0; i < str.comp_.sz - seek.comp_.sz; i++) {
+		if (ancsearch(s+i, k, seek.comp_.sz)) {
+			push(ctx->lo, ctx->os, 
+					arrgetinterval(str, i + seek.comp_.sz,
+						str.comp_.sz - seek.comp_.sz - i)); /* post */
+			push(ctx->lo, ctx->os,
+					arrgetinterval(str, i, seek.comp_.sz)); /* match */
+			push(ctx->lo, ctx->os,
+					arrgetinterval(str, 0, i)); /* pre */
+			push(ctx->lo, ctx->os, consbool(true));
+			return;
+		}
+	}
+	push(ctx->lo, ctx->os, str);
+	push(ctx->lo, ctx->os, consbool(false));
+}
+
 void initopst(context *ctx, object sd) {
 	oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 	object n,op;
-	op = consoper(ctx, "string", Istring, 1, 1, integertype); INSTALL;
-	op = consoper(ctx, "length", Slength, 1, 1, stringtype); INSTALL;
-	op = consoper(ctx, "copy", Scopy, 1, 2, stringtype, stringtype); INSTALL;
-	op = consoper(ctx, "get", Sget, 1, 2, stringtype, integertype); INSTALL;
+	op = consoper(ctx, "string", Istring, 1, 1,
+			integertype); INSTALL;
+	op = consoper(ctx, "length", Slength, 1, 1,
+			stringtype); INSTALL;
+	op = consoper(ctx, "copy", Scopy, 1, 2,
+			stringtype, stringtype); INSTALL;
+	op = consoper(ctx, "get", Sget, 1, 2,
+			stringtype, integertype); INSTALL;
 	op = consoper(ctx, "put", Sput, 0, 3,
 			stringtype, integertype, integertype); INSTALL;
 	op = consoper(ctx, "getinterval", Sgetinterval, 1, 3,
 			stringtype, integertype, integertype); INSTALL;
 	op = consoper(ctx, "putinterval", Sputinterval, 0, 3,
 			stringtype, integertype, stringtype); INSTALL;
+	op = consoper(ctx, "anchorsearch", Sanchorsearch, 3, 2,
+			stringtype, stringtype); INSTALL;
+	op = consoper(ctx, "search", Ssearch, 4, 2,
+			stringtype, stringtype); INSTALL;
 	//bdcput(ctx, sd, consname(ctx, "mark"), mark);
 }
+

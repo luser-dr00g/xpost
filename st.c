@@ -26,6 +26,16 @@ object consbst(context *ctx, unsigned sz, char *ini) {
 	return s;
 }
 
+char *charstr(context *ctx, object S) {
+	mfile *f;
+	mtab *tab;
+	unsigned ent = S.comp_.ent;
+	f = S.tag&FBANK?ctx->gl:ctx->lo;
+	findtabent(f, &tab, &ent);
+	return (void *)(f->base + tab->tab[ent].adr);
+}
+
+
 void strput(mfile *mem, object s, integer i, integer c) {
 	byte b = c;
 	put(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
@@ -60,7 +70,7 @@ int main(void) {
 
 	s = consstr(&mem, CNT_STR("This is a string"));
 	for (i=0; i < s.comp_.sz; i++) {
-		putchar(strget(&mem, s, i);
+		putchar(strget(&mem, s, i));
 	}
 	putchar('\n');
 	return 0;
