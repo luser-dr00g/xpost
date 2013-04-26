@@ -95,6 +95,22 @@ void Ssearch(context *ctx, object str, object seek) {
 	push(ctx->lo, ctx->os, consbool(false));
 }
 
+void Sforall(context *ctx, object S, object P) {
+	switch(S.comp_.sz) {
+		default:
+			push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
+			push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+			push(ctx->lo, ctx->es, cvlit(P));
+			push(ctx->lo, ctx->es,
+					arrgetinterval(S, S.comp_.off+1, S.comp_.sz-1));
+		case 1:
+			push(ctx->lo, ctx->es, P);
+			push(ctx->lo, ctx->es, consint(bstget(ctx, S, 0)));
+		case 0:
+			break;
+	}
+}
+
 void initopst(context *ctx, object sd) {
 	oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 	object n,op;
@@ -116,6 +132,8 @@ void initopst(context *ctx, object sd) {
 			stringtype, stringtype); INSTALL;
 	op = consoper(ctx, "search", Ssearch, 4, 2,
 			stringtype, stringtype); INSTALL;
+	op = consoper(ctx, "forall", Sforall, 0, 2,
+			stringtype, proctype); INSTALL;
 	//bdcput(ctx, sd, consname(ctx, "mark"), mark);
 }
 

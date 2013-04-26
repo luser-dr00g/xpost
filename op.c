@@ -10,6 +10,10 @@
 #include "nm.h"
 #include "di.h"
 #include "op.h"
+#include "ops.h"
+#include "opst.h"
+#include "opar.h"
+#include "opdi.h"
 
 object promote(object o) { return consreal(o.int_.val); }
 
@@ -222,4 +226,6 @@ void initop(context *ctx) {
 
 	initops(ctx, sd);
 	initopst(ctx, sd);
+	initopar(ctx, sd);
+	initopdi(ctx, sd);
 }

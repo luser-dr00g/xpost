@@ -30,7 +30,7 @@ char *charstr(context *ctx, object S) {
 	mfile *f;
 	mtab *tab;
 	unsigned ent = S.comp_.ent;
-	f = S.tag&FBANK?ctx->gl:ctx->lo;
+	f = bank(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
 	findtabent(f, &tab, &ent);
 	return (void *)(f->base + tab->tab[ent].adr);
 }
@@ -42,7 +42,7 @@ void strput(mfile *mem, object s, integer i, integer c) {
 }
 
 void bstput(context *ctx, object s, integer i, integer c) {
-	strput(s.tag&FBANK? ctx->gl: ctx->lo, s, i, c);
+	strput(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
 }
 
 integer strget(mfile *mem, object s, integer i) {
@@ -52,7 +52,7 @@ integer strget(mfile *mem, object s, integer i) {
 }
 
 integer bstget(context *ctx, object s, integer i) {
-	return strget(s.tag&FBANK? ctx->gl: ctx->lo, s, i);
+	return strget(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i);
 }
 
 #ifdef TESTMODULE

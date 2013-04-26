@@ -34,10 +34,10 @@ int objcmp(context *ctx, object L, object R) {
 									&& L.comp_.ent == R.comp_.ent
 									&& L.comp_.off == R.comp_.off ); // 0 if all eq
 			case stringtype: return L.comp_.sz == R.comp_.sz ?
-							 memcmp( (L.tag&FBANK?ctx->gl:ctx->lo)->base
-									 + adrent(L.tag&FBANK?ctx->gl:ctx->lo, L.comp_.ent),
-							         (R.tag&FBANK?ctx->gl:ctx->lo)->base
-									 + adrent(R.tag&FBANK?ctx->gl:ctx->lo, R.comp_.ent),
+							 memcmp( (bank(ctx, L) /*L.tag&FBANK?ctx->gl:ctx->lo*/)->base
+									 + adrent(bank(ctx, L) /*L.tag&FBANK?ctx->gl:ctx->lo*/, L.comp_.ent),
+							         (bank(ctx, R) /*R.tag&FBANK?ctx->gl:ctx->lo*/)->base
+									 + adrent(bank(ctx, R) /*R.tag&FBANK?ctx->gl:ctx->lo*/, R.comp_.ent),
 									 L.comp_.sz) :
 										 L.comp_.sz - R.comp_.sz;
 		}
@@ -174,7 +174,7 @@ object dicget(context *ctx, mfile *mem, object d, object k) {
 /* select mfile according to BANK field,
    call dicget. */
 object bdcget(context *ctx, object d, object k) {
-	return dicget(ctx, d.tag&FBANK?ctx->gl:ctx->lo, d, k);
+	return dicget(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k);
 }
 
 /* save data if not save at this level,
@@ -206,7 +206,7 @@ void dicput(context *ctx, mfile *mem, object d, object k, object v) {
 /* select mfile according to BANK field,
    call dicput. */
 void bdcput(context *ctx, object d, object k, object v) {
-	dicput(ctx, d.tag&FBANK?ctx->gl:ctx->lo, d, k, v);
+	dicput(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k, v);
 }
 
 

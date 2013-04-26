@@ -57,7 +57,7 @@ void arrput(mfile *mem, object a, integer i, object o) {
 /* Select mfile according to BANK flag,
    call arrput. */
 void barput(context *ctx, object a, integer i, object o) {
-	arrput(a.tag&FBANK? ctx->gl: ctx->lo, a, i, o);
+	arrput(bank(ctx, a) /*a.tag&FBANK? ctx->gl: ctx->lo*/, a, i, o);
 }
 
 /* call get. */
@@ -70,7 +70,7 @@ object arrget(mfile *mem, object a, integer i) {
 /* Select mfile according to BANK flag,
    call arrget. */
 object barget(context *ctx, object a, integer i) {
-	return arrget(a.tag&FBANK? ctx->gl: ctx->lo, a, i);
+	return arrget(bank(ctx, a) /*a.tag&FBANK? ctx->gl: ctx->lo*/, a, i);
 }
 
 /* adjust the offset and size fields in the object. */

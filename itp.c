@@ -75,6 +75,7 @@ void initlocal(context *ctx) {
 	ctx->lo->start = HOLD + 1; /* so HOLD is not collected and not scanned. */
 }
 
+
 /* initialize context */
 void initcontext(context *ctx) {
 	initlocal(ctx);
@@ -86,6 +87,11 @@ void initcontext(context *ctx) {
 void exitcontext(context *ctx) {
 	exitmem(ctx->gl);
 	exitmem(ctx->lo);
+}
+
+/* return the global or local memory file for the composite object */
+mfile *bank(context *ctx, object o) {
+	return o.tag&FBANK? ctx->gl : ctx->lo;
 }
 
 /* function type for interpreter action pointers */

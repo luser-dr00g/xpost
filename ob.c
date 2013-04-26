@@ -18,6 +18,16 @@ integer type(object o) {
 	return o.tag & TYPEMASK;
 }
 
+object cvx(object o){
+	o.tag &= ~FLIT;
+	return o;
+}
+
+object cvlit(object o) {
+	o.tag |= FLIT;
+	return o;
+}
+
 
 SINGLETONS(DEFINE_SINGLETON)
 

@@ -110,5 +110,9 @@ SINGLETONS(DECLARE_SINGLETON)
 object consbool(bool b);
 object consint(integer i);
 object consreal(real r);
+
+object cvx(object o);
+object cvlit(object o);
+
 void dumpobject(object o);
 
