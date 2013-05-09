@@ -8,6 +8,7 @@
 #include "st.h"
 #include "ar.h"
 #include "di.h"
+#include "nm.h"
 #include "op.h"
 
 void Idict(context *ctx, object I) {
@@ -67,4 +68,5 @@ void initopdi(context *ctx, object sd) {
 			anytype, anytype); INSTALL;
 	op = consoper(ctx, "load", Aload, 1, 1,
 			anytype); INSTALL;
+	bdcput(ctx, sd, consname(ctx, "<<"), mark);
 }

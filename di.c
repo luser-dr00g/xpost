@@ -18,7 +18,11 @@ typedef struct {
 } dichead;
 */
 
-/* Compare two objects for "equality". */
+/* Compare two objects for "equality". 
+   return 0 if "equal"
+          +value if L > R
+		  -value if L < R
+ */
 int objcmp(context *ctx, object L, object R) {
 	if (type(L) == type(R))
 		switch (type(L)) {
@@ -35,9 +39,11 @@ int objcmp(context *ctx, object L, object R) {
 									&& L.comp_.off == R.comp_.off ); // 0 if all eq
 			case stringtype: return L.comp_.sz == R.comp_.sz ?
 							 memcmp( (bank(ctx, L) /*L.tag&FBANK?ctx->gl:ctx->lo*/)->base
-									 + adrent(bank(ctx, L) /*L.tag&FBANK?ctx->gl:ctx->lo*/, L.comp_.ent),
+									 + adrent(bank(ctx, L) /*L.tag&FBANK?ctx->gl:ctx->lo*/,
+										 L.comp_.ent),
 							         (bank(ctx, R) /*R.tag&FBANK?ctx->gl:ctx->lo*/)->base
-									 + adrent(bank(ctx, R) /*R.tag&FBANK?ctx->gl:ctx->lo*/, R.comp_.ent),
+									 + adrent(bank(ctx, R) /*R.tag&FBANK?ctx->gl:ctx->lo*/,
+										 R.comp_.ent),
 									 L.comp_.sz) :
 										 L.comp_.sz - R.comp_.sz;
 		}
@@ -124,6 +130,45 @@ unsigned dicmaxlength(mfile *mem, object d) {
 	return dp->sz;
 }
 
+void dicgrow(context *ctx, object d) {
+	mfile *mem;
+	unsigned sz;
+	unsigned ad;
+	object *tp;
+	object n;
+	int i;
+	printf("DI growing dict\n");
+	mem = bank(ctx, d);
+	n = consdic(mem, sz = 2 * dicmaxlength(mem, d));
+
+	ad = adrent(mem, d.comp_.ent);
+	tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
+	for ( i=0; i < DICTABN(sz); i += 2)
+		if (objcmp(ctx, tp[i], null) != 0) {
+			dicput(ctx, mem, n, tp[i], tp[i+1]);
+		}
+
+	{   // exchange entities
+		mtab *dtab, *ntab;
+		unsigned dent, nent;
+		unsigned hold;
+		dent = d.comp_.ent;
+		nent = n.comp_.ent;
+		findtabent(mem, &dtab, &dent);
+		findtabent(mem, &ntab, &nent);
+		// exchange adrs
+		hold = dtab->tab[dent].adr;
+		dtab->tab[dent].adr = ntab->tab[nent].adr;
+		ntab->tab[nent].adr = hold;
+		// exchange sizes
+		hold = dtab->tab[dent].sz;
+		dtab->tab[dent].sz = ntab->tab[nent].sz;
+		ntab->tab[nent].sz = hold;
+
+		mfree(mem, n.comp_.ent);
+	}
+}
+
 /* */
 bool dicfull(mfile *mem, object d) {
 	return diclength(mem, d) == dicmaxlength(mem, d);
@@ -186,15 +231,21 @@ object bdcget(context *ctx, object d, object k) {
 void dicput(context *ctx, mfile *mem, object d, object k, object v) {
 	object *e;
 	dichead *dp;
+retry:
 	if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
 	e = diclookup(ctx, mem, d, k);
 	if (e == NULL) {
-		error("dict overfull");
+		//error("dict overfull");
+		//grow dict!
+		dicgrow(ctx, d);
+		goto retry;
 	}
 	if (type(e[0]) == nulltype) {
 		if (dicfull(mem, d)) {
-			error("dict full");
+			//error("dict full");
 			//grow dict!
+			dicgrow(ctx, d);
+			goto retry;
 		}
 		dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
 		++ dp->nused;

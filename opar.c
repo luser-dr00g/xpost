@@ -8,6 +8,7 @@
 #include "st.h"
 #include "ar.h"
 #include "di.h"
+#include "nm.h"
 #include "op.h"
 
 void Iarray(context *ctx, object I) {
@@ -98,5 +99,6 @@ void initopar(context *ctx, object sd) {
 			arraytype); INSTALL;
 	op = consoper(ctx, "forall", Aforall, 0, 2,
 			arraytype, proctype); INSTALL;
+	bdcput(ctx, sd, consname(ctx, "["), mark);
 }
 
