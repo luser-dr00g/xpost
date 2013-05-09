@@ -62,7 +62,7 @@ void dictomark(context *ctx) {
 	Zcounttomark(ctx);
 	i = pop(ctx->lo, ctx->os).int_.val;
 	d = consbdc(ctx, i);
-	for ( ; i > 0; i--){
+	for ( ; i > 0; i -= 2){
 		v = pop(ctx->lo, ctx->os);
 		k = pop(ctx->lo, ctx->os);
 		bdcput(ctx, d, k, v);
