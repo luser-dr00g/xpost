@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdlib.h> /* NULL */
 
 #include "m.h"
 #include "ob.h"

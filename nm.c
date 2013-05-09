@@ -119,6 +119,7 @@ void init(context *ctx) {
 context ctx;
 
 int main(void) {
+	printf("\n^test nm\n");
 	init(&ctx);
 
 	printf("pop ");

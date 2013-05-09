@@ -10,6 +10,7 @@
 #include "di.h"
 #include "nm.h"
 #include "op.h"
+#include "ops.h"
 
 void Idict(context *ctx, object I) {
 	push(ctx->lo, ctx->os, consbdc(ctx, I.int_.val));
@@ -52,6 +53,24 @@ void Aload(context *ctx, object K) {
 	error("undefined");
 }
 
+/* << k_1 v_1 ... k_N v_N  >>  dict
+   construct dictionary from pairs on stack
+ */
+void dictomark(context *ctx) {
+	int i;
+	object d, k, v;
+	Zcounttomark(ctx);
+	i = pop(ctx->lo, ctx->os).int_.val;
+	d = consbdc(ctx, i);
+	for ( ; i > 0; i--){
+		v = pop(ctx->lo, ctx->os);
+		k = pop(ctx->lo, ctx->os);
+		bdcput(ctx, d, k, v);
+	}
+	pop(ctx->lo, ctx->os); // pop mark
+	push(ctx->lo, ctx->os, d);
+}
+
 void initopdi(context *ctx, object sd) {
 	oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 	object n,op;
@@ -69,4 +88,5 @@ void initopdi(context *ctx, object sd) {
 	op = consoper(ctx, "load", Aload, 1, 1,
 			anytype); INSTALL;
 	bdcput(ctx, sd, consname(ctx, "<<"), mark);
+	op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;
 }

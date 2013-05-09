@@ -20,7 +20,7 @@ enum typepat { anytype = stringtype + 1,
 
 void initoptab(context *ctx);
 
-object consoper(context *ctx, char *name, void (*fp)(), int out, int in, ...);
+object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
 
 void opexec(context *ctx, unsigned opcode);
 

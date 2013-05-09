@@ -2,7 +2,7 @@
 /* define MMAP without MREMAP should work for Irix (using AUTOGROW) */
 /* no MREMAP under cygwin (we'll see how AUTOGROW handles...)*/
 /* define neither to use malloc/realloc/free */
-#define MMAP
+//#define MMAP
 //#define MREMAP
 
 #ifdef MMAP
@@ -83,7 +83,7 @@ unsigned initmtab(mfile *mem);
 unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz);
 
 /* find the table and relative entity index for an absolute entity index */
-void findtabent(mfile *mem, mtab **atab, unsigned *aent);
+void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@out@*/ unsigned *aent);
 
 /* get the address from an entity */
 unsigned adrent(mfile *mem, unsigned ent);

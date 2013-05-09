@@ -60,7 +60,8 @@ int getmemfile(char *fname){
 	int fd;
 	fd = open(
 			fname, //"x.mem",
-			O_RDWR | O_CREAT );
+			O_RDWR | O_CREAT,
+			S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
 	if (fd == -1)
 		perror(fname);
 	return fd;
@@ -93,18 +94,23 @@ void initmem(mfile *mem, char *fname){
 			| (fd == -1? MAP_ANONYMOUS : 0) , fd, 0);
 	if (mem->base == MAP_FAILED)
 #else
-	mem->base = malloc(pgsz);
+	mem->base = malloc(sz);
 	if (mem->base == NULL)
 #endif
 		error("unable to initialize memory file");
 	mem->used = 0;
-	mem->max = pgsz;
+	mem->max = sz;
+#ifndef MMAP
+	/* read file into malloc'd memory */
+	if (fd != -1)
+		read(fd, mem->base, sz);
+#endif
 }
 
 /* destroy the memory file */
 void exitmem(mfile *mem){
-	msync(mem->base, mem->used, MS_SYNC);
 #ifdef MMAP
+	msync(mem->base, mem->used, MS_SYNC);
 	munmap(mem->base, mem->max);
 #else
 	free(mem->base);
@@ -118,6 +124,10 @@ void exitmem(mfile *mem){
 		/* The truncate() and ftruncate() functions cause the
 		   regular file named by path or referenced by fd to
 		   be truncated to a size of precisely length bytes. */
+#ifndef MMAP
+		lseek(mem->fd, 0, SEEK_SET);
+		write(mem->fd, mem->base, mem->used);
+#endif
 		close(mem->fd);
 	}
 }
@@ -242,7 +252,7 @@ unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
 }
 
 /* find the table and relative entity index for an absolute entity index */
-void findtabent(mfile *mem, mtab **atab, unsigned *aent) {
+void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@out@*/ unsigned *aent) {
 	*atab = (void *)(mem->base);
 	while (*aent >= TABSZ) {
 		*aent -= TABSZ;

@@ -1,17 +1,22 @@
+
 CFLAGS= -g -Wall -Wextra
 OB=ob.o m.o
 LDLIBS=
 SRC= README makefile *.h *.c 
 
+test: m ob s st nm v gc ar di itp
+	./ob && ./m && ./s && ./st && ./nm && \
+	./v && ./gc && ./ar && ./di && ./itp
+
 count:
 	wc -l *.[ch]
 
 clean:
-	rm *.o *.exe
+	rm *.o *.exe g.mem l.mem
 
 splint:
-	splint +posixlib -boolops -predboolint +ignoresigns \
-	-type -shiftimplementation -predboolothers -exportlocal ./*.c
+	splint +posixlib -boolops -predboolint +ignoresigns -type \
+	-shiftimplementation -predboolothers -exportlocal -mustfreefresh ./*.c
 
 m.ps:m.pic
 	pic m.pic|groff > m.ps
@@ -55,6 +60,3 @@ itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o op.o ops.o opst.o opar.
 	op.o ops.o opst.o opar.o opdi.o
 	
 
-test: m ob s st nm v gc ar di itp
-	./ob && ./m && ./s && ./st && ./nm && \
-	./v && ./gc && ./ar && ./di && ./itp

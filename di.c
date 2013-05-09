@@ -1,6 +1,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "m.h"
 #include "ob.h"
 #include "s.h"
@@ -181,7 +182,7 @@ bool dicfull(mfile *mem, object d) {
 
 /* perform a hash-assisted lookup.
    returns a pointer to the desired pair (if found)), or a null-pair. */
-object *diclookup(context *ctx, mfile *mem, object d, object k) {
+/*@null@*/ object *diclookup(context *ctx, mfile *mem, object d, object k) {
 	unsigned ad = adrent(mem, d.comp_.ent);
 	dichead *dp = (void *)(mem->base + ad);
 	object *tp = (void *)(mem->base + ad + sizeof(dichead));
@@ -203,7 +204,10 @@ object *diclookup(context *ctx, mfile *mem, object d, object k) {
 
 /* see if lookup returns a non-null pair. */
 bool dicknown(context *ctx, mfile *mem, object d, object k) {
-	return type(*diclookup(ctx, mem, d, k)) != nulltype;
+	object *r;
+	r = diclookup(ctx, mem, d, k);
+	if (r == NULL) return false;
+	return type(*r) != nulltype;
 }
 
 /* call diclookup,

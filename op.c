@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdlib.h> /* NULL */
 
 #include "m.h"
 #include "ob.h"
@@ -47,7 +48,7 @@ void initoptab (context *ctx) {
 	assert(ent == (unsigned)(int)OPTAB);
 }
 
-object consoper(context *ctx, char *name, void (*fp)(), int out,
+object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
 		int in, ...) {
 	object nm;
 	object o;
@@ -120,7 +121,7 @@ qword digest(context *ctx, mfile *mem, unsigned stacadr) {
 	for (i=0; i < 8; i++) {
 		byte t = type(top(mem, stacadr, i));
 		if (t == invalidtype) break;
-		a |= (qword)t << (i * 8);
+		a |= (qword)t << ((unsigned)i * 8);
 	}
 	return a;
 }
