@@ -13,6 +13,11 @@ multiple contexts(?) ).
 
 The various modules were written and tested separately before being 
 coupled together to achieve the necessary basic functionality.
+Each module retains its unit-test, its main() function, guarded
+by #ifdef TESTMODULE. `make test` will compile and execute all the 
+unit tests, producing copious output, but importantly exitting with 
+an appropriate success or failure code, so the make command will 
+fail if any of the tests fail.
 
 test obj    src   header structures CONSTANTS
 m    m.o    m.c    m.h   mfile mtab TABSZ
@@ -29,6 +34,8 @@ itp       itp.c  itp.h   context
     op.o   op.c   op.h    oper optab operator handler MAXOPS SDSIZE
    ops.o  ops.c  ops.h    stack operators
   opst.o opst.c opst.h    string operators
+  opar.o opar.c opar.h    array operators
+  opdi.o opdi.c opdi.h    dictionary operators
 
 At the heart is the "m" module: the memory-file and memory-tables.
 An mfile is a raw memory space cleverly(?) macro-ized to use
