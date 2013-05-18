@@ -1,0 +1,131 @@
+This is XPost3
+
+A work-in-progress Level-2 Postscript interpreter.
+
+XPost2 is available in the downloads as a .zip of the
+source directory.  http://code.google.com/p/xpost/downloads/list
+
+This new one is being designed along different principles.
+Transparency (debug-ability), simplicity (borrowing certain
+OOP concepts like encapsulation), speed (choosing appropriate
+algorithms), extensibility (growing stacks. support for
+multiple contexts(?) ).
+
+The various modules were written and tested separately before being 
+coupled together to achieve the necessary basic functionality.
+Each module retains its unit-test, its main() function, guarded
+by #ifdef TESTMODULE. `make test` will compile and execute all the 
+unit tests, producing copious output, but importantly exitting with 
+an appropriate success or failure code, so the make command will 
+fail if any of the tests fail.
+
+test obj    src   header structures CONSTANTS
+m    m.o    m.c    m.h   mfile mtab TABSZ
+s    s.o    s.c    s.h   stack STACKSEGSZ
+v    v.o    v.c    v.h   saverec_
+     f.o    f.c    f.h    file
+ob  ob.o   ob.c   ob.h   object
+ar  ar.o   ar.c   ar.h    array
+st  st.o   st.c   st.h    string
+di  di.o   di.c   di.h   dichead dictionary
+nm  nm.o   nm.c   nm.h    name
+gc  gc.o   gc.c   gc.h    garbage collector
+itp       itp.c  itp.h   context
+    op.o   op.c   op.h    oper optab operator handler MAXOPS SDSIZE
+   ops.o  ops.c  ops.h    stack operators
+  opst.o opst.c opst.h    string operators
+  opar.o opar.c opar.h    array operators
+  opdi.o opdi.c opdi.h    dictionary operators
+
+At the heart is the "m" module: the memory-file and memory-tables.
+An mfile is a raw memory space cleverly(?) macro-ized to use
+either malloc/realloc/free or mmap/mremap/munmap.
+This memory space is sub-allocated with a segmented index.
+A datum stored in memory is here alternately called an "entity"
+(when referring to the abstract data type) or an "entry" (when
+referring to the allocation metadata in the index.
+
+An execution context has two mfiles: one for global VM, one for local VM.
+When multiple contexts are implemented, I think the normal forking will
+share the global, but create a new local (copying the parent?).
+
+At address 0 of the mfile is an mtab, a Memory Table.
+An mtab is one segment of a chain of address tables which hold
+the allocation info (size, flags) and the "pointer" to the data
+itself. All VM "pointers" are integer byte-offsets from the vm
+base pointer.
+
+The first several entries of mtab[0] are "special entities".
+These include the addresses of the stack root segments.
+
+All mfiles have (in the mtab[0]) a save stack and a free-list.
+Local VM goes on to hold the operand, execution, and dictionary
+stacks. Global VM has instead NAMES, NAMET, BOGUSNAME, and HOLD.
+NAMES and NAMET are for the Name String stack and Name Tree,
+a ternary search tree. The same old ternary search tree,
+this time updated to live in the memory file.
+
+Bogusname is an allocated name string corresponding to the 
+Not-Found result. So zero means no and asking what no means
+is Bogus. HOLD is a stack to hold arguments popped from the
+operand stack before being passed to operator functions. This
+facilitates argument passing by cracking the hold stack array
+(since the hold stack should be at most one segment. The desired
+objects from the operand stack may span a segment boundary, but
+in the hold stack, they are rooted (so we the stack as an array,
+so we can select (switch) a function call based on the number of
+objects).
+
+
+Patterned after the model of the memory-table chain is the "s" module: 
+the segmented stack.
+
+And making use of both of these is the "v" module: the *virtual* part
+of the virtual-memory, the save/restore stacks which live in the memory
+file.
+
+The three single-letter modules (m, s, & v) are considered the "core"
+of the whole thing.
+
+Arrays ("ar") and dictionaries ("di") are automatically copied before
+writing if the save-level has risen, giving cheap 'save's. 'restore'
+has an easy job of popping the save-stack and exchanging the addresses
+in the memory-tables: cheap 'restore's!!
+
+Array, String and Dictionary functions now come in 2 flavors,
+a "raw" version which expects to have the mfile specified, and
+a "friendly" version which interprets the BANK field in the tag
+to determine whether to look in the local or global VM.
+
+	Raw array functions begin with "arr".
+	Banked array " " " "bar".
+	Raw dictionary " " " "dic".
+	Banked dictionary " " " "bdc". (not thrilled with this one)
+	Raw string " " " "str".
+	Banked string " " " "bst".
+
+Perhaps the banked ones should have normal names, and the "raw" ones should
+have funky names. (Murphy's Law)
+
+
+The save stack holds save-records with two entities, the source and the 
+copy. restore merely has to exchange the addresses of the two entities.
+All array and dictionary write operations ensure that the memory is 
+saved at the current level before writing.
+This should be more efficient than any of my previous drafts. 
+"True" copy-on-write and no pointer-chasing.
+ 
+And the garbage collector ("gc"). 
+It's there. We'll see how well it works as I keep building.
+
+ 
+
+
+ 
+
+
+
+
+
+
+
