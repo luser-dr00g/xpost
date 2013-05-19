@@ -11,10 +11,6 @@
 #include "nm.h"
 #include "di.h"
 #include "op.h"
-#include "ops.h"
-#include "opst.h"
-#include "opar.h"
-#include "opdi.h"
 
 object promote(object o) { return consreal(o.int_.val); }
 
@@ -175,7 +171,7 @@ void opexec(context *ctx, unsigned opcode) {
 						|| type(el) == realtype) ) continue;
 			if (t[j] == floattype) {
 				if (type(el) == integertype)
-					pot(ctx->lo, ctx->os /*adrent(ctx->lo, OS)*/, j, promote(el));
+					pot(ctx->lo, ctx->os, j, promote(el));
 				if (type(el) == realtype) continue;
 			}
 			if (t[j] == proctype
@@ -211,6 +207,8 @@ call:
 
 #include "ops.h"
 #include "opst.h"
+#include "opar.h"
+#include "opdi.h"
 
 void initop(context *ctx) {
 	//oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));

@@ -112,6 +112,7 @@ void init(context *ctx) {
 	//(void)mtalloc(ctx->gl, 0, 0); //FREE
 	initfree(ctx->gl);
 	(void)mtalloc(ctx->gl, 0, 0); //VS
+	initctxlist(ctx->gl);
 
 	initnames(ctx);
 }

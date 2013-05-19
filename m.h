@@ -63,14 +63,11 @@ enum {
 enum {
 	FREE,   
 	VS,
-	OS,     /* local */
-	ES,
-	DS,
-	HOLD,   
-	NAMES = OS, /* first global = first local */
-	NAMET = ES,
-	BOGUSNAME = DS,
-	OPTAB = HOLD, 
+	CTXLIST,
+	NAMES, /* these 4 global only */
+	NAMET,
+	BOGUSNAME,
+	OPTAB, 
 };
 
 /* dump mtab details to stdout */

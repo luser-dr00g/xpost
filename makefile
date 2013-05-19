@@ -12,7 +12,7 @@ count:
 	wc -l *.[ch]
 
 clean:
-	rm *.o *.exe g.mem l.mem
+	rm *.o *.exe g.mem l.mem x.mem
 
 splint:
 	splint +posixlib -boolops -predboolint +ignoresigns -type \
