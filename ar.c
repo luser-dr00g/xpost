@@ -57,7 +57,7 @@ void arrput(mfile *mem, object a, integer i, object o) {
 /* Select mfile according to BANK flag,
    call arrput. */
 void barput(context *ctx, object a, integer i, object o) {
-	arrput(bank(ctx, a) /*a.tag&FBANK? ctx->gl: ctx->lo*/, a, i, o);
+	arrput(/*bank(ctx, a)*/ a.tag&FBANK? ctx->gl: ctx->lo, a, i, o);
 }
 
 /* call get. */

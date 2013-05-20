@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdlib.h> /* NULL */
 
 #include "m.h"
 #include "ob.h"
@@ -10,10 +11,6 @@
 #include "nm.h"
 #include "di.h"
 #include "op.h"
-#include "ops.h"
-#include "opst.h"
-#include "opar.h"
-#include "opdi.h"
 
 object promote(object o) { return consreal(o.int_.val); }
 
@@ -47,7 +44,7 @@ void initoptab (context *ctx) {
 	assert(ent == (unsigned)(int)OPTAB);
 }
 
-object consoper(context *ctx, char *name, void (*fp)(), int out,
+object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
 		int in, ...) {
 	object nm;
 	object o;
@@ -120,7 +117,7 @@ qword digest(context *ctx, mfile *mem, unsigned stacadr) {
 	for (i=0; i < 8; i++) {
 		byte t = type(top(mem, stacadr, i));
 		if (t == invalidtype) break;
-		a |= (qword)t << (i * 8);
+		a |= (qword)t << ((unsigned)i * 8);
 	}
 	return a;
 }
@@ -174,7 +171,7 @@ void opexec(context *ctx, unsigned opcode) {
 						|| type(el) == realtype) ) continue;
 			if (t[j] == floattype) {
 				if (type(el) == integertype)
-					pot(ctx->lo, ctx->os /*adrent(ctx->lo, OS)*/, j, promote(el));
+					pot(ctx->lo, ctx->os, j, promote(el));
 				if (type(el) == realtype) continue;
 			}
 			if (t[j] == proctype
@@ -210,6 +207,8 @@ call:
 
 #include "ops.h"
 #include "opst.h"
+#include "opar.h"
+#include "opdi.h"
 
 void initop(context *ctx) {
 	//oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));

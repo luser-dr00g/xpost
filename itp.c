@@ -18,6 +18,7 @@
 //#include "f.h"
 #include "op.h"
 
+#if 0
 /* allocate a stack as a "special entry",
    and double-check that it's the right entry */
 void makestack(mfile *mem, unsigned stk) {
@@ -27,6 +28,37 @@ void makestack(mfile *mem, unsigned stk) {
 	assert(ent == stk);
 	tab = (void *)mem->base;
 	tab->tab[ent].adr = initstack(mem);
+}
+#endif
+
+unsigned makestack(mfile *mem){
+	return initstack(mem);
+}
+
+void initctxlist(mfile *mem) {
+	unsigned ent;
+	mtab *tab;
+	ent = mtalloc(mem, 0, MAXCONTEXT * sizeof(unsigned));
+	assert(ent == CTXLIST);
+	tab = (void *)mem->base;
+	memset(mem->base + tab->tab[CTXLIST].adr, 0,
+			MAXCONTEXT * sizeof(unsigned));
+}
+
+void addtoctxlist(mfile *mem, unsigned cid) {
+	int i;
+	mtab *tab;
+	unsigned *ctxlist;
+	tab = (void *)mem->base;
+	ctxlist = (void *)(mem->base + tab->tab[CTXLIST].adr);
+	// find first empty
+	for (i=0; i < MAXCONTEXT; i++) {
+		if (ctxlist[i] == 0) {
+			ctxlist[i] = cid;
+			return;
+		}
+	}
+	error("ctxlist full");
 }
 
 /* set up global vm in the context */
@@ -39,7 +71,9 @@ void initglobal(context *ctx) {
 	(void)initmtab(ctx->gl);
 	initfree(ctx->gl);
 	initsave(ctx->gl);
-	ctx->gl->roots[0] = VS;
+	initctxlist(ctx->gl);
+	addtoctxlist(ctx->gl, ctx->id);
+	//ctx->gl->roots[0] = VS;
 
 	initnames(ctx); /* NAMES NAMET */
 	ctx->gl->roots[1] = NAMES;
@@ -61,23 +95,26 @@ void initlocal(context *ctx) {
 	(void)initmtab(ctx->lo);
 	initfree(ctx->lo);
 	initsave(ctx->lo);
+	initctxlist(ctx->lo);
+	addtoctxlist(ctx->lo, ctx->id);
 	ctx->lo->roots[0] = VS;
 
-	makestack(ctx->lo, OS);
-	makestack(ctx->lo, ES);
-	makestack(ctx->lo, DS);
-	makestack(ctx->lo, HOLD);
-	ctx->os = adrent(ctx->lo, OS); /* shortcuts */
-	ctx->es = adrent(ctx->lo, ES);
-	ctx->ds = adrent(ctx->lo, DS);
-	ctx->hold = adrent(ctx->lo, HOLD);
-	ctx->lo->roots[1] = DS;
-	ctx->lo->start = HOLD + 1; /* so HOLD is not collected and not scanned. */
+	ctx->os = makestack(ctx->lo);
+	ctx->es = makestack(ctx->lo);
+	ctx->ds = makestack(ctx->lo);
+	ctx->hold = makestack(ctx->lo);
+	//ctx->lo->roots[1] = DS;
+	//ctx->lo->start = HOLD + 1; /* so HOLD is not collected and not scanned. */
 }
 
+unsigned nextid = 0;
+unsigned initctxid(void) {
+	return ++nextid;
+}
 
 /* initialize context */
 void initcontext(context *ctx) {
+	ctx->id = initctxid();
 	initlocal(ctx);
 	initglobal(ctx);
 	ctx->vmmode = LOCAL;
@@ -89,8 +126,18 @@ void exitcontext(context *ctx) {
 	exitmem(ctx->lo);
 }
 
+/* initialize itp */
+void inititp(itp *itp){
+	initcontext(&itp->ctab[0]);
+	itp->cid = itp->ctab[0].id;
+}
+
+/* destroy itp */
+void exititp(itp *itp){
+}
+
 /* return the global or local memory file for the composite object */
-mfile *bank(context *ctx, object o) {
+/*@dependent@*/ mfile *bank(context *ctx, object o) {
 	return o.tag&FBANK? ctx->gl : ctx->lo;
 }
 
