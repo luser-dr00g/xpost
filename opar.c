@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdlib.h> /* NULL */
 
 #include "m.h"
 #include "ob.h"
@@ -10,6 +11,7 @@
 #include "di.h"
 #include "nm.h"
 #include "op.h"
+#include "ops.h"
 
 void Iarray(context *ctx, object I) {
 	push(ctx->lo, ctx->os, consbar(ctx, I.int_.val));
@@ -76,6 +78,20 @@ void Aforall(context *ctx, object A, object P) {
 	}
 }
 
+void arrtomark(context *ctx) {
+	int i;
+	object a, v;
+	Zcounttomark(ctx);
+	i = pop(ctx->lo, ctx->os).int_.val;
+	a = consbar(ctx, i);
+	for ( ; i > 0; i--){
+		v = pop(ctx->lo, ctx->os);
+		barput(ctx, a, i-1, v);
+	}
+	pop(ctx->lo, ctx->os); // pop mark
+	push(ctx->lo, ctx->os, a);
+}
+
 void initopar(context *ctx, object sd) {
 	oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 	object n,op;
@@ -100,5 +116,6 @@ void initopar(context *ctx, object sd) {
 	op = consoper(ctx, "forall", Aforall, 0, 2,
 			arraytype, proctype); INSTALL;
 	bdcput(ctx, sd, consname(ctx, "["), mark);
+	op = consoper(ctx, "]", arrtomark, 1, 0); INSTALL;
 }
 

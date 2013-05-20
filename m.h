@@ -2,7 +2,7 @@
 /* define MMAP without MREMAP should work for Irix (using AUTOGROW) */
 /* no MREMAP under cygwin (we'll see how AUTOGROW handles...)*/
 /* define neither to use malloc/realloc/free */
-#define MMAP
+//#define MMAP
 //#define MREMAP
 
 #ifdef MMAP
@@ -18,7 +18,7 @@ extern unsigned pgsz /*= getpagesize()*/; /*=4096 (usually on 32bit)*/
 
 typedef struct {
 	int fd;
-	unsigned char *base;
+	/*@dependent@*/ unsigned char *base;
 	unsigned used;
 	unsigned max;
 	unsigned roots[2]; /* low, high : entries */
@@ -63,14 +63,11 @@ enum {
 enum {
 	FREE,   
 	VS,
-	OS,     /* local */
-	ES,
-	DS,
-	HOLD,   
-	NAMES = OS, /* first global = first local */
-	NAMET = ES,
-	BOGUSNAME = DS,
-	OPTAB = HOLD, 
+	CTXLIST,
+	NAMES, /* these 4 global only */
+	NAMET,
+	BOGUSNAME,
+	OPTAB, 
 };
 
 /* dump mtab details to stdout */
@@ -83,7 +80,7 @@ unsigned initmtab(mfile *mem);
 unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz);
 
 /* find the table and relative entity index for an absolute entity index */
-void findtabent(mfile *mem, mtab **atab, unsigned *aent);
+void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@out@*/ unsigned *aent);
 
 /* get the address from an entity */
 unsigned adrent(mfile *mem, unsigned ent);

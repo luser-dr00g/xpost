@@ -112,6 +112,7 @@ void init(context *ctx) {
 	//(void)mtalloc(ctx->gl, 0, 0); //FREE
 	initfree(ctx->gl);
 	(void)mtalloc(ctx->gl, 0, 0); //VS
+	initctxlist(ctx->gl);
 
 	initnames(ctx);
 }
@@ -119,6 +120,7 @@ void init(context *ctx) {
 context ctx;
 
 int main(void) {
+	printf("\n^test nm\n");
 	init(&ctx);
 
 	printf("pop ");

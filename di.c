@@ -1,6 +1,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include "m.h"
 #include "ob.h"
 #include "s.h"
@@ -181,7 +182,8 @@ bool dicfull(mfile *mem, object d) {
 
 /* perform a hash-assisted lookup.
    returns a pointer to the desired pair (if found)), or a null-pair. */
-object *diclookup(context *ctx, mfile *mem, object d, object k) {
+/*@dependent@*/ /*@null@*/
+object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
 	unsigned ad = adrent(mem, d.comp_.ent);
 	dichead *dp = (void *)(mem->base + ad);
 	object *tp = (void *)(mem->base + ad + sizeof(dichead));
@@ -202,13 +204,16 @@ object *diclookup(context *ctx, mfile *mem, object d, object k) {
 }
 
 /* see if lookup returns a non-null pair. */
-bool dicknown(context *ctx, mfile *mem, object d, object k) {
-	return type(*diclookup(ctx, mem, d, k)) != nulltype;
+bool dicknown(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
+	object *r;
+	r = diclookup(ctx, mem, d, k);
+	if (r == NULL) return false;
+	return type(*r) != nulltype;
 }
 
 /* call diclookup,
    return the value if the key is non-null. */
-object dicget(context *ctx, mfile *mem, object d, object k) {
+object dicget(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
 	object *e;
 	e = diclookup(ctx, mem, d, k);
 	if (type(e[0]) == nulltype)
