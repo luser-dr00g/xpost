@@ -5,6 +5,7 @@ typedef struct {
 	/*@dependent@*/ mfile *gl, *lo;
 	unsigned os, es, ds, hold;  
 	unsigned vmmode; 
+	unsigned state;
 	unsigned quit;
 } context;
 
@@ -20,8 +21,11 @@ typedef struct {
 } itp;
 
 void initctxlist(mfile *mem);
+context *ctxcid(unsigned cid);
 void initcontext(context *ctx);
 void exitcontext(context *ctx);
 /*@dependent@*/
 mfile *bank(context *ctx, object o);
 
+void inititp(itp *itp);
+void exititp(itp *itp);

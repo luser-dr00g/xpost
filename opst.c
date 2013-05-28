@@ -103,9 +103,11 @@ void Sforall(context *ctx, object S, object P) {
 			push(ctx->lo, ctx->es, cvlit(P));
 			push(ctx->lo, ctx->es,
 					arrgetinterval(S, S.comp_.off+1, S.comp_.sz-1));
+			/*@fallthrough@*/
 		case 1:
 			push(ctx->lo, ctx->es, P);
 			push(ctx->lo, ctx->es, consint(bstget(ctx, S, 0)));
+			/*@fallthrough@*/
 		case 0:
 			break;
 	}

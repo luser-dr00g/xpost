@@ -43,22 +43,34 @@ int marked(mfile *mem, unsigned ent) {
 	return (tab->tab[ent].mark & MARKM) >> MARKO;
 }
 
+void markdict(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
+}
+
 /* recursively mark all elements of array */
-void markarray(mfile *mem, unsigned adr, unsigned sz) {
+void markarray(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
 	object *op = (void *)(mem->base + adr);
 	unsigned j;
 	for (j=0; j < sz; j++) {
 #ifdef TESTMODULE
 		printf("markarray: %s\n", types[op->tag]);
 #endif
-		switch(op->tag) {
+		switch(type(*op)) {
 		case arraytype:
+			if (bank(ctx, *op) != mem) break;
 			if (!marked(mem, op->comp_.ent)) {
 				markent(mem, op->comp_.ent);
-				markarray(mem, adrent(mem, op->comp_.ent), op->comp_.sz);
+				markarray(ctx, mem, adrent(mem, op->comp_.ent), op->comp_.sz);
+			}
+			break;
+		case dicttype:
+			if (bank(ctx, *op) != mem) break;
+			if (!marked(mem, op->comp_.ent)) {
+				markent(mem, op->comp_.ent);
+				markdict(ctx, mem, adrent(mem, op->comp_.ent), op->comp_.sz);
 			}
 			break;
 		case stringtype:
+			if (bank(ctx, *op) != mem) break;
 			markent(mem, op->comp_.ent);
 			break;
 		}
@@ -67,7 +79,7 @@ void markarray(mfile *mem, unsigned adr, unsigned sz) {
 }
 
 /* mark all allocations referred to by objects in stack */
-void markstack(mfile *mem, unsigned stackadr) {
+void markstack(context *ctx, mfile *mem, unsigned stackadr) {
 	stack *s = (void *)(mem->base + stackadr);
 	unsigned i;
 #ifdef TESTMODULE
@@ -78,14 +90,23 @@ next:
 #ifdef TESTMODULE
 		printf("markstack: %s\n", types[type(s->data[i])]);
 #endif
-		switch(s->data[i].tag) {
+		switch(type(s->data[i])) {
 		case arraytype:
+			if (bank(ctx, s->data[i]) != mem) break;
 			if (!marked(mem, s->data[i].comp_.ent)) {
 				markent(mem, s->data[i].comp_.ent);
-				markarray(mem, adrent(mem, s->data[i].comp_.ent), s->data[i].comp_.sz);
+				markarray(ctx, mem, adrent(mem, s->data[i].comp_.ent), s->data[i].comp_.sz);
+			}
+			break;
+		case dicttype:
+			if (bank(ctx, s->data[i]) != mem) break;
+			if (!marked(mem, s->data[i].comp_.ent)) {
+				markent(mem, s->data[i].comp_.ent);
+				markdict(ctx, mem, adrent(mem, s->data[i].comp_.ent), s->data[i].comp_.sz);
 			}
 			break;
 		case stringtype:
+			if (bank(ctx, s->data[i]) != mem) break;
 			markent(mem, s->data[i].comp_.ent);
 			break;
 		}
@@ -152,14 +173,34 @@ void sweep(mfile *mem) {
 }
 
 /* clear all marks,
-   mark all root stacks,
+   determine GLOBAL/LOCAL and mark all root stacks,
    sweep. */
 void collect(mfile *mem) {
 	unsigned i;
+	unsigned *cid;
+	context *ctx;
+
 	unmark(mem);
-	for (i = mem->roots[0]; i<= mem->roots[1]; i++) {
-		markstack(mem, adrent(mem, i));
+
+	/* for (i = mem->roots[0]; i<= mem->roots[1]; i++) {
+		markstack(mem, adrent(mem, i)); } */
+
+	cid = (void *)(mem->base + adrent(mem, CTXLIST));
+	ctx = ctxcid(cid[0]);
+	markstack(ctx, mem, adrent(mem, VS));
+	if (mem == ctx->lo) {
+
+		for (i = 0; cid[i]; i++) {
+			ctx = ctxcid(cid[i]);
+			markstack(ctx, mem, ctx->os);
+			markstack(ctx, mem, ctx->ds);
+			markstack(ctx, mem, ctx->es);
+		}
+
+	} else {
+		markstack(ctx, mem, adrent(mem, NAMES));
 	}
+
 	sweep(mem);
 }
 
@@ -207,14 +248,16 @@ unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsi
 
 #ifdef TESTMODULE
 
-mfile mem;
+mfile *mem;
 unsigned stac;
 
+/*
 void init(void) {
 	initmem(&mem, "x.mem");
 	(void)initmtab(&mem);
 	initfree(&mem);
 	initsave(&mem);
+	initctxlist(&mem);
 	mtab *tab = (void *)mem.base;
 	unsigned ent = mtalloc(&mem, 0, 0);
 	//findtabent(&mem, &tab, &ent);
@@ -223,43 +266,52 @@ void init(void) {
 	mem.roots[1] = ent;
 	mem.start = ent+1;
 }
+*/
+
+itp itpdata;
+
+void init(void) {
+	inititp(&itpdata);
+}
 
 int main(void) {
 	init();
 	printf("\n^test gc.c\n");
+	mem = itpdata.ctab[0].lo;
+	stac = itpdata.ctab[0].os;
 
-	push(&mem, stac, consint(5));
-	push(&mem, stac, consint(6));
-	push(&mem, stac, consreal(7.0));
+	push(mem, stac, consint(5));
+	push(mem, stac, consint(6));
+	push(mem, stac, consreal(7.0));
 	object ar;
-	ar = consarr(&mem, 3);
+	ar = consarr(mem, 3);
 	int i;
 	for (i=0; i < 3; i++)
-		arrput(&mem, ar, i, pop(&mem, stac));
-	push(&mem, stac, ar);                   /* array on stack */
+		arrput(mem, ar, i, pop(mem, stac));
+	push(mem, stac, ar);                   /* array on stack */
 
-	push(&mem, stac, consint(1));
-	push(&mem, stac, consint(2));
-	push(&mem, stac, consint(3));
-	ar = consarr(&mem, 3);
+	push(mem, stac, consint(1));
+	push(mem, stac, consint(2));
+	push(mem, stac, consint(3));
+	ar = consarr(mem, 3);
 	for (i=0; i < 3; i++)
-		arrput(&mem, ar, i, pop(&mem, stac));
+		arrput(mem, ar, i, pop(mem, stac));
 	dumpobject(ar);
 	/* array not on stack */
 
 #define CNT_STR(x) sizeof(x), x
-	push(&mem, stac, consstr(&mem, CNT_STR("string on stack")));
+	push(mem, stac, consstr(mem, CNT_STR("string on stack")));
 
-	dumpobject(consstr(&mem, CNT_STR("string not on stack")));
+	dumpobject(consstr(mem, CNT_STR("string not on stack")));
 
-	collect(&mem);
-	push(&mem, stac, consstr(&mem, CNT_STR("string on stack")));
-	dumpobject(consstr(&mem, CNT_STR("string not on stack")));
+	collect(mem);
+	push(mem, stac, consstr(mem, CNT_STR("string on stack")));
+	dumpobject(consstr(mem, CNT_STR("string not on stack")));
 
-	collect(&mem);
-	dumpmfile(&mem);
+	collect(mem);
+	dumpmfile(mem);
 	printf("stackaedr: %04x\n", stac);
-	dumpmtab(&mem, 0);
+	dumpmtab(mem, 0);
 	
 	return 0;
 }
