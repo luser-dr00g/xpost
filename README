@@ -36,14 +36,19 @@ itp         itp.c   itp.h   context
    opst.o  opst.c  opst.h    string operators
    opar.o opar.c opar.h    array operators
    opdi.o opdi.c opdi.h    dictionary operators
+	   opdim                magic dictionary
+	    opdimp               processes
+		opdimc               canvases
 
 At the heart is the "m" module: the memory-file and memory-tables.
+Every mfile starts with an mtab. Every mtab lives in an mfile.
 An mfile is a raw memory space cleverly(?) macro-ized to use
 either malloc/realloc/free or mmap/mremap/munmap.
 This memory space is sub-allocated with a segmented index.
 A datum stored in memory is here alternately called an "entity"
-(when referring to the abstract data type) or an "entry" (when
-referring to the allocation metadata in the index.
+(when referring to the abstract data type, ie. the object data itself,
+the raw bytes) or an "entry" (when referring to the allocation metadata
+in the index (its allocated size, the address of the data).
 
 An execution context has two mfiles: one for global VM, one for local VM.
 When multiple contexts are implemented, I think the normal forking will
@@ -56,9 +61,10 @@ itself. All VM "pointers" are integer byte-offsets from the vm
 base pointer.
 
 The first several entries of mtab[0] are "special entities".
-These include the addresses of the stack root segments.
+All mfiles have (in the mtab[0]) a save stack (VS), a
+free-list (FREE) and a context-list (CTXLIST) which contains `cid`s
+of all contexts sharing that particular mfile.
 
-All mfiles have (in the mtab[0]) a save stack and a free-list.
 Local VM goes on to hold the operand, execution, and dictionary
 stacks. Global VM has instead NAMES, NAMET, BOGUSNAME, and HOLD.
 NAMES and NAMET are for the Name String stack and Name Tree,
@@ -128,3 +134,11 @@ during save/restore sections), and the stacks from each associated context.
 But it must also me made bank-aware. When collecting a global mfile, it
 should only mark global data; likewise for a local sweep, only mark locals.
 
+Context IDs, `cid`s, are generated sequentially, starting from 1.
+They are designed so that `(cid - 1) % MAXCONTEXT` will yield the
+index in the ctab of the context. So the allocator increments 
+until this formula yields an empty slot. This lets us re-use slots
+while still maintaining unique IDs for all processes in the history
+(until the `unsigned` wraps TODO fix this timebomb).
+
+Probably need to add a loop detector to discover if ctab is full.
