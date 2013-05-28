@@ -126,9 +126,9 @@ object fileopen(mfile *mem, char *fn, char *mode) {
 		fp = fopen(fn, mode);
 		if (fp == NULL) {
 			switch (errno) {
-			case EACCES: error("invalidfilename"), exit(EXIT_FAILURE);
-			case ENOENT: error("undefinedfilename"), exit(EXIT_FAILURE);
-			default: error("unregistered"), exit(EXIT_FAILURE);
+			case EACCES: error("invalidfilename"); break;
+			case ENOENT: error("undefinedfilename"); break;
+			default: error("unregistered"); break;
 			}
 		}
 		f = consfile(mem, fp);
