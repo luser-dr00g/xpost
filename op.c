@@ -91,10 +91,10 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
 		sp = (void *)(ctx->gl->base + optab[opcode].sigadr); // recalc
 		{
 			va_list args;
-			byte *t = (void *)(ctx->gl->base + sp[si].t);
+			byte *b = (void *)(ctx->gl->base + sp[si].t);
 			va_start(args, in);
 			for (i = in-1; i >= 0; i--) {
-				t[i] = va_arg(args, int);
+				b[i] = va_arg(args, int);
 			}
 			va_end(args);
 			sp[si].in = in;
@@ -147,7 +147,7 @@ void opexec(context *ctx, unsigned opcode) {
 	signat *sp = (void *)(ctx->gl->base + op.sigadr);
 	int i,j;
 	bool pass;
-	char *err;
+	char *err = "unspecified error";
 	stack *hold;
 	int ct;
 

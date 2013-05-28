@@ -16,7 +16,8 @@ clean:
 
 splint:
 	splint +posixlib -boolops -predboolint +ignoresigns -type -nestcomment \
-	-shiftimplementation -predboolothers -exportlocal -mustfreefresh ./*.c
+-noeffect \
+-shiftimplementation -predboolothers -exportlocal -mustfreefresh ./*.c
 
 m.ps:m.pic
 	pic m.pic|groff > m.ps

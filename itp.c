@@ -18,6 +18,8 @@
 //#include "f.h"
 #include "op.h"
 
+itp itpdata;
+
 #if 0
 /* allocate a stack as a "special entry",
    and double-check that it's the right entry */
@@ -60,6 +62,7 @@ void addtoctxlist(mfile *mem, unsigned cid) {
 	}
 	error("ctxlist full");
 }
+
 
 /* set up global vm in the context */
 void initglobal(context *ctx) {
@@ -105,12 +108,21 @@ void initlocal(context *ctx) {
 	ctx->hold = makestack(ctx->lo);
 	//ctx->lo->roots[1] = DS;
 	//ctx->lo->start = HOLD + 1; /* so HOLD is not collected and not scanned. */
+	ctx->lo->start = CTXLIST + 1;
 }
+
 
 unsigned nextid = 0;
 unsigned initctxid(void) {
-	return ++nextid;
+	while ( ctxcid(++nextid)->state != 0 )
+		;
+	return nextid;
 }
+
+context *ctxcid(unsigned cid) {
+	return &itpdata.ctab[ (cid-1) % MAXCONTEXT ];
+}
+
 
 /* initialize context */
 void initcontext(context *ctx) {
@@ -126,6 +138,7 @@ void exitcontext(context *ctx) {
 	exitmem(ctx->lo);
 }
 
+
 /* initialize itp */
 void inititp(itp *itp){
 	initcontext(&itp->ctab[0]);
@@ -136,10 +149,13 @@ void inititp(itp *itp){
 void exititp(itp *itp){
 }
 
+
 /* return the global or local memory file for the composite object */
-/*@dependent@*/ mfile *bank(context *ctx, object o) {
+/*@dependent@*/
+mfile *bank(context *ctx, object o) {
 	return o.tag&FBANK? ctx->gl : ctx->lo;
 }
+
 
 /* function type for interpreter action pointers */
 typedef void evalfunc(context *ctx);
@@ -224,13 +240,16 @@ context *ctx;
 void init(void) {
 	pgsz = getpagesize();
 	initevaltype();
-	ctx = malloc(sizeof *ctx);
-	memset(ctx, 0, sizeof ctx);
-	initcontext(ctx);
+	//ctx = malloc(sizeof *ctx);
+	//memset(ctx, 0, sizeof ctx);
+	//initcontext(ctx);
+	inititp(&itpdata);
+	ctx = &itpdata.ctab[0];
 }
 
 void xit() {
-	exitcontext(ctx);
+	//exitcontext(ctx);
+	exititp(&itpdata);
 }
 
 int main(void) {

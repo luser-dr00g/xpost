@@ -44,6 +44,9 @@ enum tagdata {
 	FBANK =    0x0100, /* 0=local, 1=global */
 };
 
+/* To avoid too many structures, many types use .mark_.padw 
+   to hold an unsigned value (eg. operatortype, nametype).
+   */
 typedef struct {
 	word tag;
 	word pad0;

@@ -19,7 +19,6 @@ unit tests, producing copious output, but importantly exitting with
 an appropriate success or failure code, so the make command will 
 fail if any of the tests fail.
 
-<<<<<<< local
 test  obj     src    header structures CONSTANTS
 m     m.o     m.c     m.h   mfile mtab TABSZ
 s     s.o     s.c     s.h   stack STACKSEGSZ
@@ -35,25 +34,8 @@ itp         itp.c   itp.h   context
      op.o    op.c    op.h    oper optab operator handler MAXOPS SDSIZE
     ops.o   ops.c   ops.h    stack operators
    opst.o  opst.c  opst.h    string operators
-=======
-test obj    src   header structures CONSTANTS
-m    m.o    m.c    m.h   mfile mtab TABSZ
-s    s.o    s.c    s.h   stack STACKSEGSZ
-v    v.o    v.c    v.h   saverec_
-     f.o    f.c    f.h    file
-ob  ob.o   ob.c   ob.h   object
-ar  ar.o   ar.c   ar.h    array
-st  st.o   st.c   st.h    string
-di  di.o   di.c   di.h   dichead dictionary
-nm  nm.o   nm.c   nm.h    name
-gc  gc.o   gc.c   gc.h    garbage collector
-itp       itp.c  itp.h   context
-    op.o   op.c   op.h    oper optab operator handler MAXOPS SDSIZE
-   ops.o  ops.c  ops.h    stack operators
-  opst.o opst.c opst.h    string operators
-  opar.o opar.c opar.h    array operators
-  opdi.o opdi.c opdi.h    dictionary operators
->>>>>>> other
+   opar.o opar.c opar.h    array operators
+   opdi.o opdi.c opdi.h    dictionary operators
 
 At the heart is the "m" module: the memory-file and memory-tables.
 An mfile is a raw memory space cleverly(?) macro-ized to use
@@ -136,14 +118,13 @@ This should be more efficient than any of my previous drafts.
 And the garbage collector ("gc"). 
 It's there. We'll see how well it works as I keep building.
 
- 
 
+New itp structure holds context table ctab, and mfile tables ltab and gtab.
+New special entry CTXLIST lists all contexts associated with the mfile.
 
- 
-
-
-
-
-
-
+So the garbage collector's root-set for any given mfile is the VS
+(the save stack) (only one for each mfile, shared contexts are blocked
+during save/restore sections), and the stacks from each associated context.
+But it must also me made bank-aware. When collecting a global mfile, it
+should only mark global data; likewise for a local sweep, only mark locals.
 

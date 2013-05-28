@@ -44,7 +44,7 @@ void dumpmfile(mfile *mem){
 			if (u != 0) {
 				unsigned v;
 				for (v= u-16; v < u; v++) {
-					putchar( isprint(mem->base[v])?
+					(void)putchar( isprint(mem->base[v])?
 							mem->base[v] : '.');
 				}
 			}
@@ -52,7 +52,7 @@ void dumpmfile(mfile *mem){
 		}
 		printf("%02x ", (unsigned) mem->base[u]);
 	}
-	puts("");
+	(void)puts("");
 }
 
 /* memfile exists in path */
@@ -78,9 +78,10 @@ void initmem(mfile *mem, char *fname){
 	}
 	mem->fd = fd;
 	if (fd != -1){
-		fstat(fd, &buf);
-		sz = buf.st_size;
-		if (sz < pgsz) sz = pgsz;
+		if (fstat(fd, &buf) == 0) {
+			sz = buf.st_size;
+			if (sz < pgsz) sz = pgsz;
+		}
 	}
 
 #ifdef MMAP
@@ -97,7 +98,7 @@ void initmem(mfile *mem, char *fname){
 	mem->base = malloc(sz);
 	if (mem->base == NULL)
 #endif
-		error("unable to initialize memory file");
+		error("VM error: failed to allocate mfile data"), exit(EXIT_FAILURE);
 	mem->used = 0;
 	mem->max = sz;
 #ifndef MMAP
@@ -206,7 +207,7 @@ next_table:
 			printf(" %02x", (unsigned)mem->base[
 					tab->tab[i].adr + u ] );
 		}
-		puts("");
+		(void)puts("");
 	}
 	if (tab->nextent == TABSZ) {
 		mtabadr = tab->nexttab;
@@ -230,6 +231,7 @@ unsigned initmtab(mfile *mem){
 /* allocate memory, returns table index */
 unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
 	unsigned ent;
+	unsigned adr;
 	mtab *tab = (void *)(mem->base + mtabadr);
 	int ntab = 0;
 	while (tab->nextent >= TABSZ) {
@@ -240,9 +242,10 @@ unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
 	ent = tab->nextent;
 	++tab->nextent;
 
-	tab->tab[ent].adr = mfalloc(mem, sz);
+	adr = mfalloc(mem, sz);
 	ent += ntab*TABSZ; //recalc
 	findtabent(mem, &tab, &ent); //recalc
+	tab->tab[ent].adr = adr;
 	tab->tab[ent].sz = sz;
 
 	if (tab->nextent == TABSZ){

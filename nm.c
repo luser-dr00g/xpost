@@ -164,8 +164,9 @@ int main(void) {
 	printf("pop ");
 	dumpobject(consname(&ctx, "pop"));
 
-	dumpmfile(ctx.gl);
-	dumpmtab(ctx.gl, 0);
+	//dumpmfile(ctx.gl);
+	//dumpmtab(ctx.gl, 0);
+	puts("");
 	return 0;
 }
 

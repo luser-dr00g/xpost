@@ -139,6 +139,7 @@ void show(char *msg, mfile *mem, object a) {
 int main(void) {
 	mfile *mem = &mf;
 	object a;
+	printf("\n^test v\n");
 	init(mem);
 
 	a = consarr(mem, 2);
@@ -154,6 +155,7 @@ int main(void) {
 	restore(mem);
 	show("restored", mem, a);
 
+	puts("");
 	return 0;
 }
 

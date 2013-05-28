@@ -60,6 +60,12 @@ enum {
 };
 
 /* special entries */
+/* local mfiles set .start to CTXLIST+1,
+      and all context stacks are in the root set
+   global mfiles set .start to OPTAB+1
+      and NAMES is in the root set
+	  (and all context /globaldict's?)
+ */
 enum {
 	FREE,   
 	VS,
