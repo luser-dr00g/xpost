@@ -5,9 +5,9 @@
 #define STACKSEGSZ 2
 
 typedef struct {
-	unsigned nextseg;
-	unsigned top;
-	object data[STACKSEGSZ];
+    unsigned nextseg;
+    unsigned top;
+    object data[STACKSEGSZ];
 } stack;
 
 unsigned initstack(mfile *mem);

@@ -17,16 +17,16 @@ void error(char *msg);
 extern unsigned pgsz /*= getpagesize()*/; /*=4096 (usually on 32bit)*/
 
 typedef struct {
-	int fd;
-	/*@dependent@*/ unsigned char *base;
-	unsigned used;
-	unsigned max;
+    int fd;
+    /*@dependent@*/ unsigned char *base;
+    unsigned used;
+    unsigned max;
 
-	//no longer used, all sharing contexts have roots
-	//unsigned roots[2]; /* low, high : entries */
+    //no longer used, all sharing contexts have roots
+    //unsigned roots[2]; /* low, high : entries */
 
-	unsigned start; /* first "live" entry */
-		/* the domain of the collector is entries >= start */
+    unsigned start; /* first "live" entry */
+        /* the domain of the collector is entries >= start */
 } mfile;
 
 void dumpmfile(mfile *mem);
@@ -40,26 +40,26 @@ unsigned mfalloc(mfile *mem, unsigned sz);
 
 #define TABSZ 6
 typedef struct {
-	unsigned nexttab; /* next table in chain */
-	unsigned nextent; /* next slot in table, or TABSZ if none */
-	struct {
-		unsigned adr;
-		unsigned sz;
-		unsigned mark;
-	} tab[TABSZ];
+    unsigned nexttab; /* next table in chain */
+    unsigned nextent; /* next slot in table, or TABSZ if none */
+    struct {
+        unsigned adr;
+        unsigned sz;
+        unsigned mark;
+    } tab[TABSZ];
 } mtab;
 
 
 /* fields in mtab.tab[].mark */
 enum {
-	MARKM = 0xFF000000,
-	MARKO = 24,
-	RFCTM = 0x00FF0000,
-	RFCTO = 16,
-	LLEVM = 0x0000FF00,
-	LLEVO = 8,
-	TLEVM = 0x000000FF,
-	TLEVO = 0,
+    MARKM = 0xFF000000,
+    MARKO = 24,
+    RFCTM = 0x00FF0000,
+    RFCTO = 16,
+    LLEVM = 0x0000FF00,
+    LLEVO = 8,
+    TLEVM = 0x000000FF,
+    TLEVO = 0,
 };
 
 /* special entries */
@@ -67,16 +67,16 @@ enum {
       and all context stacks are in the root set
    global mfiles set .start to OPTAB+1
       and NAMES is in the root set
-	  (and all context /globaldict's?)
+      (and all context /globaldict's?)
  */
 enum {
-	FREE,   
-	VS,
-	CTXLIST,
-	NAMES, /* these 4 global only */
-	NAMET,
-	BOGUSNAME,
-	OPTAB, 
+    FREE,   
+    VS,
+    CTXLIST,
+    NAMES, /* these 4 global only */
+    NAMET,
+    BOGUSNAME,
+    OPTAB, 
 };
 
 /* dump mtab details to stdout */
@@ -99,11 +99,11 @@ unsigned szent(mfile *mem, unsigned ent);
 
 /* fetch a value from a composite object */
 void get(mfile *mem,
-		unsigned ent, unsigned offset, unsigned sz,
-		/*@out@*/ void *dest);
+        unsigned ent, unsigned offset, unsigned sz,
+        /*@out@*/ void *dest);
 
 /* put a value into a composite object */
 void put(mfile *mem,
-		unsigned ent, unsigned offset, unsigned sz,
-		/*@in@*/ void *src);
+        unsigned ent, unsigned offset, unsigned sz,
+        /*@in@*/ void *src);
 

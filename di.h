@@ -1,9 +1,9 @@
 
 typedef struct {
-	word tag;
-	word sz;
-	word nused;
-	word pad;
+    word tag;
+    word sz;
+    word nused;
+    word pad;
 } dichead;
 
 int objcmp(context *ctx, object l, object r);
