@@ -227,4 +227,5 @@ void initop(context *ctx) {
 	initopst(ctx, sd);
 	initopar(ctx, sd);
 	initopdi(ctx, sd);
+	push(ctx->lo, ctx->ds, sd); // push systemdict
 }

@@ -1,6 +1,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h> /* malloc */
 #include <stdio.h>
 #include "m.h"
 #include "ob.h"
@@ -269,27 +270,36 @@ void bdcput(context *ctx, object d, object k, object v) {
 #ifdef TESTMODULE
 #include <stdio.h>
 
-context ctx;
+//context ctx;
+context *ctx;
+
+void init() {
+	//initcontext(&ctx);
+	itpdata=malloc(sizeof*itpdata);
+	inititp(itpdata);
+	ctx = &itpdata->ctab[0];
+}
 
 int main(void) {
 	printf("\n^test di.c\n");
-	initcontext(&ctx);
+	init();
+
 	object d;
-	d = consbdc(&ctx, 12);
+	d = consbdc(ctx, 12);
 	printf("1 2 def\n");
-	bdcput(&ctx, d, consint(1), consint(2));
+	bdcput(ctx, d, consint(1), consint(2));
 	printf("3 4 def\n");
-	bdcput(&ctx, d, consint(3), consint(4));
+	bdcput(ctx, d, consint(3), consint(4));
 
 	printf("1 load =\n");
-	dumpobject(bdcget(&ctx, d, consint(1)));
-	//dumpobject(bdcget(&ctx, d, consint(2))); // error("undefined");
+	dumpobject(bdcget(ctx, d, consint(1)));
+	//dumpobject(bdcget(ctx, d, consint(2))); // error("undefined");
 	printf("\n3 load =\n");
-	dumpobject(bdcget(&ctx, d, consint(3)));
+	dumpobject(bdcget(ctx, d, consint(3)));
 
 
-	//dumpmfile(ctx.gl);
-	//dumpmtab(ctx.gl, 0);
+	//dumpmfile(ctx->gl);
+	//dumpmtab(ctx->gl, 0);
 	puts("");
 	return 0;
 }

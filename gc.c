@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "m.h"
@@ -262,23 +263,24 @@ void init(void) {
 	unsigned ent = mtalloc(&mem, 0, 0);
 	//findtabent(&mem, &tab, &ent);
 	stac = tab->tab[ent].adr = initstack(&mem);
-	mem.roots[0] = VS;
-	mem.roots[1] = ent;
+	//mem.roots[0] = VS;
+	//mem.roots[1] = ent;
 	mem.start = ent+1;
 }
 */
 
-itp itpdata;
+//itp *itpdata;
 
 void init(void) {
-	inititp(&itpdata);
+	itpdata = malloc(sizeof*itpdata);
+	inititp(itpdata);
 }
 
 int main(void) {
 	init();
 	printf("\n^test gc.c\n");
-	mem = itpdata.ctab[0].lo;
-	stac = itpdata.ctab[0].os;
+	mem = itpdata->ctab[0].lo;
+	stac = itpdata->ctab[0].os;
 
 	push(mem, stac, consint(5));
 	push(mem, stac, consint(6));

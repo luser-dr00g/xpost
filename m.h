@@ -21,9 +21,12 @@ typedef struct {
 	/*@dependent@*/ unsigned char *base;
 	unsigned used;
 	unsigned max;
-	unsigned roots[2]; /* low, high : entries */
-	unsigned start; /* first "live" entry == roots[1]+1 */
-		/* the domain of the collector is entries >= roots[1]+1 */
+
+	//no longer used, all sharing contexts have roots
+	//unsigned roots[2]; /* low, high : entries */
+
+	unsigned start; /* first "live" entry */
+		/* the domain of the collector is entries >= start */
 } mfile;
 
 void dumpmfile(mfile *mem);
@@ -97,10 +100,10 @@ unsigned szent(mfile *mem, unsigned ent);
 /* fetch a value from a composite object */
 void get(mfile *mem,
 		unsigned ent, unsigned offset, unsigned sz,
-		void *dest);
+		/*@out@*/ void *dest);
 
 /* put a value into a composite object */
 void put(mfile *mem,
 		unsigned ent, unsigned offset, unsigned sz,
-		void *src);
+		/*@in@*/ void *src);
 

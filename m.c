@@ -33,11 +33,13 @@ void dumpmfile(mfile *mem){
 	unsigned u;
 	printf("{mfile: base = %p, "
 			"used = 0x%x (%u), "
-			"max = 0x%x (%u), roots = [%d %d], start = %d}\n",
+			"max = 0x%x (%u), "
+			//"roots = [%d %d], "
+			"start = %d}\n",
 			mem->base,
 			mem->used, mem->used,
 			mem->max, mem->max,
-			mem->roots[0], mem->roots[1],
+			//mem->roots[0], mem->roots[1],
 			mem->start);
 	for (u=0; u < mem->used; u++) {
 		if (u%16 == 0) {
@@ -114,6 +116,10 @@ void exitmem(mfile *mem){
 	msync(mem->base, mem->used, MS_SYNC);
 	munmap(mem->base, mem->max);
 #else
+	if (mem->fd != -1) {
+		lseek(mem->fd, 0, SEEK_SET);
+		write(mem->fd, mem->base, mem->used);
+	}
 	free(mem->base);
 #endif
 	mem->base = NULL;
@@ -125,14 +131,11 @@ void exitmem(mfile *mem){
 		/* The truncate() and ftruncate() functions cause the
 		   regular file named by path or referenced by fd to
 		   be truncated to a size of precisely length bytes. */
-#ifndef MMAP
-		lseek(mem->fd, 0, SEEK_SET);
-		write(mem->fd, mem->base, mem->used);
-#endif
 		close(mem->fd);
 	}
 }
 
+/* reallocate and possibly move mem->base */
 void growmem(mfile *mem, unsigned sz){
 	void *tmp;
 	printf("growmem: %p %u\n", mem, sz);
@@ -155,7 +158,11 @@ void growmem(mfile *mem, unsigned sz){
 	mem->max = sz;
 }
 
-/* allocate memory, returns offset in memory file */
+/* allocate memory, returns offset in memory file
+   possible growmem.
+   MUST recalculate all pointers derived from mem->base
+        after this function
+ */
 unsigned mfalloc(mfile *mem, unsigned sz){
 	unsigned adr = mem->used;
 	if (sz) {
@@ -228,7 +235,11 @@ unsigned initmtab(mfile *mem){
 	return adr;
 }
 
-/* allocate memory, returns table index */
+/* allocate memory, returns table index
+   possible growmem.
+   MUST recalculate all pointers derived from mem->base
+        after this function
+ */
 unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
 	unsigned ent;
 	unsigned adr;
@@ -255,8 +266,8 @@ unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
 }
 
 /* find the table and relative entity index for an absolute entity index */
-void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@out@*/ unsigned *aent) {
-	*atab = (void *)(mem->base);
+void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@in@*/ unsigned *aent) {
+	*atab = (void *)(mem->base); // just use mtabadr=0
 	while (*aent >= TABSZ) {
 		*aent -= TABSZ;
 		if ((*atab)->nexttab == 0) {
@@ -268,14 +279,14 @@ void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@out@*/ unsigned *aent) {
 
 /* get the address from an entity */
 unsigned adrent(mfile *mem, unsigned ent) {
-	mtab *tab = (void *)(mem->base);
+	mtab *tab;// = (void *)(mem->base); // just use mtabadr=0
 	findtabent(mem,&tab,&ent);
 	return tab->tab[ent].adr;
 }
 
 /* get the size of an entity */
 unsigned szent(mfile *mem, unsigned ent) {
-	mtab *tab = (void *)(mem->base);
+	mtab *tab;// = (void *)(mem->base); // just use mtabadr=0
 	findtabent(mem,&tab,&ent);
 	return tab->tab[ent].sz;
 }
@@ -283,7 +294,7 @@ unsigned szent(mfile *mem, unsigned ent) {
 /* fetch a value from a composite object */
 void get(mfile *mem,
 		unsigned ent, unsigned offset, unsigned sz,
-		void *dest){
+		/*@out@*/ void *dest){
 	mtab *tab;
 	unsigned mtabadr = 0;
 	tab = (void *)(mem->base + mtabadr);
@@ -302,7 +313,7 @@ void get(mfile *mem,
 /* put a value into a composite object */
 void put(mfile *mem,
 		unsigned ent, unsigned offset, unsigned sz,
-		void *src){
+		/*@in@*/ void *src){
 	mtab *tab;
 	unsigned mtabadr = 0;
 	tab = (void *)(mem->base + mtabadr);

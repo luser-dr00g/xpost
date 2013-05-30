@@ -20,6 +20,8 @@ typedef struct {
 	mfile ltab[MAXMFILE];
 } itp;
 
+extern itp *itpdata;
+
 void initctxlist(mfile *mem);
 context *ctxcid(unsigned cid);
 void initcontext(context *ctx);
