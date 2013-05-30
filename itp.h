@@ -1,12 +1,12 @@
 
 
 typedef struct {
-	unsigned id;
-	/*@dependent@*/ mfile *gl, *lo;
-	unsigned os, es, ds, hold;  
-	unsigned vmmode; 
-	unsigned state;
-	unsigned quit;
+    unsigned id;
+    /*@dependent@*/ mfile *gl, *lo;
+    unsigned os, es, ds, hold;  
+    unsigned vmmode; 
+    unsigned state;
+    unsigned quit;
 } context;
 
 enum { LOCAL, GLOBAL }; //vmmode
@@ -14,10 +14,10 @@ enum { LOCAL, GLOBAL }; //vmmode
 #define MAXMFILE 10
 
 typedef struct {
-	context ctab[MAXCONTEXT];
-	unsigned cid;
-	mfile gtab[MAXMFILE];
-	mfile ltab[MAXMFILE];
+    context ctab[MAXCONTEXT];
+    unsigned cid;
+    mfile gtab[MAXMFILE];
+    mfile ltab[MAXMFILE];
 } itp;
 
 extern itp *itpdata;

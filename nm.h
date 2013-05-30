@@ -1,9 +1,9 @@
 
 typedef struct tst {
-	unsigned val,
-			 lo,     
-			 eq,
-			 hi;
+    unsigned val,
+             lo,     
+             eq,
+             hi;
 } tst;
 
 void initnames(context *ctx);
