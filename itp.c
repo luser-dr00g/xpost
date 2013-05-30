@@ -8,7 +8,7 @@
 #include "m.h"
 #include "ob.h"
 #include "s.h"
-#include "itp.h"
+#include "itp.h" /* context itp MAXCONTEXT MAXMFILE */
 #include "st.h"
 #include "ar.h"
 #include "gc.h"
@@ -18,7 +18,7 @@
 //#include "f.h"
 #include "op.h"
 
-itp itpdata;
+itp *itpdata;
 
 #if 0
 /* allocate a stack as a "special entry",
@@ -63,13 +63,25 @@ void addtoctxlist(mfile *mem, unsigned cid) {
 	error("ctxlist full");
 }
 
+mfile *nextgtab() {
+	int i;
+	for (i=0; i < MAXMFILE; i++) {
+		if (itpdata->gtab[i].base == NULL) {
+			return &itpdata->gtab[i];
+		}
+	}
+	error("cannot allocate mfile, gtab exhausted"), exit(EXIT_FAILURE);
+}
 
 /* set up global vm in the context */
 void initglobal(context *ctx) {
 	ctx->vmmode = GLOBAL;
 
 	/* allocate and initialize global vm */
-	ctx->gl = malloc(sizeof(mfile));
+	//ctx->gl = malloc(sizeof(mfile));
+	//ctx->gl = &itpdata->gtab[0];
+	ctx->gl = nextgtab();
+
 	initmem(ctx->gl, "g.mem");
 	(void)initmtab(ctx->gl);
 	initfree(ctx->gl);
@@ -79,7 +91,7 @@ void initglobal(context *ctx) {
 	//ctx->gl->roots[0] = VS;
 
 	initnames(ctx); /* NAMES NAMET */
-	ctx->gl->roots[1] = NAMES;
+	//ctx->gl->roots[1] = NAMES;
 	initoptab(ctx);
 	ctx->gl->start = OPTAB + 1; /* so OPTAB is not collected and not scanned. */
 	(void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
@@ -88,19 +100,30 @@ void initglobal(context *ctx) {
 	initop(ctx);
 }
 
+mfile *nextltab() {
+	int i;
+	for (i=0; i < MAXMFILE; i++) {
+		if (itpdata->ltab[i].base == NULL) {
+			return &itpdata->ltab[i];
+		}
+	}
+	error("cannot allocat mfile, ltab exhausted"), exit(EXIT_FAILURE);
+}
+
 /* set up local vm in the context */
 void initlocal(context *ctx) {
 	ctx->vmmode = LOCAL;
 
 	/* allocate and initialize local vm */
-	ctx->lo = malloc(sizeof(mfile));
+	//ctx->lo = malloc(sizeof(mfile));
+	ctx->lo = &itpdata->ltab[0];
 	initmem(ctx->lo, "l.mem");
 	(void)initmtab(ctx->lo);
 	initfree(ctx->lo);
 	initsave(ctx->lo);
 	initctxlist(ctx->lo);
 	addtoctxlist(ctx->lo, ctx->id);
-	ctx->lo->roots[0] = VS;
+	//ctx->lo->roots[0] = VS;
 
 	ctx->os = makestack(ctx->lo);
 	ctx->es = makestack(ctx->lo);
@@ -114,13 +137,16 @@ void initlocal(context *ctx) {
 
 unsigned nextid = 0;
 unsigned initctxid(void) {
-	while ( ctxcid(++nextid)->state != 0 )
-		;
+	unsigned startid = nextid;
+	while ( ctxcid(++nextid)->state != 0 ) {
+		if (nextid == startid + MAXCONTEXT)
+			error("ctab full. cannot create new process");
+	}
 	return nextid;
 }
 
 context *ctxcid(unsigned cid) {
-	return &itpdata.ctab[ (cid-1) % MAXCONTEXT ];
+	return &itpdata->ctab[ (cid-1) % MAXCONTEXT ];
 }
 
 
@@ -138,6 +164,41 @@ void exitcontext(context *ctx) {
 	exitmem(ctx->lo);
 }
 
+/*
+   fork new process with private global and private local vm
+   (spawn jobserver)
+   */
+unsigned fork1(context *ctx) {
+	unsigned newcid;
+	context *newctx;
+	newcid = initctxid();
+	newctx = ctxcid(newcid);
+	initlocal(ctx);
+	initglobal(ctx);
+	ctx->vmmode = LOCAL;
+}
+
+/*
+   fork new process with shared global vm and private local vm
+   (new "application"?)
+   */
+unsigned fork2(context *ctx) {
+	unsigned newcid;
+	context *newctx;
+	newcid = initctxid();
+	newctx = ctxcid(newcid);
+	initlocal(ctx);
+	newctx->gl = ctx->gl;
+	push(newctx->lo, newctx->ds, bot(ctx->lo, ctx->ds, 0)); // systemdict
+}
+
+/*
+   fork new process with shared global and shared local vm
+   (lightweight process)
+   */
+unsigned fork3(context *ctx) {
+}
+
 
 /* initialize itp */
 void inititp(itp *itp){
@@ -147,6 +208,7 @@ void inititp(itp *itp){
 
 /* destroy itp */
 void exititp(itp *itp){
+	exitcontext(&itp->ctab[0]);
 }
 
 
@@ -243,19 +305,22 @@ void init(void) {
 	//ctx = malloc(sizeof *ctx);
 	//memset(ctx, 0, sizeof ctx);
 	//initcontext(ctx);
-	inititp(&itpdata);
-	ctx = &itpdata.ctab[0];
+	itpdata = malloc(sizeof*itpdata);
+	if (!itpdata) error("itpdata=malloc failed");
+	memset(itpdata, 0, sizeof*itpdata);
+	inititp(itpdata);
+	ctx = &itpdata->ctab[0];
 }
 
 void xit() {
 	//exitcontext(ctx);
-	exititp(&itpdata);
+	exititp(itpdata);
 }
 
 int main(void) {
-	init();
-
 	printf("\n^test itp.c\n");
+
+	init();
 
 	push(ctx->lo, ctx->es, invalid);
 

@@ -33,7 +33,7 @@ void Dbegin(context *ctx, object D) {
 }
 
 void Zend(context *ctx) {
-	pop(ctx->lo, ctx->ds);
+	(void)pop(ctx->lo, ctx->ds);
 }
 
 void Adef(context *ctx, object K, object V) {
@@ -67,7 +67,7 @@ void dictomark(context *ctx) {
 		k = pop(ctx->lo, ctx->os);
 		bdcput(ctx, d, k, v);
 	}
-	pop(ctx->lo, ctx->os); // pop mark
+	(void)pop(ctx->lo, ctx->os); // pop mark
 	push(ctx->lo, ctx->os, d);
 }
 

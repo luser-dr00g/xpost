@@ -5,7 +5,7 @@
 #include "gc.h"
 #include "itp.h"
 
-object consstr(mfile *mem, unsigned sz, char *ini) {
+object consstr(mfile *mem, unsigned sz, /*@NULL@*/ char *ini) {
 	unsigned ent;
 	object o;
 	//ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int));
@@ -18,7 +18,7 @@ object consstr(mfile *mem, unsigned sz, char *ini) {
 	return o;
 }
 
-object consbst(context *ctx, unsigned sz, char *ini) {
+object consbst(context *ctx, unsigned sz, /*@NULL@*/ char *ini) {
 	object s;
 	s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
 	if (ctx->vmmode==GLOBAL)
@@ -26,7 +26,7 @@ object consbst(context *ctx, unsigned sz, char *ini) {
 	return s;
 }
 
-char *charstr(context *ctx, object S) {
+/*@dependent@*/ char *charstr(context *ctx, object S) {
 	mfile *f;
 	mtab *tab;
 	unsigned ent = S.comp_.ent;

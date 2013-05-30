@@ -90,7 +90,7 @@ void arrtomark(context *ctx) {
 		v = pop(ctx->lo, ctx->os);
 		barput(ctx, a, i-1, v);
 	}
-	pop(ctx->lo, ctx->os); // pop mark
+	(void)pop(ctx->lo, ctx->os); // pop mark
 	push(ctx->lo, ctx->os, a);
 }
 

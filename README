@@ -139,6 +139,7 @@ They are designed so that `(cid - 1) % MAXCONTEXT` will yield the
 index in the ctab of the context. So the allocator increments 
 until this formula yields an empty slot. This lets us re-use slots
 while still maintaining unique IDs for all processes in the history
-(until the `unsigned` wraps TODO fix this timebomb).
+(until the `unsigned` wraps TO//DO fix this timebomb -- not a problem,
+see http://programmers.stackexchange.com/questions/199635/ ).
 
 Probably need to add a loop detector to discover if ctab is full.
