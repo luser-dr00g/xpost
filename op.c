@@ -56,6 +56,8 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     oper op;
 
+    assert(in <= STACKSEGSZ); // or else opexec can't call it using HOLD
+
     nm = consname(ctx, name);
     for (opcode = 0; optab[opcode].name != nm.mark_.padw; opcode++) {
         if (opcode == noop) break;
@@ -129,15 +131,17 @@ void holdn (context *ctx, mfile *mem, unsigned stacadr, int n) {
     assert(n < TABSZ);
     hold = (void *)(ctx->lo->base + ctx->hold /*adrent(ctx->lo, HOLD)*/);
     hold->top = 0; /* clear HOLD */
-    j = n;
-    while (j) {
-        j--;
+    for (j=n; j--;) {
+    //j = n;
+    //while (j) {
+        //j--;
         push(ctx->lo, ctx->hold, top(mem, stacadr, j));
     }
-    j = n;
-    while (j) {
+    for (j=n; j--;) {
+    //j = n;
+    //while (j) {
         (void)pop(mem, stacadr);
-        j--;
+        //j--;
     }
 }
 
@@ -222,10 +226,28 @@ void initop(context *ctx) {
     ent = sd.comp_.ent;
     findtabent(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // make systemdict immune to collection
+#ifdef DEBUGOP
+    dumpdic(ctx->gl, sd); fflush(NULL);
+    puts("");
+#endif
 
     initops(ctx, sd);
+
+#ifdef DEBUGOP
+    dumpdic(ctx->gl, sd); fflush(NULL);
+#endif
+
     initopst(ctx, sd);
     initopar(ctx, sd);
     initopdi(ctx, sd);
-    push(ctx->lo, ctx->ds, sd); // push systemdict
+    initoptok(ctx, sd);
+    //push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
+
+#ifdef DEBUGOP
+    dumpstack(ctx->lo, ctx->ds);
+    dumpdic(ctx->gl, sd); fflush(NULL);
+#endif
 }
+
+
+

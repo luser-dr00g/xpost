@@ -43,14 +43,20 @@ void Adef(context *ctx, object K, object V) {
 void Aload(context *ctx, object K) {
     int i;
     int z = count(ctx->lo, ctx->ds);
+    dumpobject(K);
     for (i = 0; i < z; i++) {
         object D = top(ctx->lo,ctx->ds,i);
+        //dumpdic(bank(ctx, D), D); puts("");
         if (dicknown(ctx, bank(ctx, D), D, K)) {
             push(ctx->lo, ctx->os, bdcget(ctx, D, K));
             return;
         }
     }
-    error("undefined");
+    dumpmfile(ctx->gl);
+    dumpmtab(ctx->gl, 0);
+    dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+    dumpobject(K);
+    error("undefined (Aload)");
 }
 
 /* << k_1 v_1 ... k_N v_N  >>  dict

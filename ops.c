@@ -1,3 +1,4 @@
+#include <stdlib.h> /* NULL */
 #include <alloca.h>
 #include <stdbool.h>
 
@@ -153,6 +154,7 @@ void initops(context *ctx, object sd) {
     op = consoper(ctx, "dup", Adup, 2, 1, anytype); INSTALL;
     op = consoper(ctx, "copy", Icopy, 0, 1, integertype); INSTALL;
     op = consoper(ctx, "index", Iindex, 1, 1, integertype); INSTALL;
+    //dumpdic(ctx->gl, sd); fflush(NULL);
     op = consoper(ctx, "roll", IIroll, 0, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "clear", Zclear, 0, 0); INSTALL;
     op = consoper(ctx, "count", Zcount, 1, 0); INSTALL;
