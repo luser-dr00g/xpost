@@ -95,7 +95,8 @@ object consname(context *ctx, char *s) {
         tab->tab[NAMET].adr = t;
         u = addname(ctx, s);
     }
-    o.tag = nametype;
+    o.mark_.tag = nametype;
+    o.mark_.pad0 = 0;
     o.mark_.padw = u;
     return o;
 }

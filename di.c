@@ -54,10 +54,17 @@ int objcmp(context *ctx, object L, object R) {
 
 /* more like scrambled eggs */
 unsigned hash(object k) {
-    return (type(k) << 1) /* ignore flags */
+    unsigned h;
+    h = (type(k) << 1) /* ignore flags */
         + (k.comp_.sz << 3)
         + (k.comp_.ent << 7)
         + (k.comp_.off << 5);
+#ifdef DEBUGDIC
+    printf("\nhash(");
+    dumpobject(k);
+    printf(")=%d", h);
+#endif
+    return h;
 }
 
 /* dicts are implicitly 1 entry larger than declared
@@ -107,6 +114,9 @@ object consdic(mfile *mem, unsigned sz) {
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* clear table */
     for (i=0; i < DICTABN(sz); i++)
         tp[i] = null; /* remember our null object is not all-zero! */
+#ifdef DEBUGDIC
+    printf("consdic: "); dumpdic(mem, d);
+#endif
     return d;
 }
 
@@ -136,19 +146,28 @@ void dicgrow(context *ctx, object d) {
     mfile *mem;
     unsigned sz;
     unsigned ad;
+    dichead *dp;
     object *tp;
     object n;
     int i;
-    printf("DI growing dict\n");
     mem = bank(ctx, d);
+#ifdef DEBUGDIC
+    printf("DI growing dict\n");
+    dumpdic(mem, d);
+#endif
     n = consdic(mem, sz = 2 * dicmaxlength(mem, d));
 
     ad = adrent(mem, d.comp_.ent);
+    dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
-    for ( i=0; i < DICTABN(sz); i += 2)
-        if (objcmp(ctx, tp[i], null) != 0) {
-            dicput(ctx, mem, n, tp[i], tp[i+1]);
+    for ( i=0; i < dp->sz; i++)
+        if (objcmp(ctx, tp[2*i], null) != 0) {
+            dicput(ctx, mem, n, tp[2*i], tp[2*i+1]);
         }
+#ifdef DEBUGDIC
+    printf("n: ");
+    dumpdic(mem, n);
+#endif
 
     {   // exchange entities
         mtab *dtab, *ntab;
@@ -171,9 +190,23 @@ void dicgrow(context *ctx, object d) {
     }
 }
 
-/* */
+/* is it full? (y/n) */
 bool dicfull(mfile *mem, object d) {
     return diclength(mem, d) == dicmaxlength(mem, d);
+}
+
+void dumpdic(mfile *mem, object d) {
+    unsigned ad = adrent(mem, d.comp_.ent);
+    dichead *dp = (void *)(mem->base + ad);
+    object *tp = (void *)(mem->base + ad + sizeof(dichead));
+    unsigned sz = (dp->sz + 1);
+    int i;
+    for (i=0; i < sz; i++) {
+        printf("%d:", i);
+        if (type(tp[2*i]) != nulltype) {
+            dumpobject(tp[2*i]);
+        }
+    }
 }
 
 #define RETURN_TAB_I_IF_EQ_K_OR_NULL    \
@@ -191,8 +224,15 @@ object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) 
     unsigned sz = (dp->sz + 1);
     unsigned h;
     unsigned i;
+
     h = hash(k) % sz;
     i = h;
+#ifdef DEBUGDIC
+    printf("diclookup(");
+    dumpobject(k);
+    printf(");");
+    printf("%%%d=%d",sz, h);
+#endif
 
     RETURN_TAB_I_IF_EQ_K_OR_NULL
     for (++i; i < sz; i++) {

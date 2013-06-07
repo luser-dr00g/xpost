@@ -66,7 +66,8 @@ void dumpcompobject(object o){
 void dumpobject(object o){
     switch(type(o)) {
         default:
-        case invalidtype: printf("<invalid object>"); break;
+        case invalidtype: printf("<invalid object %04x %04x %04x %04x >",
+                                  o.comp_.tag, o.comp_.sz, o.comp_.ent, o.comp_.off); break;
 
         case nulltype: printf("<null>"); break;
         case marktype: printf("<mark>"); break;
@@ -78,8 +79,14 @@ void dumpobject(object o){
         case arraytype: printf("<array"); dumpcompobject(o); break;
         case dicttype: printf("<dict"); dumpcompobject(o); break;
 
-        case nametype: printf("<name %u>", (int)o.mark_.padw); break;
+        case nametype: printf("<name %u %u %u>",
+                               (int)o.mark_.tag,
+                               (int)o.mark_.pad0,
+                               (int)o.mark_.padw); break;
         case operatortype: printf("<operator %u>", (int)o.mark_.padw); break;
+        case filetype: printf("<file>"); break;
+        case savetype: printf("<save>"); break;
+        case contexttype: printf("<context>"); break;
     }
 }
 

@@ -76,7 +76,7 @@ object barget(context *ctx, object a, integer i) {
 /* adjust the offset and size fields in the object. */
 object arrgetinterval(object a, integer off, integer sz) {
     //if (s + n > a.comp_.off + a.comp_.sz)
-    if (sz - off > a.comp_.sz - a.comp_.off)
+    if (sz - off > a.comp_.sz /*- a.comp_.off*/)
         error("getinterval can only shrink!");
     a.comp_.off += off;
     a.comp_.sz = sz;

@@ -25,7 +25,7 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int 
 void opexec(context *ctx, unsigned opcode);
 
 #define INSTALL \
-    n.tag = nametype, \
+    n.mark_.tag = nametype, n.mark_.pad0 = 0, \
     n.mark_.padw = optab[op.mark_.padw].name, \
     bdcput(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc

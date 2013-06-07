@@ -29,8 +29,11 @@ unsigned initstack(mfile *mem) {
 void dumpstack(mfile *mem, unsigned stackadr) {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
+    unsigned a;
+    a = 0;
     while (1) {
         for (i=0; i < s->top; i++) {
+            printf("%d:", a++);
             dumpobject(s->data[i]);
         }
         if (i != STACKSEGSZ) break;

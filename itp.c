@@ -107,7 +107,7 @@ mfile *nextltab() {
             return &itpdata->ltab[i];
         }
     }
-    error("cannot allocat mfile, ltab exhausted"), exit(EXIT_FAILURE);
+    error("cannot allocate mfile, ltab exhausted"), exit(EXIT_FAILURE);
 }
 
 /* set up local vm in the context */
@@ -250,6 +250,17 @@ void evalpush(context *ctx) {
             pop(ctx->lo, ctx->es) );
 }
 
+/* load executable name */
+void evalload(context *ctx) {
+    push(ctx->lo, ctx->os,
+            pop(ctx->lo, ctx->es));
+    opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
+    if (isx(top(ctx->lo, ctx->os, 0))) {
+        push(ctx->lo, ctx->es,
+                pop(ctx->lo, ctx->os));
+    }
+}
+
 /* interpreter actions for executable types */
 evalfunc *evalinvalid = evalquit;
 evalfunc *evalmark = evalpop;
@@ -263,7 +274,7 @@ evalfunc *evaldict = evalpush;
 evalfunc *evalcontext = evalpush;
 evalfunc *evalfile = evalpush;
 evalfunc *evalstring = evalpush;
-evalfunc *evalname = evalpush;
+evalfunc *evalname = evalload;
 
 void evaloperator(context *ctx) {
     object op = pop(ctx->lo, ctx->es);
@@ -340,6 +351,7 @@ int main(void) {
 
     push(ctx->lo, ctx->es, invalid);
 
+#if 0
     int i;
     for (i = 8; i >= 0; i--)
         push(ctx->lo, ctx->os, consint(i));
@@ -349,6 +361,17 @@ int main(void) {
     dumpstack(ctx->lo, ctx->os); puts("");
 
     push(ctx->lo, ctx->es, consoper(ctx,"roll",NULL,0,0));
+#endif
+
+    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 127 ")));
+
+    //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
+    //dumpobject(top(ctx->lo, ctx->os, 0));
+    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+    //dumpdic(ctx->gl, top(ctx->lo, ctx->ds, 0));
+    fflush(NULL);
+    //push(ctx->lo, ctx->es, consname(ctx, "load"));
+    push(ctx->lo, ctx->es, cvx(consname(ctx, "toke")));
 
     ctx->quit = 0;
     mainloop(ctx);
