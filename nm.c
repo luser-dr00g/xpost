@@ -101,6 +101,13 @@ object consname(context *ctx, char *s) {
     return o;
 }
 
+object strname(context *ctx, object n) {
+    unsigned names = adrent(ctx->gl, NAMES);
+    object str = bot(ctx->gl, names, n.mark_.padw);
+    str.tag |= FBANK;
+    return str;
+}
+
 #ifdef TESTMODULE
 #include <stdio.h>
 #include <unistd.h>

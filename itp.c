@@ -283,12 +283,17 @@ void evaloperator(context *ctx) {
 
 void evalarray(context *ctx) {
     object a = pop(ctx->lo, ctx->es);
+    object b;
     switch (a.comp_.sz) {
     default /* > 1 */:
         push(ctx->lo, ctx->es, arrgetinterval(a, 1, a.comp_.sz - 1) );
     /*@fallthrough@*/
     case 1:
-        push(ctx->lo, ctx->es, barget(ctx, a, 0) );
+        b = barget(ctx, a, 0);
+        if (type(b) == arraytype)
+            push(ctx->lo, ctx->os, b);
+        else
+            push(ctx->lo, ctx->es, b);
     /*@fallthrough@*/
     case 0: /* drop */;
     }
@@ -309,6 +314,9 @@ void initevaltype(void) {
 
 void eval(context *ctx) {
     object t = top(ctx->lo, ctx->es, 0);
+    dumpstack(ctx->lo, ctx->os);
+    puts("");
+    dumpobject(t);
     if ( isx(t) ) /* if executable */
         evaltype[type(t)](ctx);
     else
@@ -372,6 +380,7 @@ int main(void) {
     fflush(NULL);
     //push(ctx->lo, ctx->es, consname(ctx, "load"));
     push(ctx->lo, ctx->es, cvx(consname(ctx, "toke")));
+    dumpoper(ctx, 18);
 
     ctx->quit = 0;
     mainloop(ctx);

@@ -83,6 +83,7 @@ void initoptok(context *ctx, object sd) {
             ADD(L(1)); ADD(N(add)); ENDSUB;
         ADD(N(forall)); ADD(N(pop)); ADD(N(pop));
         DEF(indexof);
+    dumpdic(ctx->gl, td);
 
     /* char str -within- bool
        test char is in string
@@ -271,8 +272,10 @@ void initoptok(context *ctx, object sd) {
         /cvri {   % string radix  .  num
             0 3 1 roll exch       %  0 base str
             dup 0 get issign {
-                dup 0 get (-) 0 get eq 4 1 roll
-                1 1 index length 1 sub getinterval
+                dup 0 get
+                (-) 0 get eq 4 1 roll
+                1 1 index length
+                1 sub getinterval
             }{ false 4 1 roll } ifelse   % bool sum base str i
             0 1 2 index length 1 sub {   % bool sum base str i
                 2 copy get               % bool sum base str i s_i
@@ -292,8 +295,8 @@ void initoptok(context *ctx, object sd) {
         ADDSUB(15);
             ADD(N(dup)); ADD(L(0)); ADD(N(get));
             ADD(L('-')); ADD(N(eq)); ADD(L(4)); ADD(L(1)); ADD(N(roll));
-            ADD(L(1)); ADD(L(1)); ADD(N(index));
-            ADD(N(length)); ADD(L(1)); ADD(N(sub)); ADD(N(getinterval));
+            ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length));
+            ADD(L(1)); ADD(N(sub)); ADD(N(getinterval));
             ENDSUB;
         ADDSUB(4);
             ADD(N(false)); ADD(L(4)); ADD(L(1)); ADD(N(roll));
@@ -387,21 +390,25 @@ void initoptok(context *ctx, object sd) {
         trim initial whitespace from string
         /snip { % str . str'
             {
-                dup length 0 eq { exit } if
-                dup 0 get isspace not { exit } if
-                1 1 index length 1 sub getinterval
+                dup length 0 eq
+                { exit } if
+                dup 0 get isspace not
+                { exit } if
+                1 1 index length
+                1 sub getinterval
             } loop
         } def */
     ARR(2);
         ADDSUB(19);
             ADD(N(dup)); ADD(N(length)); ADD(L(0)); ADD(N(eq));
             ADDSUB(1); ADD(N(exit)); ENDSUB; ADD(N(if));
-            ADD(N(dup)); ADD(L(0)); ADD(N(get));
-            ADD(N(isspace)); //n.b. #isspace not used in C namespace, no conflict with ctypes.h
+            ADD(N(dup)); ADD(L(0)); ADD(N(get)); ADD(N(isspace));
+            //n.b. #isspace is not used in the C namespace.
+            //so, no conflict with ctypes.h
             ADD(N(not));
             ADDSUB(1); ADD(N(exit)); ENDSUB; ADD(N(if));
-            ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length)); ADD(L(1)); ADD(N(sub));
-            ADD(N(getinterval));
+            ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length));
+            ADD(L(1)); ADD(N(sub)); ADD(N(getinterval));
             ENDSUB;
         ADD(N(loop));
         DEF(snip);
@@ -477,6 +484,7 @@ void initoptok(context *ctx, object sd) {
         ADD(N(end));
         DEF(toke);
         bdcput(ctx, sd, N(toke), ar);
+    dumpdic(ctx->gl, td);
 
     //op = consoper(ctx, "string", Istring, 1, 1, integertype); INSTALL;
 }

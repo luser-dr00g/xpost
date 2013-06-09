@@ -145,6 +145,7 @@ unsigned dicmaxlength(mfile *mem, object d) {
 void dicgrow(context *ctx, object d) {
     mfile *mem;
     unsigned sz;
+    unsigned newsz;
     unsigned ad;
     dichead *dp;
     object *tp;
@@ -155,12 +156,13 @@ void dicgrow(context *ctx, object d) {
     printf("DI growing dict\n");
     dumpdic(mem, d);
 #endif
-    n = consdic(mem, sz = 2 * dicmaxlength(mem, d));
+    n = consdic(mem, newsz = 2 * dicmaxlength(mem, d));
 
     ad = adrent(mem, d.comp_.ent);
     dp = (void *)(mem->base + ad);
+    sz = (dp->sz + 1);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
-    for ( i=0; i < dp->sz; i++)
+    for ( i=0; i < sz; i++)
         if (objcmp(ctx, tp[2*i], null) != 0) {
             dicput(ctx, mem, n, tp[2*i], tp[2*i+1]);
         }

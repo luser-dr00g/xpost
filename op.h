@@ -19,6 +19,7 @@ enum typepat { anytype = stringtype + 1,
 #define SDSIZE 10
 
 void initoptab(context *ctx);
+void dumpoper(context *ctx, int opcode);
 
 object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
 

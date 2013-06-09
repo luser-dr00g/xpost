@@ -43,10 +43,12 @@ void Adef(context *ctx, object K, object V) {
 void Aload(context *ctx, object K) {
     int i;
     int z = count(ctx->lo, ctx->ds);
+    printf("\nload:");
     dumpobject(K);
+    dumpstack(ctx->lo, ctx->ds);
     for (i = 0; i < z; i++) {
         object D = top(ctx->lo,ctx->ds,i);
-        //dumpdic(bank(ctx, D), D); puts("");
+        dumpdic(bank(ctx, D), D); puts("");
         if (dicknown(ctx, bank(ctx, D), D, K)) {
             push(ctx->lo, ctx->os, bdcget(ctx, D, K));
             return;
