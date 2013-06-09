@@ -1,4 +1,11 @@
-
+/* operators
+   This module is the operator interface.
+   It defines the operator constructor consoper,
+   and the operator handler function opexec.
+   initoptab is called to initialize the optab structure itself.
+   initop is called to populate the optab structure.
+   */
+ 
 typedef struct signat {
     void (*fp)();
     int in;

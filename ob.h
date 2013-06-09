@@ -1,3 +1,7 @@
+/* objects
+   define the basic 8-byte object structure
+   */
+
 typedef unsigned char byte;
 typedef unsigned short word;
 typedef unsigned long dword;

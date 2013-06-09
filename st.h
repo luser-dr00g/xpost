@@ -1,3 +1,5 @@
+/* strings
+   */
 
 object consstr(mfile *mem, unsigned sz, /*@NULL@*/ char *ini);
 object consbst(context *ctx, unsigned sz, /*@NULL@*/ char *ini);
