@@ -240,7 +240,7 @@ void initoptok(context *ctx, object sd) {
     ARR(15);
         ADD(L(3)); ADD(L(1)); ADD(N(roll));
         ADD(L(0)); ADD(N(exch)); ADD(L(0));
-        ADDSUB(30);
+        ADDSUB(31);
             ADD(L(2)); ADD(N(copy)); ADD(N(get));
             ADD(L(5)); ADD(L(3)); ADD(N(roll));
             ADD(L(2)); ADD(N(copy)); ADD(N(get));
@@ -306,7 +306,7 @@ void initoptok(context *ctx, object sd) {
         ADD(N(length)); ADD(L(1)); ADD(N(sub));
         ADDSUB(21);
             ADD(L(2)); ADD(N(copy)); ADD(N(get));
-            ADD(N(dup)); ADD(N(lower)); ADD(N(within));
+            ADD(N(dup)); ADD(lower); ADD(N(within));
             ADDSUB(2); ADD(u_l); ADD(N(add)); ENDSUB; ADD(N(if));
             ADD(alnum); ADD(N(indexof));
             ADD(L(5)); ADD(L(4)); ADD(N(roll));
@@ -399,7 +399,7 @@ void initoptok(context *ctx, object sd) {
             } loop
         } def */
     ARR(2);
-        ADDSUB(19);
+        ADDSUB(20);
             ADD(N(dup)); ADD(N(length)); ADD(L(0)); ADD(N(eq));
             ADDSUB(1); ADD(N(exit)); ENDSUB; ADD(N(if));
             ADD(N(dup)); ADD(L(0)); ADD(N(get)); ADD(N(isspace));

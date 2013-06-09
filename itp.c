@@ -261,6 +261,29 @@ void evalload(context *ctx) {
     }
 }
 
+void evaloperator(context *ctx) {
+    object op = pop(ctx->lo, ctx->es);
+    opexec(ctx, op.mark_.padw);
+}
+
+void evalarray(context *ctx) {
+    object a = pop(ctx->lo, ctx->es);
+    object b;
+    switch (a.comp_.sz) {
+    default /* > 1 */:
+        push(ctx->lo, ctx->es, arrgetinterval(a, 1, a.comp_.sz - 1) );
+        /*@fallthrough@*/
+    case 1:
+        b = barget(ctx, a, 0);
+        if (type(b) == arraytype)
+            push(ctx->lo, ctx->os, b);
+        else
+            push(ctx->lo, ctx->es, b);
+        /*@fallthrough@*/
+    case 0: /* drop */;
+    }
+}
+
 /* interpreter actions for executable types */
 evalfunc *evalinvalid = evalquit;
 evalfunc *evalmark = evalpop;
@@ -275,29 +298,6 @@ evalfunc *evalcontext = evalpush;
 evalfunc *evalfile = evalpush;
 evalfunc *evalstring = evalpush;
 evalfunc *evalname = evalload;
-
-void evaloperator(context *ctx) {
-    object op = pop(ctx->lo, ctx->es);
-    opexec(ctx, op.mark_.padw);
-}
-
-void evalarray(context *ctx) {
-    object a = pop(ctx->lo, ctx->es);
-    object b;
-    switch (a.comp_.sz) {
-    default /* > 1 */:
-        push(ctx->lo, ctx->es, arrgetinterval(a, 1, a.comp_.sz - 1) );
-    /*@fallthrough@*/
-    case 1:
-        b = barget(ctx, a, 0);
-        if (type(b) == arraytype)
-            push(ctx->lo, ctx->os, b);
-        else
-            push(ctx->lo, ctx->es, b);
-    /*@fallthrough@*/
-    case 0: /* drop */;
-    }
-}
 
 #if 0
 //This way doesn't work, since function pointers are non-constant:
@@ -384,7 +384,7 @@ int main(void) {
     fflush(NULL);
     //push(ctx->lo, ctx->es, consname(ctx, "load"));
     push(ctx->lo, ctx->es, cvx(consname(ctx, "toke")));
-    dumpoper(ctx, 18);
+    dumpoper(ctx, 3);
 
     ctx->quit = 0;
     mainloop(ctx);

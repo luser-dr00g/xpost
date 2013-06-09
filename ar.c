@@ -51,6 +51,8 @@ object consbar(context *ctx, unsigned sz) {
    call put. */
 void arrput(mfile *mem, object a, integer i, object o) {
     if (!stashed(mem, a.comp_.ent)) stash(mem, a.comp_.ent);
+    if (i > a.comp_.sz)
+        error("rangecheck (arrput)");
     put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(object), &o);
 }
 
@@ -75,9 +77,7 @@ object barget(context *ctx, object a, integer i) {
 
 /* adjust the offset and size fields in the object. */
 object arrgetinterval(object a, integer off, integer sz) {
-    //if (s + n > a.comp_.off + a.comp_.sz)
-    if (sz - off > a.comp_.sz /*- a.comp_.off*/)
-        error("getinterval can only shrink!");
+    if (sz - off > a.comp_.sz) error("getinterval can only shrink!");
     a.comp_.off += off;
     a.comp_.sz = sz;
     return a;

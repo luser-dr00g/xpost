@@ -19,7 +19,7 @@ typedef struct oper {
     unsigned sigadr;
 } oper;
 
-enum typepat { anytype = stringtype + 1,
+enum typepat { anytype = NTYPES /*stringtype + 1*/,
     floattype, numbertype, proctype };
 
 #define MAXOPS 50

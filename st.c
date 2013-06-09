@@ -66,6 +66,7 @@ mfile mem;
 int main(void) {
     object s;
     int i;
+    printf("\n^ st.c\n");
     initmem(&mem, "x.mem");
     (void)initmtab(&mem);
 

@@ -47,6 +47,7 @@ void initopb(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     object n,op;
 
+
     op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "ne", Ane, 1, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "ge", Age, 1, 2, anytype, anytype); INSTALL;
@@ -56,6 +57,7 @@ void initopb(context *ctx, object sd) {
     op = consoper(ctx, "not", Bnot, 1, 1, booleantype); INSTALL;
     op = consoper(ctx, "not", Inot, 1, 1, integertype); INSTALL;
 
-    /* dumpdic(ctx->gl, sd); fflush(NULL);
-    bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    /* dumpdic(ctx->gl, sd); fflush(NULL); */
+    bdcput(ctx, sd, consname(ctx, "true"), consbool(true));
+    bdcput(ctx, sd, consname(ctx, "false"), consbool(false));
 }
