@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h> /* NULL */
 
 #include "m.h"
@@ -254,6 +255,7 @@ void initop(context *ctx) {
     initopc(ctx, sd);
     initopt(ctx, sd);
     initoptok(ctx, sd);
+    initopm(ctx, sd);
     //push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
 #ifdef DEBUGOP
