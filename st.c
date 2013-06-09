@@ -26,7 +26,8 @@ object consbst(context *ctx, unsigned sz, /*@NULL@*/ char *ini) {
     return s;
 }
 
-/*@dependent@*/ char *charstr(context *ctx, object S) {
+/*@dependent@*/
+char *charstr(context *ctx, object S) {
     mfile *f;
     mtab *tab;
     unsigned ent = S.comp_.ent;

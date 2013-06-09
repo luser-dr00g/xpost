@@ -7,6 +7,7 @@
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "st.h"
 #include "gc.h"
 #include "nm.h"
 #include "di.h"
@@ -42,6 +43,15 @@ void initoptab (context *ctx) {
     tab->tab[ent].sz = 0; // so gc will ignore it
     //printf("ent: %d\nOPTAB: %d\n", ent, (int)OPTAB);
     assert(ent == (unsigned)(int)OPTAB);
+}
+
+void dumpoper(context *ctx, int opcode) {
+    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper op = optab[opcode];
+    mark_ nm = { nametype, 0, op.name };
+    object str = strname(ctx, (object)nm);
+    char *s = charstr(ctx, str);
+    printf("<operator %d %*s>", opcode, str.comp_.sz, s);
 }
 
 object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
@@ -240,6 +250,9 @@ void initop(context *ctx) {
     initopst(ctx, sd);
     initopar(ctx, sd);
     initopdi(ctx, sd);
+    initopb(ctx, sd);
+    initopc(ctx, sd);
+    initopt(ctx, sd);
     initoptok(ctx, sd);
     //push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
