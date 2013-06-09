@@ -1,3 +1,8 @@
+/* names
+   The name mechanism associates strings with integers,
+   using a ternary search tree
+   and a stack of string objects
+   */
 
 typedef struct tst {
     unsigned val,

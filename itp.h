@@ -1,4 +1,8 @@
-
+/* the interpreter
+       eval actions
+       core interpreter loop
+       bank utility function for extracting from the context the mfile relevant to an object
+   */
 
 typedef struct {
     unsigned id;

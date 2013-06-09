@@ -1,3 +1,14 @@
+/*  memory
+    mfile and mtab
+    
+    An mfile is a container representing *half* of virtual memory,
+    either local or global. A global-vm mfile has more special entities
+    in its mtab than a local-vm mfile.
+
+    An mtab is a chain of address tables (starting at address 0)
+    that manage the contents of the mfile.
+   */
+
 /* define MMAP and MREMAP for Linux */
 /* define MMAP without MREMAP should work for Irix (using AUTOGROW) */
 /* no MREMAP under cygwin (we'll see how AUTOGROW handles...)*/
@@ -12,8 +23,10 @@
 #  endif
 #endif
 
+/* stub */
 void error(char *msg);
 
+/* the "grain" of the mfile size */
 extern unsigned pgsz /*= getpagesize()*/; /*=4096 (usually on 32bit)*/
 
 typedef struct {
@@ -29,9 +42,16 @@ typedef struct {
         /* the domain of the collector is entries >= start */
 } mfile;
 
+/* dump metadata and contents */
 void dumpmfile(mfile *mem);
-void initmem(mfile *mem, char *fname); /* initialize the memory file */
-void exitmem(mfile *mem); /* destroy the memory file */
+
+/* initialize the mfile, possibly from file */
+void initmem(mfile *mem, char *fname);
+
+/* destroy the mfile, possibly writing to file */
+void exitmem(mfile *mem);
+
+/* resize the mfile, possibly invalidating all vm pointers */
 void growmem(mfile *mem, unsigned sz);
 
 /* allocate memory, returns offset in memory file */

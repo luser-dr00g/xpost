@@ -40,6 +40,27 @@ itp         itp.c   itp.h   context
 	    opdimp               processes
 		opdimc               canvases
 
+                itpdata
+      gc     context     
+        mfile       stack
+             mtab     object
+                 array
+                 dict
+                 string
+
+           context
+    (mfile)gl   (mfile)lo
+      mtab        mtab
+        FREE        FREE
+        VS          VS
+        CTXLIST     CTXLIST
+        NAMES       ----
+        NAMET       live-entries (gc)
+        BOGUSNAME
+        OPTAB
+        ----
+        live-entries (gc)
+
 At the heart is the "m" module: the memory-file and memory-tables.
 Every mfile starts with an mtab. Every mtab lives in an mfile.
 An mfile is a raw memory space cleverly(?) macro-ized to use
