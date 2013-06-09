@@ -28,12 +28,18 @@ typedef struct {
 int objcmp(context *ctx, object L, object R) {
     if (type(L) == type(R))
         switch (type(L)) {
+            default: error("unhandled type in objcmp");
+
             case marktype:
             case nulltype:
             case invalidtype: return 0;
+
             case integertype: return L.int_.val - R.int_.val;
             case realtype: return ! (fabs(L.real_.val - R.real_.val) < 0.0001);
+
+            case operatortype: 
             case nametype: return !( L.mark_.padw == R.mark_.padw );
+
             case dicttype: return !( L.comp_.ent == R.comp_.ent );
             case arraytype: return !( L.comp_.sz == R.comp_.sz
                                     && (L.tag&FBANK) == (R.tag&FBANK)

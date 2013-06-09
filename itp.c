@@ -314,9 +314,13 @@ void initevaltype(void) {
 
 void eval(context *ctx) {
     object t = top(ctx->lo, ctx->es, 0);
+    printf("\neval\n");
+    printf("Stack: ");
     dumpstack(ctx->lo, ctx->os);
-    puts("");
+    printf("\n");
+    printf("Executing: ");
     dumpobject(t);
+    printf("\n");
     if ( isx(t) ) /* if executable */
         evaltype[type(t)](ctx);
     else
