@@ -4,8 +4,18 @@
    and the operator handler function opexec.
    initoptab is called to initialize the optab structure itself.
    initop is called to populate the optab structure.
+
+   nb. Since consoper does a linear search through the optab,
+   an obvious optimisation would be to factor-out calls to 
+   consoper from main-line code. Pre-initialize an object
+   somewhere and re-use it where needed. xpost2 did this with
+   a global struct of "opcuts" (operator object shortcuts),
+   but here it would need to be "global", either in global-vm
+   or in the context struct.
+   One goal of the planned "quick-launch" option is to remove
+   these lookups from the initialization, too.
    */
- 
+
 typedef struct signat {
     void (*fp)();
     int in;
