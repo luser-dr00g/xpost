@@ -389,7 +389,7 @@ int main(void) {
     fflush(NULL);
     //push(ctx->lo, ctx->es, consname(ctx, "load"));
     push(ctx->lo, ctx->es, cvx(consname(ctx, "toke")));
-    dumpoper(ctx, 38);
+    dumpoper(ctx, 12);
 
     ctx->quit = 0;
     mainloop(ctx);

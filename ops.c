@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h> /* NULL */
 #include <alloca.h>
 #include <stdbool.h>

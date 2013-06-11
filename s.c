@@ -1,6 +1,7 @@
 /* s.c - a segmented, extendable stack */
 
 #include <stdbool.h>
+#include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 #include "m.h" /* mfile mfalloc findtabent */
 
