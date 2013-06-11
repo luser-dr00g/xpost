@@ -43,6 +43,31 @@ void IIIPfor (context *ctx, object init, object incr, object lim, object P) {
     push(ctx->lo, ctx->es, init);
 }
 
+void RRRPfor (context *ctx, object init, object incr, object lim, object P) {
+    real i = init.real_.val;
+    real j = incr.real_.val;
+    real n = lim.real_.val;
+    bool up = j > 0;
+    if (up? i > n : i < n) return;
+    push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
+    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    push(ctx->lo, ctx->es, cvlit(P));
+    push(ctx->lo, ctx->es, lim);
+    push(ctx->lo, ctx->es, incr);
+    push(ctx->lo, ctx->es, consreal(i + j));
+    push(ctx->lo, ctx->es, P);
+    push(ctx->lo, ctx->es, init);
+}
+
+void IPrepeat (context *ctx, object n, object P) {
+    if (n.int_.val <= 0) return;
+    push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
+    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    push(ctx->lo, ctx->es, cvlit(P));
+    push(ctx->lo, ctx->es, consint(n.int_.val - 1));
+    push(ctx->lo, ctx->es, P);
+}
+
 void Ploop (context *ctx, object P) {
     push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
     push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
@@ -53,6 +78,9 @@ void Ploop (context *ctx, object P) {
 void Zexit (context *ctx) {
     object oploop = consoper(ctx, "loop", NULL,0,0);
     object opforall = consoper(ctx, "forall", NULL,0,0);
+    object opfor = consoper(ctx, "for", NULL,0,0);
+    object oprepeat = consoper(ctx, "repeat", NULL,0,0);
+
     object x;
     printf("\nexit\n");
     dumpstack(ctx->lo, ctx->os);
@@ -62,7 +90,10 @@ void Zexit (context *ctx) {
         x = pop(ctx->lo, ctx->es);
         dumpobject(x);
         if ( (objcmp(ctx, oploop, x) == 0)
-          || (objcmp(ctx, opforall, x) == 0) )
+          || (objcmp(ctx, opforall, x) == 0)
+          || (objcmp(ctx, opfor, x) == 0)
+          || (objcmp(ctx, oprepeat, x) == 0)
+          )
             break;
     }
     printf("result:");
@@ -78,6 +109,9 @@ void initopc (context *ctx, object sd) {
     op = consoper(ctx, "ifelse", BPPifelse, 0, 3, booleantype, proctype, proctype); INSTALL;
     op = consoper(ctx, "for", IIIPfor, 0, 4, \
             integertype, integertype, integertype, proctype); INSTALL;
+    op = consoper(ctx, "for", RRRPfor, 0, 4, \
+            floattype, floattype, floattype, proctype); INSTALL;
+    op = consoper(ctx, "repeat", IPrepeat, 0, 2, integertype, proctype); INSTALL;
     op = consoper(ctx, "loop", Ploop, 0, 1, proctype); INSTALL;
     op = consoper(ctx, "exit", Zexit, 0, 0); INSTALL;
     /*

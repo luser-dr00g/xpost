@@ -427,7 +427,7 @@ void initoptok(context *ctx, object sd) {
             1 index length  % s[0..n] s n sN
             1 index sub getinterval  % s[0..n) s[n..$)
             exch
-       */
+        } def */
     ARR(28);
         ADD(L(1)); ADD(L(1)); ADD(N(index));
         ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length)); ADD(L(1)); ADD(N(sub));

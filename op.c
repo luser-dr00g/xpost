@@ -67,7 +67,11 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     oper op;
 
-    assert(in <= STACKSEGSZ); // or else opexec can't call it using HOLD
+    if (!(in < STACKSEGSZ)) {
+        printf("!(in < STACKSEGSZ) in consoper(%s, %d. %d)\n", name, out, in);
+        exit(EXIT_FAILURE);
+    }
+    //assert(in < STACKSEGSZ); // or else opexec can't call it using HOLD
 
     nm = consname(ctx, name);
     for (opcode = 0; optab[opcode].name != nm.mark_.padw; opcode++) {

@@ -252,6 +252,9 @@ void evalpush(context *ctx) {
 
 /* load executable name */
 void evalload(context *ctx) {
+    object s = strname(ctx, top(ctx->lo, ctx->es, 0));
+    printf("<name \"%*s\">", s.comp_.sz, charstr(ctx, s));
+
     push(ctx->lo, ctx->os,
             pop(ctx->lo, ctx->es));
     opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
@@ -263,6 +266,7 @@ void evalload(context *ctx) {
 
 void evaloperator(context *ctx) {
     object op = pop(ctx->lo, ctx->es);
+    dumpoper(ctx, op.mark_.padw);
     opexec(ctx, op.mark_.padw);
 }
 
@@ -375,7 +379,8 @@ int main(void) {
     push(ctx->lo, ctx->es, consoper(ctx,"roll",NULL,0,0));
 #endif
 
-    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 127 ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 127 ")));
+    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" -.48 ")));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
@@ -384,7 +389,7 @@ int main(void) {
     fflush(NULL);
     //push(ctx->lo, ctx->es, consname(ctx, "load"));
     push(ctx->lo, ctx->es, cvx(consname(ctx, "toke")));
-    dumpoper(ctx, 3);
+    dumpoper(ctx, 38);
 
     ctx->quit = 0;
     mainloop(ctx);
