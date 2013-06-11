@@ -422,6 +422,7 @@ void initoptok(context *ctx, object sd) {
                 isreg not { exit } if
                 1 add  % s n+1
             } forall  % s n
+            %1 add
             2 copy 0 exch getinterval  % s n s[0..n]
             3 1 roll  % s[0..n] s n
             1 index length  % s[0..n] s n sN
@@ -439,6 +440,7 @@ void initoptok(context *ctx, object sd) {
             ADD(L(1)); ADD(N(add));
             ENDSUB;
         ADD(N(forall));
+        //ADD(L(1)); ADD(N(add));
         ADD(L(2)); ADD(N(copy)); ADD(L(0)); ADD(N(exch)); ADD(N(getinterval));
         ADD(L(3)); ADD(L(1)); ADD(N(roll)); 
         ADD(L(1)); ADD(N(index)); ADD(N(length));

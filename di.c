@@ -9,6 +9,8 @@
 #include "gc.h"
 #include "v.h"
 #include "itp.h"
+#include "st.h"
+#include "nm.h"
 #include "di.h"
 
 /*
@@ -232,6 +234,13 @@ object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) 
     unsigned sz = (dp->sz + 1);
     unsigned h;
     unsigned i;
+    if (type(k) == stringtype) {
+        char *s = alloca(k.comp_.sz+1);
+        memcpy(s, charstr(ctx, k), k.comp_.sz);
+        s[k.comp_.sz] = '\0';
+        k = consname(ctx, s);
+
+    }
 
     h = hash(k) % sz;
     i = h;

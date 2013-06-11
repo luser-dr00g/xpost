@@ -34,6 +34,22 @@ void Alt (context *ctx, object x, object y) {
     push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) < 0));
 }
 
+void Band (context *ctx, object x, object y) {
+    push(ctx->lo, ctx->os, consbool(x.int_.val & y.int_.val));
+}
+
+void Iand (context *ctx, object x, object y) {
+    push(ctx->lo, ctx->os, consint(x.int_.val & y.int_.val));
+}
+
+void Bor (context *ctx, object x, object y) {
+    push(ctx->lo, ctx->os, consbool(x.int_.val | y.int_.val));
+}
+
+void Ior (context *ctx, object x, object y) {
+    push(ctx->lo, ctx->os, consint(x.int_.val | y.int_.val));
+}
+
 void Bnot (context *ctx, object x) {
     push(ctx->lo, ctx->os, consbool( ! (bool) x.int_.val));
 }
@@ -54,6 +70,10 @@ void initopb(context *ctx, object sd) {
     op = consoper(ctx, "gt", Agt, 1, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "le", Ale, 1, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "lt", Alt, 1, 2, anytype, anytype); INSTALL;
+    op = consoper(ctx, "and", Band, 1, 2, booleantype, booleantype); INSTALL;
+    op = consoper(ctx, "and", Iand, 1, 2, integertype, integertype); INSTALL;
+    op = consoper(ctx, "or", Bor, 1, 2, booleantype, booleantype); INSTALL;
+    op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "not", Bnot, 1, 1, booleantype); INSTALL;
     op = consoper(ctx, "not", Inot, 1, 1, integertype); INSTALL;
 

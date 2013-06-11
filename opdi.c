@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdio.h>
 
 #include "m.h"
 #include "ob.h"
@@ -40,6 +41,18 @@ void Adef(context *ctx, object K, object V) {
     bdcput(ctx, top(ctx->lo, ctx->ds, 0), K, V);
 }
 
+void DAknown(context *ctx, object D, object K) {
+    push(ctx->lo, ctx->os, consbool(dicknown(ctx, bank(ctx, D), D, K)));
+}
+
+void DAget(context *ctx, object D, object K) {
+    push(ctx->lo, ctx->os, bdcget(ctx, D, K));
+}
+
+void DAAput(context *ctx, object D, object K, object V) {
+    bdcput(ctx, D, K, V);
+}
+
 void Aload(context *ctx, object K) {
     int i;
     int z = count(ctx->lo, ctx->ds);
@@ -61,7 +74,7 @@ void Aload(context *ctx, object K) {
     error("undefined (Aload)");
 }
 
-/* << k_1 v_1 ... k_N v_N  >>  dict
+/* mark k_1 v_1 ... k_N v_N  >>  dict
    construct dictionary from pairs on stack
  */
 void dictomark(context *ctx) {
@@ -82,19 +95,18 @@ void dictomark(context *ctx) {
 void initopdi(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     object n,op;
-    op = consoper(ctx, "dict", Idict, 1, 1,
-            integertype); INSTALL;
-    op = consoper(ctx, "length", Dlength, 1, 1, 
-            dicttype); INSTALL;
-    op = consoper(ctx, "maxlength", Dmaxlength, 1, 1,
-            dicttype); INSTALL;
-    op = consoper(ctx, "begin", Dbegin, 0, 1,
-            dicttype); INSTALL;
+    op = consoper(ctx, "dict", Idict, 1, 1, integertype); INSTALL;
+    op = consoper(ctx, "length", Dlength, 1, 1, dicttype); INSTALL;
+    op = consoper(ctx, "maxlength", Dmaxlength, 1, 1, dicttype); INSTALL;
+    op = consoper(ctx, "begin", Dbegin, 0, 1, dicttype); INSTALL;
     op = consoper(ctx, "end", Zend, 0, 0); INSTALL;
-    op = consoper(ctx, "def", Adef, 0, 2,
-            anytype, anytype); INSTALL;
-    op = consoper(ctx, "load", Aload, 1, 1,
-            anytype); INSTALL;
+    op = consoper(ctx, "def", Adef, 0, 2, anytype, anytype); INSTALL;
+    op = consoper(ctx, "known", DAknown, 1, 2, dicttype, anytype); INSTALL;
+    op = consoper(ctx, "get", DAget, 1, 2, dicttype, anytype); INSTALL;
+    op = consoper(ctx, "put", DAAput, 1, 3,
+            dicttype, anytype, anytype); INSTALL;
+    op = consoper(ctx, "load", Aload, 1, 1, anytype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "<<"), mark);
     op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;
 }
+
