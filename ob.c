@@ -94,11 +94,19 @@ void dumpobject(object o){
 int main() {
     printf("\n^test ob module\n");
     object i = consint(5);
-    object r = consreal(12.0);
+    object j = consint(3579);
+    object q = consreal(12.0);
+    object r = consreal(.0370);
+    object b = consbool(true);
+    object c = consbool(false);
     dumpobject(null);
     dumpobject(mark);
     dumpobject(i);
+    dumpobject(j);
+    dumpobject(q);
     dumpobject(r);
+    dumpobject(b);
+    dumpobject(c);
     puts("");
     return 0;
 } 

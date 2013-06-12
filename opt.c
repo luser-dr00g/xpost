@@ -20,6 +20,13 @@ void Acvlit(context *ctx, object o){
     push(ctx->lo, ctx->os, cvlit(o));
 }
 
+void Scvn(context *ctx, object s) {
+    char *t = alloca(s.comp_.sz+1);
+    memcpy(t, charstr(ctx, s), s.comp_.sz);
+    t[s.comp_.sz] = '\0';
+    push(ctx->lo, ctx->os, consname(ctx, t));
+}
+
 void Acvr(context *ctx, object o) {
     switch(type(o)){
     default: error("typecheck");
@@ -29,6 +36,7 @@ void Acvr(context *ctx, object o) {
                          char *s = alloca(o.comp_.sz + 1);
                          memcpy(s, charstr(ctx, o), o.comp_.sz);
                          s[o.comp_.sz] = '\0';
+                         printf("cvr %s\n", s);
                          o = consreal(strtod(s, NULL));
                      }
 
@@ -42,6 +50,7 @@ void initopt(context *ctx, object sd) {
 
     op = consoper(ctx, "cvx", Acvx, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "cvlit", Acvlit, 1, 1, anytype); INSTALL;
+    //op = consoper(ctx, "cvn", Scvn, 1, 1, stringtype); INSTALL;
     op = consoper(ctx, "cvr", Acvr, 1, 1, anytype); INSTALL;
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */

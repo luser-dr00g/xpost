@@ -33,7 +33,7 @@ char *charstr(context *ctx, object S) {
     unsigned ent = S.comp_.ent;
     f = bank(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
     findtabent(f, &tab, &ent);
-    return (void *)(f->base + tab->tab[ent].adr);
+    return (void *)(f->base + tab->tab[ent].adr + S.comp_.off);
 }
 
 

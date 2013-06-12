@@ -43,7 +43,7 @@ void initoptab (context *ctx) {
     mtab *tab = (void *)(ctx->gl);
     tab->tab[ent].sz = 0; // so gc will ignore it
     //printf("ent: %d\nOPTAB: %d\n", ent, (int)OPTAB);
-    assert(ent == (unsigned)(int)OPTAB);
+    assert(ent == OPTAB);
 }
 
 void dumpoper(context *ctx, int opcode) {

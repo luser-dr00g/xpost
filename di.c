@@ -228,19 +228,24 @@ void dumpdic(mfile *mem, object d) {
    returns a pointer to the desired pair (if found)), or a null-pair. */
 /*@dependent@*/ /*@null@*/
 object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
-    unsigned ad = adrent(mem, d.comp_.ent);
-    dichead *dp = (void *)(mem->base + ad);
-    object *tp = (void *)(mem->base + ad + sizeof(dichead));
-    unsigned sz = (dp->sz + 1);
+    unsigned ad;
+    dichead *dp;
+    object *tp;
+    unsigned sz;
     unsigned h;
     unsigned i;
+
     if (type(k) == stringtype) {
         char *s = alloca(k.comp_.sz+1);
         memcpy(s, charstr(ctx, k), k.comp_.sz);
         s[k.comp_.sz] = '\0';
         k = consname(ctx, s);
-
     }
+
+    ad = adrent(mem, d.comp_.ent);
+    dp = (void *)(mem->base + ad);
+    tp = (void *)(mem->base + ad + sizeof(dichead));
+    sz = (dp->sz + 1);
 
     h = hash(k) % sz;
     i = h;
