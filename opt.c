@@ -1,5 +1,6 @@
 #include <alloca.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
@@ -50,7 +51,7 @@ void initopt(context *ctx, object sd) {
 
     op = consoper(ctx, "cvx", Acvx, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "cvlit", Acvlit, 1, 1, anytype); INSTALL;
-    //op = consoper(ctx, "cvn", Scvn, 1, 1, stringtype); INSTALL;
+    op = consoper(ctx, "cvn", Scvn, 1, 1, stringtype); INSTALL;
     op = consoper(ctx, "cvr", Acvr, 1, 1, anytype); INSTALL;
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
