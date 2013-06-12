@@ -30,7 +30,7 @@ typedef struct {
 
 /* dump mfile details to stdout */
 void dumpmfile(mfile *mem){
-    unsigned u;
+    unsigned u, v;
     printf("{mfile: base = %p, "
             "used = 0x%x (%u), "
             "max = 0x%x (%u), "
@@ -44,15 +44,19 @@ void dumpmfile(mfile *mem){
     for (u=0; u < mem->used; u++) {
         if (u%16 == 0) {
             if (u != 0) {
-                unsigned v;
                 for (v= u-16; v < u; v++) {
-                    (void)putchar( isprint(mem->base[v])?
-                            mem->base[v] : '.');
+                    (void)putchar(isprint(mem->base[v])? mem->base[v] : '.');
                 }
             }
             printf("\n%06u %04x: ", u, u);
         }
         printf("%02x ", (unsigned) mem->base[u]);
+    }
+    if ((u-1)%16 != 0) { //did not print in the last iteration of the loop
+        for (v= u; v%16 != 0; v++) printf("   ");
+        for (v= u - (u%16); v < u; v++) {
+            (void)putchar(isprint(mem->base[v])? mem->base[v] : '.');
+        }
     }
     (void)puts("");
 }
