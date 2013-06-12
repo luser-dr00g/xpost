@@ -25,8 +25,9 @@ void initnames(context *ctx) {
     tab = (void *)ctx->gl->base; //recalc pointer
     tab->tab[NAMES].adr = t;
     tab->tab[NAMET].adr = 0;
-#define CNT_STR(s) sizeof(s), s
-    push(ctx->gl, adrent(ctx->gl, NAMES), consstr(ctx->gl, CNT_STR("_not_a_name_")));
+#define CNT_STR(s) sizeof(s)-1, s
+    push(ctx->gl, adrent(ctx->gl, NAMES), consbst(ctx, CNT_STR("_not_a_name_")));
+    assert (top(ctx->gl, adrent(ctx->gl, NAMES), 0).comp_.ent == BOGUSNAME);
 }
 
 unsigned tstsearch(mfile *mem, unsigned tadr, char *s) {

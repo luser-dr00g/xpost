@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -121,7 +122,8 @@ next:
 /* free list head is in slot zero
    sz is 0 so gc will ignore it */
 void initfree(mfile *mem) {
-    (void)mtalloc(mem, 0, sizeof(unsigned));
+    unsigned ent = mtalloc(mem, 0, sizeof(unsigned));
+    assert (ent == FREE);
     /*
        unsigned ent = mtalloc(mem, 0, 0);
        mtab *tab = (void *)mem->base;
@@ -205,12 +207,13 @@ void collect(mfile *mem) {
     sweep(mem);
 }
 
-enum { PERIOD = 10 };
+enum { PERIOD = 500 };
 
 /* scan the free list for a suitably sized bit of memory,
    if the allocator falls back to fresh memory 10 times,
         it triggers a collection. */
 unsigned gballoc(mfile *mem, unsigned sz) {
+#if 0 
     unsigned z = adrent(mem, FREE); // free pointer
     unsigned e;                     // working pointer
     static int period = PERIOD;
@@ -229,6 +232,7 @@ try_again:
         collect(mem);
         goto try_again;
     }
+#endif
     return mtalloc(mem, 0, sz);
 }
 

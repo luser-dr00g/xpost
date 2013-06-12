@@ -380,7 +380,8 @@ int main(void) {
 #endif
 
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 127 ")));
-    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" -.48 ")));
+    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 16#FF ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" -.48 ")));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
@@ -402,6 +403,7 @@ int main(void) {
     printf("ctx->gl:\n");
     dumpmfile(ctx->gl);
     dumpmtab(ctx->gl, 0);
+    dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
 
 
     xit();

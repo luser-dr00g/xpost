@@ -54,11 +54,11 @@ itp         itp.c   itp.h   context
         FREE        FREE
         VS          VS
         CTXLIST     CTXLIST
-        NAMES       ----
-        NAMET       live-entries (gc)
+        NAMES    
+        NAMET
         BOGUSNAME
-        OPTAB
-        ----
+        OPTAB       ----
+        ----        live-entries (gc)
         live-entries (gc)
 
 At the heart is the "m" module: the memory-file and memory-tables.
@@ -152,7 +152,7 @@ New special entry CTXLIST lists all contexts associated with the mfile.
 So the garbage collector's root-set for any given mfile is the VS
 (the save stack) (only one for each mfile, shared contexts are blocked
 during save/restore sections), and the stacks from each associated context.
-But it must also me made bank-aware. When collecting a global mfile, it
+But it must also be made bank-aware. When collecting a global mfile, it
 should only mark global data; likewise for a local sweep, only mark locals.
 
 Context IDs, `cid`s, are generated sequentially, starting from 1.
@@ -163,4 +163,9 @@ while still maintaining unique IDs for all processes in the history
 (until the `unsigned` wraps TO//DO fix this timebomb -- not a problem,
 see http://programmers.stackexchange.com/questions/199635/ ).
 
-Probably need to add a loop detector to discover if ctab is full.
+Just learned from the PLRM that names should live in local-vm, not global.
+But I'm thinking I'll keep a global table for the system names. Since the
+optab lives in global-vm, I want operator names to be accessible in the
+same mfile. But "user" names should be allocated in local vm. This means
+names need to be banked just like composites.
+
