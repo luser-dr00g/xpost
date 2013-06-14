@@ -1,15 +1,20 @@
 This is XPost3
-
+______________
 A work-in-progress Level-2 Postscript interpreter.
 
-XPost2 is available in the downloads as a .zip of the
-source directory.  http://code.google.com/p/xpost/downloads/list
+[ XPost2 is available in the downloads as a .zip of the source directory.
+It was written and tested with Debian Lenny on an Olpc XO-1 laptop.
+(Well, it's not the /whole/ source directory, but all text files needed
+by the makefile) It is no longer being maintained.
+    http://code.google.com/p/xpost/downloads/detail?name=xpost2g.zip ]
 
-This new one is being designed along different principles.
+
+XPost3 is being designed along different principles.
 Transparency (debug-ability), simplicity (borrowing certain
 OOP concepts like encapsulation), speed (choosing appropriate
 algorithms), extensibility (growing stacks. support for
-multiple contexts(?) ).
+multiple contexts(?) ). It is being written and tested with cygwin
+on a Toshiba Satellite L875D.
 
 The various modules were written and tested separately before being 
 coupled together to achieve the necessary basic functionality.
@@ -19,7 +24,11 @@ unit tests, producing copious output, but importantly exitting with
 an appropriate success or failure code, so the make command will 
 fail if any of the tests fail.
 
+    Modules
+    _______
+
 test  obj     src    header structures CONSTANTS
+----  ---     ---     ---   --------------------
 m     m.o     m.c     m.h   mfile mtab TABSZ
 s     s.o     s.c     s.h   stack STACKSEGSZ
 v     v.o     v.c     v.h   saverec_
@@ -40,6 +49,9 @@ itp         itp.c   itp.h   context
 	    opdimp               processes
 		opdimc               canvases
 
+
+        Hierarchy (?)
+        -------------
                 itpdata
       gc     context     
         mfile       stack
@@ -48,18 +60,25 @@ itp         itp.c   itp.h   context
                  dict
                  string
 
+
+        Special Entities
+        ----------------
            context
     (mfile)gl   (mfile)lo
       mtab        mtab
         FREE        FREE
         VS          VS
         CTXLIST     CTXLIST
-        NAMES    
+        NAMES       (planning to add local names, too)
         NAMET
         BOGUSNAME
         OPTAB       ----
         ----        live-entries (gc)
         live-entries (gc)
+
+
+Memory
+------
 
 At the heart is the "m" module: the memory-file and memory-tables.
 Every mfile starts with an mtab. Every mtab lives in an mfile.
@@ -81,10 +100,15 @@ the allocation info (size, flags) and the "pointer" to the data
 itself. All VM "pointers" are integer byte-offsets from the vm
 base pointer.
 
+  -- Special Entities --
+
 The first several entries of mtab[0] are "special entities".
 All mfiles have (in the mtab[0]) a save stack (VS), a
 free-list (FREE) and a context-list (CTXLIST) which contains `cid`s
-of all contexts sharing that particular mfile.
+of all contexts sharing that particular mfile. This was devised
+to help encapsulate the context's global state within the mfile
+construct. Even the operator table OPTAB is a special entity
+(in case somebody needs custom operators, it is possible).
 
 Local VM goes on to hold the operand, execution, and dictionary
 stacks. Global VM has instead NAMES, NAMET, BOGUSNAME, and HOLD.
@@ -104,6 +128,9 @@ so we can select (switch) a function call based on the number of
 objects).
 
 
+Stacks
+------
+
 Patterned after the model of the memory-table chain is the "s" module: 
 the segmented stack.
 
@@ -113,6 +140,10 @@ file.
 
 The three single-letter modules (m, s, & v) are considered the "core"
 of the whole thing.
+
+
+Composite Objects
+-----------------
 
 Arrays ("ar") and dictionaries ("di") are automatically copied before
 writing if the save-level has risen, giving cheap 'save's. 'restore'
@@ -135,6 +166,9 @@ Perhaps the banked ones should have normal names, and the "raw" ones should
 have funky names. (Murphy's Law)
 
 
+Save and Restore
+----------------
+
 The save stack holds save-records with two entities, the source and the 
 copy. restore merely has to exchange the addresses of the two entities.
 All array and dictionary write operations ensure that the memory is 
@@ -145,6 +179,9 @@ This should be more efficient than any of my previous drafts.
 And the garbage collector ("gc"). 
 It's there. We'll see how well it works as I keep building.
 
+
+Bringing it all together
+------------------------
 
 New itp structure holds context table ctab, and mfile tables ltab and gtab.
 New special entry CTXLIST lists all contexts associated with the mfile.
@@ -168,4 +205,5 @@ But I'm thinking I'll keep a global table for the system names. Since the
 optab lives in global-vm, I want operator names to be accessible in the
 same mfile. But "user" names should be allocated in local vm. This means
 names need to be banked just like composites.
+
 
