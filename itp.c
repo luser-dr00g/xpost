@@ -383,7 +383,8 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 16#FF ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 8#377 ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" -.48 ")));
-    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" is-a-name ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" is-a-name ")));
+    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" /litname ")));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
