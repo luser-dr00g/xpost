@@ -64,6 +64,13 @@ void initoptok(context *ctx, object sd) {
 #define ADDSUB(n) { object sar = consbar(ctx, n); { object ar = sar; int i = 0
 #define ENDSUB } ADD(sar); }
 
+    /* /toupper { dup lower within { u-l add } if } */
+    ARR(5);
+        ADD(N(dup)); ADD(N(lower)); ADD(N(within));
+        ADDSUB(2); ADD(u_l); ADD(N(add)); ENDSUB;
+        ADD(N(if));
+        DEF(toupper);
+
     /* char str -indexof- idx
        return index of char in string
        /indexof { % char str . idx 
@@ -345,6 +352,11 @@ void initoptok(context *ctx, object sd) {
         ARR(2); // bareword: executable name
             ADD(N(cvn)); ADD(N(cvx));
             DEF(default);
+
+        /* (/) 0 get { pop puff cvn cvlit }*/
+        ARR(4); // slash: literal name
+            ADD(N(pop)); ADD(N(puff)); ADD(N(cvn)); ADD(N(cvlit));
+            bdcput(ctx, td, L('/'), ar);
     }
 
     /* string -grok- token

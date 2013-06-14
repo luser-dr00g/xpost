@@ -42,6 +42,10 @@ void Adef(context *ctx, object K, object V) {
 }
 
 void DAknown(context *ctx, object D, object K) {
+    printf("\nknown: ");
+    dumpobject(D);
+    dumpdic(bank(ctx, D), D); puts("");
+    dumpobject(K);
     push(ctx->lo, ctx->os, consbool(dicknown(ctx, bank(ctx, D), D, K)));
 }
 
