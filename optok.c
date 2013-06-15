@@ -340,8 +340,86 @@ void initoptok(context *ctx, object sd) {
         ADD(N(cvri));
         DEF(radix);
 
-    /* grok_dict - postscript "switch" statement
-       contains scanner actions for
+    /* Postscript "switch statement" dictionaries */
+
+    /* esc_dict - contains values associated with escape seqences */
+    object esc_dict;
+    {
+        object td = consbdc(ctx, 5); esc_dict = td;
+
+        ARR(0);
+        DEF(default);
+
+        ARR(2); ADD(N(pop)); ADD(N(false));
+        bdcput(ctx, td, L('\n'), ar);
+        
+        bdcput(ctx, td, L('a'), L('\a'));
+        bdcput(ctx, td, L('b'), L('\b'));
+        bdcput(ctx, td, L('f'), L('\f'));
+        bdcput(ctx, td, L('n'), L('\n'));
+        bdcput(ctx, td, L('r'), L('\r'));
+        bdcput(ctx, td, L('t'), L('\t'));
+        bdcput(ctx, td, L('v'), L('\v'));
+    }
+
+    /* str_dict - contains actions for
+       parens and slashes in (strings) */
+    object str_dict;
+    {
+        object td = consbdc(ctx, 5); str_dict = td;
+
+        /* /default{true} */
+        ARR(1);
+            ADD(N(true));
+            DEF(default);
+
+        /* (\()0 get{6 -1 roll 1 add 6 1 roll} */
+        ARR(9);
+            ADD(L(6)); ADD(L(-1)); ADD(N(roll));
+            ADD(L(1)); ADD(N(add));
+            ADD(L(6)); ADD(L(1)); ADD(N(roll));
+            ADD(N(true));
+            bdcput(ctx, td, L('('), ar);
+
+        /* (\))0 get{
+                6 -1 roll 1 sub
+                6 1 roll
+                5 index 0 ne
+           } */
+        ARR(12);
+            ADD(L(6)); ADD(L(-1)); ADD(N(roll));
+            ADD(L(1)); ADD(N(sub));
+            ADD(L(6)); ADD(L(1)); ADD(N(roll));
+            ADD(L(5)); ADD(N(index)); ADD(L(0)); ADD(N(ne));
+            bdcput(ctx, td, L(')'), ar);
+
+        /* (\\)0 get{pop
+                dup 2 index length ge{ 4 2 roll exit }if
+                2 copy get exch 1 add exch
+                dup esc-dict exch
+                2 copy knwon not{ pop/default }if
+                get exec dup false ne
+            } */
+        ARR(29);
+            ADD(N(pop));
+            ADD(N(dup)); ADD(L(2)); ADD(N(index)); ADD(N(length));
+            ADD(N(ge));
+            ADDSUB(4); 
+                ADD(L(4)); ADD(L(2)); ADD(N(roll)); ADD(N(exit));
+                ENDSUB;
+            ADD(N(if));
+            ADD(L(2)); ADD(N(copy)); ADD(N(get));
+            ADD(N(exch)); ADD(L(1)); ADD(N(add)); ADD(N(exch));
+            ADD(N(dup)); ADD(esc_dict); ADD(N(exch));
+            ADD(L(2)); ADD(N(copy)); ADD(N(known)); ADD(N(not));
+            ADDSUB(2); ADD(N(pop)); ADD(cvlit(N(default))); ENDSUB;
+            ADD(N(if));
+            ADD(N(get)); ADD(N(exec)); ADD(N(dup)); ADD(N(false)); ADD(N(ne));
+            bdcput(ctx, td, L('\\'), ar);
+
+    }
+
+    /* grok_dict - contains scanner actions for
        strings, hexstrings, array and dict names [ ] << >>,
        procs, and executable names. */
     object grok_dict;
@@ -357,6 +435,73 @@ void initoptok(context *ctx, object sd) {
         ARR(4); // slash: literal name
             ADD(N(pop)); ADD(N(puff)); ADD(N(cvn)); ADD(N(cvlit));
             bdcput(ctx, td, L('/'), ar);
+
+        /* (\() 0 get { pop % (...\))
+                1 exch dup length string 0 exch 0 % defer src si buf bi
+                {
+                    4 index 0 eq {exit} if % d s si b bi
+                    4 2 roll               % d b bi s si
+                    dup 2 index length ge {4 2 roll exit} if 
+                    2 copy get exch 1 add exch  % d b bi s si+1 s(si)
+                    dup str-dict exch
+                    2 copy known not{ pop/default }if
+                    get exec                 % d b bi s si s(si)'
+                    {
+                        5 3 roll                 % d s si s(si)' b bi
+                        3 2 roll                 % d s si b bi s(si)'
+                        3 copy put pop 1 add     % d s si b bi+1
+                    }{
+                        pop
+                        4 2 roll
+                    } ifelse
+                } loop
+                0 exch getinterval   % d s si b'
+                4 1 roll             % b' d s si
+                1 index length 1 index sub getinterval % b' d s'
+                exch pop exch  % s' b'
+            } */
+        ARR(27);
+            ADD(N(pop));
+            ADD(L(1)); ADD(N(exch)); ADD(N(dup)); ADD(N(length)); ADD(N(string));
+            ADD(L(0)); ADD(N(exch)); ADD(L(0));
+            ADDSUB(37);
+                ADD(L(4)); ADD(N(index)); ADD(L(0)); ADD(N(eq));
+                ADDSUB(1); ADD(N(exit)); ENDSUB; ADD(N(if));
+                ADD(L(4)); ADD(L(2)); ADD(N(roll));
+                ADD(N(dup)); ADD(L(2)); ADD(N(index));
+                ADD(N(length)); ADD(N(ge));
+                ADDSUB(4);
+                    ADD(L(4)); ADD(L(2)); ADD(N(roll));
+                    ADD(N(exit)); ENDSUB;
+                ADD(N(if));
+                ADD(L(2)); ADD(N(copy)); ADD(N(get));
+                ADD(N(exch)); ADD(L(1)); ADD(N(add)); ADD(N(exch));
+                ADD(N(dup)); ADD(str_dict); ADD(N(exch));
+                ADD(L(2)); ADD(N(copy)); ADD(N(known)); ADD(N(not));
+                ADDSUB(2); ADD(N(pop)); ADD(cvlit(N(default))); ENDSUB;
+                ADD(N(if));
+                ADD(N(get)); ADD(N(exec));
+                ADDSUB(12);
+                    ADD(L(5)); ADD(L(3)); ADD(N(roll));
+                    ADD(L(3)); ADD(L(2)); ADD(N(roll));
+                    ADD(L(3)); ADD(N(copy)); ADD(N(put));
+                    ADD(N(pop)); ADD(L(1)); ADD(N(add));
+                    ENDSUB;
+                ADDSUB(4);
+                    ADD(N(pop));
+                    ADD(L(4)); ADD(L(2));
+                    ADD(N(roll));
+                    ENDSUB;
+                ADD(N(ifelse));
+                ENDSUB;
+            ADD(N(loop));
+            ADD(L(0)); ADD(N(exch)); ADD(N(getinterval));
+            ADD(L(4)); ADD(L(1)); ADD(N(roll));
+            ADD(L(1)); ADD(N(index)); ADD(N(length));
+            ADD(L(1)); ADD(N(index)); ADD(N(sub)); ADD(N(getinterval));
+            ADD(N(exch)); ADD(N(pop)); ADD(N(exch));
+            bdcput(ctx, td, L('('), ar);
+
     }
 
     /* string -grok- token

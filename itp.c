@@ -340,7 +340,7 @@ void mainloop(context *ctx) {
 #ifdef TESTMODULE
 
 context *ctx;
-#define CNT_STR(s) sizeof(s), s
+#define CNT_STR(s) sizeof(s)-1, s
 
 void init(void) {
     pgsz = getpagesize();
@@ -384,7 +384,10 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 8#377 ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" -.48 ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" is-a-name ")));
-    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" /litname ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" /litname ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (s(f)g) ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (\\() ")));
+    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (--\\(--\\(--\\(--\\(--) ")));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
