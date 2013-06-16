@@ -58,6 +58,12 @@ void Inot (context *ctx, object x) {
     push(ctx->lo, ctx->os, consint( ! x.int_.val));
 }
 
+void Ibitshift (context *ctx, object x, object y) {
+    if (y.int_.val >= 0)
+        push(ctx->lo, ctx->os, consint(x.int_.val << y.int_.val));
+    else
+        push(ctx->lo, ctx->os, consint(x.int_.val >> -y.int_.val));
+}
 
 void initopb(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
@@ -76,6 +82,7 @@ void initopb(context *ctx, object sd) {
     op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "not", Bnot, 1, 1, booleantype); INSTALL;
     op = consoper(ctx, "not", Inot, 1, 1, integertype); INSTALL;
+    op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL); */
     bdcput(ctx, sd, consname(ctx, "true"), consbool(true));
