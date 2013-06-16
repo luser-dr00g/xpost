@@ -60,21 +60,31 @@ void DAAput(context *ctx, object D, object K, object V) {
 void Aload(context *ctx, object K) {
     int i;
     int z = count(ctx->lo, ctx->ds);
+#ifdef DEBUGLOAD
     printf("\nload:");
     dumpobject(K);
     dumpstack(ctx->lo, ctx->ds);
+#endif
+
     for (i = 0; i < z; i++) {
         object D = top(ctx->lo,ctx->ds,i);
+
+#ifdef DEBUGLOAD
         dumpdic(bank(ctx, D), D); puts("");
+#endif
+
         if (dicknown(ctx, bank(ctx, D), D, K)) {
             push(ctx->lo, ctx->os, bdcget(ctx, D, K));
             return;
         }
     }
+
+#ifdef DEBUGLOAD
     dumpmfile(ctx->gl);
     dumpmtab(ctx->gl, 0);
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
     dumpobject(K);
+#endif
     error("undefined (Aload)");
 }
 
