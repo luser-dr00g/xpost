@@ -7,7 +7,7 @@
        token (considered as germanized verb infinitive of "toke")
          1. snip (the tip of the cigar)
          2. puff (and light of course)
-         3. grok (analyze and interpret
+         3. grok (analyze and interpret)
             3.a,b,c. if (check (fsm_dec,fsm_rad,fsm_real) interpretation
             3.d. lookup first char in grok_dict for interpretation
                 3.d.1. ( string )
@@ -16,9 +16,7 @@
                 3.d.4. /literal-name
                 3.d.5. default: executable-name (including [])
 
-   Following the metaphor of metabolism could have been
-   far worse. Consider, "masticate", "lick", "sniff"?
-
+   This is a postscript translation of the C-version from xpost2.
    */
 #include <stdbool.h> /* ob.h:bool */
 #include <stdlib.h> /* NULL */
@@ -556,85 +554,140 @@ void initoptok(context *ctx, object sd) {
                     exch  % src' buf'
                 } ifelse
             } */
-            ARR(9); ADD(N(pop));
-                ADD(N(dup)); ADD(L(0)); ADD(N(get)); ADD(L('<')); ADD(N(eq));
-                ADDSUB(9);
-                    ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length));
-                    ADD(L(1)); ADD(N(sub)); ADD(N(getinterval));
-                    ADD(cvlit(consname(ctx, "<<"))); ADD(N(cvx)); ENDSUB;
-                ADDSUB(26);
-                    ADD(N(dup)); ADD(N(length)); ADD(L(2)); ADD(N(idiv));
-                    ADD(L(1)); ADD(N(add)); ADD(N(string));
-                    ADD(L(0)); ADD(N(exch)); ADD(L(0));
-                    ADDSUB(27);
-                        ADD(L(4)); ADD(L(2)); ADD(N(roll)); ADD(N(dup));
-                        ADD(L(2)); ADD(N(index)); ADD(N(length)); ADD(N(ge));
-                        ADDSUB(4);
-                            ADD(L(4)); ADD(L(2)); ADD(N(roll)); ADD(N(exit)); ENDSUB;
+        ARR(9); ADD(N(pop));
+            ADD(N(dup)); ADD(L(0)); ADD(N(get)); ADD(L('<')); ADD(N(eq));
+            ADDSUB(9);
+                ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length));
+                ADD(L(1)); ADD(N(sub)); ADD(N(getinterval));
+                ADD(cvlit(consname(ctx, "<<"))); ADD(N(cvx)); ENDSUB;
+            ADDSUB(26);
+                ADD(N(dup)); ADD(N(length)); ADD(L(2)); ADD(N(idiv));
+                ADD(L(1)); ADD(N(add)); ADD(N(string));
+                ADD(L(0)); ADD(N(exch)); ADD(L(0));
+                ADDSUB(27);
+                    ADD(L(4)); ADD(L(2)); ADD(N(roll)); ADD(N(dup));
+                    ADD(L(2)); ADD(N(index)); ADD(N(length)); ADD(N(ge));
+                    ADDSUB(4);
+                        ADD(L(4)); ADD(L(2)); ADD(N(roll)); ADD(N(exit)); ENDSUB;
+                    ADD(N(if));
+                    ADD(L(2)); ADD(N(copy)); ADD(N(get));
+                    ADD(N(exch)); ADD(L(1)); ADD(N(add)); ADD(N(exch));
+                    ADD(N(dup)); ADD(L('>')); ADD(N(eq));
+                    ADDSUB(5); ADD(N(pop));
+                        ADD(L(4)); ADD(L(2)); ADD(N(roll)); ADD(N(exit)); ENDSUB;
+                    ADD(N(if));
+                    ADD(N(dup)); ADD(N(isspace));
+                    ADDSUB(4);
+                        ADD(N(pop)); ADD(L(4)); ADD(L(2)); ADD(N(roll)); ENDSUB;
+                    ADDSUB(23);
+                        ADD(N(dup)); ADD(lower); ADD(N(within));
+                        ADDSUB(2); ADD(u_l); ADD(N(add)); ENDSUB;
                         ADD(N(if));
-                        ADD(L(2)); ADD(N(copy)); ADD(N(get));
-                        ADD(N(exch)); ADD(L(1)); ADD(N(add)); ADD(N(exch));
-                        ADD(N(dup)); ADD(L('>')); ADD(N(eq));
-                        ADDSUB(5); ADD(N(pop));
-                            ADD(L(4)); ADD(L(2)); ADD(N(roll)); ADD(N(exit)); ENDSUB;
-                        ADD(N(if));
-                        ADD(N(dup)); ADD(N(isspace));
-                        ADDSUB(4);
-                            ADD(N(pop)); ADD(L(4)); ADD(L(2)); ADD(N(roll)); ENDSUB;
-                        ADDSUB(23);
+                        ADD(N(dup)); ADD(N(isxdigit)); ADD(N(not));
+                        ADDSUB(1); ADD(N(syntaxerror)); ENDSUB;
+                        ADDSUB(20);
+                            ADD(alnum); ADD(N(indexof));
+                            ADD(L(4)); ADD(N(bitshift));
+                            ADD(L(5)); ADD(L(1)); ADD(N(roll));
+                            ADDSUB(20);
+                                ADD(N(dup)); ADD(L(2)); ADD(N(index));
+                                ADD(N(length)); ADD(N(ge));
+                                ADDSUB(2); ADD(L('0')); ADD(N(exit)); ENDSUB;
+                                ADD(N(if));
+                                ADD(L(2)); ADD(N(copy)); ADD(N(get));
+                                ADD(N(exch)); ADD(L(1)); ADD(N(add)); ADD(N(exch));
+                                ADD(N(dup)); ADD(N(isspace)); ADD(N(not));
+                                ADDSUB(1); ADD(N(exit)); ENDSUB;
+                                ADD(N(if));
+                                ADD(N(pop));
+                                ENDSUB;
+                            ADD(N(loop));
                             ADD(N(dup)); ADD(lower); ADD(N(within));
                             ADDSUB(2); ADD(u_l); ADD(N(add)); ENDSUB;
                             ADD(N(if));
                             ADD(N(dup)); ADD(N(isxdigit)); ADD(N(not));
                             ADDSUB(1); ADD(N(syntaxerror)); ENDSUB;
-                            ADDSUB(20);
+                            ADDSUB(6);
                                 ADD(alnum); ADD(N(indexof));
-                                ADD(L(4)); ADD(N(bitshift));
-                                ADD(L(5)); ADD(L(1)); ADD(N(roll));
-                                ADDSUB(20);
-                                    ADD(N(dup)); ADD(L(2)); ADD(N(index));
-                                    ADD(N(length)); ADD(N(ge));
-                                    ADDSUB(2); ADD(L('0')); ADD(N(exit)); ENDSUB;
-                                    ADD(N(if));
-                                    ADD(L(2)); ADD(N(copy)); ADD(N(get));
-                                    ADD(N(exch)); ADD(L(1)); ADD(N(add)); ADD(N(exch));
-                                    ADD(N(dup)); ADD(N(isspace)); ADD(N(not));
-                                    ADDSUB(1); ADD(N(exit)); ENDSUB;
-                                    ADD(N(if));
-                                    ADD(N(pop));
-                                    ENDSUB;
-                                ADD(N(loop));
-                                ADD(N(dup)); ADD(lower); ADD(N(within));
-                                ADDSUB(2); ADD(u_l); ADD(N(add)); ENDSUB;
-                                ADD(N(if));
-                                ADD(N(dup)); ADD(N(isxdigit)); ADD(N(not));
-                                ADDSUB(1); ADD(N(syntaxerror)); ENDSUB;
-                                ADDSUB(6);
-                                    ADD(alnum); ADD(N(indexof));
-                                    ADD(L(6)); ADD(L(-1)); ADD(N(roll));
-                                    ADD(N(or));
-                                    ENDSUB;
-                                ADD(N(ifelse));
+                                ADD(L(6)); ADD(L(-1)); ADD(N(roll));
+                                ADD(N(or));
                                 ENDSUB;
                             ADD(N(ifelse));
-
-                            ADD(L(5)); ADD(L(3)); ADD(N(roll));
-                            ADD(L(3)); ADD(L(2)); ADD(N(roll));
-                            ADD(L(3)); ADD(N(copy)); ADD(N(put));
-                            ADD(N(pop)); ADD(L(1)); ADD(N(add));
                             ENDSUB;
                         ADD(N(ifelse));
 
+                        ADD(L(5)); ADD(L(3)); ADD(N(roll));
+                        ADD(L(3)); ADD(L(2)); ADD(N(roll));
+                        ADD(L(3)); ADD(N(copy)); ADD(N(put));
+                        ADD(N(pop)); ADD(L(1)); ADD(N(add));
                         ENDSUB;
-                    ADD(N(loop));
-                    ADD(L(0)); ADD(N(exch)); ADD(N(getinterval));
-                    ADD(L(3)); ADD(L(1)); ADD(N(roll));
-                    ADD(L(1)); ADD(N(index)); ADD(N(length));
-                    ADD(L(1)); ADD(N(index)); ADD(N(sub)); ADD(N(getinterval));
-                    ADD(N(exch));
+                    ADD(N(ifelse));
+
                     ENDSUB;
-                ADD(N(ifelse));
-                bdcput(ctx, td, L('<'), ar);
+                ADD(N(loop));
+                ADD(L(0)); ADD(N(exch)); ADD(N(getinterval));
+                ADD(L(3)); ADD(L(1)); ADD(N(roll));
+                ADD(L(1)); ADD(N(index)); ADD(N(length));
+                ADD(L(1)); ADD(N(index)); ADD(N(sub)); ADD(N(getinterval));
+                ADD(N(exch));
+                ENDSUB;
+            ADD(N(ifelse));
+            bdcput(ctx, td, L('<'), ar);
+
+        /* (>)0 get {
+                pop
+                dup 0 get (>) 0 get eq {
+                    (>>) cvn cvx
+                }{
+                    /toke cvx /syntaxerror signalerror
+                } ifelse
+           } */
+        ARR(9);
+            ADD(N(pop));
+            ADD(N(dup)); ADD(L(0)); ADD(N(get)); ADD(L('>')); ADD(N(eq));
+            ADDSUB(2);
+                ADD(cvlit(consname(ctx, ">>"))); ADD(N(cvx)); ENDSUB;
+            ADDSUB(1);
+                ADD(N(syntaxerror)); ENDSUB;
+            ADD(N(ifelse));
+            bdcput(ctx, td, L('>'), ar);
+
+        /* ({)0 get {
+                pop
+                mark exch  % [ s'
+                {  % [ ... s'
+                    toke  % [ ... s' t b
+                    not { syntaxerror } if  % [ ... s' t
+                    dup (}) cvn eq {  % [ ... s' t
+                        pop  % [ ... s'
+                        counttomark 1 add 1 roll  % s' [ ... 
+                        ] cvx exit
+                    } if  % [ ... s' t
+                    exch  % [ ... t s'
+                } loop  % s' {}
+                %true  % s' {} true
+            } */
+        ARR(5);
+            ADD(N(pop));
+            ADD(mark); ADD(N(exch));
+            ADDSUB(10);
+                ADD(N(toke));
+                ADD(N(not));
+                ADDSUB(1); ADD(N(syntaxerror)); ENDSUB;
+                ADD(N(if));
+                ADD(N(dup)); ADD(cvlit(consname(ctx, "}"))); ADD(N(eq));
+                ADDSUB(9);
+                    ADD(N(pop));
+                    ADD(N(counttomark)); ADD(L(1)); ADD(N(add));
+                    ADD(L(1)); ADD(N(roll));
+                    ADD(cvx(consname(ctx, "]"))); ADD(N(cvx)); ADD(N(exit));
+                    ENDSUB;
+                ADD(N(if));
+                ADD(N(exch));
+                ENDSUB;
+            ADD(N(loop));
+            //ADD(N(true));
+            bdcput(ctx, td, L('{'), ar);
 
     }
 
@@ -653,16 +706,13 @@ void initoptok(context *ctx, object sd) {
     ARR(2);
         ADDSUB(32);
             ADD(N(dup)); ADD(fsm_dec); ADD(accept_dec); ADD(N(check));
-            ADDSUB(3);
-                ADD(L(10)); ADD(N(cvri)); ADD(N(exit)); ENDSUB;
+            ADDSUB(3); ADD(L(10)); ADD(N(cvri)); ADD(N(exit)); ENDSUB;
             ADD(N(if));
             ADD(N(dup)); ADD(fsm_rad); ADD(accept_rad); ADD(N(check));
-            ADDSUB(2);
-                ADD(N(radix)); ADD(N(exit)); ENDSUB;
+            ADDSUB(2); ADD(N(radix)); ADD(N(exit)); ENDSUB;
             ADD(N(if));
             ADD(N(dup)); ADD(fsm_real); ADD(accept_real); ADD(N(check));
-            ADDSUB(2);
-                ADD(N(cvr)); ADD(N(exit)); ENDSUB;
+            ADDSUB(2); ADD(N(cvr)); ADD(N(exit)); ENDSUB;
             ADD(N(if));
 
             /* fallback. lookup first char in grok_dict */

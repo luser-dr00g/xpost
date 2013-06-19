@@ -42,6 +42,9 @@ gc   gc.o    gc.c    gc.h    garbage collector
 itp         itp.c   itp.h   context
      op.o    op.c    op.h    oper optab operator handler MAXOPS SDSIZE
     ops.o   ops.c   ops.h    stack operators
+    opb.o   opb.c            boolean operators
+    opc.o   opc.c            control operators
+    opm.o   opm.c            math operators
    opst.o  opst.c  opst.h    string operators
    opar.o opar.c opar.h    array operators
    opdi.o opdi.c opdi.h    dictionary operators
