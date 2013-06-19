@@ -14,6 +14,14 @@
    or in the context struct.
    One goal of the planned "quick-launch" option is to remove
    these lookups from the initialization, too.
+
+   ----
+   An idea to speed-up typechecks, without radical change.
+   Add a `int (*check)()` function pointer to the signat
+   which directly implements the stack-checking performed by
+   opexec (but without the nasty loops).
+   opexec would then call op.sig[i].check() if not null.
+   
    */
 
 typedef struct signat {

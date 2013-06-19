@@ -290,7 +290,7 @@ void evalarray(context *ctx) {
 
 /* interpreter actions for executable types */
 evalfunc *evalinvalid = evalquit;
-evalfunc *evalmark = evalpop;
+evalfunc *evalmark = evalpush;
 evalfunc *evalnull = evalpop;
 evalfunc *evalinteger = evalpush;
 evalfunc *evalboolean = evalpush;
@@ -388,7 +388,11 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (s(f)g) ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (\\() ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (--\\(--\\(--\\(--\\(--) ")));
-    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" <68 65 6c 6c 6f 77 6f 72 6c 64> ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" <68 65 6c 6c 6f 77 6f 72 6c 64> ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" << ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" >> ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {} ")));
+    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {1 2 3.14 true} ")));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
