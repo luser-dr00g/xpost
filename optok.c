@@ -438,9 +438,26 @@ void initoptok(context *ctx, object sd) {
             ADD(N(cvn)); ADD(N(cvx));
             DEF(default);
 
-        /* (/) 0 get { pop puff cvn cvlit }*/
-        ARR(4); // slash: literal name
-            ADD(N(pop)); ADD(N(puff)); ADD(N(cvn)); ADD(N(cvlit));
+        /* (/) 0 get { pop
+               dup 0 get (/) 0 get eq {
+                   1 1 index length 1 sub getinterval
+                   puff cvn load
+               }{
+                   puff cvn cvlit
+               } ifelse
+           }*/
+        ARR(9); // slash: literal name
+            ADD(N(pop));
+            ADD(N(dup)); ADD(L(0)); ADD(N(get)); ADD(L('/')); ADD(N(eq));
+            ADDSUB(10);
+                ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length));
+                ADD(L(1)); ADD(N(sub)); ADD(N(getinterval));
+                ADD(N(puff)); ADD(N(cvn)); ADD(N(load));
+                ENDSUB;
+            ADDSUB(3);
+                ADD(N(puff)); ADD(N(cvn)); ADD(N(cvlit));
+                ENDSUB;
+            ADD(N(ifelse));
             bdcput(ctx, td, L('/'), ar);
 
         /* (\() 0 get { pop % (...\))
