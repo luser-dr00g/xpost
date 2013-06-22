@@ -26,16 +26,16 @@ object consfile(mfile *mem, FILE *fp) {
 }
 
 /* pinch-off a tmpfile containing one line from stdin. */
-FILE *lineedit() {
+FILE *lineedit(FILE *in) {
     FILE *fp;
     int c;
 
-    c = fgetc(stdin);
+    c = fgetc(in);
     if (c == EOF) error("undefinedfilename");
     fp = tmpfile();
     while (c != EOF && c != '\n') {
         fputc(c, fp);
-        c = fgetc(stdin);
+        c = fgetc(in);
     }
     fseek(fp, 0, SEEK_SET);
     return fp;
@@ -44,13 +44,13 @@ FILE *lineedit() {
 enum { MAXNEST = 20 };
 
 /* pinch-off a tmpfile containing one "statement" from stdin. */
-FILE *statementedit() {
+FILE *statementedit(FILE *in) {
     FILE *fp;
     int c;
     char nest[MAXNEST]; /* any of {(< waiting for matching >)} */
     int defer = -1; /* defer is a flag (-1 == false)
                        and an index into nest[] */
-    c = fgetc(stdin);
+    c = fgetc(in);
     if (c == EOF) error("undefinedfilename");
     fp = tmpfile();
     do {
@@ -69,7 +69,7 @@ FILE *statementedit() {
                 case ')': --defer; break;
                 case '(': nest[++defer] = c; break;
                 case '\\': fputc(c, fp);
-                           c = fgetc(stdin);
+                           c = fgetc(in);
                            if (c == EOF) goto done;
                            goto next;
                 } break;
@@ -81,7 +81,7 @@ FILE *statementedit() {
         case '(':
         case '<': nest[++defer] = c; break;
         case '\\': fputc(c, fp);
-                   c = fgetc(stdin); break;
+                   c = fgetc(in); break;
         }
         if (c == '\n') {
             if (defer == -1) goto done;
@@ -95,7 +95,7 @@ FILE *statementedit() {
         }
 next:
         fputc(c, fp);
-        c = fgetc(stdin);
+        c = fgetc(in);
     } while(c != EOF);
 done:
     fseek(fp, 0, SEEK_SET);
@@ -118,9 +118,9 @@ object fileopen(mfile *mem, char *fn, char *mode) {
         if (strcmp(mode, "w")!=0) error("invalidfileaccess");
         f = consfile(mem, stderr);
     } else if (strcmp(fn, "%lineedit")==0) {
-        f = consfile(mem, lineedit());
+        f = consfile(mem, lineedit(stdin));
     } else if (strcmp(fn, "%statementedit")==0) {
-        f = consfile(mem, statementedit());
+        f = consfile(mem, statementedit(stdin));
     } else {
         FILE *fp;
         fp = fopen(fn, mode);

@@ -288,6 +288,20 @@ void evalarray(context *ctx) {
     }
 }
 
+void evalsource(context *ctx) {
+    object a;
+    a = pop(ctx->lo, ctx->es);
+    push(ctx->lo, ctx->os, a);
+    switch(type(a)){
+        case stringtype:
+                push(ctx->lo, ctx->es, consname(ctx, "toke"));
+            break;
+        case filetype:
+            break;
+        default: error("evalsource called on non-source object");
+    }
+}
+
 /* interpreter actions for executable types */
 evalfunc *evalinvalid = evalquit;
 evalfunc *evalmark = evalpush;
@@ -360,6 +374,7 @@ void xit() {
     exititp(itpdata);
 }
 
+
 int main(void) {
     printf("\n^test itp.c\n");
 
@@ -393,7 +408,8 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" >> ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {} ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {1 2 3.14 true} ")));
-    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" //false ")));
+    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" //false ")));
+    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 breakhere div ")));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
@@ -401,8 +417,8 @@ int main(void) {
     //dumpdic(ctx->gl, top(ctx->lo, ctx->ds, 0));
     fflush(NULL);
     //push(ctx->lo, ctx->es, consname(ctx, "load"));
-    push(ctx->lo, ctx->es, cvx(consname(ctx, "toke")));
-    dumpoper(ctx, 12);
+    push(ctx->lo, ctx->es, cvx(consname(ctx, "tokeloop")));
+    //dumpoper(ctx, 12);
 
     ctx->quit = 0;
     mainloop(ctx);
