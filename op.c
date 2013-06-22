@@ -190,7 +190,7 @@ void opexec(context *ctx, unsigned opcode) {
                         || type(el) == realtype) ) continue;
             if (t[j] == floattype) {
                 if (type(el) == integertype)
-                    pot(ctx->lo, ctx->os, j, promote(el));
+                    pot(ctx->lo, ctx->os, j, el = promote(el));
                 if (type(el) == realtype) continue;
             }
             if (t[j] == proctype
@@ -229,9 +229,13 @@ call:
 #include "opar.h"
 #include "opdi.h"
 
+void breakhere(context *ctx) {
+    return;
+}
+
 void initop(context *ctx) {
-    //oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
-    //object op;
+    object op;
+    object n;
     object sd;
     mtab *tab;
     unsigned ent;
@@ -241,6 +245,7 @@ void initop(context *ctx) {
     ent = sd.comp_.ent;
     findtabent(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // make systemdict immune to collection
+    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 #ifdef DEBUGOP
     dumpdic(ctx->gl, sd); fflush(NULL);
     puts("");
@@ -251,6 +256,8 @@ void initop(context *ctx) {
 #ifdef DEBUGOP
     dumpdic(ctx->gl, sd); fflush(NULL);
 #endif
+
+    op = consoper(ctx, "breakhere", breakhere, 0, 0); INSTALL;
 
     initopst(ctx, sd);
     initopar(ctx, sd);

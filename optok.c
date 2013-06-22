@@ -846,6 +846,40 @@ void initoptok(context *ctx, object sd) {
         bdcput(ctx, sd, N(toke), ar);
     dumpdic(ctx->gl, td);
 
+    /* 
+        /tokeloop { % string
+            /wstr exch def
+            {
+                wstr toke {
+                    exch /wstr exch def
+                    dup type /arraytype ne {
+                        exec
+                    } if
+                }{
+                    exit
+                } ifelse
+            } loop
+        } def */
+    ARR(5);
+        ADD(cvlit(N(wstr))); ADD(N(exch)); ADD(N(def));
+        ADDSUB(5);
+            ADD(N(wstr)); ADD(N(toke));
+            ADDSUB(10);
+                ADD(N(exch)); ADD(cvlit(N(wstr))); ADD(N(exch)); ADD(N(def));
+                ADD(N(dup)); ADD(N(type)); ADD(cvlit(N(arraytype))); ADD(N(ne));
+                ADDSUB(1);
+                    ADD(N(exec));
+                    ENDSUB;
+                ADD(N(if));
+                ENDSUB;
+            ADDSUB(1);
+                ADD(N(exit));
+                ENDSUB;
+            ADD(N(ifelse));
+            ENDSUB;
+        ADD(N(loop));
+        bdcput(ctx, sd, N(tokeloop), ar);
+
     //op = consoper(ctx, "string", Istring, 1, 1, integertype); INSTALL;
 }
 

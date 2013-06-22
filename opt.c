@@ -45,6 +45,10 @@ void Acvr(context *ctx, object o) {
     push(ctx->lo, ctx->os, o);
 }
 
+void Atype(context *ctx, object o) {
+    push(ctx->lo, ctx->os, cvx(consname(ctx, types[type(o)])));
+}
+
 void initopt(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     object n,op;
@@ -53,6 +57,7 @@ void initopt(context *ctx, object sd) {
     op = consoper(ctx, "cvlit", Acvlit, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "cvn", Scvn, 1, 1, stringtype); INSTALL;
     op = consoper(ctx, "cvr", Acvr, 1, 1, anytype); INSTALL;
+    op = consoper(ctx, "type", Atype, 1, 1, anytype); INSTALL;
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
 

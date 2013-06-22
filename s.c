@@ -139,7 +139,7 @@ void pot(mfile *mem, unsigned stackadr, integer i, object o) {
         if (p != NULL) s = p;
         else error("stack underflow");
     }
-    s->data[s->top-1-i] = o;
+    s->data[s->top - 1 - i] = o;
 }
 #endif
 
