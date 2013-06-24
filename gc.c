@@ -207,7 +207,7 @@ void collect(mfile *mem) {
     sweep(mem);
 }
 
-enum { PERIOD = 500 };
+enum { PERIOD = 1000 };
 
 /* scan the free list for a suitably sized bit of memory,
    if the allocator falls back to fresh memory 10 times,

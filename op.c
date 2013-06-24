@@ -189,8 +189,10 @@ void opexec(context *ctx, unsigned opcode) {
                     && (type(el) == integertype
                         || type(el) == realtype) ) continue;
             if (t[j] == floattype) {
-                if (type(el) == integertype)
+                if (type(el) == integertype) {
                     pot(ctx->lo, ctx->os, j, el = promote(el));
+                    continue;
+                }
                 if (type(el) == realtype) continue;
             }
             if (t[j] == proctype

@@ -19,6 +19,7 @@
    This is a postscript translation of the C-version from xpost2.
    */
 #include <stdbool.h> /* ob.h:bool */
+#include <stdio.h>
 #include <stdlib.h> /* NULL */
 
 #include "m.h"
@@ -30,6 +31,21 @@
 #include "di.h"
 #include "op.h"
 #include "nm.h"
+#include "optok.h"
+
+object arrstrhandler;
+void strhandler (context *ctx) {
+    object post, any;
+    any = pop(ctx->lo, ctx->os);
+    post = pop(ctx->lo, ctx->os);
+    push(ctx->lo, ctx->es, post);
+    push(ctx->lo, ctx->es, any);
+    printf("strhandler: os: ");
+    dumpstack(ctx->lo, ctx->os);
+    printf("es: ");
+    dumpstack(ctx->lo, ctx->es);
+    puts("");
+}
 
 void initoptok(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
@@ -40,15 +56,15 @@ void initoptok(context *ctx, object sd) {
     td = consbdc(ctx, 20); // % tokedict, as in `/toke{//tokedict begin ...`
 
     /* "Alphabets" of the scanner */
-    object alnum = consbst(ctx, 62,
+    object alnum = cvlit(consbst(ctx, 62,
             "0123456789"
             "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            "abcdefghijklmnopqrstuvwxyz");
+            "abcdefghijklmnopqrstuvwxyz"));
     alnum = cvlit(alnum);
-    object digit = arrgetinterval(alnum, 0, 10);
-    object alpha = arrgetinterval(alnum, 10, 52);
-    object upper = arrgetinterval(alnum, 10, 26);
-    object lower = arrgetinterval(alnum, 36, 26);
+    object digit = cvlit(arrgetinterval(alnum, 0, 10));
+    object alpha = cvlit(arrgetinterval(alnum, 10, 52));
+    object upper = cvlit(arrgetinterval(alnum, 10, 26));
+    object lower = cvlit(arrgetinterval(alnum, 36, 26));
     object u_l = consint('A' - 'a');  // ie. 'a' + u_l == 'A'
 
     /* constructor shortcuts */
@@ -64,7 +80,7 @@ void initoptok(context *ctx, object sd) {
 
     /* /toupper { dup lower within { u-l add } if } */
     ARR(5);
-        ADD(N(dup)); ADD(N(lower)); ADD(N(within));
+        ADD(N(dup)); ADD(lower); ADD(N(within));
         ADDSUB(2); ADD(u_l); ADD(N(add)); ENDSUB;
         ADD(N(if));
         DEF(toupper);
@@ -121,10 +137,10 @@ void initoptok(context *ctx, object sd) {
     ARR(2); ADD(alnum); ADD(N(within)); DEF(isalnum);
     ARR(1); ADD(N(isalnum)); DEF(israddig);
     ARR(2); ADD(L('.')); ADD(N(eq)); DEF(isdot);
-    ARR(2); ADD(consbst(ctx, 2, "eE")); ADD(N(within)); DEF(ise);
-    ARR(2); ADD(consbst(ctx, 2, "+-")); ADD(N(within)); DEF(issign);
-    ARR(2); ADD(consbst(ctx, 10, "()<>[]{}/%")); ADD(N(within)); DEF(isdel);
-    ARR(2); ADD(consbst(ctx, 3, " \t\n")); ADD(N(within)); DEF(isspace);
+    ARR(2); ADD(cvlit(consbst(ctx, 2, "eE"))); ADD(N(within)); DEF(ise);
+    ARR(2); ADD(cvlit(consbst(ctx, 2, "+-"))); ADD(N(within)); DEF(issign);
+    ARR(2); ADD(cvlit(consbst(ctx, 10, "()<>[]{}/%"))); ADD(N(within)); DEF(isdel);
+    ARR(2); ADD(cvlit(consbst(ctx, 3, " \t\n"))); ADD(N(within)); DEF(isspace);
     ARR(5); ADD(N(dup)); ADD(N(isspace));
         ADDSUB(2); ADD(N(pop)); ADD(N(false)); ENDSUB;
         ADDSUB(2); ADD(N(isdel)); ADD(N(not)); ENDSUB;
@@ -332,7 +348,7 @@ void initoptok(context *ctx, object sd) {
            cvri % num
        } def */
     ARR(8);
-        ADD(consbst(ctx, 1, "#")); ADD(N(search));
+        ADD(cvlit(consbst(ctx, 1, "#"))); ADD(N(search));
         ADD(N(pop)); ADD(N(exch)); ADD(N(pop));
         ADD(L(10)); ADD(N(cvri));
         ADD(N(cvri));
@@ -483,8 +499,9 @@ void initoptok(context *ctx, object sd) {
                 4 1 roll             % b' d s si
                 1 index length 1 index sub getinterval % b' d s'
                 exch pop exch  % s' b'
+                cvlit
             } */
-        ARR(27);
+        ARR(28);
             ADD(N(pop));
             ADD(L(1)); ADD(N(exch)); ADD(N(dup)); ADD(N(length)); ADD(N(string));
             ADD(L(0)); ADD(N(exch)); ADD(L(0));
@@ -524,6 +541,7 @@ void initoptok(context *ctx, object sd) {
             ADD(L(1)); ADD(N(index)); ADD(N(length));
             ADD(L(1)); ADD(N(index)); ADD(N(sub)); ADD(N(getinterval));
             ADD(N(exch)); ADD(N(pop)); ADD(N(exch));
+            ADD(N(cvlit));
             bdcput(ctx, td, L('('), ar);
 
         /* (<)0 get { pop  % (...>...) | (<...)
@@ -569,6 +587,7 @@ void initoptok(context *ctx, object sd) {
                     3 1 roll            % b' s si
                     1 index length 1 index sub getinterval  % b' s'
                     exch  % src' buf'
+                    cvlit
                 } ifelse
             } */
         ARR(9); ADD(N(pop));
@@ -577,7 +596,7 @@ void initoptok(context *ctx, object sd) {
                 ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length));
                 ADD(L(1)); ADD(N(sub)); ADD(N(getinterval));
                 ADD(cvlit(consname(ctx, "<<"))); ADD(N(cvx)); ENDSUB;
-            ADDSUB(26);
+            ADDSUB(27);
                 ADD(N(dup)); ADD(N(length)); ADD(L(2)); ADD(N(idiv));
                 ADD(L(1)); ADD(N(add)); ADD(N(string));
                 ADD(L(0)); ADD(N(exch)); ADD(L(0));
@@ -647,6 +666,7 @@ void initoptok(context *ctx, object sd) {
                 ADD(L(1)); ADD(N(index)); ADD(N(length));
                 ADD(L(1)); ADD(N(index)); ADD(N(sub)); ADD(N(getinterval));
                 ADD(N(exch));
+                ADD(N(cvlit));
                 ENDSUB;
             ADD(N(ifelse));
             bdcput(ctx, td, L('<'), ar);
@@ -879,6 +899,11 @@ void initoptok(context *ctx, object sd) {
             ENDSUB;
         ADD(N(loop));
         bdcput(ctx, sd, N(tokeloop), ar);
+
+    ARR(1);
+        ADD(cvx(consoper(ctx, "strhandler", strhandler, 0, 0)));
+        bdcput(ctx, sd, N(strhandler), ar);
+        arrstrhandler = ar;
 
     //op = consoper(ctx, "string", Istring, 1, 1, integertype); INSTALL;
 }
