@@ -17,6 +17,7 @@
 #include "di.h"
 //#include "f.h"
 #include "op.h"
+#include "optok.h"
 
 itp *itpdata;
 
@@ -288,18 +289,14 @@ void evalarray(context *ctx) {
     }
 }
 
-void evalsource(context *ctx) {
+void evalstring(context *ctx) {
     object a;
     a = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, a);
-    switch(type(a)){
-        case stringtype:
-                push(ctx->lo, ctx->es, consname(ctx, "toke"));
-            break;
-        case filetype:
-            break;
-        default: error("evalsource called on non-source object");
-    }
+    push(ctx->lo, ctx->es, consoper(ctx, "if", NULL,0,0));
+    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    push(ctx->lo, ctx->es, cvlit(arrstrhandler));
+    push(ctx->lo, ctx->es, consname(ctx, "toke"));
 }
 
 /* interpreter actions for executable types */
@@ -314,7 +311,7 @@ evalfunc *evaldict = evalpush;
 
 evalfunc *evalcontext = evalpush;
 evalfunc *evalfile = evalpush;
-evalfunc *evalstring = evalpush;
+//evalfunc *evalstring = evalpush;
 evalfunc *evalname = evalload;
 
 #if 0
@@ -335,6 +332,9 @@ void eval(context *ctx) {
     printf("\neval\n");
     printf("Stack: ");
     dumpstack(ctx->lo, ctx->os);
+    printf("\n");
+    printf("Exec Stack: ");
+    dumpstack(ctx->lo, ctx->es);
     printf("\n");
     printf("Executing: ");
     dumpobject(t);
@@ -409,7 +409,7 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {} ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {1 2 3.14 true} ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" //false ")));
-    push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 breakhere div ")));
+    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 div "))));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
@@ -417,7 +417,7 @@ int main(void) {
     //dumpdic(ctx->gl, top(ctx->lo, ctx->ds, 0));
     fflush(NULL);
     //push(ctx->lo, ctx->es, consname(ctx, "load"));
-    push(ctx->lo, ctx->es, cvx(consname(ctx, "tokeloop")));
+    //push(ctx->lo, ctx->es, cvx(consname(ctx, "tokeloop")));
     //dumpoper(ctx, 12);
 
     ctx->quit = 0;

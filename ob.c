@@ -36,7 +36,7 @@ object consbool(bool b) {
     o.int_.tag = booleantype;
     o.int_.pad = 0;
     o.int_.val = b;
-    return o;
+    return cvlit(o);
 }
 
 object consint(integer i){
@@ -44,7 +44,7 @@ object consint(integer i){
     o.int_.tag = integertype;
     o.int_.pad = 0;
     o.int_.val = i;
-    return o;
+    return cvlit(o);
 }
 
 object consreal(real r){
@@ -52,7 +52,7 @@ object consreal(real r){
     o.real_.tag = realtype;
     o.real_.pad = 0;
     o.real_.val = r;
-    return o;
+    return cvlit(o);
 }
 
 void dumpcompobject(object o){

@@ -1,5 +1,5 @@
 
-CFLAGS= -g -Wall -Wextra
+CFLAGS= -g -Wall -Wextra 
 OB=ob.o m.o
 LDLIBS=
 SRC= README makefile *.h *.c 

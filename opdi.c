@@ -79,12 +79,14 @@ void Aload(context *ctx, object K) {
         }
     }
 
-#ifdef DEBUGLOAD
+//#ifdef DEBUGLOAD
+    dumpmfile(ctx->lo);
+    dumpmtab(ctx->lo, 0);
     dumpmfile(ctx->gl);
     dumpmtab(ctx->gl, 0);
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
     dumpobject(K);
-#endif
+//#endif
     error("undefined (Aload)");
 }
 

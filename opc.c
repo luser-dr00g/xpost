@@ -83,16 +83,20 @@ void Zexit (context *ctx) {
 
     object x;
     printf("\nexit\n");
+    dumpobject(oploop);
+    dumpobject(opforall);
+    dumpobject(opfor);
+    dumpobject(oprepeat);
     dumpstack(ctx->lo, ctx->os);
     dumpstack(ctx->lo, ctx->es);
     printf("\n");
     while(1){
         x = pop(ctx->lo, ctx->es);
         dumpobject(x);
-        if ( (objcmp(ctx, oploop, x) == 0)
-          || (objcmp(ctx, opforall, x) == 0)
-          || (objcmp(ctx, opfor, x) == 0)
-          || (objcmp(ctx, oprepeat, x) == 0)
+        if ( (objcmp(ctx, x, oploop) == 0)
+          || (objcmp(ctx, x, opforall) == 0)
+          || (objcmp(ctx, x, opfor) == 0)
+          || (objcmp(ctx, x, oprepeat) == 0)
           )
             break;
     }
