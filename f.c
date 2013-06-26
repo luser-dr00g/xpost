@@ -9,6 +9,7 @@
 
 #include "m.h"
 #include "ob.h"
+#include "gc.h"
 
 /* construct a file object.
    set the tag,
@@ -25,7 +26,7 @@ object consfile(mfile *mem, FILE *fp) {
     return f;
 }
 
-/* pinch-off a tmpfile containing one line from stdin. */
+/* pinch-off a tmpfile containing one line from file. */
 FILE *lineedit(FILE *in) {
     FILE *fp;
     int c;
@@ -43,7 +44,7 @@ FILE *lineedit(FILE *in) {
 
 enum { MAXNEST = 20 };
 
-/* pinch-off a tmpfile containing one "statement" from stdin. */
+/* pinch-off a tmpfile containing one "statement" from file. */
 FILE *statementedit(FILE *in) {
     FILE *fp;
     int c;

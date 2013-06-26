@@ -3,7 +3,7 @@ CFLAGS= -g -Wall -Wextra
 OB=ob.o m.o
 LDLIBS=
 SRC= README makefile *.h *.c 
-OP=op.o ops.o opst.o opar.o opdi.o optok.o opb.o opc.o opt.o opm.o
+OP=op.o ops.o opst.o opar.o opdi.o optok.o opb.o opc.o opt.o opm.o opf.o
 
 test: m ob s st nm v gc ar di itp
 	./ob && ./m && ./s && ./st && ./nm && \
@@ -60,7 +60,7 @@ ar:ar.c s.o m.o ob.o gc.o st.o v.o gc.o itp.o nm.o $(OP)
 di:di.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o itp.o nm.o $(OP)
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o      gc.o nm.o itp.o $(OP)
 
-itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o $(OP)
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o di.o gc.o nm.o       $(OP)
+itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o $(OP) f.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o di.o gc.o nm.o       $(OP) f.o
 	
 
