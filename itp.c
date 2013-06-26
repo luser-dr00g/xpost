@@ -15,7 +15,7 @@
 #include "v.h"
 #include "nm.h"
 #include "di.h"
-//#include "f.h"
+#include "f.h"
 #include "op.h"
 #include "optok.h"
 
@@ -290,13 +290,29 @@ void evalarray(context *ctx) {
 }
 
 void evalstring(context *ctx) {
-    object a;
-    a = pop(ctx->lo, ctx->es);
-    push(ctx->lo, ctx->os, a);
+    object s;
+    s = pop(ctx->lo, ctx->es);
+    push(ctx->lo, ctx->os, s);
     push(ctx->lo, ctx->es, consoper(ctx, "if", NULL,0,0));
     push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, cvlit(arrstrhandler));
     push(ctx->lo, ctx->es, consname(ctx, "toke"));
+}
+
+void evalfile(context *ctx) {
+    object f;
+    f = pop(ctx->lo, ctx->es);
+    if (filestatus(ctx->lo, f)) {
+        object fs;
+        object str;
+        long fz;
+        push(ctx->lo, ctx->es, f);
+        fs = consfile(ctx->lo, statementedit(filefile(ctx->lo, f)));
+        fz = filebytesavailable(ctx->lo, fs);
+        str = consbst(ctx, fz, NULL);
+        fread(charstr(ctx, str), 1, fz, filefile(ctx->lo, fs));
+        push(ctx->lo, ctx->es, cvx(str));
+    }
 }
 
 /* interpreter actions for executable types */
@@ -310,7 +326,7 @@ evalfunc *evalsave = evalpush;
 evalfunc *evaldict = evalpush;
 
 evalfunc *evalcontext = evalpush;
-evalfunc *evalfile = evalpush;
+//evalfunc *evalfile = evalpush;
 evalfunc *evalname = evalload;
 
 #if 0
@@ -408,7 +424,10 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {} ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {1 2 3.14 true} ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" //false ")));
-    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 div "))));
+    //push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 div "))));
+    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" \
+        (%stdin)(r) file cvx exec \
+                        "))));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
