@@ -311,7 +311,6 @@ evalfunc *evaldict = evalpush;
 
 evalfunc *evalcontext = evalpush;
 evalfunc *evalfile = evalpush;
-//evalfunc *evalstring = evalpush;
 evalfunc *evalname = evalload;
 
 #if 0

@@ -116,8 +116,7 @@ to help encapsulate the context's global state within the mfile
 construct. Even the operator table OPTAB is a special entity
 (in case somebody needs custom operators, it is possible).
 
-Local VM goes on to hold the operand, execution, and dictionary
-stacks. Global VM has instead NAMES, NAMET, BOGUSNAME, and HOLD.
+Global VM goes on to hold NAMES, NAMET, BOGUSNAME, and HOLD.
 NAMES and NAMET are for the Name String stack and Name Tree,
 a ternary search tree. The same old ternary search tree,
 this time updated to live in the memory file.
@@ -151,11 +150,6 @@ of the whole thing.
 Composite Objects
 -----------------
 
-Arrays ("ar") and dictionaries ("di") are automatically copied before
-writing if the save-level has risen, giving cheap 'save's. 'restore'
-has an easy job of popping the save-stack and exchanging the addresses
-in the memory-tables: cheap 'restore's!!
-
 Array, String and Dictionary functions now come in 2 flavors,
 a "raw" version which expects to have the mfile specified, and
 a "friendly" version which interprets the BANK field in the tag
@@ -181,9 +175,35 @@ All array and dictionary write operations ensure that the memory is
 saved at the current level before writing.
 This should be more efficient than any of my previous drafts. 
 "True" copy-on-write and no pointer-chasing.
- 
-And the garbage collector ("gc"). 
-It's there. We'll see how well it works as I keep building.
+
+Arrays ("ar") and dictionaries ("di") are automatically copied before
+writing if the save-level has risen, giving cheap 'save's. 'restore'
+has an easy job of popping the save-stack and exchanging the addresses
+in the memory-tables: cheap 'restore's!!
+
+
+Garbage Collection
+------------------
+
+The garbage collector module ("gc") implements a simple (?)
+mark-sweep algorithm. It operates on a per-mfile basis, so global
+and local VMs are collected separately, but all contexts sharing
+an mfile must be traversed in the /mark/ phase.
+
+I've tried to keep the algorithm very simple, because the memory
+interface itself is so complicated. Even conceptually simple operations
+like copying a pointer from the free list get pretty involved, eg.
+
+    memcpy(mem->base+z, mem->base+adrent(mem,e), sizeof(unsigned));
+
+This line copies the "pointer" (unsigned) value indicated by the
+entry e into the memory "pointed to" by the "pointer" z.
+
+It's there. It compiles. We'll see how well it works as I keep building.
+Most allocation calls do a traversal of the free-list, but I've set
+the period of the collection triggers very high, since some functions
+like markdict() haven't been written yet, so the contents of systemdict
+aren't currently safe from collection.
 
 
 Bringing it all together
