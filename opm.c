@@ -5,6 +5,9 @@
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
+#define PI (4.0 * atan(1.0))
+double RAD_PER_DEG /* = PI / 180.0 */;
+
 #include "m.h"
 #include "ob.h"
 #include "s.h"
@@ -144,9 +147,41 @@ void Rsqrt (context *ctx, object x) {
     push(ctx->lo, ctx->os, consreal(sqrt(x.real_.val)));
 }
 
+void Ratan (context *ctx, object num, object den) {
+    push(ctx->lo, ctx->os,
+            consreal(atan2(num.real_.val, den.real_.val)
+                / RAD_PER_DEG));
+}
+
+void Rcos (context *ctx, object x) {
+    push(ctx->lo, ctx->os,
+            consreal(cos(RAD_PER_DEG * x.real_.val)));
+}
+
+void Rsin (context *ctx, object x) {
+    push(ctx->lo, ctx->os,
+            consreal(sin(RAD_PER_DEG * x.real_.val)));
+}
+
+void Rexp (context *ctx, object base, object expn) {
+    if (base.real_.val < 0)
+        expn.real_.val = trunc(expn.real_.val);
+    push(ctx->lo, ctx->os,
+            consreal(pow(base.real_.val, expn.real_.val)));
+}
+
+void Rln (context *ctx, object x) {
+    push(ctx->lo, ctx->os, consreal(log(x.real_.val)));
+}
+
+void Rlog (context *ctx, object x) {
+    push(ctx->lo, ctx->es, consreal(log10(x.real_.val)));
+}
+
 void initopm (context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     object n,op;
+    RAD_PER_DEG = PI / 180.0;
 
     op = consoper(ctx, "add", Iadd, 1, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "add", Radd, 1, 2, floattype, floattype); INSTALL;
@@ -170,6 +205,12 @@ void initopm (context *ctx, object sd) {
     op = consoper(ctx, "truncate", Istet, 1, 1, integertype); INSTALL;
     op = consoper(ctx, "truncate", Rtruncate, 1, 1, realtype); INSTALL;
     op = consoper(ctx, "sqrt", Rsqrt, 1, 1, floattype); INSTALL;
+    op = consoper(ctx, "atan", Ratan, 1, 2, floattype, floattype); INSTALL;
+    op = consoper(ctx, "cos", Rcos, 1, 1, floattype); INSTALL;
+    op = consoper(ctx, "sin", Rsin, 1, 1, floattype); INSTALL;
+    op = consoper(ctx, "exp", Rexp, 1, 2, floattype, floattype); INSTALL;
+    op = consoper(ctx, "ln", Rln, 1, 1, floattype); INSTALL;
+    op = consoper(ctx, "log", Rlog, 1, 1, floattype); INSTALL;
 
     /* op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     //dumpdic(ctx->gl, sd); fflush(NULL);
