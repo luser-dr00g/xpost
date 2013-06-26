@@ -1,4 +1,6 @@
 
+FILE *lineedit(FILE *in);
+FILE *statementedit(FILE *in);
 object consfile(mfile *mem, FILE *fp);
 object fileopen(mfile *mem, char *fn, char *mode); 
 FILE *filefile(mfile *mem, object f);
