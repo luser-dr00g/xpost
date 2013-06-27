@@ -9,6 +9,7 @@
 #include "itp.h"
 #include "ar.h"
 #include "st.h"
+#include "di.h"
 #include "v.h"
 
 #ifdef TESTMODULE
@@ -45,7 +46,15 @@ int marked(mfile *mem, unsigned ent) {
     return (tab->tab[ent].mark & MARKM) >> MARKO;
 }
 
-void markdict(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
+void markobject(context *ctx, mfile *mem, object o);
+
+void markdict(context *ctx, mfile *mem, unsigned adr) {
+    dichead *dp = (void *)(mem->base + adr);
+    object *tp = (void *)(mem->base + adr + sizeof(dichead));
+    unsigned j;
+    for (j=0; j < DICTABN(dp->sz); j++) {
+        markobject(ctx, mem, tp[j]);
+    }
 }
 
 /* recursively mark all elements of array */
@@ -53,30 +62,39 @@ void markarray(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
     object *op = (void *)(mem->base + adr);
     unsigned j;
     for (j=0; j < sz; j++) {
+        markobject(ctx, mem, op[j]);
+    }
+}
+
+void markobject(context *ctx, mfile *mem, object o) {
+    switch(type(o)) {
+    case arraytype:
 #ifdef TESTMODULE
-        printf("markarray: %s\n", types[op->tag]);
+    printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
-        switch(type(*op)) {
-        case arraytype:
-            if (bank(ctx, *op) != mem) break;
-            if (!marked(mem, op->comp_.ent)) {
-                markent(mem, op->comp_.ent);
-                markarray(ctx, mem, adrent(mem, op->comp_.ent), op->comp_.sz);
-            }
-            break;
-        case dicttype:
-            if (bank(ctx, *op) != mem) break;
-            if (!marked(mem, op->comp_.ent)) {
-                markent(mem, op->comp_.ent);
-                markdict(ctx, mem, adrent(mem, op->comp_.ent), op->comp_.sz);
-            }
-            break;
-        case stringtype:
-            if (bank(ctx, *op) != mem) break;
-            markent(mem, op->comp_.ent);
-            break;
+        if (bank(ctx, o) != mem) break;
+        if (!marked(mem, o.comp_.ent)) {
+            markent(mem, o.comp_.ent);
+            markarray(ctx, mem, adrent(mem, o.comp_.ent), o.comp_.sz);
         }
-        ++op;
+        break;
+    case dicttype:
+#ifdef TESTMODULE
+    printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
+#endif
+        if (bank(ctx, o) != mem) break;
+        if (!marked(mem, o.comp_.ent)) {
+            markent(mem, o.comp_.ent);
+            markdict(ctx, mem, adrent(mem, o.comp_.ent));
+        }
+        break;
+    case stringtype:
+#ifdef TESTMODULE
+    printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
+#endif
+        if (bank(ctx, o) != mem) break;
+        markent(mem, o.comp_.ent);
+        break;
     }
 }
 
@@ -89,29 +107,7 @@ void markstack(context *ctx, mfile *mem, unsigned stackadr) {
 #endif
 next:
     for (i=0; i < s->top; i++) {
-#ifdef TESTMODULE
-        printf("markstack: %s\n", types[type(s->data[i])]);
-#endif
-        switch(type(s->data[i])) {
-        case arraytype:
-            if (bank(ctx, s->data[i]) != mem) break;
-            if (!marked(mem, s->data[i].comp_.ent)) {
-                markent(mem, s->data[i].comp_.ent);
-                markarray(ctx, mem, adrent(mem, s->data[i].comp_.ent), s->data[i].comp_.sz);
-            }
-            break;
-        case dicttype:
-            if (bank(ctx, s->data[i]) != mem) break;
-            if (!marked(mem, s->data[i].comp_.ent)) {
-                markent(mem, s->data[i].comp_.ent);
-                markdict(ctx, mem, adrent(mem, s->data[i].comp_.ent), s->data[i].comp_.sz);
-            }
-            break;
-        case stringtype:
-            if (bank(ctx, s->data[i]) != mem) break;
-            markent(mem, s->data[i].comp_.ent);
-            break;
-        }
+        markobject(ctx, mem, s->data[i]);
     }
     if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
         s = (void *)(mem->base + s->nextseg);
@@ -277,6 +273,7 @@ void init(void) {
 
 void init(void) {
     itpdata = malloc(sizeof*itpdata);
+    memset(itpdata, 0, sizeof*itpdata);
     inititp(itpdata);
 }
 
