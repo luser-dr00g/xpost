@@ -43,22 +43,22 @@ s:s.c m.o ob.o
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o
 
 nm:nm.c m.o ob.o s.o st.o gc.o itp.o $(OP)
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o di.o gc.o      itp.o $(OP)
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o di.o gc.o      itp.o $(OP) f.o
 
 v:v.c s.o m.o ob.o gc.o ar.o
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o     di.o gc.o nm.o itp.o $(OP)
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o     di.o gc.o nm.o itp.o $(OP) f.o
 
 gc:gc.c s.o m.o ob.o gc.o ar.o st.o v.o
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o di.o      nm.o itp.o $(OP)
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o di.o      nm.o itp.o $(OP) f.o
 
 st:st.c m.o gc.o itp.o
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o      v.o di.o gc.o nm.o itp.o $(OP)
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o      v.o di.o gc.o nm.o itp.o $(OP) f.o
 
 ar:ar.c s.o m.o ob.o gc.o st.o v.o gc.o itp.o nm.o $(OP)
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o st.o v.o di.o gc.o nm.o      itp.o $(OP)
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o st.o v.o di.o gc.o nm.o      itp.o $(OP) f.o
 
 di:di.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o itp.o nm.o $(OP)
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o      gc.o nm.o itp.o $(OP)
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o      gc.o nm.o itp.o $(OP) f.o
 
 itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o $(OP) f.o
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< m.o ob.o s.o ar.o st.o v.o di.o gc.o nm.o       $(OP) f.o

@@ -17,6 +17,15 @@ typedef struct {
     word pad;
 } dichead;
 
+/* dicts are implicitly 1 entry larger than declared
+   in order to simplify searching (terminate on null) */
+
+/* DICTABN yields the number of real entries for a dict of size n */
+#define DICTABN(n) (2 * ((n)+1))
+
+/* DICTABSZ yields the size in bytes */
+#define DICTABSZ(n) (DICTABN(n) * sizeof(object))
+
 /* compare objects (<,=,>) :: (-(x),0,+(x)) */
 int objcmp(context *ctx, object l, object r);
 

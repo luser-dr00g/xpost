@@ -75,15 +75,6 @@ unsigned hash(object k) {
     return h;
 }
 
-/* dicts are implicitly 1 entry larger than declared
-   in order to simplify searching (terminate on null) */
-
-/* DICTABN yields the number of real entries for a dict of size n */
-#define DICTABN(n) (2 * ((n)+1))
-
-/* DICTABSZ yields the size in bytes */
-#define DICTABSZ(n) (DICTABN(n) * sizeof(object))
-
 /* allocate an entity with gballoc,
    set the save level in the mark,
    extract the "pointer" from the entity,
