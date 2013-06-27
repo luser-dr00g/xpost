@@ -203,10 +203,10 @@ void collect(mfile *mem) {
     sweep(mem);
 }
 
-enum { PERIOD = 1000 };
+enum { PERIOD = 400 };
 
 /* scan the free list for a suitably sized bit of memory,
-   if the allocator falls back to fresh memory 10 times,
+   if the allocator falls back to fresh memory PERIOD times,
         it triggers a collection. */
 unsigned gballoc(mfile *mem, unsigned sz) {
 #if 0 

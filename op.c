@@ -270,6 +270,7 @@ void initop(context *ctx) {
     initoptok(ctx, sd);
     initopm(ctx, sd);
     initopf(ctx, sd);
+    initopx(ctx, sd);
     //push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
 #ifdef DEBUGOP
