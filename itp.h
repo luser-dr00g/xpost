@@ -8,6 +8,7 @@ typedef struct {
     unsigned id;
     /*@dependent@*/ mfile *gl, *lo;
     unsigned os, es, ds, hold;  
+    unsigned long rand_next;
     unsigned vmmode; 
     unsigned state;
     unsigned quit;

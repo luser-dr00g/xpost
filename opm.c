@@ -178,6 +178,23 @@ void Rlog (context *ctx, object x) {
     push(ctx->lo, ctx->es, consreal(log10(x.real_.val)));
 }
 
+void Zrand (context *ctx) {
+    unsigned x;
+    ctx->rand_next = ctx->rand_next * 1103515245 + 12345;
+    x = ctx->rand_next << 16;
+    ctx->rand_next = ctx->rand_next * 1103515245 + 12345;
+    x |= ctx->rand_next & 0xffff;
+    push(ctx->lo, ctx->es, consint(x & 0x7fffffff));
+}
+
+void Isrand (context *ctx, object seed) {
+    ctx->rand_next = seed.int_.val;
+}
+
+void Zrrand (context *ctx) {
+    push(ctx->lo, ctx->es, consint(ctx->rand_next));
+}
+
 void initopm (context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     object n,op;
@@ -211,6 +228,9 @@ void initopm (context *ctx, object sd) {
     op = consoper(ctx, "exp", Rexp, 1, 2, floattype, floattype); INSTALL;
     op = consoper(ctx, "ln", Rln, 1, 1, floattype); INSTALL;
     op = consoper(ctx, "log", Rlog, 1, 1, floattype); INSTALL;
+    op = consoper(ctx, "rand", Zrand, 1, 0); INSTALL;
+    op = consoper(ctx, "srand", Isrand, 0, 1, integertype); INSTALL;
+    op = consoper(ctx, "rrand", Zrrand, 1, 0); INSTALL;
 
     /* op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     //dumpdic(ctx->gl, sd); fflush(NULL);

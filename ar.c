@@ -85,39 +85,47 @@ object arrgetinterval(object a, integer off, integer sz) {
 
 #ifdef TESTMODULE
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-mfile mem;
+context *ctx;
+mfile *mem;
 
 int main(void) {
-    initmem(&mem, "x.mem");
-    (void)initmtab(&mem);
-    initfree(&mem);
-    initsave(&mem);
+    itpdata = malloc(sizeof*itpdata);
+    memset(itpdata, 0, sizeof*itpdata);
+    inititp(itpdata);
+    ctx = &itpdata->ctab[0];
+    mem = ctx->lo;
+    //initmem(&mem, "x.mem");
+    //(void)initmtab(&mem);
+    //initfree(&mem);
+    //initsave(&mem);
 
     enum { SIZE = 10 };
     printf("\n^test ar.c\n");
     printf("allocating array occupying %zu bytes\n", SIZE*sizeof(object));
-    object a = consarr(&mem, SIZE);
+    object a = consarr(mem, SIZE);
 
-    //printf("the memory table:\n"); dumpmtab(&mem, 0);
+    //printf("the memory table:\n"); dumpmtab(mem, 0);
 
     printf("test array by filling\n");
     int i;
     for (i=0; i < SIZE; i++) {
         printf("%d ", i+1);
-        arrput(&mem, a, i, consint( i+1 ));
+        arrput(mem, a, i, consint( i+1 ));
     }
     puts("");
 
     printf("and accessing.\n");
     for (i=0; i < SIZE; i++) {
         object t;
-        t = arrget(&mem, a, i);
+        t = arrget(mem, a, i);
         printf("%d: %d\n", i, t.int_.val);
     }
 
     printf("the memory table:\n");
-    dumpmtab(&mem, 0);
+    dumpmtab(mem, 0);
 
     return 0;
 }
