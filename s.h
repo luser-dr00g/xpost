@@ -5,7 +5,7 @@
 /* must include ob.h */ 
 /*typedef long long object;*/
 
-#define STACKSEGSZ 6
+#define STACKSEGSZ 20
 
 typedef struct {
     unsigned nextseg;

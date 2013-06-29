@@ -66,6 +66,7 @@ void markarray(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
     }
 }
 
+/* traverse the contents of composite objects */
 void markobject(context *ctx, mfile *mem, object o) {
     switch(type(o)) {
     case arraytype:
@@ -108,6 +109,44 @@ void markstack(context *ctx, mfile *mem, unsigned stackadr) {
 next:
     for (i=0; i < s->top; i++) {
         markobject(ctx, mem, s->data[i]);
+    }
+    if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
+        s = (void *)(mem->base + s->nextseg);
+        goto next;
+    }
+}
+
+/* mark all allocations referred to by objects in save object's stack of saverec_'s */
+void marksavestack(context *ctx, mfile *mem, unsigned stackadr) {
+    stack *s = (void *)(mem->base + stackadr);
+    unsigned i;
+#ifdef TESTMODULE
+    printf("marking save stack of size %u\n", s->top);
+#endif
+next:
+    for (i=0; i < s->top; i++) {
+        //markobject(ctx, mem, s->data[i]);
+        //marksavestack(ctx, mem, s->data[i].save_.stk);
+        markent(mem, s->data[i].saverec_.src);
+        markent(mem, s->data[i].saverec_.cpy);
+    }
+    if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
+        s = (void *)(mem->base + s->nextseg);
+        goto next;
+    }
+}
+
+/* mark all allocations referred to by objects in save stack */
+void marksave(context *ctx, mfile *mem, unsigned stackadr) {
+    stack *s = (void *)(mem->base + stackadr);
+    unsigned i;
+#ifdef TESTMODULE
+    printf("marking save stack of size %u\n", s->top);
+#endif
+next:
+    for (i=0; i < s->top; i++) {
+        //markobject(ctx, mem, s->data[i]);
+        marksavestack(ctx, mem, s->data[i].save_.stk);
     }
     if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
         s = (void *)(mem->base + s->nextseg);
@@ -181,12 +220,12 @@ void collect(mfile *mem) {
 
     unmark(mem);
 
-    /* for (i = mem->roots[0]; i<= mem->roots[1]; i++) {
-        markstack(mem, adrent(mem, i)); } */
+    /*for(i=mem->roots[0];i<=mem->roots[1];i++){markstack(mem,adrent(mem,i));}*/
 
     cid = (void *)(mem->base + adrent(mem, CTXLIST));
     ctx = ctxcid(cid[0]);
-    markstack(ctx, mem, adrent(mem, VS));
+    /* markstack(ctx, mem, adrent(mem, VS)); */ // TODO will need a special routine
+    marksave(ctx, mem, adrent(mem, VS));
     if (mem == ctx->lo) {
 
         for (i = 0; cid[i]; i++) {
@@ -249,6 +288,7 @@ unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsi
 
 #ifdef TESTMODULE
 
+context *ctx;
 mfile *mem;
 unsigned stac;
 
@@ -280,8 +320,9 @@ void init(void) {
 int main(void) {
     init();
     printf("\n^test gc.c\n");
-    mem = itpdata->ctab[0].lo;
-    stac = itpdata->ctab[0].os;
+    ctx = &itpdata->ctab[0];
+    mem = ctx->lo;
+    stac = ctx->os;
 
     push(mem, stac, consint(5));
     push(mem, stac, consint(6));
