@@ -158,14 +158,16 @@ next:
    sz is 0 so gc will ignore it */
 void initfree(mfile *mem) {
     unsigned ent = mtalloc(mem, 0, sizeof(unsigned));
+    unsigned val = 0;
     assert (ent == FREE);
+    put(mem, ent, 0, sizeof(unsigned), &val);
+    
     /*
        unsigned ent = mtalloc(mem, 0, 0);
        mtab *tab = (void *)mem->base;
        tab->tab[ent].adr = mfalloc(mem, sizeof(unsigned));
    */
 }
-
 
 /* free this ent! */
 void mfree(mfile *mem, unsigned ent) {
@@ -174,10 +176,14 @@ void mfree(mfile *mem, unsigned ent) {
     a = adrent(mem, ent);
     if (szent(mem, ent) == 0) return; // ignore zero size allocs
     z = adrent(mem, FREE);
+
+    /* copy the current free-list head to the data area of the ent. */
     // *(unsigned *)(mem->base + adrent(mem, ent)) = mem->avail;
     memcpy(mem->base+a, mem->base+z, sizeof(unsigned));
+
+    /* copy the ent number into the free-list head */
     //mem->avail = ent;
-    memcpy(mem->base+z, &ent, sizeof(ent));
+    memcpy(mem->base+z, &ent, sizeof(unsigned));
 }
 
 /* discard the free list.
@@ -218,6 +224,8 @@ void collect(mfile *mem) {
     unsigned *cid;
     context *ctx;
 
+    printf("\ncollect:\n");
+
     unmark(mem);
 
     /*for(i=mem->roots[0];i<=mem->roots[1];i++){markstack(mem,adrent(mem,i));}*/
@@ -242,7 +250,19 @@ void collect(mfile *mem) {
     sweep(mem);
 }
 
-enum { PERIOD = 400 };
+void dumpfree(mfile *mem) {
+    unsigned z = adrent(mem, FREE);;
+    unsigned e;
+    printf("freelist: ");
+    memcpy(&e, mem->base+z, sizeof(unsigned));
+    while (e) {
+        printf("%d(%d) ", e, szent(mem, e));
+        z = adrent(mem, e);
+        memcpy(&e, mem->base+z, sizeof(unsigned));
+    }
+}
+
+enum { PERIOD = 200 };
 
 /* scan the free list for a suitably sized bit of memory,
    if the allocator falls back to fresh memory PERIOD times,
@@ -252,15 +272,16 @@ unsigned gballoc(mfile *mem, unsigned sz) {
     unsigned z = adrent(mem, FREE); // free pointer
     unsigned e;                     // working pointer
     static int period = PERIOD;
-    memcpy(&e, mem->base+z, sizeof(e)); // e = *z
+    memcpy(&e, mem->base+z, sizeof(unsigned)); // e = *z
 try_again:
     while (e) { // e is not zero
         if (szent(mem,e) >= sz) {
-            memcpy(mem->base+z, mem->base+adrent(mem,e), sizeof(unsigned));
+            memcpy(mem->base+z,
+                    mem->base+adrent(mem,e), sizeof(unsigned));
             return e;
         }
         z = adrent(mem,e);
-        memcpy(&e, mem->base+z, sizeof(e));
+        memcpy(&e, mem->base+z, sizeof(unsigned));
     }
     if (--period == 0) {
         period = PERIOD;
@@ -276,13 +297,39 @@ unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsi
     mtab *tab = NULL;
     unsigned newadr;
     unsigned ent;
-    ent = mtalloc(mem, 0, newsize);
-    findtabent(mem, &tab, &ent);
-    newadr = tab->tab[ent].adr;
+    unsigned rent; // relative ent
+
+#ifdef DEBUGFREE
+    printf("mfrealloc: ");
+    printf("initial ");
+    dumpfree(mem);
+#endif
+
+    /* allocate new entry */
+    rent = ent = mtalloc(mem, 0, newsize);
+    findtabent(mem, &tab, &rent);
+
+    /* steal its adr */
+    newadr = tab->tab[rent].adr;
+
+    /* copy data */
     memcpy(mem->base + newadr, mem->base + oldadr, oldsize);
-    tab->tab[ent].adr = oldadr;
-    tab->tab[ent].sz = oldsize;
+
+    /* stash old adr */
+    tab->tab[rent].adr = oldadr;
+    tab->tab[rent].sz = oldsize;
+
+    /* free it */
     mfree(mem, ent);
+
+#ifdef DEBUGFREE
+    printf("final ");
+    dumpfree(mem);
+    printf("\n");
+    dumpmtab(mem, 0);
+    fflush(NULL);
+#endif
+
     return newadr;
 }
 

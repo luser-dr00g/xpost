@@ -41,9 +41,10 @@ int noop = 0;
 void initoptab (context *ctx) {
     unsigned ent = mtalloc(ctx->gl, 0, MAXOPS * sizeof(oper));
     mtab *tab = (void *)(ctx->gl);
+    assert(ent == OPTAB);
+    findtabent(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // so gc will ignore it
     //printf("ent: %d\nOPTAB: %d\n", ent, (int)OPTAB);
-    assert(ent == OPTAB);
 }
 
 void dumpoper(context *ctx, int opcode) {
@@ -255,25 +256,57 @@ void initop(context *ctx) {
 
     initops(ctx, sd);
 
-#ifdef DEBUGOP
+//#ifdef DEBUGOP
+    printf("\nops:\n");
     dumpdic(ctx->gl, sd); fflush(NULL);
-#endif
+//#endif
 
     op = consoper(ctx, "breakhere", breakhere, 0, 0); INSTALL;
 
     initopst(ctx, sd);
+    printf("\nopst:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopar(ctx, sd);
+    printf("\nopar:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopdi(ctx, sd);
+    printf("\nopdi:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopb(ctx, sd);
+    printf("\nopb:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopc(ctx, sd);
+    printf("\nopc:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopt(ctx, sd);
+    printf("\nopt:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initoptok(ctx, sd);
+    printf("\noptok:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopm(ctx, sd);
+    printf("\nopm:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopf(ctx, sd);
+    printf("\nopf:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopx(ctx, sd);
+    printf("\nopx:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     //push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
 #ifdef DEBUGOP
+    printf("final sd:\n");
     dumpstack(ctx->lo, ctx->ds);
     dumpdic(ctx->gl, sd); fflush(NULL);
 #endif

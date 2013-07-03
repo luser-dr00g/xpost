@@ -105,24 +105,9 @@ void Sforall(context *ctx, object S, object P) {
     if (isx(S)) push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, P);
     push(ctx->lo, ctx->es, consint(bstget(ctx, S, 0)));
-#if 0
-   switch(S.comp_.sz) {
-        default:
-            push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-            push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-            push(ctx->lo, ctx->es, cvlit(P));
-            push(ctx->lo, ctx->es,
-                    arrgetinterval(S, 1, S.comp_.sz-1));
-            /*@fallthrough@*/
-        case 1:
-            push(ctx->lo, ctx->es, P);
-            push(ctx->lo, ctx->es, consint(bstget(ctx, S, 0)));
-            /*@fallthrough@*/
-        case 0:
-            break;
-    }
-#endif
 }
+
+// token : see optok.c
 
 void initopst(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));

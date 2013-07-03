@@ -1,3 +1,5 @@
+#define DEBUGLOAD
+
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -79,14 +81,14 @@ void Aload(context *ctx, object K) {
         }
     }
 
-//#ifdef DEBUGLOAD
+#ifdef DEBUGLOAD
     dumpmfile(ctx->lo);
     dumpmtab(ctx->lo, 0);
     dumpmfile(ctx->gl);
     dumpmtab(ctx->gl, 0);
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
     dumpobject(K);
-//#endif
+#endif
     error("undefined (Aload)");
 }
 
@@ -107,6 +109,8 @@ void dictomark(context *ctx) {
     (void)pop(ctx->lo, ctx->os); // pop mark
     push(ctx->lo, ctx->os, d);
 }
+
+//TODO where forall currentdict countdictstack dictstack
 
 void initopdi(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
