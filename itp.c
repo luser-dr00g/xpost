@@ -394,6 +394,7 @@ int main(void) {
     printf("\n^test itp.c\n");
 
     init();
+    dumpdic(ctx->gl, bot(ctx->lo, ctx->ds, 0));
 
     push(ctx->lo, ctx->es, invalid);
 
@@ -425,7 +426,7 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {1 2 3.14 true} ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" //false ")));
     //push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 div "))));
-    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" \
+    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" \n\
         (%stdin)(r) file cvx exec \
                         "))));
 

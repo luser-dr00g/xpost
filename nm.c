@@ -80,7 +80,10 @@ unsigned addname(context *ctx, char *s) {
     unsigned u = count(ctx->gl, names);
     //dumpmfile(ctx->gl);
     //dumpmtab(ctx->gl, 0);
-    push(ctx->gl, names, consstr(ctx->gl, strlen(s), s));
+    unsigned vmmode = ctx->vmmode;
+    ctx->vmmode = GLOBAL;
+    push(ctx->gl, names, consbst(ctx, strlen(s), s));
+    ctx->vmmode = vmmode;
     return u;
 }
 

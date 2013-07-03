@@ -72,22 +72,6 @@ void Aforall(context *ctx, object A, object P) {
     if (isx(A)) push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, P);
     push(ctx->lo, ctx->os, barget(ctx, A, 0));
-#if 0
-    switch(A.comp_.sz) {
-    default:
-        push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-        push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        push(ctx->lo, ctx->es, cvlit(P));
-        push(ctx->lo, ctx->es, arrgetinterval(A, 1, A.comp_.sz - 1));
-        /*@fallthrough@*/
-    case 1:
-        push(ctx->lo, ctx->es, P);
-        push(ctx->lo, ctx->os, barget(ctx, A, 0));
-        /*@fallthrough@*/
-    case 0:
-        break;
-    }
-#endif
 }
 
 void arrtomark(context *ctx) {

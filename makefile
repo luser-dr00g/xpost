@@ -10,6 +10,8 @@ test: m ob s st nm v gc ar di itp
 	./ob && ./m && ./s && ./st && ./nm && \
 	./v && ./gc && ./ar && ./di && ./itp
 
+.o.c:
+
 count:
 	wc -l *.[ch]
 

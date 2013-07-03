@@ -37,7 +37,9 @@ int objcmp(context *ctx, object L, object R) {
             case invalidtype: return 0;
 
             case integertype: return L.int_.val - R.int_.val;
-            case realtype: return ! (fabs(L.real_.val - R.real_.val) < 0.0001);
+            case realtype: return (fabs(L.real_.val - R.real_.val) < 0.0001)?
+                                    0:
+                                    L.real_.val - R.real_.val;
 
             case operatortype: 
             case nametype: return !( L.mark_.padw == R.mark_.padw );
@@ -162,7 +164,8 @@ void dicgrow(context *ctx, object d) {
     sz = (dp->sz + 1);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
     for ( i=0; i < sz; i++)
-        if (objcmp(ctx, tp[2*i], null) != 0) {
+        //if (objcmp(ctx, tp[2*i], null) != 0) {
+        if (type(tp[2*i]) != nulltype) {
             dicput(ctx, mem, n, tp[2*i], tp[2*i+1]);
         }
 #ifdef DEBUGDIC
@@ -174,14 +177,17 @@ void dicgrow(context *ctx, object d) {
         mtab *dtab, *ntab;
         unsigned dent, nent;
         unsigned hold;
+
         dent = d.comp_.ent;
         nent = n.comp_.ent;
         findtabent(mem, &dtab, &dent);
         findtabent(mem, &ntab, &nent);
+
         // exchange adrs
         hold = dtab->tab[dent].adr;
         dtab->tab[dent].adr = ntab->tab[nent].adr;
         ntab->tab[nent].adr = hold;
+
         // exchange sizes
         hold = dtab->tab[dent].sz;
         dtab->tab[dent].sz = ntab->tab[nent].sz;
@@ -201,6 +207,7 @@ void dumpdic(mfile *mem, object d) {
     dichead *dp = (void *)(mem->base + ad);
     object *tp = (void *)(mem->base + ad + sizeof(dichead));
     unsigned sz = (dp->sz + 1);
+    printf("\n");
     int i;
     for (i=0; i < sz; i++) {
         printf("%d:", i);

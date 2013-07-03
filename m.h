@@ -58,7 +58,7 @@ void growmem(mfile *mem, unsigned sz);
 unsigned mfalloc(mfile *mem, unsigned sz);
 
 
-#define TABSZ 20
+#define TABSZ 200
 typedef struct {
     unsigned nexttab; /* next table in chain */
     unsigned nextent; /* next slot in table, or TABSZ if none */
