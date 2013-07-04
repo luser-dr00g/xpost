@@ -24,7 +24,9 @@ void barput(context *ctx, object a, integer i, object o);
 object arrget(mfile *mem, object a, integer i);
 object barget(context *ctx, object a, integer i);
 
-/* adjust the size and offset fields in the object */
+/* adjust the size and offset fields in the object
+   (works for strings, too)
+ */
 object arrgetinterval(object a, integer s, integer n);
 
 
