@@ -52,17 +52,22 @@ void Radd (context *ctx, object x, object y) {
     push(ctx->lo, ctx->os, consreal(x.real_.val + y.real_.val));
 }
 
-/* num1 num2  sub  difference
-   num1 minus num2 */
-void Isub (context *ctx, object x, object y) {
-    if (subwillunder(x.int_.val, y.int_.val))
-        push(ctx->lo, ctx->os, consreal((real)x.int_.val - y.int_.val));
-    else
-        push(ctx->lo, ctx->os, consint(x.int_.val - y.int_.val));
+/* num1 num2  div  quotient
+   num1 divided by num2 */
+void Rdiv (context *ctx, object x, object y) {
+    push(ctx->lo, ctx->os, consreal(x.real_.val / y.real_.val));
 }
 
-void Rsub (context *ctx, object x, object y) {
-    push(ctx->lo, ctx->os, consreal(x.real_.val - y.real_.val));
+/* num1 num2  idiv  quotient
+   integer divide */
+void Iidiv (context *ctx, object x, object y) {
+    push(ctx->lo, ctx->os, consint(x.int_.val / y.int_.val));
+}
+
+/* num1 num2  mod  remainder
+   num1 mod num2 */
+void Imod (context *ctx, object x, object y) {
+    push(ctx->lo, ctx->os, consint(x.int_.val % y.int_.val));
 }
 
 /* num1 num2  mul  product
@@ -78,22 +83,17 @@ void Rmul (context *ctx, object x, object y) {
     push(ctx->lo, ctx->os, consreal(x.real_.val * y.real_.val));
 }
 
-/* num1 num2  idiv  quotient
-   integer divide */
-void Iidiv (context *ctx, object x, object y) {
-    push(ctx->lo, ctx->os, consint(x.int_.val / y.int_.val));
+/* num1 num2  sub  difference
+   num1 minus num2 */
+void Isub (context *ctx, object x, object y) {
+    if (subwillunder(x.int_.val, y.int_.val))
+        push(ctx->lo, ctx->os, consreal((real)x.int_.val - y.int_.val));
+    else
+        push(ctx->lo, ctx->os, consint(x.int_.val - y.int_.val));
 }
 
-/* num1 num2  div  quotient
-   num1 divided by num2 */
-void Rdiv (context *ctx, object x, object y) {
-    push(ctx->lo, ctx->os, consreal(x.real_.val / y.real_.val));
-}
-
-/* num1 num2  mod  remainder
-   num1 mod num2 */
-void Imod (context *ctx, object x, object y) {
-    push(ctx->lo, ctx->os, consint(x.int_.val % y.int_.val));
+void Rsub (context *ctx, object x, object y) {
+    push(ctx->lo, ctx->os, consreal(x.real_.val - y.real_.val));
 }
 
 /* num1  abs  num2
@@ -127,42 +127,60 @@ void Istet (context *ctx, object x) {
     push(ctx->lo, ctx->os, x);
 }
 
-void Rfloor (context *ctx, object x) {
-    push(ctx->lo, ctx->os, consreal(floor(x.real_.val)));
-}
-
+/* num1  ceiling  num2
+   ceiling of num1 */
 void Rceiling (context *ctx, object x) {
     push(ctx->lo, ctx->os, consreal(ceil(x.real_.val)));
 }
 
+/* num1  floor  num2
+   floor of num1 */
+void Rfloor (context *ctx, object x) {
+    push(ctx->lo, ctx->os, consreal(floor(x.real_.val)));
+}
+
+/* num1  round  num2
+   round num1 to nearest integer */
 void Rround (context *ctx, object x) {
     push(ctx->lo, ctx->os, consreal(round(x.real_.val)));
 }
 
+/* num1  truncate  num2
+   remove fractional part of num1 */
 void Rtruncate (context *ctx, object x) {
     push(ctx->lo, ctx->os, consreal(trunc(x.real_.val)));
 }
 
+/* num1  sqrt  num2
+   square root of num1 */
 void Rsqrt (context *ctx, object x) {
     push(ctx->lo, ctx->os, consreal(sqrt(x.real_.val)));
 }
 
+/* num den  atan  angle
+   arctangent of num/den in degrees */
 void Ratan (context *ctx, object num, object den) {
     push(ctx->lo, ctx->os,
             consreal(atan2(num.real_.val, den.real_.val)
                 / RAD_PER_DEG));
 }
 
+/* angle  cos  real
+   cosine of angle (degrees) */
 void Rcos (context *ctx, object x) {
     push(ctx->lo, ctx->os,
             consreal(cos(RAD_PER_DEG * x.real_.val)));
 }
 
+/* angle  sin  real
+   sine of angle (degrees) */
 void Rsin (context *ctx, object x) {
     push(ctx->lo, ctx->os,
             consreal(sin(RAD_PER_DEG * x.real_.val)));
 }
 
+/* base exponent  exp  real
+   raise base to exponent power */
 void Rexp (context *ctx, object base, object expn) {
     if (base.real_.val < 0)
         expn.real_.val = trunc(expn.real_.val);
@@ -170,14 +188,20 @@ void Rexp (context *ctx, object base, object expn) {
             consreal(pow(base.real_.val, expn.real_.val)));
 }
 
+/* num  ln  real
+   natural logarithm of num */
 void Rln (context *ctx, object x) {
     push(ctx->lo, ctx->os, consreal(log(x.real_.val)));
 }
 
+/* num  log  real
+   logarithm (base 10) */
 void Rlog (context *ctx, object x) {
     push(ctx->lo, ctx->es, consreal(log10(x.real_.val)));
 }
 
+/* -  rand  int
+   generate pseudo-random integer */
 void Zrand (context *ctx) {
     unsigned x;
     ctx->rand_next = ctx->rand_next * 1103515245 + 12345;
@@ -187,10 +211,14 @@ void Zrand (context *ctx) {
     push(ctx->lo, ctx->es, consint(x & 0x7fffffff));
 }
 
+/* int  srand  -
+   set random number seed */
 void Isrand (context *ctx, object seed) {
     ctx->rand_next = seed.int_.val;
 }
 
+/* -  rrand  int
+   return random number seed */
 void Zrrand (context *ctx) {
     push(ctx->lo, ctx->es, consint(ctx->rand_next));
 }

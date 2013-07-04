@@ -15,34 +15,48 @@
 #include "op.h"
 #include "ops.h"
 
+/* int  dict  dict
+   create dictionary with capacity for int elements */
 void Idict(context *ctx, object I) {
     push(ctx->lo, ctx->os, consbdc(ctx, I.int_.val));
 }
 
+/* dict  length  int
+   number of key-value pairs in dict */
 void Dlength(context *ctx, object D) {
     push(ctx->lo, ctx->os, consint(diclength(
                     bank(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
 }
 
+/* dict  maxlength  int
+   capacity of dict */
 void Dmaxlength(context *ctx, object D) {
     push(ctx->lo, ctx->os, consint(dicmaxlength(
                     bank(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
 }
 
+/* dict  begin  -
+   push dict on dict stack */
 void Dbegin(context *ctx, object D) {
     push(ctx->lo, ctx->ds, D);
 }
 
+/* -  end  -
+   pop dict stack */
 void Zend(context *ctx) {
     (void)pop(ctx->lo, ctx->ds);
 }
 
+/* key value  def  -
+   associate key with value in current dict */
 void Adef(context *ctx, object K, object V) {
     bdcput(ctx, top(ctx->lo, ctx->ds, 0), K, V);
 }
 
+/* dict key  known  bool
+   test whether key is in dict */
 void DAknown(context *ctx, object D, object K) {
     printf("\nknown: ");
     dumpobject(D);
@@ -51,14 +65,20 @@ void DAknown(context *ctx, object D, object K) {
     push(ctx->lo, ctx->os, consbool(dicknown(ctx, bank(ctx, D), D, K)));
 }
 
+/* dict key  get  any
+   get value associated with key in dict */
 void DAget(context *ctx, object D, object K) {
     push(ctx->lo, ctx->os, bdcget(ctx, D, K));
 }
 
+/* dict key value  put  -
+   associate key with value in dict */
 void DAAput(context *ctx, object D, object K, object V) {
     bdcput(ctx, D, K, V);
 }
 
+/* key  load  value
+   search dict stack for key and return associated value */
 void Aload(context *ctx, object K) {
     int i;
     int z = count(ctx->lo, ctx->ds);
@@ -110,7 +130,45 @@ void dictomark(context *ctx) {
     push(ctx->lo, ctx->os, d);
 }
 
-//TODO where forall currentdict countdictstack dictstack
+/* key  where  dict true -or- false
+   find dict in which key is defined */
+void Awhere(context *ctx, object K) {
+    int i;
+    int z = count(ctx->lo, ctx->ds);
+    for (i = 0; i < z; i++) {
+        object D = top(ctx->lo, ctx->ds, i);
+        if (dicknown(ctx, bank(ctx, D), D, K)) {
+            push(ctx->lo, ctx->os, D);
+            push(ctx->lo, ctx->os, consbool(true));
+            return;
+        }
+    }
+    push(ctx->lo, ctx->ds, consbool(false));
+}
+
+/* -  currentdict  dict
+   push current dict on operand stack */
+void Zcurrentdict(context *ctx) {
+    push(ctx->lo, ctx->os, top(ctx->lo, ctx->ds, 0));
+}
+
+/* -  countdictstack  int
+   count elements on dict stack */
+void Zcountdictstack(context *ctx) {
+    push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->ds)));
+}
+
+/* array  dictstack  subarray
+   copy dict stack into array */
+void Adictstack(context *ctx, object A) {
+    int z = count(ctx->lo, ctx->ds);
+    int i;
+    for (i=0; i < z; i++)
+        barput(ctx, A, i, bot(ctx->lo, ctx->ds, i));
+    push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+}
+
+//TODO forall
 
 void initopdi(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
@@ -128,5 +186,9 @@ void initopdi(context *ctx, object sd) {
     op = consoper(ctx, "load", Aload, 1, 1, anytype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "<<"), mark);
     op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;
+    op = consoper(ctx, "where", Awhere, 2, 1, anytype); INSTALL;
+    op = consoper(ctx, "currentdict", Zcurrentdict, 1, 0); INSTALL;
+    op = consoper(ctx, "countdictstack", Zcountdictstack, 1, 0); INSTALL;
+    op = consoper(ctx, "dictstack", Adictstack, 1, 1, arraytype); INSTALL;
 }
 
