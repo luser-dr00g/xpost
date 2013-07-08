@@ -1,4 +1,4 @@
-#define DEBUGLOAD
+//#define DEBUGLOAD
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -18,7 +18,7 @@
 /* int  dict  dict
    create dictionary with capacity for int elements */
 void Idict(context *ctx, object I) {
-    push(ctx->lo, ctx->os, consbdc(ctx, I.int_.val));
+    push(ctx->lo, ctx->os, cvlit(consbdc(ctx, I.int_.val)));
 }
 
 /* dict  length  int
@@ -168,7 +168,34 @@ void Adictstack(context *ctx, object A) {
     push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
 }
 
-//TODO forall
+void DPforall (context *ctx, object D, object P) {
+    mfile *mem = bank(ctx, D);
+    D.comp_.sz = dicmaxlength(mem, D); // stash size locally
+    if (D.comp_.off <= D.comp_.sz) { // not finished?
+        unsigned ad;
+        dichead *dp;
+        object *tp;
+        ad = adrent(mem, D.comp_.ent);
+        dp = (void *)(mem->base + ad); 
+        tp = (void *)(mem->base + ad + sizeof(dichead)); 
+
+        for ( ; D.comp_.off <= D.comp_.sz; D.comp_.off++) { // find next pair
+            if (type(tp[2 * D.comp_.off]) != nulltype) { // found
+
+                push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
+                push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+                push(ctx->lo, ctx->es, cvlit(P));
+                push(ctx->lo, ctx->es, D);
+
+                push(ctx->lo, ctx->os, tp[2 * D.comp_.off]);
+                push(ctx->lo, ctx->os, tp[2 * D.comp_.off + 1]);
+
+                push(ctx->lo, ctx->es, P);
+                return;
+            }
+        }
+    }
+}
 
 void initopdi(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
@@ -190,5 +217,6 @@ void initopdi(context *ctx, object sd) {
     op = consoper(ctx, "currentdict", Zcurrentdict, 1, 0); INSTALL;
     op = consoper(ctx, "countdictstack", Zcountdictstack, 1, 0); INSTALL;
     op = consoper(ctx, "dictstack", Adictstack, 1, 1, arraytype); INSTALL;
+    op = consoper(ctx, "forall", DPforall, 0, 2, dicttype, proctype); INSTALL;
 }
 
