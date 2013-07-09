@@ -39,7 +39,10 @@ void strhandler (context *ctx) {
     any = pop(ctx->lo, ctx->os);
     post = pop(ctx->lo, ctx->os);
     push(ctx->lo, ctx->es, post);
-    push(ctx->lo, ctx->es, any);
+    if (type(any) == arraytype)
+        push(ctx->lo, ctx->os, any);
+    else
+        push(ctx->lo, ctx->es, any);
     printf("strhandler: os: ");
     dumpstack(ctx->lo, ctx->os);
     printf("es: ");
@@ -674,6 +677,7 @@ void initoptok(context *ctx, object sd) {
         /* (>)0 get {
                 pop
                 dup 0 get (>) 0 get eq {
+                    1 1 index length 1 sub getinterval
                     (>>) cvn cvx
                 }{
                     /toke cvx /syntaxerror signalerror
@@ -682,7 +686,9 @@ void initoptok(context *ctx, object sd) {
         ARR(9);
             ADD(N(pop));
             ADD(N(dup)); ADD(L(0)); ADD(N(get)); ADD(L('>')); ADD(N(eq));
-            ADDSUB(2);
+            ADDSUB(9);
+                ADD(L(1)); ADD(L(1)); ADD(N(index)); ADD(N(length));
+                ADD(L(1)); ADD(N(sub)); ADD(N(getinterval));
                 ADD(cvlit(consname(ctx, ">>"))); ADD(N(cvx)); ENDSUB;
             ADDSUB(1);
                 ADD(N(syntaxerror)); ENDSUB;

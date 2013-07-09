@@ -179,16 +179,17 @@ void DPforall (context *ctx, object D, object P) {
         dp = (void *)(mem->base + ad); 
         tp = (void *)(mem->base + ad + sizeof(dichead)); 
 
-        for ( ; D.comp_.off <= D.comp_.sz; D.comp_.off++) { // find next pair
+        for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) { // find next pair
             if (type(tp[2 * D.comp_.off]) != nulltype) { // found
+
+                push(ctx->lo, ctx->os, tp[2 * D.comp_.off]);
+                push(ctx->lo, ctx->os, tp[2 * D.comp_.off + 1]);
 
                 push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
                 push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
                 push(ctx->lo, ctx->es, cvlit(P));
+                ++D.comp_.off;
                 push(ctx->lo, ctx->es, D);
-
-                push(ctx->lo, ctx->os, tp[2 * D.comp_.off]);
-                push(ctx->lo, ctx->os, tp[2 * D.comp_.off + 1]);
 
                 push(ctx->lo, ctx->es, P);
                 return;
