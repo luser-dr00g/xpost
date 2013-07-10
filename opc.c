@@ -1,3 +1,5 @@
+/* control operators */
+
 #include <alloca.h>
 #include <stdbool.h>
 #include <stdio.h> /* printf */
@@ -76,32 +78,39 @@ void Ploop (context *ctx, object P) {
 }
 
 void Zexit (context *ctx) {
-    object oploop = consoper(ctx, "loop", NULL,0,0);
-    object opforall = consoper(ctx, "forall", NULL,0,0);
     object opfor = consoper(ctx, "for", NULL,0,0);
     object oprepeat = consoper(ctx, "repeat", NULL,0,0);
+    object oploop = consoper(ctx, "loop", NULL,0,0);
+    object opforall = consoper(ctx, "forall", NULL,0,0);
 
     object x;
     printf("\nexit\n");
-    dumpobject(oploop);
-    dumpobject(opforall);
     dumpobject(opfor);
     dumpobject(oprepeat);
+    dumpobject(oploop);
+    dumpobject(opforall);
+
     dumpstack(ctx->lo, ctx->os);
     dumpstack(ctx->lo, ctx->es);
     printf("\n");
     while(1){
         x = pop(ctx->lo, ctx->es);
         dumpobject(x);
-        if ( (objcmp(ctx, x, oploop) == 0)
-          || (objcmp(ctx, x, opforall) == 0)
-          || (objcmp(ctx, x, opfor) == 0)
+        if ( (objcmp(ctx, x, opfor)    == 0)
           || (objcmp(ctx, x, oprepeat) == 0)
-          )
+          || (objcmp(ctx, x, oploop)   == 0)
+          || (objcmp(ctx, x, opforall) == 0)
+           )
             break;
     }
     printf("result:");
     dumpstack(ctx->lo, ctx->es);
+}
+
+//TODO stop stopped countexecstack execstack start
+
+void Zquit(context *ctx) {
+    ctx->quit = 1;
 }
 
 void initopc (context *ctx, object sd) {
@@ -118,6 +127,7 @@ void initopc (context *ctx, object sd) {
     op = consoper(ctx, "repeat", IPrepeat, 0, 2, integertype, proctype); INSTALL;
     op = consoper(ctx, "loop", Ploop, 0, 1, proctype); INSTALL;
     op = consoper(ctx, "exit", Zexit, 0, 0); INSTALL;
+    op = consoper(ctx, "quit", Zquit, 0, 0); INSTALL;
     /*
     op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     //dumpdic(ctx->gl, sd); fflush(NULL);

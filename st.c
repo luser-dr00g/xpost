@@ -11,7 +11,7 @@ object consstr(mfile *mem, unsigned sz, /*@NULL@*/ char *ini) {
     //ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int));
     ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int));
     if (ini) put(mem, ent, 0, sz, ini);
-    o.tag = stringtype;
+    o.tag = stringtype | (unlimited << FACCESSO);
     o.comp_.sz = sz;
     o.comp_.ent = ent;
     o.comp_.off = 0;

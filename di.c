@@ -92,7 +92,7 @@ object consdic(mfile *mem, unsigned sz) {
     object *tp;
     unsigned i;
 
-    d.tag = dicttype;
+    d.tag = dicttype | (unlimited << FACCESSO);
     d.comp_.sz = sz;
     d.comp_.off = 0;
     //d.comp_.ent = mtalloc(mem, 0, sizeof(dichead) + DICTABSZ(sz) );
