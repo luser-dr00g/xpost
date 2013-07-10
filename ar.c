@@ -29,7 +29,7 @@ object consarr(mfile *mem, unsigned sz) {
             (cnt << LLEVO) | (cnt << TLEVO) );
 
     //return (object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0};
-    o.tag = arraytype;
+    o.tag = arraytype | (unlimited << FACCESSO);
     o.comp_.sz = (word)sz;
     o.comp_.ent = (word)ent;
     o.comp_.off = 0;

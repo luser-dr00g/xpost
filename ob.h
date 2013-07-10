@@ -41,11 +41,18 @@ char *types[] /*= { TYPES(AS_STR) "invalid"}*/ ;
 
 enum tagdata {
     TYPEMASK = 0x000F,
-    FVALID =   0x0010, /* for 'anytype' operator pattern */
+    FVALID =   0x0010, /* for 'anytype' operator pattern (7/9/2013: TODO wtf is this??) */
     FACCESS =  0x0060,
     FACCESSO = 5,  /* bitwise offset of the ACCESS field */
     FLIT =     0x0080,
     FBANK =    0x0100, /* 0=local, 1=global */
+};
+
+enum access {
+    noaccess    = 0,
+    executeonly = 1,
+    readonly    = 2,
+    unlimited   = 3,
 };
 
 /* To avoid too many structures, many types use .mark_.padw 

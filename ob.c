@@ -33,7 +33,7 @@ SINGLETONS(DEFINE_SINGLETON)
 
 object consbool(bool b) {
     object o;
-    o.int_.tag = booleantype;
+    o.int_.tag = booleantype | (unlimited << FACCESSO);
     o.int_.pad = 0;
     o.int_.val = b;
     return cvlit(o);
@@ -41,7 +41,7 @@ object consbool(bool b) {
 
 object consint(integer i){
     object o;
-    o.int_.tag = integertype;
+    o.int_.tag = integertype | (unlimited << FACCESSO);
     o.int_.pad = 0;
     o.int_.val = i;
     return cvlit(o);
@@ -49,7 +49,7 @@ object consint(integer i){
 
 object consreal(real r){
     object o;
-    o.real_.tag = realtype;
+    o.real_.tag = realtype | (unlimited << FACCESSO);
     o.real_.pad = 0;
     o.real_.val = r;
     return cvlit(o);
