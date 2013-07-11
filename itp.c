@@ -396,7 +396,8 @@ int main(void) {
     init();
     dumpdic(ctx->gl, bot(ctx->lo, ctx->ds, 0));
 
-    push(ctx->lo, ctx->es, invalid);
+    //push(ctx->lo, ctx->es, invalid);
+    push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
 
 #if 0
     int i;

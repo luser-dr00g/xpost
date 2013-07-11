@@ -10,6 +10,7 @@
 #include "s.h"
 #include "itp.h"
 #include "nm.h"
+#include "ar.h"
 #include "di.h"
 #include "op.h"
 
@@ -93,21 +94,57 @@ void Zexit (context *ctx) {
     dumpstack(ctx->lo, ctx->os);
     dumpstack(ctx->lo, ctx->es);
     printf("\n");
-    while(1){
+    while (1) {
         x = pop(ctx->lo, ctx->es);
         dumpobject(x);
         if ( (objcmp(ctx, x, opfor)    == 0)
           || (objcmp(ctx, x, oprepeat) == 0)
           || (objcmp(ctx, x, oploop)   == 0)
           || (objcmp(ctx, x, opforall) == 0)
-           )
+           ) {
             break;
+        }
     }
     printf("result:");
     dumpstack(ctx->lo, ctx->es);
 }
 
-//TODO stop stopped countexecstack execstack start
+/* The stopped context is a boolean 'false' on the exec stack,
+   so normal execution simply falls through and pushes the 
+   false onto the operand stack. 'stop' then merely has to 
+   search for 'false' and push a 'true'.  */
+
+void Zstop(context *ctx) {
+    object f = consbool(false);
+    object x;
+    while (1) {
+        x = pop(ctx->lo, ctx->es);
+        if(objcmp(ctx, f, x) == 0) {
+            push(ctx->lo, ctx->os, consbool(true));
+            return;
+        }
+    }
+    error("no stopped context in 'stop'");
+}
+
+void Astopped(context *ctx, object o) {
+    push(ctx->lo, ctx->es, consbool(false));
+    push(ctx->lo, ctx->es, o);
+}
+
+void Zcountexecstack(context *ctx) {
+    push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->es)));
+}
+
+void Aexecstack(context *ctx, object A) {
+    int z = count(ctx->lo, ctx->es);
+    int i;
+    for (i=0; i < z; i++)
+        barput(ctx, A, i, bot(ctx->lo, ctx->es, i));
+    push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+}
+
+//TODO start
 
 void Zquit(context *ctx) {
     ctx->quit = 1;
@@ -127,6 +164,10 @@ void initopc (context *ctx, object sd) {
     op = consoper(ctx, "repeat", IPrepeat, 0, 2, integertype, proctype); INSTALL;
     op = consoper(ctx, "loop", Ploop, 0, 1, proctype); INSTALL;
     op = consoper(ctx, "exit", Zexit, 0, 0); INSTALL;
+    op = consoper(ctx, "stop", Zstop, 0, 0); INSTALL;
+    op = consoper(ctx, "stopped", Astopped, 0, 1, anytype); INSTALL;
+    op = consoper(ctx, "countexecstack", Zcountexecstack, 1, 0); INSTALL;
+    op = consoper(ctx, "execstack", Aexecstack, 1, 1, arraytype); INSTALL;
     op = consoper(ctx, "quit", Zquit, 0, 0); INSTALL;
     /*
     op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
