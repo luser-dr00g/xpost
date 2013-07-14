@@ -11,6 +11,13 @@
 #include "ob.h"
 #include "gc.h"
 
+/* filetype objects use a slightly different interpretation
+   of the access flags.
+   'unlimited' designates a writable file
+   'readonly' designates a readable file
+   The only oddity here is that 'unlimited' means "not readable".
+   */
+
 /* construct a file object.
    set the tag,
    use the "doubleword" field as a "pointer" (ent),
@@ -19,7 +26,7 @@
    return object.  */
 object consfile(mfile *mem, FILE *fp) {
     object f;
-    f.tag = filetype;
+    f.tag = filetype | (unlimited << FACCESSO);
     //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *));
     f.mark_.padw = gballoc(mem, sizeof(FILE *));
     put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
@@ -112,6 +119,8 @@ object fileopen(mfile *mem, char *fn, char *mode) {
     if (strcmp(fn, "%stdin")==0) {
         if (strcmp(mode, "r")!=0) error("invalidfileaccess");
         f = consfile(mem, stdin);
+        f.tag &= ~FACCESS;
+        f.tag |= (readonly << FACCESSO);
     } else if (strcmp(fn, "%stdout")==0) {
         if (strcmp(mode, "w")!=0) error("invalidfileaccess");
         f = consfile(mem, stdout);
@@ -120,8 +129,12 @@ object fileopen(mfile *mem, char *fn, char *mode) {
         f = consfile(mem, stderr);
     } else if (strcmp(fn, "%lineedit")==0) {
         f = consfile(mem, lineedit(stdin));
+        f.tag &= ~FACCESS;
+        f.tag |= (readonly << FACCESSO);
     } else if (strcmp(fn, "%statementedit")==0) {
         f = consfile(mem, statementedit(stdin));
+        f.tag &= ~FACCESS;
+        f.tag |= (readonly << FACCESSO);
     } else {
         FILE *fp;
         fp = fopen(fn, mode);
@@ -133,6 +146,10 @@ object fileopen(mfile *mem, char *fn, char *mode) {
             }
         }
         f = consfile(mem, fp);
+        if (strcmp(mode, "r")==0){
+            f.tag &= ~FACCESS;
+            f.tag |= (readonly << FACCESSO);
+        }
     }
 
     f.tag |= FLIT;

@@ -48,7 +48,7 @@ enum tagdata {
     FBANK =    0x0100, /* 0=local, 1=global */
 };
 
-enum access {
+enum faccess {
     noaccess    = 0,
     executeonly = 1,
     readonly    = 2,
@@ -107,9 +107,12 @@ typedef union {
     saverec_ saverec_;
 } object;
 
-integer type(object o);
-integer isx(object o);
-integer islit(object o);
+int type(object o);
+int isx(object o);
+int islit(object o);
+int faccess(object o);
+int isreadable(object o);
+int iswritable(object o);
 
 #define DECLARE_SINGLETON(_) extern object _;
 #define DEFINE_SINGLETON(_) object _ = { AS_TYPE(_) };

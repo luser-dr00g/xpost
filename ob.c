@@ -6,15 +6,31 @@
 
 char *types[] = { TYPES(AS_STR) "invalid"};
 
-integer isx(object o) {
+int isx(object o) {
     return !(o.tag &FLIT);
 }
 
-integer islist(object o) {
+int islit(object o) {
     return o.tag & FLIT;
 }
 
-integer type(object o) {
+int faccess(object o) {
+    return (o.tag & FACCESS) >> FACCESSO;
+}
+
+int isreadable(object o) {
+    if (type(o) == filetype) {
+        return faccess(o) == readonly;
+    } else {
+        return faccess(o) >= readonly;
+    }
+}
+
+int iswritable(object o) {
+    return faccess(o) == unlimited;
+}
+
+int type(object o) {
     return o.tag & TYPEMASK;
 }
 
