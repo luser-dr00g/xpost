@@ -38,7 +38,7 @@ void Fread (context *ctx, object f) {
 }
 
 void Fwrite (context *ctx, object f, object i) {
-    if (!iswritable(f)) error("invalidaccess");
+    if (!iswriteable(f)) error("invalidaccess");
     filewrite(ctx->lo, f, i);
 }
 
@@ -76,7 +76,72 @@ void Freadhexstring (context *ctx, object F, object S) {
     push(ctx->lo, ctx->os, consbool(!eof));
 }
 
-void Fwritehexstring (context *ctx, object f, object s) {
+void Fwritehexstring (context *ctx, object F, object S) {
+    int n;
+    FILE *f;
+    char *s;
+    if (!filestatus(ctx->lo, F)) error("ioerror");
+    if (!iswriteable(F)) error("invalidaccess");
+    f = filefile(ctx->lo, F);
+    s = charstr(ctx, S);
+
+    for(n=0; n < S.comp_.sz; n++) {
+        if (fputc(hex[s[n] / 16], f)) error("ioerror");
+        if (fputc(hex[s[n] % 16], f)) error("ioerror");
+    }
+}
+
+void Freadstring (context *ctx, object F, object S) {
+    int n;
+    FILE *f;
+    char *s;
+    if (!filestatus(ctx->lo, F)) error("ioerror");
+    if (!isreadable(F)) error("invalidaccess");
+    f = filefile(ctx->lo, F);
+    s = charstr(ctx, S);
+    n = fread(s, 1, S.comp_.sz, f);
+    if (n == S.comp_.sz) {
+        push(ctx->lo, ctx->os, S);
+        push(ctx->lo, ctx->os, consbool(true));
+    } else {
+        S.comp_.sz = n;
+        push(ctx->lo, ctx->os, S);
+        push(ctx->lo, ctx->os, consbool(false));
+    }
+}
+
+void Fwritestring (context *ctx, object F, object S) {
+    FILE *f;
+    char *s;
+    if (!filestatus(ctx->lo, F)) error("ioerror");
+    if (!iswriteable(F)) error("invalidaccess");
+    f = filefile(ctx->lo, F);
+    s = charstr(ctx, S);
+    if (fwrite(s, 1, S.comp_.sz, f) != S.comp_.sz)
+        error("ioerror");
+}
+
+void Freadline (context *ctx, object F, object S) {
+    FILE *f;
+    char *s;
+    int n, c;
+    if (!filestatus(ctx->lo, F)) error("ioerror");
+    if (!iswriteable(F)) error("invalidaccess");
+    f = filefile(ctx->lo, F);
+    s = charstr(ctx, S);
+    for (n=0; n < S.comp_.sz; n++) {
+        c = fgetc(f);
+        if (c == EOF || c == '\n') break;
+        s[n] = c;
+    }
+    if (n == S.comp_.sz && c != '\n') error("rangecheck");
+    S.comp_.sz = n;
+    push(ctx->lo, ctx->os, S);
+    push(ctx->lo, ctx->os, consbool(c != EOF));
+}
+
+void Fbytesavailable (context *ctx, object F) {
+    push(ctx->lo, ctx->os, consint(filebytesavailable(ctx->lo, F)));
 }
 
 void initopf (context *ctx, object sd) {
@@ -87,8 +152,12 @@ void initopf (context *ctx, object sd) {
     op = consoper(ctx, "closefile", Fclosefile, 0, 1, filetype); INSTALL;
     op = consoper(ctx, "read", Fread, 1, 1, filetype); INSTALL;
     op = consoper(ctx, "write", Fwrite, 0, 2, filetype, integertype); INSTALL;
-    op = consoper(ctx, "readhexstring", Freadhexstring, 2, 2, \
-            filetype, stringtype); INSTALL;
+    op = consoper(ctx, "readhexstring", Freadhexstring, 2, 2, filetype, stringtype); INSTALL;
+    op = consoper(ctx, "writehexstring", Fwritehexstring, 0, 2, filetype, stringtype); INSTALL;
+    op = consoper(ctx, "readstring", Freadstring, 2, 2, filetype, stringtype); INSTALL;
+    op = consoper(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype); INSTALL;
+    op = consoper(ctx, "readline", Freadline, 2, 2, filetype, stringtype); INSTALL;
+    op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype); 
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
