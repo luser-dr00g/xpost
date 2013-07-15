@@ -299,6 +299,10 @@ void initop(context *ctx) {
     printf("\nopf:\n");
     dumpdic(ctx->gl, sd); fflush(NULL);
 
+    initopv(ctx, sd);
+    printf("\nopv:\n");
+    dumpdic(ctx->gl, sd); fflush(NULL);
+
     initopx(ctx, sd);
     printf("\nopx:\n");
     dumpdic(ctx->gl, sd); fflush(NULL);
