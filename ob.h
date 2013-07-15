@@ -112,7 +112,7 @@ int isx(object o);
 int islit(object o);
 int faccess(object o);
 int isreadable(object o);
-int iswritable(object o);
+int iswriteable(object o);
 
 #define DECLARE_SINGLETON(_) extern object _;
 #define DEFINE_SINGLETON(_) object _ = { AS_TYPE(_) };

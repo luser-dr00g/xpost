@@ -26,7 +26,7 @@ int isreadable(object o) {
     }
 }
 
-int iswritable(object o) {
+int iswriteable(object o) {
     return faccess(o) == unlimited;
 }
 
