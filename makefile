@@ -4,7 +4,7 @@ OB=ob.o m.o
 LDLIBS=
 SRC= README makefile *.h *.c 
 OP=op.o ops.o opst.o opar.o opdi.o optok.o opb.o opc.o opt.o \
-    opm.o opf.o opx.o
+    opm.o opf.o opx.o osunix.o
 
 test: m ob s st nm v gc ar di itp
 	./ob && ./m && ./s && ./st && ./nm && \

@@ -2,6 +2,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdio_ext.h> /* __fpurge */
 #include <stdlib.h> /* NULL */
 #include <string.h>
 
@@ -14,6 +15,7 @@
 #include "di.h"
 #include "op.h"
 #include "f.h"
+#include "osunix.h"
 
 void Sfile (context *ctx, object fn, object mode) {
     object f;
@@ -144,6 +146,55 @@ void Fbytesavailable (context *ctx, object F) {
     push(ctx->lo, ctx->os, consint(filebytesavailable(ctx->lo, F)));
 }
 
+void Zflush (context *ctx) {
+    fflush(NULL);
+}
+
+void Fflushfile (context *ctx, object F) {
+    FILE *f;
+    if (!filestatus(ctx->lo, F)) return;
+    f = filefile(ctx->lo, F);
+    if (iswriteable(F)) {
+        fflush(f);
+    } else {
+        int c;
+        while ((c = fgetc(f)) != EOF)
+            /**/;
+    }
+}
+
+void Fresetfile (context *ctx, object F) {
+    FILE *f;
+    if (!filestatus(ctx->lo, F)) return;
+    f = filefile(ctx->lo, F);
+    __fpurge(f);
+}
+
+void Fstatus (context *ctx, object F) {
+    push(ctx->lo, ctx->os, consbool(filestatus(ctx->lo, F)));
+}
+
+void Zcurrentfile (context *ctx) {
+    int z = count(ctx->lo, ctx->es);
+    int i;
+    object o;
+    for (i=0; i<z; i++) {
+        o = top(ctx->lo, ctx->es, i);
+        if (type(o) == filetype) {
+            push(ctx->lo, ctx->os, o);
+            return;
+        }
+    }
+    push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
+}
+
+void Becho (context *ctx, object b) {
+    if (b.int_.val)
+        echoon(stdin);
+    else
+        echooff(stdin);
+}
+
 void initopf (context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     object n,op;
@@ -158,6 +209,12 @@ void initopf (context *ctx, object sd) {
     op = consoper(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype); INSTALL;
     op = consoper(ctx, "readline", Freadline, 2, 2, filetype, stringtype); INSTALL;
     op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype); 
+    op = consoper(ctx, "flush", Zflush, 0, 0); INSTALL;
+    op = consoper(ctx, "flushfile", Fflushfile, 0, 1, filetype); INSTALL;
+    op = consoper(ctx, "resetfile", Fresetfile, 0, 1, filetype); INSTALL;
+    op = consoper(ctx, "status", Fstatus, 1, 1, filetype); INSTALL;
+    op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
+    op = consoper(ctx, "echo", Becho, 0, 1, booleantype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
