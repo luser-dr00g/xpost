@@ -242,13 +242,16 @@ void initop(context *ctx) {
     object sd;
     mtab *tab;
     unsigned ent;
+    oper *optab;
+
     sd = consbdc(ctx, SDSIZE);
     push(ctx->lo, ctx->ds, sd);
     tab = NULL;
     ent = sd.comp_.ent;
     findtabent(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // make systemdict immune to collection
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 #ifdef DEBUGOP
     dumpdic(ctx->gl, sd); fflush(NULL);
     puts("");
