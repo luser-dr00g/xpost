@@ -207,8 +207,8 @@ void dumpdic(mfile *mem, object d) {
     dichead *dp = (void *)(mem->base + ad);
     object *tp = (void *)(mem->base + ad + sizeof(dichead));
     unsigned sz = (dp->sz + 1);
-    printf("\n");
     int i;
+    printf("\n");
     for (i=0; i < sz; i++) {
         printf("%d:", i);
         if (type(tp[2*i]) != nulltype) {

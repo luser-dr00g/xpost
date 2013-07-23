@@ -29,7 +29,7 @@ object toke (context *ctx, object *src,
         int (*next)(context *ctx, object *src),
         void (*back)(context *ctx, int c, object *src));
 
-// handles the 'true' case from `string token` in eval()
+// handles the 'true' case from `string token` in eval() //<-- Used to
 object arrstrhandler;
 void strhandler (context *ctx) {
     object post, any;
@@ -88,8 +88,7 @@ test fsm_real[] = {
 int accept_real(int i) {
     switch (i) { //case 2:
         case 6: case 10: return true; default: return false; }
-    // 2, 6 == 2|4, 10 == 2|8
-    //return (i & 2) == 2;
+    //return (i & 3) == 2;  // 2, 6 == 2|4, 10 == 2|8
 }
 
 int fsm_check (char *s, int ns, test *fsm,

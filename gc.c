@@ -251,8 +251,8 @@ void collect(mfile *mem) {
 }
 
 void dumpfree(mfile *mem) {
-    unsigned z = adrent(mem, FREE);;
     unsigned e;
+    unsigned z = adrent(mem, FREE);;
     printf("freelist: ");
     memcpy(&e, mem->base+z, sizeof(unsigned));
     while (e) {
