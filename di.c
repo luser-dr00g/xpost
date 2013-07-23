@@ -306,6 +306,10 @@ retry:
         dicgrow(ctx, d);
         goto retry;
     }
+    if (type(e[0]) == invalidtype) {
+        fprintf(stderr, "warning: invalidtype key in dict\n");
+        e[0] = null;
+    }
     if (type(e[0]) == nulltype) {
         if (dicfull(mem, d)) {
             //error("dict full");

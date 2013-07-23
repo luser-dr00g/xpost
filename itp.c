@@ -290,28 +290,44 @@ void evalarray(context *ctx) {
 }
 
 void evalstring(context *ctx) {
-    object s;
+    object b,t,s;
     s = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, s);
-    push(ctx->lo, ctx->es, consoper(ctx, "if", NULL,0,0));
-    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    push(ctx->lo, ctx->es, cvlit(arrstrhandler));
-    push(ctx->lo, ctx->es, consname(ctx, "toke"));
+    //push(ctx->lo, ctx->es, consoper(ctx, "if", NULL,0,0));
+    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    //push(ctx->lo, ctx->es, cvlit(arrstrhandler));
+    //push(ctx->lo, ctx->es, consname(ctx, "token"));
+    opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
+    b = pop(ctx->lo, ctx->os);
+    if (b.int_.val) {
+        t = pop(ctx->lo, ctx->os);
+        s = pop(ctx->lo, ctx->os);
+        push(ctx->lo, ctx->es, s);
+        push(ctx->lo, type(t)==arraytype? ctx->os: ctx->es, t);
+    }
 }
 
 void evalfile(context *ctx) {
-    object f;
+    object b,f,t;
     f = pop(ctx->lo, ctx->es);
-    if (filestatus(ctx->lo, f)) {
-        object fs;
-        object str;
-        long fz;
+    push(ctx->lo, ctx->os, f);
+    //if (filestatus(ctx->lo, f)) {
+        //object fs;
+        //object str;
+        //long fz;
+        //push(ctx->lo, ctx->es, f);
+        //fs = consfile(ctx->lo, statementedit(filefile(ctx->lo, f)));
+        //fz = filebytesavailable(ctx->lo, fs);
+        //str = consbst(ctx, fz, NULL);
+        //fread(charstr(ctx, str), 1, fz, filefile(ctx->lo, fs));
+        //push(ctx->lo, ctx->es, cvx(str));
+    //}
+    opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
+    b = pop(ctx->lo, ctx->os);
+    if (b.int_.val) {
+        t = pop(ctx->lo, ctx->os);
         push(ctx->lo, ctx->es, f);
-        fs = consfile(ctx->lo, statementedit(filefile(ctx->lo, f)));
-        fz = filebytesavailable(ctx->lo, fs);
-        str = consbst(ctx, fz, NULL);
-        fread(charstr(ctx, str), 1, fz, filefile(ctx->lo, fs));
-        push(ctx->lo, ctx->es, cvx(str));
+        push(ctx->lo, type(t)==arraytype? ctx->os: ctx->es, t);
     }
 }
 
@@ -427,18 +443,20 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {1 2 3.14 true} ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" //false ")));
     //push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 div "))));
-    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" \n\
-        (%stdin)(r) file cvx exec \
-                        "))));
+    push(ctx->lo, ctx->es, cvx(consbst(ctx,
+                    CNT_STR(" (init.ps) (r) file cvx exec (%stdin) run quit "))));
 
-    //push(ctx->lo, ctx->os, cvx(consname(ctx,"toke")));
+    //push(ctx->lo, ctx->os, cvx(consname(ctx,"token")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
     //dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
     //dumpdic(ctx->gl, top(ctx->lo, ctx->ds, 0));
     fflush(NULL);
     //push(ctx->lo, ctx->es, consname(ctx, "load"));
-    //push(ctx->lo, ctx->es, cvx(consname(ctx, "tokeloop")));
     //dumpoper(ctx, 12);
+
+    printf("ctx->lo:\n");
+    dumpmfile(ctx->lo);
+    dumpmtab(ctx->lo, 0);
 
     ctx->quit = 0;
     mainloop(ctx);

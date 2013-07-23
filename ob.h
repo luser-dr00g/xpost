@@ -111,6 +111,7 @@ int type(object o);
 int isx(object o);
 int islit(object o);
 int faccess(object o);
+object setfaccess(object o, int access);
 int isreadable(object o);
 int iswriteable(object o);
 
