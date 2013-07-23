@@ -188,6 +188,12 @@ void Zcurrentfile (context *ctx) {
     push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
 }
 
+void Sprint (context *ctx, object S) {
+    char *s;
+    s = charstr(ctx, S);
+    fwrite(s, 1, S.comp_.sz, stdout);
+}
+
 void Becho (context *ctx, object b) {
     if (b.int_.val)
         echoon(stdin);
@@ -214,6 +220,7 @@ void initopf (context *ctx, object sd) {
     op = consoper(ctx, "resetfile", Fresetfile, 0, 1, filetype); INSTALL;
     op = consoper(ctx, "status", Fstatus, 1, 1, filetype); INSTALL;
     op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
+    op = consoper(ctx, "print", Sprint, 0, 1, stringtype); INSTALL;
     op = consoper(ctx, "echo", Becho, 0, 1, booleantype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);

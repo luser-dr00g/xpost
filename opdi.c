@@ -1,4 +1,4 @@
-//#define DEBUGLOAD
+#define DEBUGLOAD
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -52,7 +52,11 @@ void Zend(context *ctx) {
 /* key value  def  -
    associate key with value in current dict */
 void Adef(context *ctx, object K, object V) {
+    object D = top(ctx->lo, ctx->ds, 0);
+    dumpdic(bank(ctx, D), D); puts("");
     bdcput(ctx, top(ctx->lo, ctx->ds, 0), K, V);
+    puts("!def!");
+    dumpdic(bank(ctx, D), D); puts("");
 }
 
 /* dict key  known  bool

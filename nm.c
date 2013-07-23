@@ -149,25 +149,25 @@ int main(void) {
     printf("pop ");
     dumpobject(consname(ctx, "pop"));
     printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
+    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
 
     printf("apple ");
     dumpobject(consname(ctx, "apple"));
     dumpobject(consname(ctx, "apple"));
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
+    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
 
     printf("banana ");
     dumpobject(consname(ctx, "banana"));
     dumpobject(consname(ctx, "banana"));
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
+    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
 
     printf("currant ");
     dumpobject(consname(ctx, "currant"));
     dumpobject(consname(ctx, "currant"));
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
+    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
 
     printf("apple ");
     dumpobject(consname(ctx, "apple"));

@@ -18,6 +18,12 @@ int faccess(object o) {
     return (o.tag & FACCESS) >> FACCESSO;
 }
 
+object setfaccess(object o, int access) {
+    o.tag &= ~FACCESS;
+    o.tag |= (access << FACCESSO);
+    return o;
+}
+
 int isreadable(object o) {
     if (type(o) == filetype) {
         return faccess(o) == readonly;
