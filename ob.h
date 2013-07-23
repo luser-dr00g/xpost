@@ -2,6 +2,15 @@
    define the basic 8-byte object structure
    */
 
+#ifdef LARGEOBJECT
+typedef unsigned char byte;
+typedef uint32_t word;
+typedef uint64_t dword;
+typedef uint128_t qword;
+typedef int64_t integer;
+typedef double real;
+typedef dword addr;
+#else
 typedef unsigned char byte;
 typedef unsigned short word;
 typedef unsigned long dword;
@@ -9,6 +18,7 @@ typedef unsigned long long qword;
 typedef int integer;
 typedef float real;
 typedef dword addr;
+#endif
 
 #define TYPES(_) \
     _(invalid) \
@@ -86,12 +96,12 @@ typedef struct {
 typedef struct {
     word tag;
     word lev;
-    unsigned stk;
+    dword stk;
 } save_;
 
 typedef struct {
-    unsigned src;
-    unsigned cpy;
+    dword src;
+    dword cpy;
 } saverec_; /* overlays an object so it can be stacked */
 /* but only on the "save" stack, not user visible. */
 

@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
@@ -30,10 +31,10 @@ typedef struct {
 int objcmp(context *ctx, object L, object R) {
     if (type(L) == type(R))
         switch (type(L)) {
-            default: error("unhandled type in objcmp");
+            default: error("unhandled type in objcmp"); break;
 
-            case marktype:
-            case nulltype:
+            case marktype: /*@fallthrough@*/
+            case nulltype: /*@fallthrough@*/
             case invalidtype: return 0;
 
             case integertype: return L.int_.val - R.int_.val;
@@ -41,7 +42,7 @@ int objcmp(context *ctx, object L, object R) {
                                     0:
                                     L.real_.val - R.real_.val;
 
-            case operatortype: 
+            case operatortype:  /*@fallthrough@*/
             case nametype: return !( L.mark_.padw == R.mark_.padw );
 
             case dicttype: return !( L.comp_.ent == R.comp_.ent );
