@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "gc.h"

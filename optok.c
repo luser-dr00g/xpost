@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h> /* strchr */
 
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
@@ -18,6 +19,7 @@
 #include "op.h"
 #include "nm.h"
 #include "opar.h"
+#include "opdi.h"
 #include "optok.h"
 
 enum { NBUF = BUFSIZ };
@@ -230,8 +232,9 @@ object grok (context *ctx, char *s, int ns, object *src,
                       ns = puff(ctx, s, NBUF, src, next, back);
                       if (ns == NBUF) error("limitcheck");
                       s[ns] = '\0';
-                      push(ctx->lo, ctx->os, consname(ctx, s));
-                      opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
+                      //push(ctx->lo, ctx->os, cvx(consname(ctx, s)));
+                      //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
+                      Aload(ctx, cvx(consname(ctx, s)));
                       return pop(ctx->lo, ctx->os);
                   }
                   if (ns == NBUF) error("limitcheck");

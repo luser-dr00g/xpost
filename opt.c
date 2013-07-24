@@ -1,9 +1,13 @@
 #include <alloca.h>
+#include <errno.h>
+#include <limits.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
@@ -55,6 +59,23 @@ void Awcheck(context *ctx, object o) {
     push(ctx->lo, ctx->os, consbool( (o.tag & FACCESS) >> FACCESSO == unlimited ));
 }
 
+void Ncvi(context *ctx, object n) {
+    if (type(n) == realtype)
+        n = consint(n.real_.val);
+    push(ctx->lo, ctx->os, n);
+}
+
+void Scvi(context *ctx, object s) {
+    long num;
+    char *t = alloca(s.comp_.sz+1);
+    memcpy(t, charstr(ctx, s), s.comp_.sz);
+    t[s.comp_.sz] = '\0';
+    num = strtol(t, NULL, 10);
+    if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
+        error("limitcheck");
+    push(ctx->lo, ctx->os, consint(num));
+}
+
 void Scvn(context *ctx, object s) {
     char *t = alloca(s.comp_.sz+1);
     memcpy(t, charstr(ctx, s), s.comp_.sz);
@@ -62,21 +83,57 @@ void Scvn(context *ctx, object s) {
     push(ctx->lo, ctx->os, consname(ctx, t));
 }
 
-void Acvr(context *ctx, object o) {
-    switch(type(o)){
-    default: error("typecheck");
-    case realtype: break;
-    case integertype: o = consreal(o.int_.val);
-    case stringtype: {
-                         char *s = alloca(o.comp_.sz + 1);
-                         memcpy(s, charstr(ctx, o), o.comp_.sz);
-                         s[o.comp_.sz] = '\0';
-                         printf("cvr %s\n", s);
-                         o = consreal(strtod(s, NULL));
-                     }
+void Ncvr(context *ctx, object n) {
+    if (type(n) == integertype)
+        n = consreal(n.int_.val);
+    push(ctx->lo, ctx->os, n);
+}
 
+void Scvr(context *ctx, object str) {
+    double num;
+    char *s = alloca(str.comp_.sz + 1);
+    memcpy(s, charstr(ctx, str), str.comp_.sz);
+    s[str.comp_.sz] = '\0';
+    num = strtod(s, NULL);
+    if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
+        error("limitcheck");
+    push(ctx->lo, ctx->os, consreal(num));
+}
+
+int conv_rad(int num, int rad, char *s, int n) {
+    char *vec = "0123456789" "ABCDEFGHIJKLM" "NOPQRSTUVWXYZ";
+    int off;
+    if (n == 0) return 0;
+    if (num < rad) {
+        *s = vec[num];
+        return 1;
     }
-    push(ctx->lo, ctx->os, o);
+    off = conv_rad(num/rad, rad, s, n);
+    if ((off == n) || (off == -1)) return -1;
+    s[off] = vec[num%rad];
+    return off+1;
+}
+
+void NRScvrs(context *ctx, object num, object rad, object str) {
+    int r, n;
+    if (type(num) == realtype) num = consint(num.real_.val);
+    r = rad.int_.val;
+    if (r < 2 || r > 36) error("rangecheck");
+    n = conv_rad(num.int_.val, r, charstr(ctx, str), str.comp_.sz);
+    if (n == -1) error("rangecheck");
+    if (n < str.comp_.sz) str.comp_.sz = n;
+    push(ctx->lo, ctx->os, str);
+}
+
+void AScvs(context *ctx, object any, object str) {
+    char *nostringval = "-nostringval-";
+    switch(type(any)) {
+    default:
+        if (str.comp_.sz < sizeof(nostringval-1)) error("rangecheck");
+        memcpy(charstr(ctx, str), nostringval, sizeof(nostringval-1));
+        str.comp_.sz = sizeof(nostringval-1);
+    }
+    push(ctx->lo, ctx->os, str);
 }
 
 void initopt(context *ctx, object sd) {
@@ -92,11 +149,16 @@ void initopt(context *ctx, object sd) {
     op = consoper(ctx, "readonly", Areadonly, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "rcheck", Archeck, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "wcheck", Awcheck, 1, 1, anytype); INSTALL;
+    op = consoper(ctx, "cvi", Ncvi, 1, 1, numbertype); INSTALL;
+    op = consoper(ctx, "cvi", Scvi, 1, 1, stringtype); INSTALL;
     op = consoper(ctx, "cvn", Scvn, 1, 1, stringtype); INSTALL;
-    op = consoper(ctx, "cvr", Acvr, 1, 1, anytype); INSTALL;
+    op = consoper(ctx, "cvr", Ncvr, 1, 1, numbertype); INSTALL;
+    op = consoper(ctx, "cvr", Scvr, 1, 1, stringtype); INSTALL;
+    op = consoper(ctx, "cvrs", NRScvrs, 1, 3, numbertype, integertype, stringtype); INSTALL;
+    op = consoper(ctx, "cvs", AScvs, 1, 2, anytype, stringtype);
+
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
-
 }
 
 

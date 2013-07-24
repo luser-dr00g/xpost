@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"

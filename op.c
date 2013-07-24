@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
@@ -231,8 +232,17 @@ call:
 #include "opst.h"
 #include "opar.h"
 #include "opdi.h"
+#include "opb.h"
+#include "opc.h"
+#include "opt.h"
+#include "optok.h"
+#include "opm.h"
+#include "opf.h"
+#include "opv.h"
+#include "opx.h"
 
 void breakhere(context *ctx) {
+    (void)ctx;
     return;
 }
 

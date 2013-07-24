@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
