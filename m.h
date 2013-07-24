@@ -23,9 +23,6 @@
 #  endif
 #endif
 
-/* stub */
-void error(char *msg);
-
 /* the "grain" of the mfile size */
 extern unsigned pgsz /*= getpagesize()*/; /*=4096 (usually on 32bit)*/
 

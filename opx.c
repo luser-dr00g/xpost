@@ -15,7 +15,7 @@
 #include "op.h"
 
 object bind (context *ctx, object p) {
-    object t, d, r;
+    object t, d;
     int i, j, z;
     for (i = 0; i < p.comp_.sz; i++) {
         t = barget(ctx, p, i);

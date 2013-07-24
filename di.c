@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdlib.h> /* malloc */
 #include <stdio.h>
+
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
@@ -152,7 +154,7 @@ void dicgrow(context *ctx, object d) {
     dichead *dp;
     object *tp;
     object n;
-    int i;
+    unsigned i;
     mem = bank(ctx, d);
 #ifdef DEBUGDIC
     printf("DI growing dict\n");
@@ -208,7 +210,7 @@ void dumpdic(mfile *mem, object d) {
     dichead *dp = (void *)(mem->base + ad);
     object *tp = (void *)(mem->base + ad + sizeof(dichead));
     unsigned sz = (dp->sz + 1);
-    int i;
+    unsigned i;
     printf("\n");
     for (i=0; i < sz; i++) {
         printf("%d:", i);

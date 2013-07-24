@@ -6,6 +6,7 @@
 #include <stdlib.h> /* NULL */
 #include <string.h>
 
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
@@ -147,6 +148,7 @@ void Fbytesavailable (context *ctx, object F) {
 }
 
 void Zflush (context *ctx) {
+    (void)ctx;
     fflush(NULL);
 }
 
@@ -195,6 +197,7 @@ void Sprint (context *ctx, object S) {
 }
 
 void Becho (context *ctx, object b) {
+    (void)ctx;
     if (b.int_.val)
         echoon(stdin);
     else

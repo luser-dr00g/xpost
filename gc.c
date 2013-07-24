@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -51,7 +52,7 @@ void markobject(context *ctx, mfile *mem, object o);
 void markdict(context *ctx, mfile *mem, unsigned adr) {
     dichead *dp = (void *)(mem->base + adr);
     object *tp = (void *)(mem->base + adr + sizeof(dichead));
-    unsigned j;
+    int j;
     for (j=0; j < DICTABN(dp->sz); j++) {
         markobject(ctx, mem, tp[j]);
     }
@@ -120,6 +121,7 @@ next:
 void marksavestack(context *ctx, mfile *mem, unsigned stackadr) {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
+    (void)ctx;
 #ifdef TESTMODULE
     printf("marking save stack of size %u\n", s->top);
 #endif

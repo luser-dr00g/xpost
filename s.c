@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
+#include "err.h"
 #include "m.h" /* mfile mfalloc findtabent */
 
 #include "ob.h" /* object size */

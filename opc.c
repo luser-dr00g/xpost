@@ -5,6 +5,7 @@
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
+#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"

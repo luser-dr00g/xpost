@@ -1,3 +1,4 @@
+#include "err.h"
 #include "m.h"
 
 
@@ -9,14 +10,6 @@
 
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
-
-/* placeholder error function */
-/* ultimately, this will do a longjmp back to the central loop */
-void error(char *msg) {
-    fprintf(stderr, "%s\n", msg);
-    perror("last system error:");
-    exit(EXIT_FAILURE);
-}
 
 unsigned pgsz /*= getpagesize()*/ = 4096;
 
