@@ -1,4 +1,3 @@
-#define DEBUGLOAD
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -15,6 +14,8 @@
 #include "nm.h"
 #include "op.h"
 #include "ops.h"
+
+int DEBUGLOAD = 0;
 
 /* int  dict  dict
    create dictionary with capacity for int elements */
@@ -87,18 +88,18 @@ void DAAput(context *ctx, object D, object K, object V) {
 void Aload(context *ctx, object K) {
     int i;
     int z = count(ctx->lo, ctx->ds);
-#ifdef DEBUGLOAD
-    printf("\nload:");
-    dumpobject(K);
-    dumpstack(ctx->lo, ctx->ds);
-#endif
+    if (DEBUGLOAD) {
+        printf("\nload:");
+        dumpobject(K);
+        dumpstack(ctx->lo, ctx->ds);
+    }
 
     for (i = 0; i < z; i++) {
         object D = top(ctx->lo,ctx->ds,i);
 
-#ifdef DEBUGLOAD
+    if (DEBUGLOAD) {
         dumpdic(bank(ctx, D), D); puts("");
-#endif
+    }
 
         if (dicknown(ctx, bank(ctx, D), D, K)) {
             push(ctx->lo, ctx->os, bdcget(ctx, D, K));
@@ -106,14 +107,15 @@ void Aload(context *ctx, object K) {
         }
     }
 
-#ifdef DEBUGLOAD
-    dumpmfile(ctx->lo);
-    dumpmtab(ctx->lo, 0);
-    dumpmfile(ctx->gl);
-    dumpmtab(ctx->gl, 0);
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
-    dumpobject(K);
-#endif
+    if (DEBUGLOAD) {
+        dumpmfile(ctx->lo);
+        dumpmtab(ctx->lo, 0);
+        dumpmfile(ctx->gl);
+        dumpmtab(ctx->gl, 0);
+        dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+        dumpobject(K);
+    }
+
     error("undefined (Aload)");
 }
 

@@ -34,5 +34,8 @@ void exitcontext(context *ctx);
 /*@dependent@*/
 mfile *bank(context *ctx, object o);
 
+extern int TRACE;
+
 void inititp(itp *itp);
 void exititp(itp *itp);
+

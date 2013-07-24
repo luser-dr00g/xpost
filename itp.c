@@ -19,7 +19,9 @@
 #include "f.h"
 #include "op.h"
 #include "optok.h"
+#include "opdi.h"
 
+int TRACE = 0;
 itp *itpdata;
 
 #if 0
@@ -255,7 +257,8 @@ void evalpush(context *ctx) {
 /* load executable name */
 void evalload(context *ctx) {
     object s = strname(ctx, top(ctx->lo, ctx->es, 0));
-    printf("<name \"%*s\">", s.comp_.sz, charstr(ctx, s));
+    if (DEBUGLOAD)
+        printf("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
 
     push(ctx->lo, ctx->os,
             pop(ctx->lo, ctx->es));
@@ -268,7 +271,8 @@ void evalload(context *ctx) {
 
 void evaloperator(context *ctx) {
     object op = pop(ctx->lo, ctx->es);
-    dumpoper(ctx, op.mark_.padw);
+    if (TRACE)
+        dumpoper(ctx, op.mark_.padw);
     opexec(ctx, op.mark_.padw);
 }
 
@@ -361,16 +365,20 @@ void initevaltype(void) {
 
 void eval(context *ctx) {
     object t = top(ctx->lo, ctx->es, 0);
-    printf("\neval\n");
-    printf("Stack: ");
-    dumpstack(ctx->lo, ctx->os);
-    printf("\n");
-    printf("Exec Stack: ");
-    dumpstack(ctx->lo, ctx->es);
-    printf("\n");
-    printf("Executing: ");
-    dumpobject(t);
-    printf("\n");
+
+    if (TRACE) {
+        printf("\neval\n");
+        printf("Stack: ");
+        dumpstack(ctx->lo, ctx->os);
+        printf("\n");
+        printf("Exec Stack: ");
+        dumpstack(ctx->lo, ctx->es);
+        printf("\n");
+        printf("Executing: ");
+        dumpobject(t);
+        printf("\n");
+    }
+
     if ( isx(t) ) /* if executable */
         evaltype[type(t)](ctx);
     else
@@ -391,6 +399,9 @@ context *ctx;
 void init(void) {
     pgsz = getpagesize();
     initevaltype();
+
+    null = cvlit(null);
+    //mark = cvlit(mark);
     //ctx = malloc(sizeof *ctx);
     //memset(ctx, 0, sizeof ctx);
     //initcontext(ctx);
