@@ -227,15 +227,22 @@ object grok (context *ctx, char *s, int ns, object *src,
               }
 
     case '/': {
-                  ns = puff(ctx, s, NBUF, src, next, back);
+                  *s = next(ctx, src);
+                  //ns = puff(ctx, s, NBUF, src, next, back);
                   if (ns && *s == '/') {
+                      object ret;
                       ns = puff(ctx, s, NBUF, src, next, back);
                       if (ns == NBUF) error("limitcheck");
                       s[ns] = '\0';
                       //push(ctx->lo, ctx->os, cvx(consname(ctx, s)));
                       //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
+                      printf("\ntoken: loading immediate name %s\n", s);
                       Aload(ctx, cvx(consname(ctx, s)));
-                      return pop(ctx->lo, ctx->os);
+                      ret = pop(ctx->lo, ctx->os);
+                      dumpobject(ret);
+                      return ret;
+                  } else {
+                      ns = 1 + puff(ctx, s+1, NBUF-1, src, next, back);
                   }
                   if (ns == NBUF) error("limitcheck");
                   s[ns] = '\0';
