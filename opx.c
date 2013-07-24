@@ -47,12 +47,39 @@ void Pbind (context *ctx, object P) {
     push(ctx->lo, ctx->os, bind(ctx, P));
 }
 
+void traceon (context *ctx) {
+    (void)ctx;
+    TRACE = 1;
+}
+void traceoff (context *ctx) {
+    (void)ctx;
+    TRACE = 0;
+}
+
+void dumpnames (context *ctx) {
+    printf("\nnamestack: ");
+    dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+    puts("");
+}
+
+void dumpvm (context *ctx) {
+    dumpmfile(ctx->lo);
+    dumpmtab(ctx->lo, 0);
+    dumpmfile(ctx->gl);
+    dumpmtab(ctx->gl, 0);
+}
+
 void initopx(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     object n,op;
 
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "null"), null);
+
+    op = consoper(ctx, "traceon", traceon, 0, 0); INSTALL;
+    op = consoper(ctx, "traceoff", traceoff, 0, 0); INSTALL;
+    op = consoper(ctx, "dumpnames", dumpnames, 0, 0); INSTALL;
+    op = consoper(ctx, "dumpvm", dumpvm, 0, 0); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */

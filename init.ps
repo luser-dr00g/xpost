@@ -3,7 +3,7 @@
 
 /version (0) def
 /run { (r) file cvx exec } def
-/Run { dup = flush run } def
+/Run { dup print flush run } def
 /interrupt { stop } def
 
 /=string 128 string def
@@ -20,12 +20,18 @@
     dup 4 2 roll exch putinterval % (ab)
 } def
 
+
+%dumpnames dumpvm
+traceon
+
 %(/err.ps)
 %(.) [ {
 %    (XPOSTDIR) getenv %env
 %    exch pop exch pop
 %} stopped {cleartomark} if
 %exch strcat Run
+(err.ps)run
+
 
 /= {
     //=print exec
@@ -45,13 +51,14 @@ execdict begin
 end
 
 /start {
+    /quit {
+        exit
+        //execdict /quitflag true put
+        interrupt
+    } def
+
     /executive load stopped
     pop //quit % the operator
-} def
-
-/quit {
-    //execdict /quitflag true put
-    interrupt
 } def
 
 /prompt {

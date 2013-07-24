@@ -40,13 +40,13 @@ s.png:s.eps
 	convert s.eps s.png
 
 m:m.c ob.h
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< err.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< err.o     ob.o s.o ar.o st.o v.o di.o gc.o nm.o itp.o $(OP) f.o
 
 ob:ob.c ob.h
 	cc $(CFLAGS) -DTESTMODULE -o $@ $<
 
 s:s.c m.o ob.o
-	cc $(CFLAGS) -DTESTMODULE -o $@ $< err.o m.o ob.o
+	cc $(CFLAGS) -DTESTMODULE -o $@ $< err.o m.o ob.o     ar.o st.o v.o di.o gc.o nm.o itp.o $(OP) f.o
 
 nm:nm.c m.o ob.o s.o st.o gc.o itp.o $(OP)
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< err.o m.o ob.o s.o ar.o st.o v.o di.o gc.o      itp.o $(OP) f.o
@@ -66,7 +66,7 @@ ar:ar.c s.o m.o ob.o gc.o st.o v.o gc.o itp.o nm.o $(OP)
 di:di.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o itp.o nm.o $(OP)
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< err.o m.o ob.o s.o ar.o st.o v.o      gc.o nm.o itp.o $(OP) f.o
 
-itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o $(OP) f.o
+itp:itp.c s.o m.o ob.o gc.o ar.o st.o v.o gc.o nm.o di.o $(OP) f.o err.o
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< err.o m.o ob.o s.o ar.o st.o v.o di.o gc.o nm.o       $(OP) f.o
 	
 
