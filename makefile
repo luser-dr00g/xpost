@@ -3,6 +3,7 @@ CFLAGS= -g -Wall -Wextra
 OB=ob.o m.o err.o
 LDLIBS=
 SRC= README makefile *.h *.c 
+CORE=s.o st.o ar.o di.o nm.o gc.o v.o f.o
 OP=op.o ops.o opst.o opar.o opdi.o optok.o opb.o opc.o opt.o \
     opm.o opf.o opv.o opx.o osunix.o
 TESTS=m ob s st nm v gc ar di itp
@@ -39,7 +40,7 @@ s.eps:s.ps
 s.png:s.eps
 	convert s.eps s.png
 
-m:m.c ob.h
+m:m.c ob.h ob.o err.o $(CORE) itp.o $(OP)
 	cc $(CFLAGS) -DTESTMODULE -o $@ $< err.o     ob.o s.o ar.o st.o v.o di.o gc.o nm.o itp.o $(OP) f.o
 
 ob:ob.c ob.h

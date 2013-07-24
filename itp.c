@@ -269,6 +269,7 @@ void evalload(context *ctx) {
     }
 }
 
+/* execute operator */
 void evaloperator(context *ctx) {
     object op = pop(ctx->lo, ctx->es);
     if (TRACE)
@@ -276,6 +277,7 @@ void evaloperator(context *ctx) {
     opexec(ctx, op.mark_.padw);
 }
 
+/* extract head (&tail) of array */
 void evalarray(context *ctx) {
     object a = pop(ctx->lo, ctx->es);
     object b;
@@ -294,6 +296,7 @@ void evalarray(context *ctx) {
     }
 }
 
+/* extract token from string */
 void evalstring(context *ctx) {
     object b,t,s;
     s = pop(ctx->lo, ctx->es);
@@ -312,6 +315,7 @@ void evalstring(context *ctx) {
     }
 }
 
+/* extract token from file */
 void evalfile(context *ctx) {
     object b,f,t;
     f = pop(ctx->lo, ctx->es);
@@ -401,7 +405,7 @@ void init(void) {
     initevaltype();
 
     null = cvlit(null);
-    //mark = cvlit(mark);
+    //mark = cvlit(mark);  // <-- this is bad. don't know why.
     //ctx = malloc(sizeof *ctx);
     //memset(ctx, 0, sizeof ctx);
     //initcontext(ctx);
@@ -422,7 +426,7 @@ int main(void) {
     printf("\n^test itp.c\n");
 
     init();
-    dumpdic(ctx->gl, bot(ctx->lo, ctx->ds, 0));
+    //dumpdic(ctx->gl, bot(ctx->lo, ctx->ds, 0));
 
     //push(ctx->lo, ctx->es, invalid);
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
@@ -455,8 +459,9 @@ int main(void) {
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {1 2 3.14 true} ")));
     //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" //false ")));
     //push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 div "))));
-    push(ctx->lo, ctx->es, cvx(consbst(ctx,
-                    CNT_STR(" (init.ps) (r) file cvx exec (%stdin) run quit "))));
+    //push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR("(%stdin) run quit"))));
+    push(ctx->lo, ctx->es, cvx(consname(ctx, "start")));
+    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR("(init.ps) (r) file cvx exec"))));
 
     //push(ctx->lo, ctx->os, cvx(consname(ctx,"token")));
     //dumpobject(top(ctx->lo, ctx->os, 0));
@@ -466,23 +471,23 @@ int main(void) {
     //push(ctx->lo, ctx->es, consname(ctx, "load"));
     //dumpoper(ctx, 12);
 
-    printf("ctx->lo:\n");
-    dumpmfile(ctx->lo);
-    dumpmtab(ctx->lo, 0);
+    //printf("ctx->lo:\n");
+    //dumpmfile(ctx->lo);
+    //dumpmtab(ctx->lo, 0);
 
     ctx->quit = 0;
     mainloop(ctx);
 
-    dumpstack(ctx->lo, ctx->os); puts("");
+    //dumpstack(ctx->lo, ctx->os); puts("");
 
-    printf("ctx->lo:\n");
-    dumpmfile(ctx->lo);
-    dumpmtab(ctx->lo, 0);
-    printf("ctx->gl:\n");
-    dumpmfile(ctx->gl);
-    dumpmtab(ctx->gl, 0);
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
-
+    //printf("ctx->lo:\n");
+    //dumpmfile(ctx->lo);
+    //dumpmtab(ctx->lo, 0);
+    //printf("ctx->gl:\n");
+    //dumpmfile(ctx->gl);
+    //dumpmtab(ctx->gl, 0);
+    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+    printf("bye!\n"); fflush(NULL);
 
     xit();
     return 0;

@@ -150,7 +150,7 @@ void Awhere(context *ctx, object K) {
             return;
         }
     }
-    push(ctx->lo, ctx->ds, consbool(false));
+    push(ctx->lo, ctx->os, consbool(false));
 }
 
 /* -  currentdict  dict
