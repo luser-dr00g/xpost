@@ -13,6 +13,7 @@
 #include "ar.h"
 #include "di.h"
 #include "op.h"
+#include "opdi.h"
 
 object bind (context *ctx, object p) {
     object t, d;
@@ -56,6 +57,15 @@ void traceoff (context *ctx) {
     TRACE = 0;
 }
 
+void debugloadon (context *ctx) {
+    (void)ctx;
+    DEBUGLOAD = 1;
+}
+void debugloadoff (context *ctx) {
+    (void)ctx;
+    DEBUGLOAD = 0;
+}
+
 void dumpnames (context *ctx) {
     printf("\nnamestack: ");
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
@@ -78,6 +88,8 @@ void initopx(context *ctx, object sd) {
 
     op = consoper(ctx, "traceon", traceon, 0, 0); INSTALL;
     op = consoper(ctx, "traceoff", traceoff, 0, 0); INSTALL;
+    op = consoper(ctx, "debugloadon", debugloadon, 0, 0); INSTALL;
+    op = consoper(ctx, "debugloadoff", debugloadoff, 0, 0); INSTALL;
     op = consoper(ctx, "dumpnames", dumpnames, 0, 0); INSTALL;
     op = consoper(ctx, "dumpvm", dumpvm, 0, 0); INSTALL;
 

@@ -1,15 +1,16 @@
 #include <assert.h>
+#include <setjmp.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h" /* context itp MAXCONTEXT MAXMFILE */
+#include "err.h"
 #include "st.h"
 #include "ar.h"
 #include "gc.h"
@@ -23,6 +24,7 @@
 
 int TRACE = 0;
 itp *itpdata;
+int initializing = 0;
 
 #if 0
 /* allocate a stack as a "special entry",
@@ -64,7 +66,7 @@ void addtoctxlist(mfile *mem, unsigned cid) {
             return;
         }
     }
-    error("ctxlist full");
+    error(unregistered, "ctxlist full");
 }
 
 mfile *nextgtab() {
@@ -74,7 +76,8 @@ mfile *nextgtab() {
             return &itpdata->gtab[i];
         }
     }
-    error("cannot allocate mfile, gtab exhausted"), exit(EXIT_FAILURE);
+    error(unregistered, "cannot allocate mfile, gtab exhausted");
+    exit(EXIT_FAILURE);
 }
 
 /* set up global vm in the context */
@@ -111,7 +114,8 @@ mfile *nextltab() {
             return &itpdata->ltab[i];
         }
     }
-    error("cannot allocate mfile, ltab exhausted"), exit(EXIT_FAILURE);
+    error(unregistered, "cannot allocate mfile, ltab exhausted");
+    exit(EXIT_FAILURE);
 }
 
 /* set up local vm in the context */
@@ -146,7 +150,7 @@ unsigned initctxid(void) {
     unsigned startid = nextid;
     while ( ctxcid(++nextid)->state != 0 ) {
         if (nextid == startid + MAXCONTEXT)
-            error("ctab full. cannot create new process");
+            error(unregistered, "ctab full. cannot create new process");
     }
     return nextid;
 }
@@ -257,7 +261,7 @@ void evalpush(context *ctx) {
 /* load executable name */
 void evalload(context *ctx) {
     object s = strname(ctx, top(ctx->lo, ctx->es, 0));
-    if (DEBUGLOAD)
+    if (TRACE)
         printf("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
 
     push(ctx->lo, ctx->os,
@@ -354,13 +358,7 @@ evalfunc *evalcontext = evalpush;
 //evalfunc *evalfile = evalpush;
 evalfunc *evalname = evalload;
 
-#if 0
-//This way doesn't work, since function pointers are non-constant:
-#define AS_EVALFUNC(_) eval ## _ ,
-evalfunc *evaltype[] = { TYPES(AS_EVALFUNC) };
-//So we have to initialize at runtime:
-#endif
-
+/* install the evaltype functions (possibly via pointers) in the jump table */
 evalfunc *evaltype[NTYPES + 1];
 #define AS_EVALINIT(_) evaltype[ _ ## type ] = eval ## _ ;
 void initevaltype(void) {
@@ -372,14 +370,17 @@ void eval(context *ctx) {
 
     if (TRACE) {
         printf("\neval\n");
+        printf("Executing: ");
+        dumpobject(t);
+        printf("\n");
         printf("Stack: ");
         dumpstack(ctx->lo, ctx->os);
         printf("\n");
+        printf("Dict Stack: ");
+        dumpstack(ctx->lo, ctx->ds);
+        printf("\n");
         printf("Exec Stack: ");
         dumpstack(ctx->lo, ctx->es);
-        printf("\n");
-        printf("Executing: ");
-        dumpobject(t);
         printf("\n");
     }
 
@@ -389,7 +390,15 @@ void eval(context *ctx) {
         evalpush(ctx);
 }
 
+jmp_buf jbmainloop;
+bool jbmainloopset = false;
+
 void mainloop(context *ctx) {
+    volatile int err; 
+    if ((err = setjmp(jbmainloop))) {
+        onerror(ctx, err);
+    }
+    jbmainloopset = true;
     while(!ctx->quit)
         eval(ctx);
 }
@@ -402,6 +411,7 @@ context *ctx;
 
 void init(void) {
     pgsz = getpagesize();
+    initializing = 1;
     initevaltype();
 
     null = cvlit(null);
@@ -410,7 +420,7 @@ void init(void) {
     //memset(ctx, 0, sizeof ctx);
     //initcontext(ctx);
     itpdata = malloc(sizeof*itpdata);
-    if (!itpdata) error("itpdata=malloc failed");
+    if (!itpdata) error(unregistered, "itpdata=malloc failed");
     memset(itpdata, 0, sizeof*itpdata);
     inititp(itpdata);
     ctx = &itpdata->ctab[0];
@@ -475,6 +485,7 @@ int main(void) {
     //dumpmfile(ctx->lo);
     //dumpmtab(ctx->lo, 0);
 
+    //TRACE=1;
     ctx->quit = 0;
     mainloop(ctx);
 

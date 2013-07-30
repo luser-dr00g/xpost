@@ -6,11 +6,11 @@
 #include <stdlib.h> /* NULL */
 #include <string.h>
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
 #include "nm.h"
 #include "st.h"
 #include "di.h"
@@ -30,7 +30,7 @@ void Fclosefile (context *ctx, object f) {
 
 void Fread (context *ctx, object f) {
     object b;
-    if (!isreadable(f)) error("invalidaccess");
+    if (!isreadable(f)) error(invalidaccess, "Fread");
     b = fileread(ctx->lo, f);
     if (b.int_.val != EOF) {
         push(ctx->lo, ctx->os, b);
@@ -41,7 +41,7 @@ void Fread (context *ctx, object f) {
 }
 
 void Fwrite (context *ctx, object f, object i) {
-    if (!iswriteable(f)) error("invalidaccess");
+    if (!iswriteable(f)) error(invalidaccess, "Fwrite");
     filewrite(ctx->lo, f, i);
 }
 
@@ -53,8 +53,8 @@ void Freadhexstring (context *ctx, object F, object S) {
     int eof = 0;
     FILE *f;
     char *s;
-    if (!filestatus(ctx->lo, F)) error("ioerror");
-    if (!isreadable(F)) error("invalidaccess");
+    if (!filestatus(ctx->lo, F)) error(ioerror, "Freadhexstring");
+    if (!isreadable(F)) error(invalidaccess, "Freadhexstring");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
 
@@ -83,14 +83,14 @@ void Fwritehexstring (context *ctx, object F, object S) {
     int n;
     FILE *f;
     char *s;
-    if (!filestatus(ctx->lo, F)) error("ioerror");
-    if (!iswriteable(F)) error("invalidaccess");
+    if (!filestatus(ctx->lo, F)) error(ioerror, "Fwritehexstring");
+    if (!iswriteable(F)) error(invalidaccess, "Fwritehexstring");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
 
     for(n=0; n < S.comp_.sz; n++) {
-        if (fputc(hex[s[n] / 16], f)) error("ioerror");
-        if (fputc(hex[s[n] % 16], f)) error("ioerror");
+        if (fputc(hex[s[n] / 16], f)) error(ioerror, "Fwritehexstring");
+        if (fputc(hex[s[n] % 16], f)) error(ioerror, "Fwritehexstring");
     }
 }
 
@@ -98,8 +98,8 @@ void Freadstring (context *ctx, object F, object S) {
     int n;
     FILE *f;
     char *s;
-    if (!filestatus(ctx->lo, F)) error("ioerror");
-    if (!isreadable(F)) error("invalidaccess");
+    if (!filestatus(ctx->lo, F)) error(ioerror, "Freadstring");
+    if (!isreadable(F)) error(invalidaccess, "Freadstring");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
     n = fread(s, 1, S.comp_.sz, f);
@@ -116,20 +116,20 @@ void Freadstring (context *ctx, object F, object S) {
 void Fwritestring (context *ctx, object F, object S) {
     FILE *f;
     char *s;
-    if (!filestatus(ctx->lo, F)) error("ioerror");
-    if (!iswriteable(F)) error("invalidaccess");
+    if (!filestatus(ctx->lo, F)) error(ioerror, "Fwritestring");
+    if (!iswriteable(F)) error(invalidaccess, "Fwritestring");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
     if (fwrite(s, 1, S.comp_.sz, f) != S.comp_.sz)
-        error("ioerror");
+        error(ioerror, "Fwritestring");
 }
 
 void Freadline (context *ctx, object F, object S) {
     FILE *f;
     char *s;
     int n, c;
-    if (!filestatus(ctx->lo, F)) error("ioerror");
-    if (!iswriteable(F)) error("invalidaccess");
+    if (!filestatus(ctx->lo, F)) error(ioerror, "Freadline");
+    if (!iswriteable(F)) error(invalidaccess, "Freadline");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
     for (n=0; n < S.comp_.sz; n++) {
@@ -137,7 +137,7 @@ void Freadline (context *ctx, object F, object S) {
         if (c == EOF || c == '\n') break;
         s[n] = c;
     }
-    if (n == S.comp_.sz && c != '\n') error("rangecheck");
+    if (n == S.comp_.sz && c != '\n') error(rangecheck, "Freadline");
     S.comp_.sz = n;
     push(ctx->lo, ctx->os, S);
     push(ctx->lo, ctx->os, consbool(c != EOF));

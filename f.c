@@ -7,10 +7,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "gc.h"
+#include "itp.h"
+#include "err.h"
 
 /* filetype objects use a slightly different interpretation
    of the access flags.
@@ -40,7 +41,7 @@ FILE *lineedit(FILE *in) {
     int c;
 
     c = fgetc(in);
-    if (c == EOF) error("undefinedfilename");
+    if (c == EOF) error(undefinedfilename, "%lineedit");
     fp = tmpfile();
     while (c != EOF && c != '\n') {
         fputc(c, fp);
@@ -60,11 +61,11 @@ FILE *statementedit(FILE *in) {
     int defer = -1; /* defer is a flag (-1 == false)
                        and an index into nest[] */
     c = fgetc(in);
-    if (c == EOF) error("undefinedfilename");
+    if (c == EOF) error(undefinedfilename, "%statementedit");
     fp = tmpfile();
     do {
         if (defer > -1) {
-            if (defer > MAXNEST) error("syntaxerror");
+            if (defer > MAXNEST) error(syntaxerror, "syntaxerror");
             switch(nest[defer]) { /* what's the innermost nest? */
             case '{': /* within a proc, can end proc or begin proc, string, hex */
                 switch (c) {
@@ -118,15 +119,15 @@ object fileopen(mfile *mem, char *fn, char *mode) {
     f.tag = filetype;
 
     if (strcmp(fn, "%stdin")==0) {
-        if (strcmp(mode, "r")!=0) error("invalidfileaccess");
+        if (strcmp(mode, "r")!=0) error(invalidfileaccess, "fileopen");
         f = consfile(mem, stdin);
         f.tag &= ~FACCESS;
         f.tag |= (readonly << FACCESSO);
     } else if (strcmp(fn, "%stdout")==0) {
-        if (strcmp(mode, "w")!=0) error("invalidfileaccess");
+        if (strcmp(mode, "w")!=0) error(invalidfileaccess, "fileopen");
         f = consfile(mem, stdout);
     } else if (strcmp(fn, "%stderr")==0) {
-        if (strcmp(mode, "w")!=0) error("invalidfileaccess");
+        if (strcmp(mode, "w")!=0) error(invalidfileaccess, "fileopen");
         f = consfile(mem, stderr);
     } else if (strcmp(fn, "%lineedit")==0) {
         f = consfile(mem, lineedit(stdin));
@@ -141,9 +142,9 @@ object fileopen(mfile *mem, char *fn, char *mode) {
         fp = fopen(fn, mode);
         if (fp == NULL) {
             switch (errno) {
-            case EACCES: error("invalidfilename"); break;
-            case ENOENT: error("undefinedfilename"); break;
-            default: error("unregistered"); break;
+            case EACCES: error(invalidfileaccess, "fileopen"); break;
+            case ENOENT: error(undefinedfilename, "fileopen"); break;
+            default: error(unregistered, "fileopen"); break;
             }
         }
         f = consfile(mem, fp);
@@ -196,15 +197,15 @@ void fileclose(mfile *mem, object f) {
 /* if the file is valid,
    read a byte. */
 object fileread(mfile *mem, object f) {
-    if (!filestatus(mem, f)) error("ioerror");
+    if (!filestatus(mem, f)) error(ioerror, "fileread");
     return consint(fgetc(filefile(mem, f)));
 }
 
 /* if the file is valid,
    write a byte. */
 void filewrite(mfile *mem, object f, object b) {
-    if (!filestatus(mem, f)) error("ioerror");
+    if (!filestatus(mem, f)) error(ioerror, "filewrite");
     if (fputc(b.int_.val, filefile(mem, f)) == EOF)
-        error("ioerror");
+        error(ioerror, "filewrite");
 }
 

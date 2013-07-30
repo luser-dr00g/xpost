@@ -3,11 +3,11 @@
 #include <alloca.h>
 #include <stdbool.h>
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
 #include "nm.h"
 #include "di.h"
 #include "op.h"
@@ -38,8 +38,8 @@ void Adup (context *ctx, object x) {
    duplicate top n elements */
 void Icopy (context *ctx, object n) {
     int i;
-    if (n.int_.val < 0) error("rangecheck");
-    if ((unsigned)n.int_.val > count(ctx->lo, ctx->os)) error("stackunderflow");
+    if (n.int_.val < 0) error(rangecheck, "Icopy");
+    if ((unsigned)n.int_.val > count(ctx->lo, ctx->os)) error(stackunderflow, "Icopy");
     for (i=0; i < n.int_.val; i++)
         push(ctx->lo, ctx->os, top(ctx->lo, ctx->os, n.int_.val - 1));
 }
@@ -47,8 +47,8 @@ void Icopy (context *ctx, object n) {
 /* anyN..any0 N  index  anyN..any0 anyN
    duplicate arbitrary element */
 void Iindex (context *ctx, object n) {
-    if (n.int_.val < 0) error("rangecheck");
-    if ((unsigned)n.int_.val >= count(ctx->lo, ctx->os)) error("stackunderflow");
+    if (n.int_.val < 0) error(rangecheck, "Iindex");
+    if ((unsigned)n.int_.val >= count(ctx->lo, ctx->os)) error(stackunderflow, "Iindex");
     printf("index %d\n", n.int_.val);
     push(ctx->lo, ctx->os, top(ctx->lo, ctx->os, n.int_.val));
 }
@@ -60,7 +60,7 @@ void IIroll (context *ctx, object N, object J) {
     int i;
     int n = N.int_.val;
     int j = J.int_.val;
-    if (n < 0) error("rangecheck");
+    if (n < 0) error(rangecheck, "IIroll");
     if (n == 0) return;
     if (j < 0) j = n - ( (- j) % n);
     j %= n;
@@ -114,7 +114,7 @@ void Zcounttomark (context *ctx) {
             return;
         }
     }
-    error("unmatchedmark");
+    error(unmatchedmark, "Zcounttomark");
 }
 
 /*

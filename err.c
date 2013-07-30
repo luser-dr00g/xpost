@@ -1,3 +1,4 @@
+#include <setjmp.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,14 +7,30 @@
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
+#include "nm.h"
+
+char *errorname[] = { ERRORS(AS_STR) };
+
+char *errormsg;
 
 /* placeholder error function */
-/* ultimately, this will do a longjmp back to the central loop */
-void error(char *msg) {
-    fprintf(stderr, "\nError: %s", msg);
+/* ultimately, this will do a longjmp back
+   to the central loop */
+void error(unsigned err, char *msg) {
+    errormsg = msg;
+    if (!initializing && jbmainloopset) {
+        longjmp(jbmainloop, 1);
+    }
+
+    /* following will become "fallback" code
+       if jmpbuf is not set */
+    fprintf(stderr, "\nError: %s", errorname[err]);
+    fprintf(stderr, "\nExtra: %s", msg);
     perror("\nlast system error:");
 
-    printf("\nError: %s", msg);
+    printf("\nError: %s", errorname[err]);
+    printf("\nExtra: %s", msg);
     context *ctx;
     ctx = &itpdata->ctab[0];
     printf("\nopstack: ");
@@ -23,13 +40,22 @@ void error(char *msg) {
     printf("\ndictstack: ");
     dumpstack(ctx->lo, ctx->ds);
 
+    printf("\nLocal VM: ");
     dumpmfile(ctx->lo);
     dumpmtab(ctx->lo, 0);
+    printf("\nGlobal VM: ");
     dumpmfile(ctx->gl);
     dumpmtab(ctx->gl, 0);
 
+    printf("\nName Stack: ");
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
 
     exit(EXIT_FAILURE);
+}
+
+/* called by itp:loop() after longjmp from error() */
+void onerror(context *ctx, unsigned err) {
+    push(ctx->lo, ctx->os, consname(ctx, errorname[err]));
+    push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
 }
 

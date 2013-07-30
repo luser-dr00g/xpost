@@ -1,8 +1,6 @@
-#include "err.h"
-#include "m.h"
-
 
 #include <ctype.h> /* isprint */
+#include <stdbool.h>
 #include <stdlib.h> /* exit free malloc realloc */
 #include <stdio.h> /* fprintf printf perror */
 #include <string.h> /* memset */
@@ -10,6 +8,11 @@
 
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
+
+#include "m.h"
+#include "ob.h"
+#include "itp.h"
+#include "err.h"
 
 unsigned pgsz /*= getpagesize()*/ = 4096;
 
@@ -92,12 +95,14 @@ void initmem(mfile *mem, char *fname){
             |MAP_AUTOGROW
 # endif
             | (fd == -1? MAP_ANONYMOUS : 0) , fd, 0);
-    if (mem->base == MAP_FAILED)
+    if (mem->base == MAP_FAILED) { // .
 #else
     mem->base = malloc(sz);
-    if (mem->base == NULL)
+    if (mem->base == NULL) { // ..
 #endif
-        error("VM error: failed to allocate mfile data"), exit(EXIT_FAILURE);
+        error(VMerror, "VM error: failed to allocate mfile data");
+        exit(EXIT_FAILURE);
+    } // . ..
     mem->used = 0;
     mem->max = sz;
 #ifndef MMAP
@@ -150,7 +155,7 @@ void growmem(mfile *mem, unsigned sz){
     tmp = realloc(mem->base, sz);
     if (tmp == NULL)
 #endif
-        error("unable to grow memory");
+        error(VMerror, "unable to grow memory");
     mem->base = tmp;
     mem->max = sz;
 }
@@ -208,8 +213,11 @@ next_table:
                 (tab->tab[i].mark & LLEVM) >> LLEVO,
                 (tab->tab[i].mark & TLEVM) >> TLEVO );
         for (u=0; u < tab->tab[i].sz; u++) {
-            printf(" %02x", (unsigned)mem->base[
-                    tab->tab[i].adr + u ] );
+            printf(" %02x%c",
+                    (unsigned)mem->base[ tab->tab[i].adr + u ],
+                    isprint((unsigned)mem->base[ tab->tab[i].adr + u ]) ?
+                        (unsigned)mem->base[ tab->tab[i].adr + u ] :
+                        ' ');
         }
         (void)puts("");
     }
@@ -268,7 +276,7 @@ void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@in@*/ unsigned *aent) {
     while (*aent >= TABSZ) {
         *aent -= TABSZ;
         if ((*atab)->nexttab == 0) {
-            error("ent doesn't exist");
+            error(unregistered, "ent doesn't exist");
         }
         *atab = (void *)(mem->base + (*atab)->nexttab);
     }
@@ -302,7 +310,7 @@ void get(mfile *mem,
     }
 
     if (offset*sz /*+ sz*/ > tab->tab[ent].sz)
-        error("get: out of bounds");
+        error(rangecheck, "get: out of bounds");
 
     memcpy(dest, mem->base + tab->tab[ent].adr + offset*sz, sz);
 }
@@ -321,7 +329,7 @@ void put(mfile *mem,
     }
 
     if (offset*sz /*+ sz*/ > tab->tab[ent].sz)
-        error("put: out of bounds");
+        error(rangecheck, "put: out of bounds");
 
     memcpy(mem->base + tab->tab[ent].adr + offset*sz, src, sz);
 }

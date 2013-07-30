@@ -5,13 +5,13 @@
 #include <stdlib.h> /* malloc */
 #include <stdio.h>
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "gc.h"
 #include "v.h"
 #include "itp.h"
+#include "err.h"
 #include "st.h"
 #include "nm.h"
 #include "di.h"
@@ -33,12 +33,15 @@ typedef struct {
 int objcmp(context *ctx, object L, object R) {
     if (type(L) == type(R))
         switch (type(L)) {
-            default: error("unhandled type in objcmp"); break;
+            default:
+                fprintf(stderr, "unhandled type (%s) in objcmp", types[type(L)]); break;
+                error(unregistered, "");
 
             case marktype: /*@fallthrough@*/
             case nulltype: /*@fallthrough@*/
             case invalidtype: return 0;
 
+            case booleantype: /*@fallthrough@*/
             case integertype: return L.int_.val - R.int_.val;
             case realtype: return (fabs(L.real_.val - R.real_.val) < 0.0001)?
                                     0:
@@ -281,7 +284,7 @@ object dicget(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
     object *e;
     e = diclookup(ctx, mem, d, k);
     if (type(e[0]) == nulltype)
-        error("undefined");
+        error(undefined, "dicget");
     return e[1];
 }
 

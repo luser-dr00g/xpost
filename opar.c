@@ -1,12 +1,12 @@
 #include <stdbool.h>
 #include <stdlib.h> /* NULL */
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "v.h"
 #include "itp.h"
+#include "err.h"
 #include "st.h"
 #include "ar.h"
 #include "di.h"
@@ -98,7 +98,7 @@ void Aastore(context *ctx, object A) {
 /* array1 array2  copy  subarray2
    copy elements of array1 to initial subarray of array2 */
 void Acopy(context *ctx, object S, object D) {
-    if (D.comp_.sz < S.comp_.sz) error("rangecheck");
+    if (D.comp_.sz < S.comp_.sz) error(rangecheck, "Acopy");
     a_copy(ctx, S, D);
     push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
 }

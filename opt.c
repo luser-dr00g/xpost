@@ -7,11 +7,11 @@
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
 #include "nm.h"
 #include "st.h"
 #include "di.h"
@@ -72,7 +72,7 @@ void Scvi(context *ctx, object s) {
     t[s.comp_.sz] = '\0';
     num = strtol(t, NULL, 10);
     if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
-        error("limitcheck");
+        error(limitcheck, "Scvi");
     push(ctx->lo, ctx->os, consint(num));
 }
 
@@ -96,7 +96,7 @@ void Scvr(context *ctx, object str) {
     s[str.comp_.sz] = '\0';
     num = strtod(s, NULL);
     if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
-        error("limitcheck");
+        error(limitcheck, "Scvr");
     push(ctx->lo, ctx->os, consreal(num));
 }
 
@@ -118,9 +118,9 @@ void NRScvrs(context *ctx, object num, object rad, object str) {
     int r, n;
     if (type(num) == realtype) num = consint(num.real_.val);
     r = rad.int_.val;
-    if (r < 2 || r > 36) error("rangecheck");
+    if (r < 2 || r > 36) error(rangecheck, "NRScvrs");
     n = conv_rad(num.int_.val, r, charstr(ctx, str), str.comp_.sz);
-    if (n == -1) error("rangecheck");
+    if (n == -1) error(rangecheck, "NRScvrs");
     if (n < str.comp_.sz) str.comp_.sz = n;
     push(ctx->lo, ctx->os, str);
 }
@@ -129,7 +129,7 @@ void AScvs(context *ctx, object any, object str) {
     char *nostringval = "-nostringval-";
     switch(type(any)) {
     default:
-        if (str.comp_.sz < sizeof(nostringval-1)) error("rangecheck");
+        if (str.comp_.sz < sizeof(nostringval-1)) error(rangecheck, "AScvs");
         memcpy(charstr(ctx, str), nostringval, sizeof(nostringval-1));
         str.comp_.sz = sizeof(nostringval-1);
     }
