@@ -25,7 +25,11 @@ typedef struct {
     mfile ltab[MAXMFILE];
 } itp;
 
+#include <setjmp.h>
 extern itp *itpdata;
+extern int initializing;
+extern jmp_buf jbmainloop;
+extern bool jbmainloopset;
 
 void initctxlist(mfile *mem);
 context *ctxcid(unsigned cid);

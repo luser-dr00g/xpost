@@ -1,10 +1,15 @@
 %procedures in systemdict
 (loading init.ps...\n) print
+systemdict begin
 
 /version (0) def
 /run { (r) file cvx exec } def
 /Run { dup print flush run } def
 /interrupt { stop } def
+/true 0 0 eq def
+/false 0 0 ne def
+
+%traceon
 
 /=string 128 string def
 /=print {
@@ -22,7 +27,8 @@
 
 
 %dumpnames dumpvm
-traceon
+%traceon
+%debugloadon
 
 %(/err.ps)
 %(.) [ {
@@ -44,7 +50,7 @@ traceon
 execdict begin
     /quitflag false def
     /checkquit {
-        quitflag
+        //execdict /quitflag get
         { exit } if
     } def
     /execdepth 0 def
@@ -52,11 +58,12 @@ end
 
 /start {
     /quit {
-        exit
+        %exit
         //execdict /quitflag true put
         interrupt
     } def
 
+    %traceon
     /executive load stopped
     pop //quit % the operator
 } def
@@ -64,7 +71,7 @@ end
 /prompt {
     (PS) print
     count dup 0 eq { pop } { (<) print //=print exec } ifelse
-    execdepth {
+    //execdict /execdepth get {
         (>) print
     } repeat
     flush
@@ -73,6 +80,7 @@ end
 /executive {
     //execdict begin
 
+    /execdepth execdepth 1 add def
     /QUIET where { pop }{
         (Xpost Version ) print version print (\n) print
     } ifelse
@@ -110,7 +118,7 @@ end
         checkquit
     } loop
     /quitflag false def
-    /execdepth execdepth 1 sub def
+    //execdict /execdepth 2 copy get 1 sub put
 
     end
     //$error /doclose false put
@@ -118,3 +126,6 @@ end
 } bind
 def
 
+end
+%traceon
+%debugloadon

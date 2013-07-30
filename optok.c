@@ -7,11 +7,11 @@
 #include <stdlib.h>
 #include <string.h> /* strchr */
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
 #include "st.h"
 #include "ar.h"
 #include "di.h"
@@ -112,14 +112,14 @@ int fsm_check (char *s, int ns, test *fsm,
 object grok (context *ctx, char *s, int ns, object *src,
         int (*next)(context *ctx, object *src),
         void (*back)(context *ctx, int c, object *src)) {
-    if (ns == NBUF) error("limitcheck");
+    if (ns == NBUF) error(limitcheck, "grok buf maxxed");
     s[ns] = '\0';  //fsm_check & consname  terminate on \0
 
     if (fsm_check(s, ns, fsm_dec, accept_dec)) {
         long num;
         num = strtol(s, NULL, 10);
         if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
-            error("limitcheck");
+            error(limitcheck, "grok integer out of range");
         return consint(num);
     }
 
@@ -127,10 +127,10 @@ object grok (context *ctx, char *s, int ns, object *src,
         long base, num;
         base = strtol(s, &s, 10);
         if (base > 36 || base < 2)
-            error("limitcheck");
+            error(limitcheck, "grok bad radix");
         num = strtol(s+1, NULL, base);
         if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
-            error("limitcheck");
+            error(limitcheck, "grok radixnumber out of range");
         return consint(num);
     }
 
@@ -138,7 +138,7 @@ object grok (context *ctx, char *s, int ns, object *src,
         double num;
         num = strtod(s, NULL);
         if ((num == HUGE_VAL || num == -HUGE_VAL) && errno==ERANGE)
-            error("limitcheck");
+            error(limitcheck, "grok real out of range");
         return consreal(num);
     }
 
@@ -176,7 +176,7 @@ object grok (context *ctx, char *s, int ns, object *src,
                           }
                       }
                       if (!defer) break;
-                      if (sp-s > NBUF) error("limitcheck");
+                      if (sp-s > NBUF) error(limitcheck, "grok string exceeds buf");
                       else *sp++ = c;
                   }
                   return cvlit(consbst(ctx, sp-s, s));
@@ -188,7 +188,7 @@ object grok (context *ctx, char *s, int ns, object *src,
                   while (c = next(ctx, src), c != '>' && c != EOF) {
                       if (isspace(c)) continue;
                       if (isxdigit(c)) c = strchr(x, tolower(c)) - x;
-                      else error("syntaxerror");
+                      else error(syntaxerror, "grok");
                       d = c << 4; // hi nib
                       while(isspace(c = next(ctx, src)))
                           /**/;
@@ -197,9 +197,9 @@ object grok (context *ctx, char *s, int ns, object *src,
                       else if (c == '>') {
                           back(ctx, c, src); // pushback for next iter
                           c = 0;             // pretend it got a 0
-                      } else error("syntaxerror");
+                      } else error(syntaxerror, "grok");
                       d |= c;
-                      if (sp-s > ns) error("limitcheck");
+                      if (sp-s > ns) error(limitcheck, "grok hexstring exceeds buf");
                       *sp++ = d;
                   }
                   return cvlit(consbst(ctx, sp-s, s));
@@ -209,7 +209,7 @@ object grok (context *ctx, char *s, int ns, object *src,
                   int c;
                   if ((c = next(ctx, src)) == '>') {
                       return cvx(consname(ctx, ">>"));
-                  } else error("syntaxerror");
+                  } else error(syntaxerror, "grok bare angle bracket >");
               }
 
     case '{': { // This is the one part that makes it a recursive-descent parser
@@ -232,19 +232,21 @@ object grok (context *ctx, char *s, int ns, object *src,
                   if (ns && *s == '/') {
                       object ret;
                       ns = puff(ctx, s, NBUF, src, next, back);
-                      if (ns == NBUF) error("limitcheck");
+                      if (ns == NBUF) error(limitcheck, "grok immediate name exceeds buf");
                       s[ns] = '\0';
                       //push(ctx->lo, ctx->os, cvx(consname(ctx, s)));
                       //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
-                      printf("\ntoken: loading immediate name %s\n", s);
+                      if (DEBUGLOAD)
+                          printf("\ntoken: loading immediate name %s\n", s);
                       Aload(ctx, cvx(consname(ctx, s)));
                       ret = pop(ctx->lo, ctx->os);
-                      dumpobject(ret);
+                      if (DEBUGLOAD)
+                          dumpobject(ret);
                       return ret;
                   } else {
                       ns = 1 + puff(ctx, s+1, NBUF-1, src, next, back);
                   }
-                  if (ns == NBUF) error("limitcheck");
+                  if (ns == NBUF) error(limitcheck, "grok name exceeds buf");
                   s[ns] = '\0';
                   return cvlit(consname(ctx, s));
               }
@@ -313,7 +315,7 @@ void Fback(context *ctx, int c, object *F) {
 }
 void Ftoken (context *ctx, object F) {
     object t;
-    if (!filestatus(ctx->lo, F)) error("ioerror");
+    if (!filestatus(ctx->lo, F)) error(ioerror, "Ftoken");
     t = toke(ctx, &F, Fnext, Fback);
     if (type(t) != nulltype) {
         push(ctx->lo, ctx->os, t);

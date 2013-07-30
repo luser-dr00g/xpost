@@ -5,11 +5,11 @@
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
 #include "nm.h"
 #include "ar.h"
 #include "di.h"
@@ -84,8 +84,9 @@ void Zexit (context *ctx) {
     object oprepeat = consoper(ctx, "repeat", NULL,0,0);
     object oploop = consoper(ctx, "loop", NULL,0,0);
     object opforall = consoper(ctx, "forall", NULL,0,0);
-
     object x;
+
+#if 0
     printf("\nexit\n");
     dumpobject(opfor);
     dumpobject(oprepeat);
@@ -95,9 +96,11 @@ void Zexit (context *ctx) {
     dumpstack(ctx->lo, ctx->os);
     dumpstack(ctx->lo, ctx->es);
     printf("\n");
+#endif
+
     while (1) {
         x = pop(ctx->lo, ctx->es);
-        dumpobject(x);
+        //dumpobject(x);
         if ( (objcmp(ctx, x, opfor)    == 0)
           || (objcmp(ctx, x, oprepeat) == 0)
           || (objcmp(ctx, x, oploop)   == 0)
@@ -106,8 +109,11 @@ void Zexit (context *ctx) {
             break;
         }
     }
+
+#if 0
     printf("result:");
     dumpstack(ctx->lo, ctx->es);
+#endif
 }
 
 /* The stopped context is a boolean 'false' on the exec stack,
@@ -125,7 +131,7 @@ void Zstop(context *ctx) {
             return;
         }
     }
-    error("no stopped context in 'stop'");
+    error(unregistered, "no stopped context in 'stop'");
 }
 
 void Astopped(context *ctx, object o) {

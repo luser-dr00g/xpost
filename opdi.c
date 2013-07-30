@@ -2,12 +2,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "v.h"
 #include "itp.h"
+#include "err.h"
 #include "st.h"
 #include "ar.h"
 #include "di.h"
@@ -48,6 +48,8 @@ void Dbegin(context *ctx, object D) {
 /* -  end  -
    pop dict stack */
 void Zend(context *ctx) {
+    if (count(ctx->lo, ctx->ds) <= 1)
+        error(dictstackunderflow, "end");
     (void)pop(ctx->lo, ctx->ds);
 }
 
@@ -64,10 +66,12 @@ void Adef(context *ctx, object K, object V) {
 /* dict key  known  bool
    test whether key is in dict */
 void DAknown(context *ctx, object D, object K) {
+#if 0
     printf("\nknown: ");
     dumpobject(D);
     dumpdic(bank(ctx, D), D); puts("");
     dumpobject(K);
+#endif
     push(ctx->lo, ctx->os, consbool(dicknown(ctx, bank(ctx, D), D, K)));
 }
 
@@ -116,7 +120,7 @@ void Aload(context *ctx, object K) {
         dumpobject(K);
     }
 
-    error("undefined (Aload)");
+    error(undefined, "Aload");
 }
 
 /* mark k_1 v_1 ... k_N v_N  >>  dict

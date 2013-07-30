@@ -2,11 +2,11 @@
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
 #include "st.h"
 #include "ar.h"
 #include "di.h"
@@ -27,7 +27,7 @@ void s_copy(context *ctx, object S, object D) {
 }
 
 void Scopy(context *ctx, object S, object D) {
-    if (D.comp_.sz < S.comp_.sz) error("rangecheck");
+    if (D.comp_.sz < S.comp_.sz) error(rangecheck, "Scopy");
     s_copy(ctx, S, D);
     push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
 }
@@ -58,7 +58,7 @@ int ancsearch(char *str, char *seek, int seekn) {
 
 void Sanchorsearch(context *ctx, object str, object seek) {
     char *s, *k;
-    if (seek.comp_.sz > str.comp_.sz) error("rangecheck");
+    if (seek.comp_.sz > str.comp_.sz) error(rangecheck, "Sanchorsearch");
     s = charstr(ctx, str);
     k = charstr(ctx, seek);
     if (ancsearch(s, k, seek.comp_.sz)) {
@@ -77,7 +77,7 @@ void Sanchorsearch(context *ctx, object str, object seek) {
 void Ssearch(context *ctx, object str, object seek) {
     int i;
     char *s, *k;
-    if (seek.comp_.sz > str.comp_.sz) error("rangecheck");
+    if (seek.comp_.sz > str.comp_.sz) error(rangecheck, "Ssearch");
     s = charstr(ctx, str);
     k = charstr(ctx, seek);
     for (i = 0; i < str.comp_.sz - seek.comp_.sz; i++) {

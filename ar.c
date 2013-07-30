@@ -1,13 +1,13 @@
 
 #include <stdbool.h>
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "gc.h"
 #include "v.h"
 #include "itp.h"
+#include "err.h"
 #include "ar.h"
 
 /* Allocate an entity with gballoc,
@@ -53,7 +53,7 @@ object consbar(context *ctx, unsigned sz) {
 void arrput(mfile *mem, object a, integer i, object o) {
     if (!stashed(mem, a.comp_.ent)) stash(mem, a.comp_.ent);
     if (i > a.comp_.sz)
-        error("rangecheck (arrput)");
+        error(rangecheck, "arrput");
     put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(object), &o);
 }
 
@@ -78,7 +78,7 @@ object barget(context *ctx, object a, integer i) {
 
 /* adjust the offset and size fields in the object. */
 object arrgetinterval(object a, integer off, integer sz) {
-    if (sz - off > a.comp_.sz) error("getinterval can only shrink!");
+    if (sz - off > a.comp_.sz) error(rangecheck, "getinterval can only shrink!");
     a.comp_.off += off;
     a.comp_.sz = sz;
     return a;

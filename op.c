@@ -4,11 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 
-#include "err.h"
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
 #include "st.h"
 #include "gc.h"
 #include "nm.h"
@@ -84,7 +84,7 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
     if (fp) {
         if (opcode == noop) { /* a new operator */
             unsigned adr;
-            if (noop == MAXOPS-1) error("optab too small!\n");
+            if (noop == MAXOPS-1) error(unregistered, "optab too small!\n");
             adr = mfalloc(ctx->gl, sizeof(signat));
             optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc
             op.name = nm.mark_.padw;
@@ -121,7 +121,7 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
             sp[si].fp = fp;
         }
     } else if (opcode == noop) {
-        error("operator not found\n");
+        error(unregistered, "operator not found\n");
     }
 
     o.tag = operatortype;
@@ -168,17 +168,19 @@ void opexec(context *ctx, unsigned opcode) {
     signat *sp = (void *)(ctx->gl->base + op.sigadr);
     int i,j;
     bool pass;
-    char *err = "unspecified error";
+    int err;
+    char *errmsg = "unspecified error";
     stack *hold;
     int ct;
 
     ct = count(ctx->lo, ctx->os);
-    if (op.n == 0) error("unregistered");
+    if (op.n == 0) error(unregistered, "opexec");
     for (i=0; i < op.n; i++) { /* try each signature */
         byte *t;
         if (ct < sp[i].in) {
             pass = false;
-            err = "stackunderflow";
+            err = stackunderflow;
+            errmsg = "opexec";
             continue;
         }
         pass = true;
@@ -201,12 +203,13 @@ void opexec(context *ctx, unsigned opcode) {
                     && type(el) == arraytype
                     && isx(el)) continue;
             pass = false;
-            err = "typecheck";
+            err = typecheck;
+            errmsg = "opexec";
             break;
         }
         if (pass) goto call;
     }
-    error(err);
+    error(err, errmsg);
     return;
 
 call:
@@ -224,7 +227,7 @@ call:
                         hold->data[3], hold->data[4]); break;
         case 6: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3], hold->data[4], hold->data[5]); break;
-        default: error("unregistered");
+        default: error(unregistered, "opexec");
     }
 }
 
@@ -255,6 +258,7 @@ void initop(context *ctx) {
     oper *optab;
 
     sd = consbdc(ctx, SDSIZE);
+    bdcput(ctx, sd, consname(ctx, "systemdict"), sd);
     push(ctx->lo, ctx->ds, sd);
     tab = NULL;
     ent = sd.comp_.ent;

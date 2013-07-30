@@ -3,12 +3,13 @@
 #include <stdbool.h>
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
-#include "err.h"
 #include "m.h" /* mfile mfalloc findtabent */
 
 #include "ob.h" /* object size */
 /* typedef long long object; */
 
+#include "itp.h"
+#include "err.h"
 #include "s.h"
 /*#define STACKSEGSZ 10 */
 
@@ -134,11 +135,11 @@ void pot(mfile *mem, unsigned stackadr, integer i, object o) {
     }
     if (s->top == 0) {
         if (p != NULL) s = p;
-        else error("stack underflow");
+        else error(stackunderflow, "pot");
     } else if ((integer)s->top < i) {
         i -= s->top;
         if (p != NULL) s = p;
-        else error("stack underflow");
+        else error(stackunderflow, "pot");
     }
     s->data[s->top - 1 - i] = o;
 }
@@ -171,7 +172,7 @@ void tob(mfile *mem, unsigned stacadr, integer i, object o) {
     /* find desired segment */
     while (i >= STACKSEGSZ) {
         i -= STACKSEGSZ;
-        if (s->nextseg == 0) error("stack underflow");
+        if (s->nextseg == 0) error(stackunderflow, "tob");
         s = (void *)(mem->base + s->nextseg);
     }
     s->data[i] = o;
