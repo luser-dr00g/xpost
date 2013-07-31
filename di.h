@@ -7,7 +7,7 @@
      off, offset into allocation
    the entity data is a header structure
    followed by header->sz+1 key/value pairs of objects in a linear array
-   null keys denoted empty slots in the hash table.
+   null keys denote empty slots in the hash table.
    */
 
 typedef struct {

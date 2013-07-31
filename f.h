@@ -1,3 +1,7 @@
+/*
+   a filetype object uses .mark_.padw to store the ent
+   for the FILE *
+   */
 
 FILE *lineedit(FILE *in);
 FILE *statementedit(FILE *in);

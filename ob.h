@@ -66,7 +66,9 @@ enum faccess {
 };
 
 /* To avoid too many structures, many types use .mark_.padw 
-   to hold an unsigned value (eg. operatortype, nametype).
+   to hold an unsigned value (eg. operatortype, nametype, filetype).
+   Of, course if a type needs to use pad0, that's a sign that it needs
+   its own struct.
    */
 typedef struct {
     word tag;
