@@ -5,7 +5,7 @@
      sz, count of objects in array
      ent, entity number
      off, offset into allocation
-   the entity data is an "C" array of objects
+   the entity data is a "C" array of objects
    */
 
 /* consarr - construct an array object

@@ -12,7 +12,7 @@
 
 char *errorname[] = { ERRORS(AS_STR) };
 
-char *errormsg;
+volatile char *errormsg;
 
 /* placeholder error function */
 /* ultimately, this will do a longjmp back
