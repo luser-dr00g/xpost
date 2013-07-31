@@ -24,7 +24,7 @@ void a_copy(context *ctx, object S, object D) {
 /* int  array  array
    create array of length int */
 void Iarray(context *ctx, object I) {
-    push(ctx->lo, ctx->os, consbar(ctx, I.int_.val));
+    push(ctx->lo, ctx->os, cvlit(consbar(ctx, I.int_.val)));
 }
 
 /* -  [  mark

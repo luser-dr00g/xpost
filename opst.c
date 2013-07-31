@@ -13,7 +13,7 @@
 #include "op.h"
 
 void Istring(context *ctx, object I) {
-    push(ctx->lo, ctx->os, consbst(ctx, I.int_.val, NULL));
+    push(ctx->lo, ctx->os, cvlit(consbst(ctx, I.int_.val, NULL)));
 }
 
 void Slength(context *ctx, object S) {
