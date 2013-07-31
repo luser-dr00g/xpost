@@ -78,7 +78,8 @@ object consreal(real r){
 }
 
 void dumpcompobject(object o){
-    printf(" %u %u %u %u>",
+    printf(" %c %u %u %u %u>",
+            o.comp_.tag&FBANK? 'G': 'L',
             (unsigned int)o.comp_.tag,
             (unsigned int)o.comp_.sz,
             (unsigned int)o.comp_.ent,

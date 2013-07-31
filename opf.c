@@ -21,7 +21,7 @@
 void Sfile (context *ctx, object fn, object mode) {
     object f;
     f = fileopen(ctx->lo, charstr(ctx, fn), charstr(ctx, mode));
-    push(ctx->lo, ctx->os, f);
+    push(ctx->lo, ctx->os, cvlit(f));
 }
 
 void Fclosefile (context *ctx, object f) {

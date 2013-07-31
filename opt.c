@@ -126,12 +126,12 @@ void NRScvrs(context *ctx, object num, object rad, object str) {
 }
 
 void AScvs(context *ctx, object any, object str) {
-    char *nostringval = "-nostringval-";
+    char nostringval[] = "-nostringval-";
     switch(type(any)) {
     default:
-        if (str.comp_.sz < sizeof(nostringval-1)) error(rangecheck, "AScvs");
-        memcpy(charstr(ctx, str), nostringval, sizeof(nostringval-1));
-        str.comp_.sz = sizeof(nostringval-1);
+        if (str.comp_.sz < sizeof(nostringval)-1) error(rangecheck, "AScvs");
+        memcpy(charstr(ctx, str), nostringval, sizeof(nostringval)-1);
+        str.comp_.sz = sizeof(nostringval)-1;
     }
     push(ctx->lo, ctx->os, str);
 }
@@ -155,7 +155,7 @@ void initopt(context *ctx, object sd) {
     op = consoper(ctx, "cvr", Ncvr, 1, 1, numbertype); INSTALL;
     op = consoper(ctx, "cvr", Scvr, 1, 1, stringtype); INSTALL;
     op = consoper(ctx, "cvrs", NRScvrs, 1, 3, numbertype, integertype, stringtype); INSTALL;
-    op = consoper(ctx, "cvs", AScvs, 1, 2, anytype, stringtype);
+    op = consoper(ctx, "cvs", AScvs, 1, 2, anytype, stringtype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */

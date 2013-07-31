@@ -46,8 +46,10 @@ enum {
 
 #define AS_STR(_) \
     #_ ,
+#define AS_TYPE_STR(_) \
+    #_ ## "type" ,
 extern
-char *types[] /*= { TYPES(AS_STR) "invalid"}*/ ;
+char *types[] /*= { TYPES(AS_TYPE_STR) "invalid"}*/ ;
 
 enum tagdata {
     TYPEMASK = 0x000F,
