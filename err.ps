@@ -33,10 +33,10 @@ end
         handleerror
     } if
     //$error /errorname get dup /stackoverflow eq { clear }{
-        { /dictstackoverflow eq {
-                                    end end %end end end end end end end end
-                                } if } ifelse
-        } ifelse
+        /dictstackoverflow eq {
+            end end %end end end end end end end end
+        } if
+    } ifelse
     interrupt
 } def
 /signalerror /.error load def
@@ -51,7 +51,8 @@ errordict begin
                 (%%[ Error: ) print
                 errorname //=print exec
                 (; OffendingCommand: ) print
-                /command load //=print exec
+                %/command load //=print exec
+                /Extra load //=print exec
                 (]%%\n) print
                 (Stack:\n) print
                 ostack { = } forall

@@ -395,10 +395,12 @@ bool jbmainloopset = false;
 
 void mainloop(context *ctx) {
     volatile int err; 
+
     if ((err = setjmp(jbmainloop))) {
         onerror(ctx, err);
     }
     jbmainloopset = true;
+
     while(!ctx->quit)
         eval(ctx);
 }
@@ -415,10 +417,6 @@ void init(void) {
     initevaltype();
 
     null = cvlit(null);
-    //mark = cvlit(mark);  // <-- this is bad. don't know why.
-    //ctx = malloc(sizeof *ctx);
-    //memset(ctx, 0, sizeof ctx);
-    //initcontext(ctx);
     itpdata = malloc(sizeof*itpdata);
     if (!itpdata) error(unregistered, "itpdata=malloc failed");
     memset(itpdata, 0, sizeof*itpdata);
@@ -427,7 +425,6 @@ void init(void) {
 }
 
 void xit() {
-    //exitcontext(ctx);
     exititp(itpdata);
 }
 
@@ -436,70 +433,21 @@ int main(void) {
     printf("\n^test itp.c\n");
 
     init();
-    //dumpdic(ctx->gl, bot(ctx->lo, ctx->ds, 0));
 
-    //push(ctx->lo, ctx->es, invalid);
+    /* load init.ps and err.ps */
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
-
-#if 0
-    int i;
-    for (i = 8; i >= 0; i--)
-        push(ctx->lo, ctx->os, consint(i));
-
-    push(ctx->lo, ctx->os, consint(9));
-    push(ctx->lo, ctx->os, consint(-4));
-    dumpstack(ctx->lo, ctx->os); puts("");
-
-    push(ctx->lo, ctx->es, consoper(ctx,"roll",NULL,0,0));
-#endif
-
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 127 ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 16#FF ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" 8#377 ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" -.48 ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" is-a-name ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" /litname ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (s(f)g) ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (\\() ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" (--\\(--\\(--\\(--\\(--) ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" <68 65 6c 6c 6f 77 6f 72 6c 64> ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" << ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" >> ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {} ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" {1 2 3.14 true} ")));
-    //push(ctx->lo, ctx->os, consbst(ctx, CNT_STR(" //false ")));
-    //push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR(" 1 2 add 3 mul 4 div "))));
-    //push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR("(%stdin) run quit"))));
-    push(ctx->lo, ctx->es, cvx(consname(ctx, "start")));
     push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR("(init.ps) (r) file cvx exec"))));
-
-    //push(ctx->lo, ctx->os, cvx(consname(ctx,"token")));
-    //dumpobject(top(ctx->lo, ctx->os, 0));
-    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
-    //dumpdic(ctx->gl, top(ctx->lo, ctx->ds, 0));
-    fflush(NULL);
-    //push(ctx->lo, ctx->es, consname(ctx, "load"));
-    //dumpoper(ctx, 12);
-
-    //printf("ctx->lo:\n");
-    //dumpmfile(ctx->lo);
-    //dumpmtab(ctx->lo, 0);
-
-    //TRACE=1;
     ctx->quit = 0;
     mainloop(ctx);
 
-    //dumpstack(ctx->lo, ctx->os); puts("");
+    /* Run! */
+    push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
+    push(ctx->lo, ctx->es, cvx(consname(ctx, "start"))); /* start proc defined in init.ps */
+    initializing = 0;
+    ctx->quit = 0;
+    mainloop(ctx);
 
-    //printf("ctx->lo:\n");
-    //dumpmfile(ctx->lo);
-    //dumpmtab(ctx->lo, 0);
-    //printf("ctx->gl:\n");
-    //dumpmfile(ctx->gl);
-    //dumpmtab(ctx->gl, 0);
-    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
     printf("bye!\n"); fflush(NULL);
-
     xit();
     return 0;
 }

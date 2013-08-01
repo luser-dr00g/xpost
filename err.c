@@ -2,11 +2,14 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "m.h"
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "di.h"
+#include "st.h"
 #include "err.h"
 #include "nm.h"
 
@@ -55,6 +58,15 @@ void error(unsigned err, char *msg) {
 
 /* called by itp:loop() after longjmp from error() */
 void onerror(context *ctx, unsigned err) {
+    object sd;
+    object dollarerror;
+    char *errmsg;
+    sd = bot(ctx->lo, ctx->ds, 0);
+    dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
+    errmsg = errormsg;
+    bdcput(ctx, dollarerror,
+            consname(ctx, "Extra"),
+            consbst(ctx, strlen(errmsg)-1, errmsg));
     push(ctx->lo, ctx->os, consname(ctx, errorname[err]));
     push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
 }
