@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "ob.h"
 
-char *types[] = { TYPES(AS_STR) "invalid"};
+char *types[] = { TYPES(AS_TYPE_STR) "invalid"};
 
 int isx(object o) {
     return !(o.tag &FLIT);

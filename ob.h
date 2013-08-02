@@ -47,7 +47,7 @@ enum {
 #define AS_STR(_) \
     #_ ,
 #define AS_TYPE_STR(_) \
-    #_ ## "type" ,
+    #_ "type" ,
 extern
 char *types[] /*= { TYPES(AS_TYPE_STR) "invalid"}*/ ;
 

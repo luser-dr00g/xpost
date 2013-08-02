@@ -9,7 +9,6 @@ systemdict begin
 /true 0 0 eq def
 /false 0 0 ne def
 
-%traceon
 
 /=string 128 string def
 /=print {
@@ -27,7 +26,6 @@ systemdict begin
 
 
 %dumpnames dumpvm
-%traceon
 %debugloadon
 
 %(/err.ps)
@@ -46,6 +44,82 @@ systemdict begin
 
 /stack { count dup 1 add copy //= repeat pop } def
 
+% ==
+24 dict begin
+/==dict currentdict def
+    /rmargin 72 def
+    /NL (\n) def
+
+    /cvsprint {
+        =string cvs tprint
+        ( ) tprint
+    } def
+    /tprint {
+        dup length cp add rmargin gt {
+            NL print
+            /cp 0 def
+        } if
+        dup length cp add /cp exch def
+        print
+    } def
+    /typeprint { dup type exec } def
+
+    /arraytype {
+        dup rcheck {
+            dup xcheck {
+                ({ ) tprint { typeprint } forall (} ) tprint
+            }{
+                ([ ) tprint { typeprint } forall (] ) tprint
+            } ifelse
+        }{ pop (-array-) tprint } ifelse
+    } def
+    { cvsprint }
+    dup /booleantype exch def
+    dup /integertype exch def
+    /realtype exch def
+
+    /dicttype { pop (-dict- ) tprint } def
+    /filetype { pop (-file- ) tprint } def
+    /marktype { pop (-mark- ) tprint } def
+    /fonttype { pop (-font- ) tprint } def
+
+    /nametype {
+        dup xcheck not {
+            (/) tprint
+        } if
+        cvsprint
+    } def
+
+    /operatortype {
+        (--) tprint
+        =string cvs tprint
+        (--) tprint
+    } def
+
+    /savetype {
+        pop (-savelevel- ) tprint
+    } def
+
+    /stringtype {
+        dup rcheck {
+            (\() tprint tprint (\)) tprint
+        }{
+            pop (-string- ) tprint
+        } ifelse
+    } def
+
+/== {
+    %traceon
+    //==dict begin
+        /cp 0 def
+        typeprint
+        NL print
+    end
+} end def % remove ==dict, installing == in systemdict
+
+/pstack { count dup 1 add copy //== repeat pop } def
+
+
 /execdict 6 dict def
 execdict begin
     /quitflag false def
@@ -63,7 +137,6 @@ end
         interrupt
     } def
 
-    %traceon
     /executive load stopped
     pop //quit % the operator
 } def
@@ -126,7 +199,9 @@ end
 } bind
 def
 
-end
-traceon
+end % systemdict
+
+%traceon
 %debugloadon
-$error/initializing false put
+
+$error/initializing false put % ready to go!

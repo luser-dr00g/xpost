@@ -125,13 +125,69 @@ void NRScvrs(context *ctx, object num, object rad, object str) {
     push(ctx->lo, ctx->os, str);
 }
 
+int conv_integ(real num, char *s, int n) {
+    int off;
+    if (num < 10.0) {
+        *s = ((int)num) + '0';
+        return 1;
+    }
+    off = conv_integ(num/10.0, s, n);
+    if ((off == n) || (off == -1)) return -1;
+    s[off] = (((int)num)%10) + '0';
+    return off + 1;
+}
+
+int conv_frac(real num, char *s, int n) {
+    real integ, frac;
+    num *= 10.0;
+    integ = floor(num);
+    frac = num - integ;
+    *s = (int)integ + '0';
+    if (num == 0.0) return 1;
+    return 1 + conv_frac(frac, s+1, n-1);
+}
+
+int conv_real(real num, char *s, int n) {
+    int off;
+    real integ, frac;
+    if (n == 0) return -1;
+    if (isinf(num)){
+        if (n < 3) return -1;
+        memcpy(s, "inf", 3);
+        return 3;
+    }
+    if (isnan(num)){
+        if (n < 3) return -1;
+        memcpy(s, "nan", 3);
+        return 3;
+    }
+    integ = floor(num);
+    frac = num - integ;
+    off = conv_integ(integ, s, n);
+    s[off++] = '.';
+    off += conv_frac(frac, s+off, n-off);
+    return off;
+}
+
 void AScvs(context *ctx, object any, object str) {
     char nostringval[] = "-nostringval-";
+    int n;
     switch(type(any)) {
     default:
         if (str.comp_.sz < sizeof(nostringval)-1) error(rangecheck, "AScvs");
         memcpy(charstr(ctx, str), nostringval, sizeof(nostringval)-1);
         str.comp_.sz = sizeof(nostringval)-1;
+        break;
+    case integertype:
+        n = conv_rad(any.int_.val, 10, charstr(ctx, str), str.comp_.sz);
+        if (n == -1) error(rangecheck, "AScvs integertype case");
+        if (n < str.comp_.sz) str.comp_.sz = n;
+        break;
+    case realtype:
+        n = conv_real(any.real_.val, charstr(ctx, str), str.comp_.sz);
+        if (n == -1) error(rangecheck, "AScvs realtype case");
+        if (n < str.comp_.sz) str.comp_.sz = n;
+        break;
     }
     push(ctx->lo, ctx->os, str);
 }
