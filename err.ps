@@ -45,6 +45,7 @@ end
 errordict begin
     /signalerror /signalerror load def
     /handleerror {
+        traceon
         //$error begin
             newerror {
                 /newerror false def
