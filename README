@@ -1,6 +1,7 @@
 This is XPost3
 ______________
-A work-in-progress Level-2 Postscript interpreter.
+A work-in-progress Level-2 Postscript interpreter. Currently implements
+the complete Level-1 core (minus graphics).
 
 [ XPost2 is available in the downloads as a .zip of the source directory.
 It was written and tested with Debian Lenny on an Olpc XO-1 laptop.
@@ -29,33 +30,34 @@ fail if any of the tests fail.
     Modules
     _______
 
-test  obj     src    header structures CONSTANTS
-----  ---     ---     ---   --------------------
-m     m.o     m.c     m.h   mfile mtab TABSZ
-s     s.o     s.c     s.h   stack STACKSEGSZ
-v     v.o     v.c     v.h   saverec_
-      f.o     f.c     f.h    file
-ob   ob.o    ob.c    ob.h   object
-ar   ar.o    ar.c    ar.h    array
-st   st.o    st.c    st.h    string
-di   di.o    di.c    di.h   dichead dictionary
-nm   nm.o    nm.c    nm.h    name
-gc   gc.o    gc.c    gc.h    garbage collector
-itp         itp.c   itp.h   context
-     op.o    op.c    op.h    oper optab operator handler MAXOPS SDSIZE
-    ops.o   ops.c   ops.h    stack operators
-    opb.o   opb.c            boolean operators
-    opc.o   opc.c            control operators
-    opm.o   opm.c            math operators
-   opst.o  opst.c  opst.h    string operators
-   opar.o opar.c opar.h    array operators
-   opdi.o opdi.c opdi.h    dictionary operators
-	   opdim                magic dictionary (* planned)
-	    opdimp               processes (*)
-		opdimc               canvases (*)
+test   obj     src    header structures CONSTANTS
+----   ---     ---     ---   --------------------
+m      m.o     m.c     m.h   mfile mtab TABSZ
+s      s.o     s.c     s.h   stack STACKSEGSZ
+v      v.o     v.c     v.h   saverec_
+       f.o     f.c     f.h    file
+ob    ob.o    ob.c    ob.h   object
+ar    ar.o    ar.c    ar.h    array
+st    st.o    st.c    st.h    string
+di    di.o    di.c    di.h   dichead dictionary
+nm    nm.o    nm.c    nm.h    name
+gc    gc.o    gc.c    gc.h    garbage collector
+itp          itp.c   itp.h   context
+      op.o    op.c    op.h    oper optab operator handler MAXOPS SDSIZE
+     ops.o   ops.c   ops.h    stack operators
+     opb.o   opb.c            boolean operators
+     opc.o   opc.c            control operators
+     opm.o   opm.c            math operators
+    opst.o  opst.c  opst.h    string operators
+    opar.o  opar.c  opar.h    array operators
+    opdi.o  opdi.c  opdi.h    dictionary operators
+       ~~~~~~~~~~           ~~~~~~~~~~~~~~~~~~~~~~~
+ 	    opdim                magic dictionary (* planned)
+ 	     opdimp               processes (*)
+ 	 	 opdimc               canvases (*)
+ 
 
-
-        Hierarchy (?)
+        Hierarchy (Inter-relation(?))
         -------------
                 itpdata
       gc     context     
@@ -236,4 +238,29 @@ optab lives in global-vm, I want operator names to be accessible in the
 same mfile. But "user" names should be allocated in local vm. This means
 names need to be banked just like composites.
 
+
+Additional information about xpost
+----------------------------------
+
+The development of Xpost has benefited greatly from the support and
+advice of fellow programmers on usenet in comp.lang.c, comp.lang.postscript,
+comp.unix.programmer. Searching for my email addresses mijoryx@yahoo.com
+or luser.droog@gmail.com should yield many discussions, many of which
+pertain to xpost or to ideas that influence my programming style.
+
+Also, my questions on Stack Overflow should offer additional background.
+http://stackoverflow.com/users/733077/luser-droog?tab=questions
+And the answers I've received have been enormously helpful.
+
+~~~~
+
+Also, Exciting News! Possible integration of xpost and LibreOffice.
+xpost would provide EPS import for LibreOffice.
+LibreOffice would provide graphics support for xpost.
+Win-Win.
+
+https://bugs.freedesktop.org/show_bug.cgi?id=67464
+
+I may need to release under a different license. Still learning 
+about that part (who ain't??).
 
