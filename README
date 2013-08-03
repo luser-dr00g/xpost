@@ -29,6 +29,9 @@ like encapsulation), speed (choosing appropriate algorithms), extensibility
 (growing stacks. support for multiple contexts). It is being written and
 tested with cygwin on a Toshiba Satellite L875D.
 
+
+  -- Modules --
+
 The various modules were written and tested separately before being 
 coupled together to achieve the necessary basic functionality.
 Each module retains its unit-test, its main() function, guarded
@@ -37,8 +40,8 @@ unit tests, producing copious output, but importantly exitting with
 an appropriate success or failure code, so the `make test` command will 
 fail if any of the tests fail.
 
-    Modules
-    _______
+    Module TOC
+    __________
 
 test   obj     src    header structures CONSTANTS
 ----   ---     ---     ---   --------------------
@@ -54,18 +57,21 @@ nm    nm.o    nm.c    nm.h    name
 gc    gc.o    gc.c    gc.h    garbage collector
 itp          itp.c   itp.h   context
       op.o    op.c    op.h    oper optab operator handler MAXOPS SDSIZE
-     ops.o   ops.c   ops.h    stack operators
-     opb.o   opb.c            boolean operators
-     opc.o   opc.c            control operators
-     opm.o   opm.c            math operators
-    opst.o  opst.c  opst.h    string operators
-    opar.o  opar.c  opar.h    array operators
-    opdi.o  opdi.c  opdi.h    dictionary operators
+      ----    ----    ----
+      ops.o   ops.c   ops.h    stack operators
+      opb.o   opb.c            boolean operators
+      opc.o   opc.c            control operators
+      opm.o   opm.c            math operators
+      opst.o  opst.c  opst.h    string operators
+      opar.o  opar.c  opar.h    array operators
+      opdi.o  opdi.c  opdi.h    dictionary operators
        ~~~~~~~~~~           ~~~~~~~~~~~~~~~~~~~~~~~
  	    opdim                magic dictionary (* planned)
  	     opdimp               processes (*)
  	 	 opdimc               canvases (*)
- 
+
+The file and operator modules were copied with little modification
+from xpost2, and so were not deemed to require separate tests.
 
         Hierarchy (Inter-relation(?))
         -------------
@@ -76,26 +82,24 @@ itp          itp.c   itp.h   context
                  array
                  dict
                  string
+ 
+The structures are rather closely "coupled" together.
+Each piece relying upon appropriate facilities from other modules.
+But a hierarchy of a sort does exist. The itpdata structure
+directly contains the context and mfile structures in arrays.
+The garbage collector is only interested in a single mfile at any
+given time. mfiles contain mtabs which contain entities.
+stacks live in mfiles, but the context's stacks (operand stack,
+execution stack, dictionary stack) are access via "pointers"
+store in the context structure. objects live in stacks, but they
+can also live in arrays or dicts. arrays and dicts and strings
+are of course, all objects themselves.
 
 
-        Special Entities
-        ----------------
-           context
-    (mfile)gl   (mfile)lo
-      mtab        mtab
-        FREE        FREE
-        VS          VS
-        CTXLIST     CTXLIST
-        NAMES       (planning to add local names, too)
-        NAMET
-        BOGUSNAME
-        OPTAB       ----
-        ----        live-entries (gc)
-        live-entries (gc)
+Virtual Memory
+--------------
 
-
-Memory
-------
+  -- mfile --
 
 At the heart is the "m" module: the memory-file and memory-tables.
 Every mfile starts with an mtab. Every mtab lives in an mfile.
@@ -114,13 +118,15 @@ There will be 3 ways of forking a new context:
  2  Share global VM, but create a copy of local VM.
  3  Share both global and local VM.
 
+  -- mtab --
+
 At address 0 of the mfile is an mtab, a Memory Table.
 An mtab is one segment of a chain of address tables which hold
 the allocation info (size, flags) and the "pointer" to the data
 itself. All VM "pointers" are integer byte-offsets from the vm
 base pointer.
 
-  -- Special Entities --
+  -- mtab[0] Special Entities --
 
 The first several entries of mtab[0] are "special entities".
 All mfiles have (in the mtab[0]) a save stack (VS), a
@@ -146,6 +152,28 @@ objects from the operand stack may span a segment boundary, but
 in the hold stack, they are rooted (so we the stack as an array,
 so we can select (switch) a function call based on the number of
 objects).
+
+        Special Entities
+        ----------------
+           context
+    (mfile)gl   (mfile)lo
+      mtab        mtab
+        FREE        FREE
+        VS          VS
+        CTXLIST     CTXLIST
+        NAMES       (planning to add local names, too)
+        NAMET
+        BOGUSNAME
+        OPTAB       ----
+        ----        live-entries (gc) ctx->lo->start
+        live-entries (gc) ctx->gl->start
+
+The special entities in the mtab facilitate bookkeeping of the
+mtabs themselves (FREE, VS), locating associated contexts (CTXLIST),
+and internal context data (possibly shared) (NAMES, NAMET, OPTAB).
+If everything works right, the presence of BOGUSNAME should have
+no visible effect to the user.
+
 
 
 Stacks

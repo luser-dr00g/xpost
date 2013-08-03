@@ -217,7 +217,7 @@ void initopf (context *ctx, object sd) {
     op = consoper(ctx, "readstring", Freadstring, 2, 2, filetype, stringtype); INSTALL;
     op = consoper(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype); INSTALL;
     op = consoper(ctx, "readline", Freadline, 2, 2, filetype, stringtype); INSTALL;
-    op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype); 
+    op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype); INSTALL;
     op = consoper(ctx, "flush", Zflush, 0, 0); INSTALL;
     op = consoper(ctx, "flushfile", Fflushfile, 0, 1, filetype); INSTALL;
     op = consoper(ctx, "resetfile", Fresetfile, 0, 1, filetype); INSTALL;
