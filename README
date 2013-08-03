@@ -1,7 +1,17 @@
 This is XPost3
 ______________
 A work-in-progress Level-2 Postscript interpreter. Currently implements
-the complete Level-1 core (minus graphics).
+the complete Level-1 core (minus graphics). Level-2 features implemented:
+growing stacks, growing dicts, << /dictionary/syntax >>.
+
+Upon cloning the repository, the commands `make` and `make test`
+should compile all the modules and create and run all the tests.
+`./itp` will run the "interpreter test", which runs the interactive executive.
+
+The source should be portable across all gcc targets.
+Please raise an issue at
+    http://code.google.com/p/xpost/issues/list
+if you have difficulty compiling. 
 
 [ XPost2 is available in the downloads as a .zip of the source directory.
 It was written and tested with Debian Lenny on an Olpc XO-1 laptop.
@@ -212,6 +222,27 @@ machinery is being exercised even though the testing is not very
 comprehensive yet.
 
 
+Operator Handling
+-----------------
+
+Xpost3 continues to use the same bizarre twisted loop to check
+the stack contents for a combined typecheck/stackunderflow-error
++ polymorphic variadic dispatch, copying argument from the 
+postscript stack to the operator-function's calling frame.
+It's all very perverse and clever.
+
+But profiling xpost2 showed a big bottleneck with all this trickery.
+So a possible optimization is to replace the operator-signature
+type with a dedicated function pointer to a function that 
+implements the desired stack-checking. This would factor-out
+quite a bit of redundant computation, I think. For instance,
+most operators are not defined to accept the `anytype` pattern,
+therefore most operators would check the stack faster by omitting
+this clause. 
+
+This will likely require some truly heinous name-mangling.
+
+
 Bringing it all together
 ------------------------
 
@@ -247,6 +278,9 @@ advice of fellow programmers on usenet in comp.lang.c, comp.lang.postscript,
 comp.unix.programmer. Searching for my email addresses mijoryx@yahoo.com
 or luser.droog@gmail.com should yield many discussions, many of which
 pertain to xpost or to ideas that influence my programming style.
+The classic is "Embarrassing spaghetti code needs stylistic advice".
+I suppose the moral to that one is that I can hack up a loogee, but
+I clean up nice, too. :)
 
 Also, my questions on Stack Overflow should offer additional background.
 http://stackoverflow.com/users/733077/luser-droog?tab=questions

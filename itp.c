@@ -99,12 +99,12 @@ void initglobal(context *ctx) {
 
     initnames(ctx); /* NAMES NAMET */
     //ctx->gl->roots[1] = NAMES;
-    initoptab(ctx);
+    initoptab(ctx); /* allocate and zero the optab structure */
     ctx->gl->start = OPTAB + 1; /* so OPTAB is not collected and not scanned. */
     (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
     (void)consname(ctx, "getinterval"); /* middle of the start */
     (void)consname(ctx, "setmiterlimit"); /* middle of the end */
-    initop(ctx);
+    initop(ctx); /* populate the optab (and systemdict) with operators */
 }
 
 mfile *nextltab() {
@@ -365,8 +365,10 @@ void initevaltype(void) {
     TYPES(AS_EVALINIT)
 }
 
+
 void eval(context *ctx) {
     object t = top(ctx->lo, ctx->es, 0);
+    ctx->currentobject = t;
 
     if (TRACE) {
         printf("\neval\n");
@@ -403,6 +405,8 @@ void mainloop(context *ctx) {
 
     while(!ctx->quit)
         eval(ctx);
+
+    jbmainloopset = false;
 }
 
 
@@ -441,8 +445,8 @@ int main(void) {
     mainloop(ctx);
 
     /* Run! */
-    push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
-    push(ctx->lo, ctx->es, cvx(consname(ctx, "start"))); /* start proc defined in init.ps */
+    push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0)); 
+    push(ctx->lo, ctx->es, cvx(consname(ctx, "start"))); /* `start` proc defined in init.ps */
     initializing = 0;
     ctx->quit = 0;
     mainloop(ctx);

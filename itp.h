@@ -12,6 +12,7 @@ typedef struct {
     unsigned vmmode; 
     unsigned state;
     unsigned quit;
+    object currentobject;
 } context;
 
 enum { LOCAL, GLOBAL }; //vmmode
@@ -24,6 +25,7 @@ typedef struct {
     mfile gtab[MAXMFILE];
     mfile ltab[MAXMFILE];
 } itp;
+
 
 #include <setjmp.h>
 extern itp *itpdata;
