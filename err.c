@@ -23,7 +23,7 @@ volatile char *errormsg;
 void error(unsigned err, char *msg) {
     errormsg = msg;
     if (!initializing && jbmainloopset) {
-        longjmp(jbmainloop, 1);
+        longjmp(jbmainloop, err);
     }
 
     /* following will become "fallback" code

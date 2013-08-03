@@ -188,6 +188,19 @@ void AScvs(context *ctx, object any, object str) {
         if (n == -1) error(rangecheck, "AScvs realtype case");
         if (n < str.comp_.sz) str.comp_.sz = n;
         break;
+    case nametype:
+        {
+            object nams = strname(ctx, any);
+            if (nams.comp_.sz > str.comp_.sz) error(rangecheck, "AScvs nametype case");
+            if (nams.comp_.sz < str.comp_.sz) str.comp_.sz = nams.comp_.sz;
+            memcpy(charstr(ctx, str), charstr(ctx, nams), nams.comp_.sz);
+            break;
+        }
+    case stringtype:
+        if (any.comp_.sz > str.comp_.sz) error(rangecheck, "AScvs stringtype case");
+        if (any.comp_.sz < str.comp_.sz) str.comp_.sz = any.comp_.sz;
+        memcpy(charstr(ctx, str), charstr(ctx, any), any.comp_.sz);
+        break;
     }
     push(ctx->lo, ctx->os, str);
 }
