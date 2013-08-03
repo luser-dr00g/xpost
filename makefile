@@ -17,7 +17,8 @@ all: objects
 
 test: objects $(TESTS)
 	./ob && ./m && ./s && ./st && ./nm && \
-	./v && ./gc && ./ar && ./di &&  echo quit | ./itp
+	./v && ./gc && ./ar && ./di && \
+	echo "(test.ps)Run" | ./itp
 
 count:
 	wc -l *.[ch]

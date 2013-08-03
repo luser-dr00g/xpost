@@ -4,7 +4,7 @@ systemdict begin
 
 /version (0) def
 /run { (r) file cvx exec } def
-/Run { dup print flush run } def
+/Run { (\() print dup =print (\) run\n) print flush run } def
 /interrupt { stop } def
 /true 0 0 eq def
 /false 0 0 ne def
@@ -135,6 +135,7 @@ end
     /quit {
         %exit
         //execdict /quitflag true put
+        //$error /newerror false put
         interrupt
     } def
 
