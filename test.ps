@@ -1,6 +1,103 @@
 
+/fail {
+    (%stderr) (w) file
+    (TEST FAILED!\n) writestring
+} def
+
+
 [ ] ==
+[ ] type /arraytype ne {fail} if
 { ] } stopped { $error /errorname get /unmatchedmark ne {fail} if
               }{ fail } ifelse
+/= cvx =
 
+{ = } stopped { $error /errorname get /stackunderflow ne {fail} if
+              }{ fail } ifelse
+/== cvx ==
+
+{ == } stopped { $error /errorname get /stackunderflow ne {fail} if
+              }{ fail } ifelse
+
+(abs)=
+4.5 abs 4.5 ne {fail} if
+-3 abs 3 ne {fail} if
+0 abs 0 ne {fail} if
+
+(add)=
+3 4 add 7 ne {fail} if
+9.9 1.1 add 11.0 ne {fail} if
+
+(aload)=
+[23 (ab) -6] aload
+    type /arraytype eq exch
+    type /integertype eq and exch
+    type /stringtype eq and exch
+    type /integertype eq and not {fail} if
+
+(anchorsearch)=
+%(1)=
+(abbc) (ab) anchorsearch 
+    true eq exch
+    (ab) eq and exch
+    (bc) eq and not {fail} if
+%(2)=
+(abbc) (bb) anchorsearch
+    false eq exch
+    (abbc) eq and not {fail} if
+%(3)=
+(abbc) (bc) anchorsearch
+    false eq exch
+    (abbc) eq and not {fail} if
+%(4)=
+(abbc) (B) anchorsearch
+    false eq exch
+    (abbc) eq and not {fail} if
+
+(and)=
+true true and true ne {fail} if
+true false and false ne {fail} if
+false true and false ne {fail} if
+false false and false ne {fail} if
+99 1 and 1 ne {fail} if
+52 7 and 4 ne {fail} if
+
+%arc
+%arcn
+%arcto
+
+(array)=
+3 array dup type /arraytype ne {fail} if
+    aload pop null eq exch
+    null eq and exch
+    null eq and not {fail} if
+
+%ashow
+
+(astore)=
+(a) (bcd) (ef) 3 array astore type /arraytype ne {fail} if
+
+(atan)=
+(1)=
+0 1 atan 0.0 ne {fail} if
+(2)=
+1 0 atan 90.0 ne {fail} if
+(3)=
+-100 0 atan 270.0 ne {fail} if
+(4)=
+4 4 atan 45.0 ne {fail} if
+
+%awidthshow
+%banddevice
+
+(begin)=
+1 dict dup begin currentdict ne {fail} if end
+
+(bind)=
+{ add } bind 0 get type /operatortype ne {fail} if
+
+(bitshift)=
+7 3 bitshift 56 ne {fail} if
+142 -3 bitshift 17 ne {fail} if
+
+%bytesavailable
 

@@ -148,7 +148,7 @@ int conv_frac(real num, char *s, int n) {
 }
 
 int conv_real(real num, char *s, int n) {
-    int off;
+    int off = 0;
     real integ, frac;
     if (n == 0) return -1;
     if (isinf(num)){
@@ -161,9 +161,13 @@ int conv_real(real num, char *s, int n) {
         memcpy(s, "nan", 3);
         return 3;
     }
+    if (num < 0) {
+        num = fabs(num);
+        s[off++] = '-';
+    }
     integ = floor(num);
     frac = num - integ;
-    off = conv_integ(integ, s, n);
+    off += conv_integ(integ, s+off, n);
     s[off++] = '.';
     off += conv_frac(frac, s+off, n-off);
     return off;
@@ -171,12 +175,29 @@ int conv_real(real num, char *s, int n) {
 
 void AScvs(context *ctx, object any, object str) {
     char nostringval[] = "-nostringval-";
+    char strue[] = "true";
+    char sfalse[] = "false";
     int n;
+
     switch(type(any)) {
     default:
         if (str.comp_.sz < sizeof(nostringval)-1) error(rangecheck, "AScvs");
         memcpy(charstr(ctx, str), nostringval, sizeof(nostringval)-1);
         str.comp_.sz = sizeof(nostringval)-1;
+        break;
+
+    case booleantype:
+        {
+            if (any.int_.val) {
+                if (str.comp_.sz < sizeof(strue)-1) error(rangecheck, "AScvs booleantype case");
+                memcpy(charstr(ctx, str), strue, sizeof(strue)-1);
+                str.comp_.sz = sizeof(strue)-1;
+            } else {
+                if (str.comp_.sz < sizeof(sfalse)-1) error(rangecheck, "AScvs booleantype case");
+                memcpy(charstr(ctx, str), sfalse, sizeof(sfalse)-1);
+                str.comp_.sz = sizeof(sfalse)-1;
+            }
+        }
         break;
     case integertype:
         n = conv_rad(any.int_.val, 10, charstr(ctx, str), str.comp_.sz);
@@ -188,20 +209,25 @@ void AScvs(context *ctx, object any, object str) {
         if (n == -1) error(rangecheck, "AScvs realtype case");
         if (n < str.comp_.sz) str.comp_.sz = n;
         break;
-    case nametype:
+
+    case operatortype:
         {
-            object nams = strname(ctx, any);
-            if (nams.comp_.sz > str.comp_.sz) error(rangecheck, "AScvs nametype case");
-            if (nams.comp_.sz < str.comp_.sz) str.comp_.sz = nams.comp_.sz;
-            memcpy(charstr(ctx, str), charstr(ctx, nams), nams.comp_.sz);
-            break;
+            oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+            oper op = optab[any.mark_.padw];
+            mark_ nm = { nametype, 0, op.name };
+            any.mark_ = nm;
         }
+        /*@fallthrough@*/
+    case nametype:
+        any = strname(ctx, any);
+        /*@fallthrough@*/
     case stringtype:
         if (any.comp_.sz > str.comp_.sz) error(rangecheck, "AScvs stringtype case");
         if (any.comp_.sz < str.comp_.sz) str.comp_.sz = any.comp_.sz;
         memcpy(charstr(ctx, str), charstr(ctx, any), any.comp_.sz);
         break;
     }
+
     push(ctx->lo, ctx->os, str);
 }
 

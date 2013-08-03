@@ -66,7 +66,7 @@ void onerror(context *ctx, unsigned err) {
     errmsg = errormsg;
     bdcput(ctx, dollarerror,
             consname(ctx, "Extra"),
-            consbst(ctx, strlen(errmsg)-1, errmsg));
+            consbst(ctx, strlen(errmsg), errmsg));
     push(ctx->lo, ctx->os, ctx->currentobject);
     push(ctx->lo, ctx->os, cvlit(consname(ctx, errorname[err])));
     push(ctx->lo, ctx->es, consname(ctx, "signalerror"));

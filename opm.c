@@ -161,7 +161,7 @@ void Rsqrt (context *ctx, object x) {
    arctangent of num/den in degrees */
 void Ratan (context *ctx, object num, object den) {
     push(ctx->lo, ctx->os,
-            consreal(atan2(num.real_.val, den.real_.val)
+            consreal(atan2(num.real_.val * RAD_PER_DEG, den.real_.val * RAD_PER_DEG)
                 / RAD_PER_DEG));
 }
 
