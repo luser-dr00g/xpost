@@ -56,14 +56,8 @@ int objcmp(context *ctx, object L, object R) {
                                     && L.comp_.ent == R.comp_.ent
                                     && L.comp_.off == R.comp_.off ); // 0 if all eq
             case stringtype: return L.comp_.sz == R.comp_.sz ?
-                             memcmp( (bank(ctx, L) /*L.tag&FBANK?ctx->gl:ctx->lo*/)->base
-                                     + adrent(bank(ctx, L) /*L.tag&FBANK?ctx->gl:ctx->lo*/,
-                                         L.comp_.ent),
-                                     (bank(ctx, R) /*R.tag&FBANK?ctx->gl:ctx->lo*/)->base
-                                     + adrent(bank(ctx, R) /*R.tag&FBANK?ctx->gl:ctx->lo*/,
-                                         R.comp_.ent),
-                                     L.comp_.sz) :
-                                         L.comp_.sz - R.comp_.sz;
+                                    memcmp(charstr(ctx, L), charstr(ctx, R), L.comp_.sz) :
+                                    L.comp_.sz - R.comp_.sz;
         }
     return type(L) - type(R);
 }

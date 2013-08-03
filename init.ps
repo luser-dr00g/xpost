@@ -78,6 +78,7 @@ systemdict begin
     dup /integertype exch def
     /realtype exch def
 
+    /nulltype { pop (null ) tprint } def
     /dicttype { pop (-dict- ) tprint } def
     /filetype { pop (-file- ) tprint } def
     /marktype { pop (-mark- ) tprint } def

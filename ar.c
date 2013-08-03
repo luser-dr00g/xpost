@@ -20,6 +20,8 @@ object consarr(mfile *mem, unsigned sz) {
     unsigned cnt;
     mtab *tab;
     object o;
+    unsigned i;
+
     //unsigned ent = mtalloc(mem, 0, sz * sizeof(object));
     ent = gballoc(mem, (unsigned)(sz * sizeof(object)));
     tab = (void *)(mem->base);
@@ -28,6 +30,9 @@ object consarr(mfile *mem, unsigned sz) {
     cnt = count(mem, adrent(mem, VS));
     tab->tab[rent].mark = ( (0 << MARKO) | (0 << RFCTO) |
             (cnt << LLEVO) | (cnt << TLEVO) );
+
+    for (i = 0; i < sz; i++)
+        put(mem, ent, i, (unsigned)sizeof(object), &null);
 
     //return (object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0};
     o.tag = arraytype | (unlimited << FACCESSO);
