@@ -44,7 +44,7 @@ void arrtomark(context *ctx) {
         barput(ctx, a, i-1, v);
     }
     (void)pop(ctx->lo, ctx->os); // pop mark
-    push(ctx->lo, ctx->os, a);
+    push(ctx->lo, ctx->os, cvlit(a));
 }
 
 /* array  length  int

@@ -60,14 +60,15 @@ void error(unsigned err, char *msg) {
 void onerror(context *ctx, unsigned err) {
     object sd;
     object dollarerror;
-    char *errmsg;
+    char *errmsg; 
     sd = bot(ctx->lo, ctx->ds, 0);
     dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
     errmsg = errormsg;
     bdcput(ctx, dollarerror,
             consname(ctx, "Extra"),
             consbst(ctx, strlen(errmsg)-1, errmsg));
-    push(ctx->lo, ctx->os, consname(ctx, errorname[err]));
+    push(ctx->lo, ctx->os, ctx->currentobject);
+    push(ctx->lo, ctx->os, cvlit(consname(ctx, errorname[err])));
     push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
 }
 
