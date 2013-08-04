@@ -73,7 +73,8 @@ void Agetinterval(context *ctx, object A, object I, object L) {
 
 /* array1 index array2  putinterval  -
    replace subarray of array1 starting at index by array2 */
-void Aputinterval(context *ctx, object S, object I, object D) {
+void Aputinterval(context *ctx, object D, object I, object S) {
+    if (I.int_.val + S.comp_.sz > D.comp_.sz) error(rangecheck, "putinterval");
     a_copy(ctx, S, arrgetinterval(D, I.int_.val, S.comp_.sz));
 }
 
@@ -128,7 +129,7 @@ void initopar(context *ctx, object sd) {
     op = consoper(ctx, "get", Aget, 1, 2,
             arraytype, integertype); INSTALL;
     op = consoper(ctx, "put", Aput, 0, 3,
-            arraytype, integertype, integertype); INSTALL;
+            arraytype, integertype, anytype); INSTALL;
     op = consoper(ctx, "getinterval", Agetinterval, 1, 3,
             arraytype, integertype, integertype); INSTALL;
     op = consoper(ctx, "putinterval", Aputinterval, 0, 3,

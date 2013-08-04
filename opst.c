@@ -80,7 +80,7 @@ void Ssearch(context *ctx, object str, object seek) {
     if (seek.comp_.sz > str.comp_.sz) error(rangecheck, "Ssearch");
     s = charstr(ctx, str);
     k = charstr(ctx, seek);
-    for (i = 0; i < str.comp_.sz - seek.comp_.sz; i++) {
+    for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++) {
         if (ancsearch(s+i, k, seek.comp_.sz)) {
             push(ctx->lo, ctx->os, 
                     arrgetinterval(str, i + seek.comp_.sz,

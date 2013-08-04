@@ -177,6 +177,7 @@ void AScvs(context *ctx, object any, object str) {
     char nostringval[] = "-nostringval-";
     char strue[] = "true";
     char sfalse[] = "false";
+    char smark[] = "-mark-";
     int n;
 
     switch(type(any)) {
@@ -184,6 +185,11 @@ void AScvs(context *ctx, object any, object str) {
         if (str.comp_.sz < sizeof(nostringval)-1) error(rangecheck, "AScvs");
         memcpy(charstr(ctx, str), nostringval, sizeof(nostringval)-1);
         str.comp_.sz = sizeof(nostringval)-1;
+        break;
+    case marktype:
+        if (str.comp_.sz < sizeof(smark)-1) error(rangecheck, "AScvs");
+        memcpy(charstr(ctx, str), smark, sizeof(smark)-1);
+        str.comp_.sz = sizeof(smark)-1;
         break;
 
     case booleantype:
