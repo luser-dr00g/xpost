@@ -123,6 +123,19 @@ void Aload(context *ctx, object K) {
     error(undefined, "Aload");
 }
 
+/* key value  store  -
+   replace topmost definition of key */
+void Astore(context *ctx, object K, object V) {
+    object D;
+    Awhere(ctx, K);
+    if (pop(ctx->lo, ctx->os).int_.val) {
+        D = pop(ctx->lo, ctx->os);
+    } else {
+        D = top(ctx->lo, ctx->ds, 0);
+    }
+    bdcput(ctx, D, K, V);
+}
+
 /* mark k_1 v_1 ... k_N v_N  >>  dict
    construct dictionary from pairs on stack
  */
@@ -223,6 +236,7 @@ void initopdi(context *ctx, object sd) {
     op = consoper(ctx, "put", DAAput, 1, 3,
             dicttype, anytype, anytype); INSTALL;
     op = consoper(ctx, "load", Aload, 1, 1, anytype); INSTALL;
+    op = consoper(ctx, "store", Astore, 0, 2, anytype, anytype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "<<"), mark);
     op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;
     op = consoper(ctx, "where", Awhere, 2, 1, anytype); INSTALL;

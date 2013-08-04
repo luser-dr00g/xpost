@@ -629,6 +629,46 @@ saveobj restore
 (4: (abbc) (B) search {fail} if clear)=
 (abbc) (B) search {fail} if clear
 
+%setcachedevice
+%setcachelimit
+%setcacheparams
+%setcharwidth
+%setdash
+%setflat
+%setfont
+%setgray
+%sethsbcolor
+%setlinecap
+%setlinejoin
+%setlinewidth
+%setmatrix
+%setmiterlimit
+%setpacking
+%setrgbcolor
+%setscreen
+%settransfer
+%show
+%showpage
+
+%(sin)=
+%(sqrt)=
+%(srand)=
+%(stack)=
+%stackoverflow
+%stackunderflow
+%StandardEncoding
+%(start)=
+%status
+%stop
+
+(stopped)=
+{ ... } stopped not {fail} if
+
+(store)=
+/abc 123 store
+/abc where {}{currentdict} ifelse /abc 123 put
+abc 123 ne {fail} if
+
 
 
 %traceon
