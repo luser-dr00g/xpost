@@ -1,7 +1,9 @@
 
 /fail {
+    (%stdout) (w) file flushfile
     (%stderr) (w) file
-    (TEST FAILED!\n) writestring
+        dup (TEST FAILED!\n) writestring
+        flushfile
 } def
 
 
@@ -15,8 +17,7 @@
               }{ fail } ifelse
 /== cvx ==
 
-{ == } stopped { $error /errorname get /stackunderflow ne {fail} if
-              }{ fail } ifelse
+%{ == } stopped { $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
 
 (abs)=
 4.5 abs 4.5 ne {fail} if
@@ -77,20 +78,20 @@ false false and false ne {fail} if
 (a) (bcd) (ef) 3 array astore type /arraytype ne {fail} if
 
 (atan)=
-(1)=
+%(1)=
 0 1 atan 0.0 ne {fail} if
-(2)=
+%(2)=
 1 0 atan 90.0 ne {fail} if
-(3)=
+%(3)=
 -100 0 atan 270.0 ne {fail} if
-(4)=
+%(4)=
 4 4 atan 45.0 ne {fail} if
 
 %awidthshow
 %banddevice
 
 (begin)=
-1 dict dup begin currentdict ne {fail} if end
+2 dict dup begin currentdict ne {fail} if
 
 (bind)=
 { add } bind 0 get type /operatortype ne {fail} if
@@ -102,4 +103,533 @@ false false and false ne {fail} if
 (bytesavailable)=
 currentfile bytesavailable =
 
+%cachestatus
+
+(ceiling)=
+3.2 ceiling 4.0 ne {fail} if
+-4.8 ceiling -4.0 ne {fail} if
+99 ceiling 99 ne {fail} if
+
+%charpath
+
+(clear)=
+7 8 6 7  5 9 0 7 6 4 6 8 77  8 6 9  7 8 6 clear
+count 0 ne {fail} if
+
+(cleartomark)=
+777 [ 8 7 6 5 4 cleartomark
+777 ne {fail} if
+
+%clip
+%clippath
+
+%(closefile)=
+
+%closepath
+%concat
+%concatmatrix
+
+(copy)=
+1 2 3 2 copy 
+    count 5 ne {fail} if
+    3 ne {fail} if
+    2 ne {fail} if
+    3 ne {fail} if
+    2 ne {fail} if
+    1 ne {fail} if
+1 2 3 0 copy
+    count 3 ne {fail} if
+    clear
+/a1 [1 2 3] def
+a1 dup length array copy aload pop
+    3 ne {fail} if
+    2 ne {fail} if
+    1 ne {fail} if
+
+%copypage
+
+(cos)=
+0 cos 1.0 ne {fail} if
+90 cos 0.0 ne {fail} if
+
+(count)=
+clear count 0 ne {fail} if
+clear 1 2 3 count 3 ne {fail} if clear
+
+(countdictstack)=
+countdictstack =
+
+(countexecstack)=
+countexecstack =
+
+(counttomark)=
+1 mark 2 3 counttomark 2 ne {fail} if clear
+1 mark counttomark 0 ne {fail} if clear
+
+%currentcacheparams
+%currentdash
+
+(currentdict)=
+currentdict ==
+
+(currentfile)=
+currentfile ==
+
+%currentflat
+%currentfont
+%currentgray
+%currenthsbcolor
+%currentlinecap
+%currentlinejoin
+%currentlinewidth
+%currentmatrix
+%currentmiterlimit
+%currentpacking
+%currentpoint
+%currentrgbcolor
+%currentscreen
+%currenttransfer
+%curveto
+
+(cvi)=
+(1: (3.3E1) cvi 33 ne {fail} if)=
+(3.3E1) cvi 33 ne {fail} if
+(2: -47.8 cvi -47 ne {fail} if)=
+-47.8 cvi -47 ne {fail} if
+(3: 520.9 cvi 520 ne {fail} if)=
+520.9 cvi 520 ne {fail} if
+
+%(cvlit)=
+
+(cvn)=
+(abc) cvn /abc ne {fail} if
+(abc) cvx cvn xcheck not {fail} if
+
+(cvr)=
+(3.3E1) cvr 33.0 ne {fail} if
+
+(cvrs)=
+/str 10 string def
+100 8 str cvrs (144) ne {fail} if
+200 16 str cvrs dup (C8) eq exch (c8) eq or not {fail} if
+
+(cvs)=
+/str 20 string def
+(1: 123 456 add str cvs (579) ne {fail} if)=
+123 456 add str cvs (579) ne {fail} if
+(2: mark str cvs (-nostringval-) eq)=
+mark str cvs (-nostringval-) eq
+(2: mark str cvs (--nostringval--) eq)=
+mark str cvs (--nostringval--) eq
+(2: mark str cvs (-mark-) eq or or not {fail} if)=
+mark str cvs (-mark-) eq
+    or or not {fail} if
+
+%(cvx)=
+
+(def)=
+/ncnt 1 def ncnt 1 ne {fail} if
+/ncnt ncnt 1 add def ncnt 2 ne {fail} if
+
+%defaultmatrix
+%definefont
+
+%(dict)=
+
+%/dictfull
+
+%(dictstack)=
+%/dictstackoverflow
+%/dictstackunderflow
+
+(div)=
+(1: 3 2 div 1.5 ne {fail} if)=
+3 2 div 1.5 ne {fail} if
+(2: 4 2 div 2.0 ne {fail} if)=
+4 2 div 2.0 ne {fail} if
+
+%dtransform
+
+%(dup)=
+%(echo)=
+%(end)=
+end %currentdict userdict ne {fail} if
+
+%eoclip
+%eofill
+
+(eq)=
+(1: 4.0 4 eq not {fail} if)=
+4.0 4 eq not {fail} if
+(2: (abc) (abc) eq not {fail} if)=
+(abc) (abc) eq not {fail} if
+(3: (abc) /abc eq not {fail} if)=
+(abc) /abc eq not {fail} if
+(4: [1 2 3] dup eq not {fail} if)=
+[1 2 3] dup eq not {fail} if
+(5: [1 2 3] [1 2 3] eq {fail} if)=
+[1 2 3] [1 2 3] eq {fail} if
+
+%erasepage
+
+%(errordict)=
+
+(exch)=
+1 2 exch
+    1 eq {
+        2 eq not {fail} if
+    }{
+        pop fail
+    } ifelse
+
+(exec)=
+(3 2 add) cvx exec 5 ne {fail} if
+3 2 /add exec
+    /add eq exch
+    2 eq and exch
+    3 eq and not {fail} if
+3 2 /add cvx exec 5 ne {fail} if
+
+%(execstack)=
+%execstackoverflow
+%(executeonly)=
+%(exit)=
+
+(exp)=
+(1: 9 0.5 exp 3.0 ne {fail} if)=
+9 0.5 exp 3.0 ne {fail} if
+(2: -9 -1 exp -0.111111 ne {fail} if)=
+-9 -1 exp -0.111111 ne {fail} if
+
+%(false)=
+%(file)=
+%fill
+%findfont
+%flattenpath
+
+(floor)=
+3.2 floor 3.0 ne {fail} if
+-4.8 floor -5.0 ne {fail} if
+99 floor 99 ne {fail} if
+
+%(flush)=
+%(flushfile)=
+%FontDirectory
+
+(for)=
+(1: 0 1 1 4 {add} for 10 ne {fail} if)=
+0 1 1 4 {add} for 10 ne {fail} if
+(2: 1 2 6 {} for)=
+1 2 6 {} for
+    5 eq exch
+    3 eq and exch
+    1 eq and not {fail} if
+(3: 3 -.5 1 {} for)=
+3 -.5 1 {} for
+    1.0 eq exch
+    1.5 eq and exch
+    2.0 eq and exch
+    2.5 eq and exch
+    3.0 eq and not {fail} if
+
+(forall)=
+(1: 0 [13 29 3 -8 21] {add} forall 58 ne {fail} if)=
+0 [13 29 3 -8 21] {add} forall 58 ne {fail} if
+/d 2 dict def
+d /abc 123 put
+d /xyz (test) put
+(2: d {} forall)=
+d {} forall
+    dup 123 eq {
+        pop
+        /abc eq exch
+        (test) eq and exch
+        /xyz eq and not {fail} if
+    }{
+        (test) eq exch
+        /xyz eq and exch
+        123 eq and exch
+        /abc eq and not {fail} if
+    } ifelse
+
+%framedevice
+
+(ge)=
+(1: 4.2 4 ge not {fail} if)=
+4.2 4 ge not {fail} if
+(2: (abc) (d) ge {fail} if)=
+(abc) (d) ge {fail} if
+(3: (aba) (ab) ge not {fail} if)=
+(aba) (ab) ge not {fail} if
+(4: (aba) (aba) ge not {fail} if)=
+(aba) (aba) ge not {fail} if
+
+(get)=
+[31 41 59] 0 get 31 ne {fail} if
+[0 (a mixed-type array) [] {add 2 div}] 2 get length 0 ne {fail} if
+/mykey (myvalue) def
+currentdict /mykey get (myvalue) ne {fail} if
+(abc) 1 get 98 ne {fail} if
+(a) 0 get 97 ne {fail} if
+
+(getinterval)=
+[9 8 7 6 5] 1 3 getinterval aload pop 
+    6 eq exch
+    7 eq and exch
+    8 eq and not {fail} if
+(abcde) 1 3 getinterval (bcd) ne {fail} if
+(abcde) 0 0 getinterval () ne {fail} if
+
+%grestore
+%grestoreall
+%gsave
+
+%(gt)=
+
+%handleerror
+%identmatrix
+
+(idiv)=
+3 2 idiv 1 ne {fail} if
+4 2 idiv 2 ne {fail} if
+-5 2 idiv -2 ne {fail} if
+
+%idtransform
+
+(if)=
+3 4 lt {(3 is less than 4)} if (3 is less than 4) { ne {fail} if } stopped {fail} if
+
+(ifelse)=
+4 3 lt {(TruePart)} {(FalsePart)} ifelse
+    (FalsePart) ne {fail} if
+
+%image
+%imagemask
+
+(index)=
+(a)(b)(c)(d) 0 index (d) ne {fail} if
+    3 index (a) ne {fail} if
+    clear
+
+%initclip
+%initgraphics
+%initmatrix
+
+%interrupt
+%invalidaccess
+%invalidfileaccess
+%invalidfont
+%invalidrestore
+
+%invertmatrix
+
+%ioerror
+
+%itransform
+
+(known)=
+/mydict 5 dict def
+mydict /total 0 put
+mydict /total known not {fail} if
+mydict /badname known {fail} if
+
+%kshow
+
+%(le)=
+
+(length)=
+[1 2 4] length 3 ne {fail} if
+[] length 0 ne {fail} if
+/ar 20 array def ar length 20 ne {fail} if
+/mydict 5 dict def
+mydict length 0 ne {fail} if
+mydict /firstkey (firstvalue) put
+mydict length 1 ne {fail} if
+(abc\n) length 4 ne {fail} if
+() length 0 ne {fail} if
+
+%limitcheck
+%lineto
+
+(ln)=
+10 ln 2.30259 ne {fail} if
+100 ln 4.60517 ne {fail} if
+
+(load)=
+/avg {add 2 div} def
+/avg load 1 get 2 ne {fail} if
+
+(log)=
+10 log 1.0 ne {fail} if
+100 log 2.0 ne {fail} if
+
+%(loop)=
+%(lt)=
+%makefont
+
+(mark)=
+mark [ ne {fail} if
+
+%matrix
+
+(maxlength)=
+/mydict 5 dict def
+mydict length 0 ne {fail} if
+mydict maxlength 5 ne {fail} if
+
+(mod)=
+5 3 mod 2 ne {fail} if
+5 2 mod 1 ne {fail} if
+-5 3 mod -2 ne {fail} if
+
+%moveto
+%(mul)=
+%(ne)=
+
+(neg)=
+4.5 neg -4.5 ne {fail} if
+-3 neg 3 ne {fail} if
+
+%newpath
+%(noaccess)=
+%nocurrentpoint
+
+(not)=
+(1:)=
+true not false ne {fail} if
+(2:)=
+false not true ne {fail} if
+(3:)=
+52 not -53 ne {fail} if
+
+(null)=
+null 1 array 0 get ne {fail} if
+
+%nulldevice
+
+(or)=
+true true or true ne {fail} if
+true false or true ne {fail} if
+false true or true ne {fail} if
+false false or false ne {fail} if
+17 5 or 21 ne {fail} if
+
+%packedarray
+%pathbbox
+%pathforall
+
+(pop)=
+1 2 3 pop 2 ne {fail} if clear
+1 2 3 pop pop 1 ne {fail} if
+
+%(print)=
+%(prompt)=
+%(pstack)=
+
+(put)=
+(1:)=
+/ar [5 17 3 8] def
+ar 2 (abcd) put
+ar aload pop
+    8 eq exch
+    (abcd) eq and not {fail} if clear
+(2:)=
+/d 5 dict def
+d /abc 123 put
+d {} forall
+    123 eq exch
+    /abc eq and not {fail} if
+(3:)=
+/st (abc) def
+st 0 65 put
+st (Abc) ne {fail} if
+
+(putinterval)=
+(1:)=
+/ar [5 8 2 7 3] def
+ar 1 [(a) (b) (c)] putinterval
+ar aload pop
+    3 eq exch
+    (c) eq and exch
+    (b) eq and exch
+    (a) eq and exch
+    5 eq and not {fail} if
+(2:)=
+/st (abc) def
+st 1 (de) putinterval
+st (ade) ne {fail} if
+
+%(quit)=
+
+(rand)=
+rand type /integertype ne {fail} if
+rand rand eq {fail} if
+
+%rangecheck
+%(rcheck)=
+%rcurveto
+%(read)=
+%(readhexstring)=
+%(readline)=
+%(readonly)=
+%(readstring)=
+%renderbands
+
+(repeat)=
+4{(abc)}repeat count 4 ne {fail} if
+1 2 3 4 3 {pop} repeat 1 ne {fail} if
+4 {} repeat (abc) ne {fail} if
+mark 0 {(won't happen)} repeat mark ne {fail} if
+clear
+
+%resetfile
+
+%(restore)=
+
+%reversepath
+%rlineto
+%rmoveto
+
+(roll)=
+(a)(b)(c) 3 -1 roll (a) ne {fail} if clear
+(a)(b)(c) 3 1 roll (b) ne {fail} if clear
+(a)(b)(c) 3 0 roll (c) ne {fail} if clear
+
+%rotate
+
+(round)=
+(1: 3.2 round 3.0 ne {fail} if)=
+3.2 round 3.0 ne {fail} if
+(2: 6.5 round 7.0 ne {fail} if)=
+6.5 round 7.0 ne {fail} if
+(3: -4.8 round -5.0 ne {fail} if)=
+-4.8 round -5.0 ne {fail} if
+(4: -6.5 round -6.0 ne {fail} if)=
+-6.5 round -6.0 ne {fail} if
+(5: 99 round 99 ne {fail} if)=
+99 round 99 ne {fail} if
+
+%(rrand)=
+%(run)=
+
+(save)=
+/saveobj save def
+saveobj restore
+
+%scale
+%scalefont
+
+(search)=
+(1: (abbc) (ab) search not {fail} if clear)=
+(abbc) (ab) search not {fail} if clear
+(2: (abbc) (bb) search not {fail} if clear)=
+(abbc) (bb) search not {fail} if clear
+(3: (abbc) (bc) search not {fail} if clear)=
+(abbc) (bc) search not {fail} if clear
+(4: (abbc) (B) search {fail} if clear)=
+(abbc) (B) search {fail} if clear
+
+
+
 %traceon
+

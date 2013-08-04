@@ -61,11 +61,11 @@ void Iand (context *ctx, object x, object y) {
 /* bool1|int1  not  bool2|int2
    logical|bitwise not */
 void Bnot (context *ctx, object x) {
-    push(ctx->lo, ctx->os, consbool( ! (bool) x.int_.val));
+    push(ctx->lo, ctx->os, consbool( ! x.int_.val ));
 }
 
 void Inot (context *ctx, object x) {
-    push(ctx->lo, ctx->os, consint( ! x.int_.val));
+    push(ctx->lo, ctx->os, consint( ~ x.int_.val ));
 }
 
 /* bool1|int1 bool2|int2  or  bool3|int3

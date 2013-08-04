@@ -90,8 +90,8 @@ directly contains the context and mfile structures in arrays.
 The garbage collector is only interested in a single mfile at any
 given time. mfiles contain mtabs which contain entities.
 stacks live in mfiles, but the context's stacks (operand stack,
-execution stack, dictionary stack) are access via "pointers"
-store in the context structure. objects live in stacks, but they
+execution stack, dictionary stack) are accessed via "pointers"
+stored in the context structure. objects live in stacks, but they
 can also live in arrays or dicts. arrays and dicts and strings
 are of course, all objects themselves.
 

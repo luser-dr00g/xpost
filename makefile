@@ -18,13 +18,13 @@ all: objects
 test: objects $(TESTS)
 	./ob && ./m && ./s && ./st && ./nm && \
 	./v && ./gc && ./ar && ./di && \
-	echo "(test.ps)Run" | ./itp
+	echo "(test.ps)Run quit" | ./itp
 
 count:
-	wc -l *.[ch]
+	wc -l *.[ch] init.ps err.ps test.ps
 
 clean:
-	rm *.o *.exe g.mem l.mem x.mem
+	rm -f *.o *.exe g.mem l.mem x.mem
 
 splint:
 	splint +posixlib -boolops -predboolint +ignoresigns -type -nestcomment \

@@ -167,6 +167,12 @@ void initcontext(context *ctx) {
     initlocal(ctx);
     initglobal(ctx);
     ctx->vmmode = LOCAL;
+    {
+        object ud;
+        ud = consbdc(ctx, 100);
+        bdcput(ctx, bot(ctx->lo, ctx->ds, 0), consname(ctx, "userdict"), ud);
+        push(ctx->lo, ctx->ds, ud);
+    }
 }
 
 /* destroy context */

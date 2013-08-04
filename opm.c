@@ -160,9 +160,9 @@ void Rsqrt (context *ctx, object x) {
 /* num den  atan  angle
    arctangent of num/den in degrees */
 void Ratan (context *ctx, object num, object den) {
-    push(ctx->lo, ctx->os,
-            consreal(atan2(num.real_.val * RAD_PER_DEG, den.real_.val * RAD_PER_DEG)
-                / RAD_PER_DEG));
+    real ang = atan2(num.real_.val * RAD_PER_DEG, den.real_.val * RAD_PER_DEG) / RAD_PER_DEG;
+    if (ang < 0.0) ang += 360.0;
+    push(ctx->lo, ctx->os, consreal(ang));
 }
 
 /* angle  cos  real

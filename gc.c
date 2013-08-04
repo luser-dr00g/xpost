@@ -405,7 +405,12 @@ int main(void) {
     dumpmfile(mem);
     printf("stackaedr: %04x\n", stac);
     dumpmtab(mem, 0);
-    
+    //     ^ent 8 (8): adr 3404 0x0d4c, sz [24], mark _
+    //     ^ 06  00  00  00  6en 67g 20  6en 6fo 74t 20
+    printf("gc: look at the mark field . . . . . . . .^\n");
+    printf("also, see that the first 4 bytes of strings not on stack\n"
+           "have been obliterated to link-up the free list.\n");
+
     return 0;
 }
 

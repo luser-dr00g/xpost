@@ -48,7 +48,7 @@ void Dbegin(context *ctx, object D) {
 /* -  end  -
    pop dict stack */
 void Zend(context *ctx) {
-    if (count(ctx->lo, ctx->ds) <= 1)
+    if (count(ctx->lo, ctx->ds) <= 2)
         error(dictstackunderflow, "end");
     (void)pop(ctx->lo, ctx->ds);
 }
