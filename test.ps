@@ -669,7 +669,58 @@ saveobj restore
 /abc where {}{currentdict} ifelse /abc 123 put
 abc 123 ne {fail} if
 
+%(string)=
+%stringwidth
+%stroke
+%strokepath
+%(sub)=
+%syntaxerror
+%(systemdict)=
+%timeout
 
+(token)=
+(15(St1) {1 2 add}) token not {fail} if 15 ne {fail} if
+token not {fail} if (St1) ne {fail} if
+token not {fail} if type /arraytype ne {fail} if
+token {fail} if
+
+%transform
+%translate
+%(true)=
+
+(truncate)=
+3.2 truncate 3.0 ne {fail} if
+-4.8 truncate -4.0 ne {fail} if
+99 truncate 99 ne {fail} if
+
+%(type)=
+%typecheck
+%undefined
+%undefinedfilename
+%undefinedresult
+%unmatchedmark
+%unregistered
+%(userdict)=
+%usertime
+%version
+%VMerror
+%vmstatus
+%(wcheck)=
+
+%(where)=
+%widthshow
+%(write)=
+%(writehexstring)=
+%(writestring)=
+%(xcheck)=
+
+(xor)=
+true true xor false ne {fail} if
+true false xor true ne {fail} if
+false true xor true ne {fail} if
+false false xor false ne {fail} if
+7 3 xor 4 ne {fail} if
+12 3 xor 15 ne {fail} if
 
 %traceon
 
