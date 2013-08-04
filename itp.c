@@ -311,10 +311,6 @@ void evalstring(context *ctx) {
     object b,t,s;
     s = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, s);
-    //push(ctx->lo, ctx->es, consoper(ctx, "if", NULL,0,0));
-    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    //push(ctx->lo, ctx->es, cvlit(arrstrhandler));
-    //push(ctx->lo, ctx->es, consname(ctx, "token"));
     opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     b = pop(ctx->lo, ctx->os);
     if (b.int_.val) {
@@ -330,17 +326,6 @@ void evalfile(context *ctx) {
     object b,f,t;
     f = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, f);
-    //if (filestatus(ctx->lo, f)) {
-        //object fs;
-        //object str;
-        //long fz;
-        //push(ctx->lo, ctx->es, f);
-        //fs = consfile(ctx->lo, statementedit(filefile(ctx->lo, f)));
-        //fz = filebytesavailable(ctx->lo, fs);
-        //str = consbst(ctx, fz, NULL);
-        //fread(charstr(ctx, str), 1, fz, filefile(ctx->lo, fs));
-        //push(ctx->lo, ctx->es, cvx(str));
-    //}
     opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     b = pop(ctx->lo, ctx->os);
     if (b.int_.val) {
@@ -456,6 +441,7 @@ int main(void) {
     initializing = 0;
     ctx->quit = 0;
     mainloop(ctx);
+    dumpoper(ctx, 1);
 
     printf("bye!\n"); fflush(NULL);
     xit();

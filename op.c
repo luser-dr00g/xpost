@@ -54,7 +54,8 @@ void dumpoper(context *ctx, int opcode) {
     mark_ nm = { nametype, 0, op.name };
     object str = strname(ctx, (object)nm);
     char *s = charstr(ctx, str);
-    printf("<operator %d %*s>", opcode, str.comp_.sz, s);
+    signat *sig = (void *)(ctx->gl->base + op.sigadr);
+    printf("<operator %d %*s %p>", opcode, str.comp_.sz, s, sig[0].fp );
 }
 
 object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
