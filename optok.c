@@ -31,26 +31,6 @@ object toke (context *ctx, object *src,
         int (*next)(context *ctx, object *src),
         void (*back)(context *ctx, int c, object *src));
 
-// handles the 'true' case from `string token` in eval() //<-- Used to
-object arrstrhandler;
-void strhandler (context *ctx) {
-    object post, any;
-    any = pop(ctx->lo, ctx->os);
-    post = pop(ctx->lo, ctx->os);
-    push(ctx->lo, ctx->es, post);
-    if (type(any) == arraytype)
-        push(ctx->lo, ctx->os, any);
-    else
-        push(ctx->lo, ctx->es, any);
-#if 0
-    printf("strhandler: os: ");
-    dumpstack(ctx->lo, ctx->os);
-    printf("es: ");
-    dumpstack(ctx->lo, ctx->es);
-    puts("");
-#endif
-}
-
 int ishash (int c) { return c == '#'; }
 int isdot (int c) { return c == '.'; }
 int ise (int c) { return strchr("eE", c) != NULL; }
@@ -369,10 +349,5 @@ void initoptok(context *ctx, object sd) {
 
     op = consoper(ctx, "token", Ftoken, 2, 1, filetype); INSTALL;
     op = consoper(ctx, "token", Stoken, 3, 1, stringtype); INSTALL;
-
-    ARR(1);
-        ADD(cvx(consoper(ctx, "strhandler", strhandler, 0, 0)));
-        bdcput(ctx, sd, N(strhandler), ar);
-        arrstrhandler = ar;
 }
 

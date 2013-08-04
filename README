@@ -242,7 +242,12 @@ like copying a pointer from the free list get pretty involved, eg.
     memcpy(mem->base+z, mem->base+adrent(mem,e), sizeof(unsigned));
 
 This line copies the "pointer" (unsigned) value indicated by the
-entry e into the memory "pointed to" by the "pointer" z.
+entity e into the memory "pointed to" by the "pointer" z.
+
+The free list head is in special entity FREE in mtab[0]. 
+Its size is reported as 0, but the adr points to an unsigned int
+value which holds the ent number of the next element of the
+the free list. An ent number of zero terminates the list.
 
 It's there. It compiles. We'll see how well it works as I keep building.
 Most allocation calls do a traversal of the free-list, so the
