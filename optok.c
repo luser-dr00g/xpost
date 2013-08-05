@@ -165,21 +165,26 @@ object grok (context *ctx, char *s, int ns, object *src,
     case '<': {
                   int c;
                   char d, *x = "0123456789ABCDEF", *sp = s;
+                  c = next(ctx, src);
+                  if (c == '<') {
+                      return cvx(consname(ctx, "<<"));
+                  }
+                  back(ctx, c, src);
                   while (c = next(ctx, src), c != '>' && c != EOF) {
                       if (isspace(c)) continue;
-                      if (isxdigit(c)) c = strchr(x, tolower(c)) - x;
+                      if (isxdigit(c)) c = strchr(x, toupper(c)) - x;
                       else error(syntaxerror, "grok");
                       d = c << 4; // hi nib
                       while(isspace(c = next(ctx, src)))
                           /**/;
                       if (isxdigit(c))
-                          c = strchr(x, tolower(c)) - x;
+                          c = strchr(x, toupper(c)) - x;
                       else if (c == '>') {
                           back(ctx, c, src); // pushback for next iter
                           c = 0;             // pretend it got a 0
                       } else error(syntaxerror, "grok");
                       d |= c;
-                      if (sp-s > ns) error(limitcheck, "grok hexstring exceeds buf");
+                      if (sp-s > NBUF) error(limitcheck, "grok hexstring exceeds buf");
                       *sp++ = d;
                   }
                   return cvlit(consbst(ctx, sp-s, s));

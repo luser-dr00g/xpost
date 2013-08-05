@@ -265,7 +265,10 @@ unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
     tab->tab[ent].sz = sz;
 
     if (tab->nextent == TABSZ){
-        tab->nexttab = initmtab(mem);
+        unsigned newtab = initmtab(mem);
+        ent += ntab*TABSZ; //recalc
+        findtabent(mem, &tab, &ent); //recalc
+        tab->nexttab = newtab;
     }
     return ent + ntab*TABSZ;
 }

@@ -123,6 +123,7 @@ void Aload(context *ctx, object K) {
     error(undefined, "Aload");
 }
 
+void Awhere(context *ctx, object K); /* forward decl */
 /* key value  store  -
    replace topmost definition of key */
 void Astore(context *ctx, object K, object V) {
