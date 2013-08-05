@@ -12,6 +12,7 @@
 #include "st.h"
 #include "di.h"
 #include "v.h"
+#include "gc.h"
 
 #ifdef TESTMODULE
 #include <stdio.h>
@@ -264,18 +265,16 @@ void dumpfree(mfile *mem) {
     }
 }
 
-enum { PERIOD = 200 };
-
 /* scan the free list for a suitably sized bit of memory,
    if the allocator falls back to fresh memory PERIOD times,
         it triggers a collection. */
 unsigned gballoc(mfile *mem, unsigned sz) {
-#if 0 
     unsigned z = adrent(mem, FREE); // free pointer
     unsigned e;                     // working pointer
     static int period = PERIOD;
-    memcpy(&e, mem->base+z, sizeof(unsigned)); // e = *z
+#if 0
 try_again:
+    memcpy(&e, mem->base+z, sizeof(unsigned)); // e = *z
     while (e) { // e is not zero
         if (szent(mem,e) >= sz) {
             memcpy(mem->base+z,
