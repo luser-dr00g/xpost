@@ -1,0 +1,171 @@
+
+/gstate <<
+    /currentpoint { /currentpoint cvx /nocurrentpoint signalerror }
+    /currentmatrix [ 1 0 0 1 0 0 ]
+    /scratchmatrix [ 1 0 0 1 0 0 ]
+>> def
+
+% Coordinate System and Matrix Operators
+
+/matrix { 6 array identmatrix } def
+
+/initmatrix {
+    matrix defaultmatrix setmatrix
+} def
+
+/identmatrix {
+    dup type/arraytype ne { /identmatrix cvx /typecheck signalerror } if
+    { 1 0 0 1 0 0 } exch copy
+} def
+
+%defaultmatrix
+
+/currentmatrix {
+    dup type/arraytype ne { /currentmatrix cvx /typecheck signalerror } if
+    dup 0 gstate /currentmatrix get putinterval 0 6 getinterval
+} def
+
+/setmatrix {
+    dup type/arraytype ne { /setmatrix cvx /typecheck signalerror } if
+    gstate /currentmatrix get copy pop
+} def
+
+/translate {
+    dup type/arraytype ne
+        { true 3 1 roll matrix } % no array: create array, concat later
+        { false 4 1 roll } % array: do not create, do not concat later
+    ifelse % bool tx ty matrix
+    dup 0 1 put
+    dup 1 0 put
+    dup 2 0 put
+    dup 3 1 put
+    dup 4 5 4 roll put
+    dup 5 4 3 roll put
+    exch { concat } if
+} def
+
+/scale {
+    dup type/arraytype ne
+        { true 3 1 roll matrix }
+        { false 4 1 roll }
+    ifelse % bool sx sy matrix
+    dup 0        % b sx sy mat mat 0
+          5 4 roll put % b sy mat
+    dup 1 0 put
+    dup 2 0 put
+    dup 3 4 3 roll put % b mat
+    dup 4 0 put
+    dup 5 0 put
+    exch { concat } if
+} def
+
+/rotate {
+    dup type /arraytype ne
+        { true exch matrix }
+        { false 3 1 roll }
+    ifelse          % bool ang mat
+    dup 0                 % b ang mat mat 0
+          3 index cos put % b ang mat
+    dup 1 3 index sin put
+    dup 2 3 index sin neg put
+    dup 3 4 3 roll cos put
+    dup 4 0 put
+    dup 5 0 put
+    exch { concat } if
+} def
+
+/concat {
+    gstate /currentmatrix get dup concatmatrix pop
+} def
+
+/concatmatrix {
+    3 copy type/arraytype ne exch type/arraytype ne or exch type/arraytype ne or
+        { /concatmatrix cvx /typecheck signalerror } if
+12 dict begin
+    /D exch def
+    aload pop 7 6 roll aload pop
+    {l k j i h g f e d c b a}{exch def}forall
+    a g mul c h mul add
+    b g mul d h mul add
+    a i mul c j mul add
+    b i mul d j mul add
+    a k mul c l mul add e add
+    b k mul d l mul add f add
+    D astore
+end
+} def
+
+/transform {
+12 dict begin
+    dup type/arraytype ne { gstate /currentmatrix get } if
+    aload pop % x y a b c d e f
+    {f e d c b a y x}{exch def}forall
+    a x mul c y mul add e add
+    b x mul d y mul add f add
+end
+} def
+
+%dtransform
+
+/itransform {
+12 dict begin
+    dup type/arraytype ne { gstate /currentmatrix get } if
+    %gstate /scratchmatrix get copy invertmatrix transform
+    aload pop {f e d c b a y x}{exch def}forall
+    a d mul b c mul sub
+    dup 0 eq { end /itransform cvx /undefinedresult signalerror } if
+    1 exch div
+    /invdet exch def
+    d x mul b y mul sub c f mul add d e mul sub invdet mul
+    c x mul neg a y mul add b e mul add a f mul sub invdet mul
+end
+} def
+
+%idtransform
+
+/invertmatrix {
+    dup type/arraytype ne { /invertmatrix cvx /typecheck signalerror } if
+12 dict begin
+    /A exch def
+    A aload pop {f e d c b a}{exch def}forall
+    a d mul b c mul sub
+    dup 0 eq { A end /invertmatrix cvx /undefinedresult signalerror } if
+    1 exch div
+    /invdet exch def
+    d invdet mul
+    b neg invdet mul
+    c neg invdet mul
+    a invdet mul
+    c f mul d e mul sub invdet mul
+    b e mul a f mul sub invdet mul
+    A astore
+end
+} def
+
+
+% Path Construction Operators
+
+/currentpoint { gstate /currentpoint get exec } def
+
+/moveto {
+    transform
+    /itransform cvx
+    gstate /currentpoint get 0 3 getinterval astore
+    gstate exch /currentpoint exch put
+} def
+
+%currentfile flushfile
+5 5 moveto currentpoint pstack clear
+90 matrix rotate pstack clear
+10 10 matrix scale pstack clear
+300 400 matrix translate pstack clear
+matrix matrix matrix concatmatrix pstack clear
+
+2 0 translate
+1 1 moveto
+.25 .25 scale
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+
