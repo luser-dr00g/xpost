@@ -98,7 +98,8 @@ void Ibitshift (context *ctx, object x, object y) {
     if (y.int_.val >= 0)
         push(ctx->lo, ctx->os, consint(x.int_.val << y.int_.val));
     else
-        push(ctx->lo, ctx->os, consint(x.int_.val >> -y.int_.val));
+        push(ctx->lo, ctx->os, consint(
+                    (unsigned long)x.int_.val >> -y.int_.val));
 }
 
 void initopb(context *ctx, object sd) {

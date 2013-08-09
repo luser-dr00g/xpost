@@ -49,7 +49,7 @@ void Icopy (context *ctx, object n) {
 void Iindex (context *ctx, object n) {
     if (n.int_.val < 0) error(rangecheck, "Iindex");
     if ((unsigned)n.int_.val >= count(ctx->lo, ctx->os)) error(stackunderflow, "Iindex");
-    printf("index %d\n", n.int_.val);
+    //printf("index %d\n", n.int_.val);
     push(ctx->lo, ctx->os, top(ctx->lo, ctx->os, n.int_.val));
 }
 
