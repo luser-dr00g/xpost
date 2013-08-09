@@ -105,7 +105,16 @@ end
 end
 } def
 
-%dtransform
+/dtransform {
+12 dict begin
+    dup type/arraytype ne { gstate /currentmatrix get } if
+    aload pop % x y a b c d e f
+    pop pop % x y a b c d
+    {d c b a y x}{exch def}forall
+    a x mul c y mul add
+    b x mul d y mul add
+end
+} def
 
 /itransform {
 12 dict begin
@@ -121,10 +130,24 @@ end
 end
 } def
 
-%idtransform
+/idtransform {
+12 dict begin
+    dup type/arraytype ne { gstate /currentmatrix get } if
+    aload pop % x y a b c d e f
+    pop pop % x y a b c d
+    {d c b a y x}{exch def}forall
+    a d mul b c mul sub
+    dup 0 eq { end /idtransform cvx /undefinedresult signalerror } if
+    1 exch div
+    /invdet exch def
+    d x mul b y mul sub invdet mul
+    c x mul neg a y mul add invdet mul
+end
+} def
 
 /invertmatrix {
-    dup type/arraytype ne { /invertmatrix cvx /typecheck signalerror } if
+    2 copy type/arraytype ne exch type/arraytype ne or
+    { /invertmatrix cvx /typecheck signalerror } if
 12 dict begin
     /A exch def
     A aload pop {f e d c b a}{exch def}forall
