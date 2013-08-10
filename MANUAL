@@ -1,0 +1,96 @@
+This is the first draft of a description of xpost from the user side.
+What can it do? How much of Postscript is written? How much is tested?
+
+All of these are very good questions. Hopefully we'll address some of
+them in the following.
+
+Xpost3 is still in the "under-construction" phase. But I'm happy enough
+with it that I think it should be considered an "alpha" status product.
+The testing is not extensive, but it is in place, and has been used 
+throughout the development. In fact the interpreter that can be run
+right now is actually just the "interpreter test" of the interpreter
+module. But, enough of that. I promised no "internals" here.
+
+It's an important fact that the available interpreter is the interpreter
+*test*, because when you clone the repo and run `make` or `make all` 
+(which are the same), you'll also need to run `make test` or `make itp`
+to create the ./itp executable. Once it's ready to be part of `make all`,
+that will herald "beta" status.
+
+== Download and get a PS> prompt ==
+
+Requires a working gnu gcc installation with make and everything.
+Tested on cygwin, should work fine on Linux.
+
+Clone the Mercurial repository with
+
+  hg clone https://luser.droog@code.google.com/p/xpost/ 
+
+Compile all the source objects.
+
+  make all
+
+Compile and run the tests (Recommended. But you can also run
+`make itp` and launch the interpreter with `./itp`.)
+
+  make test
+
+Double-check exit-status code from the tests.
+
+  echo $?
+
+or `echo $status` in csh.
+
+Run the interpreter.
+
+  ./itp
+
+^test itp.c
+loading init.ps...
+loading err.ps...
+Xpost3 Version 0
+PS>
+
+Type `quit` or send an EOF (ctrl-D or maybe ctrl-Z) to quit
+the interpreter.
+
+<operator 1 exch 0x406ea1>bye!
+
+There's an operator dump just before exit. I'd be very curious to
+know if anyone ever gets different values for the hex-number
+which is the pointer value of the C-function for the exch operator.
+I've asked about this on Stack Overflow.
+
+  http://stackoverflow.com/questions/18040735/will-statically-linked-functions-have-the-same-pointer-values-across-runs-on-the
+
+If the values are constant for most systems, then we can consider
+the quick-launch idea to be a viable pursuit. For the moment the
+risk is such that the whole thing falls into the "premature optimization"
+bucket. 
+
+
+== Examples ==
+
+There are a few example programs demonstrating xpost's functionality
+even though it doesn't do any graphics, yet.
+
+binshape.ps  -  draw an infinite output of random 0s and 1s
+digit.ps - (doesn't work yet. uses <~ascii85~>)
+hwbin.ps - hello world using binary radix numbers
+hwhex.ps - hello world using hexstring
+tab340.ps - the smmaller golfed tablature generator
+tab418.ps - the larger golfed tablature generator
+tabref.ps - the large reference tablature generator
+ubf119.ps - the 119 char universal binary-function lookup table
+ubf70.ps - the 70 char universal binary-function lookup table
+
+Some of these were written to make use of Ghostscripts argument
+processing option `gs -- prog.ps arg0 arg1 arg2`. But xpost3 doesn't
+do that yet, you'll have to define
+
+  /ARGUMENTS [ (A) (Bm) (F#m) (F#m) ] def
+
+as an array of strings before you `(tab340.ps)run` or whatever.
+Check the source to see if it uses ARGUMENTS to know if you need
+to do this.
+
