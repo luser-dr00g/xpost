@@ -16,11 +16,32 @@
 #include "ops.h"
 
 int DEBUGLOAD = 0;
+void Awhere(context *ctx, object K); /* forward decl */
 
 /* int  dict  dict
    create dictionary with capacity for int elements */
 void Idict(context *ctx, object I) {
     push(ctx->lo, ctx->os, cvlit(consbdc(ctx, I.int_.val)));
+}
+
+/* -  <<  mark
+   start dictionary construction */
+
+/* mark k_1 v_1 ... k_N v_N  >>  dict
+   construct dictionary from pairs on stack */
+void dictomark(context *ctx) {
+    int i;
+    object d, k, v;
+    Zcounttomark(ctx);
+    i = pop(ctx->lo, ctx->os).int_.val;
+    d = consbdc(ctx, i);
+    for ( ; i > 0; i -= 2){
+        v = pop(ctx->lo, ctx->os);
+        k = pop(ctx->lo, ctx->os);
+        bdcput(ctx, d, k, v);
+    }
+    (void)pop(ctx->lo, ctx->os); // pop mark
+    push(ctx->lo, ctx->os, d);
 }
 
 /* dict  length  int
@@ -63,30 +84,6 @@ void Adef(context *ctx, object K, object V) {
     //dumpdic(bank(ctx, D), D); puts("");
 }
 
-/* dict key  known  bool
-   test whether key is in dict */
-void DAknown(context *ctx, object D, object K) {
-#if 0
-    printf("\nknown: ");
-    dumpobject(D);
-    dumpdic(bank(ctx, D), D); puts("");
-    dumpobject(K);
-#endif
-    push(ctx->lo, ctx->os, consbool(dicknown(ctx, bank(ctx, D), D, K)));
-}
-
-/* dict key  get  any
-   get value associated with key in dict */
-void DAget(context *ctx, object D, object K) {
-    push(ctx->lo, ctx->os, bdcget(ctx, D, K));
-}
-
-/* dict key value  put  -
-   associate key with value in dict */
-void DAAput(context *ctx, object D, object K, object V) {
-    bdcput(ctx, D, K, V);
-}
-
 /* key  load  value
    search dict stack for key and return associated value */
 void Aload(context *ctx, object K) {
@@ -123,7 +120,6 @@ void Aload(context *ctx, object K) {
     error(undefined, "Aload");
 }
 
-void Awhere(context *ctx, object K); /* forward decl */
 /* key value  store  -
    replace topmost definition of key */
 void Astore(context *ctx, object K, object V) {
@@ -137,23 +133,33 @@ void Astore(context *ctx, object K, object V) {
     bdcput(ctx, D, K, V);
 }
 
-/* mark k_1 v_1 ... k_N v_N  >>  dict
-   construct dictionary from pairs on stack
- */
-void dictomark(context *ctx) {
-    int i;
-    object d, k, v;
-    Zcounttomark(ctx);
-    i = pop(ctx->lo, ctx->os).int_.val;
-    d = consbdc(ctx, i);
-    for ( ; i > 0; i -= 2){
-        v = pop(ctx->lo, ctx->os);
-        k = pop(ctx->lo, ctx->os);
-        bdcput(ctx, d, k, v);
-    }
-    (void)pop(ctx->lo, ctx->os); // pop mark
-    push(ctx->lo, ctx->os, d);
+/* dict key  get  any
+   get value associated with key in dict */
+void DAget(context *ctx, object D, object K) {
+    push(ctx->lo, ctx->os, bdcget(ctx, D, K));
 }
+
+/* dict key value  put  -
+   associate key with value in dict */
+void DAAput(context *ctx, object D, object K, object V) {
+    bdcput(ctx, D, K, V);
+}
+
+/* dict key  undef  -
+   remove key and its value in dict */
+
+/* dict key  known  bool
+   test whether key is in dict */
+void DAknown(context *ctx, object D, object K) {
+#if 0
+    printf("\nknown: ");
+    dumpobject(D);
+    dumpdic(bank(ctx, D), D); puts("");
+    dumpobject(K);
+#endif
+    push(ctx->lo, ctx->os, consbool(dicknown(ctx, bank(ctx, D), D, K)));
+}
+
 
 /* key  where  dict true -or- false
    find dict in which key is defined */
@@ -171,26 +177,25 @@ void Awhere(context *ctx, object K) {
     push(ctx->lo, ctx->os, consbool(false));
 }
 
-/* -  currentdict  dict
-   push current dict on operand stack */
-void Zcurrentdict(context *ctx) {
-    push(ctx->lo, ctx->os, top(ctx->lo, ctx->ds, 0));
-}
-
-/* -  countdictstack  int
-   count elements on dict stack */
-void Zcountdictstack(context *ctx) {
-    push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->ds)));
-}
-
-/* array  dictstack  subarray
-   copy dict stack into array */
-void Adictstack(context *ctx, object A) {
-    int z = count(ctx->lo, ctx->ds);
-    int i;
-    for (i=0; i < z; i++)
-        barput(ctx, A, i, bot(ctx->lo, ctx->ds, i));
-    push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+/* dict1 dict2  copy  dict2
+   copy contents of dict1 to dict2 */
+void Dcopy(context *ctx, object S, object D) {
+    int i, sz;
+    mfile *mem;
+    unsigned ad;
+    dichead *dp;
+    object *tp;
+    mem = bank(ctx, S);
+    sz = dicmaxlength(mem, S);
+    ad = adrent(mem, S.comp_.ent);
+    dp = (void *)(mem->base + ad);
+    tp = (void *)(mem->base + ad + sizeof(dichead));
+    for (i=0; i < sz+1; i++) {
+        if (type(tp[2 * i]) != nulltype) {
+            bdcput(ctx, D, tp[2*i], tp[2*i+1]);
+        }
+    }
+    push(ctx->lo, ctx->os, D);
 }
 
 void DPforall (context *ctx, object D, object P) {
@@ -223,27 +228,59 @@ void DPforall (context *ctx, object D, object P) {
     }
 }
 
+/* -  currentdict  dict
+   push current dict on operand stack */
+void Zcurrentdict(context *ctx) {
+    push(ctx->lo, ctx->os, top(ctx->lo, ctx->ds, 0));
+}
+
+/* -  errordict  dict   % error handler dictionary : err.ps
+   -  $error  dict      % error control and status dictionary : err.ps
+   -  systemdict  dict  % system dictionary : op.c init.ps
+   -  userdict  dict    % writeable dictionary in local VM : itp.c
+   %-  globaldict  dict  % writeable dictionary in global VM
+   %-  statusdict  dict  % product-dependent dictionary
+   */
+
+/* -  countdictstack  int
+   count elements on dict stack */
+void Zcountdictstack(context *ctx) {
+    push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->ds)));
+}
+
+/* array  dictstack  subarray
+   copy dict stack into array */
+void Adictstack(context *ctx, object A) {
+    int z = count(ctx->lo, ctx->ds);
+    int i;
+    for (i=0; i < z; i++)
+        barput(ctx, A, i, bot(ctx->lo, ctx->ds, i));
+    push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+}
+
 void initopdi(context *ctx, object sd) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     object n,op;
     op = consoper(ctx, "dict", Idict, 1, 1, integertype); INSTALL;
+    bdcput(ctx, sd, consname(ctx, "<<"), mark);
+    op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;
     op = consoper(ctx, "length", Dlength, 1, 1, dicttype); INSTALL;
     op = consoper(ctx, "maxlength", Dmaxlength, 1, 1, dicttype); INSTALL;
     op = consoper(ctx, "begin", Dbegin, 0, 1, dicttype); INSTALL;
     op = consoper(ctx, "end", Zend, 0, 0); INSTALL;
     op = consoper(ctx, "def", Adef, 0, 2, anytype, anytype); INSTALL;
-    op = consoper(ctx, "known", DAknown, 1, 2, dicttype, anytype); INSTALL;
+    op = consoper(ctx, "load", Aload, 1, 1, anytype); INSTALL;
+    op = consoper(ctx, "store", Astore, 0, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "get", DAget, 1, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "put", DAAput, 1, 3,
             dicttype, anytype, anytype); INSTALL;
-    op = consoper(ctx, "load", Aload, 1, 1, anytype); INSTALL;
-    op = consoper(ctx, "store", Astore, 0, 2, anytype, anytype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "<<"), mark);
-    op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;
+    //undef
+    op = consoper(ctx, "known", DAknown, 1, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "where", Awhere, 2, 1, anytype); INSTALL;
+    op = consoper(ctx, "copy", Dcopy, 1, 2, dicttype, dicttype); INSTALL;
+    op = consoper(ctx, "forall", DPforall, 0, 2, dicttype, proctype); INSTALL;
     op = consoper(ctx, "currentdict", Zcurrentdict, 1, 0); INSTALL;
     op = consoper(ctx, "countdictstack", Zcountdictstack, 1, 0); INSTALL;
     op = consoper(ctx, "dictstack", Adictstack, 1, 1, arraytype); INSTALL;
-    op = consoper(ctx, "forall", DPforall, 0, 2, dicttype, proctype); INSTALL;
 }
 
