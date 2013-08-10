@@ -1,35 +1,121 @@
+/DEVICE <<
+    /defaultmatrix [ 1 0 0 1 0 0 ]
+>> def
 
-/gstate <<
+/graphicsdict <<
+    /currentgstate 12 dict
+    /gstackarray 100 array
+    /gptr -1
+>> def
+
+/gstatetemplate <<
     /currentpoint { /currentpoint cvx /nocurrentpoint signalerror }
     /currentmatrix [ 1 0 0 1 0 0 ]
     /scratchmatrix [ 1 0 0 1 0 0 ]
 >> def
 
+
+% -  gsave  -
+% push graphics state
+/gsave {
+graphicsdict begin
+    /gptr gptr 1 add def
+    gptr gstackarray length ge { error } if
+    gstackarray gptr gstate currentgstate put
+end
+} def
+
+% -  grestore  -
+% pop graphics state
+/grestore {
+graphicsdict begin
+    gstackarray
+    gptr -1 gt {
+        gstackarray gptr get
+        currentgstate copy pop
+        /gptr gptr 1 sub def
+    } if
+end
+} def
+
+% -  grestoreall  -
+% pop to bottommost graphics state
+/grestoreall {
+graphicsdict begin
+    /gptr -1 def
+    gstackarray 0 get
+    currentgstate copy pop
+end
+} def
+
+
+% -  initgraphics  -
+% reset graphics state parameters
+/initgraphics {
+    gstate setgstate
+} def
+
+% -  gstate  gstate
+% create graphics state object
+/gstate {
+    gstatetemplate dup length dict copy
+} def
+
+% gstate  setgstate  -
+% set graphics state from gstate
+/setgstate {
+    graphicsdict /currentgstate get copy pop
+} def
+
+% gstate  currentgstate  gstate
+% copy current graphics state into gstate
+/currentgstate {
+    graphicsdict /currentgstate get exch copy
+} def
+
+
 % Coordinate System and Matrix Operators
 
+% -  matrix  matrix
+% create identity matrix
 /matrix { 6 array identmatrix } def
 
+% -  initmatrix  -
+% set CTM to device default
 /initmatrix {
     matrix defaultmatrix setmatrix
 } def
 
+% matrix  identmatrix  matrix
+% fill matrix with identity transform
 /identmatrix {
     dup type/arraytype ne { /identmatrix cvx /typecheck signalerror } if
     { 1 0 0 1 0 0 } exch copy
 } def
 
-%defaultmatrix
+% matrix  defaultmatrix  matrix
+% fill matrix with device default matrix
+/defaultmatrix {
+    dup type/arraytype ne { /defaultmatrix cvx /typecheck signalerror } if
+    DEVICE /defaultmatrix get exch copy
+} def
 
+% matrix  currentmatrix  matrix
+% fill matrix with CTM
 /currentmatrix {
     dup type/arraytype ne { /currentmatrix cvx /typecheck signalerror } if
-    dup 0 gstate /currentmatrix get putinterval 0 6 getinterval
+    graphicsdict /currentgstate get /currentmatrix get exch copy
 } def
 
+% matrix  setmatrix  -
+% replace CTM by matrix
 /setmatrix {
     dup type/arraytype ne { /setmatrix cvx /typecheck signalerror } if
-    gstate /currentmatrix get copy pop
+    graphicsdict /currentgstate get /currentmatrix get copy pop
 } def
 
+%        tx ty  translate  -       % translate userspace by (tx, ty)
+% tx ty matrix  translate  matrix  % define translation by (tx, ty)
 /translate {
     dup type/arraytype ne
         { true 3 1 roll matrix } % no array: create array, concat later
@@ -44,6 +130,8 @@
     exch { concat } if
 } def
 
+%        sx sy  scale  -       % scale user space by (sx, sy)
+% sx sy matrix  scale  matrix  % define scaling by (sx, sy)
 /scale {
     dup type/arraytype ne
         { true 3 1 roll matrix }
@@ -59,6 +147,8 @@
     exch { concat } if
 } def
 
+%        angle  rotate  -       % rotate user space by angle
+% angle matrix  rotate  matrix  % define rotation by angle degrees
 /rotate {
     dup type /arraytype ne
         { true exch matrix }
@@ -74,10 +164,14 @@
     exch { concat } if
 } def
 
+% matrix  concat  -
+% replace CTM by matrix \times CTM
 /concat {
-    gstate /currentmatrix get dup concatmatrix pop
+    graphicsdict /currentgstate get /currentmatrix get dup concatmatrix pop
 } def
 
+% matrix1 matrix2 matrix3  concatmatrix  matrix3
+% fill matrix3 with matrix1 \times matrix2
 /concatmatrix {
     3 copy type/arraytype ne exch type/arraytype ne or exch type/arraytype ne or
         { /concatmatrix cvx /typecheck signalerror } if
@@ -95,9 +189,11 @@
 end
 } def
 
+%        x y  transform  x' y'  % transform (x,y) by CTM
+% x y matrix  transform  x' y'  % transform (x,y) by matrix
 /transform {
 12 dict begin
-    dup type/arraytype ne { gstate /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currentgstate get /currentmatrix get } if
     aload pop % x y a b c d e f
     {f e d c b a y x}{exch def}forall
     a x mul c y mul add e add
@@ -105,9 +201,11 @@ end
 end
 } def
 
+%        dx dy  dtransform  dx' dy'  % transform distance (dx,dy) by CTM
+% dx dy matrix  dtransform  dx' dy'  % transform distance (dx,dy) by matrix
 /dtransform {
 12 dict begin
-    dup type/arraytype ne { gstate /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currentgstate get /currentmatrix get } if
     aload pop % x y a b c d e f
     pop pop % x y a b c d
     {d c b a y x}{exch def}forall
@@ -116,10 +214,12 @@ end
 end
 } def
 
+%        x' y'  itransform  x y  % inverse transform (x',y') by CTM
+% x' y' matrix  itransform  x y  % inverse transform (x',y') by matrix
 /itransform {
 12 dict begin
-    dup type/arraytype ne { gstate /currentmatrix get } if
-    %gstate /scratchmatrix get copy invertmatrix transform
+    dup type/arraytype ne { graphicsdict /currentgstate get /currentmatrix get } if
+    %graphicsdict /currentgstate get /scratchmatrix get copy invertmatrix transform
     aload pop {f e d c b a y x}{exch def}forall
     a d mul b c mul sub
     dup 0 eq { end /itransform cvx /undefinedresult signalerror } if
@@ -130,9 +230,11 @@ end
 end
 } def
 
+%        dx' dy'  idtransform  dx dy  % inverse transform distance (dx',dy') by CTM
+% dx' dy' matrix  idtransform  dx dy  % inverse transform distance (dx',dy') by matrix
 /idtransform {
 12 dict begin
-    dup type/arraytype ne { gstate /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currentgstate get /currentmatrix get } if
     aload pop % x y a b c d e f
     pop pop % x y a b c d
     {d c b a y x}{exch def}forall
@@ -145,6 +247,8 @@ end
 end
 } def
 
+% matrix1 matrix2  invertmatrix  matrix2
+% fill matrix2 with inverse of matrix1
 /invertmatrix {
     2 copy type/arraytype ne exch type/arraytype ne or
     { /invertmatrix cvx /typecheck signalerror } if
@@ -168,14 +272,38 @@ end
 
 % Path Construction Operators
 
-/currentpoint { gstate /currentpoint get exec } def
+% -  newpath  -
+% initialize current path to be empty
+/newpath {
+    graphicsdict /currentgstate get
+        /currentpoint { /currentpoint cvx /nocurrentpoint signalerror } put
+} def
 
+% -  currentpoint  x y
+% return current point coordinates
+/currentpoint {
+    graphicsdict /currentgstate get /currentpoint get exec
+} def
+
+% x y  moveto  -
+% set current point to (x,y)
 /moveto {
     transform
     /itransform cvx
-    gstate /currentpoint get 0 3 getinterval astore
-    gstate exch /currentpoint exch put
+    graphicsdict /currentgstate get /currentpoint get 0 3 getinterval astore
+    graphicsdict /currentgstate get exch /currentpoint exch put
 } def
+
+% dx dy  rmoveto  -
+% relative moveto
+/rmoveto {
+    currentpoint
+    3 2 roll add
+    3 1 roll add exch
+    moveto
+} def
+
+initgraphics
 
 %currentfile flushfile
 5 5 moveto currentpoint pstack clear
