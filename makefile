@@ -2,7 +2,7 @@
 CFLAGS= -g -Wall -Wextra 
 OB=ob.o m.o err.o
 LDLIBS=-lm
-SRC= README makefile *.h *.c init.ps err.ps
+SRC= makefile *.h *.c init.ps err.ps g.ps test.ps
 CORE=s.o st.o ar.o di.o nm.o gc.o v.o f.o
 OP=op.o ops.o opst.o opar.o opdi.o optok.o opb.o opc.o opt.o \
     opm.o opf.o opv.o opx.o osunix.o
@@ -21,7 +21,7 @@ test: objects $(TESTS)
 	echo "(test.ps)Run quit" | ./itp
 
 count:
-	wc -l *.[ch] init.ps err.ps test.ps
+	wc -l $(SRC)
 
 clean:
 	rm -f *.o *.exe g.mem l.mem x.mem
