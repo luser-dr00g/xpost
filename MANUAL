@@ -19,8 +19,8 @@ that will herald "beta" status.
 
 == Download and get a PS> prompt ==
 
-Requires a working gnu gcc installation with make and everything.
-Tested on cygwin, should work fine on Linux.
+Requires a working gnu gcc installation with make and /bin/sh and
+everything. Tested on cygwin, should work fine on Linux.
 
 Clone the Mercurial repository with
 
@@ -75,7 +75,7 @@ There are a few example programs demonstrating xpost's functionality
 even though it doesn't do any graphics, yet.
 
 binshape.ps  -  draw an infinite output of random 0s and 1s
-digit.ps - (doesn't work yet. uses <~ascii85~>)
+digit.ps - (doesn't work yet. uses <~ascii85~>, which xpost won't process (yet))
 hwbin.ps - hello world using binary radix numbers
 hwhex.ps - hello world using hexstring
 tab340.ps - the smmaller golfed tablature generator
@@ -84,13 +84,151 @@ tabref.ps - the large reference tablature generator
 ubf119.ps - the 119 char universal binary-function lookup table
 ubf70.ps - the 70 char universal binary-function lookup table
 
-Some of these were written to make use of Ghostscripts argument
+Some of these were written to make use of Ghostscript's argument
 processing option `gs -- prog.ps arg0 arg1 arg2`. But xpost3 doesn't
-do that yet, you'll have to define
+do that yet, so you'll have to define
 
   /ARGUMENTS [ (A) (Bm) (F#m) (F#m) ] def
 
 as an array of strings before you `(tab340.ps)run` or whatever.
 Check the source to see if it uses ARGUMENTS to know if you need
-to do this.
+to set this variable before running.
+
+
+== Postscript arithmetic ==
+
+Just a brief review of what you should already know if you're trying
+to use xpost. Postscript uses a Reverse-Polish Syntax where the 
+operator follows the operands.
+
+  a + b      Infix Notation (ALGOL, C)
+  ( + a b )  "Cambridge" Polish Notation (Lisp)
+  a b +      Reverse Polish Notation (RPN)
+
+Postscript does not use punctuation symbols for the operators,
+but short words.
+
+    add sub mul div     2 operand
+    idiv mod
+
+    cos sin atan        1 operand
+    exp ln log
+
+For example, if you define /a, /b, and /c to contain values for
+the variables in the formula "ax^2 + bx + c",
+
+%<-- Postscript comments begin with '%' and run till the end of line -->$
+    /a 25 def
+    /b 10 def
+    /c 3 def
+
+and a definition for x,
+
+    /x 12 def
+
+you can calculate the value of the formula like this:
+
+    a x x mul mul  % ax^2
+    b x mul        % ax^2 bx
+    c   add   add  % ax^2+bx+c
+
+== Stack manipulation ==
+
+To turn this formula into a function, we need to take the input
+for the function and define it as x before applying the formula.
+
+    % x  quadratic  ax^2+bx+c
+    /quadratic {
+        /x exch def
+        a x x mul mul
+        b x mul
+        c add add
+    } def
+
+When the function is entered, the input value is on the operand stack.
+
+    number
+   |------|
+
+Then we push the (literal) name /x.
+
+      /x
+    number
+   |------|
+
+Unfortunately, `def` expects them to be in this order:
+
+    number
+      /x
+   |------|
+
+Hence `exch` is used to reorder the top two elements of the stack.
+When reading a postscript sequence like `/name exch def` one way to
+think of `exch` is like a pronoun whose antecedent is just below
+the name.
+
+    whatev  /x  exch  def
+       ^         |
+        ---------
+
+The function so far isn't very general. So let's tease out a, b, and
+c and make them parameters, too, instead of hard-coded names.
+
+    % a b c x  quadratic  ax^2+bx+c
+    /quadratic {
+        /x exch def   % a b c
+        3 1 roll      % c a b
+        x mul         % c a bx
+        3 1 roll      % bx c a
+        x x mul mul   % bx c ax^2
+        add add
+    } def
+
+This brings us to `roll`. As you can see from the stack comments,
+`3 1 roll` permutes three elements of the stack. The first
+number is how many elements to manipulate. And the second number
+indicates how many elements to move and in which direction.
+
+    /a /b /c   % a b c
+    3 1 roll   % c a b
+    3 -1 roll  % a b c
+    3 2 roll   % b c a
+    3 3 roll   % b c a
+    3 0 roll   % b c a
+    3 2 roll   % c a b
+    3 -1 roll  % a b c
+
+
+    n j roll
+
+    __ j > 0 __     move top j elements to the bottom of n
+
+    n            TOS
+     -------------|
+    |       j     |
+    |        -----|
+    |       |     |
+    V       V     |
+    a b c d e f g h
+   ^       |       |
+   |       |-------|
+   ^           |
+    -<-<-<-<-<-
+
+
+    __ j < 0 __   move j elements from the bottom of n to the top
+
+    n            TOS
+     -------------|
+    |     j       |
+    |-----        |
+    |     |       |
+    V     V       |
+    a b c d e f g h
+   |       |       ^
+   |-------|       |
+       |           ^
+        ->->->->->-
+
+    "Positive J to roll away", "Negative to bring 'em back".
 

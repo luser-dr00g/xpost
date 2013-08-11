@@ -3,7 +3,7 @@
 >> def
 
 /graphicsdict <<
-    /currentgstate 12 dict
+    /currgstate 12 dict
     /gstackarray 100 array
     /gptr -1
 >> def
@@ -12,8 +12,12 @@
     /currentpoint { /currentpoint cvx /nocurrentpoint signalerror }
     /currentmatrix [ 1 0 0 1 0 0 ]
     /scratchmatrix [ 1 0 0 1 0 0 ]
+    /currentpath 1 dict
 >> def
 
+
+
+% Graphics State Operators -- Device Independent
 
 % -  gsave  -
 % push graphics state
@@ -21,7 +25,8 @@
 graphicsdict begin
     /gptr gptr 1 add def
     gptr gstackarray length ge { error } if
-    gstackarray gptr gstate currentgstate put
+    gstackarray gptr gstate currentgstate
+    put
 end
 } def
 
@@ -29,10 +34,9 @@ end
 % pop graphics state
 /grestore {
 graphicsdict begin
-    gstackarray
     gptr -1 gt {
         gstackarray gptr get
-        currentgstate copy pop
+        currgstate copy pop
         /gptr gptr 1 sub def
     } if
 end
@@ -44,10 +48,9 @@ end
 graphicsdict begin
     /gptr -1 def
     gstackarray 0 get
-    currentgstate copy pop
+    currgstate copy pop
 end
 } def
-
 
 % -  initgraphics  -
 % reset graphics state parameters
@@ -64,14 +67,19 @@ end
 % gstate  setgstate  -
 % set graphics state from gstate
 /setgstate {
-    graphicsdict /currentgstate get copy pop
+    graphicsdict /currgstate get copy pop
 } def
 
 % gstate  currentgstate  gstate
 % copy current graphics state into gstate
 /currentgstate {
-    graphicsdict /currentgstate get exch copy
+    graphicsdict /currgstate get exch copy
 } def
+
+
+
+% Graphics State Operators -- Device Dependent
+
 
 
 % Coordinate System and Matrix Operators
@@ -104,14 +112,14 @@ end
 % fill matrix with CTM
 /currentmatrix {
     dup type/arraytype ne { /currentmatrix cvx /typecheck signalerror } if
-    graphicsdict /currentgstate get /currentmatrix get exch copy
+    graphicsdict /currgstate get /currentmatrix get exch copy
 } def
 
 % matrix  setmatrix  -
 % replace CTM by matrix
 /setmatrix {
     dup type/arraytype ne { /setmatrix cvx /typecheck signalerror } if
-    graphicsdict /currentgstate get /currentmatrix get copy pop
+    graphicsdict /currgstate get /currentmatrix get copy pop
 } def
 
 %        tx ty  translate  -       % translate userspace by (tx, ty)
@@ -167,7 +175,7 @@ end
 % matrix  concat  -
 % replace CTM by matrix \times CTM
 /concat {
-    graphicsdict /currentgstate get /currentmatrix get dup concatmatrix pop
+    graphicsdict /currgstate get /currentmatrix get dup concatmatrix pop
 } def
 
 % matrix1 matrix2 matrix3  concatmatrix  matrix3
@@ -193,7 +201,7 @@ end
 % x y matrix  transform  x' y'  % transform (x,y) by matrix
 /transform {
 12 dict begin
-    dup type/arraytype ne { graphicsdict /currentgstate get /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currgstate get /currentmatrix get } if
     aload pop % x y a b c d e f
     {f e d c b a y x}{exch def}forall
     a x mul c y mul add e add
@@ -205,7 +213,7 @@ end
 % dx dy matrix  dtransform  dx' dy'  % transform distance (dx,dy) by matrix
 /dtransform {
 12 dict begin
-    dup type/arraytype ne { graphicsdict /currentgstate get /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currgstate get /currentmatrix get } if
     aload pop % x y a b c d e f
     pop pop % x y a b c d
     {d c b a y x}{exch def}forall
@@ -218,8 +226,8 @@ end
 % x' y' matrix  itransform  x y  % inverse transform (x',y') by matrix
 /itransform {
 12 dict begin
-    dup type/arraytype ne { graphicsdict /currentgstate get /currentmatrix get } if
-    %graphicsdict /currentgstate get /scratchmatrix get copy invertmatrix transform
+    dup type/arraytype ne { graphicsdict /currgstate get /currentmatrix get } if
+    %graphicsdict /currgstate get /scratchmatrix get copy invertmatrix transform
     aload pop {f e d c b a y x}{exch def}forall
     a d mul b c mul sub
     dup 0 eq { end /itransform cvx /undefinedresult signalerror } if
@@ -234,7 +242,7 @@ end
 % dx' dy' matrix  idtransform  dx dy  % inverse transform distance (dx',dy') by matrix
 /idtransform {
 12 dict begin
-    dup type/arraytype ne { graphicsdict /currentgstate get /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currgstate get /currentmatrix get } if
     aload pop % x y a b c d e f
     pop pop % x y a b c d
     {d c b a y x}{exch def}forall
@@ -270,28 +278,82 @@ end
 } def
 
 
+
+% path == <<
+%             0 << subpath0 >>
+%             1 << %subpath1
+%                   0  << elem0 /move >> %first elem must be /move
+%                   1  << elem1 >>
+%               >>
+%         >>
+% A /move element will always start a new subpath
+% Any other element appends to the last subpath
+
 % Path Construction Operators
 
 % -  newpath  -
 % initialize current path to be empty
 /newpath {
-    graphicsdict /currentgstate get
-        /currentpoint { /currentpoint cvx /nocurrentpoint signalerror } put
+    %graphicsdict /currgstate get
+    %    /currentpoint { /currentpoint cvx /nocurrentpoint signalerror } put
+    graphicsdict /currgstate get
+        /currentpath 1 dict put
 } def
 
 % -  currentpoint  x y
 % return current point coordinates
 /currentpoint {
-    graphicsdict /currentgstate get /currentpoint get exec
+    %graphicsdict /currgstate get /currentpoint get exec
+    cpath dup length 0 eq {
+        pop /currentpoint cvx /nocurrentpoint signalerror
+    }{
+        dup length 1 sub get % last-subpath
+        dup length 1 sub get % last-elem
+        /data get dup length 2 sub 2 getinterval % last data pair
+        aload pop itransform
+    } ifelse
+} def
+
+/cpath { graphicsdict /currgstate get /currentpath get } def
+
+/addtopath { % << /data [...] /cmd /... >> <<path>>
+    dup length 0 eq {                       % elem path
+        1 index /cmd get /move eq {         % elem path
+            << 0 4 3 roll >> % new subpath  % <path> <subpath>
+            0 exch put                      %
+        }{
+            /addtopath cvx /nocurrentpoint signalerror
+        } ifelse
+    }{                                      % elem path
+        1 index /cmd get /move eq {         % elem path
+            dup length 1 sub get            % <elem> <path> <last-subpath>
+            dup length 1 sub get            % <elem> <path> <last-elem-of-last-subpath>
+            dup dup /cmd get /move eq {     % <elem> <path> <last-elem>
+                3 1 roll pop                % <last-elem> <elem>
+                /data get /data exch put
+            }{
+                pop
+                dup length 3 2 roll  % <path> n <elem>
+                << 0 3 2 roll >> % new subpath  % <path> n <<0 <elem>>>
+            } ifelse
+        }{                              % elem path
+            dup length 1 sub get        % <elem> <subpath>
+            dup length                  % <elem> <subpath> key
+            3 2 roll put     
+        } ifelse
+    } ifelse
 } def
 
 % x y  moveto  -
 % set current point to (x,y)
 /moveto {
     transform
-    /itransform cvx
-    graphicsdict /currentgstate get /currentpoint get 0 3 getinterval astore
-    graphicsdict /currentgstate get exch /currentpoint exch put
+    %2 copy
+    %/itransform cvx
+    %graphicsdict /currgstate get /currentpoint get 0 3 getinterval astore
+    %graphicsdict /currgstate get exch /currentpoint exch put
+    2 array astore
+    << /data 3 2 roll /cmd /move >> cpath addtopath
 } def
 
 % dx dy  rmoveto  -
@@ -302,6 +364,83 @@ end
     3 1 roll add exch
     moveto
 } def
+
+% x y  lineto  -
+% append straight line to (x,y)
+/lineto {
+    transform
+    2 array astore
+    << /data 3 2 roll /cmd /line >> cpath addtopath
+} def
+
+% dx dy  rlineto  -
+% relative lineto
+/rlineto {
+    currentpoint
+    3 2 roll add
+    3 1 roll add exch
+    lineto
+} def
+
+% x1 y1 x2 y2 x3 y3  curveto  -
+% append Bezier cubic section
+/curveto {
+    3 { 6 2 roll transform } repeat
+    6 array astore
+    << /data 3 2 roll /cmd /curve >> cpath addtopath
+} def
+
+% dx1 dy1 dx2 dy2 dx3 dy3  rcurveto  -
+% relative curveto
+/rcurveto {
+    3 {
+        6 2 roll currentpoint
+        3 2 roll add
+        3 1 roll add exch
+    } repeat
+    curveto
+} def
+
+% -  closepath  -
+% connect subpath back to its starting point
+/closepath {
+    cpath length 0 gt {
+        cpath dup length 1 sub get % subpath
+        dup dup length 1 sub get % subpath last-elem
+        /cmd get /close eq { % subpath
+            pop
+        }{                   % subpath
+            0 get /data get % subpath [data]
+            << /data 3 2 roll /cmd /close >> cpath addtopath
+        } ifelse
+    } if
+} def
+
+% move line curve close  pathforall  -
+% enumerate current path
+/pathforall {
+5 dict begin
+    {close curve line move}{exch def}forall
+    0 1 cpath length 1 sub {
+        /cp exch def
+        0 1 cpath cp get % subpath
+        length 1 sub {
+            cpath cp get exch get % elem
+            dup /cmd get /close ne {
+                dup /data get % elem [data]
+                aload length  % elem d a t a n
+                1 add -1 roll % d a t a elem
+            } if
+            /cmd get cvx exec
+        } for
+    } for
+end
+} def
+
+
+% Painting Operators
+
+
 
 initgraphics
 
@@ -320,3 +459,23 @@ matrix matrix matrix concatmatrix pstack clear
 90 rotate currentpoint pstack clear
 90 rotate currentpoint pstack clear
 
+/args{-1 1{-1 roll =}for}def
+
+10 10 lineto
+20 20 rlineto
+0 0 1 1 2 0 rcurveto
+closepath
+
+
+()=
+{ (moveto) 3 args }
+{ (lineto) 3 args }
+{ (curveto) 7 args }
+{ (closepath) 1 args }
+4 copy 
+pathforall
+
+gsave
+    newpath
+    pathforall
+grestore
