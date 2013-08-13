@@ -95,16 +95,8 @@ void initglobal(context *ctx) {
     initsave(ctx->gl);
     initctxlist(ctx->gl);
     addtoctxlist(ctx->gl, ctx->id);
-    //ctx->gl->roots[0] = VS;
 
-    initnames(ctx); /* NAMES NAMET */
-    //ctx->gl->roots[1] = NAMES;
-    initoptab(ctx); /* allocate and zero the optab structure */
     ctx->gl->start = OPTAB + 1; /* so OPTAB is not collected and not scanned. */
-    (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
-    (void)consname(ctx, "getinterval"); /* middle of the start */
-    (void)consname(ctx, "setmiterlimit"); /* middle of the end */
-    initop(ctx); /* populate the optab (and systemdict) with operators */
 }
 
 mfile *nextltab() {
@@ -141,7 +133,8 @@ void initlocal(context *ctx) {
     ctx->hold = makestack(ctx->lo);
     //ctx->lo->roots[1] = DS;
     //ctx->lo->start = HOLD + 1; /* so HOLD is not collected and not scanned. */
-    ctx->lo->start = CTXLIST + 1;
+    //ctx->lo->start = CTXLIST + 1;
+    ctx->lo->start = BOGUSNAME + 1;
 }
 
 
@@ -166,9 +159,20 @@ void initcontext(context *ctx) {
     ctx->id = initctxid();
     initlocal(ctx);
     initglobal(ctx);
+
+    initnames(ctx); /* NAMES NAMET */
+
+    initoptab(ctx); /* allocate and zero the optab structure */
+
+    (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
+    (void)consname(ctx, "getinterval"); /* middle of the start */
+    (void)consname(ctx, "setmiterlimit"); /* middle of the end */
+
+    initop(ctx); /* populate the optab (and systemdict) with operators */
+
     ctx->vmmode = LOCAL;
     {
-        object ud;
+        object ud; //userdict
         ud = consbdc(ctx, 100);
         bdcput(ctx, bot(ctx->lo, ctx->ds, 0), consname(ctx, "userdict"), ud);
         push(ctx->lo, ctx->ds, ud);

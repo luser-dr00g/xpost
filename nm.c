@@ -28,6 +28,22 @@ void initnames(context *ctx) {
 #define CNT_STR(s) sizeof(s)-1, s
     push(ctx->gl, adrent(ctx->gl, NAMES), consbst(ctx, CNT_STR("_not_a_name_")));
     assert (top(ctx->gl, adrent(ctx->gl, NAMES), 0).comp_.ent == BOGUSNAME);
+
+#if 0
+    ent = mtalloc(ctx->lo, 0, 0); //NAMES
+    assert(ent == NAMES);
+    ent = mtalloc(ctx->lo, 0, 0); //NAMET
+    assert(ent == NAMET);
+
+    t = initstack(ctx->lo);
+    tab = (void *)ctx->lo->base; //recalc pointer
+    tab->tab[NAMES].adr = t;
+    tab->tab[NAMET].adr = 0;
+#define CNT_STR(s) sizeof(s)-1, s
+    push(ctx->lo, adrent(ctx->lo, NAMES), consbst(ctx, CNT_STR("_not_a_name_")));
+    assert (top(ctx->lo, adrent(ctx->lo, NAMES), 0).comp_.ent == BOGUSNAME);
+#endif
+
 }
 
 unsigned tstsearch(mfile *mem, unsigned tadr, char *s) {
