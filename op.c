@@ -244,6 +244,7 @@ call:
 #include "opf.h"
 #include "opv.h"
 #include "opx.h"
+#include "oppa.h"
 
 void breakhere(context *ctx) {
     (void)ctx;
@@ -312,6 +313,8 @@ void initop(context *ctx) {
 
     initopx(ctx, sd);
     //printf("\nopx:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+
+    initoppa(ctx, sd);
 
     //push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 

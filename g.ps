@@ -549,6 +549,34 @@ end
     } if
 } def
 
+/reversedict <<
+    /move {
+    }
+    /line {
+    }
+    /curve {
+    }
+    /close {
+    }
+>> def
+
+/reversepath {
+    cpath length 0 gt {
+        cpath newpath
+            dup length 1 sub -1 0 { % path i
+            2 copy get                     % path i subpath_i
+            dup length 0 gt {
+                dup length 1 sub -1 0 { % p i sp_i j
+                    2 copy get          % p i sp_i j sp_i_j
+                    reversedict 1 index /cmd get get exec
+                    pop
+                } for
+            }{ pop pop } ifelse
+        } for
+        pop
+    } if
+} def
+
 % move line curve close  pathforall  -
 % enumerate current path
 /pathforall {
