@@ -1,4 +1,4 @@
-/*  memory
+/*  memory (master)
     mfile and mtab
     
     An mfile is a container representing *half* of virtual memory,
@@ -7,6 +7,10 @@
 
     An mtab is a chain of address tables (starting at address 0)
     that manage the contents of the mfile.
+
+    This file also contains enums that more properly belong in itp.h
+    as they direct the global configuration of the interpreter, not just
+    the memory interface.
    */
 
 /* define MMAP and MREMAP for Linux */
@@ -90,10 +94,10 @@ enum {
     FREE,   
     VS,
     CTXLIST,
-    NAMES, /* these 4 global only */
+    NAMES,
     NAMET,
     BOGUSNAME,
-    OPTAB, 
+    OPTAB,  /* this 1 global only */
 };
 
 /* dump mtab details to stdout */
