@@ -1,3 +1,5 @@
+%/CONSTRAINFLATNESS null def
+
 /DEVICE <<
     /defaultmatrix [ 1 0 0 1 0 0 ]
 >> def
@@ -85,6 +87,8 @@ end
 } def
 
 /setflat {
+    /CONSTRAiNFLATNESS where{
+        pop dup 100 gt{pop 100}if dup .2 lt{pop .2}if } if
     graphicsdict /currgstate get exch /flat exch put
 } def
 
@@ -416,13 +420,115 @@ end
     } if
 } def
 
-/flattendict <<
-    /move { cpath addtopath }
-    /line { cpath addtopath }
-    /curve {
+/median { % P0 P3 = x0 y0 x1 y1
+    3 -1 roll add .5 mul % x0 x1 y0+y1/2
+    3 1 roll add .5 mul  % (y0+y1)/2 (x0+x1)/2
+    exch % (1/2)(P0+P3)
+} def
+
+/dist { % P1 P2 = x1 y1 x2 y2
+    3 -1 roll sub dup mul % x1 x2 (y2-y1)^2
+    3 1 roll exch sub dup mul % (y2-y1)^2 (x2-x1)^2
+    add sqrt % dist
+} def
+
+%calculate the pythagorean distance between the
+% midpoint of the bezier curve and the midpoint of the straight line
+/checkflat { % P0 P1 P2 P3
+    8 copy
+    exch .125 mul exch .125 mul 8 2 roll % (1/8)P3 P0 P1 P2
+    exch .375 mul exch .375 mul 8 2 roll % (3/8)P2 (1/8)P3 P0 P1
+    exch .375 mul exch .375 mul 8 2 roll % (3/8)P1 (3/8)P2 (1/8)P3 P0
+    exch .125 mul exch .125 mul 8 2 roll % (1/8)P0 (3/8)P1 (3/8)P2 (1/8)P3
+    3 -1 roll add 3 1 roll add exch      %                        +
+    3 -1 roll add 3 1 roll add exch      %                +
+    3 -1 roll add 3 1 roll add exch      %        +
+    10 2 roll                            % B(1/2) P0 P1 P2 P3
+    8 2 roll pop pop pop pop             % B(1/2) P0 P3
+    median % B(1/2) (1/2)(P0+P3)
+    dist
+} def
+
+/getpair { % xN yN .. x0 y0 N  getpair  xN yN .. x0 y0 xN yN
+               % a0 a1 b0 b1 1
+    2 mul      % a0 a1 b0 b1 2
+    2 add dup  % a0 a1 b0 b1 4 4
+    index      % a0 a1 b0 b1 4 a0
+    exch 1 sub % a0 a1 b0 b1 a0 3
+    index      % a0 a1 b0 b1 a0 a1
+} def
+
+% P'0 = P0
+% P'1 = P01          = P0 P1 median
+%       P12          = P1 P2 median
+% P'2 = P012         = P01 P12  median
+% P'3 = P0123 = P''0 = P012 P123 median
+%       P123 = P''1  = P12 P23 median
+%       P23 = P''2   = P2 P3 median
+%       P3 = P''3
+/chopcurve { % <</cmd /curve /data [...]>>
+    flattendict /cp get aload pop
+    2 index /data get aload pop
+    checkflat % curve-error
+    %(checkflat)= dup =
+    currentflat gt {
+        /data get aload pop
+        flattendict /cp get aload pop 8 2 roll % P0 P1 P2 P3
+        %(median)=
+        %pstack()=
+        3 getpair 3 getpair median % P0 P1 P2 P3 P01
+        %(median)=
+        3 getpair 3 getpair median % P0 P1 P2 P3 P01 P12
+        3 getpair 3 getpair median % P0 P1 P2 P3 P01 P12 P23
+        2 getpair 2 getpair median % P0 P1 P2 P3 P01 P12 P23 P012
+        2 getpair 2 getpair median % P0 P1 P2 P3 P01 P12 P23 P012 P123
+        1 getpair 1 getpair median % P0 P1 P2 P3 P01 P12 P23 P012 P123 P0123
+        %(median)=
+                           %drop   % X  X  X  "  '   X   "   '    "    '
+                          %curve1  %          |  P'1     |   P'2  |    P'3
+                          %curve2  %          P"3        P"2      P"1
+                      %pair index  % 9  8  7  6  5   4   3   2    1    0
+                          %count   % 20 18 16 14 12  10  8   6    4    2
+        20 -2 roll pop pop         %    P1 P2 P3 P01 P12 P23 P012 P123 P0123
+        18 -2 roll pop pop         %       P2 P3 P01 P12 P23 P012 P123 P0123
+        16 -2 roll pop pop         %          P3 P01 P12 P23 P012 P123 P0123
+        10 -2 roll pop pop         %          P3 P01     P23 P012 P123 P0123
+                                   %          P"3 P'1    P"2 P'2 P"1 P'3
+        4 -2 roll                  %          P"3 P'1    P"2 P'2    P'3 P"1
+        8 -2 roll                  %          P"3 P'1       P'2    P'3 P"1 P"2
+        12 -2 roll                 %             P'1      P'2 P'3    P"1 P"2 P"3
+        6 array astore
+        << /data 3 2 roll /cmd /curve >> %   P'1 P'2 P'3   <P"1 P"2 P"3>
+        7 1 roll                   %        <P"1 P"2 P"3>  P'1 P'2 P'3 
+        6 array astore
+        << /data 3 2 roll /cmd /curve >> %  <P"1 P"2 P"3>  <P'1 P'2 P'3>
+        dup /data get 4 2 getinterval exch %  <P"1 P"2 P"3> [P'3] <P'1 P'2 P'3>
+        chopcurve
+        flattendict exch /cp exch put
+        chopcurve
+    }{
+        dup /data get 4 2 getinterval flattendict exch /cp exch put
         << /data 3 2 roll /data get 4 2 getinterval /cmd /line >>
+        cpath addtopath
+    } ifelse
+} def
+
+/flattendict <<
+    /move {
+        dup /data get flattendict exch /cp exch put
         cpath addtopath }
-    /close { cpath addtopath }
+    /line {
+        dup /data get flattendict exch /cp exch put
+        cpath addtopath }
+    /curve {
+        chopcurve
+        %dup /data get 4 2 getinterval flattendict exch /cp exch put
+        %<< /data 3 2 roll /data get 4 2 getinterval /cmd /line >>
+        %cpath addtopath
+    }
+    /close {
+        dup /data get flattendict exch /cp exch put
+        cpath addtopath }
 >> def
 
 /flattenpath {
@@ -488,6 +594,7 @@ matrix matrix matrix concatmatrix pstack clear
 
 /args{-1 1{-1 roll =}for}def
 
+20 20 scale
 10 10 lineto
 20 20 rlineto
 0 0 1 1 2 0 rcurveto
