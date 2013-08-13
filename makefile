@@ -5,7 +5,7 @@ LDLIBS=-lm
 SRC= makefile *.h *.c init.ps err.ps g.ps test.ps
 CORE=s.o st.o ar.o di.o nm.o gc.o v.o f.o
 OP=op.o ops.o opst.o opar.o opdi.o optok.o opb.o opc.o opt.o \
-    opm.o opf.o opv.o opx.o osunix.o
+    opm.o opf.o opv.o opx.o oppa.o osunix.o
 TESTS_OBJ=m.o ob.o s.o st.o nm.o v.o gc.o ar.o di.o itp.o
 TESTS=$(TESTS_OBJ:.o=)
 
