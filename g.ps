@@ -9,10 +9,10 @@
 >> def
 
 /gstatetemplate <<
-    /currentpoint { /currentpoint cvx /nocurrentpoint signalerror }
-    /currentmatrix [ 1 0 0 1 0 0 ]
+    /currmatrix [ 1 0 0 1 0 0 ]
     /scratchmatrix [ 1 0 0 1 0 0 ]
-    /currentpath 1 dict
+    /currpath 1 dict
+    /flat 1
 >> def
 
 
@@ -80,6 +80,13 @@ end
 
 % Graphics State Operators -- Device Dependent
 
+/currentflat {
+    graphicsdict /currgstate get /flat get
+} def
+
+/setflat {
+    graphicsdict /currgstate get exch /flat exch put
+} def
 
 
 % Coordinate System and Matrix Operators
@@ -112,14 +119,14 @@ end
 % fill matrix with CTM
 /currentmatrix {
     dup type/arraytype ne { /currentmatrix cvx /typecheck signalerror } if
-    graphicsdict /currgstate get /currentmatrix get exch copy
+    graphicsdict /currgstate get /currmatrix get exch copy
 } def
 
 % matrix  setmatrix  -
 % replace CTM by matrix
 /setmatrix {
     dup type/arraytype ne { /setmatrix cvx /typecheck signalerror } if
-    graphicsdict /currgstate get /currentmatrix get copy pop
+    graphicsdict /currgstate get /currmatrix get copy pop
 } def
 
 %        tx ty  translate  -       % translate userspace by (tx, ty)
@@ -175,7 +182,7 @@ end
 % matrix  concat  -
 % replace CTM by matrix \times CTM
 /concat {
-    graphicsdict /currgstate get /currentmatrix get dup concatmatrix pop
+    graphicsdict /currgstate get /currmatrix get dup concatmatrix pop
 } def
 
 % matrix1 matrix2 matrix3  concatmatrix  matrix3
@@ -201,7 +208,7 @@ end
 % x y matrix  transform  x' y'  % transform (x,y) by matrix
 /transform {
 12 dict begin
-    dup type/arraytype ne { graphicsdict /currgstate get /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currgstate get /currmatrix get } if
     aload pop % x y a b c d e f
     {f e d c b a y x}{exch def}forall
     a x mul c y mul add e add
@@ -213,7 +220,7 @@ end
 % dx dy matrix  dtransform  dx' dy'  % transform distance (dx,dy) by matrix
 /dtransform {
 12 dict begin
-    dup type/arraytype ne { graphicsdict /currgstate get /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currgstate get /currmatrix get } if
     aload pop % x y a b c d e f
     pop pop % x y a b c d
     {d c b a y x}{exch def}forall
@@ -226,7 +233,7 @@ end
 % x' y' matrix  itransform  x y  % inverse transform (x',y') by matrix
 /itransform {
 12 dict begin
-    dup type/arraytype ne { graphicsdict /currgstate get /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currgstate get /currmatrix get } if
     %graphicsdict /currgstate get /scratchmatrix get copy invertmatrix transform
     aload pop {f e d c b a y x}{exch def}forall
     a d mul b c mul sub
@@ -242,7 +249,7 @@ end
 % dx' dy' matrix  idtransform  dx dy  % inverse transform distance (dx',dy') by matrix
 /idtransform {
 12 dict begin
-    dup type/arraytype ne { graphicsdict /currgstate get /currentmatrix get } if
+    dup type/arraytype ne { graphicsdict /currgstate get /currmatrix get } if
     aload pop % x y a b c d e f
     pop pop % x y a b c d
     {d c b a y x}{exch def}forall
@@ -294,16 +301,13 @@ end
 % -  newpath  -
 % initialize current path to be empty
 /newpath {
-    %graphicsdict /currgstate get
-    %    /currentpoint { /currentpoint cvx /nocurrentpoint signalerror } put
     graphicsdict /currgstate get
-        /currentpath 1 dict put
+        /currpath 1 dict put
 } def
 
 % -  currentpoint  x y
 % return current point coordinates
 /currentpoint {
-    %graphicsdict /currgstate get /currentpoint get exec
     cpath dup length 0 eq {
         pop /currentpoint cvx /nocurrentpoint signalerror
     }{
@@ -314,7 +318,7 @@ end
     } ifelse
 } def
 
-/cpath { graphicsdict /currgstate get /currentpath get } def
+/cpath { graphicsdict /currgstate get /currpath get } def
 
 /addtopath { % << /data [...] /cmd /... >> <<path>>
     dup length 0 eq {                       % elem path
@@ -324,12 +328,12 @@ end
         }{
             /addtopath cvx /nocurrentpoint signalerror
         } ifelse
-    }{                                      % elem path
-        1 index /cmd get /move eq {         % elem path
-            dup length 1 sub get            % <elem> <path> <last-subpath>
-            dup length 1 sub get            % <elem> <path> <last-elem-of-last-subpath>
-            dup dup /cmd get /move eq {     % <elem> <path> <last-elem>
-                3 1 roll pop                % <last-elem> <elem>
+    }{                                  % elem path
+        1 index /cmd get /move eq {     % elem path
+            dup length 1 sub get        % elem path last-subpath
+            dup length 1 sub get        % elem path last-elem-of-last-subp
+            dup dup /cmd get /move eq { % elem path last-elem
+                3 1 roll pop            % last-elem elem
                 /data get /data exch put
             }{
                 pop
@@ -348,10 +352,6 @@ end
 % set current point to (x,y)
 /moveto {
     transform
-    %2 copy
-    %/itransform cvx
-    %graphicsdict /currgstate get /currentpoint get 0 3 getinterval astore
-    %graphicsdict /currgstate get exch /currentpoint exch put
     2 array astore
     << /data 3 2 roll /cmd /move >> cpath addtopath
 } def
@@ -416,6 +416,33 @@ end
     } if
 } def
 
+/flattendict <<
+    /move { cpath addtopath }
+    /line { cpath addtopath }
+    /curve {
+        << /data 3 2 roll /data get 4 2 getinterval /cmd /line >>
+        cpath addtopath }
+    /close { cpath addtopath }
+>> def
+
+/flattenpath {
+    cpath length 0 gt {
+        cpath newpath
+        0 1 2 index length 1 sub { % path i
+            2 copy get             % path i subpath_i
+            dup length 0 gt {
+                0 1 2 index length 1 sub { % p i sp_i j
+                    2 copy get             % p i sp_i j sp_i_j
+                    flattendict 1 index /cmd get get exec
+                    pop                    % p i sp_i
+                } for
+                pop pop
+            }{ pop pop } ifelse
+        } for
+        pop
+    } if
+} def
+
 % move line curve close  pathforall  -
 % enumerate current path
 /pathforall {
@@ -474,8 +501,20 @@ closepath
 { (closepath) 1 args }
 4 copy 
 pathforall
+(pathforall)=
 
 gsave
     newpath
-    pathforall
+    (newpath)=
+    4 copy pathforall
+    (pathforall)=
 grestore
+
+4 copy pathforall
+(pathforall)=
+
+flattenpath
+(flattenpath)=
+pathforall
+(pathforall)=
+
