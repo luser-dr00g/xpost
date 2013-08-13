@@ -232,3 +232,28 @@ indicates how many elements to move and in which direction.
 
     "Positive J to roll away", "Negative to bring 'em back".
 
+So the next step in revising our function is to remove the /x name 
+as well.
+
+  % a b c x  quadratic  ax^2+bx+c
+  /quadratic {
+      4 2 roll     % c x a b
+      1 index mul  % c x a bx
+      4 1 roll     % bx c x a
+      1 index mul  % bx c x ax
+      mul          % bx c ax^2
+      add add
+  } def
+
+If we apply `bind` to the procedure, all the operator names will
+be replaced by the operators themselves, and the function now 
+performs no dictionary lookups at all.
+
+  /quadratic load bind ==
+{ 4 2 -roll- 1 -index- -mul- 4 1 -roll- 1 -index- -mul- -mul- -add- -add- }
+
+This function will now execute as quickly as possible,
+and it will not interact with the current namespace 
+and it does not allocate any data.
+
+
