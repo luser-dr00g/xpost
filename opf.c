@@ -149,16 +149,20 @@ void Fbytesavailable (context *ctx, object F) {
 }
 
 void Zflush (context *ctx) {
+    int ret;
     (void)ctx;
-    fflush(NULL);
+    ret = fflush(NULL);
+    if (ret != 0) error(ioerror, "fflush did not return 0");
 }
 
 void Fflushfile (context *ctx, object F) {
+    int ret;
     FILE *f;
     if (!filestatus(ctx->lo, F)) return;
     f = filefile(ctx->lo, F);
     if (iswriteable(F)) {
-        fflush(f);
+        ret = fflush(f);
+        if (ret != 0) error(ioerror, "fflush did not return 0");
     } else {
         int c;
         while ((c = fgetc(f)) != EOF)
@@ -192,9 +196,12 @@ void Zcurrentfile (context *ctx) {
 }
 
 void Sprint (context *ctx, object S) {
+    size_t ret;
     char *s;
     s = charstr(ctx, S);
-    fwrite(s, 1, S.comp_.sz, stdout);
+    ret = fwrite(s, 1, S.comp_.sz, stdout);
+    if (ret != S.comp_.sz)
+        error(ioerror, "Sprint() fwrite returned unexpected value");
 }
 
 void Becho (context *ctx, object b) {

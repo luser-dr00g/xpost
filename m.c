@@ -120,7 +120,7 @@ void exitmem(mfile *mem){
     munmap(mem->base, mem->max);
 #else
     if (mem->fd != -1) {
-        lseek(mem->fd, 0, SEEK_SET);
+        (void)lseek(mem->fd, 0, SEEK_SET);
         write(mem->fd, mem->base, mem->used);
     }
     free(mem->base);
