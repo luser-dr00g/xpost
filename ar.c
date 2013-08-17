@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <stdbool.h>
 
 #include "m.h"
@@ -21,6 +22,7 @@ object consarr(mfile *mem, unsigned sz) {
     mtab *tab;
     object o;
     unsigned i;
+    assert(mem->base);
 
     //unsigned ent = mtalloc(mem, 0, sz * sizeof(object));
     ent = gballoc(mem, (unsigned)(sz * sizeof(object)));

@@ -11,6 +11,7 @@ typedef struct tst {
              hi;
 } tst;
 
+void dumpnames(context *ctx);
 void initnames(context *ctx);
 object consname(context *ctx, char *s);
 object strname(context *ctx, object n);

@@ -1,5 +1,6 @@
 /* relational, boolean, and bitwise operators */
 
+#include <assert.h>
 #include <stdlib.h> /* NULL */
 #include <alloca.h>
 #include <stdbool.h>
@@ -103,8 +104,10 @@ void Ibitshift (context *ctx, object x, object y) {
 }
 
 void initopb(context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "ne", Ane, 1, 2, anytype, anytype); INSTALL;

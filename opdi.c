@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 
@@ -200,6 +201,7 @@ void Dcopy(context *ctx, object S, object D) {
 
 void DPforall (context *ctx, object D, object P) {
     mfile *mem = bank(ctx, D);
+    assert(mem->base);
     D.comp_.sz = dicmaxlength(mem, D); // stash size locally
     if (D.comp_.off <= D.comp_.sz) { // not finished?
         unsigned ad;
@@ -259,8 +261,10 @@ void Adictstack(context *ctx, object A) {
 }
 
 void initopdi(context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     op = consoper(ctx, "dict", Idict, 1, 1, integertype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "<<"), mark);
     op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;

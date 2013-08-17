@@ -176,6 +176,7 @@ void initfree(mfile *mem) {
 void mfree(mfile *mem, unsigned ent) {
     unsigned a;
     unsigned z;
+    return;
     a = adrent(mem, ent);
     if (szent(mem, ent) == 0) return; // ignore zero size allocs
     z = adrent(mem, FREE);
@@ -237,18 +238,17 @@ void collect(mfile *mem) {
     ctx = ctxcid(cid[0]);
     /* markstack(ctx, mem, adrent(mem, VS)); */ // TODO will need a special routine
     marksave(ctx, mem, adrent(mem, VS));
-    if (mem == ctx->lo) {
 
+    if (mem == ctx->lo) {
         for (i = 0; cid[i]; i++) {
             ctx = ctxcid(cid[i]);
             markstack(ctx, mem, ctx->os);
             markstack(ctx, mem, ctx->ds);
             markstack(ctx, mem, ctx->es);
         }
+    } 
 
-    } else {
-        markstack(ctx, mem, adrent(mem, NAMES));
-    }
+    markstack(ctx, mem, adrent(mem, NAMES));
 
     sweep(mem);
 }
@@ -357,7 +357,7 @@ void init(void) {
 }
 */
 
-//itp *itpdata;
+extern itp *itpdata;
 
 void init(void) {
     itpdata = malloc(sizeof*itpdata);

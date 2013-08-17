@@ -53,7 +53,7 @@ void initmem(mfile *mem, char *fname);
 void exitmem(mfile *mem);
 
 /* resize the mfile, possibly invalidating all vm pointers */
-void growmem(mfile *mem, unsigned sz);
+mfile *growmem(mfile *mem, unsigned sz);
 
 /* allocate memory, returns offset in memory file */
 unsigned mfalloc(mfile *mem, unsigned sz);

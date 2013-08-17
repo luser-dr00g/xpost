@@ -51,7 +51,7 @@ void initoptab (context *ctx) {
 void dumpoper(context *ctx, int opcode) {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     oper op = optab[opcode];
-    mark_ nm = { nametype, 0, op.name };
+    mark_ nm = { nametype | FBANK, 0, op.name };
     object str = strname(ctx, (object)nm);
     char *s = charstr(ctx, str);
     signat *sig = (void *)(ctx->gl->base + op.sigadr);
@@ -66,9 +66,15 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
     int i;
     unsigned si;
     unsigned t;
+    unsigned vmmode;
     signat *sp;
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     oper op;
+
+    //fprintf(stderr, "name: %s\n", name);
+    assert(ctx->gl->base);
+
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     if (!(in < STACKSEGSZ)) {
         printf("!(in < STACKSEGSZ) in consoper(%s, %d. %d)\n", name, out, in);
@@ -76,7 +82,10 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
     }
     //assert(in < STACKSEGSZ); // or else opexec can't call it using HOLD
 
+    vmmode=ctx->vmmode;
+    ctx->vmmode = GLOBAL;
     nm = consname(ctx, name);
+    ctx->vmmode = vmmode;
     for (opcode = 0; optab[opcode].name != nm.mark_.padw; opcode++) {
         if (opcode == noop) break;
     }

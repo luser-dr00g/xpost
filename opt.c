@@ -1,4 +1,5 @@
 #include <alloca.h>
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
@@ -143,7 +144,8 @@ int conv_frac(real num, char *s, int n) {
     integ = floor(num);
     frac = num - integ;
     *s = (int)integ + '0';
-    if (num == 0.0) return 1;
+    //if (num == 0.0) return 1;
+    if (num < 0.0001) return 1;
     return 1 + conv_frac(frac, s+1, n-1);
 }
 
@@ -220,7 +222,7 @@ void AScvs(context *ctx, object any, object str) {
         {
             oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
             oper op = optab[any.mark_.padw];
-            mark_ nm = { nametype, 0, op.name };
+            mark_ nm = { nametype | FBANK, 0, op.name };
             any.mark_ = nm;
         }
         /*@fallthrough@*/
@@ -238,8 +240,10 @@ void AScvs(context *ctx, object any, object str) {
 }
 
 void initopt(context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "type", Atype, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "cvlit", Acvlit, 1, 1, anytype); INSTALL;

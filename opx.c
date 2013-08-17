@@ -1,4 +1,5 @@
 #include <alloca.h>
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL strtod */
@@ -66,9 +67,12 @@ void debugloadoff (context *ctx) {
     DEBUGLOAD = 0;
 }
 
-void dumpnames (context *ctx) {
-    printf("\nnamestack: ");
+void Odumpnames (context *ctx) {
+    printf("\nGlobal Name stack: ");
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+    puts("");
+    printf("\nLocal Name stack: ");
+    dumpstack(ctx->lo, adrent(ctx->lo, NAMES));
     puts("");
 }
 
@@ -80,8 +84,10 @@ void dumpvm (context *ctx) {
 }
 
 void initopx(context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "null"), null);
@@ -90,7 +96,7 @@ void initopx(context *ctx, object sd) {
     op = consoper(ctx, "traceoff", traceoff, 0, 0); INSTALL;
     op = consoper(ctx, "debugloadon", debugloadon, 0, 0); INSTALL;
     op = consoper(ctx, "debugloadoff", debugloadoff, 0, 0); INSTALL;
-    op = consoper(ctx, "dumpnames", dumpnames, 0, 0); INSTALL;
+    op = consoper(ctx, "dumpnames", Odumpnames, 0, 0); INSTALL;
     op = consoper(ctx, "dumpvm", dumpvm, 0, 0); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);

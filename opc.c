@@ -1,6 +1,7 @@
 /* control operators */
 
 #include <alloca.h>
+#include <assert.h>
 #include <stdbool.h>
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
@@ -37,6 +38,7 @@ void IIIPfor (context *ctx, object init, object incr, object lim, object P) {
     integer n = lim.int_.val;
     bool up = j > 0;
     if (up? i > n : i < n) return;
+    assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
     push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, cvlit(P));
@@ -123,8 +125,9 @@ void Zexit (context *ctx) {
 
 void Zstop(context *ctx) {
     object f = consbool(false);
+    int c = count(ctx->lo, ctx->es);
     object x;
-    while (1) {
+    while (c--) {
         x = pop(ctx->lo, ctx->es);
         if(objcmp(ctx, f, x) == 0) {
             push(ctx->lo, ctx->os, consbool(true));
@@ -158,8 +161,10 @@ void Zquit(context *ctx) {
 }
 
 void initopc (context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "exec", Aexec, 0, 1, anytype); INSTALL;
     op = consoper(ctx, "if", BPif, 0, 2, booleantype, proctype); INSTALL;

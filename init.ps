@@ -1,6 +1,11 @@
 %procedures in systemdict
 (loading init.ps...\n) print
+
+%(35\n) print
+%currentfile flushfile
+
 systemdict begin
+true setglobal
 
 /version (0) def
 /run { (r) file cvx exec } def
@@ -26,6 +31,11 @@ systemdict begin
 } def
 
 
+/= {
+    //=print exec
+    (\n) print
+} def
+
 %dumpnames dumpvm
 %debugloadon
 
@@ -37,11 +47,6 @@ systemdict begin
 %exch strcat Run
 (err.ps)run
 
-
-/= {
-    //=print exec
-    (\n) print
-} def
 
 /stack { count dup 1 add copy //= repeat pop } def
 
@@ -208,3 +213,4 @@ end % systemdict
 %debugloadon
 
 $error/initializing false put % ready to go!
+false setglobal

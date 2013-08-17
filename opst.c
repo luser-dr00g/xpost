@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdbool.h> /* ob.h:bool */
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
@@ -99,6 +100,7 @@ void Ssearch(context *ctx, object str, object seek) {
 
 void Sforall(context *ctx, object S, object P) {
     if (S.comp_.sz == 0) return;
+    assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
     push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, cvlit(P));
@@ -111,8 +113,10 @@ void Sforall(context *ctx, object S, object P) {
 // token : see optok.c
 
 void initopst(context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     op = consoper(ctx, "string", Istring, 1, 1,
             integertype); INSTALL;
     op = consoper(ctx, "length", Slength, 1, 1,

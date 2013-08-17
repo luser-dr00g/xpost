@@ -2,7 +2,7 @@
 
 (loading err.ps...\n) print
 
-/$error 13 dict def
+systemdict /$error 13 dict put
 $error begin
     /ostackarray null def
     /newerror false def
@@ -10,6 +10,7 @@ $error begin
     /errorname null def
     /initializing true def
 end
+($error)=
 
 /.error {
     //$error exch /errorname exch put
@@ -40,6 +41,7 @@ end
     interrupt
 } def
 /signalerror /.error load def
+%(.error)=
 
 /errordict 28 dict def
 errordict begin
@@ -53,8 +55,8 @@ errordict begin
                 errorname //=print exec
                 (; OffendingCommand: ) print
                 /command load //=print exec
-                (; Extra: ) print
-                /Extra load //=print exec
+                %(; Extra: ) print
+                %/Extra load //=print exec
                 (]%%\n) print
                 (Stack:\n) print
                 ostack { = } forall
@@ -90,6 +92,7 @@ errordict begin
     /unregistered {/unregistered //.error exec} def
     /interrupt { stop } def
 end
+%(errordict)=
 
 /handleerror { errordict /handleerror get exec } def
 /interrupt { stop } def
