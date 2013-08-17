@@ -27,8 +27,8 @@ clean:
 	rm -f *.o *.exe g.mem l.mem x.mem
 
 splint:
-	splint +posixlib -boolops -predboolint +ignoresigns -type -nestcomment \
--noeffect \
+	splint +posixlib -boolops -predboolint +ignoresigns -type +charindex \
+-nestcomment -noeffect -redef -shiftnegative -castfcnptr \
 -shiftimplementation -predboolothers -exportlocal -mustfreefresh ./*.c
 
 m.ps:m.pic

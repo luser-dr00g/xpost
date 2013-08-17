@@ -55,7 +55,7 @@ void dumpoper(context *ctx, int opcode) {
     object str = strname(ctx, (object)nm);
     char *s = charstr(ctx, str);
     signat *sig = (void *)(ctx->gl->base + op.sigadr);
-    printf("<operator %d %*s %p>", opcode, str.comp_.sz, s, sig[0].fp );
+    printf("<operator %d %*s %p>", opcode, str.comp_.sz, s, (void *)sig[0].fp );
 }
 
 object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
@@ -178,7 +178,7 @@ void opexec(context *ctx, unsigned opcode) {
     signat *sp = (void *)(ctx->gl->base + op.sigadr);
     int i,j;
     bool pass;
-    int err;
+    int err = unregistered;
     char *errmsg = "unspecified error";
     stack *hold;
     int ct;

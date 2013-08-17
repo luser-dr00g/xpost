@@ -70,10 +70,10 @@ void debugloadoff (context *ctx) {
 void Odumpnames (context *ctx) {
     printf("\nGlobal Name stack: ");
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
-    puts("");
+    (void)puts("");
     printf("\nLocal Name stack: ");
     dumpstack(ctx->lo, adrent(ctx->lo, NAMES));
-    puts("");
+    (void)puts("");
 }
 
 void dumpvm (context *ctx) {
