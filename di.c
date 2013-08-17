@@ -35,8 +35,9 @@ int objcmp(context *ctx, object L, object R) {
     if (type(L) == type(R))
         switch (type(L)) {
             default:
-                fprintf(stderr, "unhandled type (%s) in objcmp", types[type(L)]); break;
+                fprintf(stderr, "unhandled type (%s) in objcmp", types[type(L)]);
                 error(unregistered, "");
+                break;
 
             case marktype: return 0;
             case nulltype: return 0;
