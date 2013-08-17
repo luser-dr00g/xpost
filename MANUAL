@@ -257,3 +257,33 @@ and it will not interact with the current namespace
 and it does not allocate any data.
 
 
+
+== Sub-prompts ==
+
+Xpost's %statementedit special file features secondary prompts at each
+newline, reminding you of which open constructs are awaiting a terminator.
+
+$ ./itp
+
+^test itp.c
+loading init.ps...
+loading err.ps...
+$error
+Xpost3 Version 0
+PS>{
+{.:}
+PS<1>(
+(.:)
+PS<2>[
+PS<3>]
+PS<3>pstack
+[ ] 
+(
+)
+{ } 
+PS<3>{{{
+{{{.:}
+{{.:}
+{.:}
+PS<4>
+

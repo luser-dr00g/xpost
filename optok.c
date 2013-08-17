@@ -197,6 +197,7 @@ object grok (context *ctx, char *s, int ns, object *src,
                       return cvx(consname(ctx, ">>"));
                   } else error(syntaxerror, "grok bare angle bracket >");
               }
+              return null; //not reached
 
     case '{': { // This is the one part that makes it a recursive-descent parser
                   object tail;
@@ -297,7 +298,7 @@ int Fnext(context *ctx, object *F) {
     return fgetc(filefile(ctx->lo, *F));
 }
 void Fback(context *ctx, int c, object *F) {
-    ungetc(c, filefile(ctx->lo, *F));
+    (void)ungetc(c, filefile(ctx->lo, *F));
 }
 void Ftoken (context *ctx, object F) {
     object t;
@@ -336,24 +337,11 @@ void Stoken (context *ctx, object S) {
     }
 }
 
-#define N(t) cvx(consname(ctx, #t))
-#define L(t) consint(t)
-
-#define ARR(n) ar = cvx(consbar(ctx, n)); i = 0
-#define ADD(x) barput(ctx, ar, i++, x)
-//#define DEF(name) bdcput(ctx, td, N(name), ar)
-#define ADDSUB(n) { object sar = consbar(ctx, n); { object ar = sar; int i = 0
-#define ENDSUB } ADD(sar); }
-
 void initoptok(context *ctx, object sd) {
     oper *optab;
     object n,op;
-    object ar;
-    int i;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
-    //object td;
-    //td = consbdc(ctx, 20); // % tokedict
 
     op = consoper(ctx, "token", Ftoken, 2, 1, filetype); INSTALL;
     op = consoper(ctx, "token", Stoken, 3, 1, stringtype); INSTALL;

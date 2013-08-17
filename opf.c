@@ -128,7 +128,7 @@ void Fwritestring (context *ctx, object F, object S) {
 void Freadline (context *ctx, object F, object S) {
     FILE *f;
     char *s;
-    int n, c;
+    int n, c = ' ';
     if (!filestatus(ctx->lo, F)) error(ioerror, "Freadline");
     if (!iswriteable(F)) error(invalidaccess, "Freadline");
     f = filefile(ctx->lo, F);
