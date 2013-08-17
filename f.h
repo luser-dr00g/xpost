@@ -5,7 +5,7 @@
 
 FILE *lineedit(FILE *in);
 FILE *statementedit(FILE *in);
-object consfile(mfile *mem, FILE *fp);
+object consfile(mfile *mem, /*@NULL@*/ FILE *fp);
 object fileopen(mfile *mem, char *fn, char *mode); 
 FILE *filefile(mfile *mem, object f);
 bool filestatus(mfile *mem, object f);

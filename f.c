@@ -26,7 +26,7 @@
    allocate a FILE *,
    install the FILE *,
    return object.  */
-object consfile(mfile *mem, FILE *fp) {
+object consfile(mfile *mem, /*@NULL@*/ FILE *fp) {
     object f;
     f.tag = filetype | (unlimited << FACCESSO);
     //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *));
@@ -57,7 +57,7 @@ enum { MAXNEST = 20 };
 FILE *statementedit(FILE *in) {
     FILE *fp;
     int c;
-    char nest[MAXNEST]; /* any of {(< waiting for matching >)} */
+    char nest[MAXNEST] = {0}; /* any of {(< waiting for matching >)} */
     int defer = -1; /* defer is a flag (-1 == false)
                        and an index into nest[] */
     c = fgetc(in);
@@ -172,11 +172,13 @@ bool filestatus(mfile *mem, object f) {
 
 /* call fstat. */
 long filebytesavailable(mfile *mem, object f) {
+    int ret;
     FILE *fp;
     struct stat sb;
     fp = filefile(mem, f);
     if (!fp) return -1;
-    fstat(fileno(fp), &sb);
+    ret = fstat(fileno(fp), &sb);
+    if (ret != 0) error(ioerror, "fstat did not return 0");
     if (sb.st_size > LONG_MAX)
         return LONG_MAX;
     return (long)sb.st_size;

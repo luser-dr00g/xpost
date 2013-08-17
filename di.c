@@ -51,8 +51,8 @@ int objcmp(context *ctx, object L, object R) {
 
             case operatortype:  return L.mark_.padw - R.mark_.padw;
             case nametype: return (L.tag&FBANK)==(R.tag&FBANK)?
-                                    L.mark_.padw - R.mark_.padw:
-                                        (L.tag&FBANK) - (R.tag&FBANK);
+                                    (signed)(L.mark_.padw - R.mark_.padw):
+                                        (signed)((L.tag&FBANK) - (R.tag&FBANK));
 
             case dicttype: /*@fallthrough@*/ //return !( L.comp_.ent == R.comp_.ent );
             case arraytype: return !( L.comp_.sz == R.comp_.sz

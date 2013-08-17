@@ -87,7 +87,7 @@ void onerror(context *ctx, unsigned err) {
     //printf("1\n");
     sd = bot(ctx->lo, ctx->ds, 0);
     //printf("2\n");
-    /*
+
     dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
     printf("3\n");
     errmsg = errormsg;
@@ -96,7 +96,7 @@ void onerror(context *ctx, unsigned err) {
             consname(ctx, "Extra"),
             consbst(ctx, strlen(errmsg), errmsg));
     printf("5\n");
-    */
+
     push(ctx->lo, ctx->os, ctx->currentobject);
     //printf("6\n");
     push(ctx->lo, ctx->os, cvlit(consname(ctx, errorname[err])));

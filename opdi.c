@@ -100,7 +100,8 @@ void Aload(context *ctx, object K) {
         object D = top(ctx->lo,ctx->ds,i);
 
     if (DEBUGLOAD) {
-        dumpdic(bank(ctx, D), D); puts("");
+        dumpdic(bank(ctx, D), D);
+        (void)puts("");
     }
 
         if (dicknown(ctx, bank(ctx, D), D, K)) {
