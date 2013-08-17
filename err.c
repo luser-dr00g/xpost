@@ -89,13 +89,13 @@ void onerror(context *ctx, unsigned err) {
     //printf("2\n");
 
     dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
-    printf("3\n");
+    //printf("3\n");
     errmsg = errormsg;
-    printf("4\n");
+    //printf("4\n");
     bdcput(ctx, dollarerror,
             consname(ctx, "Extra"),
             consbst(ctx, strlen(errmsg), errmsg));
-    printf("5\n");
+    //printf("5\n");
 
     push(ctx->lo, ctx->os, ctx->currentobject);
     //printf("6\n");
