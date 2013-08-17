@@ -161,6 +161,7 @@ void initcontext(context *ctx) {
     initglobal(ctx);
 
     initnames(ctx); /* NAMES NAMET */
+    ctx->vmmode = GLOBAL;
 
     initoptab(ctx); /* allocate and zero the optab structure */
 
@@ -171,6 +172,9 @@ void initcontext(context *ctx) {
     initop(ctx); /* populate the optab (and systemdict) with operators */
 
     ctx->vmmode = LOCAL;
+    (void)consname(ctx, "minimal"); /* seed the tree with a word from the middle of the alphabet */
+    (void)consname(ctx, "interest"); /* middle of the start */
+    (void)consname(ctx, "solitaire"); /* middle of the end */
     {
         object ud; //userdict
         ud = consbdc(ctx, 100);
@@ -276,6 +280,7 @@ void evalload(context *ctx) {
 
     push(ctx->lo, ctx->os,
             pop(ctx->lo, ctx->es));
+    assert(ctx->gl->base);
     opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
     if (isx(top(ctx->lo, ctx->os, 0))) {
         push(ctx->lo, ctx->es,
@@ -315,6 +320,7 @@ void evalstring(context *ctx) {
     object b,t,s;
     s = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, s);
+    assert(ctx->gl->base);
     opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     b = pop(ctx->lo, ctx->os);
     if (b.int_.val) {
@@ -330,6 +336,7 @@ void evalfile(context *ctx) {
     object b,f,t;
     f = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, f);
+    assert(ctx->gl->base);
     opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     b = pop(ctx->lo, ctx->os);
     if (b.int_.val) {
@@ -364,6 +371,11 @@ void initevaltype(void) {
 void eval(context *ctx) {
     object t = top(ctx->lo, ctx->es, 0);
     ctx->currentobject = t;
+    assert(ctx);
+    assert(ctx->lo);
+    assert(ctx->lo->base);
+    assert(ctx->gl);
+    assert(ctx->gl->base);
 
     if (TRACE) {
         printf("\neval\n");
@@ -405,6 +417,14 @@ void mainloop(context *ctx) {
 }
 
 
+void dumpctx(context *ctx) {
+    dumpmfile(ctx->gl);
+    dumpmtab(ctx->gl, 0);
+    dumpmfile(ctx->lo);
+    dumpmtab(ctx->lo, 0);
+    dumpnames(ctx);
+}
+
 #ifdef TESTMODULE
 
 context *ctx;
@@ -425,15 +445,22 @@ void init(void) {
 
 void xit() {
     exititp(itpdata);
+    exit(0);
 }
 
 
 int main(void) {
     printf("\n^test itp.c\n");
 
+    //TRACE=1;
     init();
 
+    //dumpoper(ctx, 19);
+    //dumpctx(ctx);   /* double-check pre-initialized memory */
+    //xit();
+
     /* load init.ps and err.ps */
+    assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
     push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR("(init.ps) (r) file cvx exec"))));
     ctx->quit = 0;
@@ -445,7 +472,8 @@ int main(void) {
     initializing = 0;
     ctx->quit = 0;
     mainloop(ctx);
-    dumpoper(ctx, 1);
+
+    dumpoper(ctx, 1); // is this pointer value constant?
 
     printf("bye!\n"); fflush(NULL);
     xit();

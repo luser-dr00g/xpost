@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <ctype.h> /* isprint */
 #include <stdbool.h>
 #include <stdlib.h> /* exit free malloc realloc */
@@ -138,7 +139,7 @@ void exitmem(mfile *mem){
 }
 
 /* reallocate and possibly move mem->base */
-void growmem(mfile *mem, unsigned sz){
+mfile *growmem(mfile *mem, unsigned sz){
     void *tmp;
     printf("growmem: %p %u\n", mem, sz);
     if (sz < pgsz) sz = pgsz;
@@ -158,6 +159,7 @@ void growmem(mfile *mem, unsigned sz){
         error(VMerror, "unable to grow memory");
     mem->base = tmp;
     mem->max = sz;
+    return mem;
 }
 
 /* allocate memory, returns offset in memory file
@@ -169,7 +171,7 @@ unsigned mfalloc(mfile *mem, unsigned sz){
     unsigned adr = mem->used;
     if (sz) {
         if (sz + mem->used >=
-                mem->max) growmem(mem,sz);
+                mem->max) mem = growmem(mem,sz);
         mem->used += sz;
         memset(mem->base+adr, 0, sz);  //bzero(mem->base+adr, sz);
         /* bus error with mremap(SHARED,ANON)! */
@@ -288,13 +290,17 @@ void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@in@*/ unsigned *aent) {
 /* get the address from an entity */
 unsigned adrent(mfile *mem, unsigned ent) {
     mtab *tab;// = (void *)(mem->base); // just use mtabadr=0
+    assert(mem);
+    assert(mem->base);
     findtabent(mem,&tab,&ent);
+    assert(tab);
     return tab->tab[ent].adr;
 }
 
 /* get the size of an entity */
 unsigned szent(mfile *mem, unsigned ent) {
     mtab *tab;// = (void *)(mem->base); // just use mtabadr=0
+    assert(mem);
     findtabent(mem,&tab,&ent);
     return tab->tab[ent].sz;
 }

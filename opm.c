@@ -1,4 +1,5 @@
 #include <alloca.h>
+#include <assert.h>
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
@@ -224,8 +225,10 @@ void Zrrand (context *ctx) {
 }
 
 void initopm (context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     RAD_PER_DEG = PI / 180.0;
 
     op = consoper(ctx, "add", Iadd, 1, 2, integertype, integertype); INSTALL;

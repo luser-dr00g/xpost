@@ -1,106 +1,108 @@
 %test.ps
 % testing examples borrowed from the Operator Details in the PLRM, 1ed.
+%traceon
+/break { currentfile flushfile } def
 
 /fail {
-    (%stdout) (w) file flushfile
-    (%stderr) (w) file
-        dup (TEST FAILED!\n) writestring
-        flushfile
+    (FAIL\n) print
+    %break
+} def
+/check {
+    {} %{ (success\n) print }
+    //fail
+    ifelse
 } def
 
-
 [ ] ==
-[ ] type /arraytype ne {fail} if
-{ ] } stopped { $error /errorname get /unmatchedmark ne {fail} if
-              }{ fail } ifelse
+[ ] type /arraytype eq check
+{ ] } stopped { $error /errorname get /unmatchedmark eq check }{ fail } ifelse
 /= cvx =
 
-{ = } stopped { $error /errorname get /stackunderflow ne {fail} if
-              }{ fail } ifelse
+{ = } stopped { $error /errorname get /stackunderflow eq check }{ fail } ifelse
 /== cvx ==
 
 %{ == } stopped { $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
 
 (abs)=
-4.5 abs 4.5 ne {fail} if
--3 abs 3 ne {fail} if
-0 abs 0 ne {fail} if
+4.5 abs 4.5 eq check
+-3 abs 3 eq check
+0 abs 0 eq check
 
 (add)=
-3 4 add 7 ne {fail} if
-9.9 1.1 add 11.0 ne {fail} if
+3 4 add 7 eq check
+9.9 1.1 add 11.0 eq check
 
 (aload)=
 [23 (ab) -6] aload
     type /arraytype eq exch
     type /integertype eq and exch
     type /stringtype eq and exch
-    type /integertype eq and not {fail} if
+    type /integertype eq and check
 
 (anchorsearch)=
 %(1)=
 (abbc) (ab) anchorsearch 
     true eq exch
     (ab) eq and exch
-    (bc) eq and not {fail} if
+    (bc) eq and check
 %(2)=
 (abbc) (bb) anchorsearch
     false eq exch
-    (abbc) eq and not {fail} if
+    (abbc) eq and check
 %(3)=
 (abbc) (bc) anchorsearch
     false eq exch
-    (abbc) eq and not {fail} if
+    (abbc) eq and check
 %(4)=
 (abbc) (B) anchorsearch
     false eq exch
-    (abbc) eq and not {fail} if
+    (abbc) eq and check
 
 (and)=
-true true and true ne {fail} if
-true false and false ne {fail} if
-false true and false ne {fail} if
-false false and false ne {fail} if
-99 1 and 1 ne {fail} if
-52 7 and 4 ne {fail} if
+true true and true eq check
+true false and false eq check
+false true and false eq check
+false false and false eq check
+99 1 and 1 eq check
+52 7 and 4 eq check
 
 %arc
 %arcn
 %arcto
 
 (array)=
-3 array dup type /arraytype ne {fail} if
+3 array dup type /arraytype eq check
     aload pop null eq exch
     null eq and exch
-    null eq and not {fail} if
+    null eq and check
 
 %ashow
 
 (astore)=
-(a) (bcd) (ef) 3 array astore type /arraytype ne {fail} if
+(a) (bcd) (ef) 3 array astore type /arraytype eq check
 
 (atan)=
 %(1)=
-0 1 atan 0.0 ne {fail} if
+0 1 atan 0.0 eq check
 %(2)=
-1 0 atan 90.0 ne {fail} if
+1 0 atan 90.0 eq check
 %(3)=
--100 0 atan 270.0 ne {fail} if
+-100 0 atan 270.0 eq check
 %(4)=
-4 4 atan 45.0 ne {fail} if
+4 4 atan 45.0 eq check
 
 %awidthshow
 %banddevice
 
 (begin)=
-2 dict dup begin currentdict ne {fail} if
+2 dict dup begin currentdict eq check
 
 (bind)=
-{ add } bind 0 get type /operatortype ne {fail} if
+{ add } bind 0 get type /operatortype eq check
 
 (bitshift)=
-7 3 bitshift 56 ne {fail} if
-142 -3 bitshift 17 ne {fail} if
+7 3 bitshift 56 eq check
+142 -3 bitshift 17 eq check
 
 (bytesavailable)=
 currentfile bytesavailable =
@@ -108,19 +110,19 @@ currentfile bytesavailable =
 %cachestatus
 
 (ceiling)=
-3.2 ceiling 4.0 ne {fail} if
--4.8 ceiling -4.0 ne {fail} if
-99 ceiling 99 ne {fail} if
+3.2 ceiling 4.0 eq check
+-4.8 ceiling -4.0 eq check
+99 ceiling 99 eq check
 
 %charpath
 
 (clear)=
 7 8 6 7  5 9 0 7 6 4 6 8 77  8 6 9  7 8 6 clear
-count 0 ne {fail} if
+count 0 eq check
 
 (cleartomark)=
 777 [ 8 7 6 5 4 cleartomark
-777 ne {fail} if
+777 eq check
 
 %clip
 %clippath
@@ -133,30 +135,31 @@ count 0 ne {fail} if
 
 (copy)=
 1 2 3 2 copy 
-    count 5 ne {fail} if
-    3 ne {fail} if
-    2 ne {fail} if
-    3 ne {fail} if
-    2 ne {fail} if
-    1 ne {fail} if
+    count 5 eq check
+    3 eq check
+    2 eq check
+    3 eq check
+    2 eq check
+    1 eq check
 1 2 3 0 copy
-    count 3 ne {fail} if
+    count 3 eq check
     clear
 /a1 [1 2 3] def
 a1 dup length array copy aload pop
-    3 ne {fail} if
-    2 ne {fail} if
-    1 ne {fail} if
+    3 eq check
+    2 eq check
+    1 eq check
 
 %copypage
 
 (cos)=
-0 cos 1.0 ne {fail} if
-90 cos 0.0 ne {fail} if
+0 cos 1.0 eq check
+90 cos 0.0 eq check
 
 (count)=
-clear count 0 ne {fail} if
-clear 1 2 3 count 3 ne {fail} if clear
+clear count 0 eq check
+clear 1 2 3 count 3 eq check
+clear
 
 (countdictstack)=
 countdictstack =
@@ -165,8 +168,10 @@ countdictstack =
 countexecstack =
 
 (counttomark)=
-1 mark 2 3 counttomark 2 ne {fail} if clear
-1 mark counttomark 0 ne {fail} if clear
+1 mark 2 3 counttomark 2 eq check
+clear
+1 mark counttomark 0 eq check
+clear
 
 %currentcacheparams
 %currentdash
@@ -194,44 +199,44 @@ currentfile ==
 %curveto
 
 (cvi)=
-(1: (3.3E1) cvi 33 ne {fail} if)=
-(3.3E1) cvi 33 ne {fail} if
-(2: -47.8 cvi -47 ne {fail} if)=
--47.8 cvi -47 ne {fail} if
-(3: 520.9 cvi 520 ne {fail} if)=
-520.9 cvi 520 ne {fail} if
+(1: (3.3E1) cvi 33 eq check)=
+(3.3E1) cvi 33 eq check
+(2: -47.8 cvi -47 eq check)=
+-47.8 cvi -47 eq check
+(3: 520.9 cvi 520 eq check)=
+520.9 cvi 520 eq check
 
 %(cvlit)=
 
 (cvn)=
-(abc) cvn /abc ne {fail} if
-(abc) cvx cvn xcheck not {fail} if
+(abc) cvn /abc eq check
+(abc) cvx cvn xcheck check
 
 (cvr)=
-(3.3E1) cvr 33.0 ne {fail} if
+(3.3E1) cvr 33.0 eq check
 
 (cvrs)=
 /str 10 string def
-100 8 str cvrs (144) ne {fail} if
-200 16 str cvrs dup (C8) eq exch (c8) eq or not {fail} if
+100 8 str cvrs (144) eq check
+200 16 str cvrs dup (C8) eq exch (c8) eq or check
 
 (cvs)=
 /str 20 string def
-(1: 123 456 add str cvs (579) ne {fail} if)=
-123 456 add str cvs (579) ne {fail} if
+(1: 123 456 add str cvs (579) eq check)=
+123 456 add str cvs (579) eq check
 (2: mark str cvs (-nostringval-) eq)=
 mark str cvs (-nostringval-) eq
 (2: mark str cvs (--nostringval--) eq)=
 mark str cvs (--nostringval--) eq
-(2: mark str cvs (-mark-) eq or or not {fail} if)=
+(2: mark str cvs (-mark-) eq or or check)=
 mark str cvs (-mark-) eq
-    or or not {fail} if
+    or or check
 
 %(cvx)=
 
 (def)=
-/ncnt 1 def ncnt 1 ne {fail} if
-/ncnt ncnt 1 add def ncnt 2 ne {fail} if
+/ncnt 1 def ncnt 1 eq check
+/ncnt ncnt 1 add def ncnt 2 eq check
 
 %defaultmatrix
 %definefont
@@ -245,32 +250,32 @@ mark str cvs (-mark-) eq
 %/dictstackunderflow
 
 (div)=
-(1: 3 2 div 1.5 ne {fail} if)=
-3 2 div 1.5 ne {fail} if
-(2: 4 2 div 2.0 ne {fail} if)=
-4 2 div 2.0 ne {fail} if
+(1: 3 2 div 1.5 eq check)=
+3 2 div 1.5 eq check
+(2: 4 2 div 2.0 eq check)=
+4 2 div 2.0 eq check
 
 %dtransform
 
 %(dup)=
 %(echo)=
 %(end)=
-end %currentdict userdict ne {fail} if
+end %currentdict userdict eq check
 
 %eoclip
 %eofill
 
 (eq)=
-(1: 4.0 4 eq not {fail} if)=
-4.0 4 eq not {fail} if
-(2: (abc) (abc) eq not {fail} if)=
-(abc) (abc) eq not {fail} if
-(3: (abc) /abc eq not {fail} if)=
-(abc) /abc eq not {fail} if
-(4: [1 2 3] dup eq not {fail} if)=
-[1 2 3] dup eq not {fail} if
-(5: [1 2 3] [1 2 3] eq {fail} if)=
-[1 2 3] [1 2 3] eq {fail} if
+(1: 4.0 4 eq check)=
+4.0 4 eq check
+(2: (abc) (abc) eq check)=
+(abc) (abc) eq check
+(3: (abc) /abc eq check)=
+(abc) /abc eq check
+(4: [1 2 3] dup eq check)=
+[1 2 3] dup eq check
+(5: [1 2 3] [1 2 3] eq check)=
+[1 2 3] [1 2 3] eq false eq check
 
 %erasepage
 
@@ -279,18 +284,18 @@ end %currentdict userdict ne {fail} if
 (exch)=
 1 2 exch
     1 eq {
-        2 eq not {fail} if
+        2 eq check
     }{
         pop fail
     } ifelse
 
 (exec)=
-(3 2 add) cvx exec 5 ne {fail} if
+(3 2 add) cvx exec 5 eq check
 3 2 /add exec
     /add eq exch
     2 eq and exch
-    3 eq and not {fail} if
-3 2 /add cvx exec 5 ne {fail} if
+    3 eq and check
+3 2 /add cvx exec 5 eq check
 
 %(execstack)=
 %execstackoverflow
@@ -298,10 +303,10 @@ end %currentdict userdict ne {fail} if
 %(exit)=
 
 (exp)=
-(1: 9 0.5 exp 3.0 ne {fail} if)=
-9 0.5 exp 3.0 ne {fail} if
-(2: -9 -1 exp -0.111111 ne {fail} if)=
--9 -1 exp -0.111111 ne {fail} if
+(1: 9 0.5 exp 3.0 eq check)=
+9 0.5 exp 3.0 eq check
+(2: -9 -1 exp -0.111111 eq check)=
+-9 -1 exp -0.111111 eq check
 
 %(false)=
 %(file)=
@@ -310,33 +315,33 @@ end %currentdict userdict ne {fail} if
 %flattenpath
 
 (floor)=
-3.2 floor 3.0 ne {fail} if
--4.8 floor -5.0 ne {fail} if
-99 floor 99 ne {fail} if
+3.2 floor 3.0 eq check
+-4.8 floor -5.0 eq check
+99 floor 99 eq check
 
 %(flush)=
 %(flushfile)=
 %FontDirectory
 
 (for)=
-(1: 0 1 1 4 {add} for 10 ne {fail} if)=
-0 1 1 4 {add} for 10 ne {fail} if
+(1: 0 1 1 4 {add} for 10 eq check)=
+0 1 1 4 {add} for 10 eq check
 (2: 1 2 6 {} for)=
 1 2 6 {} for
     5 eq exch
     3 eq and exch
-    1 eq and not {fail} if
+    1 eq and check
 (3: 3 -.5 1 {} for)=
 3 -.5 1 {} for
     1.0 eq exch
     1.5 eq and exch
     2.0 eq and exch
     2.5 eq and exch
-    3.0 eq and not {fail} if
+    3.0 eq and check
 
 (forall)=
-(1: 0 [13 29 3 -8 21] {add} forall 58 ne {fail} if)=
-0 [13 29 3 -8 21] {add} forall 58 ne {fail} if
+(1: 0 [13 29 3 -8 21] {add} forall 58 eq check)=
+0 [13 29 3 -8 21] {add} forall 58 eq check
 /d 2 dict def
 d /abc 123 put
 d /xyz (test) put
@@ -346,41 +351,41 @@ d {} forall
         pop
         /abc eq exch
         (test) eq and exch
-        /xyz eq and not {fail} if
+        /xyz eq and check
     }{
         (test) eq exch
         /xyz eq and exch
         123 eq and exch
-        /abc eq and not {fail} if
+        /abc eq and check
     } ifelse
 
 %framedevice
 
 (ge)=
-(1: 4.2 4 ge not {fail} if)=
-4.2 4 ge not {fail} if
-(2: (abc) (d) ge {fail} if)=
-(abc) (d) ge {fail} if
-(3: (aba) (ab) ge not {fail} if)=
-(aba) (ab) ge not {fail} if
-(4: (aba) (aba) ge not {fail} if)=
-(aba) (aba) ge not {fail} if
+(1: 4.2 4 ge check)=
+4.2 4 ge check
+(2: (abc) (d) ge check)=
+(abc) (d) ge check
+(3: (aba) (ab) ge check)=
+(aba) (ab) ge check
+(4: (aba) (aba) ge check)=
+(aba) (aba) ge check
 
 (get)=
-[31 41 59] 0 get 31 ne {fail} if
-[0 (a mixed-type array) [] {add 2 div}] 2 get length 0 ne {fail} if
+[31 41 59] 0 get 31 eq check
+[0 (a mixed-type array) [] {add 2 div}] 2 get length 0 eq check
 /mykey (myvalue) def
-currentdict /mykey get (myvalue) ne {fail} if
-(abc) 1 get 98 ne {fail} if
-(a) 0 get 97 ne {fail} if
+currentdict /mykey get (myvalue) eq check
+(abc) 1 get 98 eq check
+(a) 0 get 97 eq check
 
 (getinterval)=
 [9 8 7 6 5] 1 3 getinterval aload pop 
     6 eq exch
     7 eq and exch
-    8 eq and not {fail} if
-(abcde) 1 3 getinterval (bcd) ne {fail} if
-(abcde) 0 0 getinterval () ne {fail} if
+    8 eq and check
+(abcde) 1 3 getinterval (bcd) eq check
+(abcde) 0 0 getinterval () eq check
 
 %grestore
 %grestoreall
@@ -392,25 +397,26 @@ currentdict /mykey get (myvalue) ne {fail} if
 %identmatrix
 
 (idiv)=
-3 2 idiv 1 ne {fail} if
-4 2 idiv 2 ne {fail} if
--5 2 idiv -2 ne {fail} if
+3 2 idiv 1 eq check
+4 2 idiv 2 eq check
+-5 2 idiv -2 eq check
 
 %idtransform
 
 (if)=
-3 4 lt {(3 is less than 4)} if (3 is less than 4) { ne {fail} if } stopped {fail} if
+3 4 lt {(3 is less than 4)} if
+    (3 is less than 4) { eq check } stopped not check
 
 (ifelse)=
 4 3 lt {(TruePart)} {(FalsePart)} ifelse
-    (FalsePart) ne {fail} if
+    (FalsePart) eq check
 
 %image
 %imagemask
 
 (index)=
-(a)(b)(c)(d) 0 index (d) ne {fail} if
-    3 index (a) ne {fail} if
+(a)(b)(c)(d) 0 index (d) eq check
+    3 index (a) eq check
     clear
 
 %initclip
@@ -432,65 +438,65 @@ currentdict /mykey get (myvalue) ne {fail} if
 (known)=
 /mydict 5 dict def
 mydict /total 0 put
-mydict /total known not {fail} if
-mydict /badname known {fail} if
+mydict /total known check
+mydict /badname known not check
 
 %kshow
 
 %(le)=
 
 (length)=
-[1 2 4] length 3 ne {fail} if
-[] length 0 ne {fail} if
-/ar 20 array def ar length 20 ne {fail} if
+[1 2 4] length 3 eq check
+[] length 0 eq check
+/ar 20 array def ar length 20 eq check
 /mydict 5 dict def
-mydict length 0 ne {fail} if
+mydict length 0 eq check
 mydict /firstkey (firstvalue) put
-mydict length 1 ne {fail} if
-(abc\n) length 4 ne {fail} if
-() length 0 ne {fail} if
+mydict length 1 eq check
+(abc\n) length 4 eq check
+() length 0 eq check
 
 %limitcheck
 %lineto
 
 (ln)=
-10 ln 2.30259 ne {fail} if
-100 ln 4.60517 ne {fail} if
+10 ln 2.30259 eq check
+100 ln 4.60517 eq check
 
 (load)=
 /avg {add 2 div} def
-/avg load 1 get 2 ne {fail} if
+/avg load 1 get 2 eq check
 
 (log)=
-10 log 1.0 ne {fail} if
-100 log 2.0 ne {fail} if
+10 log 1.0 eq check
+100 log 2.0 eq check
 
 %(loop)=
 %(lt)=
 %makefont
 
 (mark)=
-mark [ ne {fail} if
+mark [ eq check
 
 %matrix
 
 (maxlength)=
 /mydict 5 dict def
-mydict length 0 ne {fail} if
-mydict maxlength 5 ne {fail} if
+mydict length 0 eq check
+mydict maxlength 5 eq check
 
 (mod)=
-5 3 mod 2 ne {fail} if
-5 2 mod 1 ne {fail} if
--5 3 mod -2 ne {fail} if
+5 3 mod 2 eq check
+5 2 mod 1 eq check
+-5 3 mod -2 eq check
 
 %moveto
 %(mul)=
 %(ne)=
 
 (neg)=
-4.5 neg -4.5 ne {fail} if
--3 neg 3 ne {fail} if
+4.5 neg -4.5 eq check
+-3 neg 3 eq check
 
 %newpath
 %(noaccess)=
@@ -498,31 +504,31 @@ mydict maxlength 5 ne {fail} if
 
 (not)=
 (1:)=
-true not false ne {fail} if
+true not false eq check
 (2:)=
-false not true ne {fail} if
+false not true eq check
 (3:)=
-52 not -53 ne {fail} if
+52 not -53 eq check
 
 (null)=
-null 1 array 0 get ne {fail} if
+null 1 array 0 get eq check
 
 %nulldevice
 
 (or)=
-true true or true ne {fail} if
-true false or true ne {fail} if
-false true or true ne {fail} if
-false false or false ne {fail} if
-17 5 or 21 ne {fail} if
+true true or true eq check
+true false or true eq check
+false true or true eq check
+false false or false eq check
+17 5 or 21 eq check
 
 %packedarray
 %pathbbox
 %pathforall
 
 (pop)=
-1 2 3 pop 2 ne {fail} if clear
-1 2 3 pop pop 1 ne {fail} if
+1 2 3 pop 2 eq check clear
+1 2 3 pop pop 1 eq check
 
 %(print)=
 %(prompt)=
@@ -534,17 +540,17 @@ false false or false ne {fail} if
 ar 2 (abcd) put
 ar aload pop
     8 eq exch
-    (abcd) eq and not {fail} if clear
+    (abcd) eq and check clear
 (2:)=
 /d 5 dict def
 d /abc 123 put
 d {} forall
     123 eq exch
-    /abc eq and not {fail} if
+    /abc eq and check
 (3:)=
 /st (abc) def
 st 0 65 put
-st (Abc) ne {fail} if
+st (Abc) eq check
 
 (putinterval)=
 (1:)=
@@ -555,17 +561,17 @@ ar aload pop
     (c) eq and exch
     (b) eq and exch
     (a) eq and exch
-    5 eq and not {fail} if
+    5 eq and check
 (2:)=
 /st (abc) def
 st 1 (de) putinterval
-st (ade) ne {fail} if
+st (ade) eq check
 
 %(quit)=
 
 (rand)=
-rand type /integertype ne {fail} if
-rand rand eq {fail} if
+rand type /integertype eq check
+rand rand eq not check
 
 %rangecheck
 %(rcheck)=
@@ -578,10 +584,10 @@ rand rand eq {fail} if
 %renderbands
 
 (repeat)=
-4{(abc)}repeat count 4 ne {fail} if
-1 2 3 4 3 {pop} repeat 1 ne {fail} if
-4 {} repeat (abc) ne {fail} if
-mark 0 {(won't happen)} repeat mark ne {fail} if
+4{(abc)}repeat count 4 eq check
+1 2 3 4 3 {pop} repeat 1 eq check
+4 {} repeat (abc) eq check
+mark 0 {(won't happen)} repeat mark eq check
 clear
 
 %resetfile
@@ -600,16 +606,16 @@ clear
 %rotate
 
 (round)=
-(1: 3.2 round 3.0 ne {fail} if)=
-3.2 round 3.0 ne {fail} if
-(2: 6.5 round 7.0 ne {fail} if)=
-6.5 round 7.0 ne {fail} if
-(3: -4.8 round -5.0 ne {fail} if)=
--4.8 round -5.0 ne {fail} if
-(4: -6.5 round -6.0 ne {fail} if)=
--6.5 round -6.0 ne {fail} if
-(5: 99 round 99 ne {fail} if)=
-99 round 99 ne {fail} if
+(1: 3.2 round 3.0 ne check)=
+3.2 round 3.0 eq check
+(2: 6.5 round 7.0 ne check)=
+6.5 round 7.0 eq check
+(3: -4.8 round -5.0 ne check)=
+-4.8 round -5.0 eq check
+(4: -6.5 round -6.0 ne check)=
+-6.5 round -6.0 eq check
+(5: 99 round 99 ne check)=
+99 round 99 eq check
 
 %(rrand)=
 %(run)=
@@ -622,7 +628,7 @@ saveobj restore
 %scalefont
 
 (search)=
-(1: (abbc) (ab) search not {fail} if clear)=
+(1: (abbc) (ab) search {fail} if clear)=
 (abbc) (ab) search not {fail} if clear
 (2: (abbc) (bb) search not {fail} if clear)=
 (abbc) (bb) search not {fail} if clear
@@ -664,7 +670,7 @@ saveobj restore
 %stop
 
 (stopped)=
-{ ... } stopped not {fail} if
+{ ... } stopped check
 
 (store)=
 /abc 123 store
@@ -681,19 +687,19 @@ abc 123 ne {fail} if
 %timeout
 
 (token)=
-(15(St1) {1 2 add}) token not {fail} if 15 ne {fail} if
-token not {fail} if (St1) ne {fail} if
-token not {fail} if type /arraytype ne {fail} if
-token {fail} if
+(15(St1) {1 2 add}) token not {fail} if 15 eq check
+token not {fail} if (St1) eq check
+token not {fail} if type /arraytype eq check
+token not check
 
 %transform
 %translate
 %(true)=
 
 (truncate)=
-3.2 truncate 3.0 ne {fail} if
--4.8 truncate -4.0 ne {fail} if
-99 truncate 99 ne {fail} if
+3.2 truncate 3.0 eq check
+-4.8 truncate -4.0 eq check
+99 truncate 99 eq check
 
 %(type)=
 %typecheck
@@ -717,12 +723,12 @@ token {fail} if
 %(xcheck)=
 
 (xor)=
-true true xor false ne {fail} if
-true false xor true ne {fail} if
-false true xor true ne {fail} if
-false false xor false ne {fail} if
-7 3 xor 4 ne {fail} if
-12 3 xor 15 ne {fail} if
+true true xor false eq check
+true false xor true eq check
+false true xor true eq check
+false false xor false eq check
+7 3 xor 4 eq check
+12 3 xor 15 eq check
 
 %traceon
 

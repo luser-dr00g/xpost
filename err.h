@@ -16,28 +16,31 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
 
 #define ERRORS(_) \
     _(noerror) \
-    _(dictfull) _(dictstackoverflow) _(dictstackunderflow) \
-    _(execstackoverflow) _(execstackunderflow) \
+    _(dictfull) \
+    _(dictstackoverflow) \
+    _(dictstackunderflow) \
+    _(execstackoverflow) \
+    _(execstackunderflow) /*5*/\
     _(handleerror) \
     _(interrupt) \
     _(invalidaccess) \
     _(invalidexit) \
-    _(invalidfileaccess) \
+    _(invalidfileaccess) /*10*/\
     _(invalidfont) \
     _(invalidrestore) \
     _(ioerror) \
     _(limitcheck) \
-    _(nocurrentpoint) \
+    _(nocurrentpoint) /*15*/\
     _(rangecheck) \
     _(stackoverflow) \
     _(stackunderflow) \
     _(syntaxerror) \
-    _(timeout) \
+    _(timeout) /*20*/\
     _(typecheck) \
     _(undefined) \
     _(undefinedfilename) \
     _(undefinedresult) \
-    _(unmatchedmark) \
+    _(unmatchedmark) /*25*/\
     _(unregistered) \
     _(VMerror)
 enum err { ERRORS(AS_BARE) };

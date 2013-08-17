@@ -102,7 +102,8 @@ void dumpobject(object o){
         case arraytype: printf("<array"); dumpcompobject(o); break;
         case dicttype: printf("<dict"); dumpcompobject(o); break;
 
-        case nametype: printf("<name %u %u %u>",
+        case nametype: printf("<name %c %u %u %u>",
+                               o.mark_.tag&FBANK? 'G':'L',
                                (int)o.mark_.tag,
                                (int)o.mark_.pad0,
                                (int)o.mark_.padw); break;

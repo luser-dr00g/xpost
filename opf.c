@@ -1,4 +1,5 @@
 #include <alloca.h>
+#include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -205,8 +206,10 @@ void Becho (context *ctx, object b) {
 }
 
 void initopf (context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype); INSTALL;
     op = consoper(ctx, "closefile", Fclosefile, 0, 1, filetype); INSTALL;

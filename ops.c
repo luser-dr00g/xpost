@@ -1,7 +1,8 @@
+#include <alloca.h>
+#include <assert.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
-#include <alloca.h>
-#include <stdbool.h>
 
 #include "m.h"
 #include "ob.h"
@@ -150,8 +151,10 @@ void Zcounttomark (context *ctx) {
    */
 
 void initops(context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     op = consoper(ctx, "pop", Apop, 0, 1, anytype); INSTALL;
     op = consoper(ctx, "exch", AAexch, 2, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "dup", Adup, 2, 1, anytype); INSTALL;

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdbool.h>
 #include <stdlib.h> /* NULL */
 
@@ -108,6 +109,7 @@ void Acopy(context *ctx, object S, object D) {
    execute proc for each element of array */
 void Aforall(context *ctx, object A, object P) {
     if (A.comp_.sz == 0) return;
+    assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
     push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, cvlit(P));
@@ -118,8 +120,10 @@ void Aforall(context *ctx, object A, object P) {
 }
 
 void initopar(context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     op = consoper(ctx, "array", Iarray, 1, 1,
             integertype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "["), mark);

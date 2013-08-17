@@ -1,4 +1,5 @@
 #include <alloca.h>
+#include <assert.h>
 #include <math.h>
 #include <string.h>
 #include <stdbool.h>
@@ -37,8 +38,8 @@ int objcmp(context *ctx, object L, object R) {
                 fprintf(stderr, "unhandled type (%s) in objcmp", types[type(L)]); break;
                 error(unregistered, "");
 
-            case marktype: /*@fallthrough@*/
-            case nulltype: /*@fallthrough@*/
+            case marktype: return 0;
+            case nulltype: return 0;
             case invalidtype: return 0;
 
             case booleantype: /*@fallthrough@*/
@@ -47,10 +48,12 @@ int objcmp(context *ctx, object L, object R) {
                                     0:
                                     L.real_.val - R.real_.val;
 
-            case operatortype:  /*@fallthrough@*/
-            case nametype: return !( L.mark_.padw == R.mark_.padw );
+            case operatortype:  return L.mark_.padw - R.mark_.padw;
+            case nametype: return (L.tag&FBANK)==(R.tag&FBANK)?
+                                    L.mark_.padw - R.mark_.padw:
+                                        (L.tag&FBANK) - (R.tag&FBANK);
 
-            case dicttype: return !( L.comp_.ent == R.comp_.ent );
+            case dicttype: /*@fallthrough@*/ //return !( L.comp_.ent == R.comp_.ent );
             case arraytype: return !( L.comp_.sz == R.comp_.sz
                                     && (L.tag&FBANK) == (R.tag&FBANK)
                                     && L.comp_.ent == R.comp_.ent
@@ -92,6 +95,7 @@ object consdic(mfile *mem, unsigned sz) {
     object *tp;
     unsigned i;
 
+    assert(mem->base);
     d.tag = dicttype | (unlimited << FACCESSO);
     d.comp_.sz = sz;
     d.comp_.off = 0;

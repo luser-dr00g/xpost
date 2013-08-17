@@ -40,7 +40,7 @@ typedef struct oper {
 enum typepat { anytype = NTYPES /*stringtype + 1*/,
     floattype, numbertype, proctype };
 
-#define MAXOPS 140
+#define MAXOPS 150
 #define SDSIZE 10
 
 void initoptab(context *ctx);
@@ -51,7 +51,7 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int 
 void opexec(context *ctx, unsigned opcode);
 
 #define INSTALL \
-    n.mark_.tag = nametype, n.mark_.pad0 = 0, \
+    n.mark_.tag = nametype|FBANK, n.mark_.pad0 = 0, \
     n.mark_.padw = optab[op.mark_.padw].name, \
     bdcput(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc

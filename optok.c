@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h> /* errno */
 #include <limits.h>
@@ -345,10 +346,12 @@ void Stoken (context *ctx, object S) {
 #define ENDSUB } ADD(sar); }
 
 void initoptok(context *ctx, object sd) {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    oper *optab;
     object n,op;
     object ar;
     int i;
+    assert(ctx->gl->base);
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     //object td;
     //td = consbdc(ctx, 20); // % tokedict
 
