@@ -26,6 +26,7 @@ static int in_onerror;
 /* ultimately, this will do a longjmp back
    to the central loop */
 void error(unsigned err, char *msg) {
+    context *ctx;
     errormsg = msg;
     if (!initializing && jbmainloopset && !in_onerror) {
         longjmp(jbmainloop, err);
@@ -41,7 +42,7 @@ void error(unsigned err, char *msg) {
 
     printf("\nError: %s", errorname[err]);
     printf("\nExtra: %s", msg);
-    context *ctx;
+
     ctx = &itpdata->ctab[0];
     printf("\nopstack: ");
     dumpstack(ctx->lo, ctx->os);
