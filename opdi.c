@@ -149,6 +149,9 @@ void DAAput(context *ctx, object D, object K, object V) {
 
 /* dict key  undef  -
    remove key and its value in dict */
+void DAundef(context *ctx, object D, object K) {
+    bdcundef(ctx, D, K);
+}
 
 /* dict key  known  bool
    test whether key is in dict */
@@ -261,6 +264,13 @@ void Adictstack(context *ctx, object A) {
     push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
 }
 
+void cleardictstack(context *ctx) {
+    int z = count(ctx->lo, ctx->ds);
+    while (z-- > 2) {
+        (void)pop(ctx->lo, ctx->ds);
+    }
+}
+
 void initopdi(context *ctx, object sd) {
     oper *optab;
     object n,op;
@@ -279,7 +289,7 @@ void initopdi(context *ctx, object sd) {
     op = consoper(ctx, "get", DAget, 1, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "put", DAAput, 1, 3,
             dicttype, anytype, anytype); INSTALL;
-    //undef
+    //op = consoper(ctx, "undef", DAundef, 0, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "known", DAknown, 1, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "where", Awhere, 2, 1, anytype); INSTALL;
     op = consoper(ctx, "copy", Dcopy, 1, 2, dicttype, dicttype); INSTALL;
@@ -287,5 +297,6 @@ void initopdi(context *ctx, object sd) {
     op = consoper(ctx, "currentdict", Zcurrentdict, 1, 0); INSTALL;
     op = consoper(ctx, "countdictstack", Zcountdictstack, 1, 0); INSTALL;
     op = consoper(ctx, "dictstack", Adictstack, 1, 1, arraytype); INSTALL;
+    op = consoper(ctx, "cleardictstack", cleardictstack, 0, 0); INSTALL;
 }
 

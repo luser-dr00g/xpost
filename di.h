@@ -55,4 +55,6 @@ object bdcget(context *ctx, object d, object k);
 void dicput(context *ctx, /*@dependent@*/ mfile *mem, object d, object k, object v);
 void bdcput(context *ctx, object d, object k, object v);
 
+/* undefine key */
+void bdcundef(context *ctx, object d, object k);
 

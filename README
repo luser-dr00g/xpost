@@ -56,12 +56,22 @@ di    di.o    di.c    di.h   dichead dictionary
 nm    nm.o    nm.c    nm.h    name
 gc    gc.o    gc.c    gc.h    garbage collector
 itp          itp.c   itp.h   context
+  osunix.o osunix.c osunix.h  unix-dependent functions
+                            init.ps  initialization and ps-level procedures
+                            test.ps  postscript operator tests
+                              gs.ps  prototype graphics operators
+      err.o  err.c   err.h   err.ps  error mechanism (bridges both langs)
       op.o    op.c    op.h    oper optab operator handler MAXOPS SDSIZE
       ----    ----    ----
       ops.o   ops.c   ops.h    stack operators
       opb.o   opb.c            boolean operators
       opc.o   opc.c            control operators
       opm.o   opm.c            math operators
+      opf.o   opf.c            file operators
+      opt.o   opt.c            type conversion operators
+      opv.o   opv.c            vm operators
+      opx.o   opx.c            misc operators
+    optok.o optok.c            token operator (scanner)
       opst.o  opst.c  opst.h    string operators
       opar.o  opar.c  opar.h    array operators
       opdi.o  opdi.c  opdi.h    dictionary operators
@@ -137,21 +147,16 @@ construct. Even the operator table OPTAB is a special entity
 and lives in global VM, not "global memory".
 (In case somebody needs custom operators, it is possible).
 
-Global VM goes on to hold NAMES, NAMET, BOGUSNAME, and HOLD.
+Both VMs go on to hold NAMES, NAMET and BOGUSNAME.
 NAMES and NAMET are for the Name String stack and Name Tree,
 a ternary search tree. The same old ternary search tree,
 this time updated to live in the memory file.
 
 Bogusname is an allocated name string corresponding to the 
 Not-Found result. So zero means no and asking what no means
-is Bogus. HOLD is a stack to hold arguments popped from the
-operand stack before being passed to operator functions. This
-facilitates argument passing by cracking the hold stack array
-(since the hold stack should be at most one segment. The desired
-objects from the operand stack may span a segment boundary, but
-in the hold stack, they are rooted (so we the stack as an array,
-so we can select (switch) a function call based on the number of
-objects).
+is Bogus.
+
+OPTAB is unique to global memories.
 
         Special Entities
         ----------------
@@ -161,9 +166,9 @@ objects).
         FREE        FREE
         VS          VS
         CTXLIST     CTXLIST
-        NAMES       (planning to add local names, too)
-        NAMET
-        BOGUSNAME
+        NAMES       NAMES
+        NAMET       NAMET
+        BOGUSNAME   BOGUSNAME
         OPTAB       ----
         ----        live-entries (gc) ctx->lo->start
         live-entries (gc) ctx->gl->start
@@ -190,6 +195,20 @@ The three single-letter modules (m, s, & v) are considered the "core"
 of the whole thing. I wrote these and then sat on them for over a year
 while making revisions to xpost2, periodically re-reading the code
 to make sure it still made sense.
+
+
+HOLD is a stack to hold arguments popped from the
+operand stack before being passed to operator functions. This
+facilitates argument passing by cracking the hold stack array
+(since the hold stack should be at most one segment. The desired
+objects from the operand stack may span a segment boundary, but
+in the hold stack, they are rooted (so we the stack as an array,
+so we can select (switch) a function call based on the number of
+objects).
+
+At one time HOLD was a special entity, as were all of the stacks.
+But it is now referenced directly in the context struct, as are
+all of the stacks.
 
 
 Composite Objects

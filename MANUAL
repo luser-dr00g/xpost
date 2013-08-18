@@ -108,11 +108,15 @@ operator follows the operands.
 Postscript does not use punctuation symbols for the operators,
 but short words.
 
-    add sub mul div     2 operand
-    idiv mod
+    add sub mul div
+    idiv mod            2 operand
+    atan exp
 
-    cos sin atan        1 operand
-    exp ln log
+    cos sin sqrt
+    ln log              1 operand
+    abs neg
+    floor ceiling
+    truncate round
 
 For example, if you define /a, /b, and /c to contain values for
 the variables in the formula "ax^2 + bx + c",
@@ -256,6 +260,58 @@ This function will now execute as quickly as possible,
 and it will not interact with the current namespace 
 and it does not allocate any data.
 
+
+== Arrays ==
+
+It should be apparent from the last example that a procedure is
+just an array, wrapped in curly braces rather than square brackets.
+
+So we could construct the same procedure in the following way.
+
+  /quadratic [
+  4 2 /roll load 1 /index load /mul load
+  4 1 /roll load 1 /index load /mul load
+  /mul load /add load /add load
+  ] cvx def
+
+This is similar to the way bind constructs its bound procedure,
+by loading the operator objects by name and embedding them in
+the array. One must be careful in using the direct method shown
+here. Some operators are implemented as procedures and will
+not be executed if simply substituted as above. `bind` replaces
+only names that refer to operator objects. A more general approach
+would inject `exec` calls after sub-procedures.
+
+For example, suppose we want (for some crazy reason) this procedure
+to simply print its result, and not leave it on the stack.
+There's an operator `=` to do just that. But ... `=` is a procedure!
+
+So, this won't work:
+  /quadratic [
+  4 2 /roll load 1 /index load /mul load
+  4 1 /roll load 1 /index load /mul load
+  /mul load /add load /add load
+  /= load %<-- NO! Bad! procedure will not execute
+  ] cvx def
+
+This will:
+  /quadratic [
+  4 2 /roll load 1 /index load /mul load
+  4 1 /roll load 1 /index load /mul load
+  /mul load /add load /add load
+  /= load /exec load  %<-- must explicitly execute "procedure" operators
+  ] cvx def
+
+You see the convenience of bind. It performs all those loads for you,
+but leaves the procedure invocation intact.
+
+  /quadratic {
+      4 2 roll 1 index mul
+      4 1 roll 1 index mul
+      mul add add = } bind def
+  /quadratic load ==
+
+{ 4 2 -roll- 1 -index- -mul- 4 1 -roll- 1 -index- -mul- -mul- -add- -add- = }
 
 
 == Sub-prompts ==

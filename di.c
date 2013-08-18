@@ -335,6 +335,18 @@ void bdcput(context *ctx, object d, object k, object v) {
     dicput(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k, v);
 }
 
+void dicundef(context *ctx, mfile *mem, object d, object k) {
+    if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
+    //find slot for key
+    //find last chained key and value with same hash
+        //if found: move last key and value to slot
+        //not found: write null over key and value
+}
+
+void bdcundef(context *ctx, object d, object k) {
+    dicundef(ctx, bank(ctx, d), d, k);
+}
+
 
 #ifdef TESTMODULE
 #include <stdio.h>
