@@ -70,7 +70,7 @@ void Dbegin(context *ctx, object D) {
 /* -  end  -
    pop dict stack */
 void Zend(context *ctx) {
-    if (count(ctx->lo, ctx->ds) <= 2)
+    if (count(ctx->lo, ctx->ds) <= 3)
         error(dictstackunderflow, "end");
     (void)pop(ctx->lo, ctx->ds);
 }
@@ -266,7 +266,7 @@ void Adictstack(context *ctx, object A) {
 
 void cleardictstack(context *ctx) {
     int z = count(ctx->lo, ctx->ds);
-    while (z-- > 2) {
+    while (z-- > 3) {
         (void)pop(ctx->lo, ctx->ds);
     }
 }

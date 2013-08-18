@@ -171,6 +171,13 @@ void initcontext(context *ctx) {
 
     initop(ctx); /* populate the optab (and systemdict) with operators */
 
+    {
+        object gd; //globaldict
+        gd = consbdc(ctx, 100);
+        bdcput(ctx, bot(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
+        push(ctx->lo, ctx->ds, gd);
+    }
+
     ctx->vmmode = LOCAL;
     (void)consname(ctx, "minimal"); /* seed the tree with a word from the middle of the alphabet */
     (void)consname(ctx, "interest"); /* middle of the start */
