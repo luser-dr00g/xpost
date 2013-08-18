@@ -219,6 +219,7 @@ void initopf (context *ctx, object sd) {
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype); INSTALL;
+    //filter
     op = consoper(ctx, "closefile", Fclosefile, 0, 1, filetype); INSTALL;
     op = consoper(ctx, "read", Fread, 1, 1, filetype); INSTALL;
     op = consoper(ctx, "write", Fwrite, 0, 2, filetype, integertype); INSTALL;
@@ -227,13 +228,29 @@ void initopf (context *ctx, object sd) {
     op = consoper(ctx, "readstring", Freadstring, 2, 2, filetype, stringtype); INSTALL;
     op = consoper(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype); INSTALL;
     op = consoper(ctx, "readline", Freadline, 2, 2, filetype, stringtype); INSTALL;
+    //token: see optok.c
     op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype); INSTALL;
     op = consoper(ctx, "flush", Zflush, 0, 0); INSTALL;
     op = consoper(ctx, "flushfile", Fflushfile, 0, 1, filetype); INSTALL;
     op = consoper(ctx, "resetfile", Fresetfile, 0, 1, filetype); INSTALL;
     op = consoper(ctx, "status", Fstatus, 1, 1, filetype); INSTALL;
+    //string status
+    //run: see init.ps
     op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
+    //deletefile
+    //renamefile
+    //filenameforall
+    //setfileposition
+    //fileposition
     op = consoper(ctx, "print", Sprint, 0, 1, stringtype); INSTALL;
+    //=: see init.ps
+    //==: see init.ps
+    //stack: see init.ps
+    //pstack: see init.ps
+    //printobject
+    //writeobject
+    //setobjectformat
+    //currentobjectformat
     op = consoper(ctx, "echo", Becho, 0, 1, booleantype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);

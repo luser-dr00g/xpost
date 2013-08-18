@@ -7,7 +7,9 @@
 systemdict begin
 true setglobal
 
+/product (Xpost3) def
 /version (0) def
+/revision 0 def
 /run { (r) file cvx exec } def
 /Run { (\() print dup =print (\) run\n) print flush run } def
 /interrupt { stop } def
@@ -163,7 +165,10 @@ end
 
     /execdepth execdepth 1 add def
     /QUIET where { pop }{
-        (Xpost3 Version ) print version print (\n) print
+        product print
+        ( version ) print version print
+        (.) print revision =print
+        (\n) print
     } ifelse
 
     { %loop

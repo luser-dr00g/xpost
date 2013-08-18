@@ -91,6 +91,16 @@ void initopx(context *ctx, object sd) {
 
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "null"), null);
+    //version: see init.ps
+    //realtime
+    //usertime
+    //languagelevel
+    //product: see init.ps (Xpost3)
+    //revision
+    //serialnumber
+    //executive: see init.ps
+    //echo: see opf.c
+    //prompt: see init.ps
 
     op = consoper(ctx, "traceon", traceon, 0, 0); INSTALL;
     op = consoper(ctx, "traceoff", traceoff, 0, 0); INSTALL;

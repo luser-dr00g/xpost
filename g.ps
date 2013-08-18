@@ -458,14 +458,14 @@ end
     index      % a0 a1 b0 b1 a0 a1
 } def
 
-% P'0 = P0
+% P'0 = P0           = P0
 % P'1 = P01          = P0 P1 median
 %       P12          = P1 P2 median
 % P'2 = P012         = P01 P12  median
 % P'3 = P0123 = P''0 = P012 P123 median
-%       P123 = P''1  = P12 P23 median
-%       P23 = P''2   = P2 P3 median
-%       P3 = P''3
+%        P123 = P''1 = P12 P23 median
+%         P23 = P''2 = P2 P3 median
+%          P3 = P''3 = P3
 /chopcurve { % <</cmd /curve /data [...]>>
     flattendict /cp get aload pop
     2 index /data get aload pop
@@ -563,7 +563,8 @@ end
 /reversepath {
     cpath length 0 gt {
         cpath newpath
-            dup length 1 sub -1 0 { % path i
+        0 1 2 index length 1 sub { % path i
+        %dup length 1 sub -1 0 { % path i
             2 copy get                     % path i subpath_i
             dup length 0 gt {
                 dup length 1 sub -1 0 { % p i sp_i j
@@ -572,6 +573,31 @@ end
                     pop
                 } for
             }{ pop pop } ifelse
+        } for
+        pop
+    } if
+} def
+
+/strokedict <<
+    /move { }
+    /line { }
+    /curve { }
+    /close { }
+>> def
+
+/strokepath {
+    cpath length 0 gt {
+        cpath newpath
+        0 1 2 index length 1 sub { % path i
+            2 copy get             % path i subpath_i
+            dup length 0 gt {
+                0 1 2 index length 1 sub { % p i sp_i j
+                    2 copy get             % p i sp_i j sp_i_j
+                    strokedict 1 index /cmd get get exec
+                    pop                    % p i sp_i
+                } for              % p i sp_i
+            } if
+            pop pop                % path
         } for
         pop
     } if
