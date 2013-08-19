@@ -536,43 +536,80 @@ end
         cpath newpath
         0 1 2 index length 1 sub { % path i
             2 copy get             % path i subpath_i
-            dup length 0 gt {
-                0 1 2 index length 1 sub { % p i sp_i j
-                    2 copy get             % p i sp_i j sp_i_j
-                    flattendict 1 index /cmd get get exec
-                    pop                    % p i sp_i
-                } for
-                pop pop
-            }{ pop pop } ifelse
+            0 1 2 index length 1 sub { % p i sp_i j
+                2 copy get             % p i sp_i j sp_i_j
+                flattendict 1 index /cmd get get exec
+                pop                    % p i sp_i
+            } for
+            pop pop
         } for
         pop
     } if
 } def
 
 /reversedict <<
-    /move {
+    /close { % p i sp_i j sp_i_j
+        dopending
+        reversedict /pending /line put
+        reversedict /isclosed true put
     }
     /line {
+        dopending
+        reversedict /pending /line put
     }
     /curve {
+        dup /data get exch
+        dopending
+        reversedict /pending /curve put
+        reversedict /curvedata 3 2 roll put
     }
-    /close {
+    /move {
+        reversedict /isclosed get {
+            pop closepath
+        }{
+            dopending
+        } ifelse
     }
 >> def
+
+/pendingdict <<
+    /move {
+        dup /cmd /move put
+        dup /data 2 copy get dup length 2 sub 2 getinterval put %final point if curve
+    }
+    /line {
+        dup /cmd /line put
+        dup /data 2 copy get dup length 2 sub 2 getinterval put %final point if curve
+    }
+    /curve {
+        dup /cmd /curve put
+        dup /data 2 copy get
+        dup length 2 sub 2 getinterval aload pop % el el /data x y
+        reversedict /curvedata get               % el el /data x y arr
+        aload pop pop pop 4 2 roll 6 4 roll
+        6 array astore                           % el el /data arr
+        put                                      % el
+    }
+    /close { }
+>> def
+/dopending {
+    pendingdict reversedict /pending get get exec
+    cpath addtopath
+} def
 
 /reversepath {
     cpath length 0 gt {
         cpath newpath
         0 1 2 index length 1 sub { % path i
-        %dup length 1 sub -1 0 { % path i
-            2 copy get                     % path i subpath_i
-            dup length 0 gt {
-                dup length 1 sub -1 0 { % p i sp_i j
-                    2 copy get          % p i sp_i j sp_i_j
-                    reversedict 1 index /cmd get get exec
-                    pop
-                } for
-            }{ pop pop } ifelse
+            2 copy get             % path i subpath_i
+            reversedict /pending /move put
+            reversedict /isclosed false put
+            dup length 1 sub -1 0 { % p i sp_i j
+                2 copy get          % p i sp_i j sp_i_j
+                reversedict 1 index /cmd get get exec
+                pop                 % p i sp_i
+            } for
+            pop pop
         } for
         pop
     } if
@@ -676,6 +713,11 @@ grestore
 
 flattenpath
 (flattenpath)=
+4 copy pathforall
+(pathforall)=
+
+reversepath
+(reversepath)=
 pathforall
 (pathforall)=
 
