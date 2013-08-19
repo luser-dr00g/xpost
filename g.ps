@@ -325,8 +325,11 @@ end
 /cpath { graphicsdict /currgstate get /currpath get } def
 
 /addtopath { % << /data [...] /cmd /... >> <<path>>
+    %(addtopath)=
+    %(addtopath start pstack:)= pstack()=
     dup length 0 eq {                       % elem path
         1 index /cmd get /move eq {         % elem path
+            %(New Path)=
             << 0 4 3 roll >> % new subpath  % <path> <subpath>
             0 exch put                      %
         }{
@@ -334,22 +337,31 @@ end
         } ifelse
     }{                                  % elem path
         1 index /cmd get /move eq {     % elem path
-            dup length 1 sub get        % elem path last-subpath
-            dup length 1 sub get        % elem path last-elem-of-last-subp
-            dup dup /cmd get /move eq { % elem path last-elem
+            dup dup length 1 sub get    % elem path last-subpath
+            dup length 1 sub get        % elem path last-elem-of-last-subpath
+            dup /cmd get /move eq { % elem path last-elem
+                %(Merge /move)=
                 3 1 roll pop            % last-elem elem
                 /data get /data exch put
-            }{
-                pop
-                dup length 3 2 roll  % <path> n <elem>
-                << 0 3 2 roll >> % new subpath  % <path> n <<0 <elem>>>
+            }{                          % elem path last-elem
+                %(New subpath)=
+                pop                     % elem path
+                dup length 3 2 roll     % <path> n <elem>
+                << 0 3 2 roll >>        % <path> n <<0 <elem>>>        % new subpath
+                %pstack()=
+                put
             } ifelse
         }{                              % elem path
-            dup length 1 sub get        % <elem> <subpath>
-            dup length                  % <elem> <subpath> key
-            3 2 roll put     
+            %(Append elem)=
+            dup length 1 sub get        % elem last-subpath
+            dup length                  % elem last-subpath key
+            3 2 roll
+            %pstack()=
+            put     
         } ifelse
     } ifelse
+    %(addtopath final pstack:)= pstack()=
+    %(addtopath exit)=
 } def
 
 % x y  moveto  -
@@ -615,11 +627,57 @@ end
     } if
 } def
 
+/ptdiff { % P0 P1
+    3 -1 roll sub
+    3 1 roll exch sub exch % dx dy
+} def
+
+/magang { % dx dy  .  rad ang
+    2 copy 
+    dup mul exch dup mul add sqrt
+    3 1 roll exch atan
+} def
+
+/ravec { % rad ang  .  dx dy
+    dup cos 2 index mul  % rad ang rad*cos(ang)
+    3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
+} def
+
 /strokedict <<
-    /move { }
-    /line { }
-    /curve { }
-    /close { }
+    /move {
+        strokedict /cp 2 index /data get put
+        cpath addtopath
+    }
+    /line {
+        strokedict /cp get aload pop       % el x0 y0
+        2 index /data get aload pop        % el x0 y0 x1 y1
+        2 copy 2 array astore strokedict /cp 3 2 roll put
+        ptdiff                             % el dx dy
+        magang                             % el rad ang
+        currentlinewidth .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
+        ravec itransform rmoveto           % el rad ang      %rmoveto
+        %cpath ===
+        2 copy ravec itransform rlineto    % el rad ang      %rlineto
+        %cpath ===
+        currentlinewidth 1 index 90 add    % el rad ang lw -ang_perp
+        ravec itransform rlineto           % el rad ang      %rlineto
+        %cpath ===
+        180 add ravec itransform rlineto   % el rad ang      %rlineto
+        %cpath ===
+        closepath                          % el              %closepath
+        %cpath ===
+        %dup /cmd /move put
+        %cpath addtopath
+        %/data get aload pop itransform moveto
+        pop
+        strokedict /cp get
+        %aload pop
+        %itransform moveto
+        << /data 3 2 roll /cmd /move >> cpath addtopath
+        %cpath ===
+    }
+    /close 1 index %{ pop }
+    /curve { pop }
 >> def
 
 /strokepath {
@@ -691,33 +749,48 @@ matrix matrix matrix concatmatrix pstack clear
 0 0 1 1 2 0 rcurveto
 closepath
 
+newpath
+0 0 moveto
+20 20 40 20 60 0 curveto
+closepath
+
+newpath
+0 0 moveto
+50 50 lineto
+100 0 lineto
+closepath
 
 ()=
 { (moveto) 3 args }
 { (lineto) 3 args }
-{ (curveto) 7 args }
+{ pstack (curveto) 7 args }
 { (closepath) 1 args }
 4 copy 
-pathforall
 (pathforall)=
+pathforall
 
 gsave
-    newpath
     (newpath)=
-    4 copy pathforall
+    newpath
     (pathforall)=
+    4 copy pathforall
 grestore
 
-4 copy pathforall
 (pathforall)=
+4 copy pathforall
 
-flattenpath
 (flattenpath)=
+flattenpath
+(pathforall)=
 4 copy pathforall
-(pathforall)=
 
-reversepath
 (reversepath)=
-pathforall
+reversepath
 (pathforall)=
+4 copy pathforall
+
+(strokepath)=
+strokepath
+(pathforall)=
+pathforall
 
