@@ -15,6 +15,7 @@
     /scratchmatrix [ 1 0 0 1 0 0 ]
     /currpath 1 dict
     /flat 1
+    /linewidth 1
 >> def
 
 
@@ -78,18 +79,30 @@ end
     graphicsdict /currgstate get exch copy
 } def
 
+% num  setlinewidth  -
+% set line width
+/setlinewidth {
+    graphicsdict /currgstate get exch /linewidth exch put
+} def
+
+% -  currentlinewidth  num
+% return current line width
+/currentlinewidth {
+    graphicsdict /currgstate get /linewidth get
+} def
+
 
 
 % Graphics State Operators -- Device Dependent
-
-/currentflat {
-    graphicsdict /currgstate get /flat get
-} def
 
 /setflat {
     /CONSTRAiNFLATNESS where{
         pop dup 100 gt{pop 100}if dup .2 lt{pop .2}if } if
     graphicsdict /currgstate get exch /flat exch put
+} def
+
+/currentflat {
+    graphicsdict /currgstate get /flat get
 } def
 
 
@@ -763,7 +776,7 @@ closepath
 ()=
 { (moveto) 3 args }
 { (lineto) 3 args }
-{ pstack (curveto) 7 args }
+{ (curveto) 7 args }
 { (closepath) 1 args }
 4 copy 
 (pathforall)=
