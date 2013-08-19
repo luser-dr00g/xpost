@@ -67,13 +67,25 @@ void Ncvi(context *ctx, object n) {
 }
 
 void Scvi(context *ctx, object s) {
+    double dbl;
     long num;
     char *t = alloca(s.comp_.sz+1);
     memcpy(t, charstr(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
+
+    dbl = strtod(t, NULL);
+    if ((dbl == HUGE_VAL || dbl -HUGE_VAL) && errno==ERANGE)
+        error(limitcheck, "Scvr");
+    if (dbl >= LONG_MAX || dbl <= LONG_MIN)
+        error(limitcheck, "Scvi");
+    num = dbl;
+
+    /*
     num = strtol(t, NULL, 10);
     if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
         error(limitcheck, "Scvi");
+    */
+
     push(ctx->lo, ctx->os, consint(num));
 }
 
