@@ -16,6 +16,8 @@
     /currpath 1 dict
     /flat 1
     /linewidth 1
+    /linecap 0
+    /linejoin 2
 >> def
 
 
@@ -91,12 +93,36 @@ end
     graphicsdict /currgstate get /linewidth get
 } def
 
+% int  setlinecap  -
+% set shape of the ends for stroke (0=butt, 1=round, 2=square)
+/setlinecap {
+    graphicsdict /currgstate get exch /linecap exch put
+} def
+
+% -  currentlinecap  int
+% return current line cap
+/currentlinecap {
+    graphicsdict /currgstate get /linecap get
+} def
+
+% int  setlinejoin  -
+% set shape of corners for stroke (0=miter, 1=round, 2=bevel)
+/setlinejoin {
+    graphicsdict /currgstate get exch /linejoin exch put
+} def
+
+% -  currentlinejoin  int
+% return current line join
+/currentlinejoin {
+    graphicsdict /currgstate get /linejoin get
+} def
+
 
 
 % Graphics State Operators -- Device Dependent
 
 /setflat {
-    /CONSTRAiNFLATNESS where{
+    /CONSTRAINFLATNESS where{
         pop dup 100 gt{pop 100}if dup .2 lt{pop .2}if } if
     graphicsdict /currgstate get exch /flat exch put
 } def
@@ -711,6 +737,38 @@ end
     } if
 } def
 
+/maxmin {
+    2 copy
+    dup maxy gt { /maxy exch def }{ pop } ifelse
+    dup maxx gt { /maxx exch def }{ pop } ifelse
+    dup miny lt { /miny exch def }{ pop } ifelse
+    dup minx lt { /minx exch def }{ pop } ifelse
+} def
+
+/pathbbox {
+    cpath length 0 eq {
+        0 0 0 0
+    }{
+        << /minx 16#7fffffff /miny 1 index
+            /maxx 1 index neg /maxy 1 index >> begin
+        cpath
+        0 1 2 index length 1 sub {
+            2 copy get
+            0 1 2 index length 1 sub {
+                2 copy get
+                /data get
+                aload length 2 idiv
+                { maxmin } repeat
+                pop
+            } for
+            pop pop
+        } for
+        pop
+        minx miny maxx maxy
+        end
+    } ifelse
+} def
+
 % move line curve close  pathforall  -
 % enumerate current path
 /pathforall {
@@ -806,4 +864,6 @@ reversepath
 strokepath
 (pathforall)=
 pathforall
+
+clear pathbbox pstack clear
 
