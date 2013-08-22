@@ -1,6 +1,7 @@
 %/CONSTRAINFLATNESS null def
 
 /DEVICE <<
+    /dimensions [ 100 100 ]
     /defaultmatrix [ 1 0 0 1 0 0 ]
 >> def
 
@@ -14,6 +15,7 @@
     /currmatrix [ 1 0 0 1 0 0 ]
     /scratchmatrix [ 1 0 0 1 0 0 ]
     /currpath 1 dict
+    /clipregion 1 dict
     /flat 1
     /linewidth 1
     /linecap 0
@@ -745,6 +747,12 @@ end
     dup minx lt { /minx exch def }{ pop } ifelse
 } def
 
+/clippath {
+    graphicsdict /currgstate get
+        dup /clipregion get
+        /currpath exch put
+} def
+
 /pathbbox {
     cpath length 0 eq {
         0 0 0 0
@@ -790,9 +798,116 @@ end
 end
 } def
 
+/initclip {
+    graphicsdict /currgstate get 
+        dup /currpath get   % currpath
+        exch /currmatrix get % currmatrix
+
+    newpath
+    matrix setmatrix
+    DEVICE /dimensions get
+    aload pop
+    0 0 moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+
+    graphicsdict /currgstate get
+        dup dup /currpath get /clipregion exch put
+        dup 3 2 roll /currmatrix exch put
+        exch /currpath exch put
+} def
+
+/clip {
+    doclip
+    graphicsdict /currgstate get
+    dup /currpath get /clipregion exch put
+    newpath
+} def
+
+(clip.ps)run
+
+%clip the current path by the clipregion
+% convert the path to an array of polygons (arrays of points)
+% convert clipregion to array of polygons
+% traverse the clipregion
+%    convert line to [A B C] form
+%    feed polygon and line to hodgman-sutherland,
+%       receiving new polygon.
+/doclip { 4 dict begin
+
+    closepath
+    flattenpath
+    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    /PA exch def % polygon array
+
+    clippath
+    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    /CR exch def % clippath array
+
+    (PA: )print PA ==
+    (CR: )print CR ==
+
+    CR { % one clipping polygon
+        dup dup length 1 sub get % polygon final-point
+        /U exch def
+        {
+            /V exch def
+            [ U aload pop V aload pop p2abc ]  % clip-line
+            /CL exch def
+            CL ==
+
+            /PA [ PA { % one subject polygon
+                CL hodgman-sutherland
+            } forall ] def
+
+            /U V def
+        } forall
+    } forall
+    newpath
+    PA ==
+    PA {
+        dup length 0 gt {
+            dup 0 get << /data 3 2 roll /cmd /move >> cpath addtopath
+            1 1 index length 1 sub getinterval {
+                << /data 3 2 roll /cmd /line >> cpath addtopath
+            } forall
+            closepath
+        }{
+            pop
+        } ifelse
+    } forall
+
+end } def
 
 % Painting Operators
 
+% -  erasepage  -
+% paint current page white
+/erasepage {
+    gsave
+        0 setgray
+        clippath fill
+    grestore
+} def
+
+% -  fill  -
+% fill current path with current color
+/fill {
+    doclip
+} def
+
+% -  eofill  -
+% fill using even-odd rule
+/eofill {
+} def
+
+% -  stroke  -
+% draw line along current path
+/stroke {
+    strokepath fill
+} def
 
 
 initgraphics
@@ -866,4 +981,13 @@ strokepath
 pathforall
 
 clear pathbbox pstack clear
+initclip
+doclip
+(doclip)=
+(pathforall)=
+{ (moveto) 3 args }
+{ (lineto) 3 args }
+{ (curveto) 7 args }
+{ (closepath) 1 args }
+pathforall
 
