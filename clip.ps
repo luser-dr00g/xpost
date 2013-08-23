@@ -25,7 +25,7 @@
     /f exch def
     /p exch def
     /n p length def
-    %(n=)print n =
+    (n=)print n =
     n 0 gt {
 
     /P p n 1 sub get def
@@ -35,6 +35,10 @@
         p {
             /Q exch def
             /fQ Q aload pop f evaluate def
+            (P=)print P ==
+            (Q=)print Q ==
+            (fP=)print fP ==
+            (fQ=)print fQ ==
             fP 0 le {
                 fQ 0 le {
                     Q

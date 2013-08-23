@@ -282,6 +282,7 @@ end
     %graphicsdict /currgstate get /scratchmatrix get copy invertmatrix transform
     aload pop {f e d c b a y x}{exch def}forall
     a d mul b c mul sub
+    (discr:)print dup =
     dup 0 eq { end /itransform cvx /undefinedresult signalerror } if
     1 exch div
     /invdet exch def
@@ -981,13 +982,34 @@ strokepath
 pathforall
 
 clear pathbbox pstack clear
+
+
 initclip
-doclip
+
+newpath
+0 0 moveto
+10 0 lineto
+10 10 lineto
+0 10 lineto
+closepath
+(clip)=
+clip
+
+(newpath)=
+newpath
+5 -1 moveto
+11 5 lineto
+5 11 lineto
+-1 5 lineto
+closepath
+
 (doclip)=
+doclip
 (pathforall)=
 { (moveto) 3 args }
 { (lineto) 3 args }
 { (curveto) 7 args }
 { (closepath) 1 args }
 pathforall
+
 

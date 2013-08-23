@@ -36,6 +36,7 @@ object consfile(mfile *mem, /*@NULL@*/ FILE *fp) {
 }
 
 /* pinch-off a tmpfile containing one line from file. */
+/*@null@*/
 FILE *lineedit(FILE *in) {
     FILE *fp;
     int c;
@@ -43,8 +44,9 @@ FILE *lineedit(FILE *in) {
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%lineedit");
     fp = tmpfile();
+    if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     while (c != EOF && c != '\n') {
-        fputc(c, fp);
+        (void)fputc(c, fp);
         c = fgetc(in);
     }
     fseek(fp, 0, SEEK_SET);
@@ -54,6 +56,7 @@ FILE *lineedit(FILE *in) {
 enum { MAXNEST = 20 };
 
 /* pinch-off a tmpfile containing one "statement" from file. */
+/*@null@*/
 FILE *statementedit(FILE *in) {
     FILE *fp;
     int c;
@@ -63,6 +66,7 @@ FILE *statementedit(FILE *in) {
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%statementedit");
     fp = tmpfile();
+    if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     do {
         if (defer > -1) {
             if (defer > MAXNEST) error(syntaxerror, "syntaxerror");

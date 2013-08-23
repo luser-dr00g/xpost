@@ -32,38 +32,53 @@ typedef struct {
           -value if L < R
  */
 int objcmp(context *ctx, object L, object R) {
-    if (type(L) == type(R))
-        switch (type(L)) {
-            default:
-                fprintf(stderr, "unhandled type (%s) in objcmp", types[type(L)]);
-                error(unregistered, "");
-                break;
-
-            case marktype: return 0;
-            case nulltype: return 0;
-            case invalidtype: return 0;
-
-            case booleantype: /*@fallthrough@*/
-            case integertype: return L.int_.val - R.int_.val;
-            case realtype: return (fabs(L.real_.val - R.real_.val) < 0.0001)?
-                                    0:
-                                    L.real_.val - R.real_.val;
-
-            case operatortype:  return L.mark_.padw - R.mark_.padw;
-            case nametype: return (L.tag&FBANK)==(R.tag&FBANK)?
-                                    (signed)(L.mark_.padw - R.mark_.padw):
-                                        (signed)((L.tag&FBANK) - (R.tag&FBANK));
-
-            case dicttype: /*@fallthrough@*/ //return !( L.comp_.ent == R.comp_.ent );
-            case arraytype: return !( L.comp_.sz == R.comp_.sz
-                                    && (L.tag&FBANK) == (R.tag&FBANK)
-                                    && L.comp_.ent == R.comp_.ent
-                                    && L.comp_.off == R.comp_.off ); // 0 if all eq
-            case stringtype: return L.comp_.sz == R.comp_.sz ?
-                                    memcmp(charstr(ctx, L), charstr(ctx, R), L.comp_.sz) :
-                                    L.comp_.sz - R.comp_.sz;
+    if (type(L) != type(R)) {
+        if (type(L) == integertype && type(R) == realtype) {
+            L = consreal(L.int_.val);
+            goto cont;
         }
-    return type(L) - type(R);
+        if (type(R) == integertype && type(L) == realtype) {
+            R = consreal(R.int_.val);
+            goto cont;
+        }
+        return type(L) - type(R);
+    }
+
+cont:
+    switch (type(L)) {
+        default:
+            fprintf(stderr, "unhandled type (%s) in objcmp", types[type(L)]);
+            error(unregistered, "");
+            return -1;
+            break;
+
+        case marktype: return 0;
+        case nulltype: return 0;
+        case invalidtype: return 0;
+
+        case booleantype: /*@fallthrough@*/
+        case integertype: return L.int_.val - R.int_.val;
+
+        case realtype: return (fabs(L.real_.val - R.real_.val) < 0.0001)?
+                                0:
+                                L.real_.val - R.real_.val > 0? 1: -1;
+
+        case operatortype:  return L.mark_.padw - R.mark_.padw;
+
+        case nametype: return (L.tag&FBANK)==(R.tag&FBANK)?
+                                (signed)(L.mark_.padw - R.mark_.padw):
+                                    (signed)((L.tag&FBANK) - (R.tag&FBANK));
+
+        case dicttype: /*@fallthrough@*/ //return !( L.comp_.ent == R.comp_.ent );
+        case arraytype: return !( L.comp_.sz == R.comp_.sz
+                                && (L.tag&FBANK) == (R.tag&FBANK)
+                                && L.comp_.ent == R.comp_.ent
+                                && L.comp_.off == R.comp_.off ); // 0 if all eq
+
+        case stringtype: return L.comp_.sz == R.comp_.sz ?
+                                memcmp(charstr(ctx, L), charstr(ctx, R), L.comp_.sz) :
+                                L.comp_.sz - R.comp_.sz;
+    }
 }
 
 /* more like scrambled eggs */
@@ -282,8 +297,10 @@ bool dicknown(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
 object dicget(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
     object *e;
     e = diclookup(ctx, mem, d, k);
-    if (type(e[0]) == nulltype)
+    if (e == NULL || type(e[0]) == nulltype) {
         error(undefined, "dicget");
+        return null;
+    }
     return e[1];
 }
 
