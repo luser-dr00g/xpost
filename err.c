@@ -18,7 +18,7 @@
 
 char *errorname[] = { ERRORS(AS_STR) };
 
-volatile char *errormsg;
+volatile char *errormsg = "";
 
 static int in_onerror;
 
