@@ -44,6 +44,9 @@ bool dicfull(/*@dependent@*/ mfile *mem, object d);
 
 void dumpdic(mfile *mem, object d);
 
+double doubleextended (object e);
+object unextend (object e);
+
 /* test dictionary for key */
 bool dicknown(context *ctx, /*@dependent@*/ mfile *mem, object d, object k);
 

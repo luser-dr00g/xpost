@@ -11,13 +11,13 @@ typedef int64_t integer;
 typedef double real;
 typedef dword addr;
 #else
-typedef unsigned char byte;
-typedef unsigned short word;
-typedef unsigned long dword;
-typedef unsigned long long qword;
+typedef unsigned char byte;   //assumes ==8bit
+typedef unsigned short word;  //assumes ==16bit
+typedef unsigned long dword;  //assumes >=32bit
+typedef unsigned long long qword; //assumes >=64bit
 typedef int integer;
-typedef float real;
-typedef dword addr;
+typedef float real;  //assumes 32bit
+typedef dword addr;  //hmm... should probably use this more. :)
 #endif
 
 #define TYPES(_) \
@@ -34,6 +34,7 @@ typedef dword addr;
     _(name)    \
     _(boolean) \
     _(context) \
+    _(extended) \
     _(string)  \
 /* #def TYPES */
 
@@ -58,6 +59,8 @@ enum tagdata {
     FACCESSO = 5,  /* bitwise offset of the ACCESS field */
     FLIT =     0x0080,
     FBANK =    0x0100, /* 0=local, 1=global */
+ EXTENDEDINT = 0x0200,
+EXTENDEDREAL = 0x0400,
 };
 
 enum faccess {
@@ -92,6 +95,12 @@ typedef struct {
 
 typedef struct {
     word tag;
+    word sign_exp;
+    dword fraction;
+} extended_;
+
+typedef struct {
+    word tag;
     word sz;
     word ent;
     word off;
@@ -116,6 +125,7 @@ typedef union {
     mark_ mark_;
     int_ int_;
     real_ real_;
+    extended_ extended_;
     comp_ comp_;
     save_ save_;
     saverec_ saverec_;

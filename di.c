@@ -1,4 +1,3 @@
-#include <alloca.h>
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -62,6 +61,14 @@ cont:
         case realtype: return (fabs(L.real_.val - R.real_.val) < 0.0001)?
                                 0:
                                 L.real_.val - R.real_.val > 0? 1: -1;
+        case extendedtype: {
+                               double l,r;
+                               l = doubleextended(L);
+                               r = doubleextended(R);
+                               return (fabs(l - r) < 0.0001)?
+                                   0:
+                                   l - r > 0? 1: -1;
+                           }
 
         case operatortype:  return L.mark_.padw - R.mark_.padw;
 
@@ -237,6 +244,59 @@ void dumpdic(mfile *mem, object d) {
     }
 }
 
+//n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag
+object consextended (double d) {
+    unsigned long long r = *(unsigned long long *)&d;
+    extended_ e;
+    e.tag = extendedtype;
+    e.sign_exp = (r>>52) & 0x7FF;
+    e.fraction = (r>>20) & 0xFFFFFFFF;
+    return (object) e;
+}
+
+double doubleextended (object e) {
+    unsigned long long r;
+    double d;
+    r = ((unsigned long long)e.extended_.sign_exp << 52)
+        | ((unsigned long long)e.extended_.fraction << 20);
+    d = *(double *)&r;
+    return d;
+}
+
+object unextend (object e) {
+    object o;
+    double d = doubleextended(e);
+    if (e.tag & EXTENDEDINT) {
+        o = consint(d);
+    } else if (e.tag & EXTENDEDREAL) {
+        o = consreal(d);
+    } else {
+        error(unregistered, "unextend: invalid extended number object");
+    }
+    return o;
+}
+
+object clean_key (context *ctx, object k) {
+    switch(type(k)) {
+    case stringtype: {
+        char *s = alloca(k.comp_.sz+1);
+        memcpy(s, charstr(ctx, k), k.comp_.sz);
+        s[k.comp_.sz] = '\0';
+        k = consname(ctx, s);
+    }
+    break;
+    case integertype:
+        k = consextended(k.int_.val);
+        k.tag |= EXTENDEDINT;
+    break;
+    case realtype:
+        k = consextended(k.real_.val);
+        k.tag |= EXTENDEDREAL;
+    break;
+    }
+    return k;
+}
+
 #define RETURN_TAB_I_IF_EQ_K_OR_NULL    \
     if (objcmp(ctx, tp[2*i], k) == 0    \
     || objcmp(ctx, tp[2*i], null) == 0) \
@@ -253,12 +313,7 @@ object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) 
     unsigned h;
     unsigned i;
 
-    if (type(k) == stringtype) {
-        char *s = alloca(k.comp_.sz+1);
-        memcpy(s, charstr(ctx, k), k.comp_.sz);
-        s[k.comp_.sz] = '\0';
-        k = consname(ctx, s);
-    }
+    k = clean_key(ctx, k);
 
     ad = adrent(mem, d.comp_.ent);
     dp = (void *)(mem->base + ad);
@@ -341,7 +396,7 @@ retry:
         }
         dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
         ++ dp->nused;
-        e[0] = k;
+        e[0] = clean_key(ctx, k);
     }
     e[1] = v;
 }
