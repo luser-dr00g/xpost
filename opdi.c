@@ -217,9 +217,14 @@ void DPforall (context *ctx, object D, object P) {
 
         for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) { // find next pair
             if (type(tp[2 * D.comp_.off]) != nulltype) { // found
+                object k,v;
 
-                push(ctx->lo, ctx->os, tp[2 * D.comp_.off]);
-                push(ctx->lo, ctx->os, tp[2 * D.comp_.off + 1]);
+                k = tp[2 * D.comp_.off];
+                if (type(k) == extendedtype)
+                    k = unextend(k);
+                v = tp[2 * D.comp_.off + 1];
+                push(ctx->lo, ctx->os, k);
+                push(ctx->lo, ctx->os, v);
 
                 push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
                 push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));

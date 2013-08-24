@@ -362,6 +362,7 @@ evalfunc *evalboolean = evalpush;
 evalfunc *evalreal = evalpush;
 evalfunc *evalsave = evalpush;
 evalfunc *evaldict = evalpush;
+evalfunc *evalextended = evalquit;
 
 evalfunc *evalcontext = evalpush;
 //evalfunc *evalfile = evalpush;

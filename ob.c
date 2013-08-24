@@ -50,7 +50,7 @@ object cvlit(object o) {
     return o;
 }
 
-
+// null, mark
 SINGLETONS(DEFINE_SINGLETON)
 
 object consbool(bool b) {
