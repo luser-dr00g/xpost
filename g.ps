@@ -63,6 +63,7 @@ end
 % reset graphics state parameters
 /initgraphics {
     gstate setgstate
+    initclip
 } def
 
 % -  gstate  gstate
@@ -282,7 +283,7 @@ end
     %graphicsdict /currgstate get /scratchmatrix get copy invertmatrix transform
     aload pop {f e d c b a y x}{exch def}forall
     a d mul b c mul sub
-    (discr:)print dup =
+    %(discr:)print dup =
     dup 0 eq { end /itransform cvx /undefinedresult signalerror } if
     1 exch div
     /invdet exch def
@@ -910,6 +911,7 @@ end } def
     strokepath fill
 } def
 
+/TESTGRAPHICS where {pop}{ currentfile flushfile} ifelse
 
 initgraphics
 

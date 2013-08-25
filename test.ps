@@ -13,6 +13,11 @@
     ifelse
 } def
 
+(test: loading graphics...)=
+(g.ps)run
+initgraphics
+
+
 [ ] ==
 [ ] type /arraytype eq check
 { ] } stopped { $error /errorname get /unmatchedmark eq check }{ fail } ifelse
@@ -125,7 +130,11 @@ count 0 eq check
 777 eq check
 
 %clip
-%clippath
+
+(clippath)=
+clear clippath {}{}{}{} pathforall
+count 0 gt check
+clear
 
 %(closefile)=
 
@@ -182,20 +191,35 @@ currentdict ==
 (currentfile)=
 currentfile ==
 
-%currentflat
+(currentflat)=
+currentflat 0 ne check
+
 %currentfont
 %currentgray
 %currenthsbcolor
 %currentlinecap
 %currentlinejoin
-%currentlinewidth
-%currentmatrix
+
+(currentlinewidth)=
+currentlinewidth 0 ge check
+
+(currentmatrix)=
+matrix currentmatrix
+false exch {
+    0 ne or
+} forall true eq check % at least one non-zero value
+
 %currentmiterlimit
 %currentpacking
-%currentpoint
+
+(currentpoint)=
+currentpoint count 2 eq check
+clear
+
 %currentrgbcolor
 %currentscreen
 %currenttransfer
+
 %curveto
 
 (cvi)=
@@ -206,7 +230,8 @@ currentfile ==
 (3: 520.9 cvi 520 eq check)=
 520.9 cvi 520 eq check
 
-%(cvlit)=
+(cvlit)=
+{mul} cvlit xcheck false eq check
 
 (cvn)=
 (abc) cvn /abc eq check
@@ -232,13 +257,19 @@ mark str cvs (--nostringval--) eq
 mark str cvs (-mark-) eq
     or or check
 
-%(cvx)=
+(cvx)=
+[/mul cvx]cvx xcheck true eq check
 
 (def)=
 /ncnt 1 def ncnt 1 eq check
 /ncnt ncnt 1 add def ncnt 2 eq check
 
-%defaultmatrix
+(defaultmatrix)=
+matrix defaultmatrix
+false exch {
+    0 ne or
+} forall true eq check % at least one non-zero value
+
 %definefont
 
 %(dict)=
