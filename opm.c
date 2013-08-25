@@ -143,7 +143,10 @@ void Rfloor (context *ctx, object x) {
 /* num1  round  num2
    round num1 to nearest integer */
 void Rround (context *ctx, object x) {
-    push(ctx->lo, ctx->os, consreal(round(x.real_.val)));
+    if (x.real_.val > 0)
+        push(ctx->lo, ctx->os, consreal(round(x.real_.val)));
+    else
+        push(ctx->lo, ctx->os, consreal(rint(x.real_.val)));
 }
 
 /* num1  truncate  num2
