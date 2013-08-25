@@ -40,6 +40,14 @@ int objcmp(context *ctx, object L, object R) {
             R = consreal(R.int_.val);
             goto cont;
         }
+        if (type(L) == nametype && type(R) == stringtype) {
+            L = strname(ctx, L);
+            goto cont;
+        }
+        if (type(R) == nametype && type(L) == stringtype) {
+            R = strname(ctx, R);
+            goto cont;
+        }
         return type(L) - type(R);
     }
 
