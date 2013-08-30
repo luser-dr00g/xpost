@@ -16,9 +16,9 @@ objects: $(CORE) $(OP) $(OB) $(TESTS_OBJ)
 all: objects
 
 test: objects $(TESTS)
-	./ob && ./m && ./s && ./st && ./nm && \
+	(./ob && ./m && ./s && ./st && ./nm && \
 	./v && ./gc && ./ar && ./di && \
-	echo "(test.ps)Run quit" | ./itp
+	echo "(test.ps)Run quit" | ./itp) > testoutput
 
 count:
 	wc -l $(SRC)
