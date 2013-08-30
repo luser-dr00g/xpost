@@ -21,12 +21,12 @@ initgraphics
 [ ] ==
 [ ] type /arraytype eq check
 { ] } stopped { $error /errorname get /unmatchedmark eq check }{ fail } ifelse
+
 /= cvx =
-
 { = } stopped { $error /errorname get /stackunderflow eq check }{ fail } ifelse
-/== cvx ==
 
-%{ == } stopped { $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
+/== cvx ==
+{ == } stopped { $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
 
 (abs)=
 4.5 abs 4.5 eq check
@@ -140,7 +140,16 @@ clear
 
 %closepath
 %concat
-%concatmatrix
+
+(concatmatrix)=
+matrix matrix matrix concatmatrix
+aload pop
+    0 eq check
+    0 eq check
+    1 eq check
+    0 eq check
+    0 eq check
+    1 eq check
 
 (copy)=
 1 2 3 2 copy 
@@ -272,7 +281,8 @@ false exch {
 
 %definefont
 
-%(dict)=
+(dict)=
+1 dict type /dicttype eq check
 
 %/dictfull
 
@@ -287,10 +297,17 @@ false exch {
 4 2 div 2.0 eq check
 
 %dtransform
+1 1 matrix dtransform
+    1 eq check
+    1 eq check
 
-%(dup)=
+(dup)=
+5 dup 5 eq check
+    5 eq check
+
 %(echo)=
-%(end)=
+
+(end)=
 end %currentdict userdict eq check
 
 %eoclip
@@ -310,7 +327,8 @@ end %currentdict userdict eq check
 
 %erasepage
 
-%(errordict)=
+(errordict)=
+errordict type /dicttype eq check
 
 (exch)=
 1 2 exch
@@ -330,8 +348,12 @@ end %currentdict userdict eq check
 
 %(execstack)=
 %execstackoverflow
-%(executeonly)=
-%(exit)=
+
+(executeonly)=
+(string) executeonly rcheck false eq check
+
+(exit)=
+{exit false check}loop
 
 (exp)=
 (1: 9 0.5 exp 3.0 eq check)=
@@ -339,8 +361,11 @@ end %currentdict userdict eq check
 (2: -9 -1 exp -0.111111 eq check)=
 -9 -1 exp -0.111111 eq check
 
-%(false)=
+(false)=
+false not check
+
 %(file)=
+
 %fill
 %findfont
 %flattenpath
@@ -418,9 +443,18 @@ currentdict /mykey get (myvalue) eq check
 (abcde) 1 3 getinterval (bcd) eq check
 (abcde) 0 0 getinterval () eq check
 
-%grestore
-%grestoreall
-%gsave
+(grestore grestoreall gsave)=
+matrix currentmatrix aload pop
+gsave gsave 2 2 matrix scale setmatrix
+grestore grestoreall
+matrix currentmatrix aload pop
+%pstack
+    7 -1 roll eq check
+    6 -1 roll eq check
+    5 -1 roll eq check
+    4 -1 roll eq check
+    3 -1 roll eq check
+    eq check
 
 %(gt)=
 

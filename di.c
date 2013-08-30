@@ -1,3 +1,4 @@
+#include <alloca.h>
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -57,7 +58,6 @@ cont:
             fprintf(stderr, "unhandled type (%s) in objcmp", types[type(L)]);
             error(unregistered, "");
             return -1;
-            break;
 
         case marktype: return 0;
         case nulltype: return 0;
