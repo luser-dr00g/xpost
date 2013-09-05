@@ -3,8 +3,10 @@
 %traceon
 /break { currentfile flushfile } def
 
+/failcount 0 def
 /fail {
     (FAIL\n) print
+    /failcount failcount 1 add def
     %break
 } def
 /check {
@@ -794,6 +796,12 @@ false true xor true eq check
 false false xor false eq check
 7 3 xor 4 eq check
 12 3 xor 15 eq check
+
+failcount 0 eq {
+    (SUCCESS)=
+}{
+    failcount =only ( FAILs) =
+} ifelse
 
 %traceon
 

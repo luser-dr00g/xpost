@@ -331,12 +331,13 @@ end
 
 % matrix1 matrix2  invertmatrix  matrix2
 % fill matrix2 with inverse of matrix1
+% revised using example at
+%   https://groups.google.com/d/msg/comp.lang.postscript/JuclKJjfNRQ/hs5OV6Widu8J
 /invertmatrix {
     2 copy type/arraytype ne exch type/arraytype ne or
     { /invertmatrix cvx /typecheck signalerror } if
 12 dict begin
-    /A exch def
-    A aload pop {f e d c b a}{exch def}forall
+    exch aload pop {f e d c b a}{exch def}forall
     a d mul b c mul sub
     dup 0 eq { A end /invertmatrix cvx /undefinedresult signalerror } if
     1 exch div
@@ -347,7 +348,8 @@ end
     a invdet mul
     c f mul d e mul sub invdet mul
     b e mul a f mul sub invdet mul
-    A astore
+    7 -1 roll
+    astore
 end
 } def
 

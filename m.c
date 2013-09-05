@@ -141,7 +141,7 @@ void exitmem(mfile *mem){
 /* reallocate and possibly move mem->base */
 mfile *growmem(mfile *mem, unsigned sz){
     void *tmp;
-    printf("growmem: %p %u\n", mem, sz);
+    printf("growmem: %p %u + %u\n", mem, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
     else sz = (sz/pgsz + 1) * pgsz;
     sz += mem->max;
