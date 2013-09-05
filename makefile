@@ -1,5 +1,5 @@
 
-CFLAGS= -g -Wall -Wextra 
+CFLAGS= -g -m32 -Wall -Wextra 
 OB=ob.o m.o err.o
 LDLIBS=-lm
 SRC= makefile *.h *.c init.ps err.ps g.ps clip.ps test.ps
@@ -19,6 +19,7 @@ test: objects $(TESTS)
 	(./ob && ./m && ./s && ./st && ./nm && \
 	./v && ./gc && ./ar && ./di && \
 	echo "(test.ps)Run quit" | ./itp) > testoutput
+	tail testoutput
 
 count:
 	wc -l $(SRC)
