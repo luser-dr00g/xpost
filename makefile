@@ -21,6 +21,11 @@ test: objects $(TESTS)
 	echo "(test.ps)Run quit" | ./itp) > testoutput
 	tail testoutput
 
+list:xpost3.ps
+
+xpost3.ps:$(SRC)
+	a2ps -Av --toc -o $@ --delegate=off $(SRC)
+
 count:
 	wc -l $(SRC)
 
