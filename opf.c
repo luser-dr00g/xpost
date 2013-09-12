@@ -202,9 +202,22 @@ void deletefile (context *ctx, object S) {
     s = charstr(ctx, S);
     ret = remove(s);
     if (ret != 0)
-        switch(errno) {
+        switch (errno) {
             case ENOENT: error(undefinedfilename, "deletefile");
             default: error(ioerror, "deletefile");
+        }
+}
+
+void renamefile (context *ctx, object Old, object New) {
+    char *old, *new;
+    int ret;
+    old = charstr(ctx, Old);
+    new = charstr(ctx, New);
+    ret = rename(old, new);
+    if (ret != 0)
+        switch(errno) {
+            case ENOENT: error(undefinedfilename, "renamefile");
+            default: error(ioerror, "renamefile");
         }
 }
 
@@ -251,7 +264,7 @@ void initopf (context *ctx, object sd) {
     //run: see init.ps
     op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
     op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype); INSTALL;
-    //renamefile
+    op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype); INSTALL;
     //filenameforall
     //setfileposition
     //fileposition
