@@ -1,6 +1,7 @@
 #include <alloca.h>
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdio_ext.h> /* __fpurge */
@@ -195,6 +196,18 @@ void Zcurrentfile (context *ctx) {
     push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
 }
 
+void deletefile (context *ctx, object S) {
+    char *s;
+    int ret;
+    s = charstr(ctx, S);
+    ret = remove(s);
+    if (ret != 0)
+        switch(errno) {
+            case ENOENT: error(undefinedfilename, "deletefile");
+            default: error(ioerror, "deletefile");
+        }
+}
+
 void Sprint (context *ctx, object S) {
     size_t ret;
     char *s;
@@ -237,7 +250,7 @@ void initopf (context *ctx, object sd) {
     //string status
     //run: see init.ps
     op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
-    //deletefile
+    op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype); INSTALL;
     //renamefile
     //filenameforall
     //setfileposition
