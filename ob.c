@@ -111,6 +111,8 @@ void dumpobject(object o){
         case filetype: printf("<file>"); break;
         case savetype: printf("<save>"); break;
         case contexttype: printf("<context>"); break;
+        case extendedtype: printf("<extended-real>"); break;
+        case globtype: printf("<glob>"); break;
     }
 }
 

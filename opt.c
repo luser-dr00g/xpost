@@ -220,10 +220,21 @@ void AScvs(context *ctx, object any, object str) {
         }
         break;
     case integertype:
-        n = conv_rad(any.int_.val, 10, charstr(ctx, str), str.comp_.sz);
-        if (n == -1) error(rangecheck, "AScvs integertype case");
-        if (n < str.comp_.sz) str.comp_.sz = n;
-        break;
+        {
+            //n = conv_rad(any.int_.val, 10, charstr(ctx, str), str.comp_.sz);
+            char *s = charstr(ctx, str);
+            int sz = str.comp_.sz;
+            n = 0;
+            if (any.int_.val < 0) {
+                s[n++] = '-';
+                any.int_.val = abs(any.int_.val);
+                --sz;
+            }
+            n += conv_integ(any.int_.val, s + n, sz);
+            if (n == -1) error(rangecheck, "AScvs integertype case");
+            if (n < str.comp_.sz) str.comp_.sz = n;
+            break;
+        }
     case realtype:
         n = conv_real(any.real_.val, charstr(ctx, str), str.comp_.sz);
         if (n == -1) error(rangecheck, "AScvs realtype case");
