@@ -35,6 +35,7 @@ typedef dword addr;  //hmm... should probably use this more. :)
     _(boolean) \
     _(context) \
     _(extended) \
+    _(glob) \
     _(string)  \
 /* #def TYPES */
 
@@ -118,6 +119,12 @@ typedef struct {
 } saverec_; /* overlays an object so it can be stacked */
 /* but only on the "save" stack, not user visible. */
 
+typedef struct {
+    word tag;
+    word off;
+    void *ptr;
+} glob_;
+
 typedef union {
     word tag;
 
@@ -129,6 +136,7 @@ typedef union {
     comp_ comp_;
     save_ save_;
     saverec_ saverec_;
+    glob_ glob_;
 } object;
 
 int type(object o);

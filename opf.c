@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <glob.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdio_ext.h> /* __fpurge */
@@ -221,6 +222,44 @@ void renamefile (context *ctx, object Old, object New) {
         }
 }
 
+void contfilenameforall (context *ctx, object glob, object Proc, object Scr) {
+    glob_t *globbuf;
+    char *str;
+    globbuf = glob.glob_.ptr;
+    if (glob.glob_.off < globbuf->gl_pathc) {
+        push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
+        push(ctx->lo, ctx->es, Scr);
+        push(ctx->lo, ctx->es, cvlit(Proc));
+        push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+        ++glob.glob_.off;
+        push(ctx->lo, ctx->es, glob);
+
+        str = charstr(ctx, Scr);
+        if (strlen(globbuf->gl_pathv[ glob.glob_.off-1 ]) > Scr.comp_.sz)
+            error(rangecheck, "contfilenameforall");
+
+    }
+}
+
+void filenameforall (context *ctx, object Tmp, object Proc, object Scr) {
+    char *tmp;
+    glob_t *globbuf;
+    object oglob;
+    int ret;
+
+    tmp = charstr(ctx, Tmp);
+    globbuf = malloc(sizeof *globbuf);
+    ret = glob(tmp, 0, NULL, globbuf);
+    if (ret != 0)
+        error(ioerror, "filenameforall");
+
+    oglob.glob_.tag = globtype;
+    oglob.glob_.off = 0;
+    oglob.glob_.ptr = globbuf;
+
+    contfilenameforall(ctx, oglob, Proc, cvlit(Scr));
+}
+
 void Sprint (context *ctx, object S) {
     size_t ret;
     char *s;
@@ -265,7 +304,8 @@ void initopf (context *ctx, object sd) {
     op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
     op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype); INSTALL;
     op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype); INSTALL;
-    //filenameforall
+    op = consoper(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
+    op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype); INSTALL;
     //setfileposition
     //fileposition
     op = consoper(ctx, "print", Sprint, 0, 1, stringtype); INSTALL;

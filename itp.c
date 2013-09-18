@@ -363,6 +363,7 @@ evalfunc *evalreal = evalpush;
 evalfunc *evalsave = evalpush;
 evalfunc *evaldict = evalpush;
 evalfunc *evalextended = evalquit;
+evalfunc *evalglob = evalpush;
 
 evalfunc *evalcontext = evalpush;
 //evalfunc *evalfile = evalpush;

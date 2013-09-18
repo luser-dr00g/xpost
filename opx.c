@@ -4,6 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
+#include "config.h"
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#else
+#include <time.h>
+#endif
 
 #include "m.h"
 #include "ob.h"
@@ -49,6 +55,18 @@ void Pbind (context *ctx, object P) {
     push(ctx->lo, ctx->os, bind(ctx, P));
 }
 
+void realtime (context *ctx) {
+    double sec;
+    #ifdef HAVE_GETTIMEOFDAY
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
+    #else
+        sec = time(NULL) * 1000;
+    #endif
+    push(ctx->lo, ctx->os, consint(sec));
+}
+
 void traceon (context *ctx) {
     (void)ctx;
     TRACE = 1;
@@ -92,7 +110,7 @@ void initopx(context *ctx, object sd) {
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "null"), null);
     //version: see init.ps
-    //realtime
+    op = consoper(ctx, "realtime", realtime, 1, 0); INSTALL;
     //usertime
     //languagelevel
     //product: see init.ps (Xpost3)
