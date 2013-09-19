@@ -291,6 +291,7 @@ void initopf (context *ctx, object sd) {
     oper *optab;
     object n,op;
     assert(ctx->gl->base);
+    assert(sizeof(glob_t *) == 4);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype); INSTALL;
