@@ -16,6 +16,7 @@
 #include "err.h"
 #include "nm.h"
 #include "st.h"
+#include "ar.h"
 #include "di.h"
 #include "op.h"
 #include "f.h"
