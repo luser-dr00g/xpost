@@ -222,23 +222,31 @@ void renamefile (context *ctx, object Old, object New) {
         }
 }
 
-void contfilenameforall (context *ctx, object glob, object Proc, object Scr) {
+void contfilenameforall (context *ctx, object oglob, object Proc, object Scr) {
     glob_t *globbuf;
     char *str;
-    globbuf = glob.glob_.ptr;
-    if (glob.glob_.off < globbuf->gl_pathc) {
+    char *src;
+    int len;
+    globbuf = oglob.glob_.ptr;
+    if (oglob.glob_.off < globbuf->gl_pathc) {
         push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
         push(ctx->lo, ctx->es, Scr);
-        push(ctx->lo, ctx->es, cvlit(Proc));
         push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        ++glob.glob_.off;
-        push(ctx->lo, ctx->es, glob);
+        push(ctx->lo, ctx->es, cvlit(Proc));
+        ++oglob.glob_.off;
+        push(ctx->lo, ctx->es, oglob);
 
         str = charstr(ctx, Scr);
-        if (strlen(globbuf->gl_pathv[ glob.glob_.off-1 ]) > Scr.comp_.sz)
+        src = globbuf->gl_pathv[ oglob.glob_.off-1 ];
+        len = strlen(src);
+        if (len > Scr.comp_.sz)
             error(rangecheck, "contfilenameforall");
+        memcpy(str, src, len);
+        push(ctx->lo, ctx->os, arrgetinterval(Scr, 0, len));
+        push(ctx->lo, ctx->es, Proc);
 
     } else {
+        globfree(globbuf);
     }
 }
 
