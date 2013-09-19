@@ -238,6 +238,7 @@ void contfilenameforall (context *ctx, object glob, object Proc, object Scr) {
         if (strlen(globbuf->gl_pathv[ glob.glob_.off-1 ]) > Scr.comp_.sz)
             error(rangecheck, "contfilenameforall");
 
+    } else {
     }
 }
 
