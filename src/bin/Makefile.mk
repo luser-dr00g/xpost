@@ -29,35 +29,35 @@ src/bin/opt.c \
 src/bin/optok.c \
 src/bin/opv.c \
 src/bin/opx.c \
-ar.h \
-di.h \
-err.h \
-f.h \
-gc.h \
-itp.h \
-m.h \
-nm.h \
-ob.h \
-opar.h \
-opb.h \
-opc.h \
-opdi.h \
-opf.h \
-op.h \
-opm.h \
-oppa.h \
-ops.h \
-opst.h \
-opt.h \
-optok.h \
-opv.h \
-opx.h \
-osmswin.h \
-osunix.h \
-s.h \
-st.h \
-v.h
+src/bin/ar.h \
+src/bin/di.h \
+src/bin/err.h \
+src/bin/f.h \
+src/bin/gc.h \
+src/bin/itp.h \
+src/bin/m.h \
+src/bin/nm.h \
+src/bin/ob.h \
+src/bin/opar.h \
+src/bin/opb.h \
+src/bin/opc.h \
+src/bin/opdi.h \
+src/bin/opf.h \
+src/bin/op.h \
+src/bin/opm.h \
+src/bin/oppa.h \
+src/bin/ops.h \
+src/bin/opst.h \
+src/bin/opt.h \
+src/bin/optok.h \
+src/bin/opv.h \
+src/bin/opx.h \
+src/bin/osmswin.h \
+src/bin/osunix.h \
+src/bin/s.h \
+src/bin/st.h \
+src/bin/v.h
 
-src_bin_itp_CPPFLAGS = -DTESTMODULE_ITP -I$(top_srcdir)/src/bin
+src_bin_itp_CPPFLAGS = -DTESTMODULE_ITP
 
 src_bin_itp_LDADD = -lm
