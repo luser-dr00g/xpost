@@ -1,22 +1,3 @@
-#include <assert.h>
-#include <math.h>
-#include <string.h>
-#include <stdbool.h>
-#include <stdlib.h> /* malloc */
-#include <stdio.h>
-
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "gc.h"
-#include "v.h"
-#include "itp.h"
-#include "err.h"
-#include "st.h"
-#include "nm.h"
-#include "di.h"
-
-//#include <alloca.h>
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -46,6 +27,25 @@ extern "C"
 void *alloca (size_t);
 # endif
 #endif
+
+#include <assert.h>
+#include <math.h>
+#include <string.h>
+#include <stdbool.h>
+#include <stdlib.h> /* malloc */
+#include <stdio.h>
+
+#include "m.h"
+#include "ob.h"
+#include "s.h"
+#include "gc.h"
+#include "v.h"
+#include "itp.h"
+#include "err.h"
+#include "st.h"
+#include "nm.h"
+#include "di.h"
+
 
 
 
