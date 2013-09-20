@@ -44,6 +44,7 @@ void *alloca (size_t);
 #include "ar.h"
 #include "di.h"
 #include "op.h"
+#include "opc.h"
 
 void Aexec (context *ctx, object O) {
     push(ctx->lo, ctx->es, O);

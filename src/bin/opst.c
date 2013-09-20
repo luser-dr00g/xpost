@@ -12,6 +12,7 @@
 #include "ar.h"
 #include "di.h"
 #include "op.h"
+#include "opst.h"
 
 void Istring(context *ctx, object I) {
     push(ctx->lo, ctx->os, cvlit(consbst(ctx, I.int_.val, NULL)));

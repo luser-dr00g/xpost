@@ -49,6 +49,7 @@ void *alloca (size_t);
 #include "di.h"
 #include "op.h"
 #include "f.h"
+#include "opf.h"
 
 #ifdef HAVE_CONFIG_H
 # include <config.h>

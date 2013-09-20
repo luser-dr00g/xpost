@@ -41,6 +41,7 @@ void *alloca (size_t);
 #include "nm.h"
 #include "di.h"
 #include "op.h"
+#include "opb.h"
 
 /* any1 any2  eq  bool
    test equal */

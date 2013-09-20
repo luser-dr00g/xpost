@@ -46,6 +46,7 @@ void *alloca (size_t);
 #include "st.h"
 #include "di.h"
 #include "op.h"
+#include "opt.h"
 
 void Atype(context *ctx, object o) {
     push(ctx->lo, ctx->os, cvx(consname(ctx, types[type(o)])));
