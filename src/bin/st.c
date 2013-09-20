@@ -4,6 +4,7 @@
 #include "ob.h"
 #include "gc.h"
 #include "itp.h"
+#include "st.h"
 
 object consstr(mfile *mem, unsigned sz, /*@NULL@*/ char *ini) {
     unsigned ent;

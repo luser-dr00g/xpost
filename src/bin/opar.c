@@ -14,6 +14,7 @@
 #include "nm.h"
 #include "op.h"
 #include "ops.h"
+#include "opar.h"
 
 /* helper function */
 void a_copy(context *ctx, object S, object D) {

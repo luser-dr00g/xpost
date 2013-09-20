@@ -12,6 +12,7 @@
 #include "gc.h"
 #include "itp.h"
 #include "err.h"
+#include "f.h"
 
 /* filetype objects use a slightly different interpretation
    of the access flags.

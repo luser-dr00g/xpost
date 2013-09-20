@@ -15,6 +15,7 @@
 #include "nm.h"
 #include "op.h"
 #include "ops.h"
+#include "opdi.h"
 
 int DEBUGLOAD = 0;
 void Awhere(context *ctx, object K); /* forward decl */

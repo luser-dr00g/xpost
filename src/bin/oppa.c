@@ -44,6 +44,7 @@ void *alloca (size_t);
 #include "di.h"
 #include "op.h"
 #include "opar.h"
+#include "oppa.h"
 
 void packedarray (context *ctx, object n) {
     int i;

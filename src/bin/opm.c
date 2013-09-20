@@ -45,6 +45,7 @@ double RAD_PER_DEG /* = PI / 180.0 */;
 #include "nm.h"
 #include "di.h"
 #include "op.h"
+#include "opm.h"
 
 bool subwillunder(long x, long y);
 bool addwillover(long x, long y) {

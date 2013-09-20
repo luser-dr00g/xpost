@@ -7,6 +7,7 @@
 #include "s.h"
 #include "itp.h"
 #include "gc.h"
+#include "v.h"
 
 /*
 typedef struct {

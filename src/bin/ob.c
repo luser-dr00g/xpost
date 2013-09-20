@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdio.h>
+
 #include "ob.h"
 
 char *types[] = { TYPES(AS_TYPE_STR) "invalid"};
