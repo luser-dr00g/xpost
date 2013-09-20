@@ -50,12 +50,13 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = i686-pc-cygwin
 host_triplet = i686-pc-cygwin
-bin_PROGRAMS = itp$(EXEEXT)
-subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/config.h.in \
-	$(top_srcdir)/configure AUTHORS COPYING ChangeLog INSTALL NEWS \
-	compile config.guess config.sub depcomp install-sh missing
+	$(srcdir)/src/bin/Makefile.mk $(top_srcdir)/configure AUTHORS \
+	COPYING ChangeLog INSTALL NEWS compile config.guess config.sub \
+	depcomp install-sh missing
+bin_PROGRAMS = src/bin/itp$(EXEEXT)
+subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -68,19 +69,36 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_itp_OBJECTS = itp-ar.$(OBJEXT) itp-di.$(OBJEXT) itp-err.$(OBJEXT) \
-	itp-f.$(OBJEXT) itp-gc.$(OBJEXT) itp-itp.$(OBJEXT) \
-	itp-m.$(OBJEXT) itp-nm.$(OBJEXT) itp-osunix.$(OBJEXT) \
-	itp-s.$(OBJEXT) itp-v.$(OBJEXT) itp-st.$(OBJEXT) \
-	itp-ob.$(OBJEXT) itp-op.$(OBJEXT) itp-opar.$(OBJEXT) \
-	itp-opb.$(OBJEXT) itp-opc.$(OBJEXT) itp-opdi.$(OBJEXT) \
-	itp-opf.$(OBJEXT) itp-opm.$(OBJEXT) itp-oppa.$(OBJEXT) \
-	itp-ops.$(OBJEXT) itp-opst.$(OBJEXT) itp-opt.$(OBJEXT) \
-	itp-optok.$(OBJEXT) itp-opv.$(OBJEXT) itp-opx.$(OBJEXT)
-itp_OBJECTS = $(am_itp_OBJECTS)
-itp_LDADD = $(LDADD)
-itp_LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(itp_LDFLAGS) $(LDFLAGS) -o \
-	$@
+am__dirstamp = $(am__leading_dot)dirstamp
+am_src_bin_itp_OBJECTS = src/bin/src_bin_itp-ar.$(OBJEXT) \
+	src/bin/src_bin_itp-di.$(OBJEXT) \
+	src/bin/src_bin_itp-err.$(OBJEXT) \
+	src/bin/src_bin_itp-f.$(OBJEXT) \
+	src/bin/src_bin_itp-gc.$(OBJEXT) \
+	src/bin/src_bin_itp-itp.$(OBJEXT) \
+	src/bin/src_bin_itp-m.$(OBJEXT) \
+	src/bin/src_bin_itp-nm.$(OBJEXT) \
+	src/bin/src_bin_itp-osunix.$(OBJEXT) \
+	src/bin/src_bin_itp-s.$(OBJEXT) \
+	src/bin/src_bin_itp-v.$(OBJEXT) \
+	src/bin/src_bin_itp-st.$(OBJEXT) \
+	src/bin/src_bin_itp-ob.$(OBJEXT) \
+	src/bin/src_bin_itp-op.$(OBJEXT) \
+	src/bin/src_bin_itp-opar.$(OBJEXT) \
+	src/bin/src_bin_itp-opb.$(OBJEXT) \
+	src/bin/src_bin_itp-opc.$(OBJEXT) \
+	src/bin/src_bin_itp-opdi.$(OBJEXT) \
+	src/bin/src_bin_itp-opf.$(OBJEXT) \
+	src/bin/src_bin_itp-opm.$(OBJEXT) \
+	src/bin/src_bin_itp-oppa.$(OBJEXT) \
+	src/bin/src_bin_itp-ops.$(OBJEXT) \
+	src/bin/src_bin_itp-opst.$(OBJEXT) \
+	src/bin/src_bin_itp-opt.$(OBJEXT) \
+	src/bin/src_bin_itp-optok.$(OBJEXT) \
+	src/bin/src_bin_itp-opv.$(OBJEXT) \
+	src/bin/src_bin_itp-opx.$(OBJEXT)
+src_bin_itp_OBJECTS = $(am_src_bin_itp_OBJECTS)
+src_bin_itp_DEPENDENCIES =
 AM_V_P = $(am__v_P_$(V))
 am__v_P_ = $(am__v_P_$(AM_DEFAULT_VERBOSITY))
 am__v_P_0 = false
@@ -113,8 +131,8 @@ AM_V_CCLD = $(am__v_CCLD_$(V))
 am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(itp_SOURCES)
-DIST_SOURCES = $(itp_SOURCES)
+SOURCES = $(src_bin_itp_SOURCES)
+DIST_SOURCES = $(src_bin_itp_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -237,8 +255,10 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
+AUTOMAKE_OPTIONS = subdir-objects
 MAINTAINERCLEANFILES = \
 Makefile.in \
+aclocal.m4 \
 compile \
 config.guess \
 config.h.in \
@@ -249,37 +269,65 @@ depcomp \
 install-sh \
 missing
 
-itp_SOURCES = \
-ar.c \
-di.c \
-err.c \
-f.c \
-gc.c \
-itp.c \
-m.c \
-nm.c \
-osunix.c \
-s.c \
-v.c \
-st.c \
-ob.c \
-op.c \
-opar.c \
-opb.c \
-opc.c \
-opdi.c \
-opf.c \
-opm.c \
-oppa.c \
-ops.c \
-opst.c \
-opt.c \
-optok.c \
-opv.c \
-opx.c
+src_bin_itp_SOURCES = \
+src/bin/ar.c \
+src/bin/di.c \
+src/bin/err.c \
+src/bin/f.c \
+src/bin/gc.c \
+src/bin/itp.c \
+src/bin/m.c \
+src/bin/nm.c \
+src/bin/osunix.c \
+src/bin/s.c \
+src/bin/v.c \
+src/bin/st.c \
+src/bin/ob.c \
+src/bin/op.c \
+src/bin/opar.c \
+src/bin/opb.c \
+src/bin/opc.c \
+src/bin/opdi.c \
+src/bin/opf.c \
+src/bin/opm.c \
+src/bin/oppa.c \
+src/bin/ops.c \
+src/bin/opst.c \
+src/bin/opt.c \
+src/bin/optok.c \
+src/bin/opv.c \
+src/bin/opx.c \
+ar.h \
+di.h \
+err.h \
+f.h \
+gc.h \
+itp.h \
+m.h \
+nm.h \
+ob.h \
+opar.h \
+opb.h \
+opc.h \
+opdi.h \
+opf.h \
+op.h \
+opm.h \
+oppa.h \
+ops.h \
+opst.h \
+opt.h \
+optok.h \
+opv.h \
+opx.h \
+osmswin.h \
+osunix.h \
+s.h \
+st.h \
+v.h
 
-itp_CPPFLAGS = -DTESTMODULE_ITP
-itp_LDFLAGS = -lm
+src_bin_itp_CPPFLAGS = -DTESTMODULE_ITP -I$(top_srcdir)/src/bin
+src_bin_itp_LDADD = -lm
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -287,7 +335,7 @@ all: config.h
 .SUFFIXES: .c .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/src/bin/Makefile.mk $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -310,6 +358,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
+$(srcdir)/src/bin/Makefile.mk:
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -374,435 +423,498 @@ uninstall-binPROGRAMS:
 
 clean-binPROGRAMS:
 	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
-itp$(EXEEXT): $(itp_OBJECTS) $(itp_DEPENDENCIES) $(EXTRA_itp_DEPENDENCIES) 
-	@rm -f itp$(EXEEXT)
-	$(AM_V_CCLD)$(itp_LINK) $(itp_OBJECTS) $(itp_LDADD) $(LIBS)
+src/bin/$(am__dirstamp):
+	@$(MKDIR_P) src/bin
+	@: > src/bin/$(am__dirstamp)
+src/bin/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) src/bin/$(DEPDIR)
+	@: > src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-ar.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-di.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-err.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-f.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-gc.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-itp.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-m.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-nm.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-osunix.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-s.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-v.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-st.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-ob.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-op.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opar.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opb.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opc.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opdi.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opf.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opm.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-oppa.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-ops.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opst.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opt.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-optok.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opv.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/src_bin_itp-opx.$(OBJEXT): src/bin/$(am__dirstamp) \
+	src/bin/$(DEPDIR)/$(am__dirstamp)
+src/bin/itp$(EXEEXT): $(src_bin_itp_OBJECTS) $(src_bin_itp_DEPENDENCIES) $(EXTRA_src_bin_itp_DEPENDENCIES) src/bin/$(am__dirstamp)
+	@rm -f src/bin/itp$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(src_bin_itp_OBJECTS) $(src_bin_itp_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f src/bin/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
 
-include ./$(DEPDIR)/itp-ar.Po
-include ./$(DEPDIR)/itp-di.Po
-include ./$(DEPDIR)/itp-err.Po
-include ./$(DEPDIR)/itp-f.Po
-include ./$(DEPDIR)/itp-gc.Po
-include ./$(DEPDIR)/itp-itp.Po
-include ./$(DEPDIR)/itp-m.Po
-include ./$(DEPDIR)/itp-nm.Po
-include ./$(DEPDIR)/itp-ob.Po
-include ./$(DEPDIR)/itp-op.Po
-include ./$(DEPDIR)/itp-opar.Po
-include ./$(DEPDIR)/itp-opb.Po
-include ./$(DEPDIR)/itp-opc.Po
-include ./$(DEPDIR)/itp-opdi.Po
-include ./$(DEPDIR)/itp-opf.Po
-include ./$(DEPDIR)/itp-opm.Po
-include ./$(DEPDIR)/itp-oppa.Po
-include ./$(DEPDIR)/itp-ops.Po
-include ./$(DEPDIR)/itp-opst.Po
-include ./$(DEPDIR)/itp-opt.Po
-include ./$(DEPDIR)/itp-optok.Po
-include ./$(DEPDIR)/itp-opv.Po
-include ./$(DEPDIR)/itp-opx.Po
-include ./$(DEPDIR)/itp-osunix.Po
-include ./$(DEPDIR)/itp-s.Po
-include ./$(DEPDIR)/itp-st.Po
-include ./$(DEPDIR)/itp-v.Po
+include src/bin/$(DEPDIR)/src_bin_itp-ar.Po
+include src/bin/$(DEPDIR)/src_bin_itp-di.Po
+include src/bin/$(DEPDIR)/src_bin_itp-err.Po
+include src/bin/$(DEPDIR)/src_bin_itp-f.Po
+include src/bin/$(DEPDIR)/src_bin_itp-gc.Po
+include src/bin/$(DEPDIR)/src_bin_itp-itp.Po
+include src/bin/$(DEPDIR)/src_bin_itp-m.Po
+include src/bin/$(DEPDIR)/src_bin_itp-nm.Po
+include src/bin/$(DEPDIR)/src_bin_itp-ob.Po
+include src/bin/$(DEPDIR)/src_bin_itp-op.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opar.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opb.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opc.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opdi.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opf.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opm.Po
+include src/bin/$(DEPDIR)/src_bin_itp-oppa.Po
+include src/bin/$(DEPDIR)/src_bin_itp-ops.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opst.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opt.Po
+include src/bin/$(DEPDIR)/src_bin_itp-optok.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opv.Po
+include src/bin/$(DEPDIR)/src_bin_itp-opx.Po
+include src/bin/$(DEPDIR)/src_bin_itp-osunix.Po
+include src/bin/$(DEPDIR)/src_bin_itp-s.Po
+include src/bin/$(DEPDIR)/src_bin_itp-st.Po
+include src/bin/$(DEPDIR)/src_bin_itp-v.Po
 
 .c.o:
-	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+	$(am__mv) $$depbase.Tpo $$depbase.Po
 #	$(AM_V_CC)source='$<' object='$@' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(COMPILE) -c $<
+#	$(AM_V_CC_no)$(COMPILE) -c -o $@ $<
 
 .c.obj:
-	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+	$(am__mv) $$depbase.Tpo $$depbase.Po
 #	$(AM_V_CC)source='$<' object='$@' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(COMPILE) -c `$(CYGPATH_W) '$<'`
+#	$(AM_V_CC_no)$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-itp-ar.o: ar.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-ar.o -MD -MP -MF $(DEPDIR)/itp-ar.Tpo -c -o itp-ar.o `test -f 'ar.c' || echo '$(srcdir)/'`ar.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-ar.Tpo $(DEPDIR)/itp-ar.Po
-#	$(AM_V_CC)source='ar.c' object='itp-ar.o' libtool=no \
+src/bin/src_bin_itp-ar.o: src/bin/ar.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-ar.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-ar.Tpo -c -o src/bin/src_bin_itp-ar.o `test -f 'src/bin/ar.c' || echo '$(srcdir)/'`src/bin/ar.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-ar.Tpo src/bin/$(DEPDIR)/src_bin_itp-ar.Po
+#	$(AM_V_CC)source='src/bin/ar.c' object='src/bin/src_bin_itp-ar.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-ar.o `test -f 'ar.c' || echo '$(srcdir)/'`ar.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-ar.o `test -f 'src/bin/ar.c' || echo '$(srcdir)/'`src/bin/ar.c
 
-itp-ar.obj: ar.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-ar.obj -MD -MP -MF $(DEPDIR)/itp-ar.Tpo -c -o itp-ar.obj `if test -f 'ar.c'; then $(CYGPATH_W) 'ar.c'; else $(CYGPATH_W) '$(srcdir)/ar.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-ar.Tpo $(DEPDIR)/itp-ar.Po
-#	$(AM_V_CC)source='ar.c' object='itp-ar.obj' libtool=no \
+src/bin/src_bin_itp-ar.obj: src/bin/ar.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-ar.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-ar.Tpo -c -o src/bin/src_bin_itp-ar.obj `if test -f 'src/bin/ar.c'; then $(CYGPATH_W) 'src/bin/ar.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/ar.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-ar.Tpo src/bin/$(DEPDIR)/src_bin_itp-ar.Po
+#	$(AM_V_CC)source='src/bin/ar.c' object='src/bin/src_bin_itp-ar.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-ar.obj `if test -f 'ar.c'; then $(CYGPATH_W) 'ar.c'; else $(CYGPATH_W) '$(srcdir)/ar.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-ar.obj `if test -f 'src/bin/ar.c'; then $(CYGPATH_W) 'src/bin/ar.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/ar.c'; fi`
 
-itp-di.o: di.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-di.o -MD -MP -MF $(DEPDIR)/itp-di.Tpo -c -o itp-di.o `test -f 'di.c' || echo '$(srcdir)/'`di.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-di.Tpo $(DEPDIR)/itp-di.Po
-#	$(AM_V_CC)source='di.c' object='itp-di.o' libtool=no \
+src/bin/src_bin_itp-di.o: src/bin/di.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-di.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-di.Tpo -c -o src/bin/src_bin_itp-di.o `test -f 'src/bin/di.c' || echo '$(srcdir)/'`src/bin/di.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-di.Tpo src/bin/$(DEPDIR)/src_bin_itp-di.Po
+#	$(AM_V_CC)source='src/bin/di.c' object='src/bin/src_bin_itp-di.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-di.o `test -f 'di.c' || echo '$(srcdir)/'`di.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-di.o `test -f 'src/bin/di.c' || echo '$(srcdir)/'`src/bin/di.c
 
-itp-di.obj: di.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-di.obj -MD -MP -MF $(DEPDIR)/itp-di.Tpo -c -o itp-di.obj `if test -f 'di.c'; then $(CYGPATH_W) 'di.c'; else $(CYGPATH_W) '$(srcdir)/di.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-di.Tpo $(DEPDIR)/itp-di.Po
-#	$(AM_V_CC)source='di.c' object='itp-di.obj' libtool=no \
+src/bin/src_bin_itp-di.obj: src/bin/di.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-di.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-di.Tpo -c -o src/bin/src_bin_itp-di.obj `if test -f 'src/bin/di.c'; then $(CYGPATH_W) 'src/bin/di.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/di.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-di.Tpo src/bin/$(DEPDIR)/src_bin_itp-di.Po
+#	$(AM_V_CC)source='src/bin/di.c' object='src/bin/src_bin_itp-di.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-di.obj `if test -f 'di.c'; then $(CYGPATH_W) 'di.c'; else $(CYGPATH_W) '$(srcdir)/di.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-di.obj `if test -f 'src/bin/di.c'; then $(CYGPATH_W) 'src/bin/di.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/di.c'; fi`
 
-itp-err.o: err.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-err.o -MD -MP -MF $(DEPDIR)/itp-err.Tpo -c -o itp-err.o `test -f 'err.c' || echo '$(srcdir)/'`err.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-err.Tpo $(DEPDIR)/itp-err.Po
-#	$(AM_V_CC)source='err.c' object='itp-err.o' libtool=no \
+src/bin/src_bin_itp-err.o: src/bin/err.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-err.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-err.Tpo -c -o src/bin/src_bin_itp-err.o `test -f 'src/bin/err.c' || echo '$(srcdir)/'`src/bin/err.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-err.Tpo src/bin/$(DEPDIR)/src_bin_itp-err.Po
+#	$(AM_V_CC)source='src/bin/err.c' object='src/bin/src_bin_itp-err.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-err.o `test -f 'err.c' || echo '$(srcdir)/'`err.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-err.o `test -f 'src/bin/err.c' || echo '$(srcdir)/'`src/bin/err.c
 
-itp-err.obj: err.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-err.obj -MD -MP -MF $(DEPDIR)/itp-err.Tpo -c -o itp-err.obj `if test -f 'err.c'; then $(CYGPATH_W) 'err.c'; else $(CYGPATH_W) '$(srcdir)/err.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-err.Tpo $(DEPDIR)/itp-err.Po
-#	$(AM_V_CC)source='err.c' object='itp-err.obj' libtool=no \
+src/bin/src_bin_itp-err.obj: src/bin/err.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-err.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-err.Tpo -c -o src/bin/src_bin_itp-err.obj `if test -f 'src/bin/err.c'; then $(CYGPATH_W) 'src/bin/err.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/err.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-err.Tpo src/bin/$(DEPDIR)/src_bin_itp-err.Po
+#	$(AM_V_CC)source='src/bin/err.c' object='src/bin/src_bin_itp-err.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-err.obj `if test -f 'err.c'; then $(CYGPATH_W) 'err.c'; else $(CYGPATH_W) '$(srcdir)/err.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-err.obj `if test -f 'src/bin/err.c'; then $(CYGPATH_W) 'src/bin/err.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/err.c'; fi`
 
-itp-f.o: f.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-f.o -MD -MP -MF $(DEPDIR)/itp-f.Tpo -c -o itp-f.o `test -f 'f.c' || echo '$(srcdir)/'`f.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-f.Tpo $(DEPDIR)/itp-f.Po
-#	$(AM_V_CC)source='f.c' object='itp-f.o' libtool=no \
+src/bin/src_bin_itp-f.o: src/bin/f.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-f.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-f.Tpo -c -o src/bin/src_bin_itp-f.o `test -f 'src/bin/f.c' || echo '$(srcdir)/'`src/bin/f.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-f.Tpo src/bin/$(DEPDIR)/src_bin_itp-f.Po
+#	$(AM_V_CC)source='src/bin/f.c' object='src/bin/src_bin_itp-f.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-f.o `test -f 'f.c' || echo '$(srcdir)/'`f.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-f.o `test -f 'src/bin/f.c' || echo '$(srcdir)/'`src/bin/f.c
 
-itp-f.obj: f.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-f.obj -MD -MP -MF $(DEPDIR)/itp-f.Tpo -c -o itp-f.obj `if test -f 'f.c'; then $(CYGPATH_W) 'f.c'; else $(CYGPATH_W) '$(srcdir)/f.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-f.Tpo $(DEPDIR)/itp-f.Po
-#	$(AM_V_CC)source='f.c' object='itp-f.obj' libtool=no \
+src/bin/src_bin_itp-f.obj: src/bin/f.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-f.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-f.Tpo -c -o src/bin/src_bin_itp-f.obj `if test -f 'src/bin/f.c'; then $(CYGPATH_W) 'src/bin/f.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/f.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-f.Tpo src/bin/$(DEPDIR)/src_bin_itp-f.Po
+#	$(AM_V_CC)source='src/bin/f.c' object='src/bin/src_bin_itp-f.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-f.obj `if test -f 'f.c'; then $(CYGPATH_W) 'f.c'; else $(CYGPATH_W) '$(srcdir)/f.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-f.obj `if test -f 'src/bin/f.c'; then $(CYGPATH_W) 'src/bin/f.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/f.c'; fi`
 
-itp-gc.o: gc.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-gc.o -MD -MP -MF $(DEPDIR)/itp-gc.Tpo -c -o itp-gc.o `test -f 'gc.c' || echo '$(srcdir)/'`gc.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-gc.Tpo $(DEPDIR)/itp-gc.Po
-#	$(AM_V_CC)source='gc.c' object='itp-gc.o' libtool=no \
+src/bin/src_bin_itp-gc.o: src/bin/gc.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-gc.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-gc.Tpo -c -o src/bin/src_bin_itp-gc.o `test -f 'src/bin/gc.c' || echo '$(srcdir)/'`src/bin/gc.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-gc.Tpo src/bin/$(DEPDIR)/src_bin_itp-gc.Po
+#	$(AM_V_CC)source='src/bin/gc.c' object='src/bin/src_bin_itp-gc.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-gc.o `test -f 'gc.c' || echo '$(srcdir)/'`gc.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-gc.o `test -f 'src/bin/gc.c' || echo '$(srcdir)/'`src/bin/gc.c
 
-itp-gc.obj: gc.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-gc.obj -MD -MP -MF $(DEPDIR)/itp-gc.Tpo -c -o itp-gc.obj `if test -f 'gc.c'; then $(CYGPATH_W) 'gc.c'; else $(CYGPATH_W) '$(srcdir)/gc.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-gc.Tpo $(DEPDIR)/itp-gc.Po
-#	$(AM_V_CC)source='gc.c' object='itp-gc.obj' libtool=no \
+src/bin/src_bin_itp-gc.obj: src/bin/gc.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-gc.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-gc.Tpo -c -o src/bin/src_bin_itp-gc.obj `if test -f 'src/bin/gc.c'; then $(CYGPATH_W) 'src/bin/gc.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/gc.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-gc.Tpo src/bin/$(DEPDIR)/src_bin_itp-gc.Po
+#	$(AM_V_CC)source='src/bin/gc.c' object='src/bin/src_bin_itp-gc.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-gc.obj `if test -f 'gc.c'; then $(CYGPATH_W) 'gc.c'; else $(CYGPATH_W) '$(srcdir)/gc.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-gc.obj `if test -f 'src/bin/gc.c'; then $(CYGPATH_W) 'src/bin/gc.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/gc.c'; fi`
 
-itp-itp.o: itp.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-itp.o -MD -MP -MF $(DEPDIR)/itp-itp.Tpo -c -o itp-itp.o `test -f 'itp.c' || echo '$(srcdir)/'`itp.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-itp.Tpo $(DEPDIR)/itp-itp.Po
-#	$(AM_V_CC)source='itp.c' object='itp-itp.o' libtool=no \
+src/bin/src_bin_itp-itp.o: src/bin/itp.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-itp.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-itp.Tpo -c -o src/bin/src_bin_itp-itp.o `test -f 'src/bin/itp.c' || echo '$(srcdir)/'`src/bin/itp.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-itp.Tpo src/bin/$(DEPDIR)/src_bin_itp-itp.Po
+#	$(AM_V_CC)source='src/bin/itp.c' object='src/bin/src_bin_itp-itp.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-itp.o `test -f 'itp.c' || echo '$(srcdir)/'`itp.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-itp.o `test -f 'src/bin/itp.c' || echo '$(srcdir)/'`src/bin/itp.c
 
-itp-itp.obj: itp.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-itp.obj -MD -MP -MF $(DEPDIR)/itp-itp.Tpo -c -o itp-itp.obj `if test -f 'itp.c'; then $(CYGPATH_W) 'itp.c'; else $(CYGPATH_W) '$(srcdir)/itp.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-itp.Tpo $(DEPDIR)/itp-itp.Po
-#	$(AM_V_CC)source='itp.c' object='itp-itp.obj' libtool=no \
+src/bin/src_bin_itp-itp.obj: src/bin/itp.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-itp.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-itp.Tpo -c -o src/bin/src_bin_itp-itp.obj `if test -f 'src/bin/itp.c'; then $(CYGPATH_W) 'src/bin/itp.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/itp.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-itp.Tpo src/bin/$(DEPDIR)/src_bin_itp-itp.Po
+#	$(AM_V_CC)source='src/bin/itp.c' object='src/bin/src_bin_itp-itp.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-itp.obj `if test -f 'itp.c'; then $(CYGPATH_W) 'itp.c'; else $(CYGPATH_W) '$(srcdir)/itp.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-itp.obj `if test -f 'src/bin/itp.c'; then $(CYGPATH_W) 'src/bin/itp.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/itp.c'; fi`
 
-itp-m.o: m.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-m.o -MD -MP -MF $(DEPDIR)/itp-m.Tpo -c -o itp-m.o `test -f 'm.c' || echo '$(srcdir)/'`m.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-m.Tpo $(DEPDIR)/itp-m.Po
-#	$(AM_V_CC)source='m.c' object='itp-m.o' libtool=no \
+src/bin/src_bin_itp-m.o: src/bin/m.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-m.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-m.Tpo -c -o src/bin/src_bin_itp-m.o `test -f 'src/bin/m.c' || echo '$(srcdir)/'`src/bin/m.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-m.Tpo src/bin/$(DEPDIR)/src_bin_itp-m.Po
+#	$(AM_V_CC)source='src/bin/m.c' object='src/bin/src_bin_itp-m.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-m.o `test -f 'm.c' || echo '$(srcdir)/'`m.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-m.o `test -f 'src/bin/m.c' || echo '$(srcdir)/'`src/bin/m.c
 
-itp-m.obj: m.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-m.obj -MD -MP -MF $(DEPDIR)/itp-m.Tpo -c -o itp-m.obj `if test -f 'm.c'; then $(CYGPATH_W) 'm.c'; else $(CYGPATH_W) '$(srcdir)/m.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-m.Tpo $(DEPDIR)/itp-m.Po
-#	$(AM_V_CC)source='m.c' object='itp-m.obj' libtool=no \
+src/bin/src_bin_itp-m.obj: src/bin/m.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-m.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-m.Tpo -c -o src/bin/src_bin_itp-m.obj `if test -f 'src/bin/m.c'; then $(CYGPATH_W) 'src/bin/m.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/m.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-m.Tpo src/bin/$(DEPDIR)/src_bin_itp-m.Po
+#	$(AM_V_CC)source='src/bin/m.c' object='src/bin/src_bin_itp-m.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-m.obj `if test -f 'm.c'; then $(CYGPATH_W) 'm.c'; else $(CYGPATH_W) '$(srcdir)/m.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-m.obj `if test -f 'src/bin/m.c'; then $(CYGPATH_W) 'src/bin/m.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/m.c'; fi`
 
-itp-nm.o: nm.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-nm.o -MD -MP -MF $(DEPDIR)/itp-nm.Tpo -c -o itp-nm.o `test -f 'nm.c' || echo '$(srcdir)/'`nm.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-nm.Tpo $(DEPDIR)/itp-nm.Po
-#	$(AM_V_CC)source='nm.c' object='itp-nm.o' libtool=no \
+src/bin/src_bin_itp-nm.o: src/bin/nm.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-nm.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-nm.Tpo -c -o src/bin/src_bin_itp-nm.o `test -f 'src/bin/nm.c' || echo '$(srcdir)/'`src/bin/nm.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-nm.Tpo src/bin/$(DEPDIR)/src_bin_itp-nm.Po
+#	$(AM_V_CC)source='src/bin/nm.c' object='src/bin/src_bin_itp-nm.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-nm.o `test -f 'nm.c' || echo '$(srcdir)/'`nm.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-nm.o `test -f 'src/bin/nm.c' || echo '$(srcdir)/'`src/bin/nm.c
 
-itp-nm.obj: nm.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-nm.obj -MD -MP -MF $(DEPDIR)/itp-nm.Tpo -c -o itp-nm.obj `if test -f 'nm.c'; then $(CYGPATH_W) 'nm.c'; else $(CYGPATH_W) '$(srcdir)/nm.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-nm.Tpo $(DEPDIR)/itp-nm.Po
-#	$(AM_V_CC)source='nm.c' object='itp-nm.obj' libtool=no \
+src/bin/src_bin_itp-nm.obj: src/bin/nm.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-nm.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-nm.Tpo -c -o src/bin/src_bin_itp-nm.obj `if test -f 'src/bin/nm.c'; then $(CYGPATH_W) 'src/bin/nm.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/nm.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-nm.Tpo src/bin/$(DEPDIR)/src_bin_itp-nm.Po
+#	$(AM_V_CC)source='src/bin/nm.c' object='src/bin/src_bin_itp-nm.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-nm.obj `if test -f 'nm.c'; then $(CYGPATH_W) 'nm.c'; else $(CYGPATH_W) '$(srcdir)/nm.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-nm.obj `if test -f 'src/bin/nm.c'; then $(CYGPATH_W) 'src/bin/nm.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/nm.c'; fi`
 
-itp-osunix.o: osunix.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-osunix.o -MD -MP -MF $(DEPDIR)/itp-osunix.Tpo -c -o itp-osunix.o `test -f 'osunix.c' || echo '$(srcdir)/'`osunix.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-osunix.Tpo $(DEPDIR)/itp-osunix.Po
-#	$(AM_V_CC)source='osunix.c' object='itp-osunix.o' libtool=no \
+src/bin/src_bin_itp-osunix.o: src/bin/osunix.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-osunix.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-osunix.Tpo -c -o src/bin/src_bin_itp-osunix.o `test -f 'src/bin/osunix.c' || echo '$(srcdir)/'`src/bin/osunix.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-osunix.Tpo src/bin/$(DEPDIR)/src_bin_itp-osunix.Po
+#	$(AM_V_CC)source='src/bin/osunix.c' object='src/bin/src_bin_itp-osunix.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-osunix.o `test -f 'osunix.c' || echo '$(srcdir)/'`osunix.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-osunix.o `test -f 'src/bin/osunix.c' || echo '$(srcdir)/'`src/bin/osunix.c
 
-itp-osunix.obj: osunix.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-osunix.obj -MD -MP -MF $(DEPDIR)/itp-osunix.Tpo -c -o itp-osunix.obj `if test -f 'osunix.c'; then $(CYGPATH_W) 'osunix.c'; else $(CYGPATH_W) '$(srcdir)/osunix.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-osunix.Tpo $(DEPDIR)/itp-osunix.Po
-#	$(AM_V_CC)source='osunix.c' object='itp-osunix.obj' libtool=no \
+src/bin/src_bin_itp-osunix.obj: src/bin/osunix.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-osunix.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-osunix.Tpo -c -o src/bin/src_bin_itp-osunix.obj `if test -f 'src/bin/osunix.c'; then $(CYGPATH_W) 'src/bin/osunix.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/osunix.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-osunix.Tpo src/bin/$(DEPDIR)/src_bin_itp-osunix.Po
+#	$(AM_V_CC)source='src/bin/osunix.c' object='src/bin/src_bin_itp-osunix.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-osunix.obj `if test -f 'osunix.c'; then $(CYGPATH_W) 'osunix.c'; else $(CYGPATH_W) '$(srcdir)/osunix.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-osunix.obj `if test -f 'src/bin/osunix.c'; then $(CYGPATH_W) 'src/bin/osunix.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/osunix.c'; fi`
 
-itp-s.o: s.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-s.o -MD -MP -MF $(DEPDIR)/itp-s.Tpo -c -o itp-s.o `test -f 's.c' || echo '$(srcdir)/'`s.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-s.Tpo $(DEPDIR)/itp-s.Po
-#	$(AM_V_CC)source='s.c' object='itp-s.o' libtool=no \
+src/bin/src_bin_itp-s.o: src/bin/s.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-s.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-s.Tpo -c -o src/bin/src_bin_itp-s.o `test -f 'src/bin/s.c' || echo '$(srcdir)/'`src/bin/s.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-s.Tpo src/bin/$(DEPDIR)/src_bin_itp-s.Po
+#	$(AM_V_CC)source='src/bin/s.c' object='src/bin/src_bin_itp-s.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-s.o `test -f 's.c' || echo '$(srcdir)/'`s.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-s.o `test -f 'src/bin/s.c' || echo '$(srcdir)/'`src/bin/s.c
 
-itp-s.obj: s.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-s.obj -MD -MP -MF $(DEPDIR)/itp-s.Tpo -c -o itp-s.obj `if test -f 's.c'; then $(CYGPATH_W) 's.c'; else $(CYGPATH_W) '$(srcdir)/s.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-s.Tpo $(DEPDIR)/itp-s.Po
-#	$(AM_V_CC)source='s.c' object='itp-s.obj' libtool=no \
+src/bin/src_bin_itp-s.obj: src/bin/s.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-s.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-s.Tpo -c -o src/bin/src_bin_itp-s.obj `if test -f 'src/bin/s.c'; then $(CYGPATH_W) 'src/bin/s.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/s.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-s.Tpo src/bin/$(DEPDIR)/src_bin_itp-s.Po
+#	$(AM_V_CC)source='src/bin/s.c' object='src/bin/src_bin_itp-s.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-s.obj `if test -f 's.c'; then $(CYGPATH_W) 's.c'; else $(CYGPATH_W) '$(srcdir)/s.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-s.obj `if test -f 'src/bin/s.c'; then $(CYGPATH_W) 'src/bin/s.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/s.c'; fi`
 
-itp-v.o: v.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-v.o -MD -MP -MF $(DEPDIR)/itp-v.Tpo -c -o itp-v.o `test -f 'v.c' || echo '$(srcdir)/'`v.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-v.Tpo $(DEPDIR)/itp-v.Po
-#	$(AM_V_CC)source='v.c' object='itp-v.o' libtool=no \
+src/bin/src_bin_itp-v.o: src/bin/v.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-v.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-v.Tpo -c -o src/bin/src_bin_itp-v.o `test -f 'src/bin/v.c' || echo '$(srcdir)/'`src/bin/v.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-v.Tpo src/bin/$(DEPDIR)/src_bin_itp-v.Po
+#	$(AM_V_CC)source='src/bin/v.c' object='src/bin/src_bin_itp-v.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-v.o `test -f 'v.c' || echo '$(srcdir)/'`v.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-v.o `test -f 'src/bin/v.c' || echo '$(srcdir)/'`src/bin/v.c
 
-itp-v.obj: v.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-v.obj -MD -MP -MF $(DEPDIR)/itp-v.Tpo -c -o itp-v.obj `if test -f 'v.c'; then $(CYGPATH_W) 'v.c'; else $(CYGPATH_W) '$(srcdir)/v.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-v.Tpo $(DEPDIR)/itp-v.Po
-#	$(AM_V_CC)source='v.c' object='itp-v.obj' libtool=no \
+src/bin/src_bin_itp-v.obj: src/bin/v.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-v.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-v.Tpo -c -o src/bin/src_bin_itp-v.obj `if test -f 'src/bin/v.c'; then $(CYGPATH_W) 'src/bin/v.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/v.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-v.Tpo src/bin/$(DEPDIR)/src_bin_itp-v.Po
+#	$(AM_V_CC)source='src/bin/v.c' object='src/bin/src_bin_itp-v.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-v.obj `if test -f 'v.c'; then $(CYGPATH_W) 'v.c'; else $(CYGPATH_W) '$(srcdir)/v.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-v.obj `if test -f 'src/bin/v.c'; then $(CYGPATH_W) 'src/bin/v.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/v.c'; fi`
 
-itp-st.o: st.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-st.o -MD -MP -MF $(DEPDIR)/itp-st.Tpo -c -o itp-st.o `test -f 'st.c' || echo '$(srcdir)/'`st.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-st.Tpo $(DEPDIR)/itp-st.Po
-#	$(AM_V_CC)source='st.c' object='itp-st.o' libtool=no \
+src/bin/src_bin_itp-st.o: src/bin/st.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-st.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-st.Tpo -c -o src/bin/src_bin_itp-st.o `test -f 'src/bin/st.c' || echo '$(srcdir)/'`src/bin/st.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-st.Tpo src/bin/$(DEPDIR)/src_bin_itp-st.Po
+#	$(AM_V_CC)source='src/bin/st.c' object='src/bin/src_bin_itp-st.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-st.o `test -f 'st.c' || echo '$(srcdir)/'`st.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-st.o `test -f 'src/bin/st.c' || echo '$(srcdir)/'`src/bin/st.c
 
-itp-st.obj: st.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-st.obj -MD -MP -MF $(DEPDIR)/itp-st.Tpo -c -o itp-st.obj `if test -f 'st.c'; then $(CYGPATH_W) 'st.c'; else $(CYGPATH_W) '$(srcdir)/st.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-st.Tpo $(DEPDIR)/itp-st.Po
-#	$(AM_V_CC)source='st.c' object='itp-st.obj' libtool=no \
+src/bin/src_bin_itp-st.obj: src/bin/st.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-st.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-st.Tpo -c -o src/bin/src_bin_itp-st.obj `if test -f 'src/bin/st.c'; then $(CYGPATH_W) 'src/bin/st.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/st.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-st.Tpo src/bin/$(DEPDIR)/src_bin_itp-st.Po
+#	$(AM_V_CC)source='src/bin/st.c' object='src/bin/src_bin_itp-st.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-st.obj `if test -f 'st.c'; then $(CYGPATH_W) 'st.c'; else $(CYGPATH_W) '$(srcdir)/st.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-st.obj `if test -f 'src/bin/st.c'; then $(CYGPATH_W) 'src/bin/st.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/st.c'; fi`
 
-itp-ob.o: ob.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-ob.o -MD -MP -MF $(DEPDIR)/itp-ob.Tpo -c -o itp-ob.o `test -f 'ob.c' || echo '$(srcdir)/'`ob.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-ob.Tpo $(DEPDIR)/itp-ob.Po
-#	$(AM_V_CC)source='ob.c' object='itp-ob.o' libtool=no \
+src/bin/src_bin_itp-ob.o: src/bin/ob.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-ob.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-ob.Tpo -c -o src/bin/src_bin_itp-ob.o `test -f 'src/bin/ob.c' || echo '$(srcdir)/'`src/bin/ob.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-ob.Tpo src/bin/$(DEPDIR)/src_bin_itp-ob.Po
+#	$(AM_V_CC)source='src/bin/ob.c' object='src/bin/src_bin_itp-ob.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-ob.o `test -f 'ob.c' || echo '$(srcdir)/'`ob.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-ob.o `test -f 'src/bin/ob.c' || echo '$(srcdir)/'`src/bin/ob.c
 
-itp-ob.obj: ob.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-ob.obj -MD -MP -MF $(DEPDIR)/itp-ob.Tpo -c -o itp-ob.obj `if test -f 'ob.c'; then $(CYGPATH_W) 'ob.c'; else $(CYGPATH_W) '$(srcdir)/ob.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-ob.Tpo $(DEPDIR)/itp-ob.Po
-#	$(AM_V_CC)source='ob.c' object='itp-ob.obj' libtool=no \
+src/bin/src_bin_itp-ob.obj: src/bin/ob.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-ob.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-ob.Tpo -c -o src/bin/src_bin_itp-ob.obj `if test -f 'src/bin/ob.c'; then $(CYGPATH_W) 'src/bin/ob.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/ob.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-ob.Tpo src/bin/$(DEPDIR)/src_bin_itp-ob.Po
+#	$(AM_V_CC)source='src/bin/ob.c' object='src/bin/src_bin_itp-ob.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-ob.obj `if test -f 'ob.c'; then $(CYGPATH_W) 'ob.c'; else $(CYGPATH_W) '$(srcdir)/ob.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-ob.obj `if test -f 'src/bin/ob.c'; then $(CYGPATH_W) 'src/bin/ob.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/ob.c'; fi`
 
-itp-op.o: op.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-op.o -MD -MP -MF $(DEPDIR)/itp-op.Tpo -c -o itp-op.o `test -f 'op.c' || echo '$(srcdir)/'`op.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-op.Tpo $(DEPDIR)/itp-op.Po
-#	$(AM_V_CC)source='op.c' object='itp-op.o' libtool=no \
+src/bin/src_bin_itp-op.o: src/bin/op.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-op.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-op.Tpo -c -o src/bin/src_bin_itp-op.o `test -f 'src/bin/op.c' || echo '$(srcdir)/'`src/bin/op.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-op.Tpo src/bin/$(DEPDIR)/src_bin_itp-op.Po
+#	$(AM_V_CC)source='src/bin/op.c' object='src/bin/src_bin_itp-op.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-op.o `test -f 'op.c' || echo '$(srcdir)/'`op.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-op.o `test -f 'src/bin/op.c' || echo '$(srcdir)/'`src/bin/op.c
 
-itp-op.obj: op.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-op.obj -MD -MP -MF $(DEPDIR)/itp-op.Tpo -c -o itp-op.obj `if test -f 'op.c'; then $(CYGPATH_W) 'op.c'; else $(CYGPATH_W) '$(srcdir)/op.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-op.Tpo $(DEPDIR)/itp-op.Po
-#	$(AM_V_CC)source='op.c' object='itp-op.obj' libtool=no \
+src/bin/src_bin_itp-op.obj: src/bin/op.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-op.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-op.Tpo -c -o src/bin/src_bin_itp-op.obj `if test -f 'src/bin/op.c'; then $(CYGPATH_W) 'src/bin/op.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/op.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-op.Tpo src/bin/$(DEPDIR)/src_bin_itp-op.Po
+#	$(AM_V_CC)source='src/bin/op.c' object='src/bin/src_bin_itp-op.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-op.obj `if test -f 'op.c'; then $(CYGPATH_W) 'op.c'; else $(CYGPATH_W) '$(srcdir)/op.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-op.obj `if test -f 'src/bin/op.c'; then $(CYGPATH_W) 'src/bin/op.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/op.c'; fi`
 
-itp-opar.o: opar.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opar.o -MD -MP -MF $(DEPDIR)/itp-opar.Tpo -c -o itp-opar.o `test -f 'opar.c' || echo '$(srcdir)/'`opar.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opar.Tpo $(DEPDIR)/itp-opar.Po
-#	$(AM_V_CC)source='opar.c' object='itp-opar.o' libtool=no \
+src/bin/src_bin_itp-opar.o: src/bin/opar.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opar.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opar.Tpo -c -o src/bin/src_bin_itp-opar.o `test -f 'src/bin/opar.c' || echo '$(srcdir)/'`src/bin/opar.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opar.Tpo src/bin/$(DEPDIR)/src_bin_itp-opar.Po
+#	$(AM_V_CC)source='src/bin/opar.c' object='src/bin/src_bin_itp-opar.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opar.o `test -f 'opar.c' || echo '$(srcdir)/'`opar.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opar.o `test -f 'src/bin/opar.c' || echo '$(srcdir)/'`src/bin/opar.c
 
-itp-opar.obj: opar.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opar.obj -MD -MP -MF $(DEPDIR)/itp-opar.Tpo -c -o itp-opar.obj `if test -f 'opar.c'; then $(CYGPATH_W) 'opar.c'; else $(CYGPATH_W) '$(srcdir)/opar.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opar.Tpo $(DEPDIR)/itp-opar.Po
-#	$(AM_V_CC)source='opar.c' object='itp-opar.obj' libtool=no \
+src/bin/src_bin_itp-opar.obj: src/bin/opar.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opar.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opar.Tpo -c -o src/bin/src_bin_itp-opar.obj `if test -f 'src/bin/opar.c'; then $(CYGPATH_W) 'src/bin/opar.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opar.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opar.Tpo src/bin/$(DEPDIR)/src_bin_itp-opar.Po
+#	$(AM_V_CC)source='src/bin/opar.c' object='src/bin/src_bin_itp-opar.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opar.obj `if test -f 'opar.c'; then $(CYGPATH_W) 'opar.c'; else $(CYGPATH_W) '$(srcdir)/opar.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opar.obj `if test -f 'src/bin/opar.c'; then $(CYGPATH_W) 'src/bin/opar.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opar.c'; fi`
 
-itp-opb.o: opb.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opb.o -MD -MP -MF $(DEPDIR)/itp-opb.Tpo -c -o itp-opb.o `test -f 'opb.c' || echo '$(srcdir)/'`opb.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opb.Tpo $(DEPDIR)/itp-opb.Po
-#	$(AM_V_CC)source='opb.c' object='itp-opb.o' libtool=no \
+src/bin/src_bin_itp-opb.o: src/bin/opb.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opb.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opb.Tpo -c -o src/bin/src_bin_itp-opb.o `test -f 'src/bin/opb.c' || echo '$(srcdir)/'`src/bin/opb.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opb.Tpo src/bin/$(DEPDIR)/src_bin_itp-opb.Po
+#	$(AM_V_CC)source='src/bin/opb.c' object='src/bin/src_bin_itp-opb.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opb.o `test -f 'opb.c' || echo '$(srcdir)/'`opb.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opb.o `test -f 'src/bin/opb.c' || echo '$(srcdir)/'`src/bin/opb.c
 
-itp-opb.obj: opb.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opb.obj -MD -MP -MF $(DEPDIR)/itp-opb.Tpo -c -o itp-opb.obj `if test -f 'opb.c'; then $(CYGPATH_W) 'opb.c'; else $(CYGPATH_W) '$(srcdir)/opb.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opb.Tpo $(DEPDIR)/itp-opb.Po
-#	$(AM_V_CC)source='opb.c' object='itp-opb.obj' libtool=no \
+src/bin/src_bin_itp-opb.obj: src/bin/opb.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opb.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opb.Tpo -c -o src/bin/src_bin_itp-opb.obj `if test -f 'src/bin/opb.c'; then $(CYGPATH_W) 'src/bin/opb.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opb.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opb.Tpo src/bin/$(DEPDIR)/src_bin_itp-opb.Po
+#	$(AM_V_CC)source='src/bin/opb.c' object='src/bin/src_bin_itp-opb.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opb.obj `if test -f 'opb.c'; then $(CYGPATH_W) 'opb.c'; else $(CYGPATH_W) '$(srcdir)/opb.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opb.obj `if test -f 'src/bin/opb.c'; then $(CYGPATH_W) 'src/bin/opb.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opb.c'; fi`
 
-itp-opc.o: opc.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opc.o -MD -MP -MF $(DEPDIR)/itp-opc.Tpo -c -o itp-opc.o `test -f 'opc.c' || echo '$(srcdir)/'`opc.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opc.Tpo $(DEPDIR)/itp-opc.Po
-#	$(AM_V_CC)source='opc.c' object='itp-opc.o' libtool=no \
+src/bin/src_bin_itp-opc.o: src/bin/opc.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opc.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opc.Tpo -c -o src/bin/src_bin_itp-opc.o `test -f 'src/bin/opc.c' || echo '$(srcdir)/'`src/bin/opc.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opc.Tpo src/bin/$(DEPDIR)/src_bin_itp-opc.Po
+#	$(AM_V_CC)source='src/bin/opc.c' object='src/bin/src_bin_itp-opc.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opc.o `test -f 'opc.c' || echo '$(srcdir)/'`opc.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opc.o `test -f 'src/bin/opc.c' || echo '$(srcdir)/'`src/bin/opc.c
 
-itp-opc.obj: opc.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opc.obj -MD -MP -MF $(DEPDIR)/itp-opc.Tpo -c -o itp-opc.obj `if test -f 'opc.c'; then $(CYGPATH_W) 'opc.c'; else $(CYGPATH_W) '$(srcdir)/opc.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opc.Tpo $(DEPDIR)/itp-opc.Po
-#	$(AM_V_CC)source='opc.c' object='itp-opc.obj' libtool=no \
+src/bin/src_bin_itp-opc.obj: src/bin/opc.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opc.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opc.Tpo -c -o src/bin/src_bin_itp-opc.obj `if test -f 'src/bin/opc.c'; then $(CYGPATH_W) 'src/bin/opc.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opc.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opc.Tpo src/bin/$(DEPDIR)/src_bin_itp-opc.Po
+#	$(AM_V_CC)source='src/bin/opc.c' object='src/bin/src_bin_itp-opc.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opc.obj `if test -f 'opc.c'; then $(CYGPATH_W) 'opc.c'; else $(CYGPATH_W) '$(srcdir)/opc.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opc.obj `if test -f 'src/bin/opc.c'; then $(CYGPATH_W) 'src/bin/opc.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opc.c'; fi`
 
-itp-opdi.o: opdi.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opdi.o -MD -MP -MF $(DEPDIR)/itp-opdi.Tpo -c -o itp-opdi.o `test -f 'opdi.c' || echo '$(srcdir)/'`opdi.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opdi.Tpo $(DEPDIR)/itp-opdi.Po
-#	$(AM_V_CC)source='opdi.c' object='itp-opdi.o' libtool=no \
+src/bin/src_bin_itp-opdi.o: src/bin/opdi.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opdi.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opdi.Tpo -c -o src/bin/src_bin_itp-opdi.o `test -f 'src/bin/opdi.c' || echo '$(srcdir)/'`src/bin/opdi.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opdi.Tpo src/bin/$(DEPDIR)/src_bin_itp-opdi.Po
+#	$(AM_V_CC)source='src/bin/opdi.c' object='src/bin/src_bin_itp-opdi.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opdi.o `test -f 'opdi.c' || echo '$(srcdir)/'`opdi.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opdi.o `test -f 'src/bin/opdi.c' || echo '$(srcdir)/'`src/bin/opdi.c
 
-itp-opdi.obj: opdi.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opdi.obj -MD -MP -MF $(DEPDIR)/itp-opdi.Tpo -c -o itp-opdi.obj `if test -f 'opdi.c'; then $(CYGPATH_W) 'opdi.c'; else $(CYGPATH_W) '$(srcdir)/opdi.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opdi.Tpo $(DEPDIR)/itp-opdi.Po
-#	$(AM_V_CC)source='opdi.c' object='itp-opdi.obj' libtool=no \
+src/bin/src_bin_itp-opdi.obj: src/bin/opdi.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opdi.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opdi.Tpo -c -o src/bin/src_bin_itp-opdi.obj `if test -f 'src/bin/opdi.c'; then $(CYGPATH_W) 'src/bin/opdi.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opdi.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opdi.Tpo src/bin/$(DEPDIR)/src_bin_itp-opdi.Po
+#	$(AM_V_CC)source='src/bin/opdi.c' object='src/bin/src_bin_itp-opdi.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opdi.obj `if test -f 'opdi.c'; then $(CYGPATH_W) 'opdi.c'; else $(CYGPATH_W) '$(srcdir)/opdi.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opdi.obj `if test -f 'src/bin/opdi.c'; then $(CYGPATH_W) 'src/bin/opdi.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opdi.c'; fi`
 
-itp-opf.o: opf.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opf.o -MD -MP -MF $(DEPDIR)/itp-opf.Tpo -c -o itp-opf.o `test -f 'opf.c' || echo '$(srcdir)/'`opf.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opf.Tpo $(DEPDIR)/itp-opf.Po
-#	$(AM_V_CC)source='opf.c' object='itp-opf.o' libtool=no \
+src/bin/src_bin_itp-opf.o: src/bin/opf.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opf.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opf.Tpo -c -o src/bin/src_bin_itp-opf.o `test -f 'src/bin/opf.c' || echo '$(srcdir)/'`src/bin/opf.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opf.Tpo src/bin/$(DEPDIR)/src_bin_itp-opf.Po
+#	$(AM_V_CC)source='src/bin/opf.c' object='src/bin/src_bin_itp-opf.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opf.o `test -f 'opf.c' || echo '$(srcdir)/'`opf.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opf.o `test -f 'src/bin/opf.c' || echo '$(srcdir)/'`src/bin/opf.c
 
-itp-opf.obj: opf.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opf.obj -MD -MP -MF $(DEPDIR)/itp-opf.Tpo -c -o itp-opf.obj `if test -f 'opf.c'; then $(CYGPATH_W) 'opf.c'; else $(CYGPATH_W) '$(srcdir)/opf.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opf.Tpo $(DEPDIR)/itp-opf.Po
-#	$(AM_V_CC)source='opf.c' object='itp-opf.obj' libtool=no \
+src/bin/src_bin_itp-opf.obj: src/bin/opf.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opf.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opf.Tpo -c -o src/bin/src_bin_itp-opf.obj `if test -f 'src/bin/opf.c'; then $(CYGPATH_W) 'src/bin/opf.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opf.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opf.Tpo src/bin/$(DEPDIR)/src_bin_itp-opf.Po
+#	$(AM_V_CC)source='src/bin/opf.c' object='src/bin/src_bin_itp-opf.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opf.obj `if test -f 'opf.c'; then $(CYGPATH_W) 'opf.c'; else $(CYGPATH_W) '$(srcdir)/opf.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opf.obj `if test -f 'src/bin/opf.c'; then $(CYGPATH_W) 'src/bin/opf.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opf.c'; fi`
 
-itp-opm.o: opm.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opm.o -MD -MP -MF $(DEPDIR)/itp-opm.Tpo -c -o itp-opm.o `test -f 'opm.c' || echo '$(srcdir)/'`opm.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opm.Tpo $(DEPDIR)/itp-opm.Po
-#	$(AM_V_CC)source='opm.c' object='itp-opm.o' libtool=no \
+src/bin/src_bin_itp-opm.o: src/bin/opm.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opm.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opm.Tpo -c -o src/bin/src_bin_itp-opm.o `test -f 'src/bin/opm.c' || echo '$(srcdir)/'`src/bin/opm.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opm.Tpo src/bin/$(DEPDIR)/src_bin_itp-opm.Po
+#	$(AM_V_CC)source='src/bin/opm.c' object='src/bin/src_bin_itp-opm.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opm.o `test -f 'opm.c' || echo '$(srcdir)/'`opm.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opm.o `test -f 'src/bin/opm.c' || echo '$(srcdir)/'`src/bin/opm.c
 
-itp-opm.obj: opm.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opm.obj -MD -MP -MF $(DEPDIR)/itp-opm.Tpo -c -o itp-opm.obj `if test -f 'opm.c'; then $(CYGPATH_W) 'opm.c'; else $(CYGPATH_W) '$(srcdir)/opm.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opm.Tpo $(DEPDIR)/itp-opm.Po
-#	$(AM_V_CC)source='opm.c' object='itp-opm.obj' libtool=no \
+src/bin/src_bin_itp-opm.obj: src/bin/opm.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opm.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opm.Tpo -c -o src/bin/src_bin_itp-opm.obj `if test -f 'src/bin/opm.c'; then $(CYGPATH_W) 'src/bin/opm.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opm.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opm.Tpo src/bin/$(DEPDIR)/src_bin_itp-opm.Po
+#	$(AM_V_CC)source='src/bin/opm.c' object='src/bin/src_bin_itp-opm.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opm.obj `if test -f 'opm.c'; then $(CYGPATH_W) 'opm.c'; else $(CYGPATH_W) '$(srcdir)/opm.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opm.obj `if test -f 'src/bin/opm.c'; then $(CYGPATH_W) 'src/bin/opm.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opm.c'; fi`
 
-itp-oppa.o: oppa.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-oppa.o -MD -MP -MF $(DEPDIR)/itp-oppa.Tpo -c -o itp-oppa.o `test -f 'oppa.c' || echo '$(srcdir)/'`oppa.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-oppa.Tpo $(DEPDIR)/itp-oppa.Po
-#	$(AM_V_CC)source='oppa.c' object='itp-oppa.o' libtool=no \
+src/bin/src_bin_itp-oppa.o: src/bin/oppa.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-oppa.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-oppa.Tpo -c -o src/bin/src_bin_itp-oppa.o `test -f 'src/bin/oppa.c' || echo '$(srcdir)/'`src/bin/oppa.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-oppa.Tpo src/bin/$(DEPDIR)/src_bin_itp-oppa.Po
+#	$(AM_V_CC)source='src/bin/oppa.c' object='src/bin/src_bin_itp-oppa.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-oppa.o `test -f 'oppa.c' || echo '$(srcdir)/'`oppa.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-oppa.o `test -f 'src/bin/oppa.c' || echo '$(srcdir)/'`src/bin/oppa.c
 
-itp-oppa.obj: oppa.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-oppa.obj -MD -MP -MF $(DEPDIR)/itp-oppa.Tpo -c -o itp-oppa.obj `if test -f 'oppa.c'; then $(CYGPATH_W) 'oppa.c'; else $(CYGPATH_W) '$(srcdir)/oppa.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-oppa.Tpo $(DEPDIR)/itp-oppa.Po
-#	$(AM_V_CC)source='oppa.c' object='itp-oppa.obj' libtool=no \
+src/bin/src_bin_itp-oppa.obj: src/bin/oppa.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-oppa.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-oppa.Tpo -c -o src/bin/src_bin_itp-oppa.obj `if test -f 'src/bin/oppa.c'; then $(CYGPATH_W) 'src/bin/oppa.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/oppa.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-oppa.Tpo src/bin/$(DEPDIR)/src_bin_itp-oppa.Po
+#	$(AM_V_CC)source='src/bin/oppa.c' object='src/bin/src_bin_itp-oppa.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-oppa.obj `if test -f 'oppa.c'; then $(CYGPATH_W) 'oppa.c'; else $(CYGPATH_W) '$(srcdir)/oppa.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-oppa.obj `if test -f 'src/bin/oppa.c'; then $(CYGPATH_W) 'src/bin/oppa.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/oppa.c'; fi`
 
-itp-ops.o: ops.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-ops.o -MD -MP -MF $(DEPDIR)/itp-ops.Tpo -c -o itp-ops.o `test -f 'ops.c' || echo '$(srcdir)/'`ops.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-ops.Tpo $(DEPDIR)/itp-ops.Po
-#	$(AM_V_CC)source='ops.c' object='itp-ops.o' libtool=no \
+src/bin/src_bin_itp-ops.o: src/bin/ops.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-ops.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-ops.Tpo -c -o src/bin/src_bin_itp-ops.o `test -f 'src/bin/ops.c' || echo '$(srcdir)/'`src/bin/ops.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-ops.Tpo src/bin/$(DEPDIR)/src_bin_itp-ops.Po
+#	$(AM_V_CC)source='src/bin/ops.c' object='src/bin/src_bin_itp-ops.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-ops.o `test -f 'ops.c' || echo '$(srcdir)/'`ops.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-ops.o `test -f 'src/bin/ops.c' || echo '$(srcdir)/'`src/bin/ops.c
 
-itp-ops.obj: ops.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-ops.obj -MD -MP -MF $(DEPDIR)/itp-ops.Tpo -c -o itp-ops.obj `if test -f 'ops.c'; then $(CYGPATH_W) 'ops.c'; else $(CYGPATH_W) '$(srcdir)/ops.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-ops.Tpo $(DEPDIR)/itp-ops.Po
-#	$(AM_V_CC)source='ops.c' object='itp-ops.obj' libtool=no \
+src/bin/src_bin_itp-ops.obj: src/bin/ops.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-ops.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-ops.Tpo -c -o src/bin/src_bin_itp-ops.obj `if test -f 'src/bin/ops.c'; then $(CYGPATH_W) 'src/bin/ops.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/ops.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-ops.Tpo src/bin/$(DEPDIR)/src_bin_itp-ops.Po
+#	$(AM_V_CC)source='src/bin/ops.c' object='src/bin/src_bin_itp-ops.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-ops.obj `if test -f 'ops.c'; then $(CYGPATH_W) 'ops.c'; else $(CYGPATH_W) '$(srcdir)/ops.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-ops.obj `if test -f 'src/bin/ops.c'; then $(CYGPATH_W) 'src/bin/ops.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/ops.c'; fi`
 
-itp-opst.o: opst.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opst.o -MD -MP -MF $(DEPDIR)/itp-opst.Tpo -c -o itp-opst.o `test -f 'opst.c' || echo '$(srcdir)/'`opst.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opst.Tpo $(DEPDIR)/itp-opst.Po
-#	$(AM_V_CC)source='opst.c' object='itp-opst.o' libtool=no \
+src/bin/src_bin_itp-opst.o: src/bin/opst.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opst.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opst.Tpo -c -o src/bin/src_bin_itp-opst.o `test -f 'src/bin/opst.c' || echo '$(srcdir)/'`src/bin/opst.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opst.Tpo src/bin/$(DEPDIR)/src_bin_itp-opst.Po
+#	$(AM_V_CC)source='src/bin/opst.c' object='src/bin/src_bin_itp-opst.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opst.o `test -f 'opst.c' || echo '$(srcdir)/'`opst.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opst.o `test -f 'src/bin/opst.c' || echo '$(srcdir)/'`src/bin/opst.c
 
-itp-opst.obj: opst.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opst.obj -MD -MP -MF $(DEPDIR)/itp-opst.Tpo -c -o itp-opst.obj `if test -f 'opst.c'; then $(CYGPATH_W) 'opst.c'; else $(CYGPATH_W) '$(srcdir)/opst.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opst.Tpo $(DEPDIR)/itp-opst.Po
-#	$(AM_V_CC)source='opst.c' object='itp-opst.obj' libtool=no \
+src/bin/src_bin_itp-opst.obj: src/bin/opst.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opst.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opst.Tpo -c -o src/bin/src_bin_itp-opst.obj `if test -f 'src/bin/opst.c'; then $(CYGPATH_W) 'src/bin/opst.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opst.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opst.Tpo src/bin/$(DEPDIR)/src_bin_itp-opst.Po
+#	$(AM_V_CC)source='src/bin/opst.c' object='src/bin/src_bin_itp-opst.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opst.obj `if test -f 'opst.c'; then $(CYGPATH_W) 'opst.c'; else $(CYGPATH_W) '$(srcdir)/opst.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opst.obj `if test -f 'src/bin/opst.c'; then $(CYGPATH_W) 'src/bin/opst.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opst.c'; fi`
 
-itp-opt.o: opt.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opt.o -MD -MP -MF $(DEPDIR)/itp-opt.Tpo -c -o itp-opt.o `test -f 'opt.c' || echo '$(srcdir)/'`opt.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opt.Tpo $(DEPDIR)/itp-opt.Po
-#	$(AM_V_CC)source='opt.c' object='itp-opt.o' libtool=no \
+src/bin/src_bin_itp-opt.o: src/bin/opt.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opt.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opt.Tpo -c -o src/bin/src_bin_itp-opt.o `test -f 'src/bin/opt.c' || echo '$(srcdir)/'`src/bin/opt.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opt.Tpo src/bin/$(DEPDIR)/src_bin_itp-opt.Po
+#	$(AM_V_CC)source='src/bin/opt.c' object='src/bin/src_bin_itp-opt.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opt.o `test -f 'opt.c' || echo '$(srcdir)/'`opt.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opt.o `test -f 'src/bin/opt.c' || echo '$(srcdir)/'`src/bin/opt.c
 
-itp-opt.obj: opt.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opt.obj -MD -MP -MF $(DEPDIR)/itp-opt.Tpo -c -o itp-opt.obj `if test -f 'opt.c'; then $(CYGPATH_W) 'opt.c'; else $(CYGPATH_W) '$(srcdir)/opt.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opt.Tpo $(DEPDIR)/itp-opt.Po
-#	$(AM_V_CC)source='opt.c' object='itp-opt.obj' libtool=no \
+src/bin/src_bin_itp-opt.obj: src/bin/opt.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opt.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opt.Tpo -c -o src/bin/src_bin_itp-opt.obj `if test -f 'src/bin/opt.c'; then $(CYGPATH_W) 'src/bin/opt.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opt.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opt.Tpo src/bin/$(DEPDIR)/src_bin_itp-opt.Po
+#	$(AM_V_CC)source='src/bin/opt.c' object='src/bin/src_bin_itp-opt.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opt.obj `if test -f 'opt.c'; then $(CYGPATH_W) 'opt.c'; else $(CYGPATH_W) '$(srcdir)/opt.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opt.obj `if test -f 'src/bin/opt.c'; then $(CYGPATH_W) 'src/bin/opt.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opt.c'; fi`
 
-itp-optok.o: optok.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-optok.o -MD -MP -MF $(DEPDIR)/itp-optok.Tpo -c -o itp-optok.o `test -f 'optok.c' || echo '$(srcdir)/'`optok.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-optok.Tpo $(DEPDIR)/itp-optok.Po
-#	$(AM_V_CC)source='optok.c' object='itp-optok.o' libtool=no \
+src/bin/src_bin_itp-optok.o: src/bin/optok.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-optok.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-optok.Tpo -c -o src/bin/src_bin_itp-optok.o `test -f 'src/bin/optok.c' || echo '$(srcdir)/'`src/bin/optok.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-optok.Tpo src/bin/$(DEPDIR)/src_bin_itp-optok.Po
+#	$(AM_V_CC)source='src/bin/optok.c' object='src/bin/src_bin_itp-optok.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-optok.o `test -f 'optok.c' || echo '$(srcdir)/'`optok.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-optok.o `test -f 'src/bin/optok.c' || echo '$(srcdir)/'`src/bin/optok.c
 
-itp-optok.obj: optok.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-optok.obj -MD -MP -MF $(DEPDIR)/itp-optok.Tpo -c -o itp-optok.obj `if test -f 'optok.c'; then $(CYGPATH_W) 'optok.c'; else $(CYGPATH_W) '$(srcdir)/optok.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-optok.Tpo $(DEPDIR)/itp-optok.Po
-#	$(AM_V_CC)source='optok.c' object='itp-optok.obj' libtool=no \
+src/bin/src_bin_itp-optok.obj: src/bin/optok.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-optok.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-optok.Tpo -c -o src/bin/src_bin_itp-optok.obj `if test -f 'src/bin/optok.c'; then $(CYGPATH_W) 'src/bin/optok.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/optok.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-optok.Tpo src/bin/$(DEPDIR)/src_bin_itp-optok.Po
+#	$(AM_V_CC)source='src/bin/optok.c' object='src/bin/src_bin_itp-optok.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-optok.obj `if test -f 'optok.c'; then $(CYGPATH_W) 'optok.c'; else $(CYGPATH_W) '$(srcdir)/optok.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-optok.obj `if test -f 'src/bin/optok.c'; then $(CYGPATH_W) 'src/bin/optok.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/optok.c'; fi`
 
-itp-opv.o: opv.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opv.o -MD -MP -MF $(DEPDIR)/itp-opv.Tpo -c -o itp-opv.o `test -f 'opv.c' || echo '$(srcdir)/'`opv.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opv.Tpo $(DEPDIR)/itp-opv.Po
-#	$(AM_V_CC)source='opv.c' object='itp-opv.o' libtool=no \
+src/bin/src_bin_itp-opv.o: src/bin/opv.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opv.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opv.Tpo -c -o src/bin/src_bin_itp-opv.o `test -f 'src/bin/opv.c' || echo '$(srcdir)/'`src/bin/opv.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opv.Tpo src/bin/$(DEPDIR)/src_bin_itp-opv.Po
+#	$(AM_V_CC)source='src/bin/opv.c' object='src/bin/src_bin_itp-opv.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opv.o `test -f 'opv.c' || echo '$(srcdir)/'`opv.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opv.o `test -f 'src/bin/opv.c' || echo '$(srcdir)/'`src/bin/opv.c
 
-itp-opv.obj: opv.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opv.obj -MD -MP -MF $(DEPDIR)/itp-opv.Tpo -c -o itp-opv.obj `if test -f 'opv.c'; then $(CYGPATH_W) 'opv.c'; else $(CYGPATH_W) '$(srcdir)/opv.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opv.Tpo $(DEPDIR)/itp-opv.Po
-#	$(AM_V_CC)source='opv.c' object='itp-opv.obj' libtool=no \
+src/bin/src_bin_itp-opv.obj: src/bin/opv.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opv.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opv.Tpo -c -o src/bin/src_bin_itp-opv.obj `if test -f 'src/bin/opv.c'; then $(CYGPATH_W) 'src/bin/opv.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opv.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opv.Tpo src/bin/$(DEPDIR)/src_bin_itp-opv.Po
+#	$(AM_V_CC)source='src/bin/opv.c' object='src/bin/src_bin_itp-opv.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opv.obj `if test -f 'opv.c'; then $(CYGPATH_W) 'opv.c'; else $(CYGPATH_W) '$(srcdir)/opv.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opv.obj `if test -f 'src/bin/opv.c'; then $(CYGPATH_W) 'src/bin/opv.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opv.c'; fi`
 
-itp-opx.o: opx.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opx.o -MD -MP -MF $(DEPDIR)/itp-opx.Tpo -c -o itp-opx.o `test -f 'opx.c' || echo '$(srcdir)/'`opx.c
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opx.Tpo $(DEPDIR)/itp-opx.Po
-#	$(AM_V_CC)source='opx.c' object='itp-opx.o' libtool=no \
+src/bin/src_bin_itp-opx.o: src/bin/opx.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opx.o -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opx.Tpo -c -o src/bin/src_bin_itp-opx.o `test -f 'src/bin/opx.c' || echo '$(srcdir)/'`src/bin/opx.c
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opx.Tpo src/bin/$(DEPDIR)/src_bin_itp-opx.Po
+#	$(AM_V_CC)source='src/bin/opx.c' object='src/bin/src_bin_itp-opx.o' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opx.o `test -f 'opx.c' || echo '$(srcdir)/'`opx.c
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opx.o `test -f 'src/bin/opx.c' || echo '$(srcdir)/'`src/bin/opx.c
 
-itp-opx.obj: opx.c
-	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT itp-opx.obj -MD -MP -MF $(DEPDIR)/itp-opx.Tpo -c -o itp-opx.obj `if test -f 'opx.c'; then $(CYGPATH_W) 'opx.c'; else $(CYGPATH_W) '$(srcdir)/opx.c'; fi`
-	$(AM_V_at)$(am__mv) $(DEPDIR)/itp-opx.Tpo $(DEPDIR)/itp-opx.Po
-#	$(AM_V_CC)source='opx.c' object='itp-opx.obj' libtool=no \
+src/bin/src_bin_itp-opx.obj: src/bin/opx.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/bin/src_bin_itp-opx.obj -MD -MP -MF src/bin/$(DEPDIR)/src_bin_itp-opx.Tpo -c -o src/bin/src_bin_itp-opx.obj `if test -f 'src/bin/opx.c'; then $(CYGPATH_W) 'src/bin/opx.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opx.c'; fi`
+	$(AM_V_at)$(am__mv) src/bin/$(DEPDIR)/src_bin_itp-opx.Tpo src/bin/$(DEPDIR)/src_bin_itp-opx.Po
+#	$(AM_V_CC)source='src/bin/opx.c' object='src/bin/src_bin_itp-opx.obj' libtool=no \
 #	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) \
-#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o itp-opx.obj `if test -f 'opx.c'; then $(CYGPATH_W) 'opx.c'; else $(CYGPATH_W) '$(srcdir)/opx.c'; fi`
+#	$(AM_V_CC_no)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(src_bin_itp_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/bin/src_bin_itp-opx.obj `if test -f 'src/bin/opx.c'; then $(CYGPATH_W) 'src/bin/opx.c'; else $(CYGPATH_W) '$(srcdir)/src/bin/opx.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -1068,6 +1180,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f src/bin/$(DEPDIR)/$(am__dirstamp)
+	-rm -f src/bin/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1079,7 +1193,7 @@ clean-am: clean-binPROGRAMS clean-generic mostlyclean-am
 
 distclean: distclean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf ./$(DEPDIR)
+	-rm -rf src/bin/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-tags
@@ -1127,7 +1241,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf ./$(DEPDIR)
+	-rm -rf src/bin/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

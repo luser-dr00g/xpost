@@ -7,10 +7,9 @@ m4_define([v_ver], [v_maj.v_min.v_mic])
 AC_INIT([xpost], [v_ver], [luser.droog.remove@gmail.com])
 AC_PREREQ([2.52])
 AC_CONFIG_SRCDIR([configure.ac])
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADER([config.h])
 
 AM_INIT_AUTOMAKE([1.6 dist-bzip2])
-AM_PROG_CC_C_O
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 
