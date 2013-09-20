@@ -179,13 +179,18 @@ long filebytesavailable(mfile *mem, object f) {
     int ret;
     FILE *fp;
     struct stat sb;
+    long sz, pos;
+
     fp = filefile(mem, f);
     if (!fp) return -1;
     ret = fstat(fileno(fp), &sb);
     if (ret != 0) error(ioerror, "fstat did not return 0");
     if (sb.st_size > LONG_MAX)
         return LONG_MAX;
-    return (long)sb.st_size;
+    sz = (long)sb.st_size;
+    
+    pos = ftell(fp);
+    return sz - pos;
 }
 
 /* close the file,
