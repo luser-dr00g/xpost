@@ -41,6 +41,10 @@ AC_PROG_CC_C99
 
 ### Checks for header files
 
+AC_HEADER_ASSERT
+AC_HEADER_STDBOOL
+AC_HEADER_TIME
+
 
 ### Checks for types
 

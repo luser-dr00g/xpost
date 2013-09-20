@@ -28,11 +28,26 @@ void *alloca (size_t);
 # endif
 #endif
 
+#ifdef HAVE_STDBOOL_H
+# include <stdbool.h>
+#else
+# ifndef HAVE__BOOL
+#  ifdef __cplusplus
+typedef bool _Bool;
+#  else
+#   define _Bool signed char
+#  endif
+# endif
+# define bool _Bool
+# define false 0
+# define true 1
+# define __bool_true_false_are_defined 1
+#endif
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <glob.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdio_ext.h> /* __fpurge */
 #include <stdlib.h> /* NULL */
@@ -50,10 +65,6 @@ void *alloca (size_t);
 #include "op.h"
 #include "f.h"
 #include "opf.h"
-
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
 
 //#include "osunix.h"
 #include "osmswin.h"
