@@ -11,6 +11,7 @@ config.sub \
 configure \
 depcomp \
 install-sh \
-missing
+missing \
+$(DIST_ARCHIVES)
 
 include src/bin/Makefile.mk
