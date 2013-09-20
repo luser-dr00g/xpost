@@ -20,7 +20,13 @@
 #include "di.h"
 #include "op.h"
 #include "f.h"
-#include "osunix.h"
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+//#include "osunix.h"
+#include "osmswin.h"
 
 void Sfile (context *ctx, object fn, object mode) {
     object f;
