@@ -2,6 +2,8 @@
 #include <termios.h>
 #include <unistd.h>
 
+#include "osunix.h"
+
 void echoon (FILE *f) {
     struct termios ts;
     tcgetattr(fileno(f), &ts);
