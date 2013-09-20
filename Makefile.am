@@ -1,5 +1,7 @@
 AUTOMAKE_OPTIONS = subdir-objects
 
+ACLOCAL_AMFLAGS = -I m4
+
 MAINTAINERCLEANFILES = \
 Makefile.in \
 aclocal.m4 \
@@ -15,3 +17,6 @@ missing \
 $(DIST_ARCHIVES)
 
 include src/bin/Makefile.mk
+
+EXTRA_DIST = \
+m4/xpost.m4

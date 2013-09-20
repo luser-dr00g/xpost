@@ -67,4 +67,6 @@ endif
 
 src_bin_itp_CPPFLAGS = -DTESTMODULE_ITP
 
+src_bin_itp_CFLAGS = @XPOST_BIN_CFLAGS@
+
 src_bin_itp_LDADD = -lm
