@@ -116,7 +116,7 @@ void dumpobject(object o){
     }
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_OB
 int main() {
     printf("\n^test ob module\n");
     object i = consint(5);

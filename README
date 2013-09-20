@@ -35,10 +35,10 @@ tested with cygwin on a Toshiba Satellite L875D.
 The various modules were written and tested separately before being 
 coupled together to achieve the necessary basic functionality.
 Each module retains its unit-test, its main() function, guarded
-by #ifdef TESTMODULE. `make test` will compile and execute all the 
-unit tests, producing copious output, but importantly exitting with 
-an appropriate success or failure code, so the `make test` command will 
-fail if any of the tests fail.
+by #ifdef TESTMODULE_(MODULENAME). `make test` will compile and execute
+all the unit tests, producing copious output, but importantly exitting
+with an appropriate success or failure code, so the `make test` command
+will fail if any of the tests fail.
 
     Module TOC
     __________

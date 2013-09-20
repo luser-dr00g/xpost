@@ -343,7 +343,7 @@ void put(mfile *mem,
     memcpy(mem->base + tab->tab[ent].adr + offset*sz, src, sz);
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_M
 
 mfile mem;
 

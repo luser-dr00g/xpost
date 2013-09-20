@@ -196,7 +196,7 @@ object pop(mfile *mem, unsigned stackadr) {
     return s->data[--s->top]; /* pop value */
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_S
 
 #include <stdio.h>
 #include <unistd.h>

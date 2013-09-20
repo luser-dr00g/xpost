@@ -56,7 +56,7 @@ integer bstget(context *ctx, object s, integer i) {
     return strget(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i);
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_ST
 #include <stdio.h>
 
 #define CNT_STR(s) sizeof(s), s

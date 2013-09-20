@@ -166,7 +166,7 @@ object strname(context *ctx, object n) {
     return str;
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_NM
 #include <stdio.h>
 #include <unistd.h>
 
