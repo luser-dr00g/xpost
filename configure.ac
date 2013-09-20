@@ -20,6 +20,15 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_CANONICAL_HOST
 
+have_win32="no"
+case "$host_os" in
+   mingw*)
+      have_win32="yes"
+   ;;
+esac
+
+AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
+
 
 ### Checks for programs
 
