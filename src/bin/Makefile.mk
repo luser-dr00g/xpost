@@ -10,7 +10,6 @@ src/bin/gc.c \
 src/bin/itp.c \
 src/bin/m.c \
 src/bin/nm.c \
-src/bin/osunix.c \
 src/bin/s.c \
 src/bin/v.c \
 src/bin/st.c \
@@ -52,11 +51,19 @@ src/bin/opt.h \
 src/bin/optok.h \
 src/bin/opv.h \
 src/bin/opx.h \
-src/bin/osmswin.h \
-src/bin/osunix.h \
 src/bin/s.h \
 src/bin/st.h \
 src/bin/v.h
+
+if HAVE_WIN32
+src_bin_itp_SOURCES += \
+src/bin/osmswin.c \
+src/bin/osmswin.h
+else
+src_bin_itp_SOURCES += \
+src/bin/osunix.c \
+src/bin/osunix.h
+endif
 
 src_bin_itp_CPPFLAGS = -DTESTMODULE_ITP
 
