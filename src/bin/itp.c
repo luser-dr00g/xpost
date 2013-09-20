@@ -471,7 +471,7 @@ int main(void) {
     /* load init.ps and err.ps */
     assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
-    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR("(init.ps) (r) file cvx exec"))));
+    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR("(../../data/init.ps) (r) file cvx exec"))));
     ctx->quit = 0;
     mainloop(ctx);
 

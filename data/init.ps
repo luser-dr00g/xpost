@@ -47,7 +47,7 @@ true setglobal
 %    exch pop exch pop
 %} stopped {cleartomark} if
 %exch strcat Run
-(err.ps)run
+(../../data/err.ps)run
 
 
 /stack { count dup 1 add copy //= repeat pop } def
@@ -216,7 +216,7 @@ end % systemdict
 
 userdict begin
 
-(qsort.ps) run
+(../../data/qsort.ps) run
 
 % (s1) (s2) (s3) ... (sN) n  ncat  (s1s2s3...sN)
 /ncat {        % s1 s2 s3 .. sN n
