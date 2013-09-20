@@ -428,7 +428,7 @@ void bdcundef(context *ctx, object d, object k) {
 }
 
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_DI
 #include <stdio.h>
 
 //context ctx;

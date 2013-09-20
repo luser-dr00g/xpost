@@ -14,7 +14,7 @@
 #include "v.h"
 #include "gc.h"
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_GC
 #include <stdio.h>
 #endif
 
@@ -72,7 +72,7 @@ void markarray(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
 void markobject(context *ctx, mfile *mem, object o) {
     switch(type(o)) {
     case arraytype:
-#ifdef TESTMODULE
+#ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) break;
@@ -82,7 +82,7 @@ void markobject(context *ctx, mfile *mem, object o) {
         }
         break;
     case dicttype:
-#ifdef TESTMODULE
+#ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) break;
@@ -92,7 +92,7 @@ void markobject(context *ctx, mfile *mem, object o) {
         }
         break;
     case stringtype:
-#ifdef TESTMODULE
+#ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) break;
@@ -105,7 +105,7 @@ void markobject(context *ctx, mfile *mem, object o) {
 void markstack(context *ctx, mfile *mem, unsigned stackadr) {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
-#ifdef TESTMODULE
+#ifdef TESTMODULE_GC
     printf("marking stack of size %u\n", s->top);
 #endif
 next:
@@ -123,7 +123,7 @@ void marksavestack(context *ctx, mfile *mem, unsigned stackadr) {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
     (void)ctx;
-#ifdef TESTMODULE
+#ifdef TESTMODULE_GC
     printf("marking save stack of size %u\n", s->top);
 #endif
 next:
@@ -143,7 +143,7 @@ next:
 void marksave(context *ctx, mfile *mem, unsigned stackadr) {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
-#ifdef TESTMODULE
+#ifdef TESTMODULE_GC
     printf("marking save stack of size %u\n", s->top);
 #endif
 next:
@@ -334,7 +334,7 @@ unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsi
     return newadr;
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_GC
 
 context *ctx;
 mfile *mem;

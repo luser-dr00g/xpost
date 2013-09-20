@@ -95,7 +95,7 @@ object arrgetinterval(object a, integer off, integer sz) {
     return a;
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_AR
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

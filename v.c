@@ -117,7 +117,7 @@ void restore(mfile *mem) {
     sfree(mem, sav.save_.stk);
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_V
 #include "ar.h"
 #include <stdio.h>
 

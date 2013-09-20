@@ -434,7 +434,7 @@ void dumpctx(context *ctx) {
     dumpnames(ctx);
 }
 
-#ifdef TESTMODULE
+#ifdef TESTMODULE_ITP
 
 context *ctx;
 #define CNT_STR(s) sizeof(s)-1, s
