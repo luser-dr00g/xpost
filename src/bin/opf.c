@@ -66,8 +66,11 @@ typedef bool _Bool;
 #include "f.h"
 #include "opf.h"
 
-//#include "osunix.h"
-#include "osmswin.h"
+#ifdef HAVE_WIN32
+# include "osmswin.h"
+#else
+# include "osunix.h"
+#endif
 
 void Sfile (context *ctx, object fn, object mode) {
     object f;
