@@ -16,7 +16,9 @@
 } def
 
 (test: loading graphics...)=
-(g.ps)run
+flush
+%(*){=}128 string filenameforall
+(../../data/g.ps)run
 initgraphics
 
 
