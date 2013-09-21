@@ -19,7 +19,8 @@ depcomp
 install-sh
 missing
 stamp-h1
-*.exe
-*.o
 *.Po
+*.o
+*.exe
+itp
 *~
