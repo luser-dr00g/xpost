@@ -277,7 +277,7 @@ void renamefile (context *ctx, object Old, object New) {
         }
 }
 
-#ifndef HAVE_WIN32
+//#ifndef HAVE_WIN32
 
 void contfilenameforall (context *ctx, object oglob, object Proc, object Scr) {
     glob_t *globbuf;
@@ -326,7 +326,7 @@ void filenameforall (context *ctx, object Tmp, object Proc, object Scr) {
     contfilenameforall(ctx, oglob, Proc, cvlit(Scr));
 }
 
-#endif
+//#endif
 
 void Sprint (context *ctx, object S) {
     size_t ret;
@@ -349,9 +349,11 @@ void initopf (context *ctx, object sd) {
     oper *optab;
     object n,op;
     assert(ctx->gl->base);
-#ifndef HAVE_WIN32
-    assert(sizeof(glob_t *) == 4);
-#endif
+//#ifndef HAVE_WIN32
+    // make sure it fits in the slot where it's stored,
+    // if not, it won't work. TODO store pointer differently.
+    assert(sizeof(glob_t *) <= 4);
+//#endif
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype); INSTALL;
@@ -377,10 +379,10 @@ void initopf (context *ctx, object sd) {
     op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
     op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype); INSTALL;
     op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype); INSTALL;
-#ifndef HAVE_WIN32
+//#ifndef HAVE_WIN32
     op = consoper(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
     op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype); INSTALL;
-#endif
+//#endif
     //setfileposition
     //fileposition
     op = consoper(ctx, "print", Sprint, 0, 1, stringtype); INSTALL;
