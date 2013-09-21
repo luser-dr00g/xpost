@@ -1,3 +1,6 @@
+#ifndef XPOST_AR_H
+#define XPOST_AR_H
+
 /* arrays
    an array object is 8 bytes,
    consisting of 4 16bit fields common to all composite objects
@@ -29,4 +32,4 @@ object barget(context *ctx, object a, integer i);
  */
 object arrgetinterval(object a, integer s, integer n);
 
-
+#endif

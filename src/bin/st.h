@@ -1,3 +1,6 @@
+#ifndef XPOST_ST_H
+#define XPOST_ST_H
+
 /* strings
    */
 
@@ -10,4 +13,4 @@ void bstput(context *ctx, object s, integer i, integer c);
 integer strget(mfile *mem, object s, integer i);
 integer bstget(context *ctx, object s, integer i);
 
-
+#endif

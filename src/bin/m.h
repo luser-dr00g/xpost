@@ -1,6 +1,9 @@
+#ifndef XPOST_M_H
+#define XPOST_M_H
+
 /*  memory (master)
     mfile and mtab
-    
+
     An mfile is a container representing *half* of virtual memory,
     either local or global. A global-vm mfile has more special entities
     in its mtab than a local-vm mfile.
@@ -91,7 +94,7 @@ enum {
       (and all context /globaldict's?)
  */
 enum {
-    FREE,   
+    FREE,
     VS,
     CTXLIST,
     NAMES,
@@ -128,3 +131,4 @@ void put(mfile *mem,
         unsigned ent, unsigned offset, unsigned sz,
         /*@in@*/ void *src);
 
+#endif

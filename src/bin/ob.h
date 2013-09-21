@@ -1,3 +1,6 @@
+#ifndef XPOST_OB_H
+#define XPOST_OB_H
+
 /* objects
    define the basic 8-byte object structure
    */
@@ -71,7 +74,7 @@ enum faccess {
     unlimited   = 3,
 };
 
-/* To avoid too many structures, many types use .mark_.padw 
+/* To avoid too many structures, many types use .mark_.padw
    to hold an unsigned value (eg. operatortype, nametype, filetype).
    Of, course if a type needs to use pad0, that's a sign that it needs
    its own struct.
@@ -166,3 +169,4 @@ object cvlit(object o);
 
 void dumpobject(object o);
 
+#endif

@@ -1,3 +1,6 @@
+#ifndef XPOST_ERR_H
+#define XPOST_ERR_H
+
 /*
    For a commentary on these macros, see my answer to this SO question
 http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#6636596
@@ -52,3 +55,4 @@ extern volatile char *errormsg;
 void error(unsigned err, char *msg);
 void onerror(context *ctx, unsigned err);
 
+#endif

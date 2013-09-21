@@ -1,3 +1,6 @@
+#ifndef XPOST_NM_H
+#define XPOST_NM_H
+
 /* names
    The name mechanism associates strings with integers,
    using a ternary search tree
@@ -6,7 +9,7 @@
 
 typedef struct tst {
     unsigned val,
-             lo,     
+             lo,
              eq,
              hi;
 } tst;
@@ -16,4 +19,4 @@ void initnames(context *ctx);
 object consname(context *ctx, char *s);
 object strname(context *ctx, object n);
 
-
+#endif

@@ -1,3 +1,6 @@
+#ifndef XPOST_V_H
+#define XPOST_V_H
+
 /* save/restore
    Each mfile has a special entity (VS) which holds the address
    of the "save stack". This stack holds save objects.
@@ -31,4 +34,4 @@ unsigned copy(mfile *mem, unsigned ent);
 void stash(mfile *mem, unsigned ent);
 void restore(mfile *mem);
 
-
+#endif

@@ -1,3 +1,6 @@
+#ifndef XPOST_DI_H
+#define XPOST_DI_H
+
 /* dictionaries
    a dictionary object is 8 bytes
    consisting of 4 16bit fields common to composite objects
@@ -61,3 +64,4 @@ void bdcput(context *ctx, object d, object k, object v);
 /* undefine key */
 void bdcundef(context *ctx, object d, object k);
 
+#endif
