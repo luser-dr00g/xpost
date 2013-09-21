@@ -1,3 +1,4 @@
+#include <stdio.h>
 
 void echoon(FILE *f) {
 }

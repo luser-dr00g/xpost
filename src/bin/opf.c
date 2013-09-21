@@ -47,9 +47,7 @@ typedef bool _Bool;
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <glob.h>
 #include <stdio.h>
-#include <stdio_ext.h> /* __fpurge */
 #include <stdlib.h> /* NULL */
 #include <string.h>
 
@@ -69,6 +67,8 @@ typedef bool _Bool;
 #ifdef HAVE_WIN32
 # include "osmswin.h"
 #else
+#include <glob.h>
+#include <stdio_ext.h> /* __fpurge */
 # include "osunix.h"
 #endif
 
@@ -223,12 +223,16 @@ void Fflushfile (context *ctx, object F) {
     }
 }
 
+#ifndef HAVE_WIN32
+
 void Fresetfile (context *ctx, object F) {
     FILE *f;
     if (!filestatus(ctx->lo, F)) return;
     f = filefile(ctx->lo, F);
     __fpurge(f);
 }
+
+#endif
 
 void Fstatus (context *ctx, object F) {
     push(ctx->lo, ctx->os, consbool(filestatus(ctx->lo, F)));
@@ -272,6 +276,8 @@ void renamefile (context *ctx, object Old, object New) {
             default: error(ioerror, "renamefile");
         }
 }
+
+#ifndef HAVE_WIN32
 
 void contfilenameforall (context *ctx, object oglob, object Proc, object Scr) {
     glob_t *globbuf;
@@ -320,6 +326,8 @@ void filenameforall (context *ctx, object Tmp, object Proc, object Scr) {
     contfilenameforall(ctx, oglob, Proc, cvlit(Scr));
 }
 
+#endif
+
 void Sprint (context *ctx, object S) {
     size_t ret;
     char *s;
@@ -341,7 +349,9 @@ void initopf (context *ctx, object sd) {
     oper *optab;
     object n,op;
     assert(ctx->gl->base);
+#ifndef HAVE_WIN32
     assert(sizeof(glob_t *) == 4);
+#endif
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype); INSTALL;
@@ -358,15 +368,19 @@ void initopf (context *ctx, object sd) {
     op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype); INSTALL;
     op = consoper(ctx, "flush", Zflush, 0, 0); INSTALL;
     op = consoper(ctx, "flushfile", Fflushfile, 0, 1, filetype); INSTALL;
+#ifndef HAVE_WIN32
     op = consoper(ctx, "resetfile", Fresetfile, 0, 1, filetype); INSTALL;
+#endif
     op = consoper(ctx, "status", Fstatus, 1, 1, filetype); INSTALL;
     //string status
     //run: see init.ps
     op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
     op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype); INSTALL;
     op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype); INSTALL;
+#ifndef HAVE_WIN32
     op = consoper(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
     op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype); INSTALL;
+#endif
     //setfileposition
     //fileposition
     op = consoper(ctx, "print", Sprint, 0, 1, stringtype); INSTALL;
