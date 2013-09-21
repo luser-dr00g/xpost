@@ -29,40 +29,7 @@ typedef bool _Bool;
 #include <fcntl.h> /* open */
 
 #ifdef _WIN32
-#   include <io.h>
-
-//typedef int mode_t; //already in <sys/types.h>
-
-/// @Note If STRICT_UGO_PERMISSIONS is not defined, then setting Read for any
-///       of User, Group, or Other will set Read for User and setting Write
-///       will set Write for User.  Otherwise, Read and Write for Group and
-///       Other are ignored.
-///
-/// @Note For the POSIX modes that do not have a Windows equivalent, the modes
-///       defined here use the POSIX values left shifted 16 bits.
-
-static const mode_t S_ISUID      = 0x08000000;           ///< does nothing
-static const mode_t S_ISGID      = 0x04000000;           ///< does nothing
-static const mode_t S_ISVTX      = 0x02000000;           ///< does nothing
-//static const mode_t S_IRUSR      = (int)_S_IREAD;     ///< read by user
-//static const mode_t S_IWUSR      = (int)_S_IWRITE;    ///< write by user
-//static const mode_t S_IXUSR      = 0x00400000;           ///< does nothing
-#   ifndef STRICT_UGO_PERMISSIONS
-static const mode_t S_IRGRP      = (int)_S_IREAD;     ///< read by *USER*
-static const mode_t S_IWGRP      = (int)_S_IWRITE;    ///< write by *USER*
-static const mode_t S_IXGRP      = 0x00080000;           ///< does nothing
-static const mode_t S_IROTH      = (int)_S_IREAD;     ///< read by *USER*
-static const mode_t S_IWOTH      = (int)_S_IWRITE;    ///< write by *USER*
-static const mode_t S_IXOTH      = 0x00010000;           ///< does nothing
-#   else
-static const mode_t S_IRGRP      = 0x00200000;           ///< does nothing
-static const mode_t S_IWGRP      = 0x00100000;           ///< does nothing
-static const mode_t S_IXGRP      = 0x00080000;           ///< does nothing
-static const mode_t S_IROTH      = 0x00040000;           ///< does nothing
-static const mode_t S_IWOTH      = 0x00020000;           ///< does nothing
-static const mode_t S_IXOTH      = 0x00010000;           ///< does nothing
-#   endif
-static const mode_t MS_MODE_MASK = 0x0000ffff;           ///< low word
+# include <io.h>
 #endif
 
 
@@ -115,17 +82,19 @@ void dumpmfile(mfile *mem){
     (void)puts("");
 }
 
+#ifdef _WIN32
+# define XPOST_MODE_READ_WRITE _S_IREAD | _S_IWRITE
+#else
+# define XPOST_MODE_READ_WRITE S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
+#endif
+
 /* memfile exists in path */
 int getmemfile(char *fname){
     int fd;
     fd = open(
             fname, //"x.mem",
             O_RDWR | O_CREAT,
-            (S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH)
-#ifdef _WIN32
-            & MS_MODE_MASK
-#endif
-    );
+            XPOST_MODE_READ_WRITE);
     if (fd == -1)
         perror(fname);
     return fd;
