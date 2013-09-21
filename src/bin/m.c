@@ -31,7 +31,7 @@ typedef bool _Bool;
 #ifdef _WIN32
 #   include <io.h>
 
-typedef int mode_t;
+//typedef int mode_t; //already in <sys/types.h>
 
 /// @Note If STRICT_UGO_PERMISSIONS is not defined, then setting Read for any
 ///       of User, Group, or Other will set Read for User and setting Write
@@ -44,15 +44,15 @@ typedef int mode_t;
 static const mode_t S_ISUID      = 0x08000000;           ///< does nothing
 static const mode_t S_ISGID      = 0x04000000;           ///< does nothing
 static const mode_t S_ISVTX      = 0x02000000;           ///< does nothing
-static const mode_t S_IRUSR      = (mode_t)_S_IREAD;     ///< read by user
-static const mode_t S_IWUSR      = (mode_t)_S_IWRITE;    ///< write by user
-static const mode_t S_IXUSR      = 0x00400000;           ///< does nothing
+//static const mode_t S_IRUSR      = (int)_S_IREAD;     ///< read by user
+//static const mode_t S_IWUSR      = (int)_S_IWRITE;    ///< write by user
+//static const mode_t S_IXUSR      = 0x00400000;           ///< does nothing
 #   ifndef STRICT_UGO_PERMISSIONS
-static const mode_t S_IRGRP      = (mode_t)_S_IREAD;     ///< read by *USER*
-static const mode_t S_IWGRP      = (mode_t)_S_IWRITE;    ///< write by *USER*
+static const mode_t S_IRGRP      = (int)_S_IREAD;     ///< read by *USER*
+static const mode_t S_IWGRP      = (int)_S_IWRITE;    ///< write by *USER*
 static const mode_t S_IXGRP      = 0x00080000;           ///< does nothing
-static const mode_t S_IROTH      = (mode_t)_S_IREAD;     ///< read by *USER*
-static const mode_t S_IWOTH      = (mode_t)_S_IWRITE;    ///< write by *USER*
+static const mode_t S_IROTH      = (int)_S_IREAD;     ///< read by *USER*
+static const mode_t S_IWOTH      = (int)_S_IWRITE;    ///< write by *USER*
 static const mode_t S_IXOTH      = 0x00010000;           ///< does nothing
 #   else
 static const mode_t S_IRGRP      = 0x00200000;           ///< does nothing
