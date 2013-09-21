@@ -65,10 +65,11 @@ typedef bool _Bool;
 #include "opf.h"
 
 #ifdef HAVE_WIN32
+# include "glob.h"
 # include "osmswin.h"
 #else
-#include <glob.h>
-#include <stdio_ext.h> /* __fpurge */
+# include <glob.h>
+# include <stdio_ext.h> /* __fpurge */
 # include "osunix.h"
 #endif
 
