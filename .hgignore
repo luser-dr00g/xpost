@@ -1,6 +1,8 @@
 # use glob syntax.
 syntax: glob
 
+.deps
+.dirstamp
 Makefile
 Makefile.in
 aclocal.m4
@@ -17,6 +19,7 @@ depcomp
 install-sh
 missing
 stamp-h1
+*.exe
 *.o
 *.Po
 *~
