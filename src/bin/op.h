@@ -1,3 +1,6 @@
+#ifndef XPOST_OP_H
+#define XPOST_OP_H
+
 /* operators
    This module is the operator interface.
    It defines the operator constructor consoper,
@@ -6,7 +9,7 @@
    initop is called to populate the optab structure.
 
    nb. Since consoper does a linear search through the optab,
-   an obvious optimisation would be to factor-out calls to 
+   an obvious optimisation would be to factor-out calls to
    consoper from main-line code. Pre-initialize an object
    somewhere and re-use it where needed. xpost2 did this with
    a global struct of "opcuts" (operator object shortcuts),
@@ -21,7 +24,7 @@
    which directly implements the stack-checking performed by
    opexec (but without the nasty loops).
    opexec would then call op.sig[i].check() if not null.
-   
+
    */
 
 typedef struct signat {
@@ -58,3 +61,4 @@ void opexec(context *ctx, unsigned opcode);
 
 void initop(context *ctx);
 
+#endif

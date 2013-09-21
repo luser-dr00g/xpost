@@ -1,8 +1,11 @@
+#ifndef XPOST_S_H
+#define XPOST_S_H
+
 /* stacks
    Stacks consist of a chain of tables, much like mtab chains.
    */
 
-/* must include ob.h */ 
+/* must include ob.h */
 /*typedef long long object;*/
 
 #define STACKSEGSZ 20
@@ -40,6 +43,6 @@ void tob(mfile *mem, unsigned stacadr, integer i, object o);
 
 /* pop the stack. remove and return top object */
 object pop(mfile *mem, unsigned stackadr);
-/*int pop(mfile *mem, unsigned stackadr, object *po);*/ 
+/*int pop(mfile *mem, unsigned stackadr, object *po);*/
 
-
+#endif

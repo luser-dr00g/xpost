@@ -1,3 +1,6 @@
+#ifndef XPOST_ITP_H
+#define XPOST_ITP_H
+
 /* the interpreter
        eval actions
        core interpreter loop
@@ -7,9 +10,9 @@
 typedef struct {
     unsigned id;
     /*@dependent@*/ mfile *gl, *lo;
-    unsigned os, es, ds, hold;  
+    unsigned os, es, ds, hold;
     unsigned long rand_next;
-    unsigned vmmode; 
+    unsigned vmmode;
     unsigned state;
     unsigned quit;
     object currentobject;
@@ -45,3 +48,4 @@ extern int TRACE;
 void inititp(itp *itp);
 void exititp(itp *itp);
 
+#endif
