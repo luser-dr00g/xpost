@@ -5,12 +5,13 @@ m4_define([v_mic], [1])
 m4_define([v_ver], [v_maj.v_min.v_mic])
 
 AC_INIT([xpost], [v_ver], [luser.droog.remove@gmail.com])
-AC_PREREQ([2.52])
+AC_PREREQ([2.60])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
+AC_USE_SYSTEM_EXTENSIONS
 
-AM_INIT_AUTOMAKE([1.6 dist-bzip2])
+AM_INIT_AUTOMAKE([1.10 dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 
@@ -49,6 +50,8 @@ AC_HEADER_ASSERT
 AC_HEADER_STDBOOL
 AC_HEADER_TIME
 
+AC_CHECK_HEADERS([sys/mman.h])
+
 
 ### Checks for types
 
@@ -70,7 +73,7 @@ XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-
 
 AC_FUNC_ALLOCA
 
-AC_CHECK_FUNCS([gettimeofday])
+AC_CHECK_FUNCS([gettimeofday mmap mremap])
 
 ### Output
 
