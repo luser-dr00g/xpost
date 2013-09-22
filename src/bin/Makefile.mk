@@ -75,11 +75,19 @@ src_bin_itp_LDADD = -lm
 
 if HAVE_SPLINT
 splint:
-	splint +posixlib -boolops -predboolint +ignoresigns -type +charindex \
+	@SPLINT@ +posixlib -boolops -predboolint +ignoresigns -type +charindex \
 	-nestcomment -noeffect -redef -shiftnegative -castfcnptr \
 	-shiftimplementation -predboolothers -exportlocal -mustfreefresh \
 	src/bin/*.c
 else
 splint:
 	$(AM_V_at)echo "splint not found. Update PATH or install splint."
+endif
+
+if HAVE_WC
+count:
+	@WC@ -l	src/bin/*.c src/bin/*.h
+else
+count:
+	$(AM_V_at)echo "wc not found. Update PATH or install wc."
 endif
