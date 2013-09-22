@@ -18,7 +18,11 @@
 (test: loading graphics...)=
 flush
 %(*){=}128 string filenameforall
-(../../data/g.ps)run
+%(../../data)
+PACKAGE_DATA_DIR
+(/g.ps)
+strcat
+run
 initgraphics
 
 

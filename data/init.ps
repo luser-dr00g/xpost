@@ -47,7 +47,11 @@ true setglobal
 %    exch pop exch pop
 %} stopped {cleartomark} if
 %exch strcat Run
-(../../data/err.ps)run
+%(../../data)
+PACKAGE_DATA_DIR
+(/err.ps)
+strcat
+run
 
 
 /stack { count dup 1 add copy //= repeat pop } def
@@ -216,7 +220,11 @@ end % systemdict
 
 userdict begin
 
-(../../data/qsort.ps) run
+%(../../data)
+PACKAGE_DATA_DIR
+(/qsort.ps)
+strcat
+run
 
 % (s1) (s2) (s3) ... (sN) n  ncat  (s1s2s3...sN)
 /ncat {        % s1 s2 s3 .. sN n

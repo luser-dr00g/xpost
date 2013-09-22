@@ -45,11 +45,17 @@ int TRACE = 0;
 itp *itpdata;
 int initializing = 0;
 
-unsigned makestack(mfile *mem){
+static
+unsigned makestack(mfile *mem);
+
+static
+unsigned makestack(mfile *mem)
+{
     return initstack(mem);
 }
 
-void initctxlist(mfile *mem) {
+void initctxlist(mfile *mem)
+{
     unsigned ent;
     mtab *tab;
     ent = mtalloc(mem, 0, MAXCONTEXT * sizeof(unsigned));
@@ -59,6 +65,7 @@ void initctxlist(mfile *mem) {
             MAXCONTEXT * sizeof(unsigned));
 }
 
+static
 void addtoctxlist(mfile *mem,
                   unsigned cid)
 {
@@ -78,6 +85,7 @@ void addtoctxlist(mfile *mem,
     error(unregistered, "ctxlist full");
 }
 
+static
 mfile *nextgtab()
 {
     int i;
@@ -92,6 +100,7 @@ mfile *nextgtab()
 }
 
 /* set up global vm in the context */
+static
 void initglobal(context *ctx)
 {
     ctx->vmmode = GLOBAL;
@@ -111,6 +120,7 @@ void initglobal(context *ctx)
     ctx->gl->start = OPTAB + 1; /* so OPTAB is not collected and not scanned. */
 }
 
+static
 mfile *nextltab()
 {
     int i;
@@ -124,6 +134,7 @@ mfile *nextltab()
 }
 
 /* set up local vm in the context */
+static
 void initlocal(context *ctx)
 {
     ctx->vmmode = LOCAL;
@@ -152,7 +163,9 @@ void initlocal(context *ctx)
 }
 
 
+static
 unsigned nextid = 0;
+static
 unsigned initctxid(void)
 {
     unsigned startid = nextid;
@@ -218,6 +231,7 @@ void exitcontext(context *ctx)
    fork new process with private global and private local vm
    (spawn jobserver)
    */
+static
 unsigned fork1(context *ctx)
 {
     unsigned newcid;
@@ -235,6 +249,7 @@ unsigned fork1(context *ctx)
    fork new process with shared global vm and private local vm
    (new "application"?)
    */
+static
 unsigned fork2(context *ctx)
 {
     unsigned newcid;
@@ -253,6 +268,7 @@ unsigned fork2(context *ctx)
    fork new process with shared global and shared local vm
    (lightweight process)
    */
+static
 unsigned fork3(context *ctx)
 {
     unsigned newcid;
@@ -297,18 +313,21 @@ typedef
 void evalfunc(context *ctx);
 
 /* quit the interpreter */
+static
 void evalquit(context *ctx)
 {
     ++ctx->quit;
 }
 
 /* pop the execution stack */
+static
 void evalpop(context *ctx)
 {
     (void)pop(ctx->lo, ctx->es);
 }
 
 /* pop the execution stack onto the operand stack */
+static
 void evalpush(context *ctx)
 {
     push(ctx->lo, ctx->os,
@@ -316,6 +335,7 @@ void evalpush(context *ctx)
 }
 
 /* load executable name */
+static
 void evalload(context *ctx)
 {
     object s = strname(ctx, top(ctx->lo, ctx->es, 0));
@@ -333,6 +353,7 @@ void evalload(context *ctx)
 }
 
 /* execute operator */
+static
 void evaloperator(context *ctx)
 {
     object op = pop(ctx->lo, ctx->es);
@@ -343,6 +364,7 @@ void evaloperator(context *ctx)
 }
 
 /* extract head (&tail) of array */
+static
 void evalarray(context *ctx)
 {
     object a = pop(ctx->lo, ctx->es);
@@ -364,6 +386,7 @@ void evalarray(context *ctx)
 }
 
 /* extract token from string */
+static
 void evalstring(context *ctx)
 {
     object b,t,s;
@@ -382,6 +405,7 @@ void evalstring(context *ctx)
 }
 
 /* extract token from file */
+static
 void evalfile(context *ctx)
 {
     object b,f,t;
@@ -418,6 +442,7 @@ evalfunc *evalname = evalload;
 evalfunc *evaltype[NTYPES + 1];
 #define AS_EVALINIT(_) evaltype[ _ ## type ] = eval ## _ ;
 
+static
 void initevaltype(void)
 {
     TYPES(AS_EVALINIT)
@@ -513,10 +538,14 @@ void xit()
 
 
 int main(void) {
+    object sd;
     printf("\n^test itp.c\n");
 
     //TRACE=1;
     init();
+    sd = bot(ctx->lo, ctx->ds, 0);
+    bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
+            cvlit(consbst(ctx, CNT_STR(PACKAGE_DATA_DIR))));
 
     //dumpoper(ctx, 19);
     //dumpctx(ctx);   /* double-check pre-initialized memory */
@@ -525,7 +554,9 @@ int main(void) {
     /* load init.ps and err.ps */
     assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
-    push(ctx->lo, ctx->es, cvx(consbst(ctx, CNT_STR("(../../data/init.ps) (r) file cvx exec"))));
+    push(ctx->lo, ctx->es,
+        cvx(consbst(ctx,
+            CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
     ctx->quit = 0;
     mainloop(ctx);
 
