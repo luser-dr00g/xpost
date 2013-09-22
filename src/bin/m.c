@@ -28,6 +28,10 @@ typedef bool _Bool;
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
 
+#ifdef HAVE_SYS_MMAN_H
+# include <sys/mman.h> /* mmap munmap mremap */
+#endif
+
 #ifdef _WIN32
 # include <io.h>
 #endif
@@ -122,12 +126,12 @@ void initmem(mfile *mem,
         }
     }
 
-#ifdef MMAP
+#ifdef HAVE_MMAP
     mem->base = mmap(NULL,
             sz,
             PROT_READ|PROT_WRITE,
             MAP_SHARED //MAP_PRIVATE
-# ifndef MREMAP
+# ifndef HAVE_MREMAP
             |MAP_AUTOGROW
 # endif
             | (fd == -1? MAP_ANONYMOUS : 0) , fd, 0);
@@ -141,7 +145,7 @@ void initmem(mfile *mem,
     } // . ..
     mem->used = 0;
     mem->max = sz;
-#ifndef MMAP
+#ifndef HAVE_MMAP
     /* read file into malloc'd memory */
     if (fd != -1)
         read(fd, mem->base, sz);
@@ -149,8 +153,9 @@ void initmem(mfile *mem,
 }
 
 /* destroy the memory file */
-void exitmem(mfile *mem){
-#ifdef MMAP
+void exitmem(mfile *mem)
+{
+#ifdef HAVE_MMAP
     msync(mem->base, mem->used, MS_SYNC);
     munmap(mem->base, mem->max);
 #else
@@ -183,8 +188,8 @@ mfile *growmem(mfile *mem,
     if (sz < pgsz) sz = pgsz;
     else sz = (sz/pgsz + 1) * pgsz;
     sz += mem->max;
-#ifdef MMAP
-# ifdef MREMAP
+#ifdef HAVE_MMAP
+# ifdef HAVE_MREMAP
     tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
 # else
     tmp = mem->base; /* without mremap, rely on MAP_AUTOGROW */
