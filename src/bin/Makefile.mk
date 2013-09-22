@@ -68,7 +68,7 @@ src/bin/osunix.h
 endif
 
 src_bin_itp_CPPFLAGS = \
--DPACKAGE_DOC_DIR=\"$(docdir)\" \
+-DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 -DTESTMODULE_ITP
 
 src_bin_itp_CFLAGS = @XPOST_BIN_CFLAGS@
