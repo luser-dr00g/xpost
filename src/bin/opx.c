@@ -73,7 +73,9 @@ typedef bool _Bool;
 #include "opdi.h"
 #include "opx.h"
 
-object bind (context *ctx, object p) {
+object bind (context *ctx,
+             object p)
+{
     object t, d;
     int i, j, z;
     for (i = 0; i < p.comp_.sz; i++) {
@@ -102,11 +104,14 @@ object bind (context *ctx, object p) {
     return setfaccess(p, readonly);
 }
 
-void Pbind (context *ctx, object P) {
+void Pbind (context *ctx,
+            object P)
+{
     push(ctx->lo, ctx->os, bind(ctx, P));
 }
 
-void realtime (context *ctx) {
+void realtime (context *ctx)
+{
     double sec;
     #ifdef HAVE_GETTIMEOFDAY
         struct timeval tv;
@@ -118,25 +123,30 @@ void realtime (context *ctx) {
     push(ctx->lo, ctx->os, consint(sec));
 }
 
-void traceon (context *ctx) {
+void traceon (context *ctx)
+{
     (void)ctx;
     TRACE = 1;
 }
-void traceoff (context *ctx) {
+void traceoff (context *ctx)
+{
     (void)ctx;
     TRACE = 0;
 }
 
-void debugloadon (context *ctx) {
+void debugloadon (context *ctx)
+{
     (void)ctx;
     DEBUGLOAD = 1;
 }
-void debugloadoff (context *ctx) {
+void debugloadoff (context *ctx)
+{
     (void)ctx;
     DEBUGLOAD = 0;
 }
 
-void Odumpnames (context *ctx) {
+void Odumpnames (context *ctx)
+{
     printf("\nGlobal Name stack: ");
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
     (void)puts("");
@@ -145,14 +155,17 @@ void Odumpnames (context *ctx) {
     (void)puts("");
 }
 
-void dumpvm (context *ctx) {
+void dumpvm (context *ctx)
+{
     dumpmfile(ctx->lo);
     dumpmtab(ctx->lo, 0);
     dumpmfile(ctx->gl);
     dumpmtab(ctx->gl, 0);
 }
 
-void initopx(context *ctx, object sd) {
+void initopx(context *ctx,
+             object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);

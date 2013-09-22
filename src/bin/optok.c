@@ -44,28 +44,72 @@ typedef bool _Bool;
 
 enum { NBUF = BUFSIZ };
 
-int puff (context *ctx, char *buf, int nbuf, object *src,
-        int (*next)(context *ctx, object *src),
-        void (*back)(context *ctx, int c, object *src));
-object toke (context *ctx, object *src,
-        int (*next)(context *ctx, object *src),
-        void (*back)(context *ctx, int c, object *src));
+int puff (context *ctx,
+          char *buf,
+          int nbuf,
+          object *src,
+          int (*next)(context *ctx, object *src),
+          void (*back)(context *ctx, int c, object *src));
+object toke (context *ctx,
+             object *src,
+             int (*next)(context *ctx, object *src),
+             void (*back)(context *ctx, int c, object *src));
 
-int ishash (int c) { return c == '#'; }
-int isdot (int c) { return c == '.'; }
-int ise (int c) { return strchr("eE", c) != NULL; }
-int issign (int c) { return strchr("+-", c) != NULL; }
-int isdel (int c) { return strchr("()[]<>{}/%", c) != NULL; }
-int isreg (int c) { return (c!=EOF) && (!isspace(c)) && (!isdel(c)); }
+static
+int ishash (int c)
+{
+    return c == '#';
+}
+
+static
+int isdot (int c)
+{
+    return c == '.';
+}
+
+static
+int ise (int c)
+{
+    return strchr("eE", c) != NULL;
+}
+
+static
+int issign (int c)
+{
+    return strchr("+-", c) != NULL;
+}
+
+static
+int isdel (int c)
+{
+    return strchr("()[]<>{}/%", c) != NULL;
+}
+
+static
+int isreg (int c)
+{
+    return (c!=EOF) && (!isspace(c)) && (!isdel(c));
+}
+
 //int isxdigit (int c) { return strchr("0123456789ABCDEFabcdef", c) != NULL; }
 
-typedef struct { int (*pred)(int); int y, n; } test;
+typedef
+struct {
+    int (*pred)(int);
+    int y;
+    int n;
+} test;
 
 test fsm_dec[] = {
+    /*  int pred(int), y,  n */
+    /*        ------   -   -
     /* 0 */ { issign,  1,  1 },
     /* 1 */ { isdigit, 2, -1 },
     /* 2 */ { isdigit, 2, -1 } };
-int accept_dec(int i) { return i == 2; }
+int accept_dec(int i)
+{
+    return i == 2;
+}
 
 test fsm_rad[] = {
     /* 0 */ { isdigit, 1, -1 },
@@ -73,7 +117,10 @@ test fsm_rad[] = {
     /* 2 */ { ishash,  3, -1 },
     /* 3 */ { isalnum, 4, -1 },
     /* 4 */ { isalnum, 4, -1 } };
-int accept_rad(int i) { return i == 4; }
+int accept_rad(int i)
+{
+    return i == 4;
+}
 
 test fsm_real[] = {
     /* 0 */  { issign,  1,   1 },
@@ -87,14 +134,18 @@ test fsm_real[] = {
     /* 8 */  { issign,  9,   9 },
     /* 9 */  { isdigit, 10, -1 },
     /* 10 */ { isdigit, 10, -1 } };
-int accept_real(int i) {
+int accept_real(int i)
+{
     switch (i) { //case 2:
         case 6: case 10: return true; default: return false; }
     //return (i & 3) == 2;  // 2, 6 == 2|4, 10 == 2|8
 }
 
-int fsm_check (char *s, int ns, test *fsm,
-        int (*accept)(int final)) {
+int fsm_check (char *s,
+               int ns,
+               test *fsm,
+               int (*accept)(int final))
+{
     int sta = 0;
     char *sp = s;
     while (sta != -1 && *sp) {
@@ -109,9 +160,13 @@ int fsm_check (char *s, int ns, test *fsm,
     return accept(sta);
 }
 
-object grok (context *ctx, char *s, int ns, object *src,
-        int (*next)(context *ctx, object *src),
-        void (*back)(context *ctx, int c, object *src)) {
+object grok (context *ctx,
+             char *s,
+             int ns,
+             object *src,
+             int (*next)(context *ctx, object *src),
+             void (*back)(context *ctx, int c, object *src))
+{
     if (ns == NBUF) error(limitcheck, "grok buf maxxed");
     s[ns] = '\0';  //fsm_check & consname  terminate on \0
 
@@ -264,8 +319,11 @@ object grok (context *ctx, char *s, int ns, object *src,
 
 /* read until a non-whitespace, non-comment char.
    "prime" the buffer.  */
-int snip (context *ctx, char *buf, object *src,
-        int (*next)(context *ctx, object *src)) {
+int snip (context *ctx,
+          char *buf,
+          object *src,
+          int (*next)(context *ctx, object *src))
+{
     int c;
     do {
         c = next(ctx, src);
@@ -283,9 +341,13 @@ int snip (context *ctx, char *buf, object *src,
 /* read in a token up to delimiter
    read into buf any regular characters,
    if we read one too many, put it back, unless whitespace. */
-int puff (context *ctx, char *buf, int nbuf, object *src,
-        int (*next)(context *ctx, object *src),
-        void (*back)(context *ctx, int c, object *src)) {
+int puff (context *ctx,
+          char *buf,
+          int nbuf,
+          object *src,
+          int (*next)(context *ctx, object *src),
+          void (*back)(context *ctx, int c, object *src))
+{
     int c;
     char *s = buf;
     while (isreg(c = next(ctx, src))) {
@@ -297,9 +359,11 @@ int puff (context *ctx, char *buf, int nbuf, object *src,
 }
 
 
-object toke (context *ctx, object *src,
-        int (*next)(context *ctx, object *src),
-        void (*back)(context *ctx, int c, object *src)) {
+object toke (context *ctx,
+             object *src,
+             int (*next)(context *ctx, object *src),
+             void (*back)(context *ctx, int c, object *src))
+{
     char buf[NBUF] = "";
     int sta;  // status, and size
     object o;
@@ -313,13 +377,20 @@ object toke (context *ctx, object *src,
 } 
 
 
-int Fnext(context *ctx, object *F) {
+int Fnext(context *ctx,
+          object *F)
+{
     return fgetc(filefile(ctx->lo, *F));
 }
-void Fback(context *ctx, int c, object *F) {
+void Fback(context *ctx,
+           int c,
+           object *F)
+{
     (void)ungetc(c, filefile(ctx->lo, *F));
 }
-void Ftoken (context *ctx, object F) {
+void Ftoken (context *ctx,
+             object F)
+{
     object t;
     if (!filestatus(ctx->lo, F)) error(ioerror, "Ftoken");
     t = toke(ctx, &F, Fnext, Fback);
@@ -331,7 +402,9 @@ void Ftoken (context *ctx, object F) {
     }
 }
 
-int Snext(context *ctx, object *S) {
+int Snext(context *ctx,
+          object *S)
+{
     int ret;
     if (S->comp_.sz == 0) return EOF;
     ret = charstr(ctx, *S)[0];
@@ -339,12 +412,17 @@ int Snext(context *ctx, object *S) {
     --S->comp_.sz;
     return ret;
 }
-void Sback(context *ctx, int c, object *S) {
+void Sback(context *ctx,
+           int c,
+           object *S)
+{
     --S->comp_.off;
     ++S->comp_.sz;
     charstr(ctx, *S)[0] = c;
 }
-void Stoken (context *ctx, object S) {
+void Stoken (context *ctx,
+             object S)
+{
     object t;
     t = toke(ctx, &S, Snext, Sback);
     if (type(t) != nulltype) {
@@ -356,7 +434,9 @@ void Stoken (context *ctx, object S) {
     }
 }
 
-void initoptok(context *ctx, object sd) {
+void initoptok(context *ctx,
+               object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);

@@ -33,43 +33,71 @@ typedef bool _Bool;
 #include "op.h"
 #include "opst.h"
 
-void Istring(context *ctx, object I) {
+void Istring(context *ctx,
+             object I)
+{
     push(ctx->lo, ctx->os, cvlit(consbst(ctx, I.int_.val, NULL)));
 }
 
-void Slength(context *ctx, object S) {
+void Slength(context *ctx,
+             object S)
+{
     push(ctx->lo, ctx->os, consint(S.comp_.sz));
 }
 
-void s_copy(context *ctx, object S, object D) {
+void s_copy(context *ctx,
+            object S,
+            object D)
+{
     unsigned i;
     for (i = 0; i < S.comp_.sz; i++)
         bstput(ctx, D, i, bstget(ctx, S, i));
 }
 
-void Scopy(context *ctx, object S, object D) {
+void Scopy(context *ctx,
+           object S,
+           object D)
+{
     if (D.comp_.sz < S.comp_.sz) error(rangecheck, "Scopy");
     s_copy(ctx, S, D);
     push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
 }
 
-void Sget(context *ctx, object S, object I) {
+void Sget(context *ctx,
+          object S,
+          object I)
+{
     push(ctx->lo, ctx->os, consint(bstget(ctx, S, I.int_.val)));
 }
 
-void Sput(context *ctx, object S, object I, object C) {
+void Sput(context *ctx,
+          object S,
+          object I,
+          object C)
+{
     bstput(ctx, S, I.int_.val, C.int_.val);
 }
 
-void Sgetinterval(context *ctx, object S, object I, object L) {
+void Sgetinterval(context *ctx,
+                  object S,
+                  object I,
+                  object L)
+{
     push(ctx->lo, ctx->os, arrgetinterval(S, I.int_.val, L.int_.val));
 }
 
-void Sputinterval(context *ctx, object D, object I, object S) {
+void Sputinterval(context *ctx,
+                  object D,
+                  object I,
+                  object S)
+{
     s_copy(ctx, S, arrgetinterval(D, I.int_.val, S.comp_.sz));
 }
 
-int ancsearch(char *str, char *seek, int seekn) {
+int ancsearch(char *str,
+              char *seek,
+              int seekn)
+{
     int i;
     for (i = 0; i < seekn; i++)
         if (str[i] != seek[i])
@@ -77,7 +105,10 @@ int ancsearch(char *str, char *seek, int seekn) {
     return true;
 }
 
-void Sanchorsearch(context *ctx, object str, object seek) {
+void Sanchorsearch(context *ctx,
+                   object str,
+                   object seek)
+{
     char *s, *k;
     if (seek.comp_.sz > str.comp_.sz) error(rangecheck, "Sanchorsearch");
     s = charstr(ctx, str);
@@ -95,7 +126,10 @@ void Sanchorsearch(context *ctx, object str, object seek) {
     }
 }
 
-void Ssearch(context *ctx, object str, object seek) {
+void Ssearch(context *ctx,
+             object str,
+             object seek)
+{
     int i;
     char *s, *k;
     if (seek.comp_.sz > str.comp_.sz) error(rangecheck, "Ssearch");
@@ -118,7 +152,10 @@ void Ssearch(context *ctx, object str, object seek) {
     push(ctx->lo, ctx->os, consbool(false));
 }
 
-void Sforall(context *ctx, object S, object P) {
+void Sforall(context *ctx,
+             object S,
+             object P)
+{
     if (S.comp_.sz == 0) return;
     assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
@@ -132,7 +169,9 @@ void Sforall(context *ctx, object S, object P) {
 
 // token : see optok.c
 
-void initopst(context *ctx, object sd) {
+void initopst(context *ctx,
+              object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);

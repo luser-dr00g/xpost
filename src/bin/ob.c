@@ -24,27 +24,36 @@ typedef bool _Bool;
 
 #include "ob.h"
 
-char *types[] = { TYPES(AS_TYPE_STR) "invalid"};
+char *types[] = {
+    TYPES(AS_TYPE_STR)
+    "invalid"
+};
 
-int isx(object o) {
+int isx(object o)
+{
     return !(o.tag &FLIT);
 }
 
-int islit(object o) {
+int islit(object o)
+{
     return o.tag & FLIT;
 }
 
-int faccess(object o) {
+int faccess(object o)
+{
     return (o.tag & FACCESS) >> FACCESSO;
 }
 
-object setfaccess(object o, int access) {
+object setfaccess(object o,
+                  int access)
+{
     o.tag &= ~FACCESS;
     o.tag |= (access << FACCESSO);
     return o;
 }
 
-int isreadable(object o) {
+int isreadable(object o)
+{
     if (type(o) == filetype) {
         return faccess(o) == readonly;
     } else {
@@ -52,20 +61,24 @@ int isreadable(object o) {
     }
 }
 
-int iswriteable(object o) {
+int iswriteable(object o)
+{
     return faccess(o) == unlimited;
 }
 
-int type(object o) {
+int type(object o)
+{
     return o.tag & TYPEMASK;
 }
 
-object cvx(object o){
+object cvx(object o)
+{
     o.tag &= ~FLIT;
     return o;
 }
 
-object cvlit(object o) {
+object cvlit(object o)
+{
     o.tag |= FLIT;
     return o;
 }
@@ -73,7 +86,8 @@ object cvlit(object o) {
 // null, mark
 SINGLETONS(DEFINE_SINGLETON)
 
-object consbool(bool b) {
+object consbool(bool b)
+{
     object o;
     o.int_.tag = booleantype | (unlimited << FACCESSO);
     o.int_.pad = 0;
@@ -81,7 +95,8 @@ object consbool(bool b) {
     return cvlit(o);
 }
 
-object consint(integer i){
+object consint(integer i)
+{
     object o;
     o.int_.tag = integertype | (unlimited << FACCESSO);
     o.int_.pad = 0;
@@ -89,7 +104,8 @@ object consint(integer i){
     return cvlit(o);
 }
 
-object consreal(real r){
+object consreal(real r)
+{
     object o;
     o.real_.tag = realtype | (unlimited << FACCESSO);
     o.real_.pad = 0;
@@ -97,7 +113,8 @@ object consreal(real r){
     return cvlit(o);
 }
 
-void dumpcompobject(object o){
+void dumpcompobject(object o)
+{
     printf(" %c %u %u %u %u>",
             o.comp_.tag&FBANK? 'G': 'L',
             (unsigned int)o.comp_.tag,
@@ -106,7 +123,8 @@ void dumpcompobject(object o){
             (unsigned int)o.comp_.off);
 }
 
-void dumpobject(object o){
+void dumpobject(object o)
+{
     switch(type(o)) {
         default:
         case invalidtype: printf("<invalid object %04x %04x %04x %04x >",
@@ -137,7 +155,8 @@ void dumpobject(object o){
 }
 
 #ifdef TESTMODULE_OB
-int main() {
+int main()
+{
     printf("\n^test ob module\n");
     object i = consint(5);
     object j = consint(3579);

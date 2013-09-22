@@ -61,7 +61,9 @@ typedef bool _Bool;
 #include "opar.h"
 #include "oppa.h"
 
-void packedarray (context *ctx, object n) {
+void packedarray (context *ctx,
+                  object n)
+{
     int i;
     object a, v;
     a = consbar(ctx, n.int_.val);
@@ -74,12 +76,16 @@ void packedarray (context *ctx, object n) {
     push(ctx->lo, ctx->os, a);
 }
 
-void setpacking (context *ctx, object b) {
+void setpacking (context *ctx,
+                 object b)
+{
     object sd = bot(ctx->lo, ctx->ds, 0);
     bdcput(ctx, sd, consname(ctx, "currentpacking"), b);
 }
 
-void initoppa(context *ctx, object sd) {
+void initoppa(context *ctx,
+              object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);

@@ -39,6 +39,7 @@ typedef bool _Bool;
 
 /* iterate through all tables,
     clear the MARK in the mark. */
+static
 void unmark(mfile *mem) {
     mtab *tab = (void *)(mem->base);
     unsigned i;
@@ -54,6 +55,7 @@ void unmark(mfile *mem) {
 }
 
 /* set the MARK in the mark in the tab[ent] */
+static
 void markent(mfile *mem, unsigned ent) {
     mtab *tab = (void *)(mem->base);
     findtabent(mem,&tab,&ent);
@@ -61,14 +63,17 @@ void markent(mfile *mem, unsigned ent) {
 }
 
 /* is it marked? */
+static
 int marked(mfile *mem, unsigned ent) {
     mtab *tab = (void *)(mem->base);
     findtabent(mem,&tab,&ent);
     return (tab->tab[ent].mark & MARKM) >> MARKO;
 }
 
+static
 void markobject(context *ctx, mfile *mem, object o);
 
+static
 void markdict(context *ctx, mfile *mem, unsigned adr) {
     dichead *dp = (void *)(mem->base + adr);
     object *tp = (void *)(mem->base + adr + sizeof(dichead));
@@ -79,6 +84,7 @@ void markdict(context *ctx, mfile *mem, unsigned adr) {
 }
 
 /* recursively mark all elements of array */
+static
 void markarray(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
     object *op = (void *)(mem->base + adr);
     unsigned j;
@@ -88,6 +94,7 @@ void markarray(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
 }
 
 /* traverse the contents of composite objects */
+static
 void markobject(context *ctx, mfile *mem, object o) {
     switch(type(o)) {
     case arraytype:
@@ -121,6 +128,7 @@ void markobject(context *ctx, mfile *mem, object o) {
 }
 
 /* mark all allocations referred to by objects in stack */
+static
 void markstack(context *ctx, mfile *mem, unsigned stackadr) {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
@@ -138,6 +146,7 @@ next:
 }
 
 /* mark all allocations referred to by objects in save object's stack of saverec_'s */
+static
 void marksavestack(context *ctx, mfile *mem, unsigned stackadr) {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
@@ -159,6 +168,7 @@ next:
 }
 
 /* mark all allocations referred to by objects in save stack */
+static
 void marksave(context *ctx, mfile *mem, unsigned stackadr) {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
@@ -213,6 +223,7 @@ void mfree(mfile *mem, unsigned ent) {
    iterate through tables,
         if element is unmarked and not zero-sized,
             free it.  */
+static
 void sweep(mfile *mem) {
     mtab *tab;
     int ntab;

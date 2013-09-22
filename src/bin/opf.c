@@ -73,17 +73,24 @@ typedef bool _Bool;
 # include "osunix.h"
 #endif
 
-void Sfile (context *ctx, object fn, object mode) {
+void Sfile (context *ctx,
+            object fn,
+            object mode)
+{
     object f;
     f = fileopen(ctx->lo, charstr(ctx, fn), charstr(ctx, mode));
     push(ctx->lo, ctx->os, cvlit(f));
 }
 
-void Fclosefile (context *ctx, object f) {
+void Fclosefile (context *ctx,
+                 object f)
+{
     fileclose(ctx->lo, f);
 }
 
-void Fread (context *ctx, object f) {
+void Fread (context *ctx,
+            object f)
+{
     object b;
     if (!isreadable(f)) error(invalidaccess, "Fread");
     b = fileread(ctx->lo, f);
@@ -95,14 +102,20 @@ void Fread (context *ctx, object f) {
     }
 }
 
-void Fwrite (context *ctx, object f, object i) {
+void Fwrite (context *ctx,
+             object f,
+             object i)
+{
     if (!iswriteable(f)) error(invalidaccess, "Fwrite");
     filewrite(ctx->lo, f, i);
 }
 
 char *hex = "0123456789" "ABCDEF" "abcdef";
 
-void Freadhexstring (context *ctx, object F, object S) {
+void Freadhexstring (context *ctx,
+                     object F,
+                     object S)
+{
     int n;
     int c[2];
     int eof = 0;
@@ -134,7 +147,10 @@ void Freadhexstring (context *ctx, object F, object S) {
     push(ctx->lo, ctx->os, consbool(!eof));
 }
 
-void Fwritehexstring (context *ctx, object F, object S) {
+void Fwritehexstring (context *ctx,
+                      object F,
+                      object S)
+{
     int n;
     FILE *f;
     char *s;
@@ -149,7 +165,10 @@ void Fwritehexstring (context *ctx, object F, object S) {
     }
 }
 
-void Freadstring (context *ctx, object F, object S) {
+void Freadstring (context *ctx,
+                  object F,
+                  object S)
+{
     int n;
     FILE *f;
     char *s;
@@ -168,7 +187,10 @@ void Freadstring (context *ctx, object F, object S) {
     }
 }
 
-void Fwritestring (context *ctx, object F, object S) {
+void Fwritestring (context *ctx,
+                   object F,
+                   object S)
+{
     FILE *f;
     char *s;
     if (!filestatus(ctx->lo, F)) error(ioerror, "Fwritestring");
@@ -179,7 +201,10 @@ void Fwritestring (context *ctx, object F, object S) {
         error(ioerror, "Fwritestring");
 }
 
-void Freadline (context *ctx, object F, object S) {
+void Freadline (context *ctx,
+                object F,
+                object S)
+{
     FILE *f;
     char *s;
     int n, c = ' ';
@@ -198,18 +223,23 @@ void Freadline (context *ctx, object F, object S) {
     push(ctx->lo, ctx->os, consbool(c != EOF));
 }
 
-void Fbytesavailable (context *ctx, object F) {
+void Fbytesavailable (context *ctx,
+                      object F)
+{
     push(ctx->lo, ctx->os, consint(filebytesavailable(ctx->lo, F)));
 }
 
-void Zflush (context *ctx) {
+void Zflush (context *ctx)
+{
     int ret;
     (void)ctx;
     ret = fflush(NULL);
     if (ret != 0) error(ioerror, "fflush did not return 0");
 }
 
-void Fflushfile (context *ctx, object F) {
+void Fflushfile (context *ctx,
+                 object F)
+{
     int ret;
     FILE *f;
     if (!filestatus(ctx->lo, F)) return;
@@ -226,7 +256,9 @@ void Fflushfile (context *ctx, object F) {
 
 #ifndef HAVE_WIN32
 
-void Fresetfile (context *ctx, object F) {
+void Fresetfile (context *ctx,
+                 object F)
+{
     FILE *f;
     if (!filestatus(ctx->lo, F)) return;
     f = filefile(ctx->lo, F);
@@ -235,11 +267,14 @@ void Fresetfile (context *ctx, object F) {
 
 #endif
 
-void Fstatus (context *ctx, object F) {
+void Fstatus (context *ctx,
+              object F)
+{
     push(ctx->lo, ctx->os, consbool(filestatus(ctx->lo, F)));
 }
 
-void Zcurrentfile (context *ctx) {
+void Zcurrentfile (context *ctx)
+{
     int z = count(ctx->lo, ctx->es);
     int i;
     object o;
@@ -253,7 +288,9 @@ void Zcurrentfile (context *ctx) {
     push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
 }
 
-void deletefile (context *ctx, object S) {
+void deletefile (context *ctx,
+                 object S)
+{
     char *s;
     int ret;
     s = charstr(ctx, S);
@@ -265,7 +302,10 @@ void deletefile (context *ctx, object S) {
         }
 }
 
-void renamefile (context *ctx, object Old, object New) {
+void renamefile (context *ctx,
+                 object Old,
+                 object New)
+{
     char *old, *new;
     int ret;
     old = charstr(ctx, Old);
@@ -280,7 +320,11 @@ void renamefile (context *ctx, object Old, object New) {
 
 //#ifndef HAVE_WIN32
 
-void contfilenameforall (context *ctx, object oglob, object Proc, object Scr) {
+void contfilenameforall (context *ctx,
+                         object oglob,
+                         object Proc,
+                         object Scr)
+{
     glob_t *globbuf;
     char *str;
     char *src;
@@ -308,7 +352,11 @@ void contfilenameforall (context *ctx, object oglob, object Proc, object Scr) {
     }
 }
 
-void filenameforall (context *ctx, object Tmp, object Proc, object Scr) {
+void filenameforall (context *ctx,
+                     object Tmp,
+                     object Proc,
+                     object Scr)
+{
     char *tmp;
     glob_t *globbuf;
     object oglob;
@@ -329,7 +377,9 @@ void filenameforall (context *ctx, object Tmp, object Proc, object Scr) {
 
 //#endif
 
-void Sprint (context *ctx, object S) {
+void Sprint (context *ctx,
+             object S)
+{
     size_t ret;
     char *s;
     s = charstr(ctx, S);
@@ -338,7 +388,9 @@ void Sprint (context *ctx, object S) {
         error(ioerror, "Sprint() fwrite returned unexpected value");
 }
 
-void Becho (context *ctx, object b) {
+void Becho (context *ctx,
+            object b)
+{
     (void)ctx;
     if (b.int_.val)
         echoon(stdin);
@@ -346,7 +398,9 @@ void Becho (context *ctx, object b) {
         echooff(stdin);
 }
 
-void initopf (context *ctx, object sd) {
+void initopf (context *ctx,
+              object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);
