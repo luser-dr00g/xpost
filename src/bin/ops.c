@@ -60,28 +60,37 @@ typedef bool _Bool;
 
 /* any  pop  -
    discard top element */
-void Apop (context *ctx, object x) {
+void Apop (context *ctx,
+           object x)
+{
     (void)ctx;
     (void)x;
 }
 
 /* any1 any2  exch  any2 any1
    exchange top two elements */
-void AAexch (context *ctx, object x, object y) {
+void AAexch (context *ctx,
+             object x,
+             object y)
+{
     push(ctx->lo, ctx->os, y);
     push(ctx->lo, ctx->os, x);
 }
 
 /* any  dup  any any
    duplicate top element */
-void Adup (context *ctx, object x) {
+void Adup (context *ctx,
+           object x)
+{
     push(ctx->lo, ctx->os, x);
     push(ctx->lo, ctx->os, x);
 }
 
 /* any1..anyN N  copy  any1..anyN any1..anyN
    duplicate top n elements */
-void Icopy (context *ctx, object n) {
+void Icopy (context *ctx,
+            object n)
+{
     int i;
     if (n.int_.val < 0) error(rangecheck, "Icopy");
     if ((unsigned)n.int_.val > count(ctx->lo, ctx->os)) error(stackunderflow, "Icopy");
@@ -91,7 +100,9 @@ void Icopy (context *ctx, object n) {
 
 /* anyN..any0 N  index  anyN..any0 anyN
    duplicate arbitrary element */
-void Iindex (context *ctx, object n) {
+void Iindex (context *ctx,
+             object n)
+{
     if (n.int_.val < 0) error(rangecheck, "Iindex");
     if ((unsigned)n.int_.val >= count(ctx->lo, ctx->os)) error(stackunderflow, "Iindex");
     //printf("index %d\n", n.int_.val);
@@ -100,7 +111,10 @@ void Iindex (context *ctx, object n) {
 
 /* a(n-1)..a(0) n j  roll  a((j-1)mod n)..a(0) a(n-1)..a(j mod n)
    roll n elements j times */
-void IIroll (context *ctx, object N, object J) {
+void IIroll (context *ctx,
+             object N,
+             object J)
+{
     object *t;
     int i;
     int n = N.int_.val;
@@ -123,14 +137,16 @@ void IIroll (context *ctx, object N, object J) {
 
 /* |- any1..anyN  clear  |-
    discard all elements */
-void Zclear (context *ctx) {
+void Zclear (context *ctx)
+{
     stack *s = (void *)(ctx->lo->base + ctx->os);
     s->top = 0;
 }
 
 /* |- any1..anyN  count  |- any1..anyN N
    count elements on stack */
-void Zcount (context *ctx) {
+void Zcount (context *ctx)
+{
     push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->os)));
 }
 
@@ -140,7 +156,8 @@ void Zcount (context *ctx) {
 
 /* mark obj1..objN  cleartomark  -
    discard elements down through mark */
-void Zcleartomark (context *ctx) {
+void Zcleartomark (context *ctx)
+{
     object o;
     do {
         o = pop(ctx->lo, ctx->os);
@@ -149,7 +166,8 @@ void Zcleartomark (context *ctx) {
 
 /* mark obj1..objN  counttomark  N
    count elements down to mark */
-void Zcounttomark (context *ctx) {
+void Zcounttomark (context *ctx)
+{
     unsigned i;
     unsigned z;
     z = count(ctx->lo, ctx->os);
@@ -194,7 +212,9 @@ void Zcounttomark (context *ctx) {
    suspend current context momentarily
    */
 
-void initops(context *ctx, object sd) {
+void initops(context *ctx,
+             object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);

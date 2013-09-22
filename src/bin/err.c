@@ -44,8 +44,11 @@ static int in_onerror;
 /* placeholder error function */
 /* ultimately, this will do a longjmp back
    to the central loop */
-void error(unsigned err, char *msg) {
+void error(unsigned err,
+        char *msg)
+{
     context *ctx;
+
     errormsg = msg;
     if (!initializing && jbmainloopset && !in_onerror) {
         longjmp(jbmainloop, err);
@@ -87,10 +90,13 @@ void error(unsigned err, char *msg) {
 
 
 /* called by itp:loop() after longjmp from error() */
-void onerror(context *ctx, unsigned err) {
+void onerror(context *ctx,
+        unsigned err)
+{
     object sd;
     object dollarerror;
     char *errmsg; 
+
     assert(ctx);
     assert(ctx->gl);
     assert(ctx->gl->base);
