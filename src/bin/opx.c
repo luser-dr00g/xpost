@@ -65,6 +65,7 @@ typedef bool _Bool;
 #include "ob.h"
 #include "s.h"
 #include "itp.h"
+#include "err.h"
 #include "nm.h"
 #include "st.h"
 #include "ar.h"
@@ -124,6 +125,47 @@ void realtime (context *ctx)
         sec = time(NULL) * 1000;
 #endif
     push(ctx->lo, ctx->os, consint(sec));
+}
+
+static
+void Sgetenv (context *ctx,
+              object S)
+{
+    char *s;
+    char *str;
+    char *r;
+    s = charstr(ctx, S);
+    str = alloca(S.comp_.sz + 1);
+    memcpy(str, s, S.comp_.sz);
+    str[S.comp_.sz] = '\0';
+    r = getenv(str);
+    if (r)
+        push(ctx->lo, ctx->os, consbst(ctx, strlen(r), r));
+    else
+        error(undefined, "getenv returned NULL");
+}
+
+static
+void SSputenv (context *ctx,
+              object N,
+              object S)
+{
+    char *n, *s, *r;
+    n = charstr(ctx, N);
+    if (type(S) == nulltype) {
+        s = "";
+        r = alloca(N.comp_.sz + 1);
+        memcpy(r, n, N.comp_.sz);
+        r[N.comp_.sz] = '\0';
+    } else {
+        s = charstr(ctx, S);
+        r = alloca(N.comp_.sz + 1 + S.comp_.sz + 1);
+        memcpy(r, n, N.comp_.sz);
+        r[N.comp_.sz] = '=';
+        memcpy(r + N.comp_.sz + 1, s, S.comp_.sz);
+        r[N.comp_.sz + 1 + S.comp_.sz] = '\0';
+    }
+    putenv(r);
 }
 
 static
@@ -192,6 +234,9 @@ void initopx(context *ctx,
     //executive: see init.ps
     //echo: see opf.c
     //prompt: see init.ps
+
+    op = consoper(ctx, "getenv", Sgetenv, 1, 1, stringtype); INSTALL;
+    op = consoper(ctx, "putenv", SSputenv, 0, 2, stringtype, stringtype); INSTALL;
 
     op = consoper(ctx, "traceon", traceon, 0, 0); INSTALL;
     op = consoper(ctx, "traceoff", traceoff, 0, 0); INSTALL;
