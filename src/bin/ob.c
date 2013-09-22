@@ -24,26 +24,31 @@ typedef bool _Bool;
 
 #include "ob.h"
 
+/* printable strings corresponding to enum types */
 char *types[] = {
     TYPES(AS_TYPE_STR)
     "invalid"
 };
 
+/* is object executable? */
 int isx(object o)
 {
     return !(o.tag &FLIT);
 }
 
+/* is object literal? */
 int islit(object o)
 {
     return o.tag & FLIT;
 }
 
+/* return the ACCESS field for object */
 int faccess(object o)
 {
     return (o.tag & FACCESS) >> FACCESSO;
 }
 
+/* set the ACCESS field for object, returns new object */
 object setfaccess(object o,
                   int access)
 {
@@ -52,6 +57,7 @@ object setfaccess(object o,
     return o;
 }
 
+/* does the object have read access? */
 int isreadable(object o)
 {
     if (type(o) == filetype) {
@@ -61,31 +67,39 @@ int isreadable(object o)
     }
 }
 
+/* does the object have write access? */
 int iswriteable(object o)
 {
     return faccess(o) == unlimited;
 }
 
+/* return the type from the tag with all flags masked-off */
 int type(object o)
 {
     return o.tag & TYPEMASK;
 }
 
+/* convert to executable
+   removes the literal flag in the object, returns new object */
 object cvx(object o)
 {
     o.tag &= ~FLIT;
     return o;
 }
 
+/* convert to literal
+   sets the literal flag in the object, returns new object */
 object cvlit(object o)
 {
     o.tag |= FLIT;
     return o;
 }
 
+/* null and mark are both global objects */
 // null, mark
 SINGLETONS(DEFINE_SINGLETON)
 
+/* construct a booleantype object */
 object consbool(bool b)
 {
     object o;
@@ -95,6 +109,7 @@ object consbool(bool b)
     return cvlit(o);
 }
 
+/* construct an integertype object */
 object consint(integer i)
 {
     object o;
@@ -104,6 +119,7 @@ object consint(integer i)
     return cvlit(o);
 }
 
+/* construct a realtype object */
 object consreal(real r)
 {
     object o;
@@ -113,6 +129,7 @@ object consreal(real r)
     return cvlit(o);
 }
 
+/* print a dump of the fields in a composite object */
 void dumpcompobject(object o)
 {
     printf(" %c %u %u %u %u>",
@@ -123,6 +140,7 @@ void dumpcompobject(object o)
             (unsigned int)o.comp_.off);
 }
 
+/* print a dump of the object fields and contents */
 void dumpobject(object o)
 {
     switch(type(o)) {

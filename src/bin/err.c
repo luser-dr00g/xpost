@@ -89,7 +89,10 @@ void error(unsigned err,
 }
 
 
-/* called by itp:loop() after longjmp from error() */
+/* called by itp:loop() after longjmp from error()
+   pushes postscript-level error procedures
+   and resumes normal execution.
+ */
 void onerror(context *ctx,
         unsigned err)
 {

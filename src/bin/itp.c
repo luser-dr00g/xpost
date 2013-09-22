@@ -48,12 +48,15 @@ int initializing = 0;
 static
 unsigned makestack(mfile *mem);
 
+/* build a stack, return address */
 static
 unsigned makestack(mfile *mem)
 {
     return initstack(mem);
 }
 
+/* initialize the context list 
+   special entity in the mfile */
 void initctxlist(mfile *mem)
 {
     unsigned ent;
@@ -65,6 +68,7 @@ void initctxlist(mfile *mem)
             MAXCONTEXT * sizeof(unsigned));
 }
 
+/* add a context ID to the context list in mfile */
 static
 void addtoctxlist(mfile *mem,
                   unsigned cid)
@@ -85,6 +89,7 @@ void addtoctxlist(mfile *mem,
     error(unregistered, "ctxlist full");
 }
 
+/* find the next unused mfile in the global memory table */
 static
 mfile *nextgtab()
 {
@@ -99,7 +104,8 @@ mfile *nextgtab()
     exit(EXIT_FAILURE);
 }
 
-/* set up global vm in the context */
+/* set up global vm in the context
+ */
 static
 void initglobal(context *ctx)
 {
@@ -120,6 +126,7 @@ void initglobal(context *ctx)
     ctx->gl->start = OPTAB + 1; /* so OPTAB is not collected and not scanned. */
 }
 
+/* find the next unused mfile in the local memory table */
 static
 mfile *nextltab()
 {
@@ -133,7 +140,9 @@ mfile *nextltab()
     exit(EXIT_FAILURE);
 }
 
-/* set up local vm in the context */
+/* set up local vm in the context
+   allocates all stacks
+ */
 static
 void initlocal(context *ctx)
 {
@@ -163,8 +172,13 @@ void initlocal(context *ctx)
 }
 
 
+/* cursor to next cid number to try to allocate */
 static
 unsigned nextid = 0;
+
+/* allocate a context-id and associated context struct
+   returns cid;
+ */
 static
 unsigned initctxid(void)
 {
@@ -176,6 +190,9 @@ unsigned initctxid(void)
     return nextid;
 }
 
+/* adapter:
+           ctx <- cid
+   yield pointer to context struct given cid */
 context *ctxcid(unsigned cid)
 {
     //TODO reject cid 0
@@ -183,7 +200,11 @@ context *ctxcid(unsigned cid)
 }
 
 
-/* initialize context */
+/* initialize context
+   allocates operator table
+   allocates systemdict
+   populates systemdict and optab with operators
+ */
 void initcontext(context *ctx)
 {
     ctx->id = initctxid();
@@ -442,6 +463,9 @@ evalfunc *evalname = evalload;
 evalfunc *evaltype[NTYPES + 1];
 #define AS_EVALINIT(_) evaltype[ _ ## type ] = eval ## _ ;
 
+/* use above macro to initialize function table
+   keyed by enum types;
+ */
 static
 void initevaltype(void)
 {
@@ -482,6 +506,7 @@ void eval(context *ctx)
         evalpush(ctx);
 }
 
+/* the return point from all calls to error() that do not exit() */
 jmp_buf jbmainloop;
 bool jbmainloopset = false;
 
@@ -501,7 +526,7 @@ void mainloop(context *ctx)
     jbmainloopset = false;
 }
 
-
+/* print a dump of the context struct */
 void dumpctx(context *ctx)
 {
     dumpmfile(ctx->gl);

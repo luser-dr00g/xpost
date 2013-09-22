@@ -82,6 +82,7 @@ int objcmp(context *ctx,
            object L,
            object R)
 {
+    // fold nearly-comparable types to comparable
     if (type(L) != type(R)) {
         if (type(L) == integertype && type(R) == realtype) {
             L = consreal(L.int_.val);
@@ -240,6 +241,9 @@ unsigned dicmaxlength(mfile *mem,
     return dp->sz;
 }
 
+/* allocate a new dictionary,
+   copy over all non-null key/value pairs,
+   swap adrs in the two table slots. */
 static
 void dicgrow(context *ctx,
              object d)
@@ -305,6 +309,7 @@ bool dicfull(mfile *mem,
     return diclength(mem, d) == dicmaxlength(mem, d);
 }
 
+/* print a dump of the dictionary data */
 void dumpdic(mfile *mem,
              object d)
 {
@@ -323,7 +328,10 @@ void dumpdic(mfile *mem,
     }
 }
 
+/* construct an extendedtype object
+   from a double value */
 //n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag
+//     in order to unextend() later.
 object consextended (double d)
 {
     unsigned long long r = *(unsigned long long *)&d;
@@ -334,6 +342,8 @@ object consextended (double d)
     return (object) e;
 }
 
+/* adapter:
+   double <- extendedtype object */
 double doubleextended (object e)
 {
     unsigned long long r;
@@ -345,6 +355,8 @@ double doubleextended (object e)
     return d;
 }
 
+/* convert an extendedtype object to integertype or realtype 
+   depending upon flag */
 object unextend (object e)
 {
     object o;
@@ -360,6 +372,7 @@ object unextend (object e)
     return o;
 }
 
+/* make key the proper type for hashing */
 static
 object clean_key (context *ctx,
                   object k)
@@ -384,6 +397,7 @@ object clean_key (context *ctx,
     return k;
 }
 
+/* repeated loop body from the lookup function */
 #define RETURN_TAB_I_IF_EQ_K_OR_NULL    \
     if (objcmp(ctx, tp[2*i], k) == 0    \
     || objcmp(ctx, tp[2*i], null) == 0) \
@@ -521,6 +535,7 @@ void bdcput(context *ctx,
     dicput(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k, v);
 }
 
+/* undefine key from dict */
 void dicundef(context *ctx,
         mfile *mem,
         object d,
@@ -533,6 +548,7 @@ void dicundef(context *ctx,
         //not found: write null over key and value
 }
 
+/* undefine key from banked dict */
 void bdcundef(context *ctx,
         object d,
         object k)

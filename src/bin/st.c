@@ -24,6 +24,9 @@ typedef bool _Bool;
 #include "itp.h"
 #include "st.h"
 
+/* construct a stringtype object
+   with optional string value
+   */
 object consstr(mfile *mem,
                unsigned sz,
                /*@NULL@*/ char *ini)
@@ -40,6 +43,9 @@ object consstr(mfile *mem,
     return o;
 }
 
+/* construct a banked string object
+   with optional string value
+   */
 object consbst(context *ctx,
                unsigned sz,
                /*@NULL@*/ char *ini)
@@ -51,6 +57,11 @@ object consbst(context *ctx,
     return s;
 }
 
+/* adapter:
+            char* <- string object
+    yield a real, honest-to-goodness pointer to the
+    string in a stringtype object
+    */
 /*@dependent@*/
 char *charstr(context *ctx,
               object S)
@@ -64,6 +75,7 @@ char *charstr(context *ctx,
 }
 
 
+/* put a value at index into a string */
 void strput(mfile *mem,
             object s,
             integer i,
@@ -73,6 +85,7 @@ void strput(mfile *mem,
     put(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
 }
 
+/* put a value at index into a banked string */
 void bstput(context *ctx,
             object s,
             integer i,
@@ -81,6 +94,7 @@ void bstput(context *ctx,
     strput(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
 }
 
+/* get a value from a string at index */
 integer strget(mfile *mem,
                object s,
                integer i)
@@ -90,6 +104,7 @@ integer strget(mfile *mem,
     return b;
 }
 
+/* get a value from a banked string at index */
 integer bstget(context *ctx,
                object s,
                integer i)

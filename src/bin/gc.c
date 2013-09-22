@@ -70,9 +70,11 @@ int marked(mfile *mem, unsigned ent) {
     return (tab->tab[ent].mark & MARKM) >> MARKO;
 }
 
+/* recursively mark an object */
 static
 void markobject(context *ctx, mfile *mem, object o);
 
+/* recursively mark a dictionary */
 static
 void markdict(context *ctx, mfile *mem, unsigned adr) {
     dichead *dp = (void *)(mem->base + adr);
@@ -283,6 +285,7 @@ void collect(mfile *mem) {
     sweep(mem);
 }
 
+/* print a dump of the free list */
 void dumpfree(mfile *mem) {
     unsigned e;
     unsigned z = adrent(mem, FREE);;

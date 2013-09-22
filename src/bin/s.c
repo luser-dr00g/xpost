@@ -40,6 +40,8 @@ typedef struct {
 } stack;
 */
 
+/* allocate a stack segment,
+   return address */
 unsigned initstack(mfile *mem)
 {
     unsigned adr = mfalloc(mem, sizeof(stack));
@@ -49,6 +51,7 @@ unsigned initstack(mfile *mem)
     return adr;
 }
 
+/* print a dump of the stack */
 void dumpstack(mfile *mem,
                unsigned stackadr)
 {
@@ -81,6 +84,7 @@ void sfree(mfile *mem,
     /* discard */
 }
 
+/* count the stack */
 unsigned count(mfile *mem,
                unsigned stackadr)
 {
@@ -93,6 +97,7 @@ unsigned count(mfile *mem,
     return ct + s->top;
 }
 
+/* push an object on the stack */
 void push(mfile *mem,
           unsigned stackadr,
           object o)
@@ -116,35 +121,6 @@ void push(mfile *mem,
     }
 }
 
-#if 0
-/* index the stack from top-down */
-/* n.b. this code can only reliably access
-   STACKSEGSZ elements from the top */
-object top(mfile *mem,
-           unsigned stackadr,
-           integer i)
-{
-    stack *s = (void *)(mem->base + stackadr);
-    stack *p = NULL;
-
-    /* find top segment */
-    while (s->top == STACKSEGSZ) {
-        p = s;
-        s = (void *)(mem->base + s->nextseg);
-    }
-    if (s->top == 0) {
-        if (p != NULL) s = p;
-        else /*error("stack underflow");*/
-            return invalid;
-    } else if ((integer)s->top <= i) {
-        i -= s->top;
-        if (p != NULL) s = p;
-        else /*error("stack underflow");*/
-            return invalid;
-    }
-    return s->data[s->top-1-i];
-}
-#endif
 
 /* index the stack from top-down */
 object top(mfile *mem,
@@ -155,34 +131,6 @@ object top(mfile *mem,
     return bot(mem, stacadr, cnt - 1 - i);
 }
 
-#if 0
-/* index from top-down and put item there.
-   the inverse of top. */
-void pot(mfile *mem,
-         unsigned stackadr,
-         integer i,
-         object o)
-{
-    stack *s = (void *)(mem->base + stackadr);
-    stack *p = NULL;
-
-
-    /* find top segment */
-    while (s->top == STACKSEGSZ) {
-        p = s;
-        s = (void *)(mem->base + s->nextseg);
-    }
-    if (s->top == 0) {
-        if (p != NULL) s = p;
-        else error(stackunderflow, "pot");
-    } else if ((integer)s->top < i) {
-        i -= s->top;
-        if (p != NULL) s = p;
-        else error(stackunderflow, "pot");
-    }
-    s->data[s->top - 1 - i] = o;
-}
-#endif
 
 /* index from top-down and put item there.
    inverse of top. */
@@ -228,6 +176,7 @@ void tob (mfile *mem,
     s->data[i] = o;
 }
 
+/* pop an object off the stack, return object */
 object pop (mfile *mem,
             unsigned stackadr)
 {
