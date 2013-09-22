@@ -70,6 +70,7 @@ XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-
 
 AC_FUNC_ALLOCA
 
+AC_CHECK_FUNCS([gettimeofday])
 
 ### Output
 

@@ -108,13 +108,13 @@ void Pbind (context *ctx, object P) {
 
 void realtime (context *ctx) {
     double sec;
-    #ifdef HAVE_GETTIMEOFDAY
+#ifdef HAVE_GETTIMEOFDAY
         struct timeval tv;
         gettimeofday(&tv, NULL);
         sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
-    #else
+#else
         sec = time(NULL) * 1000;
-    #endif
+#endif
     push(ctx->lo, ctx->os, consint(sec));
 }
 
