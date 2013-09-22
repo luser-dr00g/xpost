@@ -44,12 +44,16 @@ AC_PROG_CC_C99
 # splint
 AC_CHECK_PROG([SPLINT], [splint], [splint], [none])
 
-have_splint="yes"
-if test "x${SPLINT}" = "xnone" ; then
-   have_splint="no"
-fi
+AM_CONDITIONAL([HAVE_SPLINT], [test "x${SPLINT}" != "xnone"])
 
-AM_CONDITIONAL([HAVE_SPLINT], [test "x${have_splint}" = "xyes"])
+AC_SUBST([SPLINT])
+
+# wc
+AC_CHECK_PROG([WC], [wc], [wc], [none])
+
+AM_CONDITIONAL([HAVE_WC], [test "x${WC}" != "xnone"])
+
+AC_SUBST([WC])
 
 
 ### Checks for libraries
@@ -101,7 +105,16 @@ echo "Configuration Options Summary:"
 echo
 echo "  OS...................: ${host_os}"
 echo
-echo "  Splint...............: ${have_splint}"
+if test "x${SPLINT}" = "xnone" ; then
+echo "  splint...............: no"
+else
+echo "  splint...............: yes (make splint)"
+fi
+if test "x${WC}" = "xnone" ; then
+echo "  wc...................: no"
+else
+echo "  wc...................: yes (make count)"
+fi
 echo
 echo "Compilation............: make (or gmake)"
 echo "  CPPFLAGS.............: $CPPFLAGS"
