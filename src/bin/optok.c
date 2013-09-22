@@ -44,12 +44,14 @@ typedef bool _Bool;
 
 enum { NBUF = BUFSIZ };
 
+static
 int puff (context *ctx,
           char *buf,
           int nbuf,
           object *src,
           int (*next)(context *ctx, object *src),
           void (*back)(context *ctx, int c, object *src));
+static
 object toke (context *ctx,
              object *src,
              int (*next)(context *ctx, object *src),
@@ -106,6 +108,7 @@ test fsm_dec[] = {
     /* 0 */ { issign,  1,  1 },
     /* 1 */ { isdigit, 2, -1 },
     /* 2 */ { isdigit, 2, -1 } };
+static
 int accept_dec(int i)
 {
     return i == 2;
@@ -117,6 +120,7 @@ test fsm_rad[] = {
     /* 2 */ { ishash,  3, -1 },
     /* 3 */ { isalnum, 4, -1 },
     /* 4 */ { isalnum, 4, -1 } };
+static
 int accept_rad(int i)
 {
     return i == 4;
@@ -134,6 +138,7 @@ test fsm_real[] = {
     /* 8 */  { issign,  9,   9 },
     /* 9 */  { isdigit, 10, -1 },
     /* 10 */ { isdigit, 10, -1 } };
+static
 int accept_real(int i)
 {
     switch (i) { //case 2:
@@ -141,6 +146,7 @@ int accept_real(int i)
     //return (i & 3) == 2;  // 2, 6 == 2|4, 10 == 2|8
 }
 
+static
 int fsm_check (char *s,
                int ns,
                test *fsm,
@@ -160,6 +166,7 @@ int fsm_check (char *s,
     return accept(sta);
 }
 
+static
 object grok (context *ctx,
              char *s,
              int ns,
@@ -319,6 +326,7 @@ object grok (context *ctx,
 
 /* read until a non-whitespace, non-comment char.
    "prime" the buffer.  */
+static
 int snip (context *ctx,
           char *buf,
           object *src,
@@ -341,6 +349,7 @@ int snip (context *ctx,
 /* read in a token up to delimiter
    read into buf any regular characters,
    if we read one too many, put it back, unless whitespace. */
+static
 int puff (context *ctx,
           char *buf,
           int nbuf,
@@ -359,6 +368,7 @@ int puff (context *ctx,
 }
 
 
+static
 object toke (context *ctx,
              object *src,
              int (*next)(context *ctx, object *src),
@@ -377,17 +387,20 @@ object toke (context *ctx,
 } 
 
 
+static
 int Fnext(context *ctx,
           object *F)
 {
     return fgetc(filefile(ctx->lo, *F));
 }
+static
 void Fback(context *ctx,
            int c,
            object *F)
 {
     (void)ungetc(c, filefile(ctx->lo, *F));
 }
+static
 void Ftoken (context *ctx,
              object F)
 {
@@ -402,6 +415,7 @@ void Ftoken (context *ctx,
     }
 }
 
+static
 int Snext(context *ctx,
           object *S)
 {
@@ -412,6 +426,7 @@ int Snext(context *ctx,
     --S->comp_.sz;
     return ret;
 }
+static
 void Sback(context *ctx,
            int c,
            object *S)
@@ -420,6 +435,7 @@ void Sback(context *ctx,
     ++S->comp_.sz;
     charstr(ctx, *S)[0] = c;
 }
+static
 void Stoken (context *ctx,
              object S)
 {

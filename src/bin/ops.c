@@ -58,8 +58,16 @@ typedef bool _Bool;
 #include "op.h"
 #include "ops.h"
 
+static void Apop (context *ctx, object q);
+static void AAexch (context *ctx, object x, object y);
+static void Adup (context *ctx, object x);
+static void IIroll (context *ctx, object N, object J);
+void Zcounttomark (context *ctx);
+void initops(context *ctx, object sd);
+
 /* any  pop  -
    discard top element */
+static
 void Apop (context *ctx,
            object x)
 {
@@ -69,6 +77,7 @@ void Apop (context *ctx,
 
 /* any1 any2  exch  any2 any1
    exchange top two elements */
+static
 void AAexch (context *ctx,
              object x,
              object y)
@@ -79,6 +88,7 @@ void AAexch (context *ctx,
 
 /* any  dup  any any
    duplicate top element */
+static
 void Adup (context *ctx,
            object x)
 {
@@ -88,6 +98,7 @@ void Adup (context *ctx,
 
 /* any1..anyN N  copy  any1..anyN any1..anyN
    duplicate top n elements */
+static
 void Icopy (context *ctx,
             object n)
 {
@@ -100,6 +111,7 @@ void Icopy (context *ctx,
 
 /* anyN..any0 N  index  anyN..any0 anyN
    duplicate arbitrary element */
+static
 void Iindex (context *ctx,
              object n)
 {
@@ -111,6 +123,7 @@ void Iindex (context *ctx,
 
 /* a(n-1)..a(0) n j  roll  a((j-1)mod n)..a(0) a(n-1)..a(j mod n)
    roll n elements j times */
+static
 void IIroll (context *ctx,
              object N,
              object J)
@@ -137,6 +150,7 @@ void IIroll (context *ctx,
 
 /* |- any1..anyN  clear  |-
    discard all elements */
+static
 void Zclear (context *ctx)
 {
     stack *s = (void *)(ctx->lo->base + ctx->os);
@@ -145,6 +159,7 @@ void Zclear (context *ctx)
 
 /* |- any1..anyN  count  |- any1..anyN N
    count elements on stack */
+static
 void Zcount (context *ctx)
 {
     push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->os)));
@@ -156,6 +171,7 @@ void Zcount (context *ctx)
 
 /* mark obj1..objN  cleartomark  -
    discard elements down through mark */
+static
 void Zcleartomark (context *ctx)
 {
     object o;

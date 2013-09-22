@@ -63,30 +63,35 @@ typedef bool _Bool;
 #include "op.h"
 #include "opt.h"
 
+static
 void Atype(context *ctx,
            object o)
 {
     push(ctx->lo, ctx->os, cvx(consname(ctx, types[type(o)])));
 }
 
+static
 void Acvlit(context *ctx,
             object o)
 {
     push(ctx->lo, ctx->os, cvlit(o));
 }
 
+static
 void Acvx(context *ctx,
           object o)
 {
     push(ctx->lo, ctx->os, cvx(o));
 }
 
+static
 void Axcheck(context *ctx,
              object o)
 {
     push(ctx->lo, ctx->os, consbool(isx(o)));
 }
 
+static
 void Aexecuteonly(context *ctx,
                   object o)
 {
@@ -95,6 +100,7 @@ void Aexecuteonly(context *ctx,
     push(ctx->lo, ctx->os, o);
 }
 
+static
 void Anoaccess(context *ctx,
                object o)
 {
@@ -103,6 +109,7 @@ void Anoaccess(context *ctx,
     push(ctx->lo, ctx->os, o);
 }
 
+static
 void Areadonly(context *ctx,
                object o)
 {
@@ -111,18 +118,21 @@ void Areadonly(context *ctx,
     push(ctx->lo, ctx->os, o);
 }
 
+static
 void Archeck(context *ctx,
              object o)
 {
     push(ctx->lo, ctx->os, consbool( (o.tag & FACCESS) >> FACCESSO >= readonly ));
 }
 
+static
 void Awcheck(context *ctx,
              object o)
 {
     push(ctx->lo, ctx->os, consbool( (o.tag & FACCESS) >> FACCESSO == unlimited ));
 }
 
+static
 void Ncvi(context *ctx,
           object n)
 {
@@ -131,6 +141,7 @@ void Ncvi(context *ctx,
     push(ctx->lo, ctx->os, n);
 }
 
+static
 void Scvi(context *ctx,
           object s)
 {
@@ -156,6 +167,7 @@ void Scvi(context *ctx,
     push(ctx->lo, ctx->os, consint(num));
 }
 
+static
 void Scvn(context *ctx,
           object s)
 {
@@ -165,6 +177,7 @@ void Scvn(context *ctx,
     push(ctx->lo, ctx->os, consname(ctx, t));
 }
 
+static
 void Ncvr(context *ctx,
           object n)
 {
@@ -173,6 +186,7 @@ void Ncvr(context *ctx,
     push(ctx->lo, ctx->os, n);
 }
 
+static
 void Scvr(context *ctx,
           object str)
 {
@@ -186,6 +200,7 @@ void Scvr(context *ctx,
     push(ctx->lo, ctx->os, consreal(num));
 }
 
+static
 int conv_rad(int num,
              int rad,
              char *s,
@@ -204,6 +219,7 @@ int conv_rad(int num,
     return off+1;
 }
 
+static
 void NRScvrs (context *ctx,
               object num,
               object rad,
@@ -219,6 +235,7 @@ void NRScvrs (context *ctx,
     push(ctx->lo, ctx->os, str);
 }
 
+static
 int conv_integ(real num,
                char *s,
                int n)
@@ -234,6 +251,7 @@ int conv_integ(real num,
     return off + 1;
 }
 
+static
 int conv_frac (real num,
                char *s,
                int n)
@@ -248,6 +266,7 @@ int conv_frac (real num,
     return 1 + conv_frac(frac, s+1, n-1);
 }
 
+static
 int conv_real (real num,
                char *s,
                int n)
@@ -277,6 +296,7 @@ int conv_real (real num,
     return off;
 }
 
+static
 void AScvs (context *ctx,
             object any,
             object str)

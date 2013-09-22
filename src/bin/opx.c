@@ -73,6 +73,7 @@ typedef bool _Bool;
 #include "opdi.h"
 #include "opx.h"
 
+static
 object bind (context *ctx,
              object p)
 {
@@ -104,12 +105,14 @@ object bind (context *ctx,
     return setfaccess(p, readonly);
 }
 
+static
 void Pbind (context *ctx,
             object P)
 {
     push(ctx->lo, ctx->os, bind(ctx, P));
 }
 
+static
 void realtime (context *ctx)
 {
     double sec;
@@ -123,28 +126,33 @@ void realtime (context *ctx)
     push(ctx->lo, ctx->os, consint(sec));
 }
 
+static
 void traceon (context *ctx)
 {
     (void)ctx;
     TRACE = 1;
 }
+static
 void traceoff (context *ctx)
 {
     (void)ctx;
     TRACE = 0;
 }
 
+static
 void debugloadon (context *ctx)
 {
     (void)ctx;
     DEBUGLOAD = 1;
 }
+static
 void debugloadoff (context *ctx)
 {
     (void)ctx;
     DEBUGLOAD = 0;
 }
 
+static
 void Odumpnames (context *ctx)
 {
     printf("\nGlobal Name stack: ");
@@ -155,6 +163,7 @@ void Odumpnames (context *ctx)
     (void)puts("");
 }
 
+static
 void dumpvm (context *ctx)
 {
     dumpmfile(ctx->lo);

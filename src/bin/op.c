@@ -34,12 +34,16 @@ typedef bool _Bool;
 #include "di.h"
 #include "op.h"
 
+static
+object promote(object o);
+
+static
 object promote(object o)
 {
     return consreal(o.int_.val);
 }
 
-/*
+/* copied from the header file for reference:
 typedef struct signat {
    void (*fp)();
    int in;
@@ -59,8 +63,11 @@ enum typepat ( anytype = stringtype + 1,
 #define MAXOPS 20
 */
 
+/* the number of ops, at any given time. */
+static
 int noop = 0;
 
+extern
 void initoptab (context *ctx)
 {
     unsigned ent = mtalloc(ctx->gl, 0, MAXOPS * sizeof(oper));
@@ -71,6 +78,7 @@ void initoptab (context *ctx)
     //printf("ent: %d\nOPTAB: %d\n", ent, (int)OPTAB);
 }
 
+extern
 void dumpoper(context *ctx,
               int opcode)
 {
@@ -83,6 +91,7 @@ void dumpoper(context *ctx,
     printf("<operator %d %*s %p>", opcode, str.comp_.sz, s, (void *)sig[0].fp );
 }
 
+extern
 object consoper(context *ctx,
                 char *name,
                 /*@null@*/ void (*fp)(),
@@ -168,6 +177,7 @@ object consoper(context *ctx,
     return o;
 }
 
+static
 qword digest(context *ctx,
              mfile *mem,
              unsigned stacadr)
@@ -185,6 +195,7 @@ qword digest(context *ctx,
 }
 
 /* copy top n elements to holding stack & pop them */
+static
 void holdn (context *ctx,
             mfile *mem,
             unsigned stacadr,
@@ -210,6 +221,7 @@ void holdn (context *ctx,
     }
 }
 
+extern
 void opexec(context *ctx,
             unsigned opcode)
 {
@@ -295,12 +307,25 @@ call:
 #include "opx.h"
 #include "oppa.h"
 
+/* no-op operator useful as a break target.
+   put 'breakhere' in the postscript program,
+   run interpreter under gdb,
+   gdb> b breakhere
+   gdb> run
+   will break in the breakhere function (of course),
+   which you can follow back to the main loop (gdb> next),
+   just as it's about to read the next token.
+ */
+static
 void breakhere(context *ctx)
 {
     (void)ctx;
     return;
 }
 
+/* create systemdict and call
+   all initop?* functions, installing all operators */
+extern
 void initop(context *ctx)
 {
     object op;

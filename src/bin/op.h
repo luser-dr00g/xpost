@@ -46,11 +46,15 @@ enum typepat { anytype = NTYPES /*stringtype + 1*/,
 #define MAXOPS 150
 #define SDSIZE 10
 
+extern
 void initoptab(context *ctx);
+extern
 void dumpoper(context *ctx, int opcode);
 
+extern
 object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
 
+extern
 void opexec(context *ctx, unsigned opcode);
 
 #define INSTALL \
@@ -59,6 +63,7 @@ void opexec(context *ctx, unsigned opcode);
     bdcput(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc
 
+extern
 void initop(context *ctx);
 
 #endif

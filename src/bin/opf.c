@@ -73,6 +73,7 @@ typedef bool _Bool;
 # include "osunix.h"
 #endif
 
+static
 void Sfile (context *ctx,
             object fn,
             object mode)
@@ -82,12 +83,14 @@ void Sfile (context *ctx,
     push(ctx->lo, ctx->os, cvlit(f));
 }
 
+static
 void Fclosefile (context *ctx,
                  object f)
 {
     fileclose(ctx->lo, f);
 }
 
+static
 void Fread (context *ctx,
             object f)
 {
@@ -102,6 +105,7 @@ void Fread (context *ctx,
     }
 }
 
+static
 void Fwrite (context *ctx,
              object f,
              object i)
@@ -112,6 +116,7 @@ void Fwrite (context *ctx,
 
 char *hex = "0123456789" "ABCDEF" "abcdef";
 
+static
 void Freadhexstring (context *ctx,
                      object F,
                      object S)
@@ -147,6 +152,7 @@ void Freadhexstring (context *ctx,
     push(ctx->lo, ctx->os, consbool(!eof));
 }
 
+static
 void Fwritehexstring (context *ctx,
                       object F,
                       object S)
@@ -165,6 +171,7 @@ void Fwritehexstring (context *ctx,
     }
 }
 
+static
 void Freadstring (context *ctx,
                   object F,
                   object S)
@@ -187,6 +194,7 @@ void Freadstring (context *ctx,
     }
 }
 
+static
 void Fwritestring (context *ctx,
                    object F,
                    object S)
@@ -201,6 +209,7 @@ void Fwritestring (context *ctx,
         error(ioerror, "Fwritestring");
 }
 
+static
 void Freadline (context *ctx,
                 object F,
                 object S)
@@ -223,12 +232,14 @@ void Freadline (context *ctx,
     push(ctx->lo, ctx->os, consbool(c != EOF));
 }
 
+static
 void Fbytesavailable (context *ctx,
                       object F)
 {
     push(ctx->lo, ctx->os, consint(filebytesavailable(ctx->lo, F)));
 }
 
+static
 void Zflush (context *ctx)
 {
     int ret;
@@ -237,6 +248,7 @@ void Zflush (context *ctx)
     if (ret != 0) error(ioerror, "fflush did not return 0");
 }
 
+static
 void Fflushfile (context *ctx,
                  object F)
 {
@@ -256,6 +268,7 @@ void Fflushfile (context *ctx,
 
 #ifndef HAVE_WIN32
 
+static
 void Fresetfile (context *ctx,
                  object F)
 {
@@ -267,12 +280,14 @@ void Fresetfile (context *ctx,
 
 #endif
 
+static
 void Fstatus (context *ctx,
               object F)
 {
     push(ctx->lo, ctx->os, consbool(filestatus(ctx->lo, F)));
 }
 
+static
 void Zcurrentfile (context *ctx)
 {
     int z = count(ctx->lo, ctx->es);
@@ -288,6 +303,7 @@ void Zcurrentfile (context *ctx)
     push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
 }
 
+static
 void deletefile (context *ctx,
                  object S)
 {
@@ -302,6 +318,7 @@ void deletefile (context *ctx,
         }
 }
 
+static
 void renamefile (context *ctx,
                  object Old,
                  object New)
@@ -320,6 +337,7 @@ void renamefile (context *ctx,
 
 //#ifndef HAVE_WIN32
 
+static
 void contfilenameforall (context *ctx,
                          object oglob,
                          object Proc,
@@ -352,6 +370,7 @@ void contfilenameforall (context *ctx,
     }
 }
 
+static
 void filenameforall (context *ctx,
                      object Tmp,
                      object Proc,
@@ -377,6 +396,7 @@ void filenameforall (context *ctx,
 
 //#endif
 
+static
 void Sprint (context *ctx,
              object S)
 {
@@ -388,6 +408,7 @@ void Sprint (context *ctx,
         error(ioerror, "Sprint() fwrite returned unexpected value");
 }
 
+static
 void Becho (context *ctx,
             object b)
 {

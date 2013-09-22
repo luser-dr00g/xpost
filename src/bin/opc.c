@@ -61,12 +61,14 @@ typedef bool _Bool;
 #include "op.h"
 #include "opc.h"
 
+static
 void Aexec (context *ctx,
             object O)
 {
     push(ctx->lo, ctx->es, O);
 }
 
+static
 void BPif (context *ctx,
            object B,
            object P)
@@ -75,6 +77,7 @@ void BPif (context *ctx,
         push(ctx->lo, ctx->es, P);
 }
 
+static
 void BPPifelse (context *ctx,
                 object B,
                 object Then,
@@ -86,6 +89,7 @@ void BPPifelse (context *ctx,
         push(ctx->lo, ctx->es, Else);
 }
 
+static
 void IIIPfor (context *ctx,
               object init,
               object incr,
@@ -108,6 +112,7 @@ void IIIPfor (context *ctx,
     push(ctx->lo, ctx->es, init);
 }
 
+static
 void RRRPfor (context *ctx,
               object init,
               object incr,
@@ -129,6 +134,7 @@ void RRRPfor (context *ctx,
     push(ctx->lo, ctx->es, init);
 }
 
+static
 void IPrepeat (context *ctx,
                object n,
                object P)
@@ -141,6 +147,7 @@ void IPrepeat (context *ctx,
     push(ctx->lo, ctx->es, P);
 }
 
+static
 void Ploop (context *ctx,
             object P)
 {
@@ -150,6 +157,7 @@ void Ploop (context *ctx,
     push(ctx->lo, ctx->es, P);
 }
 
+static
 void Zexit (context *ctx)
 {
     object opfor = consoper(ctx, "for", NULL,0,0);
@@ -193,6 +201,7 @@ void Zexit (context *ctx)
    false onto the operand stack. 'stop' then merely has to 
    search for 'false' and push a 'true'.  */
 
+static
 void Zstop(context *ctx)
 {
     object f = consbool(false);
@@ -208,6 +217,7 @@ void Zstop(context *ctx)
     error(unregistered, "no stopped context in 'stop'");
 }
 
+static
 void Astopped(context *ctx,
               object o)
 {
@@ -215,11 +225,13 @@ void Astopped(context *ctx,
     push(ctx->lo, ctx->es, o);
 }
 
+static
 void Zcountexecstack(context *ctx)
 {
     push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->es)));
 }
 
+static
 void Aexecstack(context *ctx,
                 object A)
 {
@@ -232,6 +244,7 @@ void Aexecstack(context *ctx,
 
 //TODO start
 
+static
 void Zquit(context *ctx)
 {
     ctx->quit = 1;

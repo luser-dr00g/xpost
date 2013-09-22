@@ -62,8 +62,10 @@ double RAD_PER_DEG /* = PI / 180.0 */;
 #include "op.h"
 #include "opm.h"
 
+static
 bool subwillunder(long x, long y);
 
+static
 bool addwillover(long x,
                  long y)
 {
@@ -73,6 +75,7 @@ bool addwillover(long x,
     return false;
 }
 
+static
 bool subwillunder(long x,
                   long y)
 {
@@ -82,6 +85,7 @@ bool subwillunder(long x,
     return false;
 }
 
+static
 bool mulwillover(long x,
                  long y)
 {
@@ -94,6 +98,7 @@ bool mulwillover(long x,
 
 /* num1 num2  add  sum
    num1 plus num2 */
+static
 void Iadd (context *ctx,
            object x,
            object y)
@@ -104,6 +109,7 @@ void Iadd (context *ctx,
         push(ctx->lo, ctx->os, consint(x.int_.val + y.int_.val));
 }
 
+static
 void Radd (context *ctx,
            object x,
            object y)
@@ -113,6 +119,7 @@ void Radd (context *ctx,
 
 /* num1 num2  div  quotient
    num1 divided by num2 */
+static
 void Rdiv (context *ctx,
            object x,
            object y)
@@ -122,6 +129,7 @@ void Rdiv (context *ctx,
 
 /* num1 num2  idiv  quotient
    integer divide */
+static
 void Iidiv (context *ctx,
             object x,
             object y)
@@ -131,6 +139,7 @@ void Iidiv (context *ctx,
 
 /* num1 num2  mod  remainder
    num1 mod num2 */
+static
 void Imod (context *ctx,
            object x,
            object y)
@@ -140,6 +149,7 @@ void Imod (context *ctx,
 
 /* num1 num2  mul  product
    num1 times num2 */
+static
 void Imul (context *ctx,
            object x,
            object y)
@@ -150,6 +160,7 @@ void Imul (context *ctx,
         push(ctx->lo, ctx->os, consint(x.int_.val * y.int_.val));
 }
 
+static
 void Rmul (context *ctx,
            object x,
            object y)
@@ -159,6 +170,7 @@ void Rmul (context *ctx,
 
 /* num1 num2  sub  difference
    num1 minus num2 */
+static
 void Isub (context *ctx,
            object x,
            object y)
@@ -169,6 +181,7 @@ void Isub (context *ctx,
         push(ctx->lo, ctx->os, consint(x.int_.val - y.int_.val));
 }
 
+static
 void Rsub (context *ctx,
            object x,
            object y)
@@ -178,6 +191,7 @@ void Rsub (context *ctx,
 
 /* num1  abs  num2
    absolute value of num1 */
+static
 void Iabs (context *ctx,
            object x)
 {
@@ -187,6 +201,7 @@ void Iabs (context *ctx,
         push(ctx->lo, ctx->os, consint(x.int_.val>0? x.int_.val: -x.int_.val));
 }
 
+static
 void Rabs (context *ctx,
            object x)
 {
@@ -195,6 +210,7 @@ void Rabs (context *ctx,
 
 /* num1  neg  num2
    negative of num1 */
+static
 void Ineg (context *ctx,
            object x)
 {
@@ -204,6 +220,7 @@ void Ineg (context *ctx,
         push(ctx->lo, ctx->os, consint(-x.int_.val));
 }
 
+static
 void Rneg (context *ctx,
            object x)
 {
@@ -211,6 +228,7 @@ void Rneg (context *ctx,
 }
 
 /* stub for integer  floor, ceiling, round, truncate */
+static
 void Istet (context *ctx,
             object x)
 {
@@ -219,6 +237,7 @@ void Istet (context *ctx,
 
 /* num1  ceiling  num2
    ceiling of num1 */
+static
 void Rceiling (context *ctx,
                object x)
 {
@@ -227,6 +246,7 @@ void Rceiling (context *ctx,
 
 /* num1  floor  num2
    floor of num1 */
+static
 void Rfloor (context *ctx,
              object x)
 {
@@ -235,6 +255,7 @@ void Rfloor (context *ctx,
 
 /* num1  round  num2
    round num1 to nearest integer */
+static
 void Rround (context *ctx,
              object x)
 {
@@ -249,6 +270,7 @@ void Rround (context *ctx,
 
 /* num1  truncate  num2
    remove fractional part of num1 */
+static
 void Rtruncate (context *ctx,
                 object x)
 {
@@ -257,6 +279,7 @@ void Rtruncate (context *ctx,
 
 /* num1  sqrt  num2
    square root of num1 */
+static
 void Rsqrt (context *ctx,
             object x)
 {
@@ -265,6 +288,7 @@ void Rsqrt (context *ctx,
 
 /* num den  atan  angle
    arctangent of num/den in degrees */
+static
 void Ratan (context *ctx,
             object num,
             object den)
@@ -276,6 +300,7 @@ void Ratan (context *ctx,
 
 /* angle  cos  real
    cosine of angle (degrees) */
+static
 void Rcos (context *ctx,
            object x)
 {
@@ -285,6 +310,7 @@ void Rcos (context *ctx,
 
 /* angle  sin  real
    sine of angle (degrees) */
+static
 void Rsin (context *ctx,
            object x)
 {
@@ -294,6 +320,7 @@ void Rsin (context *ctx,
 
 /* base exponent  exp  real
    raise base to exponent power */
+static
 void Rexp (context *ctx,
            object base,
            object expn)
@@ -306,6 +333,7 @@ void Rexp (context *ctx,
 
 /* num  ln  real
    natural logarithm of num */
+static
 void Rln (context *ctx,
           object x)
 {
@@ -314,6 +342,7 @@ void Rln (context *ctx,
 
 /* num  log  real
    logarithm (base 10) */
+static
 void Rlog (context *ctx,
            object x)
 {
@@ -322,6 +351,7 @@ void Rlog (context *ctx,
 
 /* -  rand  int
    generate pseudo-random integer */
+static
 void Zrand (context *ctx)
 {
     unsigned x;
@@ -334,6 +364,7 @@ void Zrand (context *ctx)
 
 /* int  srand  -
    set random number seed */
+static
 void Isrand (context *ctx,
              object seed)
 {
@@ -342,6 +373,7 @@ void Isrand (context *ctx,
 
 /* -  rrand  int
    return random number seed */
+static
 void Zrrand (context *ctx)
 {
     push(ctx->lo, ctx->es, consint(ctx->rand_next));

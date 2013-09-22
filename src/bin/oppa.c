@@ -61,6 +61,7 @@ typedef bool _Bool;
 #include "opar.h"
 #include "oppa.h"
 
+static
 void packedarray (context *ctx,
                   object n)
 {
@@ -76,6 +77,7 @@ void packedarray (context *ctx,
     push(ctx->lo, ctx->os, a);
 }
 
+static
 void setpacking (context *ctx,
                  object b)
 {

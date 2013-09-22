@@ -33,18 +33,21 @@ typedef bool _Bool;
 #include "op.h"
 #include "opst.h"
 
+static
 void Istring(context *ctx,
              object I)
 {
     push(ctx->lo, ctx->os, cvlit(consbst(ctx, I.int_.val, NULL)));
 }
 
+static
 void Slength(context *ctx,
              object S)
 {
     push(ctx->lo, ctx->os, consint(S.comp_.sz));
 }
 
+static
 void s_copy(context *ctx,
             object S,
             object D)
@@ -54,6 +57,7 @@ void s_copy(context *ctx,
         bstput(ctx, D, i, bstget(ctx, S, i));
 }
 
+static
 void Scopy(context *ctx,
            object S,
            object D)
@@ -63,6 +67,7 @@ void Scopy(context *ctx,
     push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
 }
 
+static
 void Sget(context *ctx,
           object S,
           object I)
@@ -70,6 +75,7 @@ void Sget(context *ctx,
     push(ctx->lo, ctx->os, consint(bstget(ctx, S, I.int_.val)));
 }
 
+static
 void Sput(context *ctx,
           object S,
           object I,
@@ -78,6 +84,7 @@ void Sput(context *ctx,
     bstput(ctx, S, I.int_.val, C.int_.val);
 }
 
+static
 void Sgetinterval(context *ctx,
                   object S,
                   object I,
@@ -86,6 +93,7 @@ void Sgetinterval(context *ctx,
     push(ctx->lo, ctx->os, arrgetinterval(S, I.int_.val, L.int_.val));
 }
 
+static
 void Sputinterval(context *ctx,
                   object D,
                   object I,
@@ -105,6 +113,7 @@ int ancsearch(char *str,
     return true;
 }
 
+static
 void Sanchorsearch(context *ctx,
                    object str,
                    object seek)
@@ -126,6 +135,7 @@ void Sanchorsearch(context *ctx,
     }
 }
 
+static
 void Ssearch(context *ctx,
              object str,
              object seek)
@@ -152,6 +162,7 @@ void Ssearch(context *ctx,
     push(ctx->lo, ctx->os, consbool(false));
 }
 
+static
 void Sforall(context *ctx,
              object S,
              object P)

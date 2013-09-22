@@ -40,6 +40,7 @@ void Awhere(context *ctx, object K); /* forward decl */
 
 /* int  dict  dict
    create dictionary with capacity for int elements */
+static
 void Idict(context *ctx,
            object I)
 {
@@ -51,6 +52,7 @@ void Idict(context *ctx,
 
 /* mark k_1 v_1 ... k_N v_N  >>  dict
    construct dictionary from pairs on stack */
+static
 void dictomark(context *ctx)
 {
     int i;
@@ -69,6 +71,7 @@ void dictomark(context *ctx)
 
 /* dict  length  int
    number of key-value pairs in dict */
+static
 void Dlength(context *ctx,
              object D)
 {
@@ -79,6 +82,7 @@ void Dlength(context *ctx,
 
 /* dict  maxlength  int
    capacity of dict */
+static
 void Dmaxlength(context *ctx,
                 object D)
 {
@@ -89,6 +93,7 @@ void Dmaxlength(context *ctx,
 
 /* dict  begin  -
    push dict on dict stack */
+static
 void Dbegin(context *ctx,
             object D)
 {
@@ -97,6 +102,7 @@ void Dbegin(context *ctx,
 
 /* -  end  -
    pop dict stack */
+static
 void Zend(context *ctx)
 {
     if (count(ctx->lo, ctx->ds) <= 3)
@@ -106,6 +112,7 @@ void Zend(context *ctx)
 
 /* key value  def  -
    associate key with value in current dict */
+static
 void Adef(context *ctx,
           object K,
           object V)
@@ -158,6 +165,7 @@ void Aload(context *ctx,
 
 /* key value  store  -
    replace topmost definition of key */
+static
 void Astore(context *ctx,
             object K,
             object V)
@@ -174,6 +182,7 @@ void Astore(context *ctx,
 
 /* dict key  get  any
    get value associated with key in dict */
+static
 void DAget(context *ctx,
            object D,
            object K)
@@ -183,6 +192,7 @@ void DAget(context *ctx,
 
 /* dict key value  put  -
    associate key with value in dict */
+static
 void DAAput(context *ctx,
             object D,
             object K,
@@ -193,6 +203,7 @@ void DAAput(context *ctx,
 
 /* dict key  undef  -
    remove key and its value in dict */
+static
 void DAundef(context *ctx,
              object D,
              object K)
@@ -202,6 +213,7 @@ void DAundef(context *ctx,
 
 /* dict key  known  bool
    test whether key is in dict */
+static
 void DAknown(context *ctx,
              object D,
              object K)
@@ -236,6 +248,7 @@ void Awhere(context *ctx,
 
 /* dict1 dict2  copy  dict2
    copy contents of dict1 to dict2 */
+static
 void Dcopy(context *ctx,
            object S,
            object D)
@@ -258,6 +271,7 @@ void Dcopy(context *ctx,
     push(ctx->lo, ctx->os, D);
 }
 
+static
 void DPforall (context *ctx,
                object D,
                object P)
@@ -299,6 +313,7 @@ void DPforall (context *ctx,
 
 /* -  currentdict  dict
    push current dict on operand stack */
+static
 void Zcurrentdict(context *ctx)
 {
     push(ctx->lo, ctx->os, top(ctx->lo, ctx->ds, 0));
@@ -314,6 +329,7 @@ void Zcurrentdict(context *ctx)
 
 /* -  countdictstack  int
    count elements on dict stack */
+static
 void Zcountdictstack(context *ctx)
 {
     push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->ds)));
@@ -321,6 +337,7 @@ void Zcountdictstack(context *ctx)
 
 /* array  dictstack  subarray
    copy dict stack into array */
+static
 void Adictstack(context *ctx,
                 object A)
 {
@@ -331,6 +348,7 @@ void Adictstack(context *ctx,
     push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
 }
 
+static
 void cleardictstack(context *ctx)
 {
     int z = count(ctx->lo, ctx->ds);

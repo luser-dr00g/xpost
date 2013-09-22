@@ -60,6 +60,7 @@ typedef bool _Bool;
 
 /* any1 any2  eq  bool
    test equal */
+static
 void Aeq (context *ctx,
           object x,
           object y)
@@ -69,6 +70,7 @@ void Aeq (context *ctx,
 
 /* any1 any2  ne  bool
    test not equal */
+static
 void Ane (context *ctx,
           object x,
           object y)
@@ -87,6 +89,7 @@ void Age (context *ctx,
 
 /* any1 any2  gt  bool
    test greater than */
+static
 void Agt (context *ctx,
           object x,
           object y)
@@ -105,6 +108,7 @@ void Ale (context *ctx,
 
 /* any1 any2  lt  bool
    test less than */
+static
 void Alt (context *ctx,
           object x,
           object y)
@@ -121,6 +125,7 @@ void Band (context *ctx,
     push(ctx->lo, ctx->os, consbool(x.int_.val & y.int_.val));
 }
 
+static
 void Iand (context *ctx,
            object x,
            object y)
@@ -130,12 +135,14 @@ void Iand (context *ctx,
 
 /* bool1|int1  not  bool2|int2
    logical|bitwise not */
+static
 void Bnot (context *ctx,
            object x)
 {
     push(ctx->lo, ctx->os, consbool( ! x.int_.val ));
 }
 
+static
 void Inot (context *ctx,
            object x)
 {
@@ -144,6 +151,7 @@ void Inot (context *ctx,
 
 /* bool1|int1 bool2|int2  or  bool3|int3
    logical|bitwise inclusive or */
+static
 void Bor (context *ctx,
           object x,
           object y)
@@ -151,6 +159,7 @@ void Bor (context *ctx,
     push(ctx->lo, ctx->os, consbool(x.int_.val | y.int_.val));
 }
 
+static
 void Ior (context *ctx,
           object x,
           object y)
@@ -160,6 +169,7 @@ void Ior (context *ctx,
 
 /* bool1|int1 bool2|int2  xor  bool3|int3
    exclusive or */
+static
 void Bxor (context *ctx,
            object x,
            object y)
@@ -167,6 +177,7 @@ void Bxor (context *ctx,
     push(ctx->lo, ctx->os, consbool(x.int_.val ^ y.int_.val));
 }
 
+static
 void Ixor (context *ctx,
            object x,
            object y)
@@ -180,6 +191,7 @@ void Ixor (context *ctx,
 
 /* int1 shift  bitshift  int2
    bitwise shift of int1 (positive is left) */
+static
 void Ibitshift (context *ctx,
                 object x,
                 object y)

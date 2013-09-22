@@ -60,11 +60,13 @@ typedef bool _Bool;
 #include "op.h"
 #include "opv.h"
 
+static
 void Zsave (context *ctx)
 {
     push(ctx->lo, ctx->os, save(ctx->lo));
 }
 
+static
 void Vrestore (context *ctx,
                object V)
 {
@@ -75,17 +77,20 @@ void Vrestore (context *ctx,
     }
 }
 
+static
 void Bsetglobal (context *ctx,
                  object B)
 {
     ctx->vmmode = B.int_.val? GLOBAL: LOCAL;
 }
 
+static
 void Zcurrentglobal (context *ctx)
 {
     push(ctx->lo, ctx->os, consbool(ctx->vmmode==GLOBAL));
 }
 
+static
 void Agcheck (context *ctx,
               object A)
 {
@@ -102,6 +107,7 @@ void Agcheck (context *ctx,
     push(ctx->lo, ctx->os, r);
 }
 
+static
 void Zvmstatus (context *ctx)
 {
     push(ctx->lo, ctx->os, consint(count(ctx->lo, adrent(ctx->lo, VS))));
