@@ -28,8 +28,7 @@ Clone the Mercurial repository with
 
 Configure and compile all the source objects.
 
-  autoreconf -vif
-  ./configure
+  ./autogen.sh (or ./configure if autogen.sh has already been launched)
   make
 
   [ The testing portion needs reworking and is not currently
