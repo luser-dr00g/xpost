@@ -72,3 +72,14 @@ src_bin_itp_CPPFLAGS = -DTESTMODULE_ITP
 src_bin_itp_CFLAGS = @XPOST_BIN_CFLAGS@
 
 src_bin_itp_LDADD = -lm
+
+if HAVE_SPLINT
+splint:
+	splint +posixlib -boolops -predboolint +ignoresigns -type +charindex \
+	-nestcomment -noeffect -redef -shiftnegative -castfcnptr \
+	-shiftimplementation -predboolothers -exportlocal -mustfreefresh \
+	src/bin/*.c
+else
+splint:
+	$(AM_V_at)echo "splint not found. Update PATH or install splint."
+endif
