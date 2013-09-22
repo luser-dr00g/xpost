@@ -4,8 +4,7 @@ Xpost3 is undergoing rapid changes in the direction of portability
 under the skillful care of contributor Vincent Torri.
 
 Currently the intepreter source is in src/bin and the commands
-  autoreconf -vif
-  ./configure
+  ./autogen.sh (or ./configure if autogen.sh has already been launched)
   make
 will create the interpreter binary itp(.exe)? in src/bin.
 All data paths are currently relative to this directory.
