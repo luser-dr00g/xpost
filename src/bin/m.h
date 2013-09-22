@@ -16,20 +16,6 @@
     the memory interface.
    */
 
-/* define MMAP and MREMAP for Linux */
-/* define MMAP without MREMAP should work for Irix (using AUTOGROW) */
-/* no MREMAP under cygwin (we'll see how AUTOGROW handles...)*/
-/* define neither to use malloc/realloc/free */
-//#define MMAP
-//#define MREMAP
-
-#ifdef MMAP
-#include<sys/mman.h>
-#  ifdef MREMAP
-#    define _GNU_SOURCE /* mremap */
-#  endif
-#endif
-
 /* the "grain" of the mfile size */
 extern unsigned pgsz /*= getpagesize()*/; /*=4096 (usually on 32bit)*/
 
