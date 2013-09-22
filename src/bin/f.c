@@ -46,8 +46,11 @@ typedef bool _Bool;
    allocate a FILE *,
    install the FILE *,
    return object.  */
-object consfile(mfile *mem, /*@NULL@*/ FILE *fp) {
+object consfile(mfile *mem,
+        /*@NULL@*/ FILE *fp)
+{
     object f;
+
     f.tag = filetype | (unlimited << FACCESSO);
     //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *));
     f.mark_.padw = gballoc(mem, sizeof(FILE *));
@@ -57,7 +60,8 @@ object consfile(mfile *mem, /*@NULL@*/ FILE *fp) {
 
 /* pinch-off a tmpfile containing one line from file. */
 /*@null@*/
-FILE *lineedit(FILE *in) {
+FILE *lineedit(FILE *in)
+{
     FILE *fp;
     int c;
 
@@ -77,12 +81,14 @@ enum { MAXNEST = 20 };
 
 /* pinch-off a tmpfile containing one "statement" from file. */
 /*@null@*/
-FILE *statementedit(FILE *in) {
+FILE *statementedit(FILE *in)
+{
     FILE *fp;
     int c;
     char nest[MAXNEST] = {0}; /* any of {(< waiting for matching >)} */
     int defer = -1; /* defer is a flag (-1 == false)
                        and an index into nest[] */
+
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%statementedit");
     fp = tmpfile();
@@ -138,7 +144,10 @@ done:
 
 /* check for "special" filenames,
    fallback to fopen. */
-object fileopen(mfile *mem, char *fn, char *mode) {
+object fileopen(mfile *mem,
+        char *fn,
+        char *mode)
+{
     object f;
     f.tag = filetype;
 
@@ -183,19 +192,25 @@ object fileopen(mfile *mem, char *fn, char *mode) {
 }
 
 /* yield the FILE* from a filetype object */
-FILE *filefile(mfile *mem, object f) {
+FILE *filefile(mfile *mem,
+               object f)
+{
     FILE *fp;
     get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     return fp;
 }
 
 /* make sure the FILE* is not null */
-bool filestatus(mfile *mem, object f) {
+bool filestatus(mfile *mem,
+                object f)
+{
     return filefile(mem, f) != NULL;
 }
 
 /* call fstat. */
-long filebytesavailable(mfile *mem, object f) {
+long filebytesavailable(mfile *mem,
+                        object f)
+{
     int ret;
     FILE *fp;
     struct stat sb;
@@ -215,8 +230,11 @@ long filebytesavailable(mfile *mem, object f) {
 
 /* close the file,
    NULL the FILE*. */
-void fileclose(mfile *mem, object f) {
+void fileclose(mfile *mem,
+               object f)
+{
     FILE *fp;
+
     fp = filefile(mem, f);
     if (fp) {
         fclose(fp);
@@ -227,14 +245,19 @@ void fileclose(mfile *mem, object f) {
 
 /* if the file is valid,
    read a byte. */
-object fileread(mfile *mem, object f) {
+object fileread(mfile *mem,
+                object f)
+{
     if (!filestatus(mem, f)) error(ioerror, "fileread");
     return consint(fgetc(filefile(mem, f)));
 }
 
 /* if the file is valid,
    write a byte. */
-void filewrite(mfile *mem, object f, object b) {
+void filewrite(mfile *mem,
+               object f,
+               object b)
+{
     if (!filestatus(mem, f)) error(ioerror, "filewrite");
     if (fputc(b.int_.val, filefile(mem, f)) == EOF)
         error(ioerror, "filewrite");
