@@ -180,6 +180,8 @@ object consdic(mfile *mem,
     object *tp;
     unsigned i;
 
+    if (sz < 5) sz = 5;
+
     assert(mem->base);
     d.tag = dicttype | (unlimited << FACCESSO);
     d.comp_.sz = sz;
