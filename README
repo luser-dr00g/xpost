@@ -1,0 +1,13 @@
+[The original README has moved to doc/INTERNALS.]
+
+Xpost3 is undergoing rapid changes in the direction of portability
+under the skillful care of contributor Vincent Torri.
+
+Currently the intepreter source is in src/bin and the commands
+  autoreconf -vif
+  ./configure
+  make
+will create the interpreter binary itp(.exe)? in src/bin.
+All data paths are currently relative to this directory.
+So you have to cd src/bin to run it.
+
