@@ -16,7 +16,11 @@ install-sh \
 missing \
 $(DIST_ARCHIVES)
 
+EXTRA_DIST =
+
 include src/bin/Makefile.mk
 
-EXTRA_DIST = \
+include data/Makefile.mk
+
+EXTRA_DIST += \
 m4/xpost.m4
