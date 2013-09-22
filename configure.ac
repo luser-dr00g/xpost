@@ -38,7 +38,18 @@ AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
 
 ### Checks for programs
 
+# C compiler
 AC_PROG_CC_C99
+
+# splint
+AC_CHECK_PROG([SPLINT], [splint], [splint], [none])
+
+have_splint="yes"
+if test "x${SPLINT}" = "xnone" ; then
+   have_splint="no"
+fi
+
+AM_CONDITIONAL([HAVE_SPLINT], [test "x${have_splint}" = "xyes"])
 
 
 ### Checks for libraries
@@ -89,6 +100,8 @@ echo
 echo "Configuration Options Summary:"
 echo
 echo "  OS...................: ${host_os}"
+echo
+echo "  Splint...............: ${have_splint}"
 echo
 echo "Compilation............: make (or gmake)"
 echo "  CPPFLAGS.............: $CPPFLAGS"
