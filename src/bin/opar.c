@@ -37,7 +37,7 @@ typedef bool _Bool;
 
 static void a_copy (context *ctx, object S, object D);
 static void Iarray (context *ctx, object I);
-void arrtomark (context *ctx);
+extern void arrtomark (context *ctx);
 static void Alength (context *ctx, object A);
 static void Aget (context *ctx, object A, object I);
 static void Aput(context *ctx, object A, object I, object O);
@@ -47,7 +47,7 @@ static void Aaload (context *ctx, object A);
 static void Aastore (context *ctx, object A);
 static void Acopy (context *ctx, object S, object D);
 static void Aforall(context *ctx, object A, object P);
-void initopar (context *ctx, object sd);
+extern void initopar (context *ctx, object sd);
 
 /* helper function */
 static
@@ -75,6 +75,7 @@ void Iarray (context *ctx,
 
 /* mark obj0..objN-1  ]  array
    end array construction */
+extern
 void arrtomark (context *ctx)
 {
     int i;
@@ -203,6 +204,7 @@ void Aforall(context *ctx,
     push(ctx->lo, ctx->os, barget(ctx, A, 0));
 }
 
+extern
 void initopar (context *ctx,
                object sd)
 {
