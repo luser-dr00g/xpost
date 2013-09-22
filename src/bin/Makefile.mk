@@ -74,20 +74,31 @@ src_bin_itp_CFLAGS = @XPOST_BIN_CFLAGS@
 src_bin_itp_LDADD = -lm
 
 if HAVE_SPLINT
-splint:
-	@SPLINT@ +posixlib -boolops -predboolint +ignoresigns -type +charindex \
-	-nestcomment -noeffect -redef -shiftnegative -castfcnptr \
-	-shiftimplementation -predboolothers -exportlocal -mustfreefresh \
-	src/bin/*.c
+splint_process = splint \
++posixlib -boolops -predboolint +ignoresigns -type +charindex \
+-nestcomment -noeffect -redef -shiftnegative -castfcnptr \
+-shiftimplementation -predboolothers -exportlocal -mustfreefresh \
+$(top_srcdir)/src/bin/*.c
 else
-splint:
-	$(AM_V_at)echo "splint not found. Update PATH or install splint."
+splint_process = echo "splint not found. Update PATH or install splint."
 endif
 
+splint_verbose = $(splint_verbose_@AM_V@)
+splint_verbose_ = $(splint_verbose_@AM_DEFAULT_V@)
+splint_verbose_0 = $(AM_V_at)echo "  SPLINT  " $@;
+
+splint: $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h
+	$(splint_verbose)$(splint_process)
+
 if HAVE_WC
-count:
-	@WC@ -l	src/bin/*.c src/bin/*.h
+wc_process = @WC@ -l $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h
 else
-count:
-	$(AM_V_at)echo "wc not found. Update PATH or install wc."
+wc_process = echo "wc not found. Update PATH or install wc."
 endif
+
+wc_verbose = $(wc_verbose_@AM_V@)
+wc_verbose_ = $(wc_verbose_@AM_DEFAULT_V@)
+wc_verbose_0 = $(AM_V_at)echo "  WC      " $@;
+
+count: $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h
+	$(wc_verbose)$(wc_process)
