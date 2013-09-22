@@ -850,7 +850,11 @@ end
     newpath
 } def
 
-(../../data/clip.ps)run
+%(../../data)
+PACKAGE_DATA_DIR
+(/clip.ps)
+strcat
+run
 
 %clip the current path by the clipregion
 % convert the path to an array of polygons (arrays of points)
