@@ -60,77 +60,117 @@ typedef bool _Bool;
 
 /* any1 any2  eq  bool
    test equal */
-void Aeq (context *ctx, object x, object y) {
+void Aeq (context *ctx,
+          object x,
+          object y)
+{
     push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) == 0));
 }
 
 /* any1 any2  ne  bool
    test not equal */
-void Ane (context *ctx, object x, object y) {
+void Ane (context *ctx,
+          object x,
+          object y)
+{
     push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) != 0));
 }
 
 /* any1 any2  ge  bool
    test greater or equal */
-void Age (context *ctx, object x, object y) {
+void Age (context *ctx,
+          object x,
+          object y)
+{
     push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) >= 0));
 }
 
 /* any1 any2  gt  bool
    test greater than */
-void Agt (context *ctx, object x, object y) {
+void Agt (context *ctx,
+          object x,
+          object y)
+{
     push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) > 0));
 }
 
 /* any1 any2  le  bool
    test less or equal */
-void Ale (context *ctx, object x, object y) {
+void Ale (context *ctx,
+          object x,
+          object y)
+{
     push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) <= 0));
 }
 
 /* any1 any2  lt  bool
    test less than */
-void Alt (context *ctx, object x, object y) {
+void Alt (context *ctx,
+          object x,
+          object y)
+{
     push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) < 0));
 }
 
 /* bool1|int1 bool2|int2  and  bool3|int3
    logical|bitwise and */
-void Band (context *ctx, object x, object y) {
+void Band (context *ctx,
+           object x,
+           object y)
+{
     push(ctx->lo, ctx->os, consbool(x.int_.val & y.int_.val));
 }
 
-void Iand (context *ctx, object x, object y) {
+void Iand (context *ctx,
+           object x,
+           object y)
+{
     push(ctx->lo, ctx->os, consint(x.int_.val & y.int_.val));
 }
 
 /* bool1|int1  not  bool2|int2
    logical|bitwise not */
-void Bnot (context *ctx, object x) {
+void Bnot (context *ctx,
+           object x)
+{
     push(ctx->lo, ctx->os, consbool( ! x.int_.val ));
 }
 
-void Inot (context *ctx, object x) {
+void Inot (context *ctx,
+           object x)
+{
     push(ctx->lo, ctx->os, consint( ~ x.int_.val ));
 }
 
 /* bool1|int1 bool2|int2  or  bool3|int3
    logical|bitwise inclusive or */
-void Bor (context *ctx, object x, object y) {
+void Bor (context *ctx,
+          object x,
+          object y)
+{
     push(ctx->lo, ctx->os, consbool(x.int_.val | y.int_.val));
 }
 
-void Ior (context *ctx, object x, object y) {
+void Ior (context *ctx,
+          object x,
+          object y)
+{
     push(ctx->lo, ctx->os, consint(x.int_.val | y.int_.val));
 }
 
 /* bool1|int1 bool2|int2  xor  bool3|int3
    exclusive or */
-void Bxor (context *ctx, object x, object y) {
+void Bxor (context *ctx,
+           object x,
+           object y)
+{
     push(ctx->lo, ctx->os, consbool(x.int_.val ^ y.int_.val));
 }
 
-void Ixor (context *ctx, object x, object y) {
+void Ixor (context *ctx,
+           object x,
+           object y)
+{
     push(ctx->lo, ctx->os, consint(x.int_.val ^ y.int_.val));
 }
 
@@ -140,7 +180,10 @@ void Ixor (context *ctx, object x, object y) {
 
 /* int1 shift  bitshift  int2
    bitwise shift of int1 (positive is left) */
-void Ibitshift (context *ctx, object x, object y) {
+void Ibitshift (context *ctx,
+                object x,
+                object y)
+{
     if (y.int_.val >= 0)
         push(ctx->lo, ctx->os, consint(x.int_.val << y.int_.val));
     else
@@ -148,7 +191,9 @@ void Ibitshift (context *ctx, object x, object y) {
                     (unsigned long)x.int_.val >> -y.int_.val));
 }
 
-void initopb(context *ctx, object sd) {
+void initopb(context *ctx,
+             object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);

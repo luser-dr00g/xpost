@@ -78,7 +78,10 @@ typedef struct {
           +value if L > R
           -value if L < R
  */
-int objcmp(context *ctx, object L, object R) {
+int objcmp(context *ctx,
+           object L,
+           object R)
+{
     if (type(L) != type(R)) {
         if (type(L) == integertype && type(R) == realtype) {
             L = consreal(L.int_.val);
@@ -144,7 +147,9 @@ cont:
 }
 
 /* more like scrambled eggs */
-unsigned hash(object k) {
+static
+unsigned hash(object k)
+{
     unsigned h;
     h = (type(k) << 1) /* ignore flags */
         + (k.comp_.sz << 3)
@@ -163,7 +168,9 @@ unsigned hash(object k) {
    extract the "pointer" from the entity,
    Initialize a dichead in memory,
    just after the head, clear a table of pairs. */
-object consdic(mfile *mem, unsigned sz) {
+object consdic(mfile *mem,
+               unsigned sz)
+{
     mtab *tab;
     object d;
     unsigned rent;
@@ -206,7 +213,9 @@ object consdic(mfile *mem, unsigned sz) {
 /* select mfile according to vmmode,
    call consdic,
    set the BANK flag. */
-object consbdc(context *ctx, unsigned sz) {
+object consbdc(context *ctx,
+               unsigned sz)
+{
     object d = consdic(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (ctx->vmmode == GLOBAL)
         d.tag |= FBANK;
@@ -214,18 +223,25 @@ object consbdc(context *ctx, unsigned sz) {
 }
 
 /* get the nused field from the dichead */
-unsigned diclength(mfile *mem, object d) {
+unsigned diclength(mfile *mem,
+                   object d)
+{
     dichead *dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
     return dp->nused;
 }
 
 /* get the sz field from the dichead */
-unsigned dicmaxlength(mfile *mem, object d) {
+unsigned dicmaxlength(mfile *mem,
+                      object d)
+{
     dichead *dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
     return dp->sz;
 }
 
-void dicgrow(context *ctx, object d) {
+static
+void dicgrow(context *ctx,
+             object d)
+{
     mfile *mem;
     unsigned sz;
     unsigned newsz;
@@ -234,6 +250,7 @@ void dicgrow(context *ctx, object d) {
     object *tp;
     object n;
     unsigned i;
+
     mem = bank(ctx, d);
 #ifdef DEBUGDIC
     printf("DI growing dict\n");
@@ -280,16 +297,21 @@ void dicgrow(context *ctx, object d) {
 }
 
 /* is it full? (y/n) */
-bool dicfull(mfile *mem, object d) {
+bool dicfull(mfile *mem,
+             object d)
+{
     return diclength(mem, d) == dicmaxlength(mem, d);
 }
 
-void dumpdic(mfile *mem, object d) {
+void dumpdic(mfile *mem,
+             object d)
+{
     unsigned ad = adrent(mem, d.comp_.ent);
     dichead *dp = (void *)(mem->base + ad);
     object *tp = (void *)(mem->base + ad + sizeof(dichead));
     unsigned sz = (dp->sz + 1);
     unsigned i;
+
     printf("\n");
     for (i=0; i < sz; i++) {
         printf("%d:", i);
@@ -300,7 +322,8 @@ void dumpdic(mfile *mem, object d) {
 }
 
 //n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag
-object consextended (double d) {
+object consextended (double d)
+{
     unsigned long long r = *(unsigned long long *)&d;
     extended_ e;
     e.tag = extendedtype;
@@ -309,18 +332,22 @@ object consextended (double d) {
     return (object) e;
 }
 
-double doubleextended (object e) {
+double doubleextended (object e)
+{
     unsigned long long r;
     double d;
+
     r = ((unsigned long long)e.extended_.sign_exp << 52)
         | ((unsigned long long)e.extended_.fraction << 20);
     d = *(double *)&r;
     return d;
 }
 
-object unextend (object e) {
+object unextend (object e)
+{
     object o;
     double d = doubleextended(e);
+
     if (e.tag & EXTENDEDINT) {
         o = consint(d);
     } else if (e.tag & EXTENDEDREAL) {
@@ -331,7 +358,10 @@ object unextend (object e) {
     return o;
 }
 
-object clean_key (context *ctx, object k) {
+static
+object clean_key (context *ctx,
+                  object k)
+{
     switch(type(k)) {
     case stringtype: {
         char *s = alloca(k.comp_.sz+1);
@@ -360,7 +390,11 @@ object clean_key (context *ctx, object k) {
 /* perform a hash-assisted lookup.
    returns a pointer to the desired pair (if found)), or a null-pair. */
 /*@dependent@*/ /*@null@*/
-object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
+object *diclookup(context *ctx,
+        /*@dependent@*/ mfile *mem,
+        object d,
+        object k)
+{
     unsigned ad;
     dichead *dp;
     object *tp;
@@ -395,8 +429,13 @@ object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) 
 }
 
 /* see if lookup returns a non-null pair. */
-bool dicknown(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
+bool dicknown(context *ctx,
+        /*@dependent@*/ mfile *mem,
+        object d,
+        object k)
+{
     object *r;
+
     r = diclookup(ctx, mem, d, k);
     if (r == NULL) return false;
     return type(*r) != nulltype;
@@ -404,8 +443,13 @@ bool dicknown(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
 
 /* call diclookup,
    return the value if the key is non-null. */
-object dicget(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
+object dicget(context *ctx,
+        /*@dependent@*/ mfile *mem,
+        object d,
+        object k)
+{
     object *e;
+
     e = diclookup(ctx, mem, d, k);
     if (e == NULL || type(e[0]) == nulltype) {
         error(undefined, "dicget");
@@ -416,7 +460,10 @@ object dicget(context *ctx, /*@dependent@*/ mfile *mem, object d, object k) {
 
 /* select mfile according to BANK field,
    call dicget. */
-object bdcget(context *ctx, object d, object k) {
+object bdcget(context *ctx,
+        object d,
+        object k)
+{
     return dicget(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k);
 }
 
@@ -426,9 +473,15 @@ object bdcget(context *ctx, object d, object k) {
        increase nused,
        set key,
        update value. */
-void dicput(context *ctx, mfile *mem, object d, object k, object v) {
+void dicput(context *ctx,
+        mfile *mem,
+        object d,
+        object k,
+        object v)
+{
     object *e;
     dichead *dp;
+
 retry:
     if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
     e = diclookup(ctx, mem, d, k);
@@ -458,11 +511,19 @@ retry:
 
 /* select mfile according to BANK field,
    call dicput. */
-void bdcput(context *ctx, object d, object k, object v) {
+void bdcput(context *ctx,
+        object d,
+        object k,
+        object v)
+{
     dicput(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k, v);
 }
 
-void dicundef(context *ctx, mfile *mem, object d, object k) {
+void dicundef(context *ctx,
+        mfile *mem,
+        object d,
+        object k)
+{
     if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
     //find slot for key
     //find last chained key and value with same hash
@@ -470,7 +531,10 @@ void dicundef(context *ctx, mfile *mem, object d, object k) {
         //not found: write null over key and value
 }
 
-void bdcundef(context *ctx, object d, object k) {
+void bdcundef(context *ctx,
+        object d,
+        object k)
+{
     dicundef(ctx, bank(ctx, d), d, k);
 }
 
