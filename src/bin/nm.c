@@ -33,6 +33,7 @@ typedef bool _Bool;
 
 #define CNT_STR(s) sizeof(s)-1, s
 
+/* print a dump of the name string stacks, global and local */
 void dumpnames(context *ctx)
 {
     unsigned stk;
@@ -55,6 +56,7 @@ void dumpnames(context *ctx)
     }
 }
 
+/* initialize the name special entities NAMES, NAMET */
 void initnames(context *ctx)
 {
     mtab *tab;
@@ -92,6 +94,7 @@ void initnames(context *ctx)
     ctx->vmmode = mode;
 }
 
+/* perform a search using the ternary search tree */
 unsigned tstsearch(mfile *mem,
                    unsigned tadr,
                    char *s)
@@ -110,6 +113,7 @@ unsigned tstsearch(mfile *mem,
     return 0;
 }
 
+/* add a string to the ternary search tree */
 unsigned tstinsert(mfile *mem,
                    unsigned tadr,
                    char *s)
@@ -144,6 +148,7 @@ unsigned tstinsert(mfile *mem,
     return tadr;
 }
 
+/* add the name to the name stack, return index */
 unsigned addname(context *ctx,
                  char *s)
 {
@@ -160,6 +165,15 @@ unsigned addname(context *ctx,
     return u;
 }
 
+/* construct a name object from a string
+   searches and if necessary installs string
+   in ternary search tree,
+   adding string to stack if so.
+   returns a generic object with
+       nametype tag with BANK field, 
+       mark_.pad0 set to zero
+       mark_.padw contains NAMES stack index
+ */
 object consname(context *ctx,
                 char *s)
 {
@@ -193,6 +207,10 @@ object consname(context *ctx,
     return o;
 }
 
+/* adapter:
+            string <- name
+    yield the string object from the name string stack
+    */
 object strname(context *ctx,
                object n)
 {

@@ -34,9 +34,9 @@ typedef bool _Bool;
 #include "di.h"
 #include "op.h"
 
-static
-object promote(object o);
+static object promote(object o);
 
+/* convert an integertype object to a realtype object */
 static
 object promote(object o)
 {
@@ -67,6 +67,7 @@ enum typepat ( anytype = stringtype + 1,
 static
 int noop = 0;
 
+/* allocate the OPTAB structure in VM */
 extern
 void initoptab (context *ctx)
 {
@@ -78,6 +79,7 @@ void initoptab (context *ctx)
     //printf("ent: %d\nOPTAB: %d\n", ent, (int)OPTAB);
 }
 
+/* print a dump of the operator struct given opcode */
 extern
 void dumpoper(context *ctx,
               int opcode)
@@ -91,6 +93,14 @@ void dumpoper(context *ctx,
     printf("<operator %d %*s %p>", opcode, str.comp_.sz, s, (void *)sig[0].fp );
 }
 
+/* construct an operator object
+   if given a function-pointer, attempts to install a new operator 
+   in OPTAB, otherwise just perform a lookup
+   if installing a new operator, out and in specify the number of
+   output values the function may yield and the number of input
+   values whose presence and types should be checked,
+   there should follow 'in' number of typenames passed after 'in'.
+   */
 extern
 object consoper(context *ctx,
                 char *name,
@@ -177,6 +187,9 @@ object consoper(context *ctx,
     return o;
 }
 
+/*
+   idea for a quicker pattern-matching approach
+   */
 static
 qword digest(context *ctx,
              mfile *mem,
@@ -221,6 +234,9 @@ void holdn (context *ctx,
     }
 }
 
+/* execute an operator function by opcode
+   the opcode is the payload of an operator object
+ */
 extern
 void opexec(context *ctx,
             unsigned opcode)
