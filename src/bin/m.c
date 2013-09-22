@@ -29,7 +29,7 @@ typedef bool _Bool;
 #include <fcntl.h> /* open */
 
 #ifdef HAVE_SYS_MMAN_H
-# include <sys/mman.h> /* mmap munmap */
+# include <sys/mman.h> /* mmap munmap mremap */
 #endif
 
 #ifdef _WIN32
@@ -54,8 +54,10 @@ typedef struct {
 */
 
 /* dump mfile details to stdout */
-void dumpmfile(mfile *mem){
+void dumpmfile(mfile *mem)
+{
     unsigned u, v;
+
     printf("{mfile: base = %p, "
             "used = 0x%x (%u), "
             "max = 0x%x (%u), "
@@ -93,7 +95,8 @@ void dumpmfile(mfile *mem){
 #endif
 
 /* memfile exists in path */
-int getmemfile(char *fname){
+int getmemfile(char *fname)
+{
     int fd;
     fd = open(
             fname, //"x.mem",
@@ -105,7 +108,9 @@ int getmemfile(char *fname){
 }
 
 /* initialize the memory file */
-void initmem(mfile *mem, char *fname){
+void initmem(mfile *mem,
+             char *fname)
+{
     int fd = -1;
     struct stat buf;
     size_t sz = pgsz;
@@ -148,7 +153,8 @@ void initmem(mfile *mem, char *fname){
 }
 
 /* destroy the memory file */
-void exitmem(mfile *mem){
+void exitmem(mfile *mem)
+{
 #ifdef HAVE_MMAP
     msync(mem->base, mem->used, MS_SYNC);
     munmap(mem->base, mem->max);
@@ -173,8 +179,11 @@ void exitmem(mfile *mem){
 }
 
 /* reallocate and possibly move mem->base */
-mfile *growmem(mfile *mem, unsigned sz){
+mfile *growmem(mfile *mem,
+               unsigned sz)
+{
     void *tmp;
+
     printf("growmem: %p %u + %u\n", mem, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
     else sz = (sz/pgsz + 1) * pgsz;
@@ -201,8 +210,11 @@ mfile *growmem(mfile *mem, unsigned sz){
    MUST recalculate all pointers derived from mem->base
         after this function
  */
-unsigned mfalloc(mfile *mem, unsigned sz){
+unsigned mfalloc(mfile *mem,
+                 unsigned sz)
+{
     unsigned adr = mem->used;
+
     if (sz) {
         if (sz + mem->used >=
                 mem->max) mem = growmem(mem,sz);
@@ -228,7 +240,9 @@ typedef struct {
 #endif
 
 /* dump mtab details to stdout */
-void dumpmtab(mfile *mem, unsigned mtabadr){
+void dumpmtab(mfile *mem,
+              unsigned mtabadr)
+{
     unsigned i;
     unsigned e;
     mtab *tab;
@@ -266,9 +280,11 @@ next_table:
 
 
 /* allocate and initialize a new table */
-unsigned initmtab(mfile *mem){
+unsigned initmtab(mfile *mem)
+{
     mtab *tab;
     unsigned adr;
+
     adr = mfalloc(mem, sizeof(mtab));
     tab = (void *)(mem->base + adr);
     tab->nexttab = 0;
@@ -281,11 +297,15 @@ unsigned initmtab(mfile *mem){
    MUST recalculate all pointers derived from mem->base
         after this function
  */
-unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
+unsigned mtalloc(mfile *mem,
+                 unsigned mtabadr,
+                 unsigned sz)
+{
     unsigned ent;
     unsigned adr;
     mtab *tab = (void *)(mem->base + mtabadr);
     int ntab = 0;
+
     while (tab->nextent >= TABSZ) {
         tab = (void *)(mem->base + tab->nexttab);
         ++ntab;
@@ -310,7 +330,10 @@ unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz){
 }
 
 /* find the table and relative entity index for an absolute entity index */
-void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@in@*/ unsigned *aent) {
+void findtabent(mfile *mem,
+                /*@out@*/ mtab **atab,
+                /*@in@*/ unsigned *aent)
+{
     *atab = (void *)(mem->base); // just use mtabadr=0
     while (*aent >= TABSZ) {
         *aent -= TABSZ;
@@ -322,8 +345,11 @@ void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@in@*/ unsigned *aent) {
 }
 
 /* get the address from an entity */
-unsigned adrent(mfile *mem, unsigned ent) {
+unsigned adrent(mfile *mem,
+                unsigned ent)
+{
     mtab *tab;// = (void *)(mem->base); // just use mtabadr=0
+
     assert(mem);
     assert(mem->base);
     findtabent(mem,&tab,&ent);
@@ -332,7 +358,9 @@ unsigned adrent(mfile *mem, unsigned ent) {
 }
 
 /* get the size of an entity */
-unsigned szent(mfile *mem, unsigned ent) {
+unsigned szent(mfile *mem,
+               unsigned ent)
+{
     mtab *tab;// = (void *)(mem->base); // just use mtabadr=0
     assert(mem);
     findtabent(mem,&tab,&ent);
@@ -341,10 +369,14 @@ unsigned szent(mfile *mem, unsigned ent) {
 
 /* fetch a value from a composite object */
 void get(mfile *mem,
-        unsigned ent, unsigned offset, unsigned sz,
-        /*@out@*/ void *dest){
+        unsigned ent,
+        unsigned offset,
+        unsigned sz,
+        /*@out@*/ void *dest)
+{
     mtab *tab;
     unsigned mtabadr = 0;
+
     tab = (void *)(mem->base + mtabadr);
     while (ent >= TABSZ) {
         mtabadr = tab->nexttab;
@@ -360,10 +392,14 @@ void get(mfile *mem,
 
 /* put a value into a composite object */
 void put(mfile *mem,
-        unsigned ent, unsigned offset, unsigned sz,
-        /*@in@*/ void *src){
+        unsigned ent,
+        unsigned offset,
+        unsigned sz,
+        /*@in@*/ void *src)
+{
     mtab *tab;
     unsigned mtabadr = 0;
+
     tab = (void *)(mem->base + mtabadr);
     while (ent >= TABSZ){
         mtabadr = tab->nexttab;
@@ -382,13 +418,15 @@ void put(mfile *mem,
 mfile mem;
 
 /* initialize everything */
-void init(void){
+void init(void)
+{
     pgsz = getpagesize();
     initmem(&mem, "x.mem");
     (void)initmtab(&mem); /* create mtab at address zero */
 }
 
-void xit(void){
+void xit(void)
+{
     exitmem(&mem);
 }
 

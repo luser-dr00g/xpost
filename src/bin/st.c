@@ -24,7 +24,10 @@ typedef bool _Bool;
 #include "itp.h"
 #include "st.h"
 
-object consstr(mfile *mem, unsigned sz, /*@NULL@*/ char *ini) {
+object consstr(mfile *mem,
+               unsigned sz,
+               /*@NULL@*/ char *ini)
+{
     unsigned ent;
     object o;
     //ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int));
@@ -37,7 +40,10 @@ object consstr(mfile *mem, unsigned sz, /*@NULL@*/ char *ini) {
     return o;
 }
 
-object consbst(context *ctx, unsigned sz, /*@NULL@*/ char *ini) {
+object consbst(context *ctx,
+               unsigned sz,
+               /*@NULL@*/ char *ini)
+{
     object s;
     s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
     if (ctx->vmmode==GLOBAL)
@@ -46,7 +52,9 @@ object consbst(context *ctx, unsigned sz, /*@NULL@*/ char *ini) {
 }
 
 /*@dependent@*/
-char *charstr(context *ctx, object S) {
+char *charstr(context *ctx,
+              object S)
+{
     mfile *f;
     mtab *tab;
     unsigned ent = S.comp_.ent;
@@ -56,22 +64,36 @@ char *charstr(context *ctx, object S) {
 }
 
 
-void strput(mfile *mem, object s, integer i, integer c) {
+void strput(mfile *mem,
+            object s,
+            integer i,
+            integer c)
+{
     byte b = c;
     put(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
 }
 
-void bstput(context *ctx, object s, integer i, integer c) {
+void bstput(context *ctx,
+            object s,
+            integer i,
+            integer c)
+{
     strput(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
 }
 
-integer strget(mfile *mem, object s, integer i) {
+integer strget(mfile *mem,
+               object s,
+               integer i)
+{
     byte b;
     get(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
     return b;
 }
 
-integer bstget(context *ctx, object s, integer i) {
+integer bstget(context *ctx,
+               object s,
+               integer i)
+{
     return strget(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i);
 }
 
@@ -82,7 +104,8 @@ integer bstget(context *ctx, object s, integer i) {
 
 mfile mem;
 
-int main(void) {
+int main (void)
+{
     object s;
     int i;
     printf("\n^ st.c\n");

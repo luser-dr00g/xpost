@@ -45,19 +45,6 @@ int TRACE = 0;
 itp *itpdata;
 int initializing = 0;
 
-#if 0
-/* allocate a stack as a "special entry",
-   and double-check that it's the right entry */
-void makestack(mfile *mem, unsigned stk) {
-    unsigned ent;
-    mtab *tab;
-    ent = mtalloc(mem, 0, 0); /* allocate an entry of zero length */
-    assert(ent == stk);
-    tab = (void *)mem->base;
-    tab->tab[ent].adr = initstack(mem);
-}
-#endif
-
 unsigned makestack(mfile *mem){
     return initstack(mem);
 }
@@ -72,10 +59,13 @@ void initctxlist(mfile *mem) {
             MAXCONTEXT * sizeof(unsigned));
 }
 
-void addtoctxlist(mfile *mem, unsigned cid) {
+void addtoctxlist(mfile *mem,
+                  unsigned cid)
+{
     int i;
     mtab *tab;
     unsigned *ctxlist;
+
     tab = (void *)mem->base;
     ctxlist = (void *)(mem->base + tab->tab[CTXLIST].adr);
     // find first empty
@@ -88,8 +78,10 @@ void addtoctxlist(mfile *mem, unsigned cid) {
     error(unregistered, "ctxlist full");
 }
 
-mfile *nextgtab() {
+mfile *nextgtab()
+{
     int i;
+
     for (i=0; i < MAXMFILE; i++) {
         if (itpdata->gtab[i].base == NULL) {
             return &itpdata->gtab[i];
@@ -100,7 +92,8 @@ mfile *nextgtab() {
 }
 
 /* set up global vm in the context */
-void initglobal(context *ctx) {
+void initglobal(context *ctx)
+{
     ctx->vmmode = GLOBAL;
 
     /* allocate and initialize global vm */
@@ -118,7 +111,8 @@ void initglobal(context *ctx) {
     ctx->gl->start = OPTAB + 1; /* so OPTAB is not collected and not scanned. */
 }
 
-mfile *nextltab() {
+mfile *nextltab()
+{
     int i;
     for (i=0; i < MAXMFILE; i++) {
         if (itpdata->ltab[i].base == NULL) {
@@ -130,7 +124,8 @@ mfile *nextltab() {
 }
 
 /* set up local vm in the context */
-void initlocal(context *ctx) {
+void initlocal(context *ctx)
+{
     ctx->vmmode = LOCAL;
 
     /* allocate and initialize local vm */
@@ -158,7 +153,8 @@ void initlocal(context *ctx) {
 
 
 unsigned nextid = 0;
-unsigned initctxid(void) {
+unsigned initctxid(void)
+{
     unsigned startid = nextid;
     while ( ctxcid(++nextid)->state != 0 ) {
         if (nextid == startid + MAXCONTEXT)
@@ -167,14 +163,16 @@ unsigned initctxid(void) {
     return nextid;
 }
 
-context *ctxcid(unsigned cid) {
+context *ctxcid(unsigned cid)
+{
     //TODO reject cid 0
     return &itpdata->ctab[ (cid-1) % MAXCONTEXT ];
 }
 
 
 /* initialize context */
-void initcontext(context *ctx) {
+void initcontext(context *ctx)
+{
     ctx->id = initctxid();
     initlocal(ctx);
     initglobal(ctx);
@@ -210,7 +208,8 @@ void initcontext(context *ctx) {
 }
 
 /* destroy context */
-void exitcontext(context *ctx) {
+void exitcontext(context *ctx)
+{
     exitmem(ctx->gl);
     exitmem(ctx->lo);
 }
@@ -219,9 +218,11 @@ void exitcontext(context *ctx) {
    fork new process with private global and private local vm
    (spawn jobserver)
    */
-unsigned fork1(context *ctx) {
+unsigned fork1(context *ctx)
+{
     unsigned newcid;
     context *newctx;
+
     newcid = initctxid();
     newctx = ctxcid(newcid);
     initlocal(ctx);
@@ -234,9 +235,11 @@ unsigned fork1(context *ctx) {
    fork new process with shared global vm and private local vm
    (new "application"?)
    */
-unsigned fork2(context *ctx) {
+unsigned fork2(context *ctx)
+{
     unsigned newcid;
     context *newctx;
+
     newcid = initctxid();
     newctx = ctxcid(newcid);
     initlocal(ctx);
@@ -250,9 +253,11 @@ unsigned fork2(context *ctx) {
    fork new process with shared global and shared local vm
    (lightweight process)
    */
-unsigned fork3(context *ctx) {
+unsigned fork3(context *ctx)
+{
     unsigned newcid;
     context *newctx;
+
     newcid = initctxid();
     newctx = ctxcid(newcid);
     newctx->lo = ctx->lo;
@@ -265,41 +270,54 @@ unsigned fork3(context *ctx) {
 
 
 /* initialize itp */
-void inititp(itp *itp){
+void inititp(itp *itp)
+{
     initcontext(&itp->ctab[0]);
     itp->cid = itp->ctab[0].id;
 }
 
 /* destroy itp */
-void exititp(itp *itp){
+void exititp(itp *itp)
+{
     exitcontext(&itp->ctab[0]);
 }
 
 
 /* return the global or local memory file for the composite object */
 /*@dependent@*/
-mfile *bank(context *ctx, object o) {
+mfile *bank(context *ctx,
+            object o)
+{
     return o.tag&FBANK? ctx->gl : ctx->lo;
 }
 
 
 /* function type for interpreter action pointers */
-typedef void evalfunc(context *ctx);
+typedef
+void evalfunc(context *ctx);
 
 /* quit the interpreter */
-void evalquit(context *ctx) { ++ctx->quit; }
+void evalquit(context *ctx)
+{
+    ++ctx->quit;
+}
 
 /* pop the execution stack */
-void evalpop(context *ctx) { (void)pop(ctx->lo, ctx->es); }
+void evalpop(context *ctx)
+{
+    (void)pop(ctx->lo, ctx->es);
+}
 
 /* pop the execution stack onto the operand stack */
-void evalpush(context *ctx) {
+void evalpush(context *ctx)
+{
     push(ctx->lo, ctx->os,
             pop(ctx->lo, ctx->es) );
 }
 
 /* load executable name */
-void evalload(context *ctx) {
+void evalload(context *ctx)
+{
     object s = strname(ctx, top(ctx->lo, ctx->es, 0));
     if (TRACE)
         printf("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
@@ -315,17 +333,21 @@ void evalload(context *ctx) {
 }
 
 /* execute operator */
-void evaloperator(context *ctx) {
+void evaloperator(context *ctx)
+{
     object op = pop(ctx->lo, ctx->es);
+
     if (TRACE)
         dumpoper(ctx, op.mark_.padw);
     opexec(ctx, op.mark_.padw);
 }
 
 /* extract head (&tail) of array */
-void evalarray(context *ctx) {
+void evalarray(context *ctx)
+{
     object a = pop(ctx->lo, ctx->es);
     object b;
+
     switch (a.comp_.sz) {
     default /* > 1 */:
         push(ctx->lo, ctx->es, arrgetinterval(a, 1, a.comp_.sz - 1) );
@@ -342,8 +364,10 @@ void evalarray(context *ctx) {
 }
 
 /* extract token from string */
-void evalstring(context *ctx) {
+void evalstring(context *ctx)
+{
     object b,t,s;
+
     s = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, s);
     assert(ctx->gl->base);
@@ -358,8 +382,10 @@ void evalstring(context *ctx) {
 }
 
 /* extract token from file */
-void evalfile(context *ctx) {
+void evalfile(context *ctx)
+{
     object b,f,t;
+
     f = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, f);
     assert(ctx->gl->base);
@@ -391,13 +417,17 @@ evalfunc *evalname = evalload;
 /* install the evaltype functions (possibly via pointers) in the jump table */
 evalfunc *evaltype[NTYPES + 1];
 #define AS_EVALINIT(_) evaltype[ _ ## type ] = eval ## _ ;
-void initevaltype(void) {
+
+void initevaltype(void)
+{
     TYPES(AS_EVALINIT)
 }
 
-
-void eval(context *ctx) {
+/* one iteration of the central loop */
+void eval(context *ctx)
+{
     object t = top(ctx->lo, ctx->es, 0);
+
     ctx->currentobject = t;
     assert(ctx);
     assert(ctx->lo);
@@ -430,7 +460,9 @@ void eval(context *ctx) {
 jmp_buf jbmainloop;
 bool jbmainloopset = false;
 
-void mainloop(context *ctx) {
+/* the big main central interpreter loop. */
+void mainloop(context *ctx)
+{
     volatile int err; 
 
     if ((err = setjmp(jbmainloop))) {
@@ -445,7 +477,8 @@ void mainloop(context *ctx) {
 }
 
 
-void dumpctx(context *ctx) {
+void dumpctx(context *ctx)
+{
     dumpmfile(ctx->gl);
     dumpmtab(ctx->gl, 0);
     dumpmfile(ctx->lo);
@@ -458,7 +491,8 @@ void dumpctx(context *ctx) {
 context *ctx;
 #define CNT_STR(s) sizeof(s)-1, s
 
-void init(void) {
+void init(void)
+{
     pgsz = getpagesize();
     initializing = 1;
     initevaltype();
@@ -471,7 +505,8 @@ void init(void) {
     ctx = &itpdata->ctab[0];
 }
 
-void xit() {
+void xit()
+{
     exititp(itpdata);
     exit(0);
 }

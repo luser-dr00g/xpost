@@ -61,23 +61,37 @@ typedef bool _Bool;
 #include "op.h"
 #include "opc.h"
 
-void Aexec (context *ctx, object O) {
+void Aexec (context *ctx,
+            object O)
+{
     push(ctx->lo, ctx->es, O);
 }
 
-void BPif (context *ctx, object B, object P) {
+void BPif (context *ctx,
+           object B,
+           object P)
+{
     if (B.int_.val)
         push(ctx->lo, ctx->es, P);
 }
 
-void BPPifelse (context *ctx, object B, object Then, object Else) {
+void BPPifelse (context *ctx,
+                object B,
+                object Then,
+                object Else)
+{
     if (B.int_.val)
         push(ctx->lo, ctx->es, Then);
     else
         push(ctx->lo, ctx->es, Else);
 }
 
-void IIIPfor (context *ctx, object init, object incr, object lim, object P) {
+void IIIPfor (context *ctx,
+              object init,
+              object incr,
+              object lim,
+              object P)
+{
     integer i = init.int_.val;
     integer j = incr.int_.val;
     integer n = lim.int_.val;
@@ -94,7 +108,12 @@ void IIIPfor (context *ctx, object init, object incr, object lim, object P) {
     push(ctx->lo, ctx->es, init);
 }
 
-void RRRPfor (context *ctx, object init, object incr, object lim, object P) {
+void RRRPfor (context *ctx,
+              object init,
+              object incr,
+              object lim,
+              object P)
+{
     real i = init.real_.val;
     real j = incr.real_.val;
     real n = lim.real_.val;
@@ -110,7 +129,10 @@ void RRRPfor (context *ctx, object init, object incr, object lim, object P) {
     push(ctx->lo, ctx->es, init);
 }
 
-void IPrepeat (context *ctx, object n, object P) {
+void IPrepeat (context *ctx,
+               object n,
+               object P)
+{
     if (n.int_.val <= 0) return;
     push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
     push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
@@ -119,14 +141,17 @@ void IPrepeat (context *ctx, object n, object P) {
     push(ctx->lo, ctx->es, P);
 }
 
-void Ploop (context *ctx, object P) {
+void Ploop (context *ctx,
+            object P)
+{
     push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
     push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, cvlit(P));
     push(ctx->lo, ctx->es, P);
 }
 
-void Zexit (context *ctx) {
+void Zexit (context *ctx)
+{
     object opfor = consoper(ctx, "for", NULL,0,0);
     object oprepeat = consoper(ctx, "repeat", NULL,0,0);
     object oploop = consoper(ctx, "loop", NULL,0,0);
@@ -168,7 +193,8 @@ void Zexit (context *ctx) {
    false onto the operand stack. 'stop' then merely has to 
    search for 'false' and push a 'true'.  */
 
-void Zstop(context *ctx) {
+void Zstop(context *ctx)
+{
     object f = consbool(false);
     int c = count(ctx->lo, ctx->es);
     object x;
@@ -182,16 +208,21 @@ void Zstop(context *ctx) {
     error(unregistered, "no stopped context in 'stop'");
 }
 
-void Astopped(context *ctx, object o) {
+void Astopped(context *ctx,
+              object o)
+{
     push(ctx->lo, ctx->es, consbool(false));
     push(ctx->lo, ctx->es, o);
 }
 
-void Zcountexecstack(context *ctx) {
+void Zcountexecstack(context *ctx)
+{
     push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->es)));
 }
 
-void Aexecstack(context *ctx, object A) {
+void Aexecstack(context *ctx,
+                object A)
+{
     int z = count(ctx->lo, ctx->es);
     int i;
     for (i=0; i < z; i++)
@@ -201,11 +232,14 @@ void Aexecstack(context *ctx, object A) {
 
 //TODO start
 
-void Zquit(context *ctx) {
+void Zquit(context *ctx)
+{
     ctx->quit = 1;
 }
 
-void initopc (context *ctx, object sd) {
+void initopc (context *ctx,
+              object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);

@@ -63,55 +63,77 @@ typedef bool _Bool;
 #include "op.h"
 #include "opt.h"
 
-void Atype(context *ctx, object o) {
+void Atype(context *ctx,
+           object o)
+{
     push(ctx->lo, ctx->os, cvx(consname(ctx, types[type(o)])));
 }
 
-void Acvlit(context *ctx, object o){
+void Acvlit(context *ctx,
+            object o)
+{
     push(ctx->lo, ctx->os, cvlit(o));
 }
 
-void Acvx(context *ctx, object o){
+void Acvx(context *ctx,
+          object o)
+{
     push(ctx->lo, ctx->os, cvx(o));
 }
 
-void Axcheck(context *ctx, object o) {
+void Axcheck(context *ctx,
+             object o)
+{
     push(ctx->lo, ctx->os, consbool(isx(o)));
 }
 
-void Aexecuteonly(context *ctx, object o) {
+void Aexecuteonly(context *ctx,
+                  object o)
+{
     o.tag &= ~FACCESS;
     o.tag |= (executeonly << FACCESSO);
     push(ctx->lo, ctx->os, o);
 }
 
-void Anoaccess(context *ctx, object o) {
+void Anoaccess(context *ctx,
+               object o)
+{
     o.tag &= ~FACCESS;
     o.tag |= (noaccess << FACCESSO);
     push(ctx->lo, ctx->os, o);
 }
 
-void Areadonly(context *ctx, object o) {
+void Areadonly(context *ctx,
+               object o)
+{
     o.tag &= ~FACCESS;
     o.tag |= (readonly << FACCESSO);
     push(ctx->lo, ctx->os, o);
 }
 
-void Archeck(context *ctx, object o) {
+void Archeck(context *ctx,
+             object o)
+{
     push(ctx->lo, ctx->os, consbool( (o.tag & FACCESS) >> FACCESSO >= readonly ));
 }
 
-void Awcheck(context *ctx, object o) {
+void Awcheck(context *ctx,
+             object o)
+{
     push(ctx->lo, ctx->os, consbool( (o.tag & FACCESS) >> FACCESSO == unlimited ));
 }
 
-void Ncvi(context *ctx, object n) {
+void Ncvi(context *ctx,
+          object n)
+{
     if (type(n) == realtype)
         n = consint(n.real_.val);
     push(ctx->lo, ctx->os, n);
 }
 
-void Scvi(context *ctx, object s) {
+void Scvi(context *ctx,
+          object s)
+{
     double dbl;
     long num;
     char *t = alloca(s.comp_.sz+1);
@@ -134,20 +156,26 @@ void Scvi(context *ctx, object s) {
     push(ctx->lo, ctx->os, consint(num));
 }
 
-void Scvn(context *ctx, object s) {
+void Scvn(context *ctx,
+          object s)
+{
     char *t = alloca(s.comp_.sz+1);
     memcpy(t, charstr(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
     push(ctx->lo, ctx->os, consname(ctx, t));
 }
 
-void Ncvr(context *ctx, object n) {
+void Ncvr(context *ctx,
+          object n)
+{
     if (type(n) == integertype)
         n = consreal(n.int_.val);
     push(ctx->lo, ctx->os, n);
 }
 
-void Scvr(context *ctx, object str) {
+void Scvr(context *ctx,
+          object str)
+{
     double num;
     char *s = alloca(str.comp_.sz + 1);
     memcpy(s, charstr(ctx, str), str.comp_.sz);
@@ -158,7 +186,11 @@ void Scvr(context *ctx, object str) {
     push(ctx->lo, ctx->os, consreal(num));
 }
 
-int conv_rad(int num, int rad, char *s, int n) {
+int conv_rad(int num,
+             int rad,
+             char *s,
+             int n)
+{
     char *vec = "0123456789" "ABCDEFGHIJKLM" "NOPQRSTUVWXYZ";
     int off;
     if (n == 0) return 0;
@@ -172,7 +204,11 @@ int conv_rad(int num, int rad, char *s, int n) {
     return off+1;
 }
 
-void NRScvrs(context *ctx, object num, object rad, object str) {
+void NRScvrs (context *ctx,
+              object num,
+              object rad,
+              object str)
+{
     int r, n;
     if (type(num) == realtype) num = consint(num.real_.val);
     r = rad.int_.val;
@@ -183,7 +219,10 @@ void NRScvrs(context *ctx, object num, object rad, object str) {
     push(ctx->lo, ctx->os, str);
 }
 
-int conv_integ(real num, char *s, int n) {
+int conv_integ(real num,
+               char *s,
+               int n)
+{
     int off;
     if (num < 10.0) {
         *s = ((int)num) + '0';
@@ -195,7 +234,10 @@ int conv_integ(real num, char *s, int n) {
     return off + 1;
 }
 
-int conv_frac(real num, char *s, int n) {
+int conv_frac (real num,
+               char *s,
+               int n)
+{
     real integ, frac;
     num *= 10.0;
     integ = floor(num);
@@ -206,7 +248,10 @@ int conv_frac(real num, char *s, int n) {
     return 1 + conv_frac(frac, s+1, n-1);
 }
 
-int conv_real(real num, char *s, int n) {
+int conv_real (real num,
+               char *s,
+               int n)
+{
     int off = 0;
     real integ, frac;
     if (n == 0) return -1;
@@ -232,7 +277,10 @@ int conv_real(real num, char *s, int n) {
     return off;
 }
 
-void AScvs(context *ctx, object any, object str) {
+void AScvs (context *ctx,
+            object any,
+            object str)
+{
     char nostringval[] = "-nostringval-";
     char strue[] = "true";
     char sfalse[] = "false";
@@ -307,7 +355,9 @@ void AScvs(context *ctx, object any, object str) {
     push(ctx->lo, ctx->os, str);
 }
 
-void initopt(context *ctx, object sd) {
+void initopt (context *ctx,
+              object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);
