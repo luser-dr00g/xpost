@@ -1,0 +1,1039 @@
+%/CONSTRAINFLATNESS null def
+
+/DEVICE <<
+    /dimensions [ 100 100 ]
+    /defaultmatrix [ 1 0 0 1 0 0 ]
+>> def
+
+/graphicsdict <<
+    /currgstate 12 dict
+    /gstackarray 100 array
+    /gptr -1
+>> def
+
+/gstatetemplate {<<
+    /currmatrix [ 1 0 0 1 0 0 ]
+    /scratchmatrix [ 1 0 0 1 0 0 ]
+    /currpath 1 dict
+    /clipregion 1 dict
+    /flat 1
+    /linewidth 1
+    /linecap 0
+    /linejoin 2
+>>} def
+
+
+
+% Graphics State Operators -- Device Independent
+
+/gstatecopy { % dict dict
+    begin
+    {
+        dup type /arraytype eq {
+            exch
+            currentdict 1 index known {
+                load
+            }{
+                pop
+                dup length array
+            } ifelse
+            copy pop
+        }{
+            def
+        } ifelse
+    } forall
+    currentdict end
+} def
+
+% -  gsave  -
+% push graphics state
+/gsave {
+graphicsdict begin
+    /gptr gptr 1 add def
+    gptr gstackarray length ge { error } if
+    gstackarray gptr gstate currentgstate
+    put
+end
+} def
+
+% -  grestore  -
+% pop graphics state
+/grestore {
+graphicsdict begin
+    gptr -1 gt {
+        gstackarray gptr get
+            %dup {exch = ==} forall
+        currgstate gstatecopy pop
+        /gptr gptr 1 sub def
+    } if
+end
+} def
+
+% -  grestoreall  -
+% pop to bottommost graphics state
+/grestoreall {
+graphicsdict begin
+    /gptr -1 def
+    gstackarray 0 get
+    currgstate gstatecopy pop
+end
+} def
+
+% -  initgraphics  -
+% reset graphics state parameters
+/initgraphics {
+    gstate setgstate
+    initclip
+} def
+
+% -  gstate  gstate
+% create graphics state object
+/gstate {
+    gstatetemplate dup length dict copy
+} def
+
+% gstate  setgstate  -
+% set graphics state from gstate
+/setgstate {
+    graphicsdict /currgstate get copy pop
+} def
+
+% gstate  currentgstate  gstate
+% copy current graphics state into gstate
+/currentgstate {
+    graphicsdict /currgstate get exch gstatecopy
+} def
+
+% num  setlinewidth  -
+% set line width
+/setlinewidth {
+    graphicsdict /currgstate get exch /linewidth exch put
+} def
+
+% -  currentlinewidth  num
+% return current line width
+/currentlinewidth {
+    graphicsdict /currgstate get /linewidth get
+} def
+
+% int  setlinecap  -
+% set shape of the ends for stroke (0=butt, 1=round, 2=square)
+/setlinecap {
+    graphicsdict /currgstate get exch /linecap exch put
+} def
+
+% -  currentlinecap  int
+% return current line cap
+/currentlinecap {
+    graphicsdict /currgstate get /linecap get
+} def
+
+% int  setlinejoin  -
+% set shape of corners for stroke (0=miter, 1=round, 2=bevel)
+/setlinejoin {
+    graphicsdict /currgstate get exch /linejoin exch put
+} def
+
+% -  currentlinejoin  int
+% return current line join
+/currentlinejoin {
+    graphicsdict /currgstate get /linejoin get
+} def
+
+
+
+% Graphics State Operators -- Device Dependent
+
+/setflat {
+    /CONSTRAINFLATNESS where{
+        pop dup 100 gt{pop 100}if dup .2 lt{pop .2}if } if
+    graphicsdict /currgstate get exch /flat exch put
+} def
+
+/currentflat {
+    graphicsdict /currgstate get /flat get
+} def
+
+
+% Coordinate System and Matrix Operators
+
+% -  matrix  matrix
+% create identity matrix
+/matrix { 6 array identmatrix } def
+
+% -  initmatrix  -
+% set CTM to device default
+/initmatrix {
+    matrix defaultmatrix setmatrix
+} def
+
+% matrix  identmatrix  matrix
+% fill matrix with identity transform
+/identmatrix {
+    dup type/arraytype ne { /identmatrix cvx /typecheck signalerror } if
+    { 1 0 0 1 0 0 } exch copy
+} def
+
+% matrix  defaultmatrix  matrix
+% fill matrix with device default matrix
+/defaultmatrix {
+    dup type/arraytype ne { /defaultmatrix cvx /typecheck signalerror } if
+    DEVICE /defaultmatrix get exch copy
+} def
+
+% matrix  currentmatrix  matrix
+% fill matrix with CTM
+/currentmatrix {
+    dup type/arraytype ne { /currentmatrix cvx /typecheck signalerror } if
+    graphicsdict /currgstate get /currmatrix get exch copy
+} def
+
+% matrix  setmatrix  -
+% replace CTM by matrix
+/setmatrix {
+    dup type/arraytype ne { /setmatrix cvx /typecheck signalerror } if
+    graphicsdict /currgstate get /currmatrix get copy pop
+} def
+
+%        tx ty  translate  -       % translate userspace by (tx, ty)
+% tx ty matrix  translate  matrix  % define translation by (tx, ty)
+/translate {
+    dup type/arraytype ne
+        { true 3 1 roll matrix } % no array: create array, concat later
+        { false 4 1 roll } % array: do not create, do not concat later
+    ifelse % bool tx ty matrix
+    dup 0 1 put
+    dup 1 0 put
+    dup 2 0 put
+    dup 3 1 put
+    dup 4 5 4 roll put
+    dup 5 4 3 roll put
+    exch { concat } if
+} def
+
+%        sx sy  scale  -       % scale user space by (sx, sy)
+% sx sy matrix  scale  matrix  % define scaling by (sx, sy)
+/scale {
+    dup type/arraytype ne
+        { true 3 1 roll matrix }
+        { false 4 1 roll }
+    ifelse % bool sx sy matrix
+    dup 0        % b sx sy mat mat 0
+          5 4 roll put % b sy mat
+    dup 1 0 put
+    dup 2 0 put
+    dup 3 4 3 roll put % b mat
+    dup 4 0 put
+    dup 5 0 put
+    exch { concat } if
+} def
+
+%        angle  rotate  -       % rotate user space by angle
+% angle matrix  rotate  matrix  % define rotation by angle degrees
+/rotate {
+    dup type /arraytype ne
+        { true exch matrix }
+        { false 3 1 roll }
+    ifelse          % bool ang mat
+    dup 0                 % b ang mat mat 0
+          3 index cos put % b ang mat
+    dup 1 3 index sin put
+    dup 2 3 index sin neg put
+    dup 3 4 3 roll cos put
+    dup 4 0 put
+    dup 5 0 put
+    exch { concat } if
+} def
+
+% matrix  concat  -
+% replace CTM by matrix \times CTM
+/concat {
+    graphicsdict /currgstate get /currmatrix get dup concatmatrix pop
+} def
+
+% matrix1 matrix2 matrix3  concatmatrix  matrix3
+% fill matrix3 with matrix1 \times matrix2
+/concatmatrix {
+    3 copy type/arraytype ne exch type/arraytype ne or exch type/arraytype ne or
+        { /concatmatrix cvx /typecheck signalerror } if
+12 dict begin
+    /D exch def
+    aload pop 7 6 roll aload pop
+    {l k j i h g f e d c b a}{exch def}forall
+    a g mul c h mul add
+    b g mul d h mul add
+    a i mul c j mul add
+    b i mul d j mul add
+    a k mul c l mul add e add
+    b k mul d l mul add f add
+    D astore
+end
+} def
+
+%        x y  transform  x' y'  % transform (x,y) by CTM
+% x y matrix  transform  x' y'  % transform (x,y) by matrix
+/transform {
+12 dict begin
+    dup type/arraytype ne { graphicsdict /currgstate get /currmatrix get } if
+    aload pop % x y a b c d e f
+    {f e d c b a y x}{exch def}forall
+    a x mul c y mul add e add
+    b x mul d y mul add f add
+end
+} def
+
+%        dx dy  dtransform  dx' dy'  % transform distance (dx,dy) by CTM
+% dx dy matrix  dtransform  dx' dy'  % transform distance (dx,dy) by matrix
+/dtransform {
+12 dict begin
+    dup type/arraytype ne { graphicsdict /currgstate get /currmatrix get } if
+    aload pop % x y a b c d e f
+    pop pop % x y a b c d
+    {d c b a y x}{exch def}forall
+    a x mul c y mul add
+    b x mul d y mul add
+end
+} def
+
+%        x' y'  itransform  x y  % inverse transform (x',y') by CTM
+% x' y' matrix  itransform  x y  % inverse transform (x',y') by matrix
+/itransform {
+12 dict begin
+    dup type/arraytype ne { graphicsdict /currgstate get /currmatrix get } if
+    %graphicsdict /currgstate get /scratchmatrix get copy invertmatrix transform
+    aload pop {f e d c b a y x}{exch def}forall
+    a d mul b c mul sub
+    %(discr:)print dup =
+    dup 0 eq { end /itransform cvx /undefinedresult signalerror } if
+    1 exch div
+    /invdet exch def
+    d x mul b y mul sub c f mul add d e mul sub invdet mul
+    c x mul neg a y mul add b e mul add a f mul sub invdet mul
+end
+} def
+
+%        dx' dy'  idtransform  dx dy  % inverse transform distance (dx',dy') by CTM
+% dx' dy' matrix  idtransform  dx dy  % inverse transform distance (dx',dy') by matrix
+/idtransform {
+12 dict begin
+    dup type/arraytype ne { graphicsdict /currgstate get /currmatrix get } if
+    aload pop % x y a b c d e f
+    pop pop % x y a b c d
+    {d c b a y x}{exch def}forall
+    a d mul b c mul sub
+    dup 0 eq { end /idtransform cvx /undefinedresult signalerror } if
+    1 exch div
+    /invdet exch def
+    d x mul b y mul sub invdet mul
+    c x mul neg a y mul add invdet mul
+end
+} def
+
+% matrix1 matrix2  invertmatrix  matrix2
+% fill matrix2 with inverse of matrix1
+% revised using example at
+%   https://groups.google.com/d/msg/comp.lang.postscript/JuclKJjfNRQ/hs5OV6Widu8J
+/invertmatrix {
+    2 copy type/arraytype ne exch type/arraytype ne or
+    { /invertmatrix cvx /typecheck signalerror } if
+12 dict begin
+    exch aload pop {f e d c b a}{exch def}forall
+    a d mul b c mul sub
+    dup 0 eq { A end /invertmatrix cvx /undefinedresult signalerror } if
+    1 exch div
+    /invdet exch def
+    d invdet mul
+    b neg invdet mul
+    c neg invdet mul
+    a invdet mul
+    c f mul d e mul sub invdet mul
+    b e mul a f mul sub invdet mul
+    7 -1 roll
+    astore
+end
+} def
+
+
+
+% path == <<
+%             0 << subpath0 >>
+%             1 << %subpath1
+%                   0  << elem0 /move >> %first elem must be /move
+%                   1  << elem1 >>
+%               >>
+%         >>
+% A /move element will always start a new subpath
+% Any other element appends to the last subpath
+
+% Path Construction Operators
+
+% -  newpath  -
+% initialize current path to be empty
+/newpath {
+    graphicsdict /currgstate get
+        /currpath 1 dict put
+} def
+
+% -  currentpoint  x y
+% return current point coordinates
+/currentpoint {
+    cpath dup length 0 eq {
+        pop /currentpoint cvx /nocurrentpoint signalerror
+    }{
+        dup length 1 sub get % last-subpath
+        dup length 1 sub get % last-elem
+        /data get dup length 2 sub 2 getinterval % last data pair
+        aload pop itransform
+    } ifelse
+} def
+
+/cpath { graphicsdict /currgstate get /currpath get } def
+
+/addtopath { % << /data [...] /cmd /... >> <<path>>
+    %(addtopath)=
+    %(addtopath start pstack:)= pstack()=
+    dup length 0 eq {                       % elem path
+        1 index /cmd get /move eq {         % elem path
+            %(New Path)=
+            << 0 4 3 roll >> % new subpath  % <path> <subpath>
+            0 exch put                      %
+        }{
+            /addtopath cvx /nocurrentpoint signalerror
+        } ifelse
+    }{                                  % elem path
+        1 index /cmd get /move eq {     % elem path
+            dup dup length 1 sub get    % elem path last-subpath
+            dup length 1 sub get        % elem path last-elem-of-last-subpath
+            dup /cmd get /move eq { % elem path last-elem
+                %(Merge /move)=
+                3 1 roll pop            % last-elem elem
+                /data get /data exch put
+            }{                          % elem path last-elem
+                %(New subpath)=
+                pop                     % elem path
+                dup length 3 2 roll     % <path> n <elem>
+                << 0 3 2 roll >>        % <path> n <<0 <elem>>>        % new subpath
+                %pstack()=
+                put
+            } ifelse
+        }{                              % elem path
+            %(Append elem)=
+            dup length 1 sub get        % elem last-subpath
+            dup length                  % elem last-subpath key
+            3 2 roll
+            %pstack()=
+            put     
+        } ifelse
+    } ifelse
+    %(addtopath final pstack:)= pstack()=
+    %(addtopath exit)=
+} def
+
+% x y  moveto  -
+% set current point to (x,y)
+/moveto {
+    transform
+    2 array astore
+    << /data 3 2 roll /cmd /move >> cpath addtopath
+} def
+
+% dx dy  rmoveto  -
+% relative moveto
+/rmoveto {
+    currentpoint
+    3 2 roll add
+    3 1 roll add exch
+    moveto
+} def
+
+% x y  lineto  -
+% append straight line to (x,y)
+/lineto {
+    transform
+    2 array astore
+    << /data 3 2 roll /cmd /line >> cpath addtopath
+} def
+
+% dx dy  rlineto  -
+% relative lineto
+/rlineto {
+    currentpoint
+    3 2 roll add
+    3 1 roll add exch
+    lineto
+} def
+
+% x1 y1 x2 y2 x3 y3  curveto  -
+% append Bezier cubic section
+/curveto {
+    3 { 6 2 roll transform } repeat
+    6 array astore
+    << /data 3 2 roll /cmd /curve >> cpath addtopath
+} def
+
+% dx1 dy1 dx2 dy2 dx3 dy3  rcurveto  -
+% relative curveto
+/rcurveto {
+    3 {
+        6 2 roll currentpoint
+        3 2 roll add
+        3 1 roll add exch
+    } repeat
+    curveto
+} def
+
+% -  closepath  -
+% connect subpath back to its starting point
+/closepath {
+    cpath length 0 gt {
+        cpath dup length 1 sub get % subpath
+        dup dup length 1 sub get % subpath last-elem
+        /cmd get /close eq { % subpath
+            pop
+        }{                   % subpath
+            0 get /data get % subpath [data]
+            << /data 3 2 roll /cmd /close >> cpath addtopath
+        } ifelse
+    } if
+} def
+
+/median { % P0 P3 = x0 y0 x1 y1
+    3 -1 roll add .5 mul % x0 x1 y0+y1/2
+    3 1 roll add .5 mul  % (y0+y1)/2 (x0+x1)/2
+    exch % (1/2)(P0+P3)
+} def
+
+/dist { % P1 P2 = x1 y1 x2 y2
+    3 -1 roll sub dup mul % x1 x2 (y2-y1)^2
+    3 1 roll exch sub dup mul % (y2-y1)^2 (x2-x1)^2
+    add sqrt % dist
+} def
+
+%calculate the pythagorean distance between the
+% midpoint of the bezier curve and the midpoint of the straight line
+/checkflat { % P0 P1 P2 P3
+    8 copy
+    exch .125 mul exch .125 mul 8 2 roll % (1/8)P3 P0 P1 P2
+    exch .375 mul exch .375 mul 8 2 roll % (3/8)P2 (1/8)P3 P0 P1
+    exch .375 mul exch .375 mul 8 2 roll % (3/8)P1 (3/8)P2 (1/8)P3 P0
+    exch .125 mul exch .125 mul 8 2 roll % (1/8)P0 (3/8)P1 (3/8)P2 (1/8)P3
+    3 -1 roll add 3 1 roll add exch      %                        +
+    3 -1 roll add 3 1 roll add exch      %                +
+    3 -1 roll add 3 1 roll add exch      %        +
+    10 2 roll                            % B(1/2) P0 P1 P2 P3
+    8 2 roll pop pop pop pop             % B(1/2) P0 P3
+    median % B(1/2) (1/2)(P0+P3)
+    dist
+} def
+
+/getpair { % xN yN .. x0 y0 N  getpair  xN yN .. x0 y0 xN yN
+               % a0 a1 b0 b1 1
+    2 mul      % a0 a1 b0 b1 2
+    2 add dup  % a0 a1 b0 b1 4 4
+    index      % a0 a1 b0 b1 4 a0
+    exch 1 sub % a0 a1 b0 b1 a0 3
+    index      % a0 a1 b0 b1 a0 a1
+} def
+
+% P'0 = P0           = P0
+% P'1 = P01          = P0 P1 median
+%       P12          = P1 P2 median
+% P'2 = P012         = P01 P12  median
+% P'3 = P0123 = P''0 = P012 P123 median
+%        P123 = P''1 = P12 P23 median
+%         P23 = P''2 = P2 P3 median
+%          P3 = P''3 = P3
+/chopcurve { % <</cmd /curve /data [...]>>
+    flattendict /cp get aload pop
+    2 index /data get aload pop
+    checkflat % curve-error
+    %(checkflat)= dup =
+    currentflat gt {
+        /data get aload pop
+        flattendict /cp get aload pop 8 2 roll % P0 P1 P2 P3
+        %(median)=
+        %pstack()=
+        3 getpair 3 getpair median % P0 P1 P2 P3 P01
+        %(median)=
+        3 getpair 3 getpair median % P0 P1 P2 P3 P01 P12
+        3 getpair 3 getpair median % P0 P1 P2 P3 P01 P12 P23
+        2 getpair 2 getpair median % P0 P1 P2 P3 P01 P12 P23 P012
+        2 getpair 2 getpair median % P0 P1 P2 P3 P01 P12 P23 P012 P123
+        1 getpair 1 getpair median % P0 P1 P2 P3 P01 P12 P23 P012 P123 P0123
+        %(median)=
+                           %drop   % X  X  X  "  '   X   "   '    "    '
+                          %curve1  %          |  P'1     |   P'2  |    P'3
+                          %curve2  %          P"3        P"2      P"1
+                      %pair index  % 9  8  7  6  5   4   3   2    1    0
+                          %count   % 20 18 16 14 12  10  8   6    4    2
+        20 -2 roll pop pop         %    P1 P2 P3 P01 P12 P23 P012 P123 P0123
+        18 -2 roll pop pop         %       P2 P3 P01 P12 P23 P012 P123 P0123
+        16 -2 roll pop pop         %          P3 P01 P12 P23 P012 P123 P0123
+        10 -2 roll pop pop         %          P3 P01     P23 P012 P123 P0123
+                                   %          P"3 P'1    P"2 P'2 P"1 P'3
+        4 -2 roll                  %          P"3 P'1    P"2 P'2    P'3 P"1
+        8 -2 roll                  %          P"3 P'1       P'2    P'3 P"1 P"2
+        12 -2 roll                 %             P'1      P'2 P'3    P"1 P"2 P"3
+        6 array astore
+        << /data 3 2 roll /cmd /curve >> %   P'1 P'2 P'3   <P"1 P"2 P"3>
+        7 1 roll                   %        <P"1 P"2 P"3>  P'1 P'2 P'3 
+        6 array astore
+        << /data 3 2 roll /cmd /curve >> %  <P"1 P"2 P"3>  <P'1 P'2 P'3>
+        dup /data get 4 2 getinterval exch %  <P"1 P"2 P"3> [P'3] <P'1 P'2 P'3>
+        chopcurve
+        flattendict exch /cp exch put
+        chopcurve
+    }{
+        dup /data get 4 2 getinterval flattendict exch /cp exch put
+        << /data 3 2 roll /data get 4 2 getinterval /cmd /line >>
+        cpath addtopath
+    } ifelse
+} def
+
+/flattendict <<
+    /move {
+        dup /data get flattendict exch /cp exch put
+        cpath addtopath }
+    /line {
+        dup /data get flattendict exch /cp exch put
+        cpath addtopath }
+    /curve {
+        chopcurve
+        %dup /data get 4 2 getinterval flattendict exch /cp exch put
+        %<< /data 3 2 roll /data get 4 2 getinterval /cmd /line >>
+        %cpath addtopath
+    }
+    /close {
+        dup /data get flattendict exch /cp exch put
+        cpath addtopath }
+>> def
+
+/flattenpath {
+    cpath length 0 gt {
+        cpath newpath
+        0 1 2 index length 1 sub { % path i
+            2 copy get             % path i subpath_i
+            0 1 2 index length 1 sub { % p i sp_i j
+                2 copy get             % p i sp_i j sp_i_j
+                flattendict 1 index /cmd get get exec
+                pop                    % p i sp_i
+            } for
+            pop pop
+        } for
+        pop
+    } if
+} def
+
+/reversedict <<
+    /close { % p i sp_i j sp_i_j
+        dopending
+        reversedict /pending /line put
+        reversedict /isclosed true put
+    }
+    /line {
+        dopending
+        reversedict /pending /line put
+    }
+    /curve {
+        dup /data get exch
+        dopending
+        reversedict /pending /curve put
+        reversedict /curvedata 3 2 roll put
+    }
+    /move {
+        reversedict /isclosed get {
+            pop closepath
+        }{
+            dopending
+        } ifelse
+    }
+>> def
+
+/pendingdict <<
+    /move {
+        dup /cmd /move put
+        dup /data 2 copy get dup length 2 sub 2 getinterval put %final point if curve
+    }
+    /line {
+        dup /cmd /line put
+        dup /data 2 copy get dup length 2 sub 2 getinterval put %final point if curve
+    }
+    /curve {
+        dup /cmd /curve put
+        dup /data 2 copy get
+        dup length 2 sub 2 getinterval aload pop % el el /data x y
+        reversedict /curvedata get               % el el /data x y arr
+        aload pop pop pop 4 2 roll 6 4 roll
+        6 array astore                           % el el /data arr
+        put                                      % el
+    }
+    /close { }
+>> def
+/dopending {
+    pendingdict reversedict /pending get get exec
+    cpath addtopath
+} def
+
+/reversepath {
+    cpath length 0 gt {
+        cpath newpath
+        0 1 2 index length 1 sub { % path i
+            2 copy get             % path i subpath_i
+            reversedict /pending /move put
+            reversedict /isclosed false put
+            dup length 1 sub -1 0 { % p i sp_i j
+                2 copy get          % p i sp_i j sp_i_j
+                reversedict 1 index /cmd get get exec
+                pop                 % p i sp_i
+            } for
+            pop pop
+        } for
+        pop
+    } if
+} def
+
+/ptdiff { % P0 P1
+    3 -1 roll sub
+    3 1 roll exch sub exch % dx dy
+} def
+
+/magang { % dx dy  .  rad ang
+    2 copy 
+    dup mul exch dup mul add sqrt
+    3 1 roll exch atan
+} def
+
+/ravec { % rad ang  .  dx dy
+    dup cos 2 index mul  % rad ang rad*cos(ang)
+    3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
+} def
+
+/strokedict <<
+    /move {
+        strokedict /cp 2 index /data get put
+        cpath addtopath
+    }
+    /line {
+        strokedict /cp get aload pop       % el x0 y0
+        2 index /data get aload pop        % el x0 y0 x1 y1
+        2 copy 2 array astore strokedict /cp 3 2 roll put
+        ptdiff                             % el dx dy
+        magang                             % el rad ang
+        currentlinewidth .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
+        ravec itransform rmoveto           % el rad ang      %rmoveto
+        %cpath ===
+        2 copy ravec itransform rlineto    % el rad ang      %rlineto
+        %cpath ===
+        currentlinewidth 1 index 90 add    % el rad ang lw -ang_perp
+        ravec itransform rlineto           % el rad ang      %rlineto
+        %cpath ===
+        180 add ravec itransform rlineto   % el rad ang      %rlineto
+        %cpath ===
+        closepath                          % el              %closepath
+        %cpath ===
+        %dup /cmd /move put
+        %cpath addtopath
+        %/data get aload pop itransform moveto
+        pop
+        strokedict /cp get
+        %aload pop
+        %itransform moveto
+        << /data 3 2 roll /cmd /move >> cpath addtopath
+        %cpath ===
+    }
+    /close 1 index %{ pop }
+    /curve { pop }
+>> def
+
+/strokepath {
+    cpath length 0 gt {
+        cpath newpath
+        0 1 2 index length 1 sub { % path i
+            2 copy get             % path i subpath_i
+            dup length 0 gt {
+                0 1 2 index length 1 sub { % p i sp_i j
+                    2 copy get             % p i sp_i j sp_i_j
+                    strokedict 1 index /cmd get get exec
+                    pop                    % p i sp_i
+                } for              % p i sp_i
+            } if
+            pop pop                % path
+        } for
+        pop
+    } if
+} def
+
+/maxmin {
+    2 copy
+    dup maxy gt { /maxy exch def }{ pop } ifelse
+    dup maxx gt { /maxx exch def }{ pop } ifelse
+    dup miny lt { /miny exch def }{ pop } ifelse
+    dup minx lt { /minx exch def }{ pop } ifelse
+} def
+
+/clippath {
+    graphicsdict /currgstate get
+        dup /clipregion get
+        /currpath exch put
+} def
+
+/pathbbox {
+    cpath length 0 eq {
+        0 0 0 0
+    }{
+        << /minx 16#7fffffff /miny 1 index
+            /maxx 1 index neg /maxy 1 index >> begin
+        cpath
+        0 1 2 index length 1 sub {
+            2 copy get
+            0 1 2 index length 1 sub {
+                2 copy get
+                /data get
+                aload length 2 idiv
+                { maxmin } repeat
+                pop
+            } for
+            pop pop
+        } for
+        pop
+        minx miny maxx maxy
+        end
+    } ifelse
+} def
+
+% move line curve close  pathforall  -
+% enumerate current path
+/pathforall {
+5 dict begin
+    {close curve line move}{exch def}forall
+    0 1 cpath length 1 sub {
+        /cp exch def
+        0 1 cpath cp get % subpath
+        length 1 sub {
+            cpath cp get exch get % elem
+            dup /cmd get /close ne {
+                dup /data get % elem [data]
+                aload length  % elem d a t a n
+                1 add -1 roll % d a t a elem
+            } if
+            /cmd get cvx exec
+        } for
+    } for
+end
+} def
+
+/initclip {
+    graphicsdict /currgstate get 
+        dup /currpath get   % currpath
+        exch /currmatrix get % currmatrix
+
+    newpath
+    matrix setmatrix
+    DEVICE /dimensions get
+    aload pop
+    0 0 moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+
+    graphicsdict /currgstate get
+        dup dup /currpath get /clipregion exch put
+        dup 3 2 roll /currmatrix exch put
+        exch /currpath exch put
+} def
+
+/clip {
+    doclip
+    graphicsdict /currgstate get
+    dup /currpath get /clipregion exch put
+    newpath
+} def
+
+(../../data/clip.ps)run
+
+%clip the current path by the clipregion
+% convert the path to an array of polygons (arrays of points)
+% convert clipregion to array of polygons
+% traverse the clipregion
+%    convert line to [A B C] form
+%    feed polygon and line to hodgman-sutherland,
+%       receiving new polygon.
+/doclip { 4 dict begin
+
+    closepath
+    flattenpath
+    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    /PA exch def % polygon array
+
+    clippath
+    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    /CR exch def % clippath array
+
+    (PA: )print PA ==
+    (CR: )print CR ==
+
+    CR { % one clipping polygon
+        dup dup length 1 sub get % polygon final-point
+        /U exch def
+        {
+            /V exch def
+            [ U aload pop V aload pop p2abc ]  % clip-line
+            /CL exch def
+            CL ==
+
+            /PA [ PA { % one subject polygon
+                CL hodgman-sutherland
+            } forall ] def
+
+            /U V def
+        } forall
+    } forall
+    newpath
+    PA ==
+    PA {
+        dup length 0 gt {
+            dup 0 get << /data 3 2 roll /cmd /move >> cpath addtopath
+            1 1 index length 1 sub getinterval {
+                << /data 3 2 roll /cmd /line >> cpath addtopath
+            } forall
+            closepath
+        }{
+            pop
+        } ifelse
+    } forall
+
+end } def
+
+% Painting Operators
+
+% -  erasepage  -
+% paint current page white
+/erasepage {
+    gsave
+        0 setgray
+        clippath fill
+    grestore
+} def
+
+% -  fill  -
+% fill current path with current color
+/fill {
+    doclip
+} def
+
+% -  eofill  -
+% fill using even-odd rule
+/eofill {
+} def
+
+% -  stroke  -
+% draw line along current path
+/stroke {
+    strokepath fill
+} def
+
+/TESTGRAPHICS where {pop}{ currentfile flushfile} ifelse
+
+initgraphics
+
+%currentfile flushfile
+5 5 moveto currentpoint pstack clear
+90 matrix rotate pstack clear
+10 10 matrix scale pstack clear
+300 400 matrix translate pstack clear
+matrix matrix matrix concatmatrix pstack clear
+
+2 0 translate
+1 1 moveto
+.25 .25 scale
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+
+/args{-1 1{-1 roll =}for}def
+
+20 20 scale
+10 10 lineto
+20 20 rlineto
+0 0 1 1 2 0 rcurveto
+closepath
+
+newpath
+0 0 moveto
+20 20 40 20 60 0 curveto
+closepath
+
+newpath
+0 0 moveto
+50 50 lineto
+100 0 lineto
+closepath
+
+()=
+{ (moveto) 3 args }
+{ (lineto) 3 args }
+{ (curveto) 7 args }
+{ (closepath) 1 args }
+4 copy 
+(pathforall)=
+pathforall
+
+gsave
+    (newpath)=
+    newpath
+    (pathforall)=
+    4 copy pathforall
+grestore
+
+(pathforall)=
+4 copy pathforall
+
+(flattenpath)=
+flattenpath
+(pathforall)=
+4 copy pathforall
+
+(reversepath)=
+reversepath
+(pathforall)=
+4 copy pathforall
+
+(strokepath)=
+strokepath
+(pathforall)=
+pathforall
+
+clear pathbbox pstack clear
+
+
+initclip
+
+newpath
+0 0 moveto
+10 0 lineto
+10 10 lineto
+0 10 lineto
+closepath
+(clip)=
+clip
+
+(newpath)=
+newpath
+5 -1 moveto
+11 5 lineto
+5 11 lineto
+-1 5 lineto
+closepath
+
+(doclip)=
+doclip
+(pathforall)=
+{ (moveto) 3 args }
+{ (lineto) 3 args }
+{ (curveto) 7 args }
+{ (closepath) 1 args }
+pathforall
+
+
