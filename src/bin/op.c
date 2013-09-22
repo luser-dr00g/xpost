@@ -34,7 +34,10 @@ typedef bool _Bool;
 #include "di.h"
 #include "op.h"
 
-object promote(object o) { return consreal(o.int_.val); }
+object promote(object o)
+{
+    return consreal(o.int_.val);
+}
 
 /*
 typedef struct signat {
@@ -58,7 +61,8 @@ enum typepat ( anytype = stringtype + 1,
 
 int noop = 0;
 
-void initoptab (context *ctx) {
+void initoptab (context *ctx)
+{
     unsigned ent = mtalloc(ctx->gl, 0, MAXOPS * sizeof(oper));
     mtab *tab = (void *)(ctx->gl);
     assert(ent == OPTAB);
@@ -67,7 +71,9 @@ void initoptab (context *ctx) {
     //printf("ent: %d\nOPTAB: %d\n", ent, (int)OPTAB);
 }
 
-void dumpoper(context *ctx, int opcode) {
+void dumpoper(context *ctx,
+              int opcode)
+{
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     oper op = optab[opcode];
     mark_ nm = { nametype | FBANK, 0, op.name };
@@ -77,8 +83,12 @@ void dumpoper(context *ctx, int opcode) {
     printf("<operator %d %*s %p>", opcode, str.comp_.sz, s, (void *)sig[0].fp );
 }
 
-object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
-        int in, ...) {
+object consoper(context *ctx,
+                char *name,
+                /*@null@*/ void (*fp)(),
+                int out,
+                int in, ...)
+{
     object nm;
     object o;
     int opcode;
@@ -158,9 +168,13 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out,
     return o;
 }
 
-qword digest(context *ctx, mfile *mem, unsigned stacadr) {
+qword digest(context *ctx,
+             mfile *mem,
+             unsigned stacadr)
+{
     qword a = 0;
     int i;
+
     (void)ctx;
     for (i=0; i < 8; i++) {
         byte t = type(top(mem, stacadr, i));
@@ -171,9 +185,14 @@ qword digest(context *ctx, mfile *mem, unsigned stacadr) {
 }
 
 /* copy top n elements to holding stack & pop them */
-void holdn (context *ctx, mfile *mem, unsigned stacadr, int n) {
+void holdn (context *ctx,
+            mfile *mem,
+            unsigned stacadr,
+            int n)
+{
     stack *hold;
     int j;
+
     assert(n < TABSZ);
     hold = (void *)(ctx->lo->base + ctx->hold /*adrent(ctx->lo, HOLD)*/);
     hold->top = 0; /* clear HOLD */
@@ -191,7 +210,9 @@ void holdn (context *ctx, mfile *mem, unsigned stacadr, int n) {
     }
 }
 
-void opexec(context *ctx, unsigned opcode) {
+void opexec(context *ctx,
+            unsigned opcode)
+{
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     oper op = optab[opcode];
     signat *sp = (void *)(ctx->gl->base + op.sigadr);
@@ -274,12 +295,14 @@ call:
 #include "opx.h"
 #include "oppa.h"
 
-void breakhere(context *ctx) {
+void breakhere(context *ctx)
+{
     (void)ctx;
     return;
 }
 
-void initop(context *ctx) {
+void initop(context *ctx)
+{
     object op;
     object n;
     object sd;

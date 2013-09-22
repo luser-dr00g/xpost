@@ -33,13 +33,16 @@ typedef bool _Bool;
    find the appropriate mtab,
    set the current save level in the "mark" field,
    wrap it up in an object. */
-object consarr(mfile *mem, unsigned sz) {
+object consarr(mfile *mem,
+               unsigned sz)
+{
     unsigned ent;
     unsigned rent;
     unsigned cnt;
     mtab *tab;
     object o;
     unsigned i;
+
     assert(mem->base);
 
     //unsigned ent = mtalloc(mem, 0, sz * sizeof(object));
@@ -69,7 +72,9 @@ object consarr(mfile *mem, unsigned sz) {
 /* Select a memory file according to vmmode,
    call consarr,
    set BANK flag. */
-object consbar(context *ctx, unsigned sz) {
+object consbar(context *ctx,
+               unsigned sz)
+{
     object a = consarr(ctx->vmmode==GLOBAL?
             ctx->gl: ctx->lo, sz);
     if (ctx->vmmode==GLOBAL)
@@ -79,8 +84,13 @@ object consbar(context *ctx, unsigned sz) {
 
 /* Copy if necessary,
    call put. */
-void arrput(mfile *mem, object a, integer i, object o) {
-    if (!stashed(mem, a.comp_.ent)) stash(mem, a.comp_.ent);
+void arrput(mfile *mem,
+            object a,
+            integer i,
+            object o)
+{
+    if (!stashed(mem, a.comp_.ent))
+        stash(mem, a.comp_.ent);
     if (i > a.comp_.sz)
         error(rangecheck, "arrput");
     put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(object), &o);
@@ -88,12 +98,19 @@ void arrput(mfile *mem, object a, integer i, object o) {
 
 /* Select mfile according to BANK flag,
    call arrput. */
-void barput(context *ctx, object a, integer i, object o) {
+void barput(context *ctx,
+            object a,
+            integer i,
+            object o)
+{
     arrput(/*bank(ctx, a)*/ a.tag&FBANK? ctx->gl: ctx->lo, a, i, o);
 }
 
 /* call get. */
-object arrget(mfile *mem, object a, integer i) {
+object arrget(mfile *mem,
+              object a,
+              integer i)
+{
     object o;
     get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(object)), &o);
     return o;
@@ -101,13 +118,25 @@ object arrget(mfile *mem, object a, integer i) {
 
 /* Select mfile according to BANK flag,
    call arrget. */
-object barget(context *ctx, object a, integer i) {
+object barget(context *ctx,
+              object a,
+              integer i)
+{
     return arrget(bank(ctx, a) /*a.tag&FBANK? ctx->gl: ctx->lo*/, a, i);
 }
 
-/* adjust the offset and size fields in the object. */
-object arrgetinterval(object a, integer off, integer sz) {
-    if (sz - off > a.comp_.sz) error(rangecheck, "getinterval can only shrink!");
+/* adjust the offset and size fields in the object.
+   NB. since this function only modifies the fields in the object
+   itself, it also works for string and dict objects which use
+   the same comp_ substructure. So this function is used everywhere
+   for strings and dicts. It does not touch VM.
+ */
+object arrgetinterval(object a,
+                      integer off,
+                      integer sz)
+{
+    if (sz - off > a.comp_.sz)
+        error(rangecheck, "getinterval can only shrink!");
     a.comp_.off += off;
     a.comp_.sz = sz;
     return a;

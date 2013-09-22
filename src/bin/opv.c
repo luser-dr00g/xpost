@@ -60,11 +60,14 @@ typedef bool _Bool;
 #include "op.h"
 #include "opv.h"
 
-void Zsave (context *ctx) {
+void Zsave (context *ctx)
+{
     push(ctx->lo, ctx->os, save(ctx->lo));
 }
 
-void Vrestore (context *ctx, object V) {
+void Vrestore (context *ctx,
+               object V)
+{
     int z = count(ctx->lo, adrent(ctx->lo, VS));
     while(z > V.save_.lev) {
         restore(ctx->lo);
@@ -72,15 +75,20 @@ void Vrestore (context *ctx, object V) {
     }
 }
 
-void Bsetglobal (context *ctx, object B) {
+void Bsetglobal (context *ctx,
+                 object B)
+{
     ctx->vmmode = B.int_.val? GLOBAL: LOCAL;
 }
 
-void Zcurrentglobal (context *ctx) {
+void Zcurrentglobal (context *ctx)
+{
     push(ctx->lo, ctx->os, consbool(ctx->vmmode==GLOBAL));
 }
 
-void Agcheck (context *ctx, object A) {
+void Agcheck (context *ctx,
+              object A)
+{
     object r;
     switch(type(A)) {
     default:
@@ -94,13 +102,16 @@ void Agcheck (context *ctx, object A) {
     push(ctx->lo, ctx->os, r);
 }
 
-void Zvmstatus (context *ctx) {
+void Zvmstatus (context *ctx)
+{
     push(ctx->lo, ctx->os, consint(count(ctx->lo, adrent(ctx->lo, VS))));
     push(ctx->lo, ctx->os, consint(ctx->lo->used));
     push(ctx->lo, ctx->os, consint(ctx->lo->max));
 }
 
-void initopv(context *ctx, object sd) {
+void initopv(context *ctx,
+             object sd)
+{
     oper *optab;
     object n,op;
     assert(ctx->gl->base);

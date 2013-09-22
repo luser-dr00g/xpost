@@ -43,7 +43,8 @@ typedef struct {
 
 /* create a stack in slot VS.
    sz is 0 so gc will ignore it. */
-void initsave(mfile *mem) {
+void initsave (mfile *mem)
+{
     unsigned t;
     unsigned ent;
     mtab *tab;
@@ -56,7 +57,8 @@ void initsave(mfile *mem) {
 
 /* push a new save object on the save stack
    this object is itself a stack (contains a stackadr) */
-object save(mfile *mem) {
+object save (mfile *mem)
+{
     object v;
     v.tag = savetype;
     v.save_.lev = count(mem, adrent(mem, VS));
@@ -66,7 +68,9 @@ object save(mfile *mem) {
 }
 
 /* check ent's tlev against current save level (save-stack count) */
-unsigned stashed(mfile *mem, unsigned ent) {
+unsigned stashed (mfile *mem,
+                  unsigned ent)
+{
     //object sav = top(mem, adrent(mem, VS), 0);
     mtab *tab;
     unsigned cnt;
@@ -78,7 +82,9 @@ unsigned stashed(mfile *mem, unsigned ent) {
 }
 
 /* make a clone of ent, return new ent */
-unsigned copy(mfile *mem, unsigned ent) {
+unsigned copy(mfile *mem,
+              unsigned ent)
+{
     mtab *tab;
     unsigned new;
     unsigned tent = ent;
@@ -94,7 +100,9 @@ unsigned copy(mfile *mem, unsigned ent) {
 
 /* set tlev for ent to current save level
    push saverec relating ent to saved copy */
-void stash(mfile *mem, unsigned ent) {
+void stash(mfile *mem,
+           unsigned ent)
+{
     object sav = top(mem, adrent(mem, VS), 0);
     mtab *tab;
     unsigned rent = ent;
@@ -113,7 +121,8 @@ void stash(mfile *mem, unsigned ent) {
         exchange adrs between src and cpy
         pop saverec
     pop save stack */
-void restore(mfile *mem) {
+void restore(mfile *mem)
+{
     unsigned v;
     object sav;
     mtab *stab, *ctab;
@@ -143,20 +152,23 @@ void restore(mfile *mem) {
 
 mfile mf;
 
-void init(mfile *mem) {
+void init (mfile *mem)
+{
     initmem(mem, "x.mem");
     (void)initmtab(mem);
     initfree(mem);
     initsave(mem);
 }
 
-void show(char *msg, mfile *mem, object a) {
+void show (char *msg, mfile *mem, object a)
+{
     printf("%s ", msg);
     printf("%d ", arrget(mem, a, 0).int_.val);
     printf("%d\n", arrget(mem, a, 1).int_.val);
 }
 
-int main(void) {
+int main (void)
+{
     mfile *mem = &mf;
     object a;
     printf("\n^test v\n");

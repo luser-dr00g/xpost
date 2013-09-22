@@ -33,10 +33,12 @@ typedef bool _Bool;
 
 #define CNT_STR(s) sizeof(s)-1, s
 
-void dumpnames(context *ctx) {
+void dumpnames(context *ctx)
+{
     unsigned stk;
     unsigned cnt, i;
     char *s;
+
     stk = adrent(ctx->gl, NAMES);
     cnt = count(ctx->gl, stk);
     printf("global names:\n");
@@ -53,7 +55,8 @@ void dumpnames(context *ctx) {
     }
 }
 
-void initnames(context *ctx) {
+void initnames(context *ctx)
+{
     mtab *tab;
     unsigned ent;
     unsigned t;
@@ -89,7 +92,10 @@ void initnames(context *ctx) {
     ctx->vmmode = mode;
 }
 
-unsigned tstsearch(mfile *mem, unsigned tadr, char *s) {
+unsigned tstsearch(mfile *mem,
+                   unsigned tadr,
+                   char *s)
+{
     while (tadr) {
         tst *p = (void *)(mem->base + tadr);
         if ((unsigned)*s < p->val) {
@@ -104,9 +110,13 @@ unsigned tstsearch(mfile *mem, unsigned tadr, char *s) {
     return 0;
 }
 
-unsigned tstinsert(mfile *mem, unsigned tadr, char *s) {
+unsigned tstinsert(mfile *mem,
+                   unsigned tadr,
+                   char *s)
+{
     tst *p;
     unsigned t; //temporary
+
     if (!tadr) {
         tadr = mfalloc(mem, sizeof(tst));
         p = (void *)(mem->base + tadr);
@@ -134,10 +144,13 @@ unsigned tstinsert(mfile *mem, unsigned tadr, char *s) {
     return tadr;
 }
 
-unsigned addname(context *ctx, char *s) {
+unsigned addname(context *ctx,
+                 char *s)
+{
     mfile *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
     unsigned names = adrent(mem, NAMES);
     unsigned u = count(mem, names);
+
     //dumpmfile(ctx->gl);
     //dumpmtab(ctx->gl, 0);
     //unsigned vmmode = ctx->vmmode;
@@ -147,10 +160,13 @@ unsigned addname(context *ctx, char *s) {
     return u;
 }
 
-object consname(context *ctx, char *s) {
+object consname(context *ctx,
+                char *s)
+{
     unsigned u;
     unsigned t;
     object o;
+
     u = tstsearch(ctx->lo, adrent(ctx->lo, NAMET), s);
     if (!u) {
         u = tstsearch(ctx->gl, adrent(ctx->gl, NAMET), s);
@@ -177,7 +193,9 @@ object consname(context *ctx, char *s) {
     return o;
 }
 
-object strname(context *ctx, object n) {
+object strname(context *ctx,
+               object n)
+{
     mfile *mem = bank(ctx, n);
     unsigned names = adrent(mem, NAMES);
     object str = bot(mem, names, n.mark_.padw);

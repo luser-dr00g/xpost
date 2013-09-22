@@ -40,7 +40,8 @@ typedef struct {
 } stack;
 */
 
-unsigned initstack(mfile *mem) {
+unsigned initstack(mfile *mem)
+{
     unsigned adr = mfalloc(mem, sizeof(stack));
     stack *s = (void *)(mem->base + adr);
     s->nextseg = 0;
@@ -48,7 +49,9 @@ unsigned initstack(mfile *mem) {
     return adr;
 }
 
-void dumpstack(mfile *mem, unsigned stackadr) {
+void dumpstack(mfile *mem,
+               unsigned stackadr)
+{
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
     unsigned a;
@@ -64,7 +67,9 @@ void dumpstack(mfile *mem, unsigned stackadr) {
 }
 
 /* free a stack segment */
-void sfree(mfile *mem, unsigned stackadr) {
+void sfree(mfile *mem,
+           unsigned stackadr)
+{
     stack *s = (void *)(mem->base + stackadr);
     mtab *tab;
     unsigned e;
@@ -76,7 +81,9 @@ void sfree(mfile *mem, unsigned stackadr) {
     /* discard */
 }
 
-unsigned count(mfile *mem, unsigned stackadr) {
+unsigned count(mfile *mem,
+               unsigned stackadr)
+{
     stack *s = (void *)(mem->base + stackadr);
     unsigned ct = 0;
     while (s->top == STACKSEGSZ) {
@@ -86,7 +93,10 @@ unsigned count(mfile *mem, unsigned stackadr) {
     return ct + s->top;
 }
 
-void push(mfile *mem, unsigned stackadr, object o) {
+void push(mfile *mem,
+          unsigned stackadr,
+          object o)
+{
     stack *s = (void *)(mem->base + stackadr); /* load the stack */
 
     while (s->top == STACKSEGSZ) { /* find top segment */
@@ -110,7 +120,10 @@ void push(mfile *mem, unsigned stackadr, object o) {
 /* index the stack from top-down */
 /* n.b. this code can only reliably access
    STACKSEGSZ elements from the top */
-object top(mfile *mem, unsigned stackadr, integer i) {
+object top(mfile *mem,
+           unsigned stackadr,
+           integer i)
+{
     stack *s = (void *)(mem->base + stackadr);
     stack *p = NULL;
 
@@ -134,7 +147,10 @@ object top(mfile *mem, unsigned stackadr, integer i) {
 #endif
 
 /* index the stack from top-down */
-object top(mfile *mem, unsigned stacadr, integer i) {
+object top(mfile *mem,
+           unsigned stacadr,
+           integer i)
+{
     int cnt = count(mem, stacadr);
     return bot(mem, stacadr, cnt - 1 - i);
 }
@@ -142,7 +158,11 @@ object top(mfile *mem, unsigned stacadr, integer i) {
 #if 0
 /* index from top-down and put item there.
    the inverse of top. */
-void pot(mfile *mem, unsigned stackadr, integer i, object o) {
+void pot(mfile *mem,
+         unsigned stackadr,
+         integer i,
+         object o)
+{
     stack *s = (void *)(mem->base + stackadr);
     stack *p = NULL;
 
@@ -166,13 +186,20 @@ void pot(mfile *mem, unsigned stackadr, integer i, object o) {
 
 /* index from top-down and put item there.
    inverse of top. */
-void pot(mfile *mem, unsigned stacadr, integer i, object o) {
+void pot (mfile *mem,
+          unsigned stacadr,
+          integer i,
+          object o)
+{
     int cnt = count(mem, stacadr);
     tob(mem, stacadr, cnt - 1 - i, o);
 }
 
 /* index from bottom up */
-object bot(mfile *mem, unsigned stacadr, integer i) {
+object bot (mfile *mem,
+            unsigned stacadr,
+            integer i)
+{
     stack *s = (void *)(mem->base + stacadr);
 
     /* find desired segment */
@@ -185,7 +212,11 @@ object bot(mfile *mem, unsigned stacadr, integer i) {
 
 /* index from bottom-up and put item there.
    inverse of bot. */
-void tob(mfile *mem, unsigned stacadr, integer i, object o) {
+void tob (mfile *mem,
+          unsigned stacadr,
+          integer i,
+          object o)
+{
     stack *s = (void *)(mem->base + stacadr);
 
     /* find desired segment */
@@ -197,7 +228,9 @@ void tob(mfile *mem, unsigned stacadr, integer i, object o) {
     s->data[i] = o;
 }
 
-object pop(mfile *mem, unsigned stackadr) {
+object pop (mfile *mem,
+            unsigned stackadr)
+{
     stack *s = (void *)(mem->base + stackadr);
     stack *p = NULL;
 
@@ -224,18 +257,21 @@ mfile mem;
 unsigned s, t;
 
 /* initialize everything */
-void init(void) {
+void init (void)
+{
     pgsz = getpagesize();
     initmem(&mem, "x.mem");
     s = initstack(&mem);
     t = initstack(&mem);
 }
 
-void xit(void) {
+void xit (void)
+{
     exitmem(&mem);
 }
 
-int main() {
+int main()
+{
     init();
 
     printf("\n^test s.c\n");
