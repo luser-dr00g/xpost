@@ -21,12 +21,12 @@ typedef bool _Bool;
 #include <assert.h>
 #include <string.h>
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "itp.h"
-#include "gc.h"
-#include "v.h"
+#include "m.h"  // save/restore works with mtabs
+#include "ob.h"  // save/restore examines objects
+#include "s.h"  // save/restore manipulates (internal) stacks
+#include "itp.h"  //
+#include "gc.h"  //
+#include "v.h"  // double-check prototypes
 
 /*
 typedef struct {

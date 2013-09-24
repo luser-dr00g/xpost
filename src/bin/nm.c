@@ -23,13 +23,17 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
-#include "m.h"
-#include "ob.h"
-#include "gc.h"
-#include "s.h"
-#include "itp.h"
-#include "st.h"
-#include "nm.h"
+#include "m.h"  // name structures live in mfiles
+#include "ob.h"  // names are objects, with associated hidden string objects
+#include "gc.h"  // strings are allocated using gballoc
+#include "s.h"  // name strings live on a stack
+#include "itp.h"  // initialize interpreter to test
+#include "st.h"  // access string objects
+#include "nm.h"  // double-check prototypes
+
+static unsigned tstsearch(mfile *mem, unsigned tadr, char *s);
+static unsigned tstinsert(mfile *mem, unsigned tadr, char *s);
+static unsigned addname(context *ctx, char *s);
 
 #define CNT_STR(s) sizeof(s)-1, s
 
@@ -95,6 +99,7 @@ void initnames(context *ctx)
 }
 
 /* perform a search using the ternary search tree */
+static
 unsigned tstsearch(mfile *mem,
                    unsigned tadr,
                    char *s)
@@ -114,6 +119,7 @@ unsigned tstsearch(mfile *mem,
 }
 
 /* add a string to the ternary search tree */
+static
 unsigned tstinsert(mfile *mem,
                    unsigned tadr,
                    char *s)
@@ -149,6 +155,7 @@ unsigned tstinsert(mfile *mem,
 }
 
 /* add the name to the name stack, return index */
+static
 unsigned addname(context *ctx,
                  char *s)
 {

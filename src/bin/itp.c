@@ -25,28 +25,32 @@ typedef bool _Bool;
 #include <string.h>
 #include <unistd.h>
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "itp.h" /* context itp MAXCONTEXT MAXMFILE */
-#include "err.h"
-#include "st.h"
-#include "ar.h"
-#include "gc.h"
-#include "v.h"
-#include "nm.h"
-#include "di.h"
-#include "f.h"
-#include "op.h"
-#include "optok.h"
-#include "opdi.h"
+#include "m.h"  // itp contexts contain mfiles and mtabs
+#include "ob.h"  // eval functions examine objects
+#include "s.h"  // eval functions manipulate stacks
+#include "itp.h" // uses: context itp MAXCONTEXT MAXMFILE
+#include "err.h"  // interpreter catches errors
+#include "st.h"  // eval functions examine strings
+#include "ar.h"  // eval functions examine arrays
+#include "gc.h"  // interpreter initializes garbage collector
+#include "v.h"  // interpreter initializes save/restore stacks
+#include "nm.h"  // eval functions examine names
+#include "di.h"  // eval functions examine dicts
+#include "f.h"  // eval functions examine files
+#include "op.h"  // eval functions call operators
+#include "optok.h"  // token operator functions
+#include "opdi.h"  // dictionary operator functions
 
 int TRACE = 0;
 itp *itpdata;
 int initializing = 0;
 
-static
-unsigned makestack(mfile *mem);
+static unsigned makestack(mfile *mem);
+void eval(context *ctx);
+void mainloop(context *ctx);
+void dumpctx(context *ctx);
+void init(void);
+void xit(void);
 
 /* build a stack, return address */
 static
@@ -307,16 +311,16 @@ unsigned fork3(context *ctx)
 
 
 /* initialize itp */
-void inititp(itp *itp)
+void inititp(itp *itpptr)
 {
-    initcontext(&itp->ctab[0]);
-    itp->cid = itp->ctab[0].id;
+    initcontext(&itpptr->ctab[0]);
+    itpptr->cid = itpptr->ctab[0].id;
 }
 
 /* destroy itp */
-void exititp(itp *itp)
+void exititp(itp *itpptr)
 {
-    exitcontext(&itp->ctab[0]);
+    exitcontext(&itpptr->ctab[0]);
 }
 
 
@@ -555,7 +559,7 @@ void init(void)
     ctx = &itpdata->ctab[0];
 }
 
-void xit()
+void xit(void)
 {
     exititp(itpdata);
     exit(0);

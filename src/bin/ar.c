@@ -20,14 +20,16 @@ typedef bool _Bool;
 
 #include <assert.h>
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "gc.h"
-#include "v.h"
-#include "itp.h"
-#include "err.h"
-#include "ar.h"
+#include "m.h"  // arrays live in mfile, accessed via mtab
+#include "ob.h"  // array is an object, containing objects
+#include "s.h"  // may count the save stack
+#include "gc.h"  // arrays are garbage collected
+#include "v.h"  // arrays obey save/restore
+#include "itp.h"  // banked arrays may be in global or local mfiles
+#include "err.h"  // array functions may throw errors
+#include "ar.h"  // double-check prototypes
+
+
 
 /* Allocate an entity with gballoc,
    find the appropriate mtab,

@@ -23,16 +23,16 @@ typedef bool _Bool;
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "itp.h"
-#include "err.h"
-#include "st.h"
-#include "gc.h"
-#include "nm.h"
-#include "di.h"
-#include "op.h"
+#include "m.h"  // accesses mfile
+#include "ob.h"  // operators are objects
+#include "s.h"  // uses a stack for argument passing
+#include "itp.h"  // works with context struct
+#include "err.h"  // operator functions may throw errors
+#include "st.h"  // uses string function to dump operator name
+#include "gc.h"  // allocate using gballoc
+#include "nm.h"  // operator objects have associated names
+#include "di.h"  // install operators in systemdict, a dict
+#include "op.h"  // double-check prototypes
 
 static object promote(object o);
 

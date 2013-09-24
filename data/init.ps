@@ -1,5 +1,16 @@
+%init.ps is run before systemdict is made readonly
+%
+
 %procedures in systemdict
 (loading init.ps...\n) print
+
+/DATA_DIR {
+    /PACKAGE_DATA_DIR dup where {
+        exch get
+    }{
+        pop (../../data)
+    } ifelse
+} def
 
 %(35\n) print
 %currentfile flushfile
@@ -48,7 +59,8 @@ true setglobal
 %} stopped {cleartomark} if
 %exch strcat Run
 %(../../data)
-PACKAGE_DATA_DIR
+
+DATA_DIR
 (/err.ps)
 strcat
 run
@@ -220,10 +232,7 @@ end % systemdict
 
 userdict begin
 
-%(../../data)
-PACKAGE_DATA_DIR
-(/qsort.ps)
-strcat
+DATA_DIR (/qsort.ps) strcat
 run
 
 % (s1) (s2) (s3) ... (sN) n  ncat  (s1s2s3...sN)
@@ -247,12 +256,27 @@ run
 
 
 % Named Resources
-/resourcesdict <<
+true setglobal
+globaldict begin
+/globalresourcedict <<
     /Category <<
-        /Generic <<
-        >>
+    >>
+    /Generic <<
+    >>
+    /ProcSet <<
     >>
 >> def
+end
+
+false setglobal
+userdict begin
+/localresourcedict <<
+    /Encoding <<
+        /StandardEncoding [ ]
+        /ISOLatin1Encoding [ ]
+    >>
+>> def
+end
 
 % key instance category  defineresource  instance
 /defineresource {
@@ -288,11 +312,12 @@ run
 
         2 index dup length string cvs % c cat k (category)
         1 index dup length string cvx % c cat k (category) (key)
-        (Resources) DIRSEP 4 3 roll % c cat k (key) (Res)(/)(cat)
+        DATA_DIR (/Resources) strcat
+        DIRSEP 4 3 roll % c cat k (key) (Res)(/)(cat)
         DIRSEP 5 4 roll % c cat k (Res)(/)(cat)(/)(key)
         (*) 6 ncat % c cat k (Res/cat/key*)
         [ exch
-        {} 128 string filenameforall
+        {dup length string copy} 128 string filenameforall
         ] % [list-of-potential-resources]
         dup {gt} qsort % [sorted-list]
         0 get % greatest-sorted-key-match

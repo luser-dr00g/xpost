@@ -50,17 +50,19 @@ typedef bool _Bool;
 #include <stdlib.h> /* malloc */
 #include <stdio.h>
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "gc.h"
-#include "v.h"
-#include "itp.h"
-#include "err.h"
-#include "st.h"
-#include "nm.h"
-#include "di.h"
+#include "m.h"  // dicts live in mfile, accessed via mtab
+#include "ob.h"  // dict is an object, containing objects
+#include "s.h"  // may need to count the save stack
+#include "gc.h"  // dicts are garbage collected
+#include "v.h"  // dicts obey save/restore
+#include "itp.h"  // banked dicts may live in global or local vm
+#include "err.h"  // dict functions may throw errors
+#include "st.h"  // may need string functions (convert to name)
+#include "nm.h"  // may need name functions (create name)
+#include "di.h"  // double-check prototypes
 
+object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k);
+void dicundef(context *ctx, mfile *mem, object d, object k);
 
 
 
