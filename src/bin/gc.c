@@ -23,19 +23,21 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "itp.h"
-#include "ar.h"
-#include "st.h"
-#include "di.h"
-#include "v.h"
-#include "gc.h"
+#include "m.h"  // garbage collector works with mtab and mfile
+#include "ob.h"  // collector examines objects
+#include "s.h"  // collector examines stacks
+#include "itp.h"  // collector can determine whether mfile is local or global
+#include "ar.h"  // collector examines arrays
+#include "st.h"  // string
+#include "di.h"  // collector examines dicts
+#include "v.h"  // collector examines the save stacks
+#include "gc.h"  // double-check prototypes
 
 #ifdef TESTMODULE_GC
 #include <stdio.h>
 #endif
+
+void dumpfree(mfile *mem);
 
 /* iterate through all tables,
     clear the MARK in the mark. */

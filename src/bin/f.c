@@ -26,12 +26,12 @@ typedef bool _Bool;
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "m.h"
-#include "ob.h"
-#include "gc.h"
-#include "itp.h"
-#include "err.h"
-#include "f.h"
+#include "m.h"  // files store FILE*s in (local) mfile
+#include "ob.h"  // files are objects
+#include "gc.h"  // files data allocated with gballoc
+#include "itp.h"  // interpreter
+#include "err.h"  // file functions may throw errors
+#include "f.h"  // double-check prototypes
 
 /* filetype objects use a slightly different interpretation
    of the access flags.
@@ -191,7 +191,9 @@ object fileopen(mfile *mem,
     return f;
 }
 
-/* yield the FILE* from a filetype object */
+/* adapter:
+           FILE* <- filetype object
+   yield the FILE* from a filetype object */
 FILE *filefile(mfile *mem,
                object f)
 {

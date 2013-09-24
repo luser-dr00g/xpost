@@ -38,12 +38,14 @@ typedef bool _Bool;
 
 
 
-#include "m.h"
-#include "ob.h"
-#include "itp.h"
-#include "err.h"
+#include "m.h"  // double-check prototypes
+#include "ob.h"  // mfiles contain objects
+#include "itp.h"  // initialize interpreter to test
+#include "err.h"  // memory functions may throw errors
 
 unsigned pgsz /*= getpagesize()*/ = 4096;
+
+int getmemfile(char *fname);
 
 /*
 typedef struct {
@@ -184,10 +186,11 @@ mfile *growmem(mfile *mem,
 {
     void *tmp;
 
-    printf("growmem: %p %u + %u\n", mem, mem->max, sz);
+    printf("growmem: %p %u + %u\n", mem->base, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
     else sz = (sz/pgsz + 1) * pgsz;
     sz += mem->max;
+    printf("growmem: new size: %u\n", sz);
 #ifdef HAVE_MMAP
 # ifdef HAVE_MREMAP
     tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
@@ -216,8 +219,8 @@ unsigned mfalloc(mfile *mem,
     unsigned adr = mem->used;
 
     if (sz) {
-        if (sz + mem->used >=
-                mem->max) mem = growmem(mem,sz);
+        if (sz + mem->used >= mem->max)
+            mem = growmem(mem,sz);
         mem->used += sz;
         memset(mem->base+adr, 0, sz);  //bzero(mem->base+adr, sz);
         /* bus error with mremap(SHARED,ANON)! */

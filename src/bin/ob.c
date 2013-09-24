@@ -22,7 +22,9 @@ typedef bool _Bool;
 
 #include <stdio.h>
 
-#include "ob.h"
+#include "ob.h" // double-check prototypes
+
+void dumpcompobject(object o);
 
 /* printable strings corresponding to enum types */
 char *types[] = {
