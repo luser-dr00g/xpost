@@ -50,8 +50,9 @@ typedef bool _Bool;
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
-#define PI (4.0 * atan(1.0))
-double RAD_PER_DEG /* = PI / 180.0 */;
+//#define PI (4.0 * atan(1.0))
+//double RAD_PER_DEG /* = PI / 180.0 */;
+#define RAD_PER_DEG (M_PI / 180.0)
 
 #include "m.h"
 #include "ob.h"
@@ -386,7 +387,7 @@ void initopm (context *ctx,
     object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
-    RAD_PER_DEG = PI / 180.0;
+    //RAD_PER_DEG = PI / 180.0;
 
     op = consoper(ctx, "add", Iadd, 1, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "add", Radd, 1, 2, floattype, floattype); INSTALL;

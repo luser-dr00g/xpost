@@ -35,19 +35,6 @@ typedef bool _Bool;
 #include "ops.h"
 #include "opar.h"
 
-static void a_copy (context *ctx, object S, object D);
-static void Iarray (context *ctx, object I);
-extern void arrtomark (context *ctx);
-static void Alength (context *ctx, object A);
-static void Aget (context *ctx, object A, object I);
-static void Aput(context *ctx, object A, object I, object O);
-static void Agetinterval (context *ctx, object A, object I, object L);
-static void Aputinterval (context *ctx, object D, object I, object S);
-static void Aaload (context *ctx, object A);
-static void Aastore (context *ctx, object A);
-static void Acopy (context *ctx, object S, object D);
-static void Aforall(context *ctx, object A, object P);
-extern void initopar (context *ctx, object sd);
 
 /* helper function */
 static

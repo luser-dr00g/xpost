@@ -34,7 +34,6 @@ typedef bool _Bool;
 #include "di.h"  // install operators in systemdict, a dict
 #include "op.h"  // double-check prototypes
 
-static object promote(object o);
 
 /* convert an integertype object to a realtype object */
 static

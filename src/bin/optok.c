@@ -104,7 +104,7 @@ struct {
 
 test fsm_dec[] = {
     /*  int pred(int), y,  n */
-    /*        ------   -   -
+    /*       -------- --  -- */
     /* 0 */ { issign,  1,  1 },
     /* 1 */ { isdigit, 2, -1 },
     /* 2 */ { isdigit, 2, -1 } };

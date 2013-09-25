@@ -37,7 +37,6 @@ typedef bool _Bool;
 #include <stdio.h>
 #endif
 
-void dumpfree(mfile *mem);
 
 /* iterate through all tables,
     clear the MARK in the mark. */
