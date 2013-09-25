@@ -41,6 +41,9 @@ AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
 # C compiler
 AC_PROG_CC_C99
 
+# documentation
+XPOST_CHECK_DOXYGEN([build_doc="yes"], [build_doc="no"])
+
 # splint
 AC_CHECK_PROG([SPLINT], [splint], [splint], [none])
 
@@ -105,6 +108,7 @@ echo "Configuration Options Summary:"
 echo
 echo "  OS...................: ${host_os}"
 echo
+echo "  Documentation........: ${enable_doc}"
 if test "x${SPLINT}" = "xnone" ; then
 echo "  splint...............: no"
 else
