@@ -102,6 +102,7 @@ void Sputinterval(context *ctx,
     s_copy(ctx, S, arrgetinterval(D, I.int_.val, S.comp_.sz));
 }
 
+static
 int ancsearch(char *str,
               char *seek,
               int seekn)

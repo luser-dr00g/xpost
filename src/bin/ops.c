@@ -58,12 +58,6 @@ typedef bool _Bool;
 #include "op.h"
 #include "ops.h"
 
-static void Apop (context *ctx, object q);
-static void AAexch (context *ctx, object x, object y);
-static void Adup (context *ctx, object x);
-static void IIroll (context *ctx, object N, object J);
-void Zcounttomark (context *ctx);
-void initops(context *ctx, object sd);
 
 /* any  pop  -
    discard top element */

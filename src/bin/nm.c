@@ -31,10 +31,6 @@ typedef bool _Bool;
 #include "st.h"  // access string objects
 #include "nm.h"  // double-check prototypes
 
-static unsigned tstsearch(mfile *mem, unsigned tadr, char *s);
-static unsigned tstinsert(mfile *mem, unsigned tadr, char *s);
-static unsigned addname(context *ctx, char *s);
-
 #define CNT_STR(s) sizeof(s)-1, s
 
 /* print a dump of the name string stacks, global and local */

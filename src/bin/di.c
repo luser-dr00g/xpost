@@ -61,9 +61,6 @@ typedef bool _Bool;
 #include "nm.h"  // may need name functions (create name)
 #include "di.h"  // double-check prototypes
 
-object *diclookup(context *ctx, /*@dependent@*/ mfile *mem, object d, object k);
-void dicundef(context *ctx, mfile *mem, object d, object k);
-
 
 
 /*
@@ -408,6 +405,7 @@ object clean_key (context *ctx,
 /* perform a hash-assisted lookup.
    returns a pointer to the desired pair (if found)), or a null-pair. */
 /*@dependent@*/ /*@null@*/
+static
 object *diclookup(context *ctx,
         /*@dependent@*/ mfile *mem,
         object d,

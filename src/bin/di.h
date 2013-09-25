@@ -62,6 +62,7 @@ void dicput(context *ctx, /*@dependent@*/ mfile *mem, object d, object k, object
 void bdcput(context *ctx, object d, object k, object v);
 
 /* undefine key */
+void dicundef(context *ctx, mfile *mem, object d, object k);
 void bdcundef(context *ctx, object d, object k);
 
 #endif

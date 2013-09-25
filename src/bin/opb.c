@@ -80,6 +80,7 @@ void Ane (context *ctx,
 
 /* any1 any2  ge  bool
    test greater or equal */
+static
 void Age (context *ctx,
           object x,
           object y)
@@ -99,6 +100,7 @@ void Agt (context *ctx,
 
 /* any1 any2  le  bool
    test less or equal */
+static
 void Ale (context *ctx,
           object x,
           object y)
@@ -118,6 +120,7 @@ void Alt (context *ctx,
 
 /* bool1|int1 bool2|int2  and  bool3|int3
    logical|bitwise and */
+static
 void Band (context *ctx,
            object x,
            object y)

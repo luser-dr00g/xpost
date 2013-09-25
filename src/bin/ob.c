@@ -18,19 +18,21 @@ typedef bool _Bool;
 # define __bool_true_false_are_defined 1
 #endif
 
-//#define TESTMODULE
 
 #include <stdio.h>
 
 #include "ob.h" // double-check prototypes
 
-void dumpcompobject(object o);
 
 /* printable strings corresponding to enum types */
 char *types[] = {
     TYPES(AS_TYPE_STR)
     "invalid"
 };
+
+/*
+   Manipulating the tag field in an object
+*/
 
 /* is object executable? */
 int isx(object o)
@@ -97,6 +99,11 @@ object cvlit(object o)
     return o;
 }
 
+
+/*
+   Constructors for simple types
+*/
+
 /* null and mark are both global objects */
 // null, mark
 SINGLETONS(DEFINE_SINGLETON)
@@ -131,7 +138,13 @@ object consreal(real r)
     return cvlit(o);
 }
 
+
+/*
+   Dump data
+*/
+
 /* print a dump of the fields in a composite object */
+static
 void dumpcompobject(object o)
 {
     printf(" %c %u %u %u %u>",

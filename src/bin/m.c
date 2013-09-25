@@ -45,7 +45,6 @@ typedef bool _Bool;
 
 unsigned pgsz /*= getpagesize()*/ = 4096;
 
-int getmemfile(char *fname);
 
 /*
 typedef struct {
@@ -97,6 +96,7 @@ void dumpmfile(mfile *mem)
 #endif
 
 /* memfile exists in path */
+static
 int getmemfile(char *fname)
 {
     int fd;
