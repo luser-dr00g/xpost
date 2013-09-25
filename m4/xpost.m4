@@ -131,3 +131,51 @@ if test "${have_flag}" != "yes"; then
 m4_foreach_w([flag], [$2], [_XPOST_CHECK_LINKER_FLAGS([$1], m4_defn([flag]))])
 fi
 ])dnl
+
+dnl XPOST_CHECK_DOXYGEN([ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
+dnl Test for the doxygen program
+dnl Defines DOXYGEN
+dnl Defines the automake conditionnal XPOST_BUILD_DOC
+dnl
+AC_DEFUN([XPOST_CHECK_DOXYGEN],
+[
+
+DOXYGEN="doxygen"
+
+AC_ARG_ENABLE([doc],
+   AC_HELP_STRING(
+      [--disable-doc],
+      [Disable the build of the documentation @<:@default=yes@:>@]),
+   [if test "${disable_doc}" = "yes" ; then
+       enable_doc="no"
+    else
+       enable_doc="yes"
+    fi],
+   [enable_doc="yes"]
+)
+
+AC_ARG_WITH([doxygen],
+   [AC_HELP_STRING(
+      [--with-doxygen=FILE],
+      [doxygen program to use @<:@default=doxygen@:>@])],
+   [DOXYGEN=${withval}],
+   [DOXYGEN="doxygen"])
+
+if test "x${enable_doc}" = "xyes" ; then
+   AC_CHECK_PROG([BUILD_DOCS], [${DOXYGEN}], [${DOXYGEN}], [none])
+   if test "x${BUILD_DOCS}" = "xnone" ; then
+      AC_MSG_WARN([doxygen requested but not found. Please check PATH or Doxygen program name])
+   fi
+fi
+
+
+dnl
+dnl Substitution
+dnl
+AC_SUBST([DOXYGEN])
+
+AM_CONDITIONAL([XPOST_BUILD_DOC], [test "x${BUILD_DOCS}" != "xnone"])
+
+AS_IF([test "x${BUILD_DOCS}" != "xnone"], [$1], [$2])
+
+])
