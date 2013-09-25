@@ -108,7 +108,7 @@ echo "Configuration Options Summary:"
 echo
 echo "  OS...................: ${host_os}"
 echo
-echo "  Documentation........: ${enable_doc}"
+echo "  Documentation........: ${enable_doc} (make doc)"
 if test "x${SPLINT}" = "xnone" ; then
 echo "  splint...............: no"
 else
