@@ -424,12 +424,9 @@ void initopf (context *ctx,
 {
     oper *optab;
     object n,op;
+
     assert(ctx->gl->base);
-//#ifndef HAVE_WIN32
-    // make sure it fits in the slot where it's stored,
-    // if not, it won't work. TODO store pointer differently.
-    assert(sizeof(glob_t *) <= 4);
-//#endif
+
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype); INSTALL;
