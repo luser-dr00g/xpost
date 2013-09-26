@@ -41,6 +41,10 @@ AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
 # C compiler
 AC_PROG_CC_C99
 
+if test "x${ac_cv_prog_cc_c99}" = "xno" ; then
+   AC_MSG_ERROR([Can not find a C99 compliant compiler. Exiting...])
+fi
+
 # documentation
 XPOST_CHECK_DOXYGEN([build_doc="yes"], [build_doc="no"])
 
