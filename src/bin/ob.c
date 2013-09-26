@@ -24,7 +24,10 @@ typedef bool _Bool;
 #include "ob.h" // double-check prototypes
 
 
-/* printable strings corresponding to enum types */
+/*! \def char *types[]
+  printable strings corresponding to enum types
+*/
+
 char *types[] = {
     TYPES(AS_TYPE_STR)
     "invalid"
@@ -34,25 +37,33 @@ char *types[] = {
    Manipulating the tag field in an object
 */
 
-/* is object executable? */
+/*! \fn int isx(object o)
+  is object executable?
+*/
 int isx(object o)
 {
     return !(o.tag &FLIT);
 }
 
-/* is object literal? */
+/*! \fn int islit(object o)
+  is object literal?
+*/
 int islit(object o)
 {
     return o.tag & FLIT;
 }
 
-/* return the ACCESS field for object */
+/*! \fn int faccess(object o)
+   return the ACCESS field for object
+*/
 int faccess(object o)
 {
     return (o.tag & FACCESS) >> FACCESSO;
 }
 
-/* set the ACCESS field for object, returns new object */
+/*! \fn object setfaccess(object o, int access)
+  set the ACCESS field for object, returns new object
+*/
 object setfaccess(object o,
                   int access)
 {
@@ -61,7 +72,9 @@ object setfaccess(object o,
     return o;
 }
 
-/* does the object have read access? */
+/*! \fn int isreadable(object o)
+  does the object have read access?
+*/
 int isreadable(object o)
 {
     if (type(o) == filetype) {
@@ -71,28 +84,36 @@ int isreadable(object o)
     }
 }
 
-/* does the object have write access? */
+/*! \fn int iswriteable(object o)
+  does the object have write access?
+*/
 int iswriteable(object o)
 {
     return faccess(o) == unlimited;
 }
 
-/* return the type from the tag with all flags masked-off */
+/*! \fn int type(object o)
+  return the type from the tag with all flags masked-off
+*/
 int type(object o)
 {
     return o.tag & TYPEMASK;
 }
 
-/* convert to executable
-   removes the literal flag in the object, returns new object */
+/*! \fn object cvx(object o)
+  convert to executable
+   removes the literal flag in the object, returns new object
+*/
 object cvx(object o)
 {
     o.tag &= ~FLIT;
     return o;
 }
 
-/* convert to literal
-   sets the literal flag in the object, returns new object */
+/* \fn object cvlit(object o)
+   convert to literal
+   sets the literal flag in the object, returns new object
+*/
 object cvlit(object o)
 {
     o.tag |= FLIT;
@@ -108,7 +129,9 @@ object cvlit(object o)
 // null, mark
 SINGLETONS(DEFINE_SINGLETON)
 
-/* construct a booleantype object */
+/*! \fn object consbool(bool b)
+  construct a booleantype object
+ */
 object consbool(bool b)
 {
     object o;
@@ -118,7 +141,9 @@ object consbool(bool b)
     return cvlit(o);
 }
 
-/* construct an integertype object */
+/*! \fn object consint(integer i)
+   construct an integertype object
+ */
 object consint(integer i)
 {
     object o;
@@ -128,7 +153,9 @@ object consint(integer i)
     return cvlit(o);
 }
 
-/* construct a realtype object */
+/*! \fn object consreal(real r)
+  construct a realtype object
+ */
 object consreal(real r)
 {
     object o;
@@ -155,7 +182,9 @@ void dumpcompobject(object o)
             (unsigned int)o.comp_.off);
 }
 
-/* print a dump of the object fields and contents */
+/*! \fn void dumpobject(object o)
+  print a dump of the object fields and contents
+*/
 void dumpobject(object o)
 {
     switch(type(o)) {
