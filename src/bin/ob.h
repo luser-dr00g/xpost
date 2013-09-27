@@ -5,7 +5,7 @@
     \brief define the basic 8-byte object structure
 */
 
-#ifdef LARGEOBJECT
+#ifdef WANT_LARGE_OBJECT
 typedef unsigned char byte;
 typedef uint32_t word;
 typedef uint64_t dword;
