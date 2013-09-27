@@ -1,3 +1,6 @@
+/*! \file ob.c
+   simple object functions
+*/
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -38,7 +41,8 @@ char *types[] = {
 */
 
 /*! \fn int isx(object o)
-  is object executable?
+  masks the FLIT (Literal flag) with the tag and performs
+  a logical NOT. excutable means NOT having the FLIT flag set.
 */
 int isx(object o)
 {
@@ -46,7 +50,10 @@ int isx(object o)
 }
 
 /*! \fn int islit(object o)
-  is object literal?
+  masks the FLIT (Literal flag) with the tag.
+  0 is false, but true is FLIT, not 1.
+  Thus all operations using these flag functions
+  should work on zero/non-zero, don't assume true is 1.
 */
 int islit(object o)
 {
@@ -54,7 +61,11 @@ int islit(object o)
 }
 
 /*! \fn int faccess(object o)
-   return the ACCESS field for object
+   mask the FACCESS (Access Mask) with the tag, and shift the result
+   by FACCESSO (Access bit-Offset) to return just the (2-) bit field.
+   
+   A general description of the access flag behavior is at
+https://groups.google.com/d/topic/comp.lang.postscript/ENxhFBqwgq4/discussion
 */
 int faccess(object o)
 {
@@ -62,7 +73,8 @@ int faccess(object o)
 }
 
 /*! \fn object setfaccess(object o, int access)
-  set the ACCESS field for object, returns new object
+   clear the FACCESS with an inverse mask.
+   OR-in the new access field, shifted up by FACCESSO.
 */
 object setfaccess(object o,
                   int access)
@@ -73,7 +85,11 @@ object setfaccess(object o,
 }
 
 /*! \fn int isreadable(object o)
-  does the object have read access?
+  check the access permissions, specially for filetypes.
+  regular objects have read access if the value is greater
+  than executeonly.
+  filetype objects have read access only if the value is
+  equal to readonly.
 */
 int isreadable(object o)
 {
@@ -85,7 +101,8 @@ int isreadable(object o)
 }
 
 /*! \fn int iswriteable(object o)
-  does the object have write access?
+  check the access permissions.
+  an object is writeable if its access value is equal to unlimited.
 */
 int iswriteable(object o)
 {
@@ -93,7 +110,7 @@ int iswriteable(object o)
 }
 
 /*! \fn int type(object o)
-  return the type from the tag with all flags masked-off
+  return the tag ANDed with TYPEMASK which removes the flags.
 */
 int type(object o)
 {
@@ -101,8 +118,8 @@ int type(object o)
 }
 
 /*! \fn object cvx(object o)
-  convert to executable
-   removes the literal flag in the object, returns new object
+  removes the FLIT (literal flag) in the object
+  with an inverse mask, returns modified object
 */
 object cvx(object o)
 {
@@ -112,7 +129,8 @@ object cvx(object o)
 
 /* \fn object cvlit(object o)
    convert to literal
-   sets the literal flag in the object, returns new object
+   ORs-in the FLIT (literal flag) in the object's tag,
+   returns modified object
 */
 object cvlit(object o)
 {
@@ -130,7 +148,10 @@ object cvlit(object o)
 SINGLETONS(DEFINE_SINGLETON)
 
 /*! \fn object consbool(bool b)
-  construct a booleantype object
+  set the type to booleantype, and set unlimited access.
+  set the pad to 0.
+  set the value to the argument b.
+  return the object as literal.
  */
 object consbool(bool b)
 {
@@ -142,7 +163,10 @@ object consbool(bool b)
 }
 
 /*! \fn object consint(integer i)
-   construct an integertype object
+   set the type to integertype, and set unlimited access.
+   set the pad to 0.
+   set the value to the argument i.
+   return the object as literal.
  */
 object consint(integer i)
 {
@@ -154,7 +178,10 @@ object consint(integer i)
 }
 
 /*! \fn object consreal(real r)
-  construct a realtype object
+  set the type to realtype, and set unlimited access.
+  set the pad to 0.
+  set the value to the argument r.
+  return the object as literal.
  */
 object consreal(real r)
 {
@@ -170,7 +197,10 @@ object consreal(real r)
    Dump data
 */
 
-/* print a dump of the fields in a composite object */
+/*
+   print a dump of the fields in a composite object.
+   just the trailing part, common to stringtype, arraytype, dicttype.
+ */
 static
 void dumpcompobject(object o)
 {
@@ -183,7 +213,6 @@ void dumpcompobject(object o)
 }
 
 /*! \fn void dumpobject(object o)
-  print a dump of the object fields and contents
 */
 void dumpobject(object o)
 {

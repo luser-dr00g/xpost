@@ -49,7 +49,7 @@ typedef dword addr;  //hmm... should probably use this more. :)
 
 #define AS_TYPE(_) \
     _ ## type ,
-enum {
+enum types {
     TYPES(AS_TYPE)
     NTYPES
 };
