@@ -17,6 +17,21 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 ### Additional options to configure
 
+AC_ARG_ENABLE([large-object],
+   [AS_HELP_STRING([--enable-large-object], [enable use of large object @<:@default=no@:>@])],
+   [
+    if test "x${enableval}" = "xyes" ; then
+       enable_large_object="yes"
+    else
+       enable_large_object="no"
+    fi
+   ],
+   [enable_large_object="no"])
+
+if test "x${enable_large_object}" = "xyes" ; then
+   AC_DEFINE([WANT_LARGE_OBJECT], [1], [Define to 1 if large object are wanted])
+fi
+
 
 ### Default options with respect to host
 
