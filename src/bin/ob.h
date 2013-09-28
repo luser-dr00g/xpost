@@ -1,8 +1,12 @@
 #ifndef XPOST_OB_H
 #define XPOST_OB_H
 
-/*! \file ob.h
-    \brief define the basic 8-byte object structure
+/**
+ * @file ob.h
+ * @brief The file defines the basic 8-byte object structure.
+ * @defgroup xpost_object Object structure
+ *
+ * @{
 */
 
 #ifdef WANT_LARGE_OBJECT
@@ -65,19 +69,19 @@ enum types {
 extern
 char *types[] /*= { TYPES(AS_TYPE_STR) "invalid"}*/ ;
 
-/*! \def enum tagdata
-    \brief bitmasks and bitshift-positions for the flags in the tag
-*/
-
+/**
+ * @enum tagdata
+ * @brief Bitmasks and bitshift-positions for the flags in the tag.
+ */
 enum tagdata {
     TYPEMASK = 0x000F,
-    FVALID =   0x0010, /* for 'anytype' operator pattern (7/9/2013: TODO wtf is this??) */
+    FVALID =   0x0010, /**< for 'anytype' operator pattern (7/9/2013: TODO wtf is this??) */
     FACCESS =  0x0060,
-    FACCESSO = 5,  /* bitwise offset of the ACCESS field */
+    FACCESSO = 5,  /**< bitwise offset of the ACCESS field */
     FLIT =     0x0080,
     FBANK =    0x0100, /* 0=local, 1=global */
- EXTENDEDINT = 0x0200,
-EXTENDEDREAL = 0x0400,
+    EXTENDEDINT = 0x0200,
+    EXTENDEDREAL = 0x0400,
 };
 
 /*! \def enum faccess
@@ -204,22 +208,37 @@ typedef union {
     glob_ glob_;
 } object;
 
-/*! \fn int type(object o)
-    \brief return the object's type, ie. the tag with flags masked-off
+/**
+ * @brief Return the object's type, ie. the tag with flags masked-off.
+ *
+ * @param o The object.
+ * @return The type of the object.
+ *
+ * This function returns the type of the object @p o, that is the tag
+ * with flags masked-off.
 */
-
 int type(object o);
 
-/*! \fn int isx(object o)
-    \brief return non-zero if the object is executable, zero if not
-*/
-
+/**
+ * @brief Check whether the object is executable or not.
+ *
+ * @param o The object.
+ * @return 1 if the object is executabe, 0 otherwise.
+ *
+ * This function returns 1 if the object @p o is executable, 0
+ * otherwise.
+ */
 int isx(object o);
 
-/*! \fn int islit(object o)
-    \brief return non-zero if the object is literal, zero if not
-*/
-
+/**
+ * @brief Check whether the object is literal or not.
+ *
+ * @param o The object.
+ * @return 1 if the object is literal, 0 otherwise.
+ *
+ * This function returns 1 if the object @p o is literal, 0
+ * otherwise.
+ */
 int islit(object o);
 
 /*! \fn int faccess(object o)
@@ -296,5 +315,9 @@ object cvlit(object o);
 */
 
 void dumpobject(object o);
+
+/**
+ * @}
+ */
 
 #endif
