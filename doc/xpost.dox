@@ -52,6 +52,9 @@ make install
  *
  * @subsection xpost_make_rules Make rules
  *
+ * @li doc : build documentation
+ * @li splint : run splint, the static analyser
+ * @li count : display the number of lines of code, using the wc tool
  * @li maintainer-clean : get back to the state after a checkout
  * @li distcheck : build tar balls
  */
