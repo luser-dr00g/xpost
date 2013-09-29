@@ -1,0 +1,20 @@
+[The original README has moved to doc/INTERNALS.]
+
+Xpost3 is undergoing rapid changes in the direction of portability
+under the skillful care and guidance of contributor Vincent Torri.
+
+
+
+Quick Installation Instructions.
+----- ------------ -------------
+
+Currently the intepreter source is in src/bin and the commands
+  ./autogen.sh (or ./configure if autogen.sh has already been launched)
+  make
+will create the interpreter binary itp(.exe)? in src/bin.
+  make install
+will install the application, so itp can be run as a command.
+
+
+
+Many more installation and configuration options desribed in ./INSTALL.

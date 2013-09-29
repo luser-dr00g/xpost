@@ -1,0 +1,57 @@
+/**
+ * @mainpage xpost_main xpost
+ * @author luser
+ * @date 2013
+ *
+ * @section xpost_intro Introduction
+ *
+ * Xpost is an interpreter for the postscript language level-one
+ * (working on level-two) as defined by the first edition (& second
+ * edition) of the Adobe postscript manual. The ultimate goal is to
+ * extend xpost into a postscript based window-system and debugging
+ * environment, a clone of NeWS. The dead system that was so great
+ * that even 18 years after its end-of-line, nobody's willing to sell
+ * their old manuals.
+ *
+ * @section xpost_getting Getting xpost
+ *
+ * Xpost source code is hosted in Google Code at the address
+ * http://code.google.com/p/xpost/. It can be checked out with
+ * mercurial, see http://code.google.com/p/xpost/source/checkout.
+ *
+ * @section xpost_compilation Compilation and installation
+ *
+ * @subsection xpost_configuration Configuration
+ *
+ * @verbatim
+./autogen.sh
+   @endverbatim
+ *
+ * To configuring it the following times:
+ *
+ * @verbatim
+./configure
+   @endverbatim
+ *
+ * @subsection xpost_compilation Compilation
+ *
+   @verbatim
+make -j5
+   @endverbatim
+ *
+ * @subsection xpost_installation Installation
+ *
+ * @verbatim
+make install
+   @endverbatim
+ *
+ * @subsection xpost_configure_options Configure options
+ *
+ * @li --help : help
+ * @li --disable-assert : disable asserts in code
+ *
+ * @subsection xpost_make_rules Make rules
+ *
+ * @li maintainer-clean : get back to the state after a checkout
+ * @li distcheck : build tar balls
+ */

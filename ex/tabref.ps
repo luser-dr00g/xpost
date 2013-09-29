@@ -1,0 +1,44 @@
+%!PS
+<< %axioms and operations
+/t{2 2 1} %major tetrachord
+/m{t t 2} %mixolydian mode
+/u{2 1 2} %minor tetrachord
+/a{u u} %aolian mode
+/s{m m t} %2.5-octave mixolydian intervals
+/r{3 1 roll}
+/${[exch 0 exch{1 index add}forall]}%running sum: convert (relative)intervals to (abstract)fretstops
+/+{[r exch{1 index add exch}forall pop]} %scale array by scalar
+/@{[r{2 copy get r pop}forall pop]} %select array elements from array of indices
+/&{0 1 3 index length 1 sub{ %array2 += array1
+    2 copy get 3 index 2 index get add 3 copy put pop pop}for exch pop}
+>>begin<< %map ascii values to scaling functions
+65[a]$ %generate fretstops of the A aolian scale to assign scalars to note names
+[0 0 0 0 -12 -12 -12]& %drop E F and G down an octave
+{[exch/+ cvx]cvx 1 index 1 add}forall pop %generate the pairs 'A'->{0 +}, 'B'->{2 +}
+35{1 +} %'#'-> scale up by one
+98{-1 +} %'b'-> scale down by one
+109{dup 4 2 copy get 1 sub put} %'m'-> tweak the 'third' down by one
+%generate chord pattern from (string)
+/*{[s]$ %generate fretstops of the E mixolydian scale
+  [1 4 8 11 13 15 18] %A-shape figured bass: IV chord of E mixolydian
+  -1 + %convert scale degrees to array indices
+  @ %generate chord template by selecting indices from mixolydian scale
+  exch{load exec}forall %execute ascii values, scaling the pattern
+  dup 0 get 0 ge{0}{1}ifelse 6 getinterval %discard first note if it has fallen off the bottom
+  [0 -5 -10 -15 -19 -24]&} %subtract the string offsets
+>>begin %activate definitions
+%(A)* pstack()= clear %[0 0 2 2 2 0]
+%(B)* pstack()= clear %[2 2 4 4 4 2]
+%(F#)* pstack()= clear %[2 4 4 3 2 2]
+%(Abm)* pstack()= %[4 6 6 4 4 4]
+[ARGUMENTS{*}forall] %convert array of strings to array of patterns
+[(E)(A)(D)(G)(B)(e)] %array of string names
+6{ %for each "string"
+    [exch cvx exec print( )print] %pop string name and print with space
+    exch %put names behind numbers
+    [exch{ %for each "chord"
+        [exch cvx exec( )cvs print(---)print] %pop number, convert, print with trailing hyphens
+    }forall] %zip up chord array for next iteration
+    ()= %print a newline
+    exch %put numbers behind names
+}repeat
