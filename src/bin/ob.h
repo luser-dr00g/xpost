@@ -5,21 +5,23 @@
     \brief define the basic 8-byte object structure
 */
 
+#include <stdint.h>
+
 #ifdef WANT_LARGE_OBJECT
 typedef unsigned char byte;
-typedef uint32_t word;
-typedef uint64_t dword;
-typedef uint128_t qword;
-typedef int64_t integer;
-typedef double real;
-typedef dword addr;
+typedef uint32_t word;      // 2x small size
+typedef uint64_t dword;     // 2x small size
+typedef uint64_t qword;
+typedef int64_t integer;    // 2x small size
+typedef double real;        // 2x small size
+typedef dword addr;         // (2x small size (via dword))
 #else
-typedef unsigned char byte;   //assumes ==8bit
-typedef unsigned short word;  //assumes ==16bit
-typedef unsigned long dword;  //assumes >=32bit
-typedef unsigned long long qword; //assumes >=64bit
-typedef int integer;
-typedef float real;  //assumes 32bit
+typedef unsigned char byte; //assumes ==8bit
+typedef uint16_t word;
+typedef uint32_t dword;
+typedef uint64_t qword;
+typedef int32_t integer;
+typedef float real;         //assumes IEEE
 typedef dword addr;  //hmm... should probably use this more. :)
 #endif
 

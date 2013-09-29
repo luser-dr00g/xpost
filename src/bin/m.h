@@ -21,6 +21,7 @@ extern unsigned pgsz /*= getpagesize()*/; /*=4096 (usually on 32bit)*/
 
 typedef struct {
     int fd;
+    char *fname;
     /*@dependent@*/ unsigned char *base;
     unsigned used;
     unsigned max;

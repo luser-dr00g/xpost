@@ -1,12 +1,15 @@
-This is XPost3
-______________
-A work-in-progress Level-2 Postscript interpreter. Currently implements
-the complete Level-1 core (minus graphics). Level-2 features implemented:
-growing stacks, growing dicts, << /dictionary/syntax >>.
+XPost3 Internals (formerly the README)
 
+______________
+XPost3 is a work-in-progress Level-2 Postscript interpreter. Currently it
+implements the complete Level-1 core (minus graphics). Level-2 features
+implemented: growing stacks, growing dicts, << /dictionary/syntax >>.
+
+[ the paragraph is outdated, see the README
 Upon cloning the repository, the commands `make` and `make test`
 should compile all the modules and create and run all the tests.
 `./itp` will run the "interpreter test", which runs the interactive executive.
+]
 
 The source should be portable across all gcc targets.
 Please raise an issue at
@@ -105,6 +108,40 @@ stored in the context structure. objects live in stacks, but they
 can also live in arrays or dicts. arrays and dicts and strings
 are of course, all objects themselves.
 
+
+      Layers
+      ------
+
+Another way to consider the overall organization of modules is
+by /level/. There are "base" modules which are closer to C, and
+operator modules which are closer to Postscript.
+
+Core           Objects                Operators
+----           -------                ---------
+m - memory    
+  \- s - stack                         
+  /    \- v - save/restore  - - - - - -/- opv - save/restore operators
+ob - object                           /- - - - /- optok - token operator for file and string
+  \- f - file - - - - - - - - - - - -/-  opf -/- file operators
+  |    |~ - - osunix    |(file uses one of these)
+  \    \~ - - oswindows |
+   \- - - - - - - - st - string - - /- - opst - string operators
+    \- -  - - - - - ar - array  - -/ - - opar - array operators
+     \- - - - - - - di - dict   - /- - - opdi - dict operators
+      \- -  - - - - op - operator-
+(all of \- -  - - - nm - name     \
+ these                             \- - - opb - boolean operators
+ implement                          \ - - obc - control operators
+ objects)                   (all of  \- - obm - math operators
+                         these create \ - oppa - packed arrays (simulated)
+                     operator objects) \- opx - misc operators
+                     
+            -----------------
+                    | - - err - error handler (used everywhere
+                    |
+                    itp - interpreter (uses everything)
+          
+         
 
 Virtual Memory
 --------------

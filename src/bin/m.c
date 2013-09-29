@@ -116,6 +116,7 @@ void initmem(mfile *mem,
     int fd = -1;
     struct stat buf;
     size_t sz = pgsz;
+    mem->fname = fname;
 
     if (fname) {
         fd = getmemfile(fname);
@@ -132,7 +133,7 @@ void initmem(mfile *mem,
     mem->base = mmap(NULL,
             sz,
             PROT_READ|PROT_WRITE,
-            MAP_SHARED //MAP_PRIVATE
+            (fd == -1? MAP_PRIVATE : MAP_SHARED)
 # ifndef HAVE_MREMAP
             |MAP_AUTOGROW
 # endif
@@ -185,6 +186,7 @@ mfile *growmem(mfile *mem,
                unsigned sz)
 {
     void *tmp;
+    int newfd;
 
     printf("growmem: %p %u + %u\n", mem->base, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
@@ -195,14 +197,44 @@ mfile *growmem(mfile *mem,
 # ifdef HAVE_MREMAP
     tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
 # else
-    tmp = mem->base; /* without mremap, rely on MAP_AUTOGROW */
+    //tmp = mem->base; /* without mremap, rely on MAP_AUTOGROW */
+    /* fails under cygwin where MAP_AUTOGROW doesn't appear to do anything.
+       instead, let's do a manual mremap: mmap a new larger size for the 
+       same file descriptor; munmap the previous.
+     */
+    msync(mem->base, mem->used, MS_SYNC);
+    //newfd = dup(mem->fd);
+    munmap(mem->base, mem->used);
+    close(mem->fd);
+    newfd = open(mem->fname, 
+            O_RDWR | O_CREAT,
+            XPOST_MODE_READ_WRITE);
+    tmp = mmap(NULL, sz,
+            PROT_READ|PROT_WRITE,
+            newfd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED ,
+            newfd, 0);
 # endif
-    if (tmp == MAP_FAILED)
+    if (tmp == MAP_FAILED) {
 #else
     tmp = realloc(mem->base, sz);
-    if (tmp == NULL)
+    if (tmp == NULL) {
 #endif
         error(VMerror, "unable to grow memory");
+#ifdef HAVE_MMAP
+# ifndef HAVE_MREMAP
+        tmp = mmap(NULL, mem->max,
+                PROT_READ|PROT_WRITE,
+                mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED ,
+                newfd, 0);
+# endif
+#endif
+    }
+#ifdef HAVE_MMAP
+# ifndef HAVE_MREMAP
+    //memcpy(tmp, mem->base, mem->used);
+    mem->fd = newfd;
+# endif
+#endif
     mem->base = tmp;
     mem->max = sz;
     return mem;
