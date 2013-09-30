@@ -127,10 +127,14 @@ AC_FUNC_ALLOCA
 
 AC_CHECK_FUNCS([gettimeofday])
 
+have_mremap="no"
 if test "x${have_mmap}" = "xyes" ; then
    AC_CHECK_FUNCS([mmap mremap])
    if ! test "x${ac_cv_func_mmap}" = "xyes" ; then
       have_mmap="no"
+   fi
+   if test "x${ac_cv_func_mremap}" = "xyes" ; then
+      have_mremap="yes"
    fi
 fi
 
@@ -149,7 +153,11 @@ echo "Configuration Options Summary:"
 echo
 echo "  OS...................: ${host_os}"
 echo
-echo "  mmap support.........: ${have_mmap}"
+if test "x${have_mmap}" = "xyes" ; then
+echo "  mmap support.........: ${have_mmap} (mremap: ${have_mremap})"
+else
+echo "  mmap support.........: no"
+fi
 echo "  Documentation........: ${enable_doc} (make doc)"
 if test "x${SPLINT}" = "xnone" ; then
 echo "  splint...............: no"
