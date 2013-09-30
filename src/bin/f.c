@@ -33,6 +33,37 @@ typedef bool _Bool;
 #include "err.h"  // file functions may throw errors
 #include "f.h"  // double-check prototypes
 
+#ifdef __MINGW32__
+FILE *
+my_tmpfile()
+{
+  char *buf;
+  const char *name;
+  const char *tmpdir;
+  size_t l1;
+  size_t l2;
+
+  tmpdir = getenv("TEMP");
+  if (!tmpdir)
+    tmpdir = getenv("TMP");
+  if (!tmpdir)
+    return NULL;
+
+  name = tmpnam(NULL);
+  /* name points to a static buffer, so no need to check it */
+
+  l1 = strlen(tmpdir);
+  l2 = strlen(name);
+  buf = alloca(l1 + l2 + 1);
+  memcpy(buf, tmpdir, l1);
+  memcpy(buf + l1, name, l2);
+  buf[l1 + l2] = '\0';
+
+  return fopen(buf, "wbD");
+}
+#endif
+
+
 /* filetype objects use a slightly different interpretation
    of the access flags.
    'unlimited' designates a writable file
@@ -67,7 +98,11 @@ FILE *lineedit(FILE *in)
 
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%lineedit");
+# ifdef __MINGW32__
+    fp = my_tmpfile();
+# else
     fp = tmpfile();
+# endif
     if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     while (c != EOF && c != '\n') {
         (void)fputc(c, fp);
@@ -91,7 +126,11 @@ FILE *statementedit(FILE *in)
 
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%statementedit");
+# ifdef __MINGW32__
+    fp = my_tmpfile();
+# else
     fp = tmpfile();
+# endif
     if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     do {
         if (defer > -1) {

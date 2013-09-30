@@ -204,7 +204,7 @@ mfile *growmem(mfile *mem,
      */
     msync(mem->base, mem->used, MS_SYNC);
     //newfd = dup(mem->fd);
-    munmap(mem->base, mem->used);
+    munmap(mem->base, mem->max);
     close(mem->fd);
     newfd = open(mem->fname, 
             O_RDWR | O_CREAT,
