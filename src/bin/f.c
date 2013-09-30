@@ -37,7 +37,7 @@ typedef bool _Bool;
 /*
  * Note:
  * this hack is needed as tmpfile in the Windows CRT opens
- * the temporary file in c:/ which need administrator
+ * the temporary file in c:/ which needs administrator
  * privileges.
  */
 static FILE *
