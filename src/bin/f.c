@@ -34,8 +34,8 @@ typedef bool _Bool;
 #include "f.h"  // double-check prototypes
 
 #ifdef __MINGW32__
-FILE *
-my_tmpfile()
+static FILE *
+f_tmpfile()
 {
   char *buf;
   const char *name;
@@ -61,6 +61,8 @@ my_tmpfile()
 
   return fopen(buf, "wbD");
 }
+#else
+# define f_tmpfile tmpfile
 #endif
 
 
@@ -98,11 +100,7 @@ FILE *lineedit(FILE *in)
 
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%lineedit");
-# ifdef __MINGW32__
-    fp = my_tmpfile();
-# else
-    fp = tmpfile();
-# endif
+    fp = f_tmpfile();
     if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     while (c != EOF && c != '\n') {
         (void)fputc(c, fp);
@@ -126,11 +124,7 @@ FILE *statementedit(FILE *in)
 
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%statementedit");
-# ifdef __MINGW32__
-    fp = my_tmpfile();
-# else
-    fp = tmpfile();
-# endif
+    fp = f_tmpfile();
     if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     do {
         if (defer > -1) {
