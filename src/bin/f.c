@@ -34,6 +34,12 @@ typedef bool _Bool;
 #include "f.h"  // double-check prototypes
 
 #ifdef __MINGW32__
+/*
+ * Note:
+ * this hack is needed as tmpfile in the Windows CRT opens
+ * the temporary file in c:/ which need administrator
+ * privileges.
+ */
 static FILE *
 f_tmpfile()
 {
