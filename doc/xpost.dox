@@ -1,7 +1,13 @@
 /**
- * @mainpage xpost_main xpost
+ * @mainpage xpost documentation
  * @author Joshua Ryan
  * @date 2013
+ * @copyright BSD 3-Clause License
+ *
+ * @section xpost_toc Table of Contents
+ *
+ * @li @ref xpost_intro
+ * @li @ref xpost_design
  *
  * @section xpost_intro Introduction
  *
@@ -44,221 +50,14 @@ make install
  *
  * @subsection xpost_configure_options Configure options
  *
- * @li --help : help
- * @li --disable-assert : disable asserts in code
+ * - --help : help
+ * - --disable-assert : disable asserts in code
  *
  * @subsection xpost_make_rules Make rules
  *
- * @li doc : build documentation
- * @li splint : run splint, the static analyser
- * @li count : display the number of lines of code, using the wc tool
- * @li maintainer-clean : get back to the state after a checkout
- * @li distcheck : build tar balls
- *
- * @section xpost_design Design
- *
- * XPost3 is being designed along different principles. Transparency
- * (debugability), simplicity (borrowing certain OOP concepts like
- * encapsulation), speed (choosing appropriate algorithms),
- * extensibility (growing stacks. support for multiple contexts).
- *
- * @subsection xpost_modules Modules
- *
- * @subsubsection xpost_modules_toc Modules TOC
- *
- * @subsubsection xpost_modules_layers Modules layers
- *
- * @subsection xpost_vm Virtual memory
- *
- * @subsubsection xpost_vm_mfile mfile
- *
- * At the heart is the "m" module: the memory-file and
- * memory-tables. Every mfile starts with an mtab. Every mtab lives in
- * an mfile. An mfile is a raw memory space cleverly(?) macro-ized to
- * use either malloc/realloc/free or mmap/mremap/munmap. This memory
- * space is sub-allocated with a segmented index, the mtabs.
- *
- * A datum stored in memory is here alternately called an "entity"
- * (when referring to the abstract data type, ie. the object data
- * itself, the raw bytes) or an "entry" (when referring to the
- * allocation metadata in the table (its allocated size, the address
- * of the data).
- *
- * An execution context has two mfiles: one for global VM, one for
- * local VM. There will be 3 ways of forking a new context:
- *
- * -# Create copies of both global and local VM.
- * -# Share global VM, but create a copy of local VM.
- * -# Share both global and local VM.
- *
- * @subsubsection xpost_vm_mtab mtab
- *
- * At address 0 of the mfile is an mtab, a Memory Table. An mtab is
- * one segment of a chain of address tables which hold the allocation
- * info (size, flags) and the "pointer" to the data itself. All VM
- * "pointers" are integer byte-offsets from the vm base pointer.
- *
- * @subsubsection xpost_vm_mtab0 mtab[0] special entities
- *
- * The first several entries of mtab[0] are "special entities". All
- * mfiles have (in the mtab[0]) a save stack (VS), a free-list (FREE)
- * and a context-list (CTXLIST) which contains `cid`s of all contexts
- * sharing that particular mfile. This was devised to help encapsulate
- * the context's global state within the mfile construct. Even the
- * operator table OPTAB is a special entity and lives in global VM,
- * not "global memory". (In case somebody needs custom operators, it
- * is possible).
- *
- * Both VMs go on to hold NAMES, NAMET and BOGUSNAME. NAMES and NAMET
- * are for the Name String stack and Name Tree, a ternary search
- * tree. The same old ternary search tree, this time updated to live
- * in the memory file.
- *
- * Bogusname is an allocated name string corresponding to the
- * Not-Found result. So zero means no and asking what no means is
- * Bogus.
- *
- * OPTAB is unique to global memories.
- *
- * FIXME: put the table here
- *
- * The special entities in the mtab facilitate bookkeeping of the
- * mtabs themselves (FREE, VS), locating associated contexts
- * (CTXLIST), and internal context data (possibly shared) (NAMES,
- * NAMET, OPTAB). If everything works right, the presence of BOGUSNAME
- * should have no visible effect to the user.
- *
- * @subsection xpost_stacks Stacks
- *
- * Patterned after the model of the memory-table chain is the "s"
- * module: the segmented stack.
- *
- * And making use of both of these is the "v" module: the *virtual*
- * part of the virtual-memory, the save/restore stacks which live in
- * the memory file.
- *
- * The three single-letter modules (m, s, & v) are considered the
- * "core" of the whole thing. I wrote these and then sat on them for
- * over a year while making revisions to xpost2, periodically
- * re-reading the code to make sure it still made sense.
- *
- * HOLD is a stack to hold arguments popped from the operand stack
- * before being passed to operator functions. This facilitates
- * argument passing by cracking the hold stack array (since the hold
- * stack should be at most one segment. The desired objects from the
- * operand stack may span a segment boundary, but in the hold stack,
- * they are rooted (so we the stack as an array, so we can select
- * (switch) a function call based on the number of objects).
- *
- * At one time HOLD was a special entity, as were all of the
- * stacks. But it is now referenced directly in the context struct, as
- * are all of the stacks.
- *
- * @subsection xpost_co Composite objects
- *
- * Array, String and Dictionary functions now come in 2 flavors, a
- * "raw" version which expects to have the mfile specified, and a
- * "friendly" version which interprets the BANK field in the tag to
- * determine whether to look in the local or global VM.
- *
- * - Raw array functions begin with "arr".
- * - Banked array " " " "bar".
- * - Raw dictionary " " " "dic".
- * - Banked dictionary " " " "bdc". (not thrilled with this one)
- * - Raw string " " " "str".
- * - Banked string " " " "bst".
- *
- * Perhaps the banked ones should have normal names, and the "raw"
- * ones should have funky names. (cf. Murphy's Law)
- *
- * @subsection xpost_sr Save and restore
- *
- * The save stack holds save-records with two entities, the source and
- * the copy. restore merely has to exchange the addresses of the two
- * entities. All array and dictionary write operations ensure that the
- * memory is saved at the current level before writing. This should be
- * more efficient than any of my previous drafts. "True" copy-on-write
- * and no pointer-chasing.
- *
- * Arrays ("ar") and dictionaries ("di") are automatically copied
- * before writing if the save-level has risen, giving cheap
- * 'save's. 'restore' has an easy job of popping the save-stack and
- * exchanging the addresses in the memory-tables: cheap 'restore's!!
- *
- * @subsection xpost_gc Garbage collection
- *
- * The garbage collector module ("gc") implements a simple (?)
- * mark-sweep algorithm. It operates on a per-mfile basis, so global
- * and local VMs are collected separately, but all contexts sharing an
- * mfile must be traversed in the /mark/ phase.
- *
- * I've tried to keep the algorithm very simple, because the memory
- * interface itself is so complicated. Even conceptually simple
- * operations like copying a pointer from the free list get pretty
- * involved, eg.
- *
- * @verbatim
-memcpy(mem->base+z, mem->base+adrent(mem,e), sizeof(unsigned));
-   @endverbatim
- *
- * This line copies the "pointer" (unsigned) value indicated by the
- * entity e into the memory "pointed to" by the "pointer" z.
- *
- * The free list head is in special entity FREE in mtab[0]. Its size
- * is reported as 0, but the adr points to an unsigned int value which
- * holds the ent number of the next element of the the free list. An
- * ent number of zero terminates the list.
- *
- * It's there. It compiles. We'll see how well it works as I keep
- * building. Most allocation calls do a traversal of the free-list, so
- * the machinery is being exercised even though the testing is not
- * very comprehensive yet.
- *
- * @subsection xpost_oh Operator handling
- *
- * Xpost3 continues to use the same bizarre twisted loop to check the
- * stack contents for a combined typecheck/stackunderflow-error +
- * polymorphic variadic dispatch, copying argument from the postscript
- * stack to the operator-function's calling frame. It's all very
- * perverse and clever.
- *
- * But profiling xpost2 showed a big bottleneck with all this
- * trickery. So a possible optimization is to replace the
- * operator-signature type with a dedicated function pointer to a
- * function that implements the desired stack-checking. This would
- * factor-out quite a bit of redundant computation, I think. For
- * instance, most operators are not defined to accept the `anytype`
- * pattern, therefore most operators would check the stack faster by
- * omitting this clause.
- *
- * This will likely require some truly heinous name-mangling.
- *
- * @subsection xpost_merge Bringing it all together
- *
- * New itp structure holds context table ctab, and mfile tables ltab
- * and gtab. New special entry CTXLIST lists all contexts associated
- * with the mfile.
- *
- * So the garbage collector's root-set for any given mfile is the VS
- * (the save stack) (only one for each mfile, shared contexts are
- * blocked during save/restore sections), and the stacks from each
- * associated context. It has also been made bank-aware. When
- * collecting a global mfile, it only marks global data; likewise for
- * a local sweep, only mark locals.
- *
- * Context IDs, `cid`s, are generated sequentially, starting from 1.
- * They are designed so that `(cid - 1) % MAXCONTEXT` will yield
- * the index in the ctab of the context. So the allocator increments
- * until this formula yields an empty slot. This lets us re-use slots
- * while still maintaining unique IDs for all processes in the history
- * (until the `unsigned` wraps TO//DO fix this timebomb -- not a
- * problem, see http://programmers.stackexchange.com/questions/199635/
- * ).
- *
- * Just learned from the PLRM that names should live in local-vm, not
- * global. But I'm thinking I'll keep a global table for the system
- * names. Since the optab lives in global-vm, I want operator names to
- * be accessible in the same mfile. But "user" names should be
- * allocated in local vm. This means names need to be banked just like
- * composites.
+ * - doc : build documentation
+ * - splint : run splint, the static analyser
+ * - count : display the number of lines of code, using the wc tool
+ * - maintainer-clean : get back to the state after a checkout
+ * - distcheck : build tar balls
  */
