@@ -32,6 +32,19 @@ if test "x${enable_large_object}" = "xyes" ; then
    AC_DEFINE([WANT_LARGE_OBJECT], [1], [Define to 1 if large object are wanted])
 fi
 
+AC_ARG_ENABLE([mmap],
+   [AS_HELP_STRING([--disable-mmap], [disable use of mmap and use malloc instead @<:@default=yes@:>@])],
+   [
+    if test "x${enableval}" = "xyes" ; then
+       enable_mmap="yes"
+    else
+       enable_mmap="no"
+    fi
+   ],
+   [enable_mmap="yes"])
+
+have_mmap="no"
+
 
 ### Default options with respect to host
 
@@ -87,7 +100,9 @@ AC_HEADER_ASSERT
 AC_HEADER_STDBOOL
 AC_HEADER_TIME
 
-AC_CHECK_HEADERS([sys/mman.h])
+if test "x${enable_mmap}" = "xyes" ; then
+   AC_CHECK_HEADERS([sys/mman.h], [have_mmap="yes"], [have_mmap="no"])
+fi
 
 
 ### Checks for types
@@ -110,7 +125,14 @@ XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-
 
 AC_FUNC_ALLOCA
 
-AC_CHECK_FUNCS([gettimeofday mmap mremap])
+AC_CHECK_FUNCS([gettimeofday])
+
+if test "x${have_mmap}" = "xyes" ; then
+   AC_CHECK_FUNCS([mmap mremap])
+   if ! test "x${ac_cv_func_mmap}" = "xyes" ; then
+      have_mmap="no"
+   fi
+fi
 
 ### Output
 
@@ -127,6 +149,7 @@ echo "Configuration Options Summary:"
 echo
 echo "  OS...................: ${host_os}"
 echo
+echo "  mmap support.........: ${have_mmap}"
 echo "  Documentation........: ${enable_doc} (make doc)"
 if test "x${SPLINT}" = "xnone" ; then
 echo "  splint...............: no"
