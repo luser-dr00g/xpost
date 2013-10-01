@@ -59,7 +59,7 @@ my_tmpfile()
   memcpy(buf + l1, name, l2);
   buf[l1 + l2] = '\0';
 
-  return fopen(buf, "wbD");
+  return fopen(buf, "w+bD");
 }
 #endif
 
