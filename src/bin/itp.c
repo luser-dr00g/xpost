@@ -589,9 +589,14 @@ int main(void) {
     ctx->quit = 0;
     mainloop(ctx);
 
-    /* Run! */
+    /* prime the exec stack
+       so it starts with 'start',
+       and if it ever gets to the bottom, it quits.  */
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0)); 
-    push(ctx->lo, ctx->es, cvx(consname(ctx, "start"))); /* `start` proc defined in init.ps */
+        /* `start` proc defined in init.ps */
+    push(ctx->lo, ctx->es, cvx(consname(ctx, "start")));
+
+    /* Run! */
     initializing = 0;
     ctx->quit = 0;
     mainloop(ctx);

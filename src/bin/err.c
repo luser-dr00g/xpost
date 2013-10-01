@@ -49,6 +49,7 @@ void error(unsigned err,
 {
     context *ctx;
 
+
     errormsg = msg;
     if (!initializing && jbmainloopset && !in_onerror) {
         longjmp(jbmainloop, err);
@@ -99,6 +100,7 @@ void onerror(context *ctx,
     object sd;
     object dollarerror;
     char *errmsg; 
+    stack *sp;
 
     assert(ctx);
     assert(ctx->gl);
@@ -111,6 +113,15 @@ void onerror(context *ctx,
 #ifdef EMITONERROR
     fprintf(stderr, "err: %s\n", errorname[err]);
 #endif
+    //reset stack
+    if (type(ctx->currentobject) == operatortype
+            && ctx->currentobject.tag & FOPARGSINHOLD) {
+        int n = ctx->currentobject.mark_.pad0;
+        int i;
+        for (i=0; i < n; i++) {
+            push(ctx->lo, ctx->os, bot(ctx->lo, ctx->hold, i));
+        }
+    }
 
     //printf("1\n");
     sd = bot(ctx->lo, ctx->ds, 0);
