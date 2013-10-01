@@ -290,6 +290,12 @@ void opexec(context *ctx,
     return;
 
 call:
+    if (ctx->currentobject.tag == operatortype 
+            && ctx->currentobject.mark_.padw == opcode) {
+        ctx->currentobject.mark_.pad0 = sp[i].in; 
+        ctx->currentobject.tag |= FOPARGSINHOLD;
+    }
+
     holdn(ctx, ctx->lo, ctx->os, sp[i].in);
     hold = (void *)(ctx->lo->base + ctx->hold /*adrent(ctx->lo, HOLD)*/ );
 

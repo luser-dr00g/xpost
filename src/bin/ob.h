@@ -84,6 +84,7 @@ enum tagdata {
     FBANK =    0x0100, /* 0=local, 1=global */
     EXTENDEDINT = 0x0200,
     EXTENDEDREAL = 0x0400,
+    FOPARGSINHOLD = 0x0800, /* for onerror to reset stack */
 };
 
 /*! \def enum faccess
