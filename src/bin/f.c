@@ -92,7 +92,7 @@ f_tmpfile(void)
   memcpy(buf + l1, name, l2);
   buf[l1 + l2] = '\0';
 
-  return fopen(buf, "wbD");
+  return fopen(buf, "w+bD");
 }
 #else
 # define f_tmpfile tmpfile
