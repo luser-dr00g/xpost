@@ -147,7 +147,7 @@ void restore(mfile *mem)
 }
 
 #ifdef TESTMODULE_V
-#include "ar.h"
+#include "xpost_array.h"
 #include <stdio.h>
 
 mfile mf;

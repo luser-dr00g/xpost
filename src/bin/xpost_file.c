@@ -111,7 +111,13 @@ f_tmpfile(void)
    use the "doubleword" field as a "pointer" (ent),
    allocate a FILE *,
    install the FILE *,
-   return object.  */
+   return object.
+   caller must set access for a readable file,
+   default is writable.
+   eg.
+    FILE *fp = fopen(...);
+    object f = readonly(consfile(fp)).
+ */
 object consfile(mfile *mem,
         /*@NULL@*/ FILE *fp)
 {
@@ -126,6 +132,7 @@ object consfile(mfile *mem,
 
 /* pinch-off a tmpfile containing one line from file. */
 /*@null@*/
+static
 FILE *lineedit(FILE *in)
 {
     FILE *fp;
@@ -147,6 +154,7 @@ enum { MAXNEST = 20 };
 
 /* pinch-off a tmpfile containing one "statement" from file. */
 /*@null@*/
+static
 FILE *statementedit(FILE *in)
 {
     FILE *fp;

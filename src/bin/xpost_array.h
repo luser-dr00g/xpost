@@ -1,7 +1,7 @@
 #ifndef XPOST_AR_H
 #define XPOST_AR_H
 
-/*! \file ar.h
+/*! \file xpost_array.h
    \brief array functions
 
    an array object is 8 bytes,

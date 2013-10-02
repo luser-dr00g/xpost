@@ -56,8 +56,8 @@ typedef bool _Bool;
 #include "itp.h"
 #include "err.h"
 #include "nm.h"
-#include "ar.h"
-#include "di.h"
+#include "xpost_array.h"
+#include "xpost_dict.h"
 #include "op.h"
 #include "opc.h"
 

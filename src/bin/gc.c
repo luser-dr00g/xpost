@@ -27,9 +27,9 @@ typedef bool _Bool;
 #include "ob.h"  // collector examines objects
 #include "s.h"  // collector examines stacks
 #include "itp.h"  // collector can determine whether mfile is local or global
-#include "ar.h"  // collector examines arrays
+#include "xpost_array.h"  // collector examines arrays
 #include "st.h"  // string
-#include "di.h"  // collector examines dicts
+#include "xpost_dict.h"  // collector examines dicts
 #include "v.h"  // collector examines the save stacks
 #include "gc.h"  // double-check prototypes
 

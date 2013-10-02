@@ -31,11 +31,11 @@ typedef bool _Bool;
 #include "itp.h" // uses: context itp MAXCONTEXT MAXMFILE
 #include "err.h"  // interpreter catches errors
 #include "st.h"  // eval functions examine strings
-#include "ar.h"  // eval functions examine arrays
+#include "xpost_array.h"  // eval functions examine arrays
 #include "gc.h"  // interpreter initializes garbage collector
 #include "v.h"  // interpreter initializes save/restore stacks
 #include "nm.h"  // eval functions examine names
-#include "di.h"  // eval functions examine dicts
+#include "xpost_dict.h"  // eval functions examine dicts
 #include "xpost_file.h"  // eval functions examine files
 #include "op.h"  // eval functions call operators
 #include "optok.h"  // token operator functions
