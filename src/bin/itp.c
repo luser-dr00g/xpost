@@ -36,7 +36,7 @@ typedef bool _Bool;
 #include "v.h"  // interpreter initializes save/restore stacks
 #include "nm.h"  // eval functions examine names
 #include "di.h"  // eval functions examine dicts
-#include "f.h"  // eval functions examine files
+#include "xpost_file.h"  // eval functions examine files
 #include "op.h"  // eval functions call operators
 #include "optok.h"  // token operator functions
 #include "opdi.h"  // dictionary operator functions
@@ -113,6 +113,8 @@ mfile *nextgtab()
 static
 void initglobal(context *ctx)
 {
+    char g_filenam[L_tmpnam];
+    char *fn;
     ctx->vmmode = GLOBAL;
 
     /* allocate and initialize global vm */
@@ -120,7 +122,10 @@ void initglobal(context *ctx)
     //ctx->gl = &itpdata->gtab[0];
     ctx->gl = nextgtab();
 
-    initmem(ctx->gl, "g.mem");
+    fn = tmpnam(g_filenam);
+    if (fn == NULL) fn = "g.mem";
+
+    initmem(ctx->gl, fn);
     (void)initmtab(ctx->gl);
     initfree(ctx->gl);
     initsave(ctx->gl);
@@ -150,6 +155,8 @@ mfile *nextltab()
 static
 void initlocal(context *ctx)
 {
+    char l_filenam[L_tmpnam];
+    char *fn;
     ctx->vmmode = LOCAL;
 
     /* allocate and initialize local vm */
@@ -157,7 +164,10 @@ void initlocal(context *ctx)
     //ctx->lo = &itpdata->ltab[0];
     ctx->lo = nextltab();
 
-    initmem(ctx->lo, "l.mem");
+    fn = tmpnam(l_filenam);
+    if (fn == NULL) fn = "l.mem";
+
+    initmem(ctx->lo, fn);
     (void)initmtab(ctx->lo);
     initfree(ctx->lo);
     initsave(ctx->lo);

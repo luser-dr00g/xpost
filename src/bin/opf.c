@@ -61,7 +61,7 @@ typedef bool _Bool;
 #include "ar.h"
 #include "di.h"
 #include "op.h"
-#include "f.h"
+#include "xpost_file.h"
 #include "opf.h"
 
 #ifdef HAVE_WIN32
