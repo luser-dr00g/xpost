@@ -31,7 +31,7 @@ typedef bool _Bool;
 #include "st.h"  // uses string function to dump operator name
 #include "gc.h"  // allocate using gballoc
 #include "nm.h"  // operator objects have associated names
-#include "di.h"  // install operators in systemdict, a dict
+#include "xpost_dict.h"  // install operators in systemdict, a dict
 #include "op.h"  // double-check prototypes
 
 

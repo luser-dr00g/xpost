@@ -31,7 +31,7 @@ typedef bool _Bool;
 #include "v.h"  // arrays obey save/restore
 #include "itp.h"  // banked arrays may be in global or local mfiles
 #include "err.h"  // array functions may throw errors
-#include "ar.h"  // double-check prototypes
+#include "xpost_array.h"  // double-check prototypes
 
 
 

@@ -54,7 +54,7 @@ typedef bool _Bool;
 #include "s.h"
 #include "itp.h"
 #include "nm.h"
-#include "di.h"
+#include "xpost_dict.h"
 #include "op.h"
 #include "opb.h"
 

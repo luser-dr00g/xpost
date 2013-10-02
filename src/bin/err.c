@@ -28,7 +28,7 @@ typedef bool _Bool;
 #include "ob.h"  // object
 #include "s.h"  // stack
 #include "itp.h"  // access context struct
-#include "di.h"  // access dict objects
+#include "xpost_dict.h"  // access dict objects
 #include "st.h"  // access string objects
 #include "err.h"  // double-check prototypes
 #include "nm.h"  // create names

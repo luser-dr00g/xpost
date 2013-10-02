@@ -59,7 +59,7 @@ typedef bool _Bool;
 #include "err.h"  // dict functions may throw errors
 #include "st.h"  // may need string functions (convert to name)
 #include "nm.h"  // may need name functions (create name)
-#include "di.h"  // double-check prototypes
+#include "xpost_dict.h"  // double-check prototypes
 
 
 

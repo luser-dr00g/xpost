@@ -2,8 +2,8 @@
 bin_PROGRAMS = src/bin/itp
 
 src_bin_itp_SOURCES = \
-src/bin/ar.c \
-src/bin/di.c \
+src/bin/xpost_array.c \
+src/bin/xpost_dict.c \
 src/bin/err.c \
 src/bin/xpost_file.c \
 src/bin/gc.c \
@@ -28,8 +28,8 @@ src/bin/opt.c \
 src/bin/optok.c \
 src/bin/opv.c \
 src/bin/opx.c \
-src/bin/ar.h \
-src/bin/di.h \
+src/bin/xpost_array.h \
+src/bin/xpost_dict.h \
 src/bin/err.h \
 src/bin/xpost_file.h \
 src/bin/gc.h \
