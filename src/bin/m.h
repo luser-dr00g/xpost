@@ -37,7 +37,7 @@ typedef struct {
 void dumpmfile(mfile *mem);
 
 /* initialize the mfile, possibly from file */
-void initmem(mfile *mem, char *fname);
+void initmem(mfile *mem, char *fname, int fd);
 
 /* destroy the mfile, possibly writing to file */
 void exitmem(mfile *mem);

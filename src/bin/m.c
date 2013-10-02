@@ -111,16 +111,17 @@ int getmemfile(char *fname)
 
 /* initialize the memory file */
 void initmem(mfile *mem,
-             char *fname)
+             char *fname,
+             int fd
+             )
 {
-    int fd = -1;
+    //int fd = -1;
     struct stat buf;
     size_t sz = pgsz;
     mem->fname = fname;
 
-    if (fname) {
-        fd = getmemfile(fname);
-    }
+    //if (fname) { fd = getmemfile(fname); }
+
     mem->fd = fd;
     if (fd != -1){
         if (fstat(fd, &buf) == 0) {
