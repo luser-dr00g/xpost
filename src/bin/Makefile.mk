@@ -5,7 +5,7 @@ src_bin_itp_SOURCES = \
 src/bin/ar.c \
 src/bin/di.c \
 src/bin/err.c \
-src/bin/f.c \
+src/bin/xpost_file.c \
 src/bin/gc.c \
 src/bin/itp.c \
 src/bin/m.c \
@@ -31,7 +31,7 @@ src/bin/opx.c \
 src/bin/ar.h \
 src/bin/di.h \
 src/bin/err.h \
-src/bin/f.h \
+src/bin/xpost_file.h \
 src/bin/gc.h \
 src/bin/itp.h \
 src/bin/m.h \

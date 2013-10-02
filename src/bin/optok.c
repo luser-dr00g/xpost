@@ -35,7 +35,7 @@ typedef bool _Bool;
 #include "st.h"
 #include "ar.h"
 #include "di.h"
-#include "f.h"
+#include "xpost_file.h"
 #include "op.h"
 #include "nm.h"
 #include "opar.h"

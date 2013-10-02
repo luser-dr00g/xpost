@@ -58,7 +58,7 @@ typedef bool _Bool;
 #include "gc.h"  // files data allocated with gballoc
 #include "itp.h"  // interpreter
 #include "err.h"  // file functions may throw errors
-#include "f.h"  // double-check prototypes
+#include "xpost_file.h"  // double-check prototypes
 
 #ifdef __MINGW32__
 /*
