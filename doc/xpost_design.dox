@@ -42,6 +42,9 @@
  * info (size, flags) and the "pointer" to the data itself. All VM
  * "pointers" are integer byte-offsets from the vm base pointer.
  *
+ * @image html m.png
+ * @image latex m.eps
+ *
  * @subsection xpost_vm_mtab0 mtab[0] special entities
  *
  * The first several entries of mtab[0] are "special entities". All
