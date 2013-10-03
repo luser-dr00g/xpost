@@ -61,18 +61,18 @@ typedef bool _Bool;
 #endif
 
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
 #include "itp.h"
-#include "err.h"
-#include "nm.h"
-#include "st.h"
+#include "xpost_error.h"
+#include "xpost_name.h"
+#include "xpost_string.h"
 #include "xpost_array.h"
 #include "xpost_dict.h"
-#include "op.h"
-#include "opdi.h"
-#include "opx.h"
+#include "xpost_operator.h"
+#include "xpost_op_dict.h"
+#include "xpost_op_misc.h"
 
 static
 object bind (context *ctx,

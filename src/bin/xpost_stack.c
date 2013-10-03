@@ -23,12 +23,12 @@ typedef bool _Bool;
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
-#include "m.h" /* mfile mfalloc findtabent */
-#include "ob.h" /* object size */
+#include "xpost_memory.h" /* mfile mfalloc findtabent */
+#include "xpost_object.h" /* object size */
 /* typedef long long object; */
 #include "itp.h"
-#include "err.h" // stack functions may throw errors
-#include "s.h"  // double-check prototypes
+#include "xpost_error.h" // stack functions may throw errors
+#include "xpost_stack.h"  // double-check prototypes
 /*#define STACKSEGSZ 10 */
 
 /*

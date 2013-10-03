@@ -24,14 +24,14 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
-#include "m.h"  // mfile
-#include "ob.h"  // object
-#include "s.h"  // stack
+#include "xpost_memory.h"  // mfile
+#include "xpost_object.h"  // object
+#include "xpost_stack.h"  // stack
 #include "itp.h"  // access context struct
 #include "xpost_dict.h"  // access dict objects
-#include "st.h"  // access string objects
-#include "err.h"  // double-check prototypes
-#include "nm.h"  // create names
+#include "xpost_string.h"  // access string objects
+#include "xpost_error.h"  // double-check prototypes
+#include "xpost_name.h"  // create names
 
 //#define EMITONERROR
 

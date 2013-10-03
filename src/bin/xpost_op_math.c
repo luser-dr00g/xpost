@@ -54,14 +54,14 @@ typedef bool _Bool;
 //double RAD_PER_DEG /* = PI / 180.0 */;
 #define RAD_PER_DEG (M_PI / 180.0)
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
 #include "itp.h"
-#include "nm.h"
+#include "xpost_name.h"
 #include "xpost_dict.h"
-#include "op.h"
-#include "opm.h"
+#include "xpost_operator.h"
+#include "xpost_op_math.h"
 
 static
 bool subwillunder(long x, long y);

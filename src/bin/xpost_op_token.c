@@ -27,20 +27,20 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h> /* strchr */
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
 #include "itp.h"
-#include "err.h"
-#include "st.h"
+#include "xpost_error.h"
+#include "xpost_string.h"
 #include "xpost_array.h"
 #include "xpost_dict.h"
 #include "xpost_file.h"
-#include "op.h"
-#include "nm.h"
-#include "opar.h"
-#include "opdi.h"
-#include "optok.h"
+#include "xpost_operator.h"
+#include "xpost_name.h"
+#include "xpost_op_array.h"
+#include "xpost_op_dict.h"
+#include "xpost_op_token.h"
 
 enum { NBUF = BUFSIZ };
 

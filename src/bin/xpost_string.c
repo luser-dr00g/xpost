@@ -18,11 +18,11 @@ typedef bool _Bool;
 # define __bool_true_false_are_defined 1
 #endif
 
-#include "m.h"  // strings live in mfile, accessed via mtab
-#include "ob.h"  // strings are objects
-#include "gc.h"  // strings are allocated using gballoc
+#include "xpost_memory.h"  // strings live in mfile, accessed via mtab
+#include "xpost_object.h"  // strings are objects
+#include "xpost_garbage.h"  // strings are allocated using gballoc
 #include "itp.h"  // banked strings may live in local or global vm
-#include "st.h"  // double-check prototypes
+#include "xpost_string.h"  // double-check prototypes
 
 /* construct a stringtype object
    with optional string value
