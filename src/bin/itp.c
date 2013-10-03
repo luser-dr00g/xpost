@@ -41,6 +41,10 @@ typedef bool _Bool;
 #include "optok.h"  // token operator functions
 #include "opdi.h"  // dictionary operator functions
 
+#ifdef HAVE_WIN32
+# include "osmswin.h" // mkstemp
+#endif
+
 int TRACE = 0;
 itp *itpdata;
 int initializing = 0;
