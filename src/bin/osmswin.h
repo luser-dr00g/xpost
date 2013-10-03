@@ -4,4 +4,8 @@
 void echoon(FILE *f);
 void echooff(FILE *f);
 
+#ifdef __MINGW32__
+int mkstemp(char *template);
+#endif
+
 #endif
