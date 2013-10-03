@@ -101,6 +101,9 @@
  * stacks. But it is now referenced directly in the context struct, as
  * are all of the stacks.
  *
+ * @image html stack.png
+ * @image latex stack.eps
+ *
  * @section xpost_co Composite objects
  *
  * Array, String and Dictionary functions now come in 2 flavors, a
