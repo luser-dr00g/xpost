@@ -23,15 +23,15 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
-#include "m.h"  // garbage collector works with mtab and mfile
-#include "ob.h"  // collector examines objects
-#include "s.h"  // collector examines stacks
+#include "xpost_memory.h"  // garbage collector works with mtab and mfile
+#include "xpost_object.h"  // collector examines objects
+#include "xpost_stack.h"  // collector examines stacks
 #include "itp.h"  // collector can determine whether mfile is local or global
 #include "xpost_array.h"  // collector examines arrays
-#include "st.h"  // string
+#include "xpost_string.h"  // string
 #include "xpost_dict.h"  // collector examines dicts
-#include "v.h"  // collector examines the save stacks
-#include "gc.h"  // double-check prototypes
+#include "xpost_save.h"  // collector examines the save stacks
+#include "xpost_garbage.h"  // double-check prototypes
 
 #ifdef TESTMODULE_GC
 #include <stdio.h>

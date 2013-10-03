@@ -48,15 +48,15 @@ typedef bool _Bool;
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
 #include "itp.h"
-#include "err.h"
-#include "nm.h"
+#include "xpost_error.h"
+#include "xpost_name.h"
 #include "xpost_dict.h"
-#include "op.h"
-#include "ops.h"
+#include "xpost_operator.h"
+#include "xpost_op_stack.h"
 
 
 /* any  pop  -

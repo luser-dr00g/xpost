@@ -49,16 +49,16 @@ typedef bool _Bool;
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "v.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
+#include "xpost_save.h"
 #include "itp.h"
-#include "nm.h"
-#include "st.h"
+#include "xpost_name.h"
+#include "xpost_string.h"
 #include "xpost_dict.h"
-#include "op.h"
-#include "opv.h"
+#include "xpost_operator.h"
+#include "xpost_op_save.h"
 
 static
 void Zsave (context *ctx)

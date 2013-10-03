@@ -23,13 +23,13 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
-#include "m.h"  // name structures live in mfiles
-#include "ob.h"  // names are objects, with associated hidden string objects
-#include "gc.h"  // strings are allocated using gballoc
-#include "s.h"  // name strings live on a stack
+#include "xpost_memory.h"  // name structures live in mfiles
+#include "xpost_object.h"  // names are objects, with associated hidden string objects
+#include "xpost_garbage.h"  // strings are allocated using gballoc
+#include "xpost_stack.h"  // name strings live on a stack
 #include "itp.h"  // initialize interpreter to test
-#include "st.h"  // access string objects
-#include "nm.h"  // double-check prototypes
+#include "xpost_string.h"  // access string objects
+#include "xpost_name.h"  // double-check prototypes
 
 #define CNT_STR(s) sizeof(s)-1, s
 

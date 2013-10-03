@@ -22,16 +22,16 @@ typedef bool _Bool;
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
 #include "itp.h"
-#include "err.h"
-#include "st.h"
+#include "xpost_error.h"
+#include "xpost_string.h"
 #include "xpost_array.h"
 #include "xpost_dict.h"
-#include "op.h"
-#include "opst.h"
+#include "xpost_operator.h"
+#include "xpost_op_string.h"
 
 static
 void Istring(context *ctx,

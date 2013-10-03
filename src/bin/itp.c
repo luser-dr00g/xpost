@@ -25,21 +25,21 @@ typedef bool _Bool;
 #include <string.h>
 #include <unistd.h>
 
-#include "m.h"  // itp contexts contain mfiles and mtabs
-#include "ob.h"  // eval functions examine objects
-#include "s.h"  // eval functions manipulate stacks
+#include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
+#include "xpost_object.h"  // eval functions examine objects
+#include "xpost_stack.h"  // eval functions manipulate stacks
 #include "itp.h" // uses: context itp MAXCONTEXT MAXMFILE
-#include "err.h"  // interpreter catches errors
-#include "st.h"  // eval functions examine strings
+#include "xpost_error.h"  // interpreter catches errors
+#include "xpost_string.h"  // eval functions examine strings
 #include "xpost_array.h"  // eval functions examine arrays
-#include "gc.h"  // interpreter initializes garbage collector
-#include "v.h"  // interpreter initializes save/restore stacks
-#include "nm.h"  // eval functions examine names
+#include "xpost_garbage.h"  // interpreter initializes garbage collector
+#include "xpost_save.h"  // interpreter initializes save/restore stacks
+#include "xpost_name.h"  // eval functions examine names
 #include "xpost_dict.h"  // eval functions examine dicts
 #include "xpost_file.h"  // eval functions examine files
-#include "op.h"  // eval functions call operators
-#include "optok.h"  // token operator functions
-#include "opdi.h"  // dictionary operator functions
+#include "xpost_operator.h"  // eval functions call operators
+#include "xpost_op_token.h"  // token operator functions
+#include "xpost_op_dict.h"  // dictionary operator functions
 
 #ifdef HAVE_WIN32
 # include "osmswin.h" // mkstemp

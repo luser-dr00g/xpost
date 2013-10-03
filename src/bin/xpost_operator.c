@@ -23,16 +23,16 @@ typedef bool _Bool;
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 
-#include "m.h"  // accesses mfile
-#include "ob.h"  // operators are objects
-#include "s.h"  // uses a stack for argument passing
+#include "xpost_memory.h"  // accesses mfile
+#include "xpost_object.h"  // operators are objects
+#include "xpost_stack.h"  // uses a stack for argument passing
 #include "itp.h"  // works with context struct
-#include "err.h"  // operator functions may throw errors
-#include "st.h"  // uses string function to dump operator name
-#include "gc.h"  // allocate using gballoc
-#include "nm.h"  // operator objects have associated names
+#include "xpost_error.h"  // operator functions may throw errors
+#include "xpost_string.h"  // uses string function to dump operator name
+#include "xpost_garbage.h"  // allocate using gballoc
+#include "xpost_name.h"  // operator objects have associated names
 #include "xpost_dict.h"  // install operators in systemdict, a dict
-#include "op.h"  // double-check prototypes
+#include "xpost_operator.h"  // double-check prototypes
 
 
 /* convert an integertype object to a realtype object */
@@ -314,19 +314,19 @@ call:
     }
 }
 
-#include "ops.h"
-#include "opst.h"
-#include "opar.h"
-#include "opdi.h"
-#include "opb.h"
-#include "opc.h"
-#include "opt.h"
-#include "optok.h"
-#include "opm.h"
-#include "opf.h"
-#include "opv.h"
-#include "opx.h"
-#include "oppa.h"
+#include "xpost_op_stack.h"
+#include "xpost_op_string.h"
+#include "xpost_op_array.h"
+#include "xpost_op_dict.h"
+#include "xpost_op_boolean.h"
+#include "xpost_op_control.h"
+#include "xpost_op_type.h"
+#include "xpost_op_token.h"
+#include "xpost_op_math.h"
+#include "xpost_op_file.h"
+#include "xpost_op_save.h"
+#include "xpost_op_misc.h"
+#include "xpost_op_packedarray.h"
 
 /* no-op operator useful as a break target.
    put 'breakhere' in the postscript program,

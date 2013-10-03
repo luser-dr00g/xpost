@@ -1,4 +1,4 @@
-/*! \file ob.c
+/*! \file xpost_object.c
    simple object functions
 */
 #ifdef HAVE_CONFIG_H
@@ -24,7 +24,7 @@ typedef bool _Bool;
 
 #include <stdio.h>
 
-#include "ob.h" // double-check prototypes
+#include "xpost_object.h" // double-check prototypes
 
 
 /*! \def char *types[]

@@ -21,19 +21,19 @@ typedef bool _Bool;
 #include <assert.h>
 #include <stdio.h>
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
-#include "v.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
+#include "xpost_save.h"
 #include "itp.h"
-#include "err.h"
-#include "st.h"
+#include "xpost_error.h"
+#include "xpost_string.h"
 #include "xpost_array.h"
 #include "xpost_dict.h"
-#include "nm.h"
-#include "op.h"
-#include "ops.h"
-#include "opdi.h"
+#include "xpost_name.h"
+#include "xpost_operator.h"
+#include "xpost_op_stack.h"
+#include "xpost_op_dict.h"
 
 int DEBUGLOAD = 0;
 void Awhere(context *ctx, object K); /* forward decl */

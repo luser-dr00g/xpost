@@ -52,16 +52,16 @@ typedef bool _Bool;
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
-#include "m.h"
-#include "ob.h"
-#include "s.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
 #include "itp.h"
-#include "err.h"
-#include "nm.h"
-#include "st.h"
+#include "xpost_error.h"
+#include "xpost_name.h"
+#include "xpost_string.h"
 #include "xpost_dict.h"
-#include "op.h"
-#include "opt.h"
+#include "xpost_operator.h"
+#include "xpost_op_type.h"
 
 static
 void Atype(context *ctx,

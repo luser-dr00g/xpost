@@ -50,15 +50,15 @@ typedef bool _Bool;
 #include <stdlib.h> /* malloc */
 #include <stdio.h>
 
-#include "m.h"  // dicts live in mfile, accessed via mtab
-#include "ob.h"  // dict is an object, containing objects
-#include "s.h"  // may need to count the save stack
-#include "gc.h"  // dicts are garbage collected
-#include "v.h"  // dicts obey save/restore
+#include "xpost_memory.h"  // dicts live in mfile, accessed via mtab
+#include "xpost_object.h"  // dict is an object, containing objects
+#include "xpost_stack.h"  // may need to count the save stack
+#include "xpost_garbage.h"  // dicts are garbage collected
+#include "xpost_save.h"  // dicts obey save/restore
 #include "itp.h"  // banked dicts may live in global or local vm
-#include "err.h"  // dict functions may throw errors
-#include "st.h"  // may need string functions (convert to name)
-#include "nm.h"  // may need name functions (create name)
+#include "xpost_error.h"  // dict functions may throw errors
+#include "xpost_string.h"  // may need string functions (convert to name)
+#include "xpost_name.h"  // may need name functions (create name)
 #include "xpost_dict.h"  // double-check prototypes
 
 
