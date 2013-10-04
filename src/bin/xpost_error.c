@@ -113,6 +113,7 @@ void onerror(context *ctx,
 #ifdef EMITONERROR
     fprintf(stderr, "err: %s\n", errorname[err]);
 #endif
+
     //reset stack
     if (type(ctx->currentobject) == operatortype
             && ctx->currentobject.tag & FOPARGSINHOLD) {
