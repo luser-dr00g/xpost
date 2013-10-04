@@ -38,21 +38,24 @@ void dumpnames(context *ctx)
 {
     unsigned stk;
     unsigned cnt, i;
+    object str;
     char *s;
 
     stk = adrent(ctx->gl, NAMES);
     cnt = count(ctx->gl, stk);
     printf("global names:\n");
     for (i=0; i < cnt; i++){
-        s = charstr(ctx, bot(ctx->gl, stk, i));
-        printf("%d: %s\n", i, s);
+        str = bot(ctx->gl, stk, i);
+        s = charstr(ctx, str);
+        printf("%d: %*s\n", i, str.comp_.sz, s);
     }
     stk = adrent(ctx->lo, NAMES);
     cnt = count(ctx->lo, stk);
     printf("local names:\n");
     for (i=0; i < cnt; i++) {
-        s = charstr(ctx, bot(ctx->lo, stk, i));
-        printf("%d: %s\n", i, s);
+        str = bot(ctx->lo, stk, i);
+        s = charstr(ctx, str);
+        printf("%d: %*s\n", i, str.comp_.sz, s);
     }
 }
 

@@ -79,7 +79,15 @@ void Sfile (context *ctx,
             object mode)
 {
     object f;
-    f = fileopen(ctx->lo, charstr(ctx, fn), charstr(ctx, mode));
+    char *cfn, *cmode;
+    cfn = alloca(fn.comp_.sz + 1);
+    memcpy(cfn, charstr(ctx, fn), fn.comp_.sz);
+    cfn[fn.comp_.sz] = '\0';
+    cmode = alloca(mode.comp_.sz + 1);
+    memcpy(cmode, charstr(ctx, mode), mode.comp_.sz);
+    cmode[mode.comp_.sz] = '\0';
+
+    f = fileopen(ctx->lo, cfn, cmode);
     push(ctx->lo, ctx->os, cvlit(f));
 }
 
