@@ -99,7 +99,7 @@ void addtoctxlist(mfile *mem,
 
 /* find the next unused mfile in the global memory table */
 static
-mfile *nextgtab()
+mfile *nextgtab(void)
 {
     int i;
 
@@ -140,7 +140,7 @@ void initglobal(context *ctx)
 
 /* find the next unused mfile in the local memory table */
 static
-mfile *nextltab()
+mfile *nextltab(void)
 {
     int i;
     for (i=0; i < MAXMFILE; i++) {
