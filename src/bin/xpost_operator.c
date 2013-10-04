@@ -67,7 +67,6 @@ static
 int noop = 0;
 
 /* allocate the OPTAB structure in VM */
-extern
 void initoptab (context *ctx)
 {
     unsigned ent = mtalloc(ctx->gl, 0, MAXOPS * sizeof(oper));
@@ -79,7 +78,6 @@ void initoptab (context *ctx)
 }
 
 /* print a dump of the operator struct given opcode */
-extern
 void dumpoper(context *ctx,
               int opcode)
 {
@@ -100,7 +98,6 @@ void dumpoper(context *ctx,
    values whose presence and types should be checked,
    there should follow 'in' number of typenames passed after 'in'.
    */
-extern
 object consoper(context *ctx,
                 char *name,
                 /*@null@*/ void (*fp)(),
@@ -236,7 +233,6 @@ void holdn (context *ctx,
 /* execute an operator function by opcode
    the opcode is the payload of an operator object
  */
-extern
 void opexec(context *ctx,
             unsigned opcode)
 {
@@ -346,7 +342,6 @@ void breakhere(context *ctx)
 
 /* create systemdict and call
    all initop?* functions, installing all operators */
-extern
 void initop(context *ctx)
 {
     object op;
