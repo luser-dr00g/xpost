@@ -36,8 +36,10 @@ typedef struct {
 } save_;
 
 typedef struct {
-    unsigned src;
-    unsigned cpy;
+    word tag;
+    word pad;
+    word src;
+    word cpy;
 } saverec_;
 */
 
@@ -48,8 +50,10 @@ void initsave (mfile *mem)
     unsigned t;
     unsigned ent;
     mtab *tab;
+
     ent = mtalloc(mem, 0, 0); /* allocate an entry of zero length */
     assert(ent == VS);
+
     t = initstack(mem);
     tab = (void *)mem->base;
     tab->tab[ent].adr = t;
@@ -75,9 +79,11 @@ unsigned stashed (mfile *mem,
     mtab *tab;
     unsigned cnt;
     unsigned tlev;
+
     cnt = count(mem, adrent(mem, VS));
     findtabent(mem, &tab, &ent);
     tlev = (tab->tab[ent].mark & TLEVM) >> TLEVO;
+
     return tlev == cnt;
 }
 
@@ -88,6 +94,7 @@ unsigned copy(mfile *mem,
     mtab *tab;
     unsigned new;
     unsigned tent = ent;
+
     findtabent(mem, &tab, &ent);
     new = gballoc(mem, tab->tab[ent].sz);
     ent = tent;
@@ -95,23 +102,30 @@ unsigned copy(mfile *mem,
     memcpy(mem->base + adrent(mem, new),
             mem->base + tab->tab[ent].adr,
             tab->tab[ent].sz);
+
     return new;
 }
 
 /* set tlev for ent to current save level
    push saverec relating ent to saved copy */
 void stash(mfile *mem,
+           unsigned tag,
+           unsigned pad,
            unsigned ent)
 {
-    object sav = top(mem, adrent(mem, VS), 0);
     mtab *tab;
-    unsigned rent = ent;
     object o;
     unsigned tlev;
+    unsigned rent = ent;
+    object sav = top(mem, adrent(mem, VS), 0);
+
     findtabent(mem, &tab, &rent);
     tlev = sav.save_.lev;
     tab->tab[rent].mark &= ~TLEVM; // clear TLEV field
     tab->tab[rent].mark |= (tlev << TLEVO);  // set TLEV field
+
+    o.saverec_.tag = tag;
+    o.saverec_.pad = pad;
     o.saverec_.src = ent;
     o.saverec_.cpy = copy(mem, ent);
     push(mem, sav.save_.stk, o);
@@ -128,6 +142,7 @@ void restore(mfile *mem)
     mtab *stab, *ctab;
     unsigned cnt;
     unsigned sent, cent;
+
     v = adrent(mem, VS); // save-stack address
     sav = pop(mem, v); // save-object (stack of saverec_'s)
     cnt = count(mem, sav.save_.stk);

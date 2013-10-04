@@ -41,14 +41,17 @@ typedef bool _Bool;
 /* iterate through all tables,
     clear the MARK in the mark. */
 static
-void unmark(mfile *mem) {
+void unmark(mfile *mem)
+{
     mtab *tab = (void *)(mem->base);
     unsigned i;
+
     for (i = mem->start; i < tab->nextent; i++) {
         tab->tab[i].mark &= ~MARKM;
     }
     while (tab->nexttab != 0) {
         tab = (void *)(mem->base + tab->nexttab);
+
         for (i = 0; i < tab->nextent; i++) {
             tab->tab[i].mark &= ~MARKM;
         }
@@ -57,15 +60,25 @@ void unmark(mfile *mem) {
 
 /* set the MARK in the mark in the tab[ent] */
 static
-void markent(mfile *mem, unsigned ent) {
-    mtab *tab = (void *)(mem->base);
+void markent(mfile *mem,
+        unsigned ent)
+{
+    mtab *tab;
+
+    if (ent < mem->start)
+        return;
+
+    tab = (void *)(mem->base);
+
     findtabent(mem,&tab,&ent);
     tab->tab[ent].mark |= MARKM;
 }
 
 /* is it marked? */
 static
-int marked(mfile *mem, unsigned ent) {
+int marked(mfile *mem,
+        unsigned ent)
+{
     mtab *tab = (void *)(mem->base);
     findtabent(mem,&tab,&ent);
     return (tab->tab[ent].mark & MARKM) >> MARKO;
@@ -77,10 +90,14 @@ void markobject(context *ctx, mfile *mem, object o);
 
 /* recursively mark a dictionary */
 static
-void markdict(context *ctx, mfile *mem, unsigned adr) {
+void markdict(context *ctx,
+        mfile *mem,
+        unsigned adr)
+{
     dichead *dp = (void *)(mem->base + adr);
     object *tp = (void *)(mem->base + adr + sizeof(dichead));
     int j;
+
     for (j=0; j < DICTABN(dp->sz); j++) {
         markobject(ctx, mem, tp[j]);
     }
@@ -88,9 +105,14 @@ void markdict(context *ctx, mfile *mem, unsigned adr) {
 
 /* recursively mark all elements of array */
 static
-void markarray(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
+void markarray(context *ctx,
+        mfile *mem,
+        unsigned adr,
+        unsigned sz)
+{
     object *op = (void *)(mem->base + adr);
     unsigned j;
+
     for (j=0; j < sz; j++) {
         markobject(ctx, mem, op[j]);
     }
@@ -98,8 +120,12 @@ void markarray(context *ctx, mfile *mem, unsigned adr, unsigned sz) {
 
 /* traverse the contents of composite objects */
 static
-void markobject(context *ctx, mfile *mem, object o) {
+void markobject(context *ctx,
+        mfile *mem,
+        object o)
+{
     switch(type(o)) {
+
     case arraytype:
 #ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
@@ -110,6 +136,7 @@ void markobject(context *ctx, mfile *mem, object o) {
             markarray(ctx, mem, adrent(mem, o.comp_.ent), o.comp_.sz);
         }
         break;
+
     case dicttype:
 #ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
@@ -120,6 +147,7 @@ void markobject(context *ctx, mfile *mem, object o) {
             markdict(ctx, mem, adrent(mem, o.comp_.ent));
         }
         break;
+
     case stringtype:
 #ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
@@ -127,17 +155,27 @@ void markobject(context *ctx, mfile *mem, object o) {
         if (bank(ctx, o) != mem) break;
         markent(mem, o.comp_.ent);
         break;
+
+    case filetype:
+        //if (mem == ctx->lo) //shouldn't even find in global
+        markent(mem, o.mark_.padw);
+        break;
     }
 }
 
 /* mark all allocations referred to by objects in stack */
 static
-void markstack(context *ctx, mfile *mem, unsigned stackadr) {
+void markstack(context *ctx,
+        mfile *mem,
+        unsigned stackadr)
+{
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
+
 #ifdef TESTMODULE_GC
     printf("marking stack of size %u\n", s->top);
 #endif
+
 next:
     for (i=0; i < s->top; i++) {
         markobject(ctx, mem, s->data[i]);
@@ -146,38 +184,67 @@ next:
         s = (void *)(mem->base + s->nextseg);
         goto next;
     }
+
+    //if (s->nextseg) { /* maybe not. this is a MARK phase, after all */
+        //sfree(mem, s->nextseg);
+        //s->nextseg = 0;
+    //}
 }
 
 /* mark all allocations referred to by objects in save object's stack of saverec_'s */
 static
-void marksavestack(context *ctx, mfile *mem, unsigned stackadr) {
+void marksavestack(context *ctx,
+        mfile *mem,
+        unsigned stackadr)
+{
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
     (void)ctx;
+
 #ifdef TESTMODULE_GC
     printf("marking save stack of size %u\n", s->top);
 #endif
+
 next:
     for (i=0; i < s->top; i++) {
         //markobject(ctx, mem, s->data[i]);
         //marksavestack(ctx, mem, s->data[i].save_.stk);
         markent(mem, s->data[i].saverec_.src);
         markent(mem, s->data[i].saverec_.cpy);
+        if (s->data[i].saverec_.tag == dicttype) {
+            markdict(ctx, mem, adrent(mem, s->data[i].saverec_.src));
+            markdict(ctx, mem, adrent(mem, s->data[i].saverec_.cpy));
+        }
+        if (s->data[i].saverec_.tag == arraytype) {
+            unsigned sz = s->data[i].saverec_.pad;
+            markarray(ctx, mem, adrent(mem, s->data[i].saverec_.src), sz);
+            markarray(ctx, mem, adrent(mem, s->data[i].saverec_.cpy), sz);
+        }
     }
     if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
         s = (void *)(mem->base + s->nextseg);
         goto next;
     }
+    
+    if (s->nextseg) {
+        sfree(mem, s->nextseg);
+        s->nextseg = 0;
+    }
 }
 
 /* mark all allocations referred to by objects in save stack */
 static
-void marksave(context *ctx, mfile *mem, unsigned stackadr) {
+void marksave(context *ctx,
+        mfile *mem,
+        unsigned stackadr)
+{
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
+
 #ifdef TESTMODULE_GC
     printf("marking save stack of size %u\n", s->top);
 #endif
+
 next:
     for (i=0; i < s->top; i++) {
         //markobject(ctx, mem, s->data[i]);
@@ -191,7 +258,8 @@ next:
 
 /* free list head is in slot zero
    sz is 0 so gc will ignore it */
-void initfree(mfile *mem) {
+void initfree(mfile *mem)
+{
     unsigned ent = mtalloc(mem, 0, sizeof(unsigned));
     unsigned val = 0;
     assert (ent == FREE);
@@ -205,20 +273,25 @@ void initfree(mfile *mem) {
 }
 
 /* free this ent! */
-void mfree(mfile *mem, unsigned ent) {
+void mfree(mfile *mem,
+        unsigned ent)
+{
     unsigned a;
     unsigned z;
-    return;
+    //return;
+
+    if (ent < mem->start)
+        return;
+
     a = adrent(mem, ent);
     if (szent(mem, ent) == 0) return; // ignore zero size allocs
     z = adrent(mem, FREE);
+    printf("freeing %d bytes\n", szent(mem, ent));
 
     /* copy the current free-list head to the data area of the ent. */
-    // *(unsigned *)(mem->base + adrent(mem, ent)) = mem->avail;
     memcpy(mem->base+a, mem->base+z, sizeof(unsigned));
 
     /* copy the ent number into the free-list head */
-    //mem->avail = ent;
     memcpy(mem->base+z, &ent, sizeof(unsigned));
 }
 
@@ -227,69 +300,83 @@ void mfree(mfile *mem, unsigned ent) {
         if element is unmarked and not zero-sized,
             free it.  */
 static
-void sweep(mfile *mem) {
+void sweep(mfile *mem)
+{
     mtab *tab;
     int ntab;
+    unsigned zero = 0;
     unsigned z;
     unsigned i;
 
-    z = adrent(mem, FREE);
-    //memcpy(mem->base+z, &(unsigned){ 0 }, sizeof(unsigned));
-    *(unsigned *)(mem->base+z) = 0;
+    z = adrent(mem, FREE); // address of the free list head
+
+    memcpy(mem->base+z, &zero, sizeof(unsigned)); // discard list
+    //*(unsigned *)(mem->base+z) = 0;
+
+    /* scan first table */
     tab = (void *)(mem->base);
     ntab = 0;
     for (i = mem->start; i < tab->nextent; i++) {
-        if ((tab->tab[i].mark & MARKM) == 0 && tab->tab[i].sz != 0)
-            mfree(mem, i + ntab*TABSZ);
+        if ( (tab->tab[i].mark & MARKM) == 0
+                && tab->tab[i].sz != 0)
+            mfree(mem, i);
     }
-    while (tab->nexttab != 0) {
+
+    /* scan linked tables */
+    while (i < TABSZ && tab->nexttab != 0) {
         tab = (void *)(mem->base + tab->nexttab);
         ++ntab;
+
         for (i = mem->start; i < tab->nextent; i++) {
-            if ((tab->tab[i].mark & MARKM) == 0 && tab->tab[i].sz != 0)
+            if ( (tab->tab[i].mark & MARKM) == 0
+                    && tab->tab[i].sz != 0)
                 mfree(mem, i + ntab*TABSZ);
         }
-        if (i!=TABSZ) break;
     }
 }
 
 /* clear all marks,
    determine GLOBAL/LOCAL and mark all root stacks,
    sweep. */
-void collect(mfile *mem) {
+void collect(mfile *mem)
+{
     unsigned i;
     unsigned *cid;
     context *ctx;
+    int isglobal;
 
     printf("\ncollect:\n");
 
-    unmark(mem);
-
-    /*for(i=mem->roots[0];i<=mem->roots[1];i++){markstack(mem,adrent(mem,i));}*/
-
+    /* determine global/glocal */
     cid = (void *)(mem->base + adrent(mem, CTXLIST));
     ctx = ctxcid(cid[0]);
-    /* markstack(ctx, mem, adrent(mem, VS)); */ // TODO will need a special routine
-    marksave(ctx, mem, adrent(mem, VS));
+    isglobal = mem == ctx->gl;
 
-    if (mem == ctx->lo) {
-        for (i = 0; cid[i]; i++) {
+    if (isglobal) {
+    } else {
+        unmark(mem);
+
+        marksave(ctx, mem, adrent(mem, VS));
+        markstack(ctx, mem, adrent(mem, NAMES));
+
+        for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = ctxcid(cid[i]);
             markstack(ctx, mem, ctx->os);
             markstack(ctx, mem, ctx->ds);
             markstack(ctx, mem, ctx->es);
+            markstack(ctx, mem, ctx->hold);
         }
-    } 
 
-    markstack(ctx, mem, adrent(mem, NAMES));
-
-    sweep(mem);
+        sweep(mem);
+    }
 }
 
 /* print a dump of the free list */
-void dumpfree(mfile *mem) {
+void dumpfree(mfile *mem)
+{
     unsigned e;
     unsigned z = adrent(mem, FREE);;
+
     printf("freelist: ");
     memcpy(&e, mem->base+z, sizeof(unsigned));
     while (e) {
@@ -302,10 +389,13 @@ void dumpfree(mfile *mem) {
 /* scan the free list for a suitably sized bit of memory,
    if the allocator falls back to fresh memory PERIOD times,
         it triggers a collection. */
-unsigned gballoc(mfile *mem, unsigned sz) {
+unsigned gballoc(mfile *mem,
+        unsigned sz)
+{
     unsigned z = adrent(mem, FREE); // free pointer
     unsigned e;                     // working pointer
     static int period = PERIOD;
+
 //#if 0
 try_again:
     memcpy(&e, mem->base+z, sizeof(unsigned)); // e = *z
@@ -328,7 +418,11 @@ try_again:
 }
 
 /* allocate new entry, copy data, steal its adr, stash old adr, free it */
-unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsize) {
+unsigned mfrealloc(mfile *mem,
+        unsigned oldadr,
+        unsigned oldsize,
+        unsigned newsize)
+{
     mtab *tab = NULL;
     unsigned newadr;
     unsigned ent;

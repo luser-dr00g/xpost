@@ -331,6 +331,7 @@ void dumpdic(mfile *mem,
    from a double value */
 //n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag
 //     in order to unextend() later.
+static
 object consextended (double d)
 {
     unsigned long long r = *(unsigned long long *)&d;
@@ -499,7 +500,7 @@ void dicput(context *ctx,
     dichead *dp;
 
 retry:
-    if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
+    if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
     e = diclookup(ctx, mem, d, k);
     if (e == NULL) {
         //error("dict overfull");
@@ -541,7 +542,7 @@ void dicundef(context *ctx,
         object d,
         object k)
 {
-    if (!stashed(mem, d.comp_.ent)) stash(mem, d.comp_.ent);
+    if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
     //find slot for key
     //find last chained key and value with same hash
         //if found: move last key and value to slot

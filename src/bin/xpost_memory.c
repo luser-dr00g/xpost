@@ -386,10 +386,10 @@ unsigned adrent(mfile *mem,
 {
     mtab *tab;// = (void *)(mem->base); // just use mtabadr=0
 
-    assert(mem);
-    assert(mem->base);
+    //assert(mem);
+    //assert(mem->base);
     findtabent(mem,&tab,&ent);
-    assert(tab);
+    //assert(tab);
     return tab->tab[ent].adr;
 }
 
@@ -398,7 +398,7 @@ unsigned szent(mfile *mem,
                unsigned ent)
 {
     mtab *tab;// = (void *)(mem->base); // just use mtabadr=0
-    assert(mem);
+    //assert(mem);
     findtabent(mem,&tab,&ent);
     return tab->tab[ent].sz;
 }
