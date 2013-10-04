@@ -62,7 +62,6 @@ void Iarray (context *ctx,
 
 /* mark obj0..objN-1  ]  array
    end array construction */
-extern
 void arrtomark (context *ctx)
 {
     int i;
@@ -191,7 +190,6 @@ void Aforall(context *ctx,
     push(ctx->lo, ctx->os, barget(ctx, A, 0));
 }
 
-extern
 void initopar (context *ctx,
                object sd)
 {
