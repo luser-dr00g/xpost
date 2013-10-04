@@ -87,7 +87,10 @@ void dumpoper(context *ctx,
     object str = strname(ctx, (object)nm);
     char *s = charstr(ctx, str);
     signat *sig = (void *)(ctx->gl->base + op.sigadr);
-    printf("<operator %d %*s %p>", opcode, str.comp_.sz, s, (void *)sig[0].fp );
+    printf("<operator %d %d:%*s %p>",
+            opcode,
+            str.comp_.sz, str.comp_.sz, s,
+            (void *)sig[0].fp );
 }
 
 /* construct an operator object
