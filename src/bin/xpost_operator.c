@@ -286,10 +286,21 @@ void opexec(context *ctx,
     return;
 
 call:
+    /* If we're executing the context's "currentobject",
+       set the number of arguments consumed,
+       and set a flag declaring that this has been done.
+       This is so onerror() can reset the stack (if possible).
+    */
     if (ctx->currentobject.tag == operatortype 
             && ctx->currentobject.mark_.padw == opcode) {
         ctx->currentobject.mark_.pad0 = sp[i].in; 
         ctx->currentobject.tag |= FOPARGSINHOLD;
+    } else {
+        /* Not executing current op.
+           HOLD may *not* be assumed to contain currentobject's arguments.
+           clear the flag.
+        */
+        ctx->currentobject.tag &= ~FOPARGSINHOLD;
     }
 
     holdn(ctx, ctx->lo, ctx->os, sp[i].in);

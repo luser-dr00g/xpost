@@ -306,7 +306,7 @@ unsigned gballoc(mfile *mem, unsigned sz) {
     unsigned z = adrent(mem, FREE); // free pointer
     unsigned e;                     // working pointer
     static int period = PERIOD;
-#if 0
+//#if 0
 try_again:
     memcpy(&e, mem->base+z, sizeof(unsigned)); // e = *z
     while (e) { // e is not zero
@@ -323,7 +323,7 @@ try_again:
         collect(mem);
         goto try_again;
     }
-#endif
+//#endif
     return mtalloc(mem, 0, sz);
 }
 
