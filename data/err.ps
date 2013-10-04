@@ -1,0 +1,101 @@
+% error dictionaries
+
+(loading err.ps...\n) print
+
+systemdict /$error 13 dict put
+$error begin
+    /ostackarray null def
+    /newerror false def
+    /command null def
+    /errorname null def
+    /initializing true def
+    /Extra () def
+end
+($error)=
+
+/.error {
+    %false setglobal
+    //$error exch /errorname exch put
+    //$error exch /command exch put
+    //$error /newerror true put
+    //$error /errorname get /VMerror ne {
+        //$error /ostackarray get null eq {
+            //$error /estackarray 250 array put
+            //$error /ostackarray 1000 array put
+            //$error /dstackarray 30 array put
+        } if
+        count
+        //$error /ostackarray get exch 0 exch getinterval astore
+        //$error exch /ostack exch put
+        //$error /dstack //$error /dstackarray get dictstack put
+        //$error /estack //$error /estackarray get execstack
+        dup length 2 sub 0 exch getinterval put % trim 1:{ //$err... 2:{ //$err... execstack
+        //$error /ostack get aload pop
+    } if
+    //$error /initializing get {
+        handleerror
+    } if
+    //$error /errorname get dup /stackoverflow eq { clear }{
+        /dictstackoverflow eq {
+            end end %end end end end end end end end
+        } if
+    } ifelse
+    interrupt
+} def
+/signalerror /.error load def
+%(.error)=
+
+/errordict 28 dict def
+errordict begin
+    /signalerror /signalerror load def
+    /handleerror {
+        %traceon
+        //$error begin
+            newerror {
+                /newerror false def
+                (%%[ Error: ) print
+                errorname //=print exec
+                (; OffendingCommand: ) print
+                /command load //=print exec
+                (; Extra: ) print
+                /Extra load //=print exec
+                (]%%\n) print
+                (Stack:\n) print
+                ostack { = } forall
+                (ExecStack:\n) print
+                estack { = } forall
+                flush
+            } if
+        end
+    } def
+    /VMerror {/VMerror //.error exec} def
+    /dictfull {/dictfull //.error exec} def
+    /dictstackoverflow {/dictstackoverflow //.error exec} def
+    /dictstackunderflow {/dictstackunderflow //.error exec} def
+    /execstackoverflow {/execstackoverflow //.error exec} def
+    /invalidaccess {/invalidaccess //.error exec} def
+    /invalidexit {/invalidexit //.error exec} def
+    /invalidfileaccess {/invalidfileaccess //.error exec} def
+    /invalidfont {/invalidfont //.error exec} def
+    /invalidrestore {/invalidrestore //.error exec} def
+    /ioerror {/ioerror //.error exec} def
+    /limitcheck {/limitcheck //.error exec} def
+    /nocurrentpoint {/nocurrentpoint //.error exec} def
+    /rangecheck {/rangecheck //.error exec} def
+    /stackoverflow {/stackoverflow //.error exec} def
+    /stackunderflow {/stackunderflow //.error exec} def
+    /syntaxerror {/syntaxerror //.error exec} def
+    /timeout {/timeout /timeout //.error exec} def
+    /typecheck {/typecheck //.error exec} def
+    /undefined {/undefined //.error exec} def
+    /undefinedfilename {/undefinedfilename //.error exec} def
+    /undefinedresult {/undefinedresult //.error exec} def
+    /unmatchedmark {/unmatchedmark //.error exec} def
+    /unregistered {/unregistered //.error exec} def
+    /interrupt { stop } def
+end
+%(errordict)=
+
+/handleerror { errordict /handleerror get exec } def
+/interrupt { stop } def
+
