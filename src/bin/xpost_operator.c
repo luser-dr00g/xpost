@@ -334,6 +334,7 @@ call:
 #include "xpost_op_save.h"
 #include "xpost_op_misc.h"
 #include "xpost_op_packedarray.h"
+#include "xpost_op_param.h"
 
 /* no-op operator useful as a break target.
    put 'breakhere' in the postscript program,
@@ -418,6 +419,7 @@ void initop(context *ctx)
     //printf("\nopx:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
 
     initoppa(ctx, sd);
+    initopparam(ctx, sd);
 
     //push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
