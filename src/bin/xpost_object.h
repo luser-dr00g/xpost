@@ -170,8 +170,10 @@ typedef struct {
 */
 
 typedef struct {
-    dword src;
-    dword cpy;
+    word tag;
+    word pad;
+    word src;
+    word cpy;
 } saverec_; /* overlays an object so it can be stacked */
 /* but only on the "save" stack, not user visible. */
 
@@ -221,6 +223,8 @@ typedef union {
  * with flags masked-off.
 */
 int type(object o);
+
+int iscomposite(object o);
 
 /**
  * @brief Check whether the object is executable or not.

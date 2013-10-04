@@ -67,11 +67,17 @@ void vmreclaim (context *ctx, object I) {
     switch (I.int_.val) {
     default: error(rangecheck, "invalid argument");
     case -2: /* disable automatic collection in local and global vm */
+             break;
     case -1: /* disable automatic collection in local vm */
+             break;
     case 0: /* enable automatic collection */
+             break;
     case 1: /* perform immediate collection in local vm */
+             collect(ctx->lo);
+             break;
     case 2: /* perform immediate collection in local and global vm */
-             ;
+             collect(ctx->gl);
+             break;
     }
 }
 

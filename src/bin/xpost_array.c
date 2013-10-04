@@ -96,7 +96,7 @@ void arrput(mfile *mem,
             object o)
 {
     if (!stashed(mem, a.comp_.ent))
-        stash(mem, a.comp_.ent);
+        stash(mem, arraytype, a.comp_.sz, a.comp_.ent);
     if (i > a.comp_.sz)
         error(rangecheck, "arrput");
     put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(object), &o);
@@ -109,7 +109,12 @@ void barput(context *ctx,
             integer i,
             object o)
 {
-    arrput(/*bank(ctx, a)*/ a.tag&FBANK? ctx->gl: ctx->lo, a, i, o);
+    mfile *mem = bank(ctx, a);
+    if ( mem == ctx->gl
+            && iscomposite(o)
+            && mem != bank(ctx, o))
+        error(invalidaccess, "local into global");
+    arrput(mem, a, i, o);
 }
 
 /* call get. */

@@ -117,6 +117,17 @@ int type(object o)
     return o.tag & TYPEMASK;
 }
 
+int iscomposite(object o)
+{
+    switch(type(o)){
+        case stringtype:
+        case dicttype:
+        case arraytype:
+            return true;
+    }
+    return false;
+}
+
 /*! \fn object cvx(object o)
   removes the FLIT (literal flag) in the object
   with an inverse mask, returns modified object
