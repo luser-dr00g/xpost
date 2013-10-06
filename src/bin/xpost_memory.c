@@ -126,7 +126,12 @@ void initmem(mfile *mem,
     if (fd != -1){
         if (fstat(fd, &buf) == 0) {
             sz = buf.st_size;
-            if (sz < pgsz) sz = pgsz;
+            if (sz < pgsz) {
+                sz = pgsz;
+#ifdef HAVE_MMAP
+                ftruncate(fd, sz);
+#endif
+            }
         }
     }
 
@@ -195,6 +200,7 @@ mfile *growmem(mfile *mem,
     sz += mem->max;
     printf("growmem: new size: %u\n", sz);
 #ifdef HAVE_MMAP
+    ftruncate(mem->fd, sz);
 # ifdef HAVE_MREMAP
     tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
 # else
