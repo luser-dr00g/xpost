@@ -47,7 +47,7 @@ typedef bool _Bool;
 
 int TRACE = 0;
 itp *itpdata;
-int initializing = 0;
+int initializing = 1;
 
 static unsigned makestack(mfile *mem);
 void eval(context *ctx);
@@ -252,7 +252,7 @@ void initcontext(context *ctx)
     {
         object ud; //userdict
         ud = consbdc(ctx, 100);
-        bdcput(ctx, bot(ctx->lo, ctx->ds, 0), consname(ctx, "userdict"), ud);
+        bdcput(ctx, ud, consname(ctx, "userdict"), ud);
         push(ctx->lo, ctx->ds, ud);
     }
 }
@@ -585,9 +585,12 @@ int main(void) {
     //TRACE=1;
     init();
     sd = bot(ctx->lo, ctx->ds, 0);
+    ctx->vmmode = GLOBAL;
     bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
             cvlit(consbst(ctx, CNT_STR(PACKAGE_DATA_DIR))));
+    ctx->vmmode = LOCAL;
 
+    dumpoper(ctx, 20);
     //dumpoper(ctx, 19);
     //dumpctx(ctx);   /* double-check pre-initialized memory */
     //xit();
