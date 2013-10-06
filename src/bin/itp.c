@@ -48,6 +48,7 @@ typedef bool _Bool;
 int TRACE = 0;
 itp *itpdata;
 int initializing = 1;
+int ignoreinvalidaccess = 0;
 
 static unsigned makestack(mfile *mem);
 void eval(context *ctx);
@@ -580,21 +581,25 @@ void xit(void)
 
 
 int main(void) {
-    object sd;
+    object sd, ud;
     printf("\n^test itp.c\n");
 
     //TRACE=1;
     init();
     sd = bot(ctx->lo, ctx->ds, 0);
+    ud = bot(ctx->lo, ctx->ds, 2);
     ctx->vmmode = GLOBAL;
     bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
             cvlit(consbst(ctx, CNT_STR(PACKAGE_DATA_DIR))));
     ctx->vmmode = LOCAL;
 
-    dumpoper(ctx, 20);
+    dumpoper(ctx, 14);
+    //dumpoper(ctx, 20);
     //dumpoper(ctx, 19);
     //dumpctx(ctx);   /* double-check pre-initialized memory */
     //xit();
+
+    ignoreinvalidaccess = 1;
 
     /* load init.ps and err.ps */
     assert(ctx->gl->base);
@@ -604,6 +609,14 @@ int main(void) {
             CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
     ctx->quit = 0;
     mainloop(ctx);
+
+    bdcput(ctx, sd, consname(ctx, "userdict"), ud);
+    bdcput(ctx, sd, consname(ctx, "errordict"),
+            bdcget(ctx, ud, consname(ctx, "errordict")));
+    bdcput(ctx, sd, consname(ctx, "$error"),
+            bdcget(ctx, ud, consname(ctx, "$error")));
+
+    ignoreinvalidaccess = 0;
 
     /* prime the exec stack
        so it starts with 'start',

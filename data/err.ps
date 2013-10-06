@@ -1,18 +1,16 @@
 % err.ps
 %
 % error dictionaries
-% run from init.ps, within
+% run from init.ps
 %
-%    systemdict begin
-%    true setglobal
-%        ...
-%    end
-%    false setglobal
-%    
 
 (loading err.ps...\n) print
 
-systemdict /$error 13 dict put
+currentglobal
+false setglobal
+userdict begin
+
+/$error 13 dict def
 $error begin
     /ostackarray null def
     /newerror false def
@@ -24,7 +22,7 @@ end
 ($error)=
 
 /.error {
-    true setglobal
+    false setglobal
     //$error exch /errorname exch put
     //$error exch /command exch put
     //$error /newerror true put
@@ -50,7 +48,6 @@ end
             end end %end end end end end end end end
         } if
     } ifelse
-    false setglobal
     interrupt
 } def
 /signalerror /.error load def
@@ -110,3 +107,5 @@ end
 /handleerror { errordict /handleerror get exec } def
 /interrupt { stop } def
 
+end
+setglobal
