@@ -156,16 +156,20 @@ execdict begin
 end
 
 /start {
-    /quit {
+    currentglobal
+    false setglobal
+    userdict /quit {
         %exit
         //execdict /quitflag true put
-        //$error /newerror false put
+        $error /newerror false put
         interrupt
-    } def
+    } put
+    setglobal
 
     /executive load stopped
     pop //quit % the operator
 } def
+%currentfile flushfile
 
 /prompt {
     (PS) print
@@ -286,6 +290,7 @@ userdict begin
     >>
 >> def
 end
+true setglobal
 
 % key instance category  defineresource  instance
 /defineresource {

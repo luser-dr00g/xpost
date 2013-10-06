@@ -534,16 +534,19 @@ void bdcput(context *ctx,
         object v)
 {
     mfile *mem = bank(ctx, d);
-    if ( mem == ctx->gl
-            && iscomposite(k)
-            && mem != bank(ctx, k))
-        error(invalidaccess, "local key into global dict");
-    if ( mem == ctx->gl
-            && iscomposite(v)
-            && mem != bank(ctx, v)) {
-        dumpobject(v);
-        error(invalidaccess, "local value into global dict");
+    if (!ignoreinvalidaccess) {
+        if ( mem == ctx->gl
+                && iscomposite(k)
+                && mem != bank(ctx, k))
+            error(invalidaccess, "local key into global dict");
+        if ( mem == ctx->gl
+                && iscomposite(v)
+                && mem != bank(ctx, v)) {
+            dumpobject(v);
+            error(invalidaccess, "local value into global dict");
+        }
     }
+
     dicput(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k, v);
 }
 

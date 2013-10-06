@@ -33,6 +33,7 @@ typedef struct {
 #include <setjmp.h>
 extern itp *itpdata;
 extern int initializing;
+extern int ignoreinvalidaccess;
 extern jmp_buf jbmainloop;
 extern bool jbmainloopset;
 

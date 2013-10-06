@@ -110,10 +110,13 @@ void barput(context *ctx,
             object o)
 {
     mfile *mem = bank(ctx, a);
-    if ( mem == ctx->gl
-            && iscomposite(o)
-            && mem != bank(ctx, o))
-        error(invalidaccess, "local value into global array");
+    if (!ignoreinvalidaccess) {
+        if ( mem == ctx->gl
+                && iscomposite(o)
+                && mem != bank(ctx, o))
+            error(invalidaccess, "local value into global array");
+    }
+
     arrput(mem, a, i, o);
 }
 
