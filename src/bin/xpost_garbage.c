@@ -23,15 +23,15 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
-#include "xpost_memory.h"  // garbage collector works with mtab and mfile
-#include "xpost_object.h"  // collector examines objects
-#include "xpost_stack.h"  // collector examines stacks
-#include "itp.h"  // collector can determine whether mfile is local or global
-#include "xpost_array.h"  // collector examines arrays
-#include "xpost_string.h"  // string
-#include "xpost_dict.h"  // collector examines dicts
-#include "xpost_save.h"  // collector examines the save stacks
-#include "xpost_garbage.h"  // double-check prototypes
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_stack.h"
+#include "itp.h"
+#include "xpost_array.h"
+#include "xpost_string.h"
+#include "xpost_dict.h"
+#include "xpost_save.h"
+#include "xpost_garbage.h"
 
 #ifdef TESTMODULE_GC
 #include <stdio.h>
@@ -338,21 +338,40 @@ void sweep(mfile *mem)
 /* clear all marks,
    determine GLOBAL/LOCAL and mark all root stacks,
    sweep. */
-void collect(mfile *mem)
+void collect(mfile *mem, int dosweep)
 {
     unsigned i;
     unsigned *cid;
     context *ctx;
     int isglobal;
 
+    if (initializing) 
+        return;
+
     printf("\ncollect:\n");
 
     /* determine global/glocal */
+    isglobal = false;
     cid = (void *)(mem->base + adrent(mem, CTXLIST));
-    ctx = ctxcid(cid[0]);
-    isglobal = mem == ctx->gl;
+    for (i = 0; i < MAXCONTEXT; i++) {
+        ctx = ctxcid(cid[i]);
+        if (mem == ctx->gl) {
+            isglobal = true;
+            break;
+        }
+    }
 
     if (isglobal) {
+        unmark(mem);
+
+        marksave(ctx, mem, adrent(mem, VS));
+        markstack(ctx, mem, adrent(mem, NAMES));
+
+        for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
+            ctx = ctxcid(cid[i]);
+            collect(ctx->lo, false);
+        }
+
     } else {
         unmark(mem);
 
@@ -366,9 +385,10 @@ void collect(mfile *mem)
             markstack(ctx, mem, ctx->es);
             markstack(ctx, mem, ctx->hold);
         }
-
-        sweep(mem);
     }
+
+    if (dosweep)
+        sweep(mem);
 }
 
 /* print a dump of the free list */
@@ -410,7 +430,7 @@ try_again:
     }
     if (--period == 0) {
         period = PERIOD;
-        collect(mem);
+        collect(mem, true);
         goto try_again;
     }
 //#endif
