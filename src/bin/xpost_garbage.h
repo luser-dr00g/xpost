@@ -19,7 +19,7 @@ unsigned gballoc(mfile *mem, unsigned sz);
 void mfree(mfile *mem, unsigned ent);
 
 /* perform a collection on mfile */
-void collect(mfile *mem);
+void collect(mfile *mem, int dosweep);
 
 /* reallocate data, preserving (the maximum of) original contents */
 unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);

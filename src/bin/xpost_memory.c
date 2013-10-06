@@ -188,11 +188,12 @@ void exitmem(mfile *mem)
 }
 
 /* reallocate and possibly move mem->base */
-mfile *growmem(mfile *mem,
+void growmem(mfile *mem,
                unsigned sz)
 {
     void *tmp;
     int newfd;
+    char zero = 0;
 
     printf("growmem: %p %u + %u\n", mem->base, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
@@ -211,11 +212,12 @@ mfile *growmem(mfile *mem,
      */
     msync(mem->base, mem->used, MS_SYNC);
     //newfd = dup(mem->fd);
+    newfd = mem->fd;
     munmap(mem->base, mem->max);
-    close(mem->fd);
-    newfd = open(mem->fname, 
-            O_RDWR | O_CREAT,
-            XPOST_MODE_READ_WRITE);
+    //close(mem->fd);
+    //newfd = open(mem->fname, O_RDWR | O_CREAT, XPOST_MODE_READ_WRITE);
+    lseek(newfd, 0, SEEK_SET);
+    ftruncate(newfd, sz);
     tmp = mmap(NULL, sz,
             PROT_READ|PROT_WRITE,
             newfd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED ,
@@ -244,7 +246,6 @@ mfile *growmem(mfile *mem,
 #endif
     mem->base = tmp;
     mem->max = sz;
-    return mem;
 }
 
 /* allocate memory, returns offset in memory file
@@ -259,7 +260,7 @@ unsigned mfalloc(mfile *mem,
 
     if (sz) {
         if (sz + mem->used >= mem->max)
-            mem = growmem(mem,sz);
+            growmem(mem,sz);
         mem->used += sz;
         memset(mem->base+adr, 0, sz);  //bzero(mem->base+adr, sz);
         /* bus error with mremap(SHARED,ANON)! */
