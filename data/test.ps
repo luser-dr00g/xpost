@@ -317,7 +317,9 @@ false exch {
 %(echo)=
 
 (end)=
-end %currentdict userdict eq check
+end
+end %something's wrong: extra dict on stack
+currentdict userdict eq check
 
 %eoclip
 %eofill
@@ -407,9 +409,13 @@ false not check
 (forall)=
 (1: 0 [13 29 3 -8 21] {add} forall 58 eq check)=
 0 [13 29 3 -8 21] {add} forall 58 eq check
+(a)=
 /d 2 dict def
+(b)=
 d /abc 123 put
+(c)=
 d /xyz (test) put
+
 (2: d {} forall)=
 d {} forall
     dup 123 eq {
