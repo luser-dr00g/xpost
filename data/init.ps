@@ -4,6 +4,12 @@
 %procedures in systemdict
 (loading init.ps...\n) print
 
+%(35\n) print
+%currentfile flushfile
+
+systemdict begin
+true setglobal
+
 /DATA_DIR {
     /PACKAGE_DATA_DIR dup where {
         exch get
@@ -11,12 +17,6 @@
         pop (../../data)
     } ifelse
 } def
-
-%(35\n) print
-%currentfile flushfile
-
-systemdict begin
-true setglobal
 
 /product (Xpost3) def
 /version (0) def
@@ -364,6 +364,10 @@ end % userdict
 
 %traceon
 %debugloadon
+
+/runtest {
+    DATA_DIR (/test.ps) strcat run
+} def
 
 $error/initializing false put % ready to go!
 false setglobal

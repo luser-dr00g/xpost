@@ -47,10 +47,10 @@ void vmreclaim (context *ctx, object I) {
     case 0: /* enable automatic collection */
              break;
     case 1: /* perform immediate collection in local vm */
-             collect(ctx->lo);
+             collect(ctx->lo, true);
              break;
     case 2: /* perform immediate collection in local and global vm */
-             collect(ctx->gl);
+             collect(ctx->gl, true);
              break;
     }
 }

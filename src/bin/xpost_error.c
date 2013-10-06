@@ -33,7 +33,7 @@ typedef bool _Bool;
 #include "xpost_error.h"  // double-check prototypes
 #include "xpost_name.h"  // create names
 
-//#define EMITONERROR
+#define EMITONERROR
 
 char *errorname[] = { ERRORS(AS_STR) };
 
@@ -132,9 +132,18 @@ void onerror(context *ctx,
     //printf("3\n");
     errmsg = errormsg;
     //printf("4\n");
-    bdcput(ctx, dollarerror,
-            consname(ctx, "Extra"),
-            consbst(ctx, strlen(errmsg), errmsg));
+    if (err == VMerror) {
+        bdcput(ctx, dollarerror,
+                consname(ctx, "Extra"),
+                null);
+    } else {
+        unsigned mode = ctx->vmmode;
+        ctx->vmmode = GLOBAL;
+        bdcput(ctx, dollarerror,
+                consname(ctx, "Extra"),
+                consbst(ctx, strlen(errmsg), errmsg));
+        ctx->vmmode = mode;
+    }
     //printf("5\n");
 
     push(ctx->lo, ctx->os, ctx->currentobject);
