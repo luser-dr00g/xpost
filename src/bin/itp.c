@@ -574,6 +574,7 @@ void init(void)
 void xit(void)
 {
     exititp(itpdata);
+    free(itpdata);
     exit(0);
 }
 
