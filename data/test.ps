@@ -3,6 +3,7 @@
 %traceon
 /break { currentfile flushfile } def
 
+
 /failcount 0 def
 /fail {
     (FAIL\n) print
@@ -34,7 +35,7 @@ breakhere
 { = } stopped { $error /errorname get /stackunderflow eq check }{ fail } ifelse
 
 /== cvx ==
-{ == } stopped { $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
+{ == } stopped { end $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
 
 (abs)=
 4.5 abs 4.5 eq check
@@ -318,7 +319,6 @@ false exch {
 
 (end)=
 end
-end %something's wrong: extra dict on stack
 currentdict userdict eq check
 
 %eoclip

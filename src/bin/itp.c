@@ -599,6 +599,8 @@ int main(void) {
     //dumpctx(ctx);   /* double-check pre-initialized memory */
     //xit();
 
+    /* FIXME: Squeeze and eliminate this workaround.
+       Ignoring errors is a bad idea.  */
     ignoreinvalidaccess = 1;
 
     /* load init.ps and err.ps */
