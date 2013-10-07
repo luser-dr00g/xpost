@@ -555,59 +555,49 @@ void dumpctx(context *ctx)
 
 #ifdef TESTMODULE_ITP
 
+/* global shortcut for a single-threaded interpreter */
 context *ctx;
+
+/* string constructor helper for literals */
 #define CNT_STR(s) sizeof(s)-1, s
 
-void init(void)
+/* set global pagesize, initialize eval's jump-table */
+void initalldata(void)
 {
     pgsz = getpagesize();
     initializing = 1;
     initevaltype();
 
+    /* allocate the top-level itpdata data structure. */
     null = cvlit(null);
     itpdata = malloc(sizeof*itpdata);
     if (!itpdata) error(unregistered, "itpdata=malloc failed");
     memset(itpdata, 0, sizeof*itpdata);
+
+    /* allocate and initialize the first context structure
+       and associated memory structures.
+       populate OPTAB and systemdict with operators.
+       push systemdict, globaldict, and userdict on dict stack
+     */
     inititp(itpdata);
+
+    /* set global shortcut to context_0
+       (the only context in a single-threaded interpreter) */
     ctx = &itpdata->ctab[0];
 }
 
-void xit(void)
+void setdatadir(context *ctx, object sd)
 {
-    exititp(itpdata);
-    free(itpdata);
-    exit(0);
-}
-
-
-int main(void) {
-    object sd, ud;
-    printf("\n^test itp.c\n");
-
-    /* Allocate and initialize all interpreter data structures. */
-    init();
-
-    /* extract systemdict and userdict for additional definitions */
-    sd = bot(ctx->lo, ctx->ds, 0);
-    ud = bot(ctx->lo, ctx->ds, 2);
-
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
     bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
             cvlit(consbst(ctx, CNT_STR(PACKAGE_DATA_DIR))));
     ctx->vmmode = LOCAL;
+}
 
-    dumpoper(ctx, 14);
-    //dumpoper(ctx, 20);
-    //dumpoper(ctx, 19);
-    //dumpctx(ctx);   /* double-check pre-initialized memory */
-    //xit();
-
-/* FIXME: Squeeze and eliminate this workaround.
-   Ignoring errors is a bad idea.  */
-ignoreinvalidaccess = 1;
-
-    /* load init.ps and err.ps */
+/* load init.ps and err.ps while systemdict is writeable */
+void loadinitps(context *ctx)
+{
     assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
     push(ctx->lo, ctx->es,
@@ -615,7 +605,10 @@ ignoreinvalidaccess = 1;
             CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
     ctx->quit = 0;
     mainloop(ctx);
+}
 
+void copyudtosd(context *ctx, object ud, object sd)
+{
     /* copy userdict names to systemdict
         Problem: This is clearly an invalidaccess,
         and yet is required by the PLRM. Discussion:
@@ -626,9 +619,38 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
             bdcget(ctx, ud, consname(ctx, "errordict")));
     bdcput(ctx, sd, consname(ctx, "$error"),
             bdcget(ctx, ud, consname(ctx, "$error")));
+}
+
+void createitp(void)
+{
+    object sd, ud;
+
+    /* Allocate and initialize all interpreter data structures. */
+    initalldata();
+
+    /* extract systemdict and userdict for additional definitions */
+    sd = bot(ctx->lo, ctx->ds, 0);
+    ud = bot(ctx->lo, ctx->ds, 2);
+
+    setdatadir(ctx, sd);
+
+/* FIXME: Squeeze and eliminate this workaround.
+   Ignoring errors is a bad idea.  */
+ignoreinvalidaccess = 1;
+
+    loadinitps(ctx);
+
+    copyudtosd(ctx, ud, sd);
 
 ignoreinvalidaccess = 0;
 
+    /* make systemdict readonly */
+    bdcput(ctx, sd, consname(ctx, "systemdict"), setfaccess(sd,readonly));
+    tob(ctx->lo, ctx->ds, 0, setfaccess(sd, readonly));
+}
+
+void runitp(void)
+{
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
@@ -640,11 +662,28 @@ ignoreinvalidaccess = 0;
     initializing = 0;
     ctx->quit = 0;
     mainloop(ctx);
+}
 
+void xit(void)
+{
     dumpoper(ctx, 1); // is this pointer value constant?
-
     printf("bye!\n"); fflush(NULL);
+    exititp(itpdata);
+    free(itpdata);
+    exit(0);
+}
+
+int main(void)
+{
+    printf("\n^test itp.c\n");
+
+    createitp();
+
+    runitp();
+
     xit();
+
+    /* not reached. xit() calls exit() */
     return 0;
 }
 
