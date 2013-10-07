@@ -179,11 +179,15 @@ void exitmem(mfile *mem)
     mem->max = 0;
 
     if (mem->fd != -1) {
-        /* int ftruncate(int fd, off_t length); */
-        /* The truncate() and ftruncate() functions cause the
-           regular file named by path or referenced by fd to
-           be truncated to a size of precisely length bytes. */
         close(mem->fd);
+        mem->fd = -1;
+    }
+    if (mem->fname) {
+        struct stat sb;
+        if (stat(mem->fname, &sb) == 0)
+            remove(mem->fname);
+        free(mem->fname);
+        mem->fname = NULL;
     }
 }
 
