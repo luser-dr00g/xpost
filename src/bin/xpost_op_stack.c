@@ -51,7 +51,7 @@ typedef bool _Bool;
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
-#include "itp.h"
+#include "xpost_interpreter.h"
 #include "xpost_error.h"
 #include "xpost_name.h"
 #include "xpost_dict.h"

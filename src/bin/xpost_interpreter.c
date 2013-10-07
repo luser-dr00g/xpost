@@ -28,7 +28,7 @@ typedef bool _Bool;
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks
-#include "itp.h" // uses: context itp MAXCONTEXT MAXMFILE
+#include "xpost_interpreter.h" // uses: context itp MAXCONTEXT MAXMFILE
 #include "xpost_error.h"  // interpreter catches errors
 #include "xpost_string.h"  // eval functions examine strings
 #include "xpost_array.h"  // eval functions examine arrays
@@ -671,19 +671,6 @@ void destroyitp(void)
     collect(itpdata->ctab->gl, true, true);
     exititp(itpdata);
     free(itpdata);
-}
-
-int main(void)
-{
-    printf("\n^test itp.c\n");
-
-    createitp();
-
-    runitp();
-
-    destroyitp();
-
-    return 0;
 }
 
 #endif

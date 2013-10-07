@@ -29,7 +29,7 @@ typedef bool _Bool;
 #include "xpost_stack.h"  // may count the save stack
 #include "xpost_garbage.h"  // arrays are garbage collected
 #include "xpost_save.h"  // arrays obey save/restore
-#include "itp.h"  // banked arrays may be in global or local mfiles
+#include "xpost_interpreter.h"  // banked arrays may be in global or local mfiles
 #include "xpost_error.h"  // array functions may throw errors
 #include "xpost_array.h"  // double-check prototypes
 

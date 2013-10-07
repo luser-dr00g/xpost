@@ -25,7 +25,7 @@ typedef bool _Bool;
 #include "xpost_object.h"
 #include "xpost_stack.h"
 #include "xpost_save.h"
-#include "itp.h"
+#include "xpost_interpreter.h"
 #include "xpost_error.h"
 #include "xpost_string.h"
 #include "xpost_array.h"
