@@ -313,7 +313,10 @@ void mfree(mfile *mem,
     if (tab->tab[rent].tag == filetype) {
         FILE *fp;
         get(mem, ent, 0, sizeof(FILE *), &fp);
-        if (fp)
+        if (fp
+                && fp != stdin
+                && fp != stdout
+                && fp != stderr)
             fclose(fp);
     }
 
