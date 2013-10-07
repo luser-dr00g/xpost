@@ -295,6 +295,8 @@ void initfree(mfile *mem)
 void mfree(mfile *mem,
         unsigned ent)
 {
+    mtab *tab;
+    unsigned rent = ent;
     unsigned a;
     unsigned z;
     //return;
@@ -302,8 +304,19 @@ void mfree(mfile *mem,
     if (ent < mem->start)
         return;
 
-    a = adrent(mem, ent);
-    if (szent(mem, ent) == 0) return; // ignore zero size allocs
+    findtabent(mem, &tab, &rent);
+    //a = adrent(mem, ent);
+    a = tab->tab[rent].adr;
+    //if (szent(mem, ent) == 0) return; // ignore zero size allocs
+    if (tab->tab[rent].sz == 0) return;
+
+    if (tab->tab[rent].tag == filetype) {
+        FILE *fp;
+        get(mem, ent, 0, sizeof(FILE *), &fp);
+        if (fp)
+            fclose(fp);
+    }
+
     z = adrent(mem, FREE);
     printf("freeing %d bytes\n", szent(mem, ent));
 

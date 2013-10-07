@@ -668,6 +668,7 @@ void destroyitp(void)
 {
     dumpoper(ctx, 1); // is this pointer value constant?
     printf("bye!\n"); fflush(NULL);
+    collect(itpdata->ctab->gl, true, true);
     exititp(itpdata);
     free(itpdata);
 }
