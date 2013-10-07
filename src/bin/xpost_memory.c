@@ -338,7 +338,8 @@ unsigned initmtab(mfile *mem)
  */
 unsigned mtalloc(mfile *mem,
                  unsigned mtabadr,
-                 unsigned sz)
+                 unsigned sz,
+                 unsigned tag)
 {
     unsigned ent;
     unsigned adr;
@@ -358,6 +359,7 @@ unsigned mtalloc(mfile *mem,
     findtabent(mem, &tab, &ent); //recalc
     tab->tab[ent].adr = adr;
     tab->tab[ent].sz = sz;
+    tab->tab[ent].tag = tag;
 
     if (tab->nextent == TABSZ){
         unsigned newtab = initmtab(mem);
@@ -478,13 +480,13 @@ int main(){
     printf("\n^test m.c\n");
     //printf("getmemfile: %d\n", getmemfile());
 
-    ent = mtalloc(&mem, 0, sizeof seven);
+    ent = mtalloc(&mem, 0, sizeof seven, 0);
     put(&mem, ent, 0, sizeof seven, &seven);
     get(&mem, ent, 0, sizeof seven, &ret);
     printf("put %d, got %d\n", seven, ret);
 
     unsigned ent2;
-    ent2 = mtalloc(&mem, 0, 8*sizeof seven);
+    ent2 = mtalloc(&mem, 0, 8*sizeof seven, 0);
     put(&mem, ent2, 6, sizeof seven, &seven);
     get(&mem, ent2, 6, sizeof seven, &ret);
     printf("put %d in slot 7, got %d\n", seven, ret);
@@ -494,7 +496,7 @@ int main(){
     unsigned ent3;
     char str[] = "beads in buddha's necklace";
     char sret[sizeof str];
-    ent3 = mtalloc(&mem, 0, strlen(str)+1);
+    ent3 = mtalloc(&mem, 0, strlen(str)+1, 0);
     put(&mem, ent3, 0, sizeof str, str);
     get(&mem, ent3, 0, sizeof str, sret);
     printf("stored and retrieved %s\n", sret);

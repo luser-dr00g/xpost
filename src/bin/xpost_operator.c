@@ -69,7 +69,7 @@ int noop = 0;
 /* allocate the OPTAB structure in VM */
 void initoptab (context *ctx)
 {
-    unsigned ent = mtalloc(ctx->gl, 0, MAXOPS * sizeof(oper));
+    unsigned ent = mtalloc(ctx->gl, 0, MAXOPS * sizeof(oper), 0);
     mtab *tab = (void *)(ctx->gl);
     assert(ent == OPTAB);
     findtabent(ctx->gl, &tab, &ent);

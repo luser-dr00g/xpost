@@ -76,7 +76,7 @@ void sfree(mfile *mem,
     mtab *tab;
     unsigned e;
     if (s->nextseg) sfree(mem, s->nextseg);
-    e = mtalloc(mem, 0, 0); /* allocate entry with 0 size */
+    e = mtalloc(mem, 0, 0, 0); /* allocate entry with 0 size */
     findtabent(mem, &tab, &e);
     tab->tab[e].adr = stackadr; /* insert address */
     tab->tab[e].sz = sizeof(stack); /* insert size */

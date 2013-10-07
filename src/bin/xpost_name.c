@@ -69,9 +69,9 @@ void initnames(context *ctx)
 
     mode = ctx->vmmode;
     ctx->vmmode = GLOBAL;
-    ent = mtalloc(ctx->gl, 0, 0); //gl:NAMES
+    ent = mtalloc(ctx->gl, 0, 0, 0); //gl:NAMES
     assert(ent == NAMES);
-    ent = mtalloc(ctx->gl, 0, 0); //gl:NAMET
+    ent = mtalloc(ctx->gl, 0, 0, 0); //gl:NAMET
     assert(ent == NAMET);
 
     t = initstack(ctx->gl);
@@ -82,9 +82,9 @@ void initnames(context *ctx)
     assert (top(ctx->gl, adrent(ctx->gl, NAMES), 0).comp_.ent == BOGUSNAME);
 
     ctx->vmmode = LOCAL;
-    ent = mtalloc(ctx->lo, 0, 0); //lo:NAMES
+    ent = mtalloc(ctx->lo, 0, 0, 0); //lo:NAMES
     assert(ent == NAMES);
-    ent = mtalloc(ctx->lo, 0, 0); //lo:NAMET
+    ent = mtalloc(ctx->lo, 0, 0, 0); //lo:NAMET
     assert(ent == NAMET);
 
     t = initstack(ctx->lo);
@@ -237,9 +237,9 @@ void init(context *ctx) {
     ctx->gl = malloc(sizeof(mfile));
     initmem(ctx->gl, "x.mem");
     (void)initmtab(ctx->gl); // create mtab at address zero
-    //(void)mtalloc(ctx->gl, 0, 0); //FREE
+    //(void)mtalloc(ctx->gl, 0, 0, 0); //FREE
     initfree(ctx->gl);
-    (void)mtalloc(ctx->gl, 0, 0); //VS
+    (void)mtalloc(ctx->gl, 0, 0, 0); //VS
     initctxlist(ctx->gl);
 
     initnames(ctx);

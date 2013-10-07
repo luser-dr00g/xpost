@@ -51,7 +51,7 @@ void initsave (mfile *mem)
     unsigned ent;
     mtab *tab;
 
-    ent = mtalloc(mem, 0, 0); /* allocate an entry of zero length */
+    ent = mtalloc(mem, 0, 0, 0); /* allocate an entry of zero length */
     assert(ent == VS);
 
     t = initstack(mem);
@@ -96,7 +96,7 @@ unsigned copy(mfile *mem,
     unsigned tent = ent;
 
     findtabent(mem, &tab, &ent);
-    new = gballoc(mem, tab->tab[ent].sz);
+    new = gballoc(mem, tab->tab[ent].sz, tab->tab[ent].tag);
     ent = tent;
     findtabent(mem, &tab, &ent); //recalc
     memcpy(mem->base + adrent(mem, new),

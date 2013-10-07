@@ -186,8 +186,8 @@ object consdic(mfile *mem,
     d.tag = dicttype | (unlimited << FACCESSO);
     d.comp_.sz = sz;
     d.comp_.off = 0;
-    //d.comp_.ent = mtalloc(mem, 0, sizeof(dichead) + DICTABSZ(sz) );
-    d.comp_.ent = gballoc(mem, sizeof(dichead) + DICTABSZ(sz) );
+    //d.comp_.ent = mtalloc(mem, 0, sizeof(dichead) + DICTABSZ(sz), 0 );
+    d.comp_.ent = gballoc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype);
 
     tab = (void *)(mem->base);
     rent = d.comp_.ent;

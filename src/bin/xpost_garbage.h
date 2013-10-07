@@ -13,7 +13,7 @@ void initfree(mfile *mem);
 void dumpfree(mfile *mem);
 
 /* allocate data, re-using garbage if possible */
-unsigned gballoc(mfile *mem, unsigned sz);
+unsigned gballoc(mfile *mem, unsigned sz, unsigned tag);
 
 /* explicitly add ent to free list */
 void mfree(mfile *mem, unsigned ent);

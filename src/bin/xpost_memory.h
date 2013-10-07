@@ -57,6 +57,7 @@ typedef struct {
         unsigned adr;
         unsigned sz;
         unsigned mark;
+        unsigned tag;
     } tab[TABSZ];
 } mtab;
 
@@ -97,7 +98,7 @@ void dumpmtab(mfile *mem, unsigned mtabadr);
 unsigned initmtab(mfile *mem);
 
 /* allocate memory, returns table index */
-unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz);
+unsigned mtalloc(mfile *mem, unsigned mtabadr, unsigned sz, unsigned tag);
 
 /* find the table and relative entity index for an absolute entity index */
 void findtabent(mfile *mem, /*@out@*/ mtab **atab, /*@out@*/ unsigned *aent);

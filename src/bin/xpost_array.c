@@ -1,4 +1,4 @@
-/*! \file ar.c
+/** \file ar.c
    array functions
 */
 
@@ -35,10 +35,12 @@ typedef bool _Bool;
 
 
 
-/* Allocate an entity with gballoc,
+/**
+  Allocate an entity with gballoc,
    find the appropriate mtab,
    set the current save level in the "mark" field,
-   wrap it up in an object. */
+   wrap it up in an object.
+*/
 object consarr(mfile *mem,
                unsigned sz)
 {
@@ -51,11 +53,11 @@ object consarr(mfile *mem,
 
     assert(mem->base);
 
-    //unsigned ent = mtalloc(mem, 0, sz * sizeof(object));
+    //unsigned ent = mtalloc(mem, 0, sz * sizeof(object), 0);
     if (sz == 0) {
         ent = 0;
     } else {
-        ent = gballoc(mem, (unsigned)(sz * sizeof(object)));
+        ent = gballoc(mem, (unsigned)(sz * sizeof(object)), arraytype);
         tab = (void *)(mem->base);
         rent = ent;
         findtabent(mem, &tab, &rent);
@@ -75,9 +77,10 @@ object consarr(mfile *mem,
     return o;
 } 
 
-/* Select a memory file according to vmmode,
+/** Select a memory file according to vmmode,
    call consarr,
-   set BANK flag. */
+   set BANK flag.
+*/
 object consbar(context *ctx,
                unsigned sz)
 {
@@ -88,8 +91,9 @@ object consbar(context *ctx,
     return a;
 }
 
-/* Copy if necessary,
-   call put. */
+/** Copy if necessary,
+   call put.
+*/
 void arrput(mfile *mem,
             object a,
             integer i,
@@ -102,8 +106,9 @@ void arrput(mfile *mem,
     put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(object), &o);
 }
 
-/* Select mfile according to BANK flag,
-   call arrput. */
+/** Select mfile according to BANK flag,
+   call arrput.
+*/
 void barput(context *ctx,
             object a,
             integer i,
