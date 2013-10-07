@@ -193,7 +193,6 @@ void growmem(mfile *mem,
 {
     void *tmp;
     int newfd;
-    char zero = 0;
 
     printf("growmem: %p %u + %u\n", mem->base, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
@@ -211,11 +210,8 @@ void growmem(mfile *mem,
        same file descriptor; munmap the previous.
      */
     msync(mem->base, mem->used, MS_SYNC);
-    //newfd = dup(mem->fd);
     newfd = mem->fd;
     munmap(mem->base, mem->max);
-    //close(mem->fd);
-    //newfd = open(mem->fname, O_RDWR | O_CREAT, XPOST_MODE_READ_WRITE);
     lseek(newfd, 0, SEEK_SET);
     ftruncate(newfd, sz);
     tmp = mmap(NULL, sz,
