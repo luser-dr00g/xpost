@@ -86,20 +86,21 @@ int marked(mfile *mem,
 
 /* recursively mark an object */
 static
-void markobject(context *ctx, mfile *mem, object o);
+void markobject(context *ctx, mfile *mem, object o, int markall);
 
 /* recursively mark a dictionary */
 static
 void markdict(context *ctx,
         mfile *mem,
-        unsigned adr)
+        unsigned adr,
+        int markall)
 {
     dichead *dp = (void *)(mem->base + adr);
     object *tp = (void *)(mem->base + adr + sizeof(dichead));
     int j;
 
     for (j=0; j < DICTABN(dp->sz); j++) {
-        markobject(ctx, mem, tp[j]);
+        markobject(ctx, mem, tp[j], markall);
     }
 }
 
@@ -108,13 +109,14 @@ static
 void markarray(context *ctx,
         mfile *mem,
         unsigned adr,
-        unsigned sz)
+        unsigned sz,
+        int markall)
 {
     object *op = (void *)(mem->base + adr);
     unsigned j;
 
     for (j=0; j < sz; j++) {
-        markobject(ctx, mem, op[j]);
+        markobject(ctx, mem, op[j], markall);
     }
 }
 
@@ -122,7 +124,8 @@ void markarray(context *ctx,
 static
 void markobject(context *ctx,
         mfile *mem,
-        object o)
+        object o,
+        int markall)
 {
     switch(type(o)) {
 
@@ -130,10 +133,15 @@ void markobject(context *ctx,
 #ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
-        if (bank(ctx, o) != mem) break;
+        if (bank(ctx, o) != mem) {
+            if (markall)
+                mem = bank(ctx, o);
+            else
+                break;
+        }
         if (!marked(mem, o.comp_.ent)) {
             markent(mem, o.comp_.ent);
-            markarray(ctx, mem, adrent(mem, o.comp_.ent), o.comp_.sz);
+            markarray(ctx, mem, adrent(mem, o.comp_.ent), o.comp_.sz, markall);
         }
         break;
 
@@ -141,10 +149,15 @@ void markobject(context *ctx,
 #ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
-        if (bank(ctx, o) != mem) break;
+        if (bank(ctx, o) != mem) {
+            if (markall)
+                mem = bank(ctx, o);
+            else
+                break;
+        }
         if (!marked(mem, o.comp_.ent)) {
             markent(mem, o.comp_.ent);
-            markdict(ctx, mem, adrent(mem, o.comp_.ent));
+            markdict(ctx, mem, adrent(mem, o.comp_.ent), markall);
         }
         break;
 
@@ -152,7 +165,12 @@ void markobject(context *ctx,
 #ifdef TESTMODULE_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
-        if (bank(ctx, o) != mem) break;
+        if (bank(ctx, o) != mem) {
+            if (markall)
+                mem = bank(ctx, o);
+            else
+                break;
+        }
         markent(mem, o.comp_.ent);
         break;
 
@@ -167,7 +185,8 @@ void markobject(context *ctx,
 static
 void markstack(context *ctx,
         mfile *mem,
-        unsigned stackadr)
+        unsigned stackadr,
+        int markall)
 {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
@@ -178,7 +197,7 @@ void markstack(context *ctx,
 
 next:
     for (i=0; i < s->top; i++) {
-        markobject(ctx, mem, s->data[i]);
+        markobject(ctx, mem, s->data[i], markall);
     }
     if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
         s = (void *)(mem->base + s->nextseg);
@@ -212,13 +231,13 @@ next:
         markent(mem, s->data[i].saverec_.src);
         markent(mem, s->data[i].saverec_.cpy);
         if (s->data[i].saverec_.tag == dicttype) {
-            markdict(ctx, mem, adrent(mem, s->data[i].saverec_.src));
-            markdict(ctx, mem, adrent(mem, s->data[i].saverec_.cpy));
+            markdict(ctx, mem, adrent(mem, s->data[i].saverec_.src), false);
+            markdict(ctx, mem, adrent(mem, s->data[i].saverec_.cpy), false);
         }
         if (s->data[i].saverec_.tag == arraytype) {
             unsigned sz = s->data[i].saverec_.pad;
-            markarray(ctx, mem, adrent(mem, s->data[i].saverec_.src), sz);
-            markarray(ctx, mem, adrent(mem, s->data[i].saverec_.cpy), sz);
+            markarray(ctx, mem, adrent(mem, s->data[i].saverec_.src), sz, false);
+            markarray(ctx, mem, adrent(mem, s->data[i].saverec_.cpy), sz, false);
         }
     }
     if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
@@ -338,7 +357,7 @@ void sweep(mfile *mem)
 /* clear all marks,
    determine GLOBAL/LOCAL and mark all root stacks,
    sweep. */
-void collect(mfile *mem, int dosweep)
+void collect(mfile *mem, int dosweep, int markall)
 {
     unsigned i;
     unsigned *cid;
@@ -353,7 +372,7 @@ void collect(mfile *mem, int dosweep)
     /* determine global/glocal */
     isglobal = false;
     cid = (void *)(mem->base + adrent(mem, CTXLIST));
-    for (i = 0; i < MAXCONTEXT; i++) {
+    for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
         ctx = ctxcid(cid[i]);
         if (mem == ctx->gl) {
             isglobal = true;
@@ -365,30 +384,37 @@ void collect(mfile *mem, int dosweep)
         unmark(mem);
 
         marksave(ctx, mem, adrent(mem, VS));
-        markstack(ctx, mem, adrent(mem, NAMES));
+        markstack(ctx, mem, adrent(mem, NAMES), markall);
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = ctxcid(cid[i]);
-            collect(ctx->lo, false);
+            collect(ctx->lo, false, markall);
         }
 
     } else {
         unmark(mem);
 
         marksave(ctx, mem, adrent(mem, VS));
-        markstack(ctx, mem, adrent(mem, NAMES));
+        markstack(ctx, mem, adrent(mem, NAMES), markall);
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = ctxcid(cid[i]);
-            markstack(ctx, mem, ctx->os);
-            markstack(ctx, mem, ctx->ds);
-            markstack(ctx, mem, ctx->es);
-            markstack(ctx, mem, ctx->hold);
+            markstack(ctx, mem, ctx->os, markall);
+            markstack(ctx, mem, ctx->ds, markall);
+            markstack(ctx, mem, ctx->es, markall);
+            markstack(ctx, mem, ctx->hold, markall);
         }
     }
 
-    if (dosweep)
+    if (dosweep) {
         sweep(mem);
+        if (isglobal) {
+            for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
+                ctx = ctxcid(cid[i]);
+                sweep(ctx->lo);
+            }
+        }
+    }
 }
 
 /* print a dump of the free list */
@@ -430,7 +456,7 @@ try_again:
     }
     if (--period == 0) {
         period = PERIOD;
-        collect(mem, true);
+        collect(mem, true, false);
         goto try_again;
     }
 //#endif

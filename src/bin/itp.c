@@ -584,10 +584,14 @@ int main(void) {
     object sd, ud;
     printf("\n^test itp.c\n");
 
-    //TRACE=1;
+    /* Allocate and initialize all interpreter data structures. */
     init();
+
+    /* extract systemdict and userdict for additional definitions */
     sd = bot(ctx->lo, ctx->ds, 0);
     ud = bot(ctx->lo, ctx->ds, 2);
+
+    /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
     bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
             cvlit(consbst(ctx, CNT_STR(PACKAGE_DATA_DIR))));
@@ -599,9 +603,9 @@ int main(void) {
     //dumpctx(ctx);   /* double-check pre-initialized memory */
     //xit();
 
-    /* FIXME: Squeeze and eliminate this workaround.
-       Ignoring errors is a bad idea.  */
-    ignoreinvalidaccess = 1;
+/* FIXME: Squeeze and eliminate this workaround.
+   Ignoring errors is a bad idea.  */
+ignoreinvalidaccess = 1;
 
     /* load init.ps and err.ps */
     assert(ctx->gl->base);
@@ -612,13 +616,18 @@ int main(void) {
     ctx->quit = 0;
     mainloop(ctx);
 
+    /* copy userdict names to systemdict
+        Problem: This is clearly an invalidaccess,
+        and yet is required by the PLRM. Discussion:
+https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
+     */
     bdcput(ctx, sd, consname(ctx, "userdict"), ud);
     bdcput(ctx, sd, consname(ctx, "errordict"),
             bdcget(ctx, ud, consname(ctx, "errordict")));
     bdcput(ctx, sd, consname(ctx, "$error"),
             bdcget(ctx, ud, consname(ctx, "$error")));
 
-    ignoreinvalidaccess = 0;
+ignoreinvalidaccess = 0;
 
     /* prime the exec stack
        so it starts with 'start',
