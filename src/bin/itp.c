@@ -129,7 +129,7 @@ void initglobal(context *ctx)
 
     fd = mkstemp(g_filenam);
 
-    initmem(ctx->gl, strdup(g_filenam), fd);
+    initmem(ctx->gl, g_filenam, fd);
     (void)initmtab(ctx->gl);
     initfree(ctx->gl);
     initsave(ctx->gl);
@@ -170,7 +170,7 @@ void initlocal(context *ctx)
 
     fd = mkstemp(l_filenam);
 
-    initmem(ctx->lo, strdup(l_filenam), fd);
+    initmem(ctx->lo, l_filenam, fd);
     (void)initmtab(ctx->lo);
     initfree(ctx->lo);
     initsave(ctx->lo);
