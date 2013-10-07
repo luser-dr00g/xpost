@@ -553,7 +553,7 @@ void dumpctx(context *ctx)
     dumpnames(ctx);
 }
 
-#ifdef TESTMODULE_ITP
+//#ifdef TESTMODULE_ITP
 
 /* global shortcut for a single-threaded interpreter */
 context *ctx;
@@ -673,4 +673,4 @@ void destroyitp(void)
     free(itpdata);
 }
 
-#endif
+//#endif
