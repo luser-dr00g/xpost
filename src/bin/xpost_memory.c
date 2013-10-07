@@ -118,7 +118,11 @@ void initmem(mfile *mem,
     //int fd = -1;
     struct stat buf;
     size_t sz = pgsz;
-    mem->fname = fname;
+    //mem->fname = fname;
+    if (fname)
+        strcpy(mem->fname, fname);
+    else
+        mem->fname[0] = '\0';
 
     //if (fname) { fd = getmemfile(fname); }
 
@@ -182,12 +186,11 @@ void exitmem(mfile *mem)
         close(mem->fd);
         mem->fd = -1;
     }
-    if (mem->fname) {
+    if (mem->fname[0] != '\0') {
         struct stat sb;
         if (stat(mem->fname, &sb) == 0)
             remove(mem->fname);
-        free(mem->fname);
-        mem->fname = NULL;
+        mem->fname[0] = '\0';
     }
 }
 
