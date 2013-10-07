@@ -49,4 +49,10 @@ extern int TRACE;
 void inititp(itp *itp);
 void exititp(itp *itp);
 
+/* 3 simple top-level functions */
+
+void createitp(void);
+void runitp(void);
+void destroyitp(void);
+
 #endif
