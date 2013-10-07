@@ -21,7 +21,7 @@ typedef bool _Bool;
 #include "xpost_memory.h"  // strings live in mfile, accessed via mtab
 #include "xpost_object.h"  // strings are objects
 #include "xpost_garbage.h"  // strings are allocated using gballoc
-#include "itp.h"  // banked strings may live in local or global vm
+#include "xpost_interpreter.h"  // banked strings may live in local or global vm
 #include "xpost_string.h"  // double-check prototypes
 
 /* construct a stringtype object

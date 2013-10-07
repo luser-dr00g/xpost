@@ -24,7 +24,7 @@ typedef bool _Bool;
 #include "xpost_memory.h"  // save/restore works with mtabs
 #include "xpost_object.h"  // save/restore examines objects
 #include "xpost_stack.h"  // save/restore manipulates (internal) stacks
-#include "itp.h"  //
+#include "xpost_interpreter.h"  //
 #include "xpost_garbage.h"  //
 #include "xpost_save.h"  // double-check prototypes
 

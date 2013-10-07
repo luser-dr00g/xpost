@@ -26,7 +26,7 @@ typedef bool _Bool;
 #include "xpost_memory.h" /* mfile mfalloc findtabent */
 #include "xpost_object.h" /* object size */
 /* typedef long long object; */
-#include "itp.h"
+#include "xpost_interpreter.h"
 #include "xpost_error.h" // stack functions may throw errors
 #include "xpost_stack.h"  // double-check prototypes
 /*#define STACKSEGSZ 10 */

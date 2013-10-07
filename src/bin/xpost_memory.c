@@ -40,7 +40,7 @@ typedef bool _Bool;
 
 #include "xpost_memory.h"  // double-check prototypes
 #include "xpost_object.h"  // mfiles contain objects
-#include "itp.h"  // initialize interpreter to test
+#include "xpost_interpreter.h"  // initialize interpreter to test
 #include "xpost_error.h"  // memory functions may throw errors
 
 unsigned pgsz /*= getpagesize()*/ = 4096;
