@@ -124,8 +124,8 @@ object consfile(mfile *mem,
     object f;
 
     f.tag = filetype | (unlimited << FACCESSO);
-    //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *));
-    f.mark_.padw = gballoc(mem, sizeof(FILE *));
+    //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *), 0);
+    f.mark_.padw = gballoc(mem, sizeof(FILE *), filetype);
     put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     return f;
 }

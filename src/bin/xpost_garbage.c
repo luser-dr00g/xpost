@@ -279,13 +279,13 @@ next:
    sz is 0 so gc will ignore it */
 void initfree(mfile *mem)
 {
-    unsigned ent = mtalloc(mem, 0, sizeof(unsigned));
+    unsigned ent = mtalloc(mem, 0, sizeof(unsigned), 0);
     unsigned val = 0;
     assert (ent == FREE);
     put(mem, ent, 0, sizeof(unsigned), &val);
     
     /*
-       unsigned ent = mtalloc(mem, 0, 0);
+       unsigned ent = mtalloc(mem, 0, 0, 0);
        mtab *tab = (void *)mem->base;
        tab->tab[ent].adr = mfalloc(mem, sizeof(unsigned));
    */
@@ -361,7 +361,7 @@ void collect(mfile *mem, int dosweep, int markall)
 {
     unsigned i;
     unsigned *cid;
-    context *ctx;
+    context *ctx = NULL;
     int isglobal;
 
     if (initializing) 
@@ -436,7 +436,8 @@ void dumpfree(mfile *mem)
    if the allocator falls back to fresh memory PERIOD times,
         it triggers a collection. */
 unsigned gballoc(mfile *mem,
-        unsigned sz)
+        unsigned sz,
+        unsigned tag)
 {
     unsigned z = adrent(mem, FREE); // free pointer
     unsigned e;                     // working pointer
@@ -447,8 +448,13 @@ try_again:
     memcpy(&e, mem->base+z, sizeof(unsigned)); // e = *z
     while (e) { // e is not zero
         if (szent(mem,e) >= sz) {
+            mtab *tab;
+            unsigned ent;
             memcpy(mem->base+z,
                     mem->base+adrent(mem,e), sizeof(unsigned));
+            ent = e;
+            findtabent(mem, &tab, &ent);
+            tab->tab[ent].tag = tag;
             return e;
         }
         z = adrent(mem,e);
@@ -460,7 +466,7 @@ try_again:
         goto try_again;
     }
 //#endif
-    return mtalloc(mem, 0, sz);
+    return mtalloc(mem, 0, sz, tag);
 }
 
 /* allocate new entry, copy data, steal its adr, stash old adr, free it */
@@ -481,7 +487,7 @@ unsigned mfrealloc(mfile *mem,
 #endif
 
     /* allocate new entry */
-    rent = ent = mtalloc(mem, 0, newsize);
+    rent = ent = mtalloc(mem, 0, newsize, 0);
     findtabent(mem, &tab, &rent);
 
     /* steal its adr */

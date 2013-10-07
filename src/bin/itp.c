@@ -70,7 +70,7 @@ void initctxlist(mfile *mem)
 {
     unsigned ent;
     mtab *tab;
-    ent = mtalloc(mem, 0, MAXCONTEXT * sizeof(unsigned));
+    ent = mtalloc(mem, 0, MAXCONTEXT * sizeof(unsigned), 0);
     assert(ent == CTXLIST);
     tab = (void *)mem->base;
     memset(mem->base + tab->tab[CTXLIST].adr, 0,
@@ -664,13 +664,12 @@ void runitp(void)
     mainloop(ctx);
 }
 
-void xit(void)
+void destroyitp(void)
 {
     dumpoper(ctx, 1); // is this pointer value constant?
     printf("bye!\n"); fflush(NULL);
     exititp(itpdata);
     free(itpdata);
-    exit(0);
 }
 
 int main(void)
@@ -681,9 +680,8 @@ int main(void)
 
     runitp();
 
-    xit();
+    destroyitp();
 
-    /* not reached. xit() calls exit() */
     return 0;
 }
 

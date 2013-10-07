@@ -33,8 +33,8 @@ object consstr(mfile *mem,
 {
     unsigned ent;
     object o;
-    //ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int));
-    ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int));
+    //ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int), 0);
+    ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype);
     if (ini) put(mem, ent, 0, sz, ini);
     o.tag = stringtype | (unlimited << FACCESSO);
     o.comp_.sz = sz;
