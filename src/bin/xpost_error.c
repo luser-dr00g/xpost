@@ -33,7 +33,7 @@ typedef bool _Bool;
 #include "xpost_error.h"  // double-check prototypes
 #include "xpost_name.h"  // create names
 
-#define EMITONERROR
+//#define EMITONERROR
 
 char *errorname[] = { ERRORS(AS_STR) };
 

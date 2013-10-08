@@ -316,12 +316,14 @@ void mfree(mfile *mem,
         if (fp
                 && fp != stdin
                 && fp != stdout
-                && fp != stderr)
+                && fp != stderr) {
+            printf("gc:mfree closing FILE*\n");
             fclose(fp);
+        }
     }
 
     z = adrent(mem, FREE);
-    printf("freeing %d bytes\n", szent(mem, ent));
+    //printf("freeing %d bytes\n", szent(mem, ent));
 
     /* copy the current free-list head to the data area of the ent. */
     memcpy(mem->base+a, mem->base+z, sizeof(unsigned));
@@ -383,7 +385,7 @@ void collect(mfile *mem, int dosweep, int markall)
     if (initializing) 
         return;
 
-    printf("\ncollect:\n");
+    //printf("\ncollect:\n");
 
     /* determine global/glocal */
     isglobal = false;
