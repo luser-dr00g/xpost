@@ -201,11 +201,11 @@ void growmem(mfile *mem,
     void *tmp;
     int newfd;
 
-    printf("growmem: %p %u + %u\n", mem->base, mem->max, sz);
+    //printf("growmem: %p %u + %u\n", mem->base, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
     else sz = (sz/pgsz + 1) * pgsz;
     sz += mem->max;
-    printf("growmem: new size: %u\n", sz);
+    //printf("growmem: new size: %u\n", sz);
 #ifdef HAVE_MMAP
     ftruncate(mem->fd, sz);
 # ifdef HAVE_MREMAP

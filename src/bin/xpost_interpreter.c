@@ -651,6 +651,8 @@ ignoreinvalidaccess = 0;
 
 void runitp(void)
 {
+    object gsav, lsav;
+    int glev, llev;
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
@@ -658,10 +660,24 @@ void runitp(void)
         /* `start` proc defined in init.ps */
     push(ctx->lo, ctx->es, cvx(consname(ctx, "start")));
 
+    gsav = save(ctx->gl);
+    lsav = save(ctx->lo);
+
     /* Run! */
     initializing = 0;
     ctx->quit = 0;
     mainloop(ctx);
+
+    for ( glev = count(ctx->gl, adrent(ctx->gl, VS));
+            glev > gsav.save_.lev;
+            glev-- ) {
+        restore(ctx->gl);
+    }
+    for ( llev = count(ctx->lo, adrent(ctx->lo, VS));
+            llev > lsav.save_.lev;
+            llev-- ) {
+        restore(ctx->lo);
+    }
 }
 
 void destroyitp(void)
