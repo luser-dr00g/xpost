@@ -43,7 +43,7 @@ typedef struct oper {
 enum typepat { anytype = NTYPES /*stringtype + 1*/,
     floattype, numbertype, proctype };
 
-#define MAXOPS 150
+#define MAXOPS 180
 #define SDSIZE 10
 
 void initoptab(context *ctx);

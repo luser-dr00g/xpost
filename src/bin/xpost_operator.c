@@ -133,6 +133,8 @@ object consoper(context *ctx,
     ctx->vmmode = GLOBAL;
     nm = consname(ctx, name);
     ctx->vmmode = vmmode;
+
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     for (opcode = 0; optab[opcode].name != nm.mark_.padw; opcode++) {
         if (opcode == noop) break;
     }

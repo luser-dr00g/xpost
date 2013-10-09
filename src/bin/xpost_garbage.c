@@ -175,8 +175,11 @@ void markobject(context *ctx,
         break;
 
     case filetype:
-        //if (mem == ctx->lo) //shouldn't even find in global
-        markent(mem, o.mark_.padw);
+        if (mem == ctx->lo) {
+            markent(mem, o.mark_.padw);
+        } else {//shouldn't even find in global
+            printf("file found in global vm\n");
+        }
         break;
     }
 }
