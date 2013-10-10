@@ -123,7 +123,7 @@ object consfile(mfile *mem,
 {
     object f;
 
-    printf("consfile\n");
+    printf("consfile %p\n", fp);
     f.tag = filetype | (unlimited << FACCESSO);
     //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *), 0);
     f.mark_.padw = gballoc(mem, sizeof(FILE *), filetype);
