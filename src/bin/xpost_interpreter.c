@@ -564,7 +564,7 @@ context *ctx;
 /* set global pagesize, initialize eval's jump-table */
 void initalldata(void)
 {
-    pgsz = getpagesize();
+    //pgsz = getpagesize();
     initializing = 1;
     initevaltype();
 
@@ -660,14 +660,17 @@ void runitp(void)
         /* `start` proc defined in init.ps */
     push(ctx->lo, ctx->es, cvx(consname(ctx, "start")));
 
+#if 0
     gsav = save(ctx->gl);
     lsav = save(ctx->lo);
+#endif
 
     /* Run! */
     initializing = 0;
     ctx->quit = 0;
     mainloop(ctx);
 
+#if 0
     for ( glev = count(ctx->gl, adrent(ctx->gl, VS));
             glev > gsav.save_.lev;
             glev-- ) {
@@ -678,6 +681,7 @@ void runitp(void)
             llev-- ) {
         restore(ctx->lo);
     }
+#endif
 }
 
 void destroyitp(void)

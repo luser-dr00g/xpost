@@ -320,10 +320,17 @@ void mfree(mfile *mem,
                 && fp != stdin
                 && fp != stdout
                 && fp != stderr) {
-            printf("gc:mfree closing FILE*\n");
+            tab->tab[rent].tag = 0;
+            printf("gc:mfree closing FILE* %p\n", fp);
+            fflush(stdout);
+            if (fp < 0x1000)
+                return;
             fclose(fp);
+            fp = NULL;
+            put(mem, ent, 0, sizeof(FILE *), &fp);
         }
     }
+    tab->tab[rent].tag = 0;
 
     z = adrent(mem, FREE);
     //printf("freeing %d bytes\n", szent(mem, ent));
