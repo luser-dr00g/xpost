@@ -564,7 +564,7 @@ context *ctx;
 /* set global pagesize, initialize eval's jump-table */
 void initalldata(void)
 {
-    //pgsz = getpagesize();
+    pgsz = getpagesize();
     initializing = 1;
     initevaltype();
 
