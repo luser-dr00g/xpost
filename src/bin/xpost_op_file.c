@@ -357,9 +357,11 @@ void contfilenameforall (context *ctx,
     int len;
     globbuf = oglob.glob_.ptr;
     if (oglob.glob_.off < globbuf->gl_pathc) {
-        push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
+        //push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
+        push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.contfilenameforall));
         push(ctx->lo, ctx->es, Scr);
-        push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+        //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+        push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
         push(ctx->lo, ctx->es, cvlit(Proc));
         ++oglob.glob_.off;
         push(ctx->lo, ctx->es, oglob);
@@ -462,6 +464,7 @@ void initopf (context *ctx,
     op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype); INSTALL;
 //#ifndef HAVE_WIN32
     op = consoper(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
+    ctx->opcuts.contfilenameforall = op.mark_.padw;
     op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype); INSTALL;
 //#endif
     //setfileposition

@@ -181,11 +181,16 @@ void Aforall(context *ctx,
         return;
 
     assert(ctx->gl->base);
-    push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    //push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
+    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
     push(ctx->lo, ctx->es, cvlit(P));
     push(ctx->lo, ctx->es, cvlit(arrgetinterval(A, 1, A.comp_.sz - 1)));
-    if (isx(A)) push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    if (isx(A)) {
+        //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+        push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    }
     push(ctx->lo, ctx->es, P);
     push(ctx->lo, ctx->os, barget(ctx, A, 0));
 }

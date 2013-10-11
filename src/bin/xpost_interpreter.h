@@ -7,6 +7,17 @@
        bank utility function for extracting from the context the mfile relevant to an object
    */
 
+struct opcuts {
+    int contfilenameforall;
+    int cvx;
+    int opfor;
+    int forall;
+    int load;
+    int loop;
+    int repeat;
+    int token;
+};
+
 typedef struct {
     unsigned id;
     /*@dependent@*/ mfile *gl, *lo;
@@ -16,6 +27,7 @@ typedef struct {
     unsigned state;
     unsigned quit;
     object currentobject;
+    struct opcuts opcuts;
 } context;
 
 enum { LOCAL, GLOBAL }; //vmmode

@@ -48,6 +48,7 @@ enum typepat { anytype = NTYPES /*stringtype + 1*/,
 
 void initoptab(context *ctx);
 void dumpoper(context *ctx, int opcode);
+object operfromcode(int opcode);
 
 object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
 

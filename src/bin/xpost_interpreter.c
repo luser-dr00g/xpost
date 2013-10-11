@@ -383,7 +383,8 @@ void evalload(context *ctx)
     push(ctx->lo, ctx->os,
             pop(ctx->lo, ctx->es));
     assert(ctx->gl->base);
-    opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
+    //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
+    opexec(ctx, ctx->opcuts.load);
     if (isx(top(ctx->lo, ctx->os, 0))) {
         push(ctx->lo, ctx->es,
                 pop(ctx->lo, ctx->os));
@@ -432,7 +433,8 @@ void evalstring(context *ctx)
     s = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, s);
     assert(ctx->gl->base);
-    opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
+    //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
+    opexec(ctx, ctx->opcuts.token);
     b = pop(ctx->lo, ctx->os);
     if (b.int_.val) {
         t = pop(ctx->lo, ctx->os);
@@ -451,7 +453,8 @@ void evalfile(context *ctx)
     f = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, f);
     assert(ctx->gl->base);
-    opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
+    //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
+    opexec(ctx, ctx->opcuts.token);
     b = pop(ctx->lo, ctx->os);
     if (b.int_.val) {
         t = pop(ctx->lo, ctx->os);
