@@ -191,4 +191,9 @@ void put(mfile *mem,
         unsigned ent, unsigned offset, unsigned sz,
         /*@in@*/ void *src);
 
+/** \fn int test_memory()
+  perform functionality tests on the memory module.
+*/
+int test_memory();
+
 #endif

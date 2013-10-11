@@ -624,9 +624,12 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
             bdcget(ctx, ud, consname(ctx, "$error")));
 }
 
+
 void createitp(void)
 {
     object sd, ud;
+
+    test_memory();
 
     /* Allocate and initialize all interpreter data structures. */
     initalldata();
@@ -651,6 +654,7 @@ ignoreinvalidaccess = 0;
     bdcput(ctx, sd, consname(ctx, "systemdict"), setfaccess(sd,readonly));
     tob(ctx->lo, ctx->ds, 0, setfaccess(sd, readonly));
 }
+
 
 void runitp(void)
 {

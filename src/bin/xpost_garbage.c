@@ -321,10 +321,11 @@ void mfree(mfile *mem,
                 && fp != stdout
                 && fp != stderr) {
             tab->tab[rent].tag = 0;
+#ifdef DEBUG_FILE
             printf("gc:mfree closing FILE* %p\n", fp);
             fflush(stdout);
-            if (fp < 0x1000)
-                return;
+#endif
+            //if (fp < 0x1000) return;
             fclose(fp);
             fp = NULL;
             put(mem, ent, 0, sizeof(FILE *), &fp);
