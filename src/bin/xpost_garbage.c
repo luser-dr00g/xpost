@@ -33,7 +33,7 @@ typedef bool _Bool;
 #include "xpost_save.h"
 #include "xpost_garbage.h"
 
-#ifdef TESTMODULE_GC
+#ifdef DEBUG_GC
 #include <stdio.h>
 #endif
 
@@ -130,7 +130,7 @@ void markobject(context *ctx,
     switch(type(o)) {
 
     case arraytype:
-#ifdef TESTMODULE_GC
+#ifdef DEBUG_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) {
@@ -146,7 +146,7 @@ void markobject(context *ctx,
         break;
 
     case dicttype:
-#ifdef TESTMODULE_GC
+#ifdef DEBUG_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) {
@@ -162,7 +162,7 @@ void markobject(context *ctx,
         break;
 
     case stringtype:
-#ifdef TESTMODULE_GC
+#ifdef DEBUG_GC
     printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) {
@@ -175,10 +175,10 @@ void markobject(context *ctx,
         break;
 
     case filetype:
-        if (mem == ctx->lo) {
-            markent(mem, o.mark_.padw);
-        } else {//shouldn't even find in global
+        if (mem == ctx->gl) {
             printf("file found in global vm\n");
+        } else {
+            markent(mem, o.mark_.padw);
         }
         break;
     }
@@ -194,7 +194,7 @@ void markstack(context *ctx,
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
 
-#ifdef TESTMODULE_GC
+#ifdef DEBUG_GC
     printf("marking stack of size %u\n", s->top);
 #endif
 
@@ -223,7 +223,7 @@ void marksavestack(context *ctx,
     unsigned i;
     (void)ctx;
 
-#ifdef TESTMODULE_GC
+#ifdef DEBUG_GC
     printf("marking save stack of size %u\n", s->top);
 #endif
 
@@ -263,7 +263,7 @@ void marksave(context *ctx,
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
 
-#ifdef TESTMODULE_GC
+#ifdef DEBUG_GC
     printf("marking save stack of size %u\n", s->top);
 #endif
 
@@ -427,14 +427,29 @@ void collect(mfile *mem, int dosweep, int markall)
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = ctxcid(cid[i]);
+#ifdef DEBUG_GC
+            printf("marking os\n");
+#endif
             markstack(ctx, mem, ctx->os, markall);
+#ifdef DEBUG_GC
+            printf("marking ds\n");
+#endif
             markstack(ctx, mem, ctx->ds, markall);
+#ifdef DEBUG_GC
+            printf("marking es\n");
+#endif
             markstack(ctx, mem, ctx->es, markall);
+#ifdef DEBUG_GC
+            printf("marking hold\n");
+#endif
             markstack(ctx, mem, ctx->hold, markall);
         }
     }
 
     if (dosweep) {
+#ifdef DEBUG_GC
+        printf("sweep\n");
+#endif
         sweep(mem);
         if (isglobal) {
             for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
