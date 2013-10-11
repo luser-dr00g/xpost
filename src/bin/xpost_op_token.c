@@ -460,5 +460,6 @@ void initoptok(context *ctx,
 
     op = consoper(ctx, "token", Ftoken, 2, 1, filetype); INSTALL;
     op = consoper(ctx, "token", Stoken, 3, 1, stringtype); INSTALL;
+    ctx->opcuts.token = op.mark_.padw;
 }
 

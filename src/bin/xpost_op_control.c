@@ -102,8 +102,10 @@ void IIIPfor (context *ctx,
     bool up = j > 0;
     if (up? i > n : i < n) return;
     assert(ctx->gl->base);
-    push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    //push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
+    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
     push(ctx->lo, ctx->es, cvlit(P));
     push(ctx->lo, ctx->es, lim);
     push(ctx->lo, ctx->es, incr);
@@ -124,8 +126,10 @@ void RRRPfor (context *ctx,
     real n = lim.real_.val;
     bool up = j > 0;
     if (up? i > n : i < n) return;
-    push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    //push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
+    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
     push(ctx->lo, ctx->es, cvlit(P));
     push(ctx->lo, ctx->es, lim);
     push(ctx->lo, ctx->es, incr);
@@ -140,8 +144,10 @@ void IPrepeat (context *ctx,
                object P)
 {
     if (n.int_.val <= 0) return;
-    push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
-    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    //push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.repeat));
+    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
     push(ctx->lo, ctx->es, cvlit(P));
     push(ctx->lo, ctx->es, consint(n.int_.val - 1));
     push(ctx->lo, ctx->es, P);
@@ -151,8 +157,10 @@ static
 void Ploop (context *ctx,
             object P)
 {
-    push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
-    push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    //push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.loop));
+    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
     push(ctx->lo, ctx->es, cvlit(P));
     push(ctx->lo, ctx->es, P);
 }
@@ -160,10 +168,14 @@ void Ploop (context *ctx,
 static
 void Zexit (context *ctx)
 {
-    object opfor = consoper(ctx, "for", NULL,0,0);
-    object oprepeat = consoper(ctx, "repeat", NULL,0,0);
-    object oploop = consoper(ctx, "loop", NULL,0,0);
-    object opforall = consoper(ctx, "forall", NULL,0,0);
+    //object opfor = consoper(ctx, "for", NULL,0,0);
+    object opfor = operfromcode(ctx->opcuts.opfor);
+    //object oprepeat = consoper(ctx, "repeat", NULL,0,0);
+    object oprepeat = operfromcode(ctx->opcuts.repeat);
+    //object oploop = consoper(ctx, "loop", NULL,0,0);
+    object oploop = operfromcode(ctx->opcuts.loop);
+    //object opforall = consoper(ctx, "forall", NULL,0,0);
+    object opforall = operfromcode(ctx->opcuts.forall);
     object x;
 
 #if 0
@@ -265,8 +277,11 @@ void initopc (context *ctx,
             integertype, integertype, integertype, proctype); INSTALL;
     op = consoper(ctx, "for", RRRPfor, 0, 4, \
             floattype, floattype, floattype, proctype); INSTALL;
+    ctx->opcuts.opfor = op.mark_.padw;
     op = consoper(ctx, "repeat", IPrepeat, 0, 2, integertype, proctype); INSTALL;
+    ctx->opcuts.repeat = op.mark_.padw;
     op = consoper(ctx, "loop", Ploop, 0, 1, proctype); INSTALL;
+    ctx->opcuts.loop = op.mark_.padw;
     op = consoper(ctx, "exit", Zexit, 0, 0); INSTALL;
     op = consoper(ctx, "stop", Zstop, 0, 0); INSTALL;
     op = consoper(ctx, "stopped", Astopped, 0, 1, anytype); INSTALL;

@@ -93,6 +93,15 @@ void dumpoper(context *ctx,
             (void *)sig[0].fp );
 }
 
+object operfromcode(int opcode)
+{
+    object op;
+    op.mark_.tag = operatortype;
+    op.mark_.pad0 = 0;
+    op.mark_.padw = opcode;
+    return op;
+}
+
 /* construct an operator object
    if given a function-pointer, attempts to install a new operator 
    in OPTAB, otherwise just perform a lookup
