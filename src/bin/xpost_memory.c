@@ -109,11 +109,14 @@ int getmemfile(char *fname)
     return fd;
 }
 
-/* initialize the memory file */
+/** \fn void initmem(mfile *mem, char *fname, int fd)
+  initialize the memory file.
+  copies fname into mfile struct.
+  associates fd with mfile struct, using mmap or read.
+*/
 void initmem(mfile *mem,
              char *fname,
-             int fd
-             )
+             int fd)
 {
     //int fd = -1;
     struct stat buf;
@@ -459,6 +462,66 @@ void put(mfile *mem,
         error(rangecheck, "put: out of bounds");
 
     memcpy(mem->base + tab->tab[ent].adr + offset*sz, src, sz);
+}
+
+static
+mfile tstmem;
+
+static
+void init_test_memory()
+{
+    int fd;
+    char *fname = "x.mem";
+    pgsz = getpagesize();
+    fd = open(fname, O_RDWR | O_CREAT, XPOST_MODE_READ_WRITE);
+    initmem(&tstmem, fname, fd);
+    (void)initmtab(&tstmem);
+}
+
+static
+void exit_test_memory()
+{
+    exitmem(&tstmem);
+}
+
+int test_memory ()
+{
+    mfile *mem = &tstmem;
+    init_test_memory();
+    {
+        unsigned ent;
+        int seven = 7;
+        int ret;
+
+        ent = mtalloc(mem, 0, sizeof seven, 0);
+        put(mem, ent, 0, sizeof seven, &seven);
+        get(mem, ent, 0, sizeof seven, &ret);
+
+        assert(ret == seven);
+    }
+    {
+        unsigned ent;
+        int seven = 7;
+        int ret;
+
+        ent = mtalloc(mem, 0, 8*sizeof seven, 0);
+        put(mem, ent, 7, sizeof seven, &seven);
+        get(mem, ent, 7, sizeof seven, &ret);
+
+        assert(ret == seven);
+    }
+    {
+        unsigned ent;
+        char str[] = "a string to store.";
+        char ret[sizeof str];
+
+        ent = mtalloc(mem, 0, sizeof str, 0);
+        put(mem, ent, 0, sizeof str, str);
+        get(mem, ent, 0, sizeof str, ret);
+
+        assert(strcmp(str,ret) == 0);
+    }
+    exit_test_memory();
 }
 
 #ifdef TESTMODULE_M
