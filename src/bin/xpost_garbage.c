@@ -668,6 +668,21 @@ int test_garbage_collect()
         unsigned pre, post, sz, ret;
 
         pre = ctx->lo->used;
+	arr = consbar(ctx, 5);
+	barput(ctx, arr, 0, consint(12));
+	barput(ctx, arr, 1, consint(13));
+	barput(ctx, arr, 2, consint(14));
+	barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
+	barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
+	post = ctx->lo->used;
+	sz = post-pre;
+
+	push(ctx->lo, ctx->os, arr);
+	assert(collect(ctx->lo, true, false) == 0);
+
+	pop(ctx->lo, ctx->os);
+	ret = collect(ctx->lo, true, false);
+	assert(ret >= sz);
 
     }
     exit_test_garbage();
