@@ -55,6 +55,7 @@ object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int 
 void opexec(context *ctx, unsigned opcode);
 
 #define INSTALL \
+    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)), \
     n.mark_.tag = nametype|FBANK, n.mark_.pad0 = 0, \
     n.mark_.padw = optab[op.mark_.padw].name, \
     bdcput(ctx, sd, n, op), \
