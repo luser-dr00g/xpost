@@ -294,24 +294,24 @@ void initfree(mfile *mem)
    */
 }
 
-/* free this ent! */
-void mfree(mfile *mem,
+/* free this ent! returns reclaimed size */
+unsigned mfree(mfile *mem,
         unsigned ent)
 {
     mtab *tab;
     unsigned rent = ent;
     unsigned a;
     unsigned z;
+    unsigned sz;
     //return;
 
     if (ent < mem->start)
-        return;
+        return 0;
 
     findtabent(mem, &tab, &rent);
-    //a = adrent(mem, ent);
     a = tab->tab[rent].adr;
-    //if (szent(mem, ent) == 0) return; // ignore zero size allocs
-    if (tab->tab[rent].sz == 0) return;
+    sz = tab->tab[rent].sz;
+    if (sz == 0) return 0;
 
     if (tab->tab[rent].tag == filetype) {
         FILE *fp;
@@ -325,7 +325,7 @@ void mfree(mfile *mem,
             printf("gc:mfree closing FILE* %p\n", fp);
             fflush(stdout);
 #endif
-            //if (fp < 0x1000) return;
+            //if (fp < 0x1000) return 0;
             fclose(fp);
             fp = NULL;
             put(mem, ent, 0, sizeof(FILE *), &fp);
@@ -341,20 +341,25 @@ void mfree(mfile *mem,
 
     /* copy the ent number into the free-list head */
     memcpy(mem->base+z, &ent, sizeof(unsigned));
+
+    return sz;
 }
 
 /* discard the free list.
    iterate through tables,
         if element is unmarked and not zero-sized,
-            free it.  */
+            free it. 
+   return reclaimed size
+ */
 static
-void sweep(mfile *mem)
+unsigned sweep(mfile *mem)
 {
     mtab *tab;
     int ntab;
     unsigned zero = 0;
     unsigned z;
     unsigned i;
+    unsigned sz = 0;
 
     z = adrent(mem, FREE); // address of the free list head
 
@@ -367,7 +372,7 @@ void sweep(mfile *mem)
     for (i = mem->start; i < tab->nextent; i++) {
         if ( (tab->tab[i].mark & MARKM) == 0
                 && tab->tab[i].sz != 0)
-            mfree(mem, i);
+            sz += mfree(mem, i);
     }
 
     /* scan linked tables */
@@ -378,23 +383,28 @@ void sweep(mfile *mem)
         for (i = mem->start; i < tab->nextent; i++) {
             if ( (tab->tab[i].mark & MARKM) == 0
                     && tab->tab[i].sz != 0)
-                mfree(mem, i + ntab*TABSZ);
+                sz += mfree(mem, i + ntab*TABSZ);
         }
     }
+
+    return sz;
 }
 
 /* clear all marks,
    determine GLOBAL/LOCAL and mark all root stacks,
-   sweep. */
-void collect(mfile *mem, int dosweep, int markall)
+   sweep.
+   return reclaimed size
+ */
+unsigned collect(mfile *mem, int dosweep, int markall)
 {
     unsigned i;
     unsigned *cid;
     context *ctx = NULL;
     int isglobal;
+    unsigned sz = 0;
 
     if (initializing) 
-        return;
+        return 0;
 
     //printf("\ncollect:\n");
 
@@ -428,18 +438,22 @@ void collect(mfile *mem, int dosweep, int markall)
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = ctxcid(cid[i]);
+
 #ifdef DEBUG_GC
             printf("marking os\n");
 #endif
             markstack(ctx, mem, ctx->os, markall);
+
 #ifdef DEBUG_GC
             printf("marking ds\n");
 #endif
             markstack(ctx, mem, ctx->ds, markall);
+
 #ifdef DEBUG_GC
             printf("marking es\n");
 #endif
             markstack(ctx, mem, ctx->es, markall);
+
 #ifdef DEBUG_GC
             printf("marking hold\n");
 #endif
@@ -451,14 +465,16 @@ void collect(mfile *mem, int dosweep, int markall)
 #ifdef DEBUG_GC
         printf("sweep\n");
 #endif
-        sweep(mem);
+        sz += sweep(mem);
         if (isglobal) {
             for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
                 ctx = ctxcid(cid[i]);
-                sweep(ctx->lo);
+                sz += sweep(ctx->lo);
             }
         }
     }
+    
+    return sz;
 }
 
 /* print a dump of the free list */
@@ -545,7 +561,7 @@ unsigned mfrealloc(mfile *mem,
     tab->tab[rent].sz = oldsize;
 
     /* free it */
-    mfree(mem, ent);
+    (void) mfree(mem, ent);
 
 #ifdef DEBUGFREE
     printf("final ");
@@ -556,6 +572,106 @@ unsigned mfrealloc(mfile *mem,
 #endif
 
     return newadr;
+}
+
+static
+context *ctx;
+
+static
+void init_test_garbage()
+{
+    int fd;
+    int cid;
+    char fname[] = "xmemXXXXXX";
+    mtab *tab;
+
+    /* create interpreter and context */
+    pgsz = getpagesize();
+    itpdata = malloc(sizeof*itpdata);
+    memset(itpdata, 0, sizeof*itpdata);
+    cid = initctxid();
+    ctx = ctxcid(cid);
+    ctx->id = cid;
+
+    /* create global memory file */
+    ctx->gl = nextgtab();
+    fd = mkstemp(fname);
+    initmem(ctx->gl, fname, fd);
+    (void)initmtab(ctx->gl);
+    initfree(ctx->gl);
+    initsave(ctx->gl);
+    initctxlist(ctx->gl);
+    addtoctxlist(ctx->gl, ctx->id);
+    ctx->gl->start = OPTAB + 1;
+
+    /* create local memory file */
+    ctx->lo = nextltab();
+    strcpy(fname, "xmemXXXXXX");
+    fd = mkstemp(fname);
+    initmem(ctx->lo, fname, fd);
+    (void)initmtab(ctx->lo);
+    initfree(ctx->lo);
+    initsave(ctx->lo);
+    initctxlist(ctx->lo);
+    addtoctxlist(ctx->lo, ctx->id);
+    ctx->lo->start = BOGUSNAME + 1;
+
+    /* create names in both mfiles */
+    initnames(ctx);
+
+    /* create global OPTAB */
+    ctx->vmmode = GLOBAL;
+    initoptab(ctx);
+    // ... no initop(). don't need operators for this.
+
+    /* only need one stack */
+    ctx->vmmode = LOCAL;
+    ctx->os = ctx->ds = ctx->es = ctx->hold = initstack(ctx->lo);
+
+    initializing = false; /* garbage collector won't run otherwise */
+}
+
+static
+void exit_test_garbage()
+{
+    exitmem(ctx->lo);
+    exitmem(ctx->gl);
+    free(itpdata);
+    itpdata = NULL;
+
+    initializing = true;
+}
+
+int test_garbage_collect()
+{
+    init_test_garbage();
+    {
+        object str;
+        unsigned pre, post, sz, ret;
+
+        pre = ctx->lo->used;
+        str = consbst(ctx, 7, "0123456");
+        post = ctx->lo->used;
+        sz = post-pre;
+        //printf("str sz=%u\n", sz);
+
+        push(ctx->lo, ctx->os, str);
+        assert(collect(ctx->lo, true, false) == 0);
+
+        pop(ctx->lo, ctx->os);
+        ret = collect(ctx->lo, true, false);
+        //printf("collect returned %u\n", ret);
+        assert(ret >= sz);
+    }
+    {
+        object arr;
+        unsigned pre, post, sz, ret;
+
+        pre = ctx->lo->used;
+
+    }
+    exit_test_garbage();
+    return 0;
 }
 
 #ifdef TESTMODULE_GC

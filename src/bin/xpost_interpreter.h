@@ -49,7 +49,11 @@ extern int ignoreinvalidaccess;
 extern jmp_buf jbmainloop;
 extern bool jbmainloopset;
 
+mfile *nextltab(void);
+mfile *nextgtab(void);
 void initctxlist(mfile *mem);
+void addtoctxlist(mfile *mem, unsigned cid);
+unsigned initctxid(void);
 context *ctxcid(unsigned cid);
 void initcontext(context *ctx);
 void exitcontext(context *ctx);

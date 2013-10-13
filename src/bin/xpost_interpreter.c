@@ -78,7 +78,6 @@ void initctxlist(mfile *mem)
 }
 
 /* add a context ID to the context list in mfile */
-static
 void addtoctxlist(mfile *mem,
                   unsigned cid)
 {
@@ -99,7 +98,6 @@ void addtoctxlist(mfile *mem,
 }
 
 /* find the next unused mfile in the global memory table */
-static
 mfile *nextgtab(void)
 {
     int i;
@@ -140,7 +138,6 @@ void initglobal(context *ctx)
 }
 
 /* find the next unused mfile in the local memory table */
-static
 mfile *nextltab(void)
 {
     int i;
@@ -196,7 +193,6 @@ unsigned nextid = 0;
 /* allocate a context-id and associated context struct
    returns cid;
  */
-static
 unsigned initctxid(void)
 {
     unsigned startid = nextid;
@@ -630,6 +626,8 @@ void createitp(void)
     object sd, ud;
 
     test_memory();
+    test_garbage_collect();
+    nextid = 0; //reset process counter
 
     /* Allocate and initialize all interpreter data structures. */
     initalldata();
@@ -693,7 +691,7 @@ void runitp(void)
 
 void destroyitp(void)
 {
-    dumpoper(ctx, 1); // is this pointer value constant?
+    //dumpoper(ctx, 1); // is this pointer value constant?
     printf("bye!\n"); fflush(NULL);
     collect(itpdata->ctab->gl, true, true);
     exititp(itpdata);

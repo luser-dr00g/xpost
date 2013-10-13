@@ -16,12 +16,13 @@ void dumpfree(mfile *mem);
 unsigned gballoc(mfile *mem, unsigned sz, unsigned tag);
 
 /* explicitly add ent to free list */
-void mfree(mfile *mem, unsigned ent);
+unsigned mfree(mfile *mem, unsigned ent);
 
 /* perform a collection on mfile */
-void collect(mfile *mem, int dosweep, int markall);
+unsigned collect(mfile *mem, int dosweep, int markall);
 
 /* reallocate data, preserving (the maximum of) original contents */
 unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
 
+int test_garbage_collect();
 #endif

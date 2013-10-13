@@ -464,8 +464,7 @@ void put(mfile *mem,
     memcpy(mem->base + tab->tab[ent].adr + offset*sz, src, sz);
 }
 
-static
-mfile tstmem;
+static mfile tstmem;
 
 static
 void init_test_memory()
@@ -522,6 +521,7 @@ int test_memory ()
         assert(strcmp(str,ret) == 0);
     }
     exit_test_memory();
+    return 0;
 }
 
 #ifdef TESTMODULE_M
