@@ -101,6 +101,8 @@ void push(mfile *mem,
           unsigned stackadr,
           object o)
 {
+    unsigned newst;
+    unsigned stadr;
     stack *s = (void *)(mem->base + stackadr); /* load the stack */
 
     while (s->top == STACKSEGSZ) { /* find top segment */
@@ -112,7 +114,10 @@ void push(mfile *mem,
     /* if push maxxed the topmost segment, link a new one */
     if (s->top == STACKSEGSZ) {
         if (s->nextseg == 0) {
-            s->nextseg = initstack(mem);
+            stadr = (unsigned char *)s - mem->base;
+            newst = initstack(mem);
+            s = (void *)(mem->base + stadr);
+            s->nextseg = newst;
         } else {
             s = (void *)(mem->base + s->nextseg);
             s->top = 0;
