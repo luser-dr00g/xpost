@@ -84,6 +84,7 @@ splint_process = splint \
 +posixlib -boolops -predboolint +ignoresigns -type +charindex \
 -nestcomment -noeffect -redef -shiftnegative -castfcnptr \
 -shiftimplementation -predboolothers -exportlocal -mustfreefresh \
+-preproc \
 $(top_srcdir)/src/bin/*.c
 else
 splint_process = echo "splint not found. Update PATH or install splint."
