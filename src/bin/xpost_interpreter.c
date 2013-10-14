@@ -665,28 +665,24 @@ void runitp(void)
         /* `start` proc defined in init.ps */
     push(ctx->lo, ctx->es, cvx(consname(ctx, "start")));
 
-#if 0
     gsav = save(ctx->gl);
     lsav = save(ctx->lo);
-#endif
 
     /* Run! */
     initializing = 0;
     ctx->quit = 0;
     mainloop(ctx);
 
-#if 0
-    for ( glev = count(ctx->gl, adrent(ctx->gl, VS));
-            glev > gsav.save_.lev;
-            glev-- ) {
+    //for ( glev = count(ctx->gl, adrent(ctx->gl, VS));
+    //        glev > gsav.save_.lev;
+    //        glev-- ) {
         restore(ctx->gl);
-    }
+    //}
     for ( llev = count(ctx->lo, adrent(ctx->lo, VS));
             llev > lsav.save_.lev;
             llev-- ) {
         restore(ctx->lo);
     }
-#endif
 }
 
 void destroyitp(void)

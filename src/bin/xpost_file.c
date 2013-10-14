@@ -92,6 +92,7 @@ f_tmpfile(void)
   memcpy(buf + l1, name, l2);
   buf[l1 + l2] = '\0';
 
+  printf("fopen\n");
   return fopen(buf, "w+bD");
 }
 #else
@@ -249,6 +250,7 @@ object fileopen(mfile *mem,
         f.tag |= (readonly << FACCESSO);
     } else {
         FILE *fp;
+		printf("fopen\n");
         fp = fopen(fn, mode);
         if (fp == NULL) {
             switch (errno) {
@@ -316,6 +318,7 @@ void fileclose(mfile *mem,
 
     fp = filefile(mem, f);
     if (fp) {
+		printf("fclose");
         fclose(fp);
         fp = NULL;
         put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);

@@ -326,6 +326,7 @@ unsigned mfree(mfile *mem,
             fflush(stdout);
 #endif
             //if (fp < 0x1000) return 0;
+			printf("fclose");
             fclose(fp);
             fp = NULL;
             put(mem, ent, 0, sizeof(FILE *), &fp);
