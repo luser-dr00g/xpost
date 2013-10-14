@@ -4,6 +4,10 @@ m4_define([v_min], [0])
 m4_define([v_mic], [1])
 m4_define([v_ver], [v_maj.v_min.v_mic])
 
+m4_define([lt_cur], [m4_eval(v_maj + v_min)])
+m4_define([lt_rev], [v_mic])
+m4_define([lt_age], [v_min])
+
 AC_INIT([xpost], [v_ver], [luser.droog.remove@gmail.com])
 AC_PREREQ([2.60])
 AC_CONFIG_SRCDIR([configure.ac])
@@ -13,6 +17,16 @@ AC_USE_SYSTEM_EXTENSIONS
 
 AM_INIT_AUTOMAKE([1.10 dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
+LT_INIT([win32-dll])
+
+version_info="lt_cur:lt_rev:lt_age"
+release_info="v_rel"
+AC_SUBST([version_info])
+AC_SUBST([release_info])
+
+VMAJ=v_maj
+AC_SUBST([VMAJ])
 
 
 ### Additional options to configure
@@ -114,6 +128,8 @@ fi
 ### Checks for compiler characteristics
 
 AM_PROG_CC_C_O
+
+XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections])
 
 XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections])
 

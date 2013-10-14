@@ -13,11 +13,18 @@ config.sub \
 configure \
 depcomp \
 install-sh \
+ltmain.sh \
+m4/libtool.m4 \
+m4/ltoptions.m4 \
+m4/ltsugar.m4 \
+m4/ltversion.m4 \
+m4/lt~obsolete.m4 \
 missing \
 $(DIST_ARCHIVES)
 
 EXTRA_DIST =
 
+include src/lib/Makefile.mk
 include src/bin/Makefile.mk
 include data/Makefile.mk
 include doc/Makefile.mk
