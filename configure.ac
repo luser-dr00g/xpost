@@ -21,9 +21,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 LT_INIT([win32-dll])
 
 version_info="lt_cur:lt_rev:lt_age"
-release_info="v_rel"
 AC_SUBST([version_info])
-AC_SUBST([release_info])
 
 VMAJ=v_maj
 AC_SUBST([VMAJ])

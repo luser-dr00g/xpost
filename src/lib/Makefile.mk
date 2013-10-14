@@ -17,4 +17,4 @@ src_lib_libxpost_la_CFLAGS = \
 
 src_lib_libxpost_la_LIBADD =
 
-src_lib_libxpost_la_LDFLAGS = -no-undefined -version-info @version_info@ @release_info@
+src_lib_libxpost_la_LDFLAGS = -no-undefined -version-info @version_info@

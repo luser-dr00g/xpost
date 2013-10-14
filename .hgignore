@@ -3,6 +3,7 @@ syntax: glob
 
 .deps
 .dirstamp
+.libs
 Makefile
 Makefile.in
 aclocal.m4
@@ -20,6 +21,7 @@ depcomp
 doc/html
 doc/latex
 install-sh
+libtool
 ltmain.sh
 m4\libtool.m4
 m4\ltoptions.m4
@@ -31,5 +33,7 @@ stamp-h1
 *.Po
 *.o
 *.exe
+*.la
+*.lo
 itp
 *~
