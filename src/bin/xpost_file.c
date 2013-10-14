@@ -144,6 +144,7 @@ FILE *lineedit(FILE *in)
 
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%lineedit");
+	printf("tmpfile (fdopen)\n");
     fp = f_tmpfile();
     if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     while (c != EOF && c != '\n') {
@@ -169,6 +170,7 @@ FILE *statementedit(FILE *in)
 
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%statementedit");
+	printf("tmpfile (fdopen)\n");
     fp = f_tmpfile();
     if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     do {
