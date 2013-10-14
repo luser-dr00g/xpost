@@ -166,13 +166,15 @@ void initmem(mfile *mem,
     if (fd != -1)
         read(fd, mem->base, sz);
 #endif
+	if (fd == -1)
+		memset(mem->base, 0, mem->max);
 }
 
 /* destroy the memory file */
 void exitmem(mfile *mem)
 {
 #ifdef HAVE_MMAP
-    msync(mem->base, mem->used, MS_SYNC);
+    //msync(mem->base, mem->used, MS_SYNC);
     munmap(mem->base, mem->max);
 #else
     if (mem->fd != -1) {
