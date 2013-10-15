@@ -3,6 +3,11 @@
 Xpost3 is undergoing rapid changes in the direction of portability
 under the skillful care and guidance of contributor Vincent Torri.
 
+Xpost3 is currently (10/15/2013, and in the author's opinion) a
+pretty-solid cross-platform scripting-language interpreter.
+
+But it does not currently have any graphical output capability. :(
+		We're working on it. :)
 
 
 Quick Installation Instructions.
@@ -15,6 +20,13 @@ will create the interpreter binary itp(.exe)? in src/bin.
   make install
 will install the application, so itp can be run as a command.
 
+Xpost also has the ability to determine if it is being run from the
+real installation directory or just being from the source directory.
+So you can also do a "quick-install" just to try it out by creating
+an alias in the shell (which will of course only be valid for the
+current shell and will disappear when the shell is terminated).
+  alias itp="$PWD/src/bin/itp"
+will create a temporary shell alias for the current session.
 
 
 Many more installation and configuration options desribed in ./INSTALL.
