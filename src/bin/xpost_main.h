@@ -42,5 +42,6 @@ typedef bool _Bool;
 #include "xpost_operator.h"  // eval functions call operators
 #include "xpost_op_token.h"  // token operator functions
 #include "xpost_op_dict.h"  // dictionary operator functions
+#include "xpost_pathname.h"
 
 
