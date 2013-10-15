@@ -69,7 +69,7 @@ int xpost_is_installed (char *argv0)
 
 	if ((len = readlink("/proc/self/exe", buf, sizeof buf)) != -1) {
 		buf[len] = '\0';
-		strcat(buf, basename(argv0));
+		//strcat(buf, basename(argv0));
 	}
 
 	if (len == -1)
