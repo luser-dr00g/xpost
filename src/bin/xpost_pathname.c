@@ -12,6 +12,7 @@ int checkexepath (char *exepath)
 	printf("dirname: %s\n", exedir);
 	printf("PACKAGE_INSTALL_DIR: %s\n", PACKAGE_INSTALL_DIR);
 	is_installed = strstr(exepath, PACKAGE_INSTALL_DIR) != NULL;
+	printf("is_installed: %d\n", is_installed);
 	return 0;
 }
 
@@ -31,7 +32,7 @@ char *appendtocwd (char *relpath)
 static
 int searchpathforargv0(char *argv0)
 {
-	return 0;
+	return checkexepath(".");
 }
 
 static
@@ -55,7 +56,7 @@ int xpost_is_installed (char *argv0)
 	char buf[1024];
 	ssize_t len;
 	printf("argv0: %s\n", argv0);
-	return checkargv0(argv0);
+	//return checkargv0(argv0);
 
 #ifdef HAVE_WIN32
 	len = GetModuleFileName(NULL, buf, 1024);
