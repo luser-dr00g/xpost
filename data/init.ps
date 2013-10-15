@@ -10,13 +10,25 @@
 systemdict begin
 true setglobal
 
-/DATA_DIR {
+/strcat {
+    2 copy
+    length exch length exch 1 index add % a b an bn+an
+    string dup 0 6 -1 roll putinterval % b an str
+    dup 4 2 roll exch putinterval % (ab)
+} def
+
+/DATA_DIR 
     /PACKAGE_DATA_DIR dup where {
         exch get
     }{
-        pop (../../data)
+        pop
+		EXE_DIR (/../../data) strcat
     } ifelse
-} def
+def
+
+(DATA_DIR =) print
+DATA_DIR print
+(\n) print
 
 /product (Xpost3) def
 /version (0) def
@@ -36,12 +48,6 @@ true setglobal
     print
 } def
 /=only //=print def
-/strcat {
-    2 copy
-    length exch length exch 1 index add % a b an bn+an
-    string dup 0 6 -1 roll putinterval % b an str
-    dup 4 2 roll exch putinterval % (ab)
-} def
 
 
 /= {

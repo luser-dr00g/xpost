@@ -40,6 +40,7 @@ typedef bool _Bool;
 #include "xpost_operator.h"  // eval functions call operators
 #include "xpost_op_token.h"  // token operator functions
 #include "xpost_op_dict.h"  // dictionary operator functions
+#include "xpost_pathname.h" // determine whether xpost is installed
 
 #ifdef HAVE_WIN32
 # include "osmswin.h" // mkstemp
@@ -589,8 +590,17 @@ void setdatadir(context *ctx, object sd)
 {
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
-    bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
-            cvlit(consbst(ctx, CNT_STR(PACKAGE_DATA_DIR))));
+	if (is_installed) {
+		bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
+            cvlit(consbst(ctx,
+					CNT_STR(PACKAGE_DATA_DIR))));
+		bdcput(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
+			cvlit(consbst(ctx,
+					CNT_STR(PACKAGE_INSTALL_DIR))));
+	} 
+	bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
+			cvlit(consbst(ctx,
+					strlen(exedir), exedir)));
     ctx->vmmode = LOCAL;
 }
 
@@ -599,9 +609,20 @@ void loadinitps(context *ctx)
 {
     assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
-    push(ctx->lo, ctx->es,
-        cvx(consbst(ctx,
-            CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
+	if (is_installed)
+		push(ctx->lo, ctx->es,
+			cvx(consbst(ctx,
+					CNT_STR("(" PACKAGE_DATA_DIR
+						"/init.ps) (r) file cvx exec"))));
+	else {
+		char buf[1024];
+		snprintf(buf, 1024,
+				"(%s/../../data/init.ps) (r) file cvx exec",
+				exedir);
+		push(ctx->lo, ctx->es,
+			cvx(consbst(ctx,
+					strlen(buf), buf)));
+	}
     ctx->quit = 0;
     mainloop(ctx);
 }
@@ -621,7 +642,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-void createitp(void)
+void createitp()
 {
     object sd, ud;
 
@@ -636,7 +657,7 @@ void createitp(void)
     sd = bot(ctx->lo, ctx->ds, 0);
     ud = bot(ctx->lo, ctx->ds, 2);
 
-    setdatadir(ctx, sd);
+	setdatadir(ctx, sd);
 
 /* FIXME: Squeeze and eliminate this workaround.
    Ignoring errors is a bad idea.  */
