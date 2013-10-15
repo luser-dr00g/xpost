@@ -25,12 +25,36 @@ for using:
 or, for just reading:
     http://code.google.com/p/xpost/downloads/detail?name=xpost2.pdf ]
 
+Developer note: for working with the postscript level, ie. 
+working with the protoype (primitive) graphics code.
+Xpost has the ability to determine if it is being run from the
+real installation directory or just being from the source directory.
+  cd xpost
+  make
+  alias itp="$PWD/src/bin/itp"
+will create a temporary shell alias for the current session.
+When running run the source directory, xpost considers itself
+"not installed", and looks for the postscript initialization files
+from the /data directory relative to the repository's root.
+Assuming the exec call that launched xpost set the argv[0] string
+appropriately, or a /proc filesystem exists, xpost will locate 
+itself and its data.
+This means changes to the postscript files will (obviously) 
+change the behavior of the interpreter. This ability has been
+found useful in adjusting the `breakhere` debugging operator
+in postscript code.
+
+
+
 
 XPost3 is being designed along different principles.
 Transparency (debugability), simplicity (borrowing certain OOP concepts
 like encapsulation), speed (choosing appropriate algorithms), extensibility
 (growing stacks. support for multiple contexts). It is being written and
 tested with cygwin on a Toshiba Satellite L875D.
+
+Thanks to the cross-platform powers of the autotools setup
+(thanks, Vincent), Xpost is also tested on MinGW and Linux.
 
 
   -- Modules --
@@ -46,47 +70,51 @@ will fail if any of the tests fail.
     Module TOC
     __________
 
-test   obj     src    header structures CONSTANTS
-----   ---     ---     ---   --------------------
-m      m.o     m.c     m.h   mfile mtab TABSZ
-s      s.o     s.c     s.h   stack STACKSEGSZ
-v      v.o     v.c     v.h   saverec_
-       f.o     f.c     f.h    file
-ob    ob.o    ob.c    ob.h   object
-ar    ar.o    ar.c    ar.h    array
-st    st.o    st.c    st.h    string
-di    di.o    di.c    di.h   dichead dictionary
-nm    nm.o    nm.c    nm.h    name
-gc    gc.o    gc.c    gc.h    garbage collector
-itp          itp.c   itp.h   context
-  osunix.o osunix.c osunix.h  unix-dependent functions
+                             structures CONSTANTS
+       ---     ---     ---   --------------------
+       xpost_memory          mfile mtab TABSZ
+       xpost_stack           stack STACKSEGSZ
+       xpost_save            saverec_
+       xpost_file             file
+      xpost_object           object
+      xpost_array             array
+      xpost_string            string
+      xpost_dict             dichead dictionary
+      xpost_name              name
+      xpost_garbage           garbage collector
+itp   xpost_main
+      xpost_interpreter      context
+          osunix              unix-dependent functions
+          osmswin             windows (mingw) hacks
                             init.ps  initialization and ps-level procedures
                             test.ps  postscript operator tests
-                              gs.ps  prototype graphics operators
+                               g.ps  prototype graphics operators
       err.o  err.c   err.h   err.ps  error mechanism (bridges both langs)
-      op.o    op.c    op.h    oper optab operator handler MAXOPS SDSIZE
+      xpost_operator          oper optab operator handler MAXOPS SDSIZE
       ----    ----    ----
-      ops.o   ops.c   ops.h    stack operators
-      opb.o   opb.c            boolean operators
-      opc.o   opc.c            control operators
-      opm.o   opm.c            math operators
-      opf.o   opf.c            file operators
-      opt.o   opt.c            type conversion operators
-      opv.o   opv.c            vm operators
-      opx.o   opx.c            misc operators
-    optok.o optok.c            token operator (scanner)
-      opst.o  opst.c  opst.h    string operators
-      opar.o  opar.c  opar.h    array operators
-      opdi.o  opdi.c  opdi.h    dictionary operators
+      xpost_op_stack           stack operators
+      xpost_op_bool            boolean operators
+      xpost_op_control         control operators
+      xpost_op_math            math operators
+      xpost_op_file            file operators
+      xpost_op_type            type conversion operators
+      xpost_op_save            vm operators
+      xpost_op_misc            misc operators
+    xpost_op_token             token operator (scanner)
+      xpost_op_string           string operators
+      xpost_op_array            array operators
+      xpost_op_dict             dictionary operators
        ~~~~~~~~~~           ~~~~~~~~~~~~~~~~~~~~~~~
- 	    opdim                magic dictionary (* planned)
- 	     opdimp               processes (*)
- 	 	 opdimc               canvases (*)
+        opdim                magic dictionary (* planned)
+         opdimp               processes (*)
+         opdimc               canvases (*)
 
 The file and operator modules were copied with little modification
 from xpost2, and so were not deemed to require separate tests.
 
-        Hierarchy (Inter-relation(?))
+        Data-structure
+          Hierarchy
+    (Inter-relation(?))
         -------------
                 itpdata
       gc     context     
@@ -256,12 +284,12 @@ a "raw" version which expects to have the mfile specified, and
 a "friendly" version which interprets the BANK field in the tag
 to determine whether to look in the local or global VM.
 
-	Raw array functions begin with "arr".
-	Banked array " " " "bar".
-	Raw dictionary " " " "dic".
-	Banked dictionary " " " "bdc". (not thrilled with this one)
-	Raw string " " " "str".
-	Banked string " " " "bst".
+    Raw array functions begin with "arr".
+    Banked array " " " "bar".
+    Raw dictionary " " " "dic".
+    Banked dictionary " " " "bdc". (not thrilled with this one)
+    Raw string " " " "str".
+    Banked string " " " "bst".
 
 Perhaps the banked ones should have normal names, and the "raw" ones should
 have funky names. (cf. Murphy's Law)
