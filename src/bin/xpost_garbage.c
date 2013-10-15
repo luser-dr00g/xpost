@@ -324,9 +324,9 @@ unsigned mfree(mfile *mem,
 #ifdef DEBUG_FILE
             printf("gc:mfree closing FILE* %p\n", fp);
             fflush(stdout);
-#endif
             //if (fp < 0x1000) return 0;
 			printf("fclose");
+#endif
             fclose(fp);
             fp = NULL;
             put(mem, ent, 0, sizeof(FILE *), &fp);

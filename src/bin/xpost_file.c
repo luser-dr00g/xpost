@@ -92,7 +92,9 @@ f_tmpfile(void)
   memcpy(buf + l1, name, l2);
   buf[l1 + l2] = '\0';
 
+#ifdef DEBUG_FILE
   printf("fopen\n");
+#endif
   return fopen(buf, "w+bD");
 }
 #else
@@ -144,7 +146,9 @@ FILE *lineedit(FILE *in)
 
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%lineedit");
+#ifdef DEBUG_FILE
 	printf("tmpfile (fdopen)\n");
+#endif
     fp = f_tmpfile();
     if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     while (c != EOF && c != '\n') {
@@ -170,7 +174,9 @@ FILE *statementedit(FILE *in)
 
     c = fgetc(in);
     if (c == EOF) error(undefinedfilename, "%statementedit");
+#ifdef DEBUG_FILE
 	printf("tmpfile (fdopen)\n");
+#endif
     fp = f_tmpfile();
     if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
     do {
@@ -252,7 +258,9 @@ object fileopen(mfile *mem,
         f.tag |= (readonly << FACCESSO);
     } else {
         FILE *fp;
+#ifdef DEBUG_FILE
 		printf("fopen\n");
+#endif
         fp = fopen(fn, mode);
         if (fp == NULL) {
             switch (errno) {
@@ -320,7 +328,9 @@ void fileclose(mfile *mem,
 
     fp = filefile(mem, f);
     if (fp) {
+#ifdef DEBUG_FILE
 		printf("fclose");
+#endif
         fclose(fp);
         fp = NULL;
         put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);

@@ -7,16 +7,27 @@ static
 int checkexepath (char *exepath)
 {
 	char *slash;
+
+    /* replace windows's \\  so we can compare paths */
 	while ((slash = strchr(exepath, '\\'))) {
 		*slash = '/';
 	}
+
+    /* global exedir is set in ps systemdict as /EXE_DIR */
 	exedir = strdup(exepath);
 	dirname(exedir);
+
+#ifdef DEBUG_PATHNAME
 	printf("exepath: %s\n", exepath);
 	printf("dirname: %s\n", exedir);
 	printf("PACKAGE_INSTALL_DIR: %s\n", PACKAGE_INSTALL_DIR);
+#endif
+
 	is_installed = strstr(exepath, PACKAGE_INSTALL_DIR) != NULL;
+
+#ifdef DEBUG_PATHNAME
 	printf("is_installed: %d\n", is_installed);
+#endif
 	return 0;
 }
 
@@ -93,7 +104,7 @@ int xpost_is_installed (char *argv0)
 
 	if ((len = readlink("/proc/self/exe", buf, sizeof buf)) != -1) {
 		buf[len] = '\0';
-		//strcat(buf, basename(argv0));
+		//strcat(buf, basename(argv0)); //already there
 	}
 
 	if (len == -1)

@@ -47,7 +47,7 @@ in postscript code.
 
 
 
-XPost3 is being designed along different principles.
+XPost3 is being designed along different principles from previous versions.
 Transparency (debugability), simplicity (borrowing certain OOP concepts
 like encapsulation), speed (choosing appropriate algorithms), extensibility
 (growing stacks. support for multiple contexts). It is being written and
@@ -62,10 +62,10 @@ Thanks to the cross-platform powers of the autotools setup
 The various modules were written and tested separately before being 
 coupled together to achieve the necessary basic functionality.
 Each module retains its unit-test, its main() function, guarded
-by #ifdef TESTMODULE_(MODULENAME). `make test` will compile and execute
-all the unit tests, producing copious output, but importantly exitting
-with an appropriate success or failure code, so the `make test` command
-will fail if any of the tests fail.
+by #ifdef TESTMODULE_(MODULENAME). These tests are now inactive,
+but may be useful in reading the code. Although not run, they
+are mostly updated to reflect changes in the rest of the code.
+
 
     Module TOC
     __________
@@ -146,28 +146,29 @@ operator modules which are closer to Postscript.
 
 Core           Objects                Operators
 ----           -------                ---------
-m - memory    
-  \- s - stack                         
-  /    \- v - save/restore  - - - - - -/- opv - save/restore operators
-ob - object                           /- - - - /- optok - token operator for file and string
-  \- f - file - - - - - - - - - - - -/-  opf -/- file operators
-  |    |~ - - osunix    |(file uses one of these)
-  \    \~ - - oswindows |
-   \- - - - - - - - st - string - - /- - opst - string operators
-    \- -  - - - - - ar - array  - -/ - - opar - array operators
-     \- - - - - - - di - dict   - /- - - opdi - dict operators
-      \- -  - - - - op - operator-
-(all of \- -  - - - nm - name     \
- these                             \- - - opb - boolean operators
- implement                          \ - - obc - control operators
- objects)                   (all of  \- - obm - math operators
-                         these create \ - oppa - packed arrays (simulated)
-                     operator objects) \- opx - misc operators
+xpost_memory  
+  \- xpost_stack
+  /    \- xpost_save .  .  .- - - - - -/- xpost_op_save - save/restore operators
+xpost_object - object                 /- - - - /- xpost_op_token 
+                                                token operator for file and string
+  \- xpost_file - file - - - - - - - -/-  xpost_op_file -/- file operators
+  |    |~ - - osunix   |(file uses one of these)
+  \    \~ - - osmswin  |
+   \- - - - - - - - xpost_string - - - /- - xpost_op_string - string operators
+    \- -  - - - - - xpost_array - - -/ - - xpost_op_array - array operators
+     \- - - - - - - xpost_dict - - /- - - xpost_op_dict - dict operators
+      \- -  - - - - xpost_operator - -
+(all of \- -  - - - xpost_name - -\
+ these                             \- - - xpost_op_bool - boolean operators
+ implement                          \ - - xpost_op_control - control operators
+ objects)                   (all of  \- - xpost_op_math - math operators
+                         these create \ - xpost_op_packedarray - (simulated)
+                     operator objects) \- xpost_op_misc - misc operators
                      
             -----------------
-                    | - - err - error handler (used everywhere
+                    | - - xpost_error - error handler (used everywhere
                     |
-                    itp - interpreter (uses everything)
+                    xpost_interpreter - interpreter (uses everything)
           
          
 
@@ -176,7 +177,7 @@ Virtual Memory
 
   -- mfile --
 
-At the heart is the "m" module: the memory-file and memory-tables.
+At the heart is the "xpost_memory" module: the memory-file and memory-tables.
 Every mfile starts with an mtab. Every mtab lives in an mfile.
 An mfile is a raw memory space cleverly(?) macro-ized to use
 either malloc/realloc/free or mmap/mremap/munmap.
@@ -249,14 +250,14 @@ no visible effect to the user.
 Stacks
 ------
 
-Patterned after the model of the memory-table chain is the "s" module: 
-the segmented stack.
+Patterned after the model of the memory-table chain is the
+"xpost_stack" module: the segmented stack.
 
-And making use of both of these is the "v" module: the *virtual* part
-of the virtual-memory, the save/restore stacks which live in the memory
-file.
+And making use of both of these is the "xpost_save" module:
+the *virtual* part of the virtual-memory, the save/restore stacks
+which live in the memory file.
 
-The three single-letter modules (m, s, & v) are considered the "core"
+These three modules (memory, stack, & save) are considered the "core"
 of the whole thing. I wrote these and then sat on them for over a year
 while making revisions to xpost2, periodically re-reading the code
 to make sure it still made sense.
@@ -279,7 +280,7 @@ all of the stacks.
 Composite Objects
 -----------------
 
-Array, String and Dictionary functions now come in 2 flavors,
+Array, String and Dictionary functions come in 2 flavors,
 a "raw" version which expects to have the mfile specified, and
 a "friendly" version which interprets the BANK field in the tag
 to determine whether to look in the local or global VM.
@@ -305,16 +306,16 @@ saved at the current level before writing.
 This should be more efficient than any of my previous drafts. 
 "True" copy-on-write and no pointer-chasing.
 
-Arrays ("ar") and dictionaries ("di") are automatically copied before
-writing if the save-level has risen, giving cheap 'save's. 'restore'
-has an easy job of popping the save-stack and exchanging the addresses
-in the memory-tables: cheap 'restore's!!
+Arrays ("xpost_array") and dictionaries ("xpost_dict") are automatically
+copied before writing if the save-level has risen, giving cheap 'save's.
+'restore' has an easy job of popping the save-stack and exchanging
+the addresses in the memory-tables: cheap 'restore's!!
 
 
 Garbage Collection
 ------------------
 
-The garbage collector module ("gc") implements a simple (?)
+The garbage collector module ("xpost_garbage") implements a simple (?)
 mark-sweep algorithm. It operates on a per-mfile basis, so global
 and local VMs are collected separately, but all contexts sharing
 an mfile must be traversed in the /mark/ phase.
@@ -333,10 +334,7 @@ Its size is reported as 0, but the adr points to an unsigned int
 value which holds the ent number of the next element of the
 the free list. An ent number of zero terminates the list.
 
-It's there. It compiles. We'll see how well it works as I keep building.
-Most allocation calls do a traversal of the free-list, so the
-machinery is being exercised even though the testing is not very
-comprehensive yet.
+It appears to be functioning now.
 
 
 Operator Handling
