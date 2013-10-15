@@ -457,7 +457,9 @@ void evalfile(context *ctx)
         t = pop(ctx->lo, ctx->os);
         push(ctx->lo, ctx->es, f);
         push(ctx->lo, type(t)==arraytype? ctx->os: ctx->es, t);
-    }
+    } else {
+		fileclose(ctx->lo, f);
+	}
 }
 
 /* interpreter actions for executable types */

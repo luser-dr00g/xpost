@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
     runitp();
 
     destroyitp();
+	free(exedir);
 
     return 0;
 }
