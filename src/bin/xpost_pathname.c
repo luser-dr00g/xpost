@@ -55,8 +55,19 @@ int xpost_is_installed (char *argv0)
 {
 	char buf[1024];
 	ssize_t len;
+    char *libsptr;
+
 	printf("argv0: %s\n", argv0);
-	//return checkargv0(argv0);
+
+    /* hack for cygwin and mingw.
+       there's this unfortunate ".libs" in there.
+    */
+    if ((libsptr = strstr(argv0, ".libs/"))) {
+        printf("removing '.libs' from pathname\n");
+        memmove(libsptr, libsptr+6, strlen(libsptr+6)+1);
+        printf("argv0: %s\n", argv0);
+        return checkargv0(argv0);
+    }
 
 #ifdef HAVE_WIN32
 	len = GetModuleFileName(NULL, buf, 1024);
