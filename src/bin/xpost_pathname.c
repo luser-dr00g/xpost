@@ -6,6 +6,10 @@ char *exedir;
 static
 int checkexepath (char *exepath)
 {
+	char *slash;
+	while ((slash = strchr(exepath, '\\'))) {
+		*slash = '/';
+	}
 	exedir = strdup(exepath);
 	dirname(exedir);
 	printf("exepath: %s\n", exepath);
@@ -38,7 +42,12 @@ int searchpathforargv0(char *argv0)
 static
 int checkargv0 (char *argv0)
 {
+#ifdef HAVE_WIN32
+	if (argv0[1] == ':'
+			&& (argv0[2] == '/' || argv0[2] == '\\'))
+#else
 	if (argv0[0] == '/') /* absolute path */
+#endif
 		return checkexepath(argv0);
 	else if (strchr(argv0, '/')) { /* relative path */
 		char *tmp;
@@ -70,12 +79,16 @@ int xpost_is_installed (char *argv0)
     }
 
 #ifdef HAVE_WIN32
+	return checkargv0(argv0);
+
+	/*
 	len = GetModuleFileName(NULL, buf, 1024);
 	buf[len] = '\0';
 	if (len == 0)
 		return -1;
 	else
 		return checkexepath(buf);
+	*/
 #else
 
 	if ((len = readlink("/proc/self/exe", buf, sizeof buf)) != -1) {
