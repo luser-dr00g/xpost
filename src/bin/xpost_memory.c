@@ -317,7 +317,7 @@ next_table:
             printf(" %02x%c",
                     (unsigned)mem->base[ tab->tab[i].adr + u ],
                     isprint((unsigned)mem->base[ tab->tab[i].adr + u ]) ?
-                        (unsigned char)mem->base[ tab->tab[i].adr + u ] :
+                        (unsigned)mem->base[ tab->tab[i].adr + u ] :
                         ' ');
         }
         (void)puts("");
