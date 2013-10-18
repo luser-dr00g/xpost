@@ -70,7 +70,7 @@ typedef enum Xpost_type {
 #define AS_TYPE_STR(_) \
     #_ "type" ,
 extern
-char *types[] /*= { TYPES(AS_TYPE_STR) "invalid"}*/ ;
+char *xpost_type_names[] /*= { TYPES(AS_TYPE_STR) "invalid"}*/ ;
 
 /**
  * @enum Xpost_tag_data
@@ -287,7 +287,7 @@ int xpost_object_is_readable(object obj);
 /**
  * @brief Return 1 if the object is writeable, 0 otherwise.
 */
-int xpost_object_is_iswriteable(object obj);
+int xpost_object_is_writeable(object obj);
 
 /** @def SINGLETONS
  *  @brief Certain simple objects exist as global template variables
