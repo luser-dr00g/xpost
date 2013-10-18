@@ -95,19 +95,20 @@ Xpost_Object xpost_cons_real (real r)
    Type and Tag Manipulation
 */
 
-int xpost_object_get_type (Xpost_Object obj)
+Xpost_Object_Type xpost_object_get_type (Xpost_Object obj)
 {
     return obj.tag & XPOST_OBJECT_TAG_DATA_TYPEMASK;
 }
 
 int xpost_object_is_composite (Xpost_Object obj)
 {
-    switch (xpost_object_type(obj))
+    switch (xpost_object_get_type(obj))
     {
         case stringtype: /*@fallthrough@*/
         case arraytype: /*@fallthrough@*/
         case dicttype:
             return true;
+        default: break;
     }
     return false;
 }
@@ -122,13 +123,13 @@ int xpost_object_is_lit(Xpost_Object obj)
     return !!(obj.tag & XPOST_OBJECT_TAG_DATA_FLIT);
 }
 
-int xpost_object_get_access (Xpost_Object obj)
+Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj)
 {
     return (obj.tag & XPOST_OBJECT_TAG_DATA_FACCESS)
         >> XPOST_OBJECT_TAG_DATA_FACCESSO;
 }
 
-Xpost_Object xpost_object_set_access (Xpost_Object obj, int access)
+Xpost_Object xpost_object_set_access (Xpost_Object obj, Xpost_Object_Tag_Access access)
 {
     obj.tag &= ~XPOST_OBJECT_TAG_DATA_FACCESS;
     obj.tag |= (access << XPOST_OBJECT_TAG_DATA_FACCESSO);
@@ -137,7 +138,7 @@ Xpost_Object xpost_object_set_access (Xpost_Object obj, int access)
 
 int xpost_object_is_readable(Xpost_Object obj)
 {
-    if (xpost_object_type(obj) == filetype)
+    if (xpost_object_get_type(obj) == filetype)
     {
         return xpost_object_get_access(obj)
             == XPOST_OBJECT_TAG_ACCESS_READ_ONLY;
@@ -194,7 +195,7 @@ void _xpost_object_dump_composite (Xpost_Object obj)
 
 void xpost_object_dump (Xpost_Object obj)
 {
-    switch (xpost_object_type(obj))
+    switch (xpost_object_get_type(obj))
     {
     default: /*@fallthrough@*/
     case invalidtype: printf("<invalid object "
