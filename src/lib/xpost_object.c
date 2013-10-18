@@ -1,11 +1,11 @@
 /** @file xpost_object.c
  *  @brief Simple object constructors and functions.
 */
-#ifdef HAVE_CONFIG.H
+#ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL.H
+#ifdef HAVE_STDBOOL_H
 # include <stdbool.h>
 #else
 # ifndef HAVE__BOOL
@@ -60,7 +60,9 @@ object xpost_cons_bool (bool b)
 {
     object obj;
 
-    obj.int_.tag = booleantype | (unlimited << FACCESSO);
+    obj.int_.tag = booleantype
+        | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
+            << XPOST_OBJECT_FACCESSO);
     obj.int_.pad = 0;
     obj.int_.val = b;
 
@@ -80,7 +82,9 @@ object xpost_cons_int (integer i)
 {
     object obj;
 
-    obj.int_.tag = integertype | (unlimited << FACCESSO);
+    obj.int_.tag = integertype
+        | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
+                << XPOST_OBJECT_FACCESSO);
     obj.int_.pad = 0;
     obj.int_.val = i;
 
@@ -100,7 +104,9 @@ object xpost_cons_real (real r)
 {
     object obj;
 
-    obj.real_.tag = realtype | (unlimited << FACCESSO);
+    obj.real_.tag = realtype
+        | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
+                << XPOST_OBJECT_FACCESSO);
     obj.real_.pad = 0;
     obj.real_.val = r;
 
@@ -126,7 +132,7 @@ int xpost_object_type (object obj)
 */
 int xpost_object_is_composite (object obj)
 {
-    switch (type(obj))
+    switch (xpost_object_type(obj))
     {
         case stringtype: /*@fallthrough@*/
         case arraytype: /*@fallthrough@*/
@@ -231,7 +237,7 @@ int xpost_object_is_writeable (object obj)
 */
 object xpost_object_cvx (object obj)
 {
-    obj.tag &= ~FLIT;
+    obj.tag &= ~ XPOST_OBJECT_FLIT;
 
     return obj;
 }
@@ -245,7 +251,7 @@ object xpost_object_cvx (object obj)
 */
 object xpost_object_cvlit (object obj)
 {
-    obj.tag |= FLIT;
+    obj.tag |= XPOST_OBJECT_FLIT;
 
     return obj;
 }
