@@ -73,6 +73,11 @@
  *
  */
 
+/**
+ * @enum Xpost_Object_Type
+ * @brief A value to track the type of object,
+ *        and select the correct union member for manipulation.
+ */
 typedef enum {
     XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE)
     XPOST_OBJECT_NTYPES
@@ -84,14 +89,14 @@ typedef enum {
  */
 typedef enum
 {
-    XPOST_OBJECT_TAG_DATA_TYPEMASK = 0x000F,
+    XPOST_OBJECT_TAG_DATA_TYPEMASK = 0x000F, /**< mask to yield Xpost_Object_Type */
     XPOST_OBJECT_TAG_DATA_FVALID = 0x0010, /**< for 'anytype' operator pattern */
-    XPOST_OBJECT_TAG_DATA_FACCESS = 0x0060,
+    XPOST_OBJECT_TAG_DATA_FACCESS = 0x0060, /**< 2-bit mask for the ACCESS field */
     XPOST_OBJECT_TAG_DATA_FACCESSO = 5,    /**< bitwise offset of the ACCESS field */
-    XPOST_OBJECT_TAG_DATA_FLIT = 0x0080,
-    XPOST_OBJECT_TAG_DATA_FBANK = 0x0100, /* 0=local, 1=global */
-    XPOST_OBJECT_TAG_DATA_EXTENDEDINT = 0x0200,
-    XPOST_OBJECT_TAG_DATA_EXTENDEDREAL = 0x0400,
+    XPOST_OBJECT_TAG_DATA_FLIT = 0x0080,  /**< literal flag: 0=executable, 1=literal */
+    XPOST_OBJECT_TAG_DATA_FBANK = 0x0100, /**< select memory-file for composite-object data: 0=local, 1=global */
+    XPOST_OBJECT_TAG_DATA_EXTENDEDINT = 0x0200, /**< extended object was originally integer */
+    XPOST_OBJECT_TAG_DATA_EXTENDEDREAL = 0x0400, /**< extended object was originally real */
     XPOST_OBJECT_TAG_DATA_FOPARGSINHOLD = 0x0800, /* for onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
@@ -101,10 +106,10 @@ typedef enum
  */
 typedef enum
 {
-    XPOST_OBJECT_TAG_ACCESS_NONE,
-    XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY,
-    XPOST_OBJECT_TAG_ACCESS_READ_ONLY,
-    XPOST_OBJECT_TAG_ACCESS_UNLIMITED,
+    XPOST_OBJECT_TAG_ACCESS_NONE,         /**< WRITE= no,  READ= no,  EXEC= no   */
+    XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY, /**< WRITE= no,  READ= no,  EXEC= yes  */
+    XPOST_OBJECT_TAG_ACCESS_READ_ONLY,    /**< WRITE= no,  READ= yes, EXEC= yes, files: READ  */
+    XPOST_OBJECT_TAG_ACCESS_UNLIMITED,    /**< WRITE= yes, READ= yes, EXEC= yes, files: WRITE */
 } Xpost_Object_Tag_Access;
 
 
@@ -152,7 +157,7 @@ typedef dword addr;
 
 /**
  * @typedef Xpost_Object_mark_
- * @brief A generic object: 2 unsigned shorts and an unsigned long.
+ * @brief A generic object: 2 words and a double-word.
  *
  * To avoid too many structure, many types use .mark_.padw
  * to hold an unsigned integer (eg. operatortype, nametype, filetype).
@@ -265,7 +270,7 @@ typedef struct
  * @brief The top-level object union.
  *
  * The tag word overlays the tag words in each subtype, so it can
- * be used to determine an object's type (using the xpost_object_type()
+ * be used to determine an object's type (using the xpost_object_get_type()
  * function which masks-off any flags in the tag).
  */
 typedef union
@@ -372,7 +377,7 @@ Xpost_Object xpost_cons_real (real r);
  * This function returns the type of the object @p obj, that is the tag
  * with flags masked-off : obj.tag & #XPOST_OBJECT_TAG_DATA_TYPEMASK
  */
-int xpost_object_type (Xpost_Object obj);
+Xpost_Object_Type xpost_object_get_type (Xpost_Object obj);
 
 /**
  * @brief Determine whether the object is composite or not (ie. simple).
@@ -432,7 +437,7 @@ int xpost_object_is_lit (Xpost_Object obj);
  * A general description of the access flag behavior is at
  * https://groups.google.com/d/topic/comp.lang.postscript/ENxhFBqwgq4/discussion
  */
-int xpost_object_get_access (Xpost_Object obj);
+Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj);
 
 /**
  * @brief Return object with access-field set to access.
@@ -446,7 +451,9 @@ int xpost_object_get_access (Xpost_Object obj);
  * an inverse mask. OR-in the new access field, shifted up by
  * #XPOST_OBJECT_TAG_DATA_FACCESSO.
  */
-Xpost_Object xpost_object_set_access (Xpost_Object obj, int access);
+Xpost_Object xpost_object_set_access (
+        Xpost_Object obj,
+        Xpost_Object_Tag_Access access);
 
 
 /**
