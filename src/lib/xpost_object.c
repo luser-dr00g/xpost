@@ -178,10 +178,10 @@ static
 void _xpost_object_dump_composite (Xpost_Object obj)
 {
     printf(" %c "
-            XPOST_FMT_WORD(u) " "
-            XPOST_FMT_WORD(u) " "
-            XPOST_FMT_WORD(u) " "
-            XPOST_FMT_WORD(u) ">",
+            "%" XPOST_FMT_WORD(u) " "
+            "%" XPOST_FMT_WORD(u) " "
+            "%" XPOST_FMT_WORD(u) " "
+            "%" XPOST_FMT_WORD(u) ">",
             obj.comp_.tag & XPOST_OBJECT_TAG_DATA_FBANK ? 'G' : 'L',
             obj.comp_.tag,
             obj.comp_.sz,
@@ -217,10 +217,10 @@ void xpost_object_dump (Xpost_Object obj)
     case booleantype: printf("<boolean %s>",
                               obj.int_.val ? "true" : "false");
                       break;
-    case integertype: printf("<integer " XPOST_FMT_INTEGER(d) ">",
+    case integertype: printf("<integer %" XPOST_FMT_INTEGER(d) ">",
                               obj.int_.val);
                       break;
-    case realtype: printf("<real " XPOST_FMT_REAL ">",
+    case realtype: printf("<real %" XPOST_FMT_REAL ">",
                            obj.real_.val);
                    break;
 
@@ -235,9 +235,9 @@ void xpost_object_dump (Xpost_Object obj)
                    break;
 
     case nametype: printf("<name %c "
-                           XPOST_FMT_WORD(u) " "
-                           XPOST_FMT_WORD(u) " "
-                           XPOST_FMT_DWORD(u) ">",
+                           "%" XPOST_FMT_WORD(u) " "
+                           "%" XPOST_FMT_WORD(u) " "
+                           "%" XPOST_FMT_DWORD(u) ">",
                            obj.mark_.tag & XPOST_OBJECT_TAG_DATA_FBANK ?
                                'G' : 'L',
                            obj.mark_.tag,
@@ -246,11 +246,11 @@ void xpost_object_dump (Xpost_Object obj)
                    break;
 
     case operatortype: printf("<operator "
-                               XPOST_FMT_DWORD(u) ">",
+                               "%" XPOST_FMT_DWORD(u) ">",
                                obj.mark_.padw);
                        break;
     case filetype: printf("<file "
-                           XPOST_FMT_DWORD(u) ">",
+                           "%" XPOST_FMT_DWORD(u) ">",
                            obj.mark_.padw);
                    break;
 
