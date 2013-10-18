@@ -120,6 +120,12 @@ typedef uint64_t qword;
 typedef int64_t integer;    // 2x small size
 typedef double real;        // 2x small size
 typedef dword addr;         // 2x small size (via dword)
+# define XPOST_FMT_WORD(_)    PRI ## _ ## 32
+# define XPOST_FMT_DWORD(_)   PRI ## _ ## 64
+# define XPOST_FMT_QWORD(_)   PRI ## _ ## 64
+# define XPOST_FMT_INTEGER(_) PRI ## _ ## 64
+# define XPOST_FMT_REAL       "%f"
+# define XPOST_FMT_ADDR       PRI ## _ ## 64
 #else
 typedef unsigned char byte; // assumed 8-bit
 typedef uint16_t word;
@@ -128,6 +134,12 @@ typedef uint64_t qword;
 typedef int32_t integer;
 typedef float real;        // assumes IEEE 754
 typedef dword addr;
+# define XPOST_FMT_WORD(_)    PRI ## _ ## 16
+# define XPOST_FMT_DWORD(_)   PRI ## _ ## 32
+# define XPOST_FMT_QWORD(_)   PRI ## _ ## 64
+# define XPOST_FMT_INTEGER(_) PRI ## _ ## 32
+# define XPOST_FMT_REAL       "%f"
+# define XPOST_FMT_ADDR       PRI ## _ ## 32
 #endif
 
 /*

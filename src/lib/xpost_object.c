@@ -257,6 +257,16 @@ object xpost_object_cvlit (object obj)
 static
 void _xpost_object_dump_composite (object obj)
 {
+    printf(" %c "
+            XPOST_FMT_WORD(u) " "
+            XPOST_FMT_WORD(u) " "
+            XPOST_FMT_WORD(u) " "
+            XPOST_FMT_WORD(u) ">",
+            obj.comp_.tag & XPOST_OBJECT_FBANK ? 'G' : 'L',
+            obj.comp_.tag,
+            obj.comp_.sz,
+            obj.comp_.ent,
+            obj.comp_.off);
 }
 
 /**
@@ -268,6 +278,73 @@ void _xpost_object_dump_composite (object obj)
 */
 void xpost_object_dump (object obj)
 {
+    switch (xpost_object_type(obj))
+    {
+    default: /*@fallthrough@*/
+    case invalidtype: printf("<invalid object "
+                              "%04" XPOST_FMT_WORD(x) " "
+                              "%04" XPOST_FMT_WORD(x) " "
+                              "%04" XPOST_FMT_WORD(x) " "
+                              "%04" XPOST_FMT_WORD(x) " >",
+                              obj.comp_.tag,
+                              obj.comp_.sz,
+                              obj.comp_.ent,
+                              obj.comp_.off);
+                      break;
+
+    case nulltype: printf("<null>");
+                   break;
+    case marktype: printf("<mark>");
+                   break;
+
+    case booleantype: printf("<boolean %s>",
+                              obj.int_.val ? "true" : "false");
+                      break;
+    case integertype: printf("<integer " XPOST_FMT_INTEGER(d) ">",
+                              obj.int_.val);
+                      break;
+    case realtype: printf("<real " XPOST_FMT_REAL ">",
+                           obj.real_.val);
+                   break;
+
+    case stringtype: printf("<string");
+                     _xpost_object_dump_composite(obj);
+                     break;
+    case arraytype: printf("<array");
+                    _xpost_object_dump_composite(obj);
+                    break;
+    case dicttype: printf("<dict");
+                   _xpost_object_dump_composite(obj);
+                   break;
+
+    case nametype: printf("<name %c "
+                           XPOST_FMT_WORD(u) " "
+                           XPOST_FMT_WORD(u) " "
+                           XPOST_FMT_DWORD(u) ">",
+                           obj.mark_.tag & XPOST_OBJECT_FBANK ? 'G' : 'L',
+                           obj.mark_.tag,
+                           obj.mark_.pad0,
+                           obj.mark_.padw);
+                   break;
+
+    case operatortype: printf("<operator "
+                               XPOST_FMT_DWORD(u) ">",
+                               obj.mark_.padw);
+                       break;
+    case filetype: printf("<file "
+                           XPOST_FMT_DWORD(u) ">",
+                           obj.mark_.padw);
+                   break;
+
+    case savetype: printf("<save>");
+                   break;
+    case contexttype: printf("<context>");
+                      break;
+    case extendedtype: printf("<extended>");
+                       break;
+    case globtype: printf("<glob>");
+                   break;
+    }
 }
 
 
