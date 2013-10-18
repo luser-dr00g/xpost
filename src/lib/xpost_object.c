@@ -25,136 +25,28 @@ typedef bool _Bool;
 
 #include "xpost_object.h"
 
+/*
+ *
+ * Variables
+ *
+ */
 
-/** @def char *xpost_type_names[]
+/* null and mark are both global objects */
+XPOST_OBJECT_SINGLETONS(XPOST_OBJECT_DEFINE_SINGLETON)
+
+/** @def char *xpost_object_type_names[]
  *  @brief Printable strings corresponding to enum Xpost_type.
 */
-char *xpost_type_names[] =
+char *xpost_object_type_names[] =
 {
-    TYPES(AS_TYPE_STR)
+    XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE_STR)
     "invalid"
 };
-
-
-/** @fn int xpost_object_type(object obj)
- *  @brief Return obj.tag & TYPEMASK to yield an Xpost_type enum value.
-*/
-int xpost_object_type (object obj)
-{
-    return obj.tag & TYPEMASK;
-}
-
-
-/** @fn int xpost_object_is_composite(object obj)
- *  @brief Return 1 if the object is composite, 0 otherwise.
-*/
-int xpost_object_is_composite (object obj)
-{
-    switch (type(obj))
-    {
-        case stringtype: /*@fallthrough@*/
-        case arraytype: /*@fallthrough@*/
-        case dicttype:
-            return true;
-    }
-    return false;
-}
-
-
-/** @fn int xpost_object_is_exe(object obj)
- *  @brief Return 1 if the object is executable, 0 otherwise.
- *
- *  Masks the FLIT (Literal flag) with the tag and performs
- *  a logical NOT. Ie. executable means NOT having the FLIT flag set.
-*/
-int xpost_object_is_exe(object obj)
-{
-    return !(obj.tag & FLIT);
-}
-
-
-/** @fn int xpost_object_is_lit(object obj)
- *  @brief Return 1 if the object is literal, 0 otherwise.
- *
- *  Masks the FLIT (Literal flag) with the tag and performs
- *  a double-NOT to normalize the value to the range [0..1].
-*/
-int xpost_object_is_lit(object obj)
-{
-    return !!(obj.tag & FLIT);
-}
-
-
-/** @fn xpost_object_get_access (object obj)
- *  @brief Yield the access-field from the object's tag.
- *
- *  Mask the FACCESS (Access Mask) with the tag, and shift the result down
- *  by FACCESSO (Access bit-Offset) to return just the (2-) bit field.
- *
- *  A general description of the access flag behavior is at
- *  https://groups.google.com/d/topic/comp.lang.postscript/ENxhFBqwgq4/discussion
-*/
-int xpost_object_get_access (object obj)
-{
-    return (obj.tag & FACCESS) >> FACCESSO;
-}
-
-
-/** @fn object xpost_object_set_access (object obj, int access)
- *  @brief Return object with access-field set to access.
- *
- *  Clear the access-field with an inverse mask.
- *  OR-in the new access field, shifted up by FACCESSO.
-*/
-object xpost_object_set_access (object obj, int access)
-{
-    obj.tag &= ~FACCESS;
-    obj.tag |= (access << FACCESSO);
-    return obj;
-}
-
-
-/** @fn int xpost_object_is_readable(object obj)
- *  @brief Return 1 if the object is readable, 0 otherwise.
- *
- *  Check the access permissions of the object, specially for filetypes.
- *  Regular objects have read access if the value is greater than
- *  executeonly.
- *  Filetype objects have read access only if the value is equal
- *  to readonly.
-*/
-int xpost_object_is_readable(object obj)
-{
-    if (xpost_object_type(obj) == filetype)
-    {
-        return xpost_object_get_access(obj) == readonly;
-    }
-    else
-    {
-        return xpost_object_get_access(obj) >= readonly;
-    }
-}
-
-
-/** @fn int xpost_object_is_writeable(object obj)
- *  @brief Return 1 if the object is readable, 0 otherwise.
- *  
- *  Check the access permissions of the object.
- *  An object is writeable if its access is equal to unlimited.
-*/
-int xpost_object_is_writeable (object obj)
-{
-    return xpost_object_get_access(obj) == unlimited;
-}
 
 
 /* 
    Constructors for simple types
 */
-
-/* null and mark are both global objects */
-SINGLETONS(DEFINE_SINGLETON)
-
 
 /** @fn object xpost_cons_bool(bool b)
  *  @brief Construct a booleantype object with value b.
@@ -216,6 +108,121 @@ object xpost_cons_real (real r)
 }
 
 
+/*
+   Type and Tag Manipulation
+*/
+
+/** @fn int xpost_object_type(object obj)
+ *  @brief Return obj.tag & TYPEMASK to yield an Xpost_type enum value.
+*/
+int xpost_object_type (object obj)
+{
+    return obj.tag & XPOST_OBJECT_TYPEMASK;
+}
+
+
+/** @fn int xpost_object_is_composite(object obj)
+ *  @brief Return 1 if the object is composite, 0 otherwise.
+*/
+int xpost_object_is_composite (object obj)
+{
+    switch (type(obj))
+    {
+        case stringtype: /*@fallthrough@*/
+        case arraytype: /*@fallthrough@*/
+        case dicttype:
+            return true;
+    }
+    return false;
+}
+
+
+/** @fn int xpost_object_is_exe(object obj)
+ *  @brief Return 1 if the object is executable, 0 otherwise.
+ *
+ *  Masks the FLIT (Literal flag) with the tag and performs
+ *  a logical NOT. Ie. executable means NOT having the FLIT flag set.
+*/
+int xpost_object_is_exe(object obj)
+{
+    return !(obj.tag & XPOST_OBJECT_FLIT);
+}
+
+
+/** @fn int xpost_object_is_lit(object obj)
+ *  @brief Return 1 if the object is literal, 0 otherwise.
+ *
+ *  Masks the FLIT (Literal flag) with the tag and performs
+ *  a double-NOT to normalize the value to the range [0..1].
+*/
+int xpost_object_is_lit(object obj)
+{
+    return !!(obj.tag & XPOST_OBJECT_FLIT);
+}
+
+
+/** @fn xpost_object_get_access (object obj)
+ *  @brief Yield the access-field from the object's tag.
+ *
+ *  Mask the FACCESS (Access Mask) with the tag, and shift the result down
+ *  by FACCESSO (Access bit-Offset) to return just the (2-) bit field.
+ *
+ *  A general description of the access flag behavior is at
+ *  https://groups.google.com/d/topic/comp.lang.postscript/ENxhFBqwgq4/discussion
+*/
+int xpost_object_get_access (object obj)
+{
+    return (obj.tag & XPOST_OBJECT_FACCESS) >> XPOST_OBJECT_FACCESSO;
+}
+
+
+/** @fn object xpost_object_set_access (object obj, int access)
+ *  @brief Return object with access-field set to access.
+ *
+ *  Clear the access-field with an inverse mask.
+ *  OR-in the new access field, shifted up by FACCESSO.
+*/
+object xpost_object_set_access (object obj, int access)
+{
+    obj.tag &= ~XPOST_OBJECT_FACCESS;
+    obj.tag |= (access << XPOST_OBJECT_FACCESSO);
+    return obj;
+}
+
+
+/*
+ *  Check the access permissions of the object, specially for filetypes.
+ *  Regular objects have read access if the value is greater than
+ *  executeonly.
+ *  Filetype objects have read access only if the value is equal
+ *  to readonly.
+*/
+int xpost_object_is_readable(object obj)
+{
+    if (xpost_object_type(obj) == filetype)
+    {
+        return xpost_object_get_access(obj)
+            == XPOST_OBJECT_TAG_ACCESS_READ_ONLY;
+    }
+    else
+    {
+        return xpost_object_get_access(obj)
+            >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY;
+    }
+}
+
+
+/*
+ *  Check the access permissions of the object.
+ *  An object is writeable if its access is equal to unlimited.
+*/
+int xpost_object_is_writeable (object obj)
+{
+    return xpost_object_get_access(obj)
+        == XPOST_OBJECT_TAG_ACCESS_UNLIMITED;
+}
+
+
 /** @fn object xpost_object_cvx(object obj)
  *  @brief Return object, with executable attribute set to executable.
  *
@@ -243,11 +250,18 @@ object xpost_object_cvlit (object obj)
     return obj;
 }
 
+/**
+ * @cond LOCAL
+ */
 
 static
 void _xpost_object_dump_composite (object obj)
 {
 }
+
+/**
+ * @endcond
+ */
 
 /** @fn void xpost_object_dump(object obj)
  *  @brief print a dump of the object's contents to stdout.
