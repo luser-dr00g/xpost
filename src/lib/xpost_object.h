@@ -51,10 +51,10 @@
     #_ "type" ,
 
 #define XPOST_OBJECT_DECLARE_SINGLETON(_) \
-    extern object _;
+    extern Xpost_Object _ ;
 
 #define XPOST_OBJECT_DEFINE_SINGLETON(_) \
-    object _ = \
+    Xpost_Object _ = \
     { \
         XPOST_OBJECT_AS_TYPE(_) \
     };
@@ -74,7 +74,7 @@
 
 typedef enum {
     XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE)
-    NTYPES
+    XPOST_OBJECT_NTYPES
 } Xpost_Object_Type;
 
 /**
@@ -83,15 +83,15 @@ typedef enum {
  */
 typedef enum
 {
-    XPOST_OBJECT_TYPEMASK = 0x000F,
-    XPOST_OBJECT_FVALID = 0x0010, /*< for 'anytype' operator pattern */
-    XPOST_OBJECT_FACCESS = 0x0060,
-    XPOST_OBJECT_FACCESSO = 5,    /*< bitwise offset of the ACCESS field */
-    XPOST_OBJECT_FLIT = 0x0080,
-    XPOST_OBJECT_FBANK = 0x0100, /* 0=local, 1=global */
-    XPOST_OBJECT_EXTENDEDINT = 0x0200,
-    XPOST_OBJECT_EXTENDEDREAL = 0x0400,
-    XPOST_OBJECT_FOPARGSINHOLD = 0x0800, /* for onerror to reset stack */
+    XPOST_OBJECT_TAG_DATA_TYPEMASK = 0x000F,
+    XPOST_OBJECT_TAG_DATA_FVALID = 0x0010, /*< for 'anytype' operator pattern */
+    XPOST_OBJECT_TAG_DATA_FACCESS = 0x0060,
+    XPOST_OBJECT_TAG_DATA_FACCESSO = 5,    /*< bitwise offset of the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FLIT = 0x0080,
+    XPOST_OBJECT_TAG_DATA_FBANK = 0x0100, /* 0=local, 1=global */
+    XPOST_OBJECT_TAG_DATA_EXTENDEDINT = 0x0200,
+    XPOST_OBJECT_TAG_DATA_EXTENDEDREAL = 0x0400,
+    XPOST_OBJECT_TAG_DATA_FOPARGSINHOLD = 0x0800, /* for onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
 /** @def enum Xpost_Object_Tag_Access
@@ -161,7 +161,7 @@ typedef struct
     word tag;
     word pad0;
     dword padw;
-} mark_;
+} Xpost_Object_mark_;
 
 /** @def typedef struct {} int_
  *  @brief The integertype object.
@@ -171,7 +171,7 @@ typedef struct
     word tag;
     word pad;
     integer val;
-} int_;
+} Xpost_Object_int_;
 
 /** @def typedef struct {} real_
  *  @brief The realtype object.
@@ -181,7 +181,7 @@ typedef struct
     word tag;
     word pad;
     real val;
-} real_;
+} Xpost_Object_real_;
 
 /** @def typedef struct {} extended_
  *  @brief A combined integer-real for use in dictionaries
@@ -192,7 +192,7 @@ typedef struct
     word tag;
     word sign_exp;
     dword fraction;
-} extended_;
+} Xpost_Object_extended_;
 
 /** @def typedef struct {} comp_
  *  @brief The composite object structure, used for strings, arrays, dicts.
@@ -203,7 +203,7 @@ typedef struct
     word sz;
     word ent;
     word off;
-} comp_;
+} Xpost_Object_comp_;
 
 /** @def typedef struct {} save_
  *  @brief The savetype object, for both user and on the save stack.
@@ -213,7 +213,7 @@ typedef struct
     word tag;
     word lev;
     dword stk;
-} save_;
+} Xpost_Object_save_;
 
 /** @def typedef struct {} saverec_
  *  @brief The saverec_ type is not available as a (Postscript) user type.
@@ -228,7 +228,7 @@ typedef struct
     word pad;
     word src;
     word cpy;
-} saverec_; 
+} Xpost_Object_saverec_; 
 
 /** @def typedef struct {} glob_
  *  @brief The globtype object exists only for passing between
@@ -242,7 +242,7 @@ typedef struct
     word tag;
     word off;
     void *ptr;
-} glob_;
+} Xpost_Object_glob_;
 
 /*
  *
@@ -261,15 +261,15 @@ typedef union
 {
     word tag;
 
-    mark_ mark_;
-    int_ int_;
-    real_ real_;
-    extended_ extended_;
-    comp_ comp_;
-    save_ save_;
-    saverec_ saverec_;
-    glob_ glob_;
-} object;
+    Xpost_Object_mark_ mark_;
+    Xpost_Object_int_ int_;
+    Xpost_Object_real_ real_;
+    Xpost_Object_extended_ extended_;
+    Xpost_Object_comp_ comp_;
+    Xpost_Object_save_ save_;
+    Xpost_Object_saverec_ saverec_;
+    Xpost_Object_glob_ glob_;
+} Xpost_Object;
 
 
 /*
@@ -289,7 +289,8 @@ XPOST_OBJECT_SINGLETONS(XPOST_OBJECT_DECLARE_SINGLETON)
  *  @brief A table of strings keyed to the types enum.
  */
 extern
-char *xpost_object_type_names[] /*= { XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE_STR) "invalid"}*/ ;
+char *xpost_object_type_names[]
+    /*= { XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE_STR) "invalid"}*/ ;
 
 /*
  *
@@ -305,17 +306,17 @@ char *xpost_object_type_names[] /*= { XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE_ST
 /** @fn object xpost_cons_bool(bool b)
  *  @brief Construct a booleantype object with value b.
  */
-object xpost_cons_bool (bool b);
+Xpost_Object xpost_cons_bool (bool b);
 
 /** @fn object xpost_cons_int(integer i)
  *  @brief Construct an integertype object with value i.
  */
-object xpost_cons_int (integer i);
+Xpost_Object xpost_cons_int (integer i);
 
 /** @fn object xpost_cons_real(real r)
  *  @brief Construct a realtype object with value r.
  */
-object xpost_cons_real (real r);
+Xpost_Object xpost_cons_real (real r);
 
 
 /*
@@ -331,7 +332,7 @@ object xpost_cons_real (real r);
  * This function returns the type of the object @p obj, that is the tag
  * with flags masked-off.
  */
-int xpost_object_type (object obj);
+int xpost_object_type (Xpost_Object obj);
 
 /**
  * @brief Determine whether the object is composite or not (ie. simple).
@@ -342,7 +343,7 @@ int xpost_object_type (object obj);
  * This function returns 1 if the object @p obj is one of the composite
  * types (arraytype, stringtype, or dicttype), 0 otherwise.
  */
-int xpost_object_is_composite (object obj);
+int xpost_object_is_composite (Xpost_Object obj);
 
 
 /**
@@ -354,7 +355,7 @@ int xpost_object_is_composite (object obj);
  * This function returns 1 if the object @p obj is executable, 0
  * otherwise.
  */
-int xpost_object_is_exe (object obj);
+int xpost_object_is_exe (Xpost_Object obj);
 
 /**
  * @brief Determine whether the object is literal or not.
@@ -365,7 +366,7 @@ int xpost_object_is_exe (object obj);
  * This function returns 1 if the object @p obj is literal, 0
  * otherwise.
  */
-int xpost_object_is_lit (object obj);
+int xpost_object_is_lit (Xpost_Object obj);
 
 
 /**
@@ -377,7 +378,7 @@ int xpost_object_is_lit (object obj);
  * This function returns the access-field from the object's tag,
  * a value from enum Xpost_tag_access_value. 
  */
-int xpost_object_get_access (object obj);
+int xpost_object_get_access (Xpost_Object obj);
 
 /**
  * @brief Return object with access-field set to access.
@@ -385,39 +386,39 @@ int xpost_object_get_access (object obj);
  * @param obj The object.
  * @return 
  */
-object xpost_object_set_access (object obj, int access);
+Xpost_Object xpost_object_set_access (Xpost_Object obj, int access);
 
 
 /**
  * @brief Return 1 if the object is readable, 0 otherwise.
  */
-int xpost_object_is_readable (object obj);
+int xpost_object_is_readable (Xpost_Object obj);
 
 /**
  * @brief Return 1 if the object is writeable, 0 otherwise.
  */
-int xpost_object_is_writeable (object obj);
+int xpost_object_is_writeable (Xpost_Object obj);
 
 
 /** @fn object xpost_object_cvx(object obj)
  *  @brief Return object, with executable attribute set to executable.
  */
-object xpost_object_cvx (object obj);
+Xpost_Object xpost_object_cvx (Xpost_Object obj);
 
-/** @fn object xpost_object_cvlit(object obj)
+/** @fn Xpost_Object xpost_object_cvlit(Xpost_Object obj)
  *  @brief Return object, with executable attribute set to literal.
  */
-object xpost_object_cvlit (object obj);
+Xpost_Object xpost_object_cvlit (Xpost_Object obj);
 
 
 /*
    Debugging dump
  */
 
-/** @fn void xpost_object_dump(object obj)
+/** @fn void xpost_object_dump(Xpost_Object obj)
  *  @brief print a dump of the object contents to stdout
  */
-void xpost_object_dump (object obj);
+void xpost_object_dump (Xpost_Object obj);
 
 /**
  * @}
