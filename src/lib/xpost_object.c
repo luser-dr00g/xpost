@@ -56,13 +56,13 @@ char *xpost_object_type_names[] =
  *  Set the value to the argument b.
  *  Return the object as literal.
 */
-object xpost_cons_bool (bool b)
+Xpost_Object xpost_cons_bool (bool b)
 {
-    object obj;
+    Xpost_Object obj;
 
     obj.int_.tag = booleantype
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
-            << XPOST_OBJECT_FACCESSO);
+            << XPOST_OBJECT_TAG_DATA_FACCESSO);
     obj.int_.pad = 0;
     obj.int_.val = b;
 
@@ -78,13 +78,13 @@ object xpost_cons_bool (bool b)
  *  Set the value to the argument i.
  *  Return the object as literal.
 */
-object xpost_cons_int (integer i)
+Xpost_Object xpost_cons_int (integer i)
 {
-    object obj;
+    Xpost_Object obj;
 
     obj.int_.tag = integertype
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
-                << XPOST_OBJECT_FACCESSO);
+                << XPOST_OBJECT_TAG_DATA_FACCESSO);
     obj.int_.pad = 0;
     obj.int_.val = i;
 
@@ -100,13 +100,13 @@ object xpost_cons_int (integer i)
  *  Set the value to the argument r.
  *  Return the object as literal.
 */
-object xpost_cons_real (real r)
+Xpost_Object xpost_cons_real (real r)
 {
-    object obj;
+    Xpost_Object obj;
 
     obj.real_.tag = realtype
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
-                << XPOST_OBJECT_FACCESSO);
+                << XPOST_OBJECT_TAG_DATA_FACCESSO);
     obj.real_.pad = 0;
     obj.real_.val = r;
 
@@ -118,19 +118,19 @@ object xpost_cons_real (real r)
    Type and Tag Manipulation
 */
 
-/** @fn int xpost_object_type(object obj)
+/** @fn int xpost_object_type(Xpost_Object obj)
  *  @brief Return obj.tag & TYPEMASK to yield an Xpost_type enum value.
 */
-int xpost_object_type (object obj)
+int xpost_object_type (Xpost_Object obj)
 {
-    return obj.tag & XPOST_OBJECT_TYPEMASK;
+    return obj.tag & XPOST_OBJECT_TAG_DATA_TYPEMASK;
 }
 
 
-/** @fn int xpost_object_is_composite(object obj)
+/** @fn int xpost_object_is_composite(Xpost_Object obj)
  *  @brief Return 1 if the object is composite, 0 otherwise.
 */
-int xpost_object_is_composite (object obj)
+int xpost_object_is_composite (Xpost_Object obj)
 {
     switch (xpost_object_type(obj))
     {
@@ -143,31 +143,31 @@ int xpost_object_is_composite (object obj)
 }
 
 
-/** @fn int xpost_object_is_exe(object obj)
+/** @fn int xpost_object_is_exe(Xpost_Object obj)
  *  @brief Return 1 if the object is executable, 0 otherwise.
  *
  *  Masks the FLIT (Literal flag) with the tag and performs
  *  a logical NOT. Ie. executable means NOT having the FLIT flag set.
 */
-int xpost_object_is_exe(object obj)
+int xpost_object_is_exe(Xpost_Object obj)
 {
-    return !(obj.tag & XPOST_OBJECT_FLIT);
+    return !(obj.tag & XPOST_OBJECT_TAG_DATA_FLIT);
 }
 
 
-/** @fn int xpost_object_is_lit(object obj)
+/** @fn int xpost_object_is_lit(Xpost_Object obj)
  *  @brief Return 1 if the object is literal, 0 otherwise.
  *
  *  Masks the FLIT (Literal flag) with the tag and performs
  *  a double-NOT to normalize the value to the range [0..1].
 */
-int xpost_object_is_lit(object obj)
+int xpost_object_is_lit(Xpost_Object obj)
 {
-    return !!(obj.tag & XPOST_OBJECT_FLIT);
+    return !!(obj.tag & XPOST_OBJECT_TAG_DATA_FLIT);
 }
 
 
-/** @fn xpost_object_get_access (object obj)
+/** @fn xpost_object_get_access (Xpost_Object obj)
  *  @brief Yield the access-field from the object's tag.
  *
  *  Mask the FACCESS (Access Mask) with the tag, and shift the result down
@@ -176,22 +176,23 @@ int xpost_object_is_lit(object obj)
  *  A general description of the access flag behavior is at
  *  https://groups.google.com/d/topic/comp.lang.postscript/ENxhFBqwgq4/discussion
 */
-int xpost_object_get_access (object obj)
+int xpost_object_get_access (Xpost_Object obj)
 {
-    return (obj.tag & XPOST_OBJECT_FACCESS) >> XPOST_OBJECT_FACCESSO;
+    return (obj.tag & XPOST_OBJECT_TAG_DATA_FACCESS)
+        >> XPOST_OBJECT_TAG_DATA_FACCESSO;
 }
 
 
-/** @fn object xpost_object_set_access (object obj, int access)
+/** @fn object xpost_object_set_access (Xpost_Object obj, int access)
  *  @brief Return object with access-field set to access.
  *
  *  Clear the access-field with an inverse mask.
  *  OR-in the new access field, shifted up by FACCESSO.
 */
-object xpost_object_set_access (object obj, int access)
+Xpost_Object xpost_object_set_access (Xpost_Object obj, int access)
 {
-    obj.tag &= ~XPOST_OBJECT_FACCESS;
-    obj.tag |= (access << XPOST_OBJECT_FACCESSO);
+    obj.tag &= ~XPOST_OBJECT_TAG_DATA_FACCESS;
+    obj.tag |= (access << XPOST_OBJECT_TAG_DATA_FACCESSO);
     return obj;
 }
 
@@ -203,7 +204,7 @@ object xpost_object_set_access (object obj, int access)
  *  Filetype objects have read access only if the value is equal
  *  to readonly.
 */
-int xpost_object_is_readable(object obj)
+int xpost_object_is_readable(Xpost_Object obj)
 {
     if (xpost_object_type(obj) == filetype)
     {
@@ -222,36 +223,36 @@ int xpost_object_is_readable(object obj)
  *  Check the access permissions of the object.
  *  An object is writeable if its access is equal to unlimited.
 */
-int xpost_object_is_writeable (object obj)
+int xpost_object_is_writeable (Xpost_Object obj)
 {
     return xpost_object_get_access(obj)
         == XPOST_OBJECT_TAG_ACCESS_UNLIMITED;
 }
 
 
-/** @fn object xpost_object_cvx(object obj)
+/** @fn object xpost_object_cvx(Xpost_Object obj)
  *  @brief Return object, with executable attribute set to executable.
  *
  *  Convert to executable. Removes the FLIT (literal flag)
  *  in the object's tag with an inverse mask. Returns modified object.
 */
-object xpost_object_cvx (object obj)
+Xpost_Object xpost_object_cvx (Xpost_Object obj)
 {
-    obj.tag &= ~ XPOST_OBJECT_FLIT;
+    obj.tag &= ~ XPOST_OBJECT_TAG_DATA_FLIT;
 
     return obj;
 }
 
 
-/** @fn object xpost_object_cvlit(object obj)
+/** @fn Xpost_Object xpost_object_cvlit(Xpost_Object obj)
  *  @brief Return object, with executable attribute set to literal.
  *
  *  Convert to Literal. OR-in the FLIT (literal flag) in the object's tag.
  *  Returns modified object.
 */
-object xpost_object_cvlit (object obj)
+Xpost_Object xpost_object_cvlit (Xpost_Object obj)
 {
-    obj.tag |= XPOST_OBJECT_FLIT;
+    obj.tag |= XPOST_OBJECT_TAG_DATA_FLIT;
 
     return obj;
 }
@@ -261,14 +262,14 @@ object xpost_object_cvlit (object obj)
  */
 
 static
-void _xpost_object_dump_composite (object obj)
+void _xpost_object_dump_composite (Xpost_Object obj)
 {
     printf(" %c "
             XPOST_FMT_WORD(u) " "
             XPOST_FMT_WORD(u) " "
             XPOST_FMT_WORD(u) " "
             XPOST_FMT_WORD(u) ">",
-            obj.comp_.tag & XPOST_OBJECT_FBANK ? 'G' : 'L',
+            obj.comp_.tag & XPOST_OBJECT_TAG_DATA_FBANK ? 'G' : 'L',
             obj.comp_.tag,
             obj.comp_.sz,
             obj.comp_.ent,
@@ -279,10 +280,10 @@ void _xpost_object_dump_composite (object obj)
  * @endcond
  */
 
-/** @fn void xpost_object_dump(object obj)
+/** @fn void xpost_object_dump(Xpost_Object obj)
  *  @brief print a dump of the object's contents to stdout.
 */
-void xpost_object_dump (object obj)
+void xpost_object_dump (Xpost_Object obj)
 {
     switch (xpost_object_type(obj))
     {
@@ -327,7 +328,8 @@ void xpost_object_dump (object obj)
                            XPOST_FMT_WORD(u) " "
                            XPOST_FMT_WORD(u) " "
                            XPOST_FMT_DWORD(u) ">",
-                           obj.mark_.tag & XPOST_OBJECT_FBANK ? 'G' : 'L',
+                           obj.mark_.tag & XPOST_OBJECT_TAG_DATA_FBANK ?
+                               'G' : 'L',
                            obj.mark_.tag,
                            obj.mark_.pad0,
                            obj.mark_.padw);
