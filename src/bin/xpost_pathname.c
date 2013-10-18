@@ -9,9 +9,10 @@ int checkexepath (char *exepath)
 	char *slash;
 
     /* replace windows's \\  so we can compare paths */
-	while ((slash = strchr(exepath, '\\'))) {
-		*slash = '/';
-	}
+    slash = exepath;
+    while (*slash++) {
+        if (*slash == '\\') *slash = '/';
+    }
 
     /* global exedir is set in ps systemdict as /EXE_DIR */
 	exedir = strdup(exepath);
@@ -23,6 +24,7 @@ int checkexepath (char *exepath)
 	printf("PACKAGE_INSTALL_DIR: %s\n", PACKAGE_INSTALL_DIR);
 #endif
 
+    /* if path-to-executable is where it should be installed */
 	is_installed = strstr(exepath, PACKAGE_INSTALL_DIR) != NULL;
 
 #ifdef DEBUG_PATHNAME
@@ -47,6 +49,13 @@ char *appendtocwd (char *relpath)
 static
 int searchpathforargv0(char *argv0)
 {
+    /*
+       not implemented.
+       This function may be necessary on some obscure unices.
+       It is called if there is no other path information,
+       ie. argv[0] is a bare name,
+       and no /proc/???/exe links are present
+    */
 	return checkexepath(".");
 }
 
