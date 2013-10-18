@@ -148,11 +148,11 @@ typedef dword addr;
  *
  */
 
-/** @def typdef struct {} mark_
+/** @def typedef struct {} mark_
  *  @brief A generic object: 2 unsigned shorts and an unsigned long.
  *
  *  To avoid too many structure, many types use .mark_.padw
- *  to hold an unsigned value (eg. operatortype, nametype, filetype).
+ *  to hold an unsigned integer (eg. operatortype, nametype, filetype).
  *  Of course, if a type needs to use pad0, that's a sign that
  *  it needs its own struct.
  */
@@ -216,11 +216,11 @@ typedef struct
 } Xpost_Object_save_;
 
 /** @def typedef struct {} saverec_
- *  @brief The saverec_ type is not available as a (Postscript) user type.
- *         saverec_s occupy the "current save stack" referred to by the
- *         stk field of a save object.
+ *  @brief The saverec_ type overlays an object so that it can be stacked.
  *
- *  The saverec_ type overlays an object so that it can be stacked.
+ *  The saverec_ type is not available as a (Postscript) user type.
+ *  saverec_s occupy the "current save stack" referred to by the
+ *  stk field of a save object.
  */
 typedef struct
 {
@@ -300,27 +300,42 @@ char *xpost_object_type_names[]
 
 
 /*
-   Constructors
+   Constructors for simple types.
+
+   These objects contain their own values and are not tied
+   to a specific context.
  */
 
-/** @fn object xpost_cons_bool(bool b)
+/** @fn Xpost_Object xpost_cons_bool(bool b)
  *  @brief Construct a booleantype object with value b.
+ *
+ *  @param b A boolean value.
+ *  @return A new object.
  */
 Xpost_Object xpost_cons_bool (bool b);
 
-/** @fn object xpost_cons_int(integer i)
+/** @fn Xpost_Object xpost_cons_int(integer i)
  *  @brief Construct an integertype object with value i.
+ *
+ *  @param i An integer value, typically defined as int32_t.
+ *  @return A new object.
  */
 Xpost_Object xpost_cons_int (integer i);
 
-/** @fn object xpost_cons_real(real r)
+/** @fn Xpost_Object xpost_cons_real(real r)
  *  @brief Construct a realtype object with value r.
+ *
+ *  @param r A real value, typically defined as float.
+ *  @return A new object.
  */
 Xpost_Object xpost_cons_real (real r);
 
 
 /*
    Type and Tag Manipulation
+
+   These functions manipulate the information in the Xpost_Object's
+   tag field, which contains the type and various flags and bitfields.
  */
 
 /**
@@ -374,7 +389,7 @@ int xpost_object_is_lit (Xpost_Object obj);
  *
  * @param obj The object.
  * @return The access-field from the object's tag.
-
+ *
  * This function returns the access-field from the object's tag,
  * a value from enum Xpost_tag_access_value. 
  */
@@ -384,39 +399,77 @@ int xpost_object_get_access (Xpost_Object obj);
  * @brief Return object with access-field set to access.
  *
  * @param obj The object.
- * @return 
+ * @param access New access-field value.
+ * @return The modified object.
+ *
+ * This function sets the access-field in @p obj to @p access.
+ * It returns the modified object.
  */
 Xpost_Object xpost_object_set_access (Xpost_Object obj, int access);
 
 
 /**
- * @brief Return 1 if the object is readable, 0 otherwise.
+ * @brief Determine whether the object is readable or not.
+ *
+ * @param obj The object.
+ * @return 1 if the object is readable, 0 otherwise.
  */
 int xpost_object_is_readable (Xpost_Object obj);
 
 /**
- * @brief Return 1 if the object is writeable, 0 otherwise.
+ * @brief Determine whether the object is writable or not.
+ *
+ * @param obj The object.
+ * @return 1 if the object is writeable, 0 otherwise.
  */
 int xpost_object_is_writeable (Xpost_Object obj);
 
 
 /** @fn object xpost_object_cvx(object obj)
- *  @brief Return object, with executable attribute set to executable.
+ *  @brief Convert object to executable.
+ *
+ *  @param obj The object.
+ *  @return object, with executable attribute set to executable.
+ *
+ *  The name 'cvx' is borrowed from the Postscript language.
+ *  cvx is the name of the Postscript operator which performs
+ *  this function.
  */
 Xpost_Object xpost_object_cvx (Xpost_Object obj);
 
 /** @fn Xpost_Object xpost_object_cvlit(Xpost_Object obj)
- *  @brief Return object, with executable attribute set to literal.
+ *  @brief Convert object to literal.
+ *
+ *  @param obj The object.
+ *  @return object, with executable attribute set to literal.
+ *
+ *  The name 'cvlit' is borrowed from the Postscript language.
+ *  cvlit is the name of the Postscript operator which performs
+ *  this function.
  */
 Xpost_Object xpost_object_cvlit (Xpost_Object obj);
 
 
 /*
-   Debugging dump
+   Debugging dump.
+
+   This function is used in the backup error handler.
  */
 
 /** @fn void xpost_object_dump(Xpost_Object obj)
  *  @brief print a dump of the object contents to stdout
+ *
+ *  This function can print the raw object's contents, 
+ *  discriminated by type. It can print the values of
+ *  simple object, but not composites where it can only
+ *  print the memory-table index (aka 'ent') and offset.
+ *
+ *  xpost_object_dump is used in the backup error handler
+ *  which is used for errors in initialization or when the
+ *  installed error handler fails. Since it is part of a
+ *  larger information dump, there should also be a dump
+ *  of the memory-file and memory-tables where the ent
+ *  may be located.
  */
 void xpost_object_dump (Xpost_Object obj);
 

@@ -611,11 +611,12 @@ void loadinitps(context *ctx)
 {
     assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
+/*splint doesn't like the composed macros*/
+#ifndef S_SPLINT_S
 	if (is_installed)
 		push(ctx->lo, ctx->es,
 			cvx(consbst(ctx,
-					CNT_STR("(" PACKAGE_DATA_DIR
-						"/init.ps) (r) file cvx exec"))));
+             CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
 	else {
 		char buf[1024];
 		snprintf(buf, 1024,
@@ -625,6 +626,7 @@ void loadinitps(context *ctx)
 			cvx(consbst(ctx,
 					strlen(buf), buf)));
 	}
+#endif
     ctx->quit = 0;
     mainloop(ctx);
 }

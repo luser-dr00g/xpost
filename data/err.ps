@@ -19,7 +19,7 @@ $error begin
     /initializing true def
     /Extra () def
 end
-($error)=
+($error installed)=
 
 /.error {
     false setglobal
@@ -51,7 +51,7 @@ end
     interrupt
 } def
 /signalerror /.error load def
-%(.error)=
+(.error installed)=
 
 /errordict 28 dict def
 errordict begin
@@ -102,7 +102,7 @@ errordict begin
     /unregistered {/unregistered //.error exec} def
     /interrupt { stop } def
 end
-%(errordict)=
+(errordict installed)=
 
 /handleerror { errordict /handleerror get exec } def
 /interrupt { stop } def

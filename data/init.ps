@@ -256,6 +256,9 @@ def
 } def
 
 /setpagedevice {
+    dup type /dicttype ne {
+        /setpagedevice cvx /typecheck signalerror
+    } if
 } def
 /currentpagedevice {
 } def
