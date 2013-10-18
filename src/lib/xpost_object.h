@@ -1,15 +1,116 @@
 #ifndef XPOST_OBJECT_H
 #define XPOST_OBJECT_H
 
+#include <inttypes.h>
+
 /**
  * @file xpost_object.h
- * @brief The file defines the basic (8-byte) object structure.
+ * @brief The file defines the basic object structure, typically 8-bytes.
  * @defgroup xpost_object Object structure
  *
  * @{
-*/
+ */
 
-#include <stdint.h>
+/*
+ *
+ * Macros
+ *
+ */
+
+/** @def XPOST_OBJECT_TYPES
+ *  @brief X-macro for defining enum of typenames and 
+ *         associated string-table.
+ */
+
+#define XPOST_OBJECT_TYPES(_) \
+    _(invalid) \
+    _(null) \
+    _(mark) \
+    _(integer) \
+    _(real) \
+    _(array) \
+    _(dict) \
+    _(file) \
+    _(operator) \
+    _(save) \
+    _(name) \
+    _(boolean) \
+    _(context) \
+    _(extended) \
+    _(glob) \
+    _(string) \
+/* #def XPOST_OBJECT_TYPES */
+
+#define XPOST_OBJECT_AS_TYPE(_) \
+    _ ## type ,
+
+#define XPOST_OBJECT_AS_STR(_) \
+    #_ ,
+
+#define XPOST_OBJECT_AS_TYPE_STR(_) \
+    #_ "type" ,
+
+#define XPOST_OBJECT_DECLARE_SINGLETON(_) \
+    extern object _;
+
+#define XPOST_OBJECT_DEFINE_SINGLETON(_) \
+    object _ = \
+    { \
+        XPOST_OBJECT_AS_TYPE(_) \
+    };
+
+#define XPOST_OBJECT_SINGLETONS(_) \
+    _(invalid) \
+    _(null) \
+    _(mark) \
+/* #def XPOST_OBJECT_SINGLETONS */
+
+
+/*
+ *
+ * Enums
+ *
+ */
+
+typedef enum {
+    XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE)
+    NTYPES
+} Xpost_Object_Type;
+
+/**
+ * @enum Xpost_tag_data
+ * @brief Bitmasks and bitshift-positions for the flags in the tag.
+ */
+typedef enum
+{
+    XPOST_OBJECT_TYPEMASK = 0x000F,
+    XPOST_OBJECT_FVALID = 0x0010, /*< for 'anytype' operator pattern */
+    XPOST_OBJECT_FACCESS = 0x0060,
+    XPOST_OBJECT_FACCESSO = 5,    /*< bitwise offset of the ACCESS field */
+    XPOST_OBJECT_FLIT = 0x0080,
+    XPOST_OBJECT_FBANK = 0x0100, /* 0=local, 1=global */
+    XPOST_OBJECT_EXTENDEDINT = 0x0200,
+    XPOST_OBJECT_EXTENDEDREAL = 0x0400,
+    XPOST_OBJECT_FOPARGSINHOLD = 0x0800, /* for onerror to reset stack */
+} Xpost_Object_Tag_Data;
+
+/** @def enum Xpost_Object_Tag_Access
+ *  @brief valid values for the ACCESS bitfield
+ */
+typedef enum
+{
+    XPOST_OBJECT_TAG_ACCESS_NONE,
+    XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY,
+    XPOST_OBJECT_TAG_ACCESS_READ_ONLY,
+    XPOST_OBJECT_TAG_ACCESS_UNLIMITED,
+} Xpost_Object_Tag_Access;
+
+
+/*
+ *
+ * Typedefs
+ *
+ */
 
 #ifdef WANT_LARGE_OBJECT
 typedef unsigned char byte;
@@ -29,75 +130,11 @@ typedef float real;        // assumes IEEE 754
 typedef dword addr;
 #endif
 
-/** @def TYPES
- *  @brief X-macro for defining enum of typenames and 
- *         associated string-table.
-*/
-
-#define TYPES(_) \
-    _(invalid) \
-    _(null) \
-    _(mark) \
-    _(integer) \
-    _(real) \
-    _(array) \
-    _(dict) \
-    _(file) \
-    _(operator) \
-    _(save) \
-    _(name) \
-    _(boolean) \
-    _(context) \
-    _(extended) \
-    _(glob) \
-    _(string) \
-/* #def TYPES */
-
-#define AS_TYPE(_) \
-    _ ## type ,
-typedef enum Xpost_type {
-    TYPES(AS_TYPE)
-    NTYPES
-} Xpost_type;
-
-/**
- *  @var char *xpost_type_names[]
- *  @brief A table of strings keyed to the types enum.
-*/
-
-#define AS_STR(_) \
-    #_ ,
-#define AS_TYPE_STR(_) \
-    #_ "type" ,
-extern
-char *xpost_type_names[] /*= { TYPES(AS_TYPE_STR) "invalid"}*/ ;
-
-/**
- * @enum Xpost_tag_data
- * @brief Bitmasks and bitshift-positions for the flags in the tag.
-*/
-typedef enum Xpost_tag_data {
-    TYPEMASK = 0x000F,
-    FVALID = 0x0010, /*< for 'anytype' operator pattern */
-    FACCESS = 0x0060,
-    FACCESSO = 5,    /*< bitwise offset of the ACCESS field */
-    FLIT = 0x0080,
-    FBANK = 0x0100, /* 0=local, 1=global */
-    EXTENDEDINT = 0x0200,
-    EXTENDEDREAL = 0x0400,
-    FOPARGSINHOLD = 0x0800, /* for onerror to reset stack */
-};
-
-/** @def enum Xpost_tag_access_value
- *  @brief valid values for the ACCESS bitfield
-*/
-
-typedef enum Xpost_tag_access_value {
-    noaccess = 0,
-    executeonly = 1,
-    readonly = 2,
-    unlimited = 3,
-} Xpost_tag_access_value;
+/*
+ *
+ * Structs
+ *
+ */
 
 /** @def typdef struct {} mark_
  *  @brief A generic object: 2 unsigned shorts and an unsigned long.
@@ -106,9 +143,9 @@ typedef enum Xpost_tag_access_value {
  *  to hold an unsigned value (eg. operatortype, nametype, filetype).
  *  Of course, if a type needs to use pad0, that's a sign that
  *  it needs its own struct.
-*/
-
-typedef struct {
+ */
+typedef struct
+{
     word tag;
     word pad0;
     dword padw;
@@ -116,9 +153,9 @@ typedef struct {
 
 /** @def typedef struct {} int_
  *  @brief The integertype object.
-*/
-
-typedef struct {
+ */
+typedef struct
+{
     word tag;
     word pad;
     integer val;
@@ -126,9 +163,9 @@ typedef struct {
 
 /** @def typedef struct {} real_
  *  @brief The realtype object.
-*/
-
-typedef struct {
+ */
+typedef struct
+{
     word tag;
     word pad;
     real val;
@@ -137,9 +174,9 @@ typedef struct {
 /** @def typedef struct {} extended_
  *  @brief A combined integer-real for use in dictionaries
  *         as number keys.
-*/
-
-typedef struct {
+ */
+typedef struct
+{
     word tag;
     word sign_exp;
     dword fraction;
@@ -147,9 +184,9 @@ typedef struct {
 
 /** @def typedef struct {} comp_
  *  @brief The composite object structure, used for strings, arrays, dicts.
-*/
-
-typedef struct {
+ */
+typedef struct
+{
     word tag;
     word sz;
     word ent;
@@ -158,9 +195,9 @@ typedef struct {
 
 /** @def typedef struct {} save_
  *  @brief The savetype object, for both user and on the save stack.
-*/
-
-typedef struct {
+ */
+typedef struct
+{
     word tag;
     word lev;
     dword stk;
@@ -172,9 +209,9 @@ typedef struct {
  *         stk field of a save object.
  *
  *  The saverec_ type overlays an object so that it can be stacked.
-*/
-
-typedef struct {
+ */
+typedef struct
+{
     word tag;
     word pad;
     word src;
@@ -187,13 +224,19 @@ typedef struct {
  *
  *  There are no constructors for this type. It has no use outside
  *  the filenameforall looping construct.
-*/
-
-typedef struct {
+ */
+typedef struct
+{
     word tag;
     word off;
     void *ptr;
 } glob_;
+
+/*
+ *
+ * Union
+ *
+ */
 
 /** @def typedef union {} object
  *  @brief The top-level object union.
@@ -201,9 +244,9 @@ typedef struct {
  *  The tag word overlays the tag words in each subtype, so it can
  *  be used to determine an object's type (using the xpost_object_type()
  *  function which masks-off any flags in the tag).
-*/
-
-typedef union {
+ */
+typedef union
+{
     word tag;
 
     mark_ mark_;
@@ -216,6 +259,57 @@ typedef union {
     glob_ glob_;
 } object;
 
+
+/*
+ *
+ * Variables
+ *
+ */
+
+/** @def XPOST_OBJECT_SINGLETONS
+ *  @brief Certain simple objects exist as global template variables
+ *         rather than do-nothing constructors.
+ */
+XPOST_OBJECT_SINGLETONS(XPOST_OBJECT_DECLARE_SINGLETON)
+
+/**
+ *  @var char *xpost_object_type_names[]
+ *  @brief A table of strings keyed to the types enum.
+ */
+extern
+char *xpost_object_type_names[] /*= { XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE_STR) "invalid"}*/ ;
+
+/*
+ *
+ * Functions
+ *
+ */
+
+
+/*
+   Constructors
+ */
+
+/** @fn object xpost_cons_bool(bool b)
+ *  @brief Construct a booleantype object with value b.
+ */
+object xpost_cons_bool (bool b);
+
+/** @fn object xpost_cons_int(integer i)
+ *  @brief Construct an integertype object with value i.
+ */
+object xpost_cons_int (integer i);
+
+/** @fn object xpost_cons_real(real r)
+ *  @brief Construct a realtype object with value r.
+ */
+object xpost_cons_real (real r);
+
+
+/*
+   Type and Tag Manipulation
+ */
+
 /**
  * @brief Return the object's type, it. the tag with flags masked-off.
  *
@@ -224,7 +318,7 @@ typedef union {
  *
  * This function returns the type of the object @p obj, that is the tag
  * with flags masked-off.
-*/
+ */
 int xpost_object_type (object obj);
 
 /**
@@ -235,8 +329,9 @@ int xpost_object_type (object obj);
  *
  * This function returns 1 if the object @p obj is one of the composite
  * types (arraytype, stringtype, or dicttype), 0 otherwise.
-*/
+ */
 int xpost_object_is_composite (object obj);
+
 
 /**
  * @brief Determine whether the object is executable or not.
@@ -246,7 +341,7 @@ int xpost_object_is_composite (object obj);
  *
  * This function returns 1 if the object @p obj is executable, 0
  * otherwise.
-*/
+ */
 int xpost_object_is_exe (object obj);
 
 /**
@@ -257,8 +352,9 @@ int xpost_object_is_exe (object obj);
  *
  * This function returns 1 if the object @p obj is literal, 0
  * otherwise.
-*/
+ */
 int xpost_object_is_lit (object obj);
+
 
 /**
  * @brief Yield the access-field from the object's tag.
@@ -268,7 +364,7 @@ int xpost_object_is_lit (object obj);
 
  * This function returns the access-field from the object's tag,
  * a value from enum Xpost_tag_access_value. 
-*/
+ */
 int xpost_object_get_access (object obj);
 
 /**
@@ -276,63 +372,40 @@ int xpost_object_get_access (object obj);
  *
  * @param obj The object.
  * @return 
-*/
+ */
 object xpost_object_set_access (object obj, int access);
+
 
 /**
  * @brief Return 1 if the object is readable, 0 otherwise.
-*/
-int xpost_object_is_readable(object obj);
+ */
+int xpost_object_is_readable (object obj);
 
 /**
  * @brief Return 1 if the object is writeable, 0 otherwise.
-*/
-int xpost_object_is_writeable(object obj);
+ */
+int xpost_object_is_writeable (object obj);
 
-/** @def SINGLETONS
- *  @brief Certain simple objects exist as global template variables
- *         rather than do-nothing constructors.
-*/
-
-#define DECLARE_SINGLETON(_) extern object _;
-#define DEFINE_SINGLETON(_) object _ = { AS_TYPE(_) };
-#define SINGLETONS(_) \
-    _(invalid) \
-    _(null) \
-    _(mark) \
-/* #def SINGLETONS */
-
-SINGLETONS(DECLARE_SINGLETON)
-
-/** @fn object xpost_cons_bool(bool b)
- *  @brief Construct a booleantype object with value b.
-*/
-object xpost_cons_bool(bool b);
-
-/** @fn object xpost_cons_int(integer i)
- *  @brief Construct an integertype object with value i.
-*/
-object xpost_cons_int(integer i);
-
-/** @fn object xpost_cons_real(real r)
- *  @brief Construct a realtype object with value r.
-*/
-object xpost_cons_real(real r);
 
 /** @fn object xpost_object_cvx(object obj)
  *  @brief Return object, with executable attribute set to executable.
-*/
-object xpost_object_cvx(object obj);
+ */
+object xpost_object_cvx (object obj);
 
 /** @fn object xpost_object_cvlit(object obj)
  *  @brief Return object, with executable attribute set to literal.
-*/
-object xpost_object_cvlit(object obj);
+ */
+object xpost_object_cvlit (object obj);
+
+
+/*
+   Debugging dump
+ */
 
 /** @fn void xpost_object_dump(object obj)
  *  @brief print a dump of the object contents to stdout
-*/
-void xpost_object_dump(object obj);
+ */
+void xpost_object_dump (object obj);
 
 /**
  * @}
