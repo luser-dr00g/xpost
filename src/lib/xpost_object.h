@@ -17,9 +17,10 @@
  *
  */
 
-/** @def XPOST_OBJECT_TYPES
- *  @brief X-macro for defining enum of typenames and 
- *         associated string-table.
+/**
+ * @def XPOST_OBJECT_TYPES
+ * @brief X-macro for defining enum of typenames and
+ *        associated string-table.
  */
 
 #define XPOST_OBJECT_TYPES(_) \
@@ -78,15 +79,15 @@ typedef enum {
 } Xpost_Object_Type;
 
 /**
- * @enum Xpost_tag_data
+ * @enum Xpost_Object_Tag_Data
  * @brief Bitmasks and bitshift-positions for the flags in the tag.
  */
 typedef enum
 {
     XPOST_OBJECT_TAG_DATA_TYPEMASK = 0x000F,
-    XPOST_OBJECT_TAG_DATA_FVALID = 0x0010, /*< for 'anytype' operator pattern */
+    XPOST_OBJECT_TAG_DATA_FVALID = 0x0010, /**< for 'anytype' operator pattern */
     XPOST_OBJECT_TAG_DATA_FACCESS = 0x0060,
-    XPOST_OBJECT_TAG_DATA_FACCESSO = 5,    /*< bitwise offset of the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FACCESSO = 5,    /**< bitwise offset of the ACCESS field */
     XPOST_OBJECT_TAG_DATA_FLIT = 0x0080,
     XPOST_OBJECT_TAG_DATA_FBANK = 0x0100, /* 0=local, 1=global */
     XPOST_OBJECT_TAG_DATA_EXTENDEDINT = 0x0200,
@@ -94,8 +95,9 @@ typedef enum
     XPOST_OBJECT_TAG_DATA_FOPARGSINHOLD = 0x0800, /* for onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
-/** @def enum Xpost_Object_Tag_Access
- *  @brief valid values for the ACCESS bitfield
+/**
+ * @enum Xpost_Object_Tag_Access
+ * @brief valid values for the ACCESS bitfield
  */
 typedef enum
 {
@@ -148,13 +150,14 @@ typedef dword addr;
  *
  */
 
-/** @def typedef struct {} mark_
- *  @brief A generic object: 2 unsigned shorts and an unsigned long.
+/**
+ * @typedef Xpost_Object_mark_
+ * @brief A generic object: 2 unsigned shorts and an unsigned long.
  *
- *  To avoid too many structure, many types use .mark_.padw
- *  to hold an unsigned integer (eg. operatortype, nametype, filetype).
- *  Of course, if a type needs to use pad0, that's a sign that
- *  it needs its own struct.
+ * To avoid too many structure, many types use .mark_.padw
+ * to hold an unsigned integer (eg. operatortype, nametype, filetype).
+ * Of course, if a type needs to use pad0, that's a sign that
+ * it needs its own struct.
  */
 typedef struct
 {
@@ -163,8 +166,9 @@ typedef struct
     dword padw;
 } Xpost_Object_mark_;
 
-/** @def typedef struct {} int_
- *  @brief The integertype object.
+/**
+ * @typedef Xpost_Object_int_
+ * @brief The integertype object.
  */
 typedef struct
 {
@@ -173,8 +177,9 @@ typedef struct
     integer val;
 } Xpost_Object_int_;
 
-/** @def typedef struct {} real_
- *  @brief The realtype object.
+/**
+ * @typedef Xpost_Object_real_
+ * @brief The realtype object.
  */
 typedef struct
 {
@@ -183,9 +188,10 @@ typedef struct
     real val;
 } Xpost_Object_real_;
 
-/** @def typedef struct {} extended_
- *  @brief A combined integer-real for use in dictionaries
- *         as number keys.
+/**
+ * @typedef Xpost_Object_extended_
+ * @brief A combined integer-real for use in dictionaries
+ *        as number keys.
  */
 typedef struct
 {
@@ -194,8 +200,9 @@ typedef struct
     dword fraction;
 } Xpost_Object_extended_;
 
-/** @def typedef struct {} comp_
- *  @brief The composite object structure, used for strings, arrays, dicts.
+/**
+ * @typedef Xpost_Object_comp_
+ * @brief The composite object structure, used for strings, arrays, dicts.
  */
 typedef struct
 {
@@ -205,8 +212,9 @@ typedef struct
     word off;
 } Xpost_Object_comp_;
 
-/** @def typedef struct {} save_
- *  @brief The savetype object, for both user and on the save stack.
+/**
+ * @typedef Xpost_Object_save_
+ * @brief The savetype object, for both user and on the save stack.
  */
 typedef struct
 {
@@ -215,12 +223,13 @@ typedef struct
     dword stk;
 } Xpost_Object_save_;
 
-/** @def typedef struct {} saverec_
- *  @brief The saverec_ type overlays an object so that it can be stacked.
+/**
+ * @typedef Xpost_Object_saverec_
+ * @brief The saverec_ type overlays an object so that it can be stacked.
  *
- *  The saverec_ type is not available as a (Postscript) user type.
+ * The saverec_ type is not available as a (Postscript) user type.
  *  saverec_s occupy the "current save stack" referred to by the
- *  stk field of a save object.
+ * stk field of a save object.
  */
 typedef struct
 {
@@ -228,14 +237,15 @@ typedef struct
     word pad;
     word src;
     word cpy;
-} Xpost_Object_saverec_; 
+} Xpost_Object_saverec_;
 
-/** @def typedef struct {} glob_
- *  @brief The globtype object exists only for passing between
- *         iterations of filenameforall.
+/**
+ * @typedef Xpost_Object_glob_
+ * @brief The globtype object exists only for passing between
+ *        iterations of filenameforall.
  *
- *  There are no constructors for this type. It has no use outside
- *  the filenameforall looping construct.
+ * There are no constructors for this type. It has no use outside
+ * the filenameforall looping construct.
  */
 typedef struct
 {
@@ -250,12 +260,13 @@ typedef struct
  *
  */
 
-/** @def typedef union {} object
- *  @brief The top-level object union.
+/**
+ * @typedef Xpost_Object
+ * @brief The top-level object union.
  *
- *  The tag word overlays the tag words in each subtype, so it can
- *  be used to determine an object's type (using the xpost_object_type()
- *  function which masks-off any flags in the tag).
+ * The tag word overlays the tag words in each subtype, so it can
+ * be used to determine an object's type (using the xpost_object_type()
+ * function which masks-off any flags in the tag).
  */
 typedef union
 {
@@ -278,15 +289,16 @@ typedef union
  *
  */
 
-/** @def XPOST_OBJECT_SINGLETONS
- *  @brief Certain simple objects exist as global template variables
- *         rather than do-nothing constructors.
+/**
+ * @def XPOST_OBJECT_SINGLETONS
+ * @brief Certain simple objects exist as global template variables
+ *        rather than do-nothing constructors.
  */
 XPOST_OBJECT_SINGLETONS(XPOST_OBJECT_DECLARE_SINGLETON)
 
 /**
- *  @var char *xpost_object_type_names[]
- *  @brief A table of strings keyed to the types enum.
+ * @var char *xpost_object_type_names[]
+ * @brief A table of strings keyed to the types enum.
  */
 extern
 char *xpost_object_type_names[]
@@ -306,27 +318,40 @@ char *xpost_object_type_names[]
    to a specific context.
  */
 
-/** @fn Xpost_Object xpost_cons_bool(bool b)
- *  @brief Construct a booleantype object with value b.
+/**
+ * @brief Construct a booleantype object with the given value.
  *
- *  @param b A boolean value.
- *  @return A new object.
+ * @param b A boolean value.
+ * @return A new object.
+ *
+ * This function constructs a booleantype object with value @p b.
+ * It sets the type to booleantype, sets unlimited access, sets the
+ * pad to 0, sets the value to @p b. It returns the object as literal.
  */
 Xpost_Object xpost_cons_bool (bool b);
 
-/** @fn Xpost_Object xpost_cons_int(integer i)
- *  @brief Construct an integertype object with value i.
+/**
+ * @brief Construct an integertype object with the given value.
  *
- *  @param i An integer value, typically defined as int32_t.
- *  @return A new object.
+ * @param i An integer value, typically defined as int32_t.
+ * @return A new object.
+ *
+ * This function constructs an integertype object with value @p i.
+ * It sets the type to integertype, sest unlimited access, sets the
+ * pad to 0, set the value to @p i. It returns the object as literal.
  */
 Xpost_Object xpost_cons_int (integer i);
 
-/** @fn Xpost_Object xpost_cons_real(real r)
- *  @brief Construct a realtype object with value r.
+/**
+ * @brief Construct a realtype object with the given value.
  *
- *  @param r A real value, typically defined as float.
- *  @return A new object.
+ * @param r A real value, typically defined as float.
+ * @return A new object.
+ *
+ * This function constructs a realtype object with value @p r.
+ * It sets the type to realtype, sets unlimited access,
+ * sets the pad to 0, sets the value to @p r. It returns the object as
+ * literal.
  */
 Xpost_Object xpost_cons_real (real r);
 
@@ -342,10 +367,10 @@ Xpost_Object xpost_cons_real (real r);
  * @brief Return the object's type, it. the tag with flags masked-off.
  *
  * @param obj The object.
- * @return The type of the object, an enum Xpost_type value.
+ * @return The type of the object as an #Xpost_Object_Type.
  *
  * This function returns the type of the object @p obj, that is the tag
- * with flags masked-off.
+ * with flags masked-off : obj.tag & #XPOST_OBJECT_TAG_DATA_TYPEMASK
  */
 int xpost_object_type (Xpost_Object obj);
 
@@ -369,6 +394,10 @@ int xpost_object_is_composite (Xpost_Object obj);
  *
  * This function returns 1 if the object @p obj is executable, 0
  * otherwise.
+ *
+ * Masks the #XPOST_OBJECT_TAG_DATA_FLIT with the tag and performs
+ * a logical NOT. Ie. executable means NOT having the
+ * #XPOST_OBJECT_TAG_DATA_FLIT flag set.
  */
 int xpost_object_is_exe (Xpost_Object obj);
 
@@ -380,6 +409,9 @@ int xpost_object_is_exe (Xpost_Object obj);
  *
  * This function returns 1 if the object @p obj is literal, 0
  * otherwise.
+ *
+ * Masks the #XPOST_OBJECT_TAG_DATA_FLIT with the tag and performs
+ * a double-NOT to normalize the value to the range [0..1].
  */
 int xpost_object_is_lit (Xpost_Object obj);
 
@@ -390,8 +422,15 @@ int xpost_object_is_lit (Xpost_Object obj);
  * @param obj The object.
  * @return The access-field from the object's tag.
  *
- * This function returns the access-field from the object's tag,
- * a value from enum Xpost_tag_access_value. 
+ * This function returns the access-field from the tag of @p obj
+ * a value from #Xpost_Object_Tag_Access.
+ *
+ * Mask the #XPOST_OBJECT_TAG_DATA_FACCESS with the tag, and shift
+ * the result down by #XPOST_OBJECT_TAG_DATA_FACCESSO to return just
+ * the (2-) bit field.
+ *
+ * A general description of the access flag behavior is at
+ * https://groups.google.com/d/topic/comp.lang.postscript/ENxhFBqwgq4/discussion
  */
 int xpost_object_get_access (Xpost_Object obj);
 
@@ -403,7 +442,9 @@ int xpost_object_get_access (Xpost_Object obj);
  * @return The modified object.
  *
  * This function sets the access-field in @p obj to @p access.
- * It returns the modified object.
+ * It returns the modified object by clearing the access-field with
+ * an inverse mask. OR-in the new access field, shifted up by
+ * #XPOST_OBJECT_TAG_DATA_FACCESSO.
  */
 Xpost_Object xpost_object_set_access (Xpost_Object obj, int access);
 
@@ -413,6 +454,13 @@ Xpost_Object xpost_object_set_access (Xpost_Object obj, int access);
  *
  * @param obj The object.
  * @return 1 if the object is readable, 0 otherwise.
+ *
+ * This function checks the access permissions of @p obj,
+ * specially for filetypes. Regular objects have read access if the
+ * value is greater than executeonly.
+ *
+ * Filetype objects have read access only if the value is equal
+ * to readonly.
  */
 int xpost_object_is_readable (Xpost_Object obj);
 
@@ -421,31 +469,34 @@ int xpost_object_is_readable (Xpost_Object obj);
  *
  * @param obj The object.
  * @return 1 if the object is writeable, 0 otherwise.
+ *
+ * This function checks the access permissions of @p obj.
+ * An object is writeable if its access is equal to unlimited.
  */
 int xpost_object_is_writeable (Xpost_Object obj);
 
 
-/** @fn object xpost_object_cvx(object obj)
- *  @brief Convert object to executable.
+/**
+ * @brief Convert object to executable.
  *
- *  @param obj The object.
- *  @return object, with executable attribute set to executable.
+ * @param obj The object.
+ * @return A new object with executable attribute set to executable.
  *
- *  The name 'cvx' is borrowed from the Postscript language.
- *  cvx is the name of the Postscript operator which performs
- *  this function.
+ * The name 'cvx' is borrowed from the Postscript language.
+ * cvx is the name of the Postscript operator which performs
+ * this function.
  */
 Xpost_Object xpost_object_cvx (Xpost_Object obj);
 
-/** @fn Xpost_Object xpost_object_cvlit(Xpost_Object obj)
- *  @brief Convert object to literal.
+/**
+ * @brief Convert object to literal.
  *
- *  @param obj The object.
- *  @return object, with executable attribute set to literal.
+ * @param obj The object.
+ * @return A new object with executable attribute set to literal.
  *
- *  The name 'cvlit' is borrowed from the Postscript language.
- *  cvlit is the name of the Postscript operator which performs
- *  this function.
+ * The name 'cvlit' is borrowed from the Postscript language.
+ * cvlit is the name of the Postscript operator which performs
+ * this function.
  */
 Xpost_Object xpost_object_cvlit (Xpost_Object obj);
 
@@ -456,20 +507,22 @@ Xpost_Object xpost_object_cvlit (Xpost_Object obj);
    This function is used in the backup error handler.
  */
 
-/** @fn void xpost_object_dump(Xpost_Object obj)
- *  @brief print a dump of the object contents to stdout
+/**
+ * @brief print a dump of the object contents to stdout
  *
- *  This function can print the raw object's contents, 
- *  discriminated by type. It can print the values of
- *  simple object, but not composites where it can only
- *  print the memory-table index (aka 'ent') and offset.
+ * @param obj The object to dump.
  *
- *  xpost_object_dump is used in the backup error handler
- *  which is used for errors in initialization or when the
- *  installed error handler fails. Since it is part of a
- *  larger information dump, there should also be a dump
- *  of the memory-file and memory-tables where the ent
- *  may be located.
+ * This function can print the raw object's contents,
+ * discriminated by type. It can print the values of
+ * simple object, but not composites where it can only
+ * print the memory-table index (aka 'ent') and offset.
+ *
+ * This function is used in the backup error handler
+ * which is used for errors in initialization or when the
+ * installed error handler fails. Since it is part of a
+ * larger information dump, there should also be a dump
+ * of the memory-file and memory-tables where the ent
+ * may be located.
  */
 void xpost_object_dump (Xpost_Object obj);
 
