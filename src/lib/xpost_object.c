@@ -95,7 +95,7 @@ Xpost_Object xpost_cons_real (real r)
    Type and Tag Manipulation
 */
 
-int xpost_object_type (Xpost_Object obj)
+int xpost_object_get_type (Xpost_Object obj)
 {
     return obj.tag & XPOST_OBJECT_TAG_DATA_TYPEMASK;
 }
