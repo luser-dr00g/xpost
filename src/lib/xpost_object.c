@@ -22,6 +22,15 @@ typedef bool _Bool;
 
 #include "xpost_object.h"
 
+/**
+ * @file xpost_object.c
+ * @brief Simple object constructors and functions.
+*/
+
+/**
+ * @cond LOCAL
+ */
+
 #ifdef WANT_LARGE_OBJECT
 # define XPOST_FMT_WORD(_)    PRI ## _ ## 32
 # define XPOST_FMT_DWORD(_)   PRI ## _ ## 64
@@ -39,9 +48,8 @@ typedef bool _Bool;
 #endif
 
 /**
- * @file xpost_object.c
- * @brief Simple object constructors and functions.
-*/
+ * @endcond
+ */
 
 /*
  *
