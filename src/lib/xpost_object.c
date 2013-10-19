@@ -73,7 +73,7 @@ Xpost_Object xpost_cons_bool (bool b)
 
     obj.int_.tag = booleantype
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
-            << XPOST_OBJECT_TAG_DATA_FACCESSO);
+            << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     obj.int_.pad = 0;
     obj.int_.val = b;
 
@@ -86,7 +86,7 @@ Xpost_Object xpost_cons_int (integer i)
 
     obj.int_.tag = integertype
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
-                << XPOST_OBJECT_TAG_DATA_FACCESSO);
+                << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     obj.int_.pad = 0;
     obj.int_.val = i;
 
@@ -99,7 +99,7 @@ Xpost_Object xpost_cons_real (real r)
 
     obj.real_.tag = realtype
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
-                << XPOST_OBJECT_TAG_DATA_FACCESSO);
+                << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     obj.real_.pad = 0;
     obj.real_.val = r;
 
@@ -113,7 +113,7 @@ Xpost_Object xpost_cons_real (real r)
 
 Xpost_Object_Type xpost_object_get_type (Xpost_Object obj)
 {
-    return obj.tag & XPOST_OBJECT_TAG_DATA_TYPEMASK;
+    return obj.tag & XPOST_OBJECT_TAG_DATA_TYPE_MASK;
 }
 
 int xpost_object_is_composite (Xpost_Object obj)
@@ -131,24 +131,24 @@ int xpost_object_is_composite (Xpost_Object obj)
 
 int xpost_object_is_exe(Xpost_Object obj)
 {
-    return !(obj.tag & XPOST_OBJECT_TAG_DATA_FLIT);
+    return !(obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_LIT);
 }
 
 int xpost_object_is_lit(Xpost_Object obj)
 {
-    return !!(obj.tag & XPOST_OBJECT_TAG_DATA_FLIT);
+    return !!(obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_LIT);
 }
 
 Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj)
 {
-    return (obj.tag & XPOST_OBJECT_TAG_DATA_FACCESS)
-        >> XPOST_OBJECT_TAG_DATA_FACCESSO;
+    return (obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK)
+        >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET;
 }
 
 Xpost_Object xpost_object_set_access (Xpost_Object obj, Xpost_Object_Tag_Access access)
 {
-    obj.tag &= ~XPOST_OBJECT_TAG_DATA_FACCESS;
-    obj.tag |= (access << XPOST_OBJECT_TAG_DATA_FACCESSO);
+    obj.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    obj.tag |= (access << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     return obj;
 }
 
@@ -174,14 +174,14 @@ int xpost_object_is_writeable (Xpost_Object obj)
 
 Xpost_Object xpost_object_cvx (Xpost_Object obj)
 {
-    obj.tag &= ~ XPOST_OBJECT_TAG_DATA_FLIT;
+    obj.tag &= ~ XPOST_OBJECT_TAG_DATA_FLAG_LIT;
 
     return obj;
 }
 
 Xpost_Object xpost_object_cvlit (Xpost_Object obj)
 {
-    obj.tag |= XPOST_OBJECT_TAG_DATA_FLIT;
+    obj.tag |= XPOST_OBJECT_TAG_DATA_FLAG_LIT;
 
     return obj;
 }
@@ -198,7 +198,7 @@ void _xpost_object_dump_composite (Xpost_Object obj)
             "%" XPOST_FMT_WORD(u) " "
             "%" XPOST_FMT_WORD(u) " "
             "%" XPOST_FMT_WORD(u) ">",
-            obj.comp_.tag & XPOST_OBJECT_TAG_DATA_FBANK ? 'G' : 'L',
+            obj.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK ? 'G' : 'L',
             obj.comp_.tag,
             obj.comp_.sz,
             obj.comp_.ent,
@@ -254,7 +254,7 @@ void xpost_object_dump (Xpost_Object obj)
                            "%" XPOST_FMT_WORD(u) " "
                            "%" XPOST_FMT_WORD(u) " "
                            "%" XPOST_FMT_DWORD(u) ">",
-                           obj.mark_.tag & XPOST_OBJECT_TAG_DATA_FBANK ?
+                           obj.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK ?
                                'G' : 'L',
                            obj.mark_.tag,
                            obj.mark_.pad0,
