@@ -230,8 +230,8 @@ _xpost_log_fprint_cb(FILE *stream,
 void
 xpost_log_print_cb_set(Xpost_Log_Print_Cb cb, void *data)
 {
-  _xpost_log_print_cb = cb;
-  _xpost_log_print_cb_data = data;
+    _xpost_log_print_cb = cb;
+    _xpost_log_print_cb_data = data;
 }
 
 void
