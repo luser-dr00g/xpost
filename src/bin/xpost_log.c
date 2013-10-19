@@ -24,6 +24,9 @@ static const char *_xpost_log_level_names[] =
     "INF"
 };
 
+static Xpost_Log_Print_Cb _xpost_log_print_cb = xpost_log_print_cb_stderr;
+static void *_xpost_log_print_cb_data = NULL;
+
 #ifdef _WIN32
 static void
 _xpost_log_print_prefix_func(FILE *stream,
@@ -224,6 +227,12 @@ _xpost_log_fprint_cb(FILE *stream,
  *                                 Global                                     *
  *============================================================================*/
 
+void
+xpost_log_print_cb_set(Xpost_Log_Print_Cb cb, void *data)
+{
+  _xpost_log_print_cb = cb;
+  _xpost_log_print_cb_data = data;
+}
 
 void
 xpost_log_print_cb_stderr(Xpost_Log_Level level,
@@ -265,6 +274,6 @@ xpost_log_print(Xpost_Log_Level level,
     }
 
     va_start(args, fmt);
-    xpost_log_print_cb_stderr(level, file, fct, line, fmt, NULL, args);
+    _xpost_log_print_cb(level, file, fct, line, fmt, _xpost_log_print_cb_data, args);
     va_end(args);
 }
