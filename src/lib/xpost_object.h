@@ -89,15 +89,15 @@ typedef enum {
  */
 typedef enum
 {
-    XPOST_OBJECT_TAG_DATA_TYPEMASK = 0x000F, /**< mask to yield Xpost_Object_Type */
-    XPOST_OBJECT_TAG_DATA_FVALID = 0x0010, /**< for 'anytype' operator pattern */
-    XPOST_OBJECT_TAG_DATA_FACCESS = 0x0060, /**< 2-bit mask for the ACCESS field */
-    XPOST_OBJECT_TAG_DATA_FACCESSO = 5,    /**< bitwise offset of the ACCESS field */
-    XPOST_OBJECT_TAG_DATA_FLIT = 0x0080,  /**< literal flag: 0=executable, 1=literal */
-    XPOST_OBJECT_TAG_DATA_FBANK = 0x0100, /**< select memory-file for composite-object data: 0=local, 1=global */
-    XPOST_OBJECT_TAG_DATA_EXTENDEDINT = 0x0200, /**< extended object was originally integer */
-    XPOST_OBJECT_TAG_DATA_EXTENDEDREAL = 0x0400, /**< extended object was originally real */
-    XPOST_OBJECT_TAG_DATA_FOPARGSINHOLD = 0x0800, /* for onerror to reset stack */
+    XPOST_OBJECT_TAG_DATA_TYPE_MASK          = 0x000F, /**< mask to yield Xpost_Object_Type */
+    XPOST_OBJECT_TAG_DATA_FLAG_VALID         = 0x0010, /**< for 'anytype' operator pattern */
+    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK   = 0x0060, /**< 2-bit mask for the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET = 5,    /**< bitwise offset of the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FLAG_LIT           = 0x0080,  /**< literal flag: 0=executable, 1=literal */
+    XPOST_OBJECT_TAG_DATA_FLAG_BANK          = 0x0100, /**< select memory-file for composite-object data: 0=local, 1=global */
+    XPOST_OBJECT_TAG_DATA_EXTENDED_INT       = 0x0200, /**< extended object was integer */
+    XPOST_OBJECT_TAG_DATA_EXTENDED_REAL      = 0x0400, /**< extended object was real */
+    XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD  = 0x0800, /* for onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
 /**
@@ -157,7 +157,7 @@ typedef struct
     word tag;
     word pad0;
     dword padw;
-} Xpost_Object_mark_;
+} Xpost_Object_Mark;
 
 /**
  * @typedef Xpost_Object_int_
@@ -168,7 +168,7 @@ typedef struct
     word tag;
     word pad;
     integer val;
-} Xpost_Object_int_;
+} Xpost_Object_Int;
 
 /**
  * @typedef Xpost_Object_real_
@@ -179,7 +179,7 @@ typedef struct
     word tag;
     word pad;
     real val;
-} Xpost_Object_real_;
+} Xpost_Object_Real;
 
 /**
  * @typedef Xpost_Object_extended_
@@ -191,7 +191,7 @@ typedef struct
     word tag;
     word sign_exp;
     dword fraction;
-} Xpost_Object_extended_;
+} Xpost_Object_Extended;
 
 /**
  * @typedef Xpost_Object_comp_
@@ -203,7 +203,7 @@ typedef struct
     word sz;
     word ent;
     word off;
-} Xpost_Object_comp_;
+} Xpost_Object_Comp;
 
 /**
  * @typedef Xpost_Object_save_
@@ -214,7 +214,7 @@ typedef struct
     word tag;
     word lev;
     dword stk;
-} Xpost_Object_save_;
+} Xpost_Object_Save;
 
 /**
  * @typedef Xpost_Object_saverec_
@@ -230,7 +230,7 @@ typedef struct
     word pad;
     word src;
     word cpy;
-} Xpost_Object_saverec_;
+} Xpost_Object_Saverec;
 
 /**
  * @typedef Xpost_Object_glob_
@@ -245,7 +245,7 @@ typedef struct
     word tag;
     word off;
     void *ptr;
-} Xpost_Object_glob_;
+} Xpost_Object_Glob;
 
 /*
  *
@@ -265,14 +265,14 @@ typedef union
 {
     word tag;
 
-    Xpost_Object_mark_ mark_;
-    Xpost_Object_int_ int_;
-    Xpost_Object_real_ real_;
-    Xpost_Object_extended_ extended_;
-    Xpost_Object_comp_ comp_;
-    Xpost_Object_save_ save_;
-    Xpost_Object_saverec_ saverec_;
-    Xpost_Object_glob_ glob_;
+    Xpost_Object_Mark mark_;
+    Xpost_Object_Int int_;
+    Xpost_Object_Real real_;
+    Xpost_Object_Extended extended_;
+    Xpost_Object_Comp comp_;
+    Xpost_Object_Save save_;
+    Xpost_Object_Saverec saverec_;
+    Xpost_Object_Glob glob_;
 } Xpost_Object;
 
 
@@ -388,9 +388,9 @@ int xpost_object_is_composite (Xpost_Object obj);
  * This function returns 1 if the object @p obj is executable, 0
  * otherwise.
  *
- * Masks the #XPOST_OBJECT_TAG_DATA_FLIT with the tag and performs
+ * Masks the #XPOST_OBJECT_TAG_DATA_FLAG_LIT with the tag and performs
  * a logical NOT. Ie. executable means NOT having the
- * #XPOST_OBJECT_TAG_DATA_FLIT flag set.
+ * #XPOST_OBJECT_TAG_DATA_FLAG_LIT flag set.
  */
 int xpost_object_is_exe (Xpost_Object obj);
 
@@ -403,7 +403,7 @@ int xpost_object_is_exe (Xpost_Object obj);
  * This function returns 1 if the object @p obj is literal, 0
  * otherwise.
  *
- * Masks the #XPOST_OBJECT_TAG_DATA_FLIT with the tag and performs
+ * Masks the #XPOST_OBJECT_TAG_DATA_FLAG_LIT with the tag and performs
  * a double-NOT to normalize the value to the range [0..1].
  */
 int xpost_object_is_lit (Xpost_Object obj);
@@ -418,8 +418,8 @@ int xpost_object_is_lit (Xpost_Object obj);
  * This function returns the access-field from the tag of @p obj
  * a value from #Xpost_Object_Tag_Access.
  *
- * Mask the #XPOST_OBJECT_TAG_DATA_FACCESS with the tag, and shift
- * the result down by #XPOST_OBJECT_TAG_DATA_FACCESSO to return just
+ * Mask the #XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK with the tag, and shift
+ * the result down by #XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET to return just
  * the (2-) bit field.
  *
  * A general description of the access flag behavior is at
@@ -437,7 +437,7 @@ Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj);
  * This function sets the access-field in @p obj to @p access.
  * It returns the modified object by clearing the access-field with
  * an inverse mask. OR-in the new access field, shifted up by
- * #XPOST_OBJECT_TAG_DATA_FACCESSO.
+ * #XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET.
  */
 Xpost_Object xpost_object_set_access (
         Xpost_Object obj,
