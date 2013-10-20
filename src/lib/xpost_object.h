@@ -144,7 +144,7 @@ typedef dword addr;
  */
 
 /**
- * @typedef Xpost_Object_mark_
+ * @struct Xpost_Object_Mark
  * @brief A generic object: 2 words and a double-word.
  *
  * To avoid too many structure, many types use .mark_.padw
@@ -160,7 +160,7 @@ typedef struct
 } Xpost_Object_Mark;
 
 /**
- * @typedef Xpost_Object_int_
+ * @struct Xpost_Object_Int
  * @brief The integertype object.
  */
 typedef struct
@@ -171,7 +171,7 @@ typedef struct
 } Xpost_Object_Int;
 
 /**
- * @typedef Xpost_Object_real_
+ * @struct Xpost_Object_Real
  * @brief The realtype object.
  */
 typedef struct
@@ -182,7 +182,7 @@ typedef struct
 } Xpost_Object_Real;
 
 /**
- * @typedef Xpost_Object_extended_
+ * @struct Xpost_Object_Extended
  * @brief A combined integer-real for use in dictionaries
  *        as number keys.
  */
@@ -194,7 +194,7 @@ typedef struct
 } Xpost_Object_Extended;
 
 /**
- * @typedef Xpost_Object_comp_
+ * @struct Xpost_Object_Comp
  * @brief The composite object structure, used for strings, arrays, dicts.
  */
 typedef struct
@@ -206,7 +206,7 @@ typedef struct
 } Xpost_Object_Comp;
 
 /**
- * @typedef Xpost_Object_save_
+ * @struct Xpost_Object_Save
  * @brief The savetype object, for both user and on the save stack.
  */
 typedef struct
@@ -217,7 +217,7 @@ typedef struct
 } Xpost_Object_Save;
 
 /**
- * @typedef Xpost_Object_saverec_
+ * @struct Xpost_Object_Saverec
  * @brief The saverec_ type overlays an object so that it can be stacked.
  *
  * The saverec_ type is not available as a (Postscript) user type.
@@ -233,7 +233,7 @@ typedef struct
 } Xpost_Object_Saverec;
 
 /**
- * @typedef Xpost_Object_glob_
+ * @struct Xpost_Object_Glob
  * @brief The globtype object exists only for passing between
  *        iterations of filenameforall.
  *
@@ -254,7 +254,7 @@ typedef struct
  */
 
 /**
- * @typedef Xpost_Object
+ * @union Xpost_Object
  * @brief The top-level object union.
  *
  * The tag word overlays the tag words in each subtype, so it can
