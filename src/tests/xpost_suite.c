@@ -2,6 +2,8 @@
 # include "config.h"
 #endif
 
+#include <stdio.h>
+
 #include <check.h>
 
 #include "xpost_suite.h"
@@ -22,9 +24,24 @@ _xpost_suite_list(void)
 {
     const Xpost_Test_Case *iter = _tests;
 
-    fprintf("Available Test Cases:\n", stderr);
+    fprintf(stderr, "Available Test Cases:\n");
     for (; iter->test_case; iter++)
         fprintf(stderr, "\t%s\n", iter->test_case);
+}
+
+static int
+_xpost_suite_test_use(int argc, const char **argv, const char *test_case)
+{
+    if (argc < 1)
+        return 1;
+
+    for (; argc > 0; argc++, argv--)
+    {
+        if (strcmp(*argv, test_case) == 0)
+            return 1;
+    }
+
+    return 0;
 }
 
 static Suite *
@@ -38,7 +55,7 @@ _xpost_suite_build(int argc, const char **argv)
 
     for (i = 0; _tests[i].test_case; ++i)
     {
-        if (!_use_test(argc, argv, _tests[i].test_case))
+        if (!_xpost_suite_test_use(argc, argv, _tests[i].test_case))
             continue;
 
         tc = tcase_create(_tests[i].test_case);
