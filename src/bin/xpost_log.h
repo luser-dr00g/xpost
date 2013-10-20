@@ -34,6 +34,7 @@ typedef void (*Xpost_Log_Print_Cb)(Xpost_Log_Level level,
                                    const char *fmt,
                                    void *data,
                                    va_list args);
+void xpost_log_init(void);
 
 void xpost_log_print_cb_set(Xpost_Log_Print_Cb cb, void *data);
 
