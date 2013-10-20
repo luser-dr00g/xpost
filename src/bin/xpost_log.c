@@ -24,6 +24,12 @@ static const char *_xpost_log_level_names[] =
     "DBG"
 };
 
+#ifdef DEBUG
+static Xpost_Log_Level _xpost_log_level = XPOST_LOG_LEVEL_DBG;
+#else
+static Xpost_Log_Level _xpost_log_level = XPOST_LOG_LEVEL_ERR;
+#endif
+
 static Xpost_Log_Print_Cb _xpost_log_print_cb = xpost_log_print_cb_stderr;
 static void *_xpost_log_print_cb_data = NULL;
 
@@ -228,6 +234,16 @@ _xpost_log_fprint_cb(FILE *stream,
  *============================================================================*/
 
 void
+xpost_log_init(void)
+{
+    const char *level;
+
+    level = getenv("XPOST_LOG_LEVEL");
+    if (level)
+        _xpost_log_level = atoi(level);
+}
+
+void
 xpost_log_print_cb_set(Xpost_Log_Print_Cb cb, void *data)
 {
     _xpost_log_print_cb = cb;
@@ -272,6 +288,9 @@ xpost_log_print(Xpost_Log_Level level,
         fprintf(stderr, "ERROR: %s() fmt == NULL\n", __FUNCTION__);
         return;
     }
+
+    if (level > _xpost_log_level)
+        return;
 
     va_start(args, fmt);
     _xpost_log_print_cb(level, file, fct, line, fmt, _xpost_log_print_cb_data, args);
