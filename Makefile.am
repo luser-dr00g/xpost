@@ -29,5 +29,18 @@ include src/bin/Makefile.mk
 include data/Makefile.mk
 include doc/Makefile.mk
 
+# Unit tests
+
+if XPOST_ENABLE_TESTS
+
+include src/tests/Makefile.mk
+
+else
+
+check-local:
+	@echo "reconfigure with --enable-tests"
+
+endif
+
 EXTRA_DIST += \
 m4/xpost.m4

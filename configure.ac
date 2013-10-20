@@ -57,6 +57,17 @@ AC_ARG_ENABLE([mmap],
 
 have_mmap="no"
 
+AC_ARG_ENABLE([tests],
+   [AC_HELP_STRING([--enable-tests], [enable tests @<:@default=disabled@:>@])],
+   [
+    if test "x${enableval}" = "xyes" ; then
+       enable_tests="yes"
+    else
+       enable_tests="no"
+    fi
+   ],
+   [enable_tests="no"])
+
 
 ### Default options with respect to host
 
@@ -104,6 +115,19 @@ AC_SUBST([WC])
 
 
 ### Checks for libraries
+
+have_tests="no"
+if test "x${enable_tests}" = "xyes" ; then
+   PKG_CHECK_MODULES([CHECK],
+      [check >= 0.9.5],
+      [have_tests="yes"],
+      [have_tests="no"])
+fi
+
+AC_MSG_CHECKING([whether tests are built])
+AC_MSG_RESULT([${have_tests}])
+
+AM_CONDITIONAL(XPOST_ENABLE_TESTS, test "x${have_tests}" = "xyes")
 
 
 ### Checks for header files
@@ -182,6 +206,11 @@ if test "x${WC}" = "xnone" ; then
 echo "  wc...................: no"
 else
 echo "  wc...................: yes (make count)"
+fi
+if test "x${have_tests}" = "xyes" ; then
+echo "  Tests................: yes (make check)"
+else
+echo "  Tests................: no"
 fi
 echo
 echo "Compilation............: make (or gmake)"
