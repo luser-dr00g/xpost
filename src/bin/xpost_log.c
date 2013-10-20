@@ -20,8 +20,8 @@ static const char *_xpost_log_level_names[] =
 {
     "ERR",
     "WRN",
-    "DBG",
-    "INF"
+    "INF",
+    "DBG"
 };
 
 static Xpost_Log_Print_Cb _xpost_log_print_cb = xpost_log_print_cb_stderr;
