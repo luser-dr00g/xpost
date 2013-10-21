@@ -188,7 +188,7 @@ void xpost_memory_file_grow (
  * This function allocate @p sz bytes to @p mem and returns the
  * offset. If sz is 0, it just returns the offset.
  *
- * May call xpost_memory_file_grow which will invalidate all pointers
+ * Note: May call xpost_memory_file_grow which may invalidate all pointers
  * derived from mem->base. MUST recalculate all VM pointers after this
  * function.
  */
@@ -218,6 +218,9 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem);
  *
  * This function allocates and initialises a new memory table in
  * @p mem.
+ *
+ * MUST recalculate all VM pointers after this function.
+ * See note in xpost_memory_file_alloc.
  */
 unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
 
@@ -229,10 +232,12 @@ unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
  * @param[in] sz The table size.
  * @param[in] tag The table tag.
  * @return The table index.
+ *
+ * MUST recalculate all VM pointers after this function.
+ * See note in xpost_memory_file_alloc.
  */
 unsigned int xpost_memory_table_alloc (
         Xpost_Memory_File *mem,
-        unsigned int mtabadr,
         unsigned int sz,
         unsigned int tag);
 
@@ -263,6 +268,14 @@ unsigned int xpost_memory_table_get_addr (
         unsigned int ent);
 
 /**
+ * @brief Set the address for an entity.
+ */
+void xpost_memory_table_set_addr (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int addr);
+
+/**
  * @brief Get the size of an entity.
  *
  * @param[in,out] mem The memory file.
@@ -274,6 +287,44 @@ unsigned int xpost_memory_table_get_addr (
 unsigned int xpost_memory_table_get_size (
         Xpost_Memory_File *mem,
         unsigned int ent);
+
+/**
+ * @brief Set the size for an entity.
+ */
+void xpost_memory_table_set_size (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int size);
+
+/**
+ * @brief Get the mark field of an entity.
+ */
+unsigned int xpost_memory_table_get_mark (
+        Xpost_Memory_File *mem,
+        unsigned int ent);
+
+/**
+ * @brief Set the mark field for an entity.
+ */
+void xpost_memory_table_set_mark (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int mark);
+
+/**
+ * @brief Get the tag of an entity.
+ */
+unsigned int xpost_memory_table_get_tag (
+        Xpost_Memory_File *mem,
+        unsigned int ent);
+
+/**
+ * @brief Set the tag for an entity.
+ */
+void xpost_memory_table_set_tag (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int tag);
 
 /**
  * @brief Fetch a value from a composite object.
@@ -318,7 +369,7 @@ void xpost_memory_put (
  * @param[in] mem The memory file.
  *
  * This function dumps to stdout the data and associated memory of
- * the table in @p mem.
+ * the table at address 0 in @p mem.
  */
 void xpost_memory_table_dump (const Xpost_Memory_File *mem);
 
