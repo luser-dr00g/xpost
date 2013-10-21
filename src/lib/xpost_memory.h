@@ -248,6 +248,12 @@ unsigned int xpost_memory_table_alloc (
  * @param[in,out] mem The memory file.
  * @param[out] atab The table.
  * @param[in,out] aent The entity.
+ *
+ * This function takes the memory file and an absolute entity,
+ * and writes a pointer to the relevant segment of the table chain
+ * into the variable pointed-to by @p atab. It updates the referenced
+ * absolute entity index with the index relative to the returned 
+ * table segment.
  */
 void xpost_memory_table_find_relative (
         Xpost_Memory_File *mem,
@@ -257,9 +263,9 @@ void xpost_memory_table_find_relative (
 /**
  * @brief Get the address from an entity.
  *
- * @param[in,out] mem The memory file.
+ * @param[in] mem The memory file.
  * @param[in] ent The entity.
- * @return The adress.
+ * @return The address.
  *
  * This function returns the address of the entity @p ent in @p mem.
  */
@@ -269,6 +275,13 @@ unsigned int xpost_memory_table_get_addr (
 
 /**
  * @brief Set the address for an entity.
+ *
+ * @param[in] mem The memory file.
+ * @param[in] ent The entity.
+ * @param[in] addr The new address.
+ * 
+ * This function replaces the address for @p ent in @p mem with 
+ * a new address @p addr.
  */
 void xpost_memory_table_set_addr (
         Xpost_Memory_File *mem,
@@ -278,7 +291,7 @@ void xpost_memory_table_set_addr (
 /**
  * @brief Get the size of an entity.
  *
- * @param[in,out] mem The memory file.
+ * @param[in] mem The memory file.
  * @param[in] ent The entity.
  * @return The size.
  *
@@ -290,6 +303,13 @@ unsigned int xpost_memory_table_get_size (
 
 /**
  * @brief Set the size for an entity.
+ *
+ * @param[in] mem The memory file.
+ * @param[in] ent The entity.
+ * @param[in] size The new size.
+ *
+ * This function replaces the size for @p ent in @p mem with
+ * a new size @p size.
  */
 void xpost_memory_table_set_size (
         Xpost_Memory_File *mem,
@@ -298,6 +318,12 @@ void xpost_memory_table_set_size (
 
 /**
  * @brief Get the mark field of an entity.
+ *
+ * @param[in] mem The memory file.
+ * @param[in] ent The entity.
+ * @return The mark field.
+ *
+ * This function returns the mark field of the entity @p ent in @p mem.
  */
 unsigned int xpost_memory_table_get_mark (
         Xpost_Memory_File *mem,
@@ -305,6 +331,13 @@ unsigned int xpost_memory_table_get_mark (
 
 /**
  * @brief Set the mark field for an entity.
+ *
+ * @param[in] mem The memory file.
+ * @param[in] ent The entity.
+ * @param[in] mark The new mark field.
+ *
+ * This function replaces the mark field of the entity @p ent in @p mem
+ * with the new value @p mark.
  */
 void xpost_memory_table_set_mark (
         Xpost_Memory_File *mem,
@@ -313,6 +346,11 @@ void xpost_memory_table_set_mark (
 
 /**
  * @brief Get the tag of an entity.
+ *
+ * @param[in] mem The memory file.
+ * @param[in] ent The entity.
+ *
+ * This function returns the tag field of the entity @p ent in @p mem.
  */
 unsigned int xpost_memory_table_get_tag (
         Xpost_Memory_File *mem,
@@ -320,6 +358,12 @@ unsigned int xpost_memory_table_get_tag (
 
 /**
  * @brief Set the tag for an entity.
+ *
+ * @param[in] mem The memory file.
+ * @param[in] ent The entity.
+ * @param[in] tag The new tag.
+ *
+ * This function replaces the tag field of the entity @p ent in @p mem.
  */
 void xpost_memory_table_set_tag (
         Xpost_Memory_File *mem,
@@ -335,7 +379,9 @@ void xpost_memory_table_set_tag (
  * @param[in] sz The entity size.
  * @param[out] dest A buffer
  *
- * FIXME...
+ * This function performs a generic "get" operation from a composite object,
+ * or other VM entity such as a file.
+ * It is used to retrieve bytes from strings, and objects from arrays.
  */
 void xpost_memory_get (
         Xpost_Memory_File *mem,
@@ -353,7 +399,9 @@ void xpost_memory_get (
  * @param[in] sz The entity size.
  * @param[in] src A buffer
  *
- * FIXME...
+ * This function performs a generic "put" operation into a composite object,
+ * or other VM entity such as a file.
+ * It is used to store bytes in strings, and objects in arrays.
  */
 void xpost_memory_put (
         Xpost_Memory_File *mem,
