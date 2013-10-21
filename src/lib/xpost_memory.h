@@ -211,12 +211,24 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem);
 */
 
 /**
- * @brief Allocate and Initialize a new table.
+ * @brief Allocate and Initialize a new table and return the offset.
+ *
+ * @param[in,out] mem The memory file.
+ * @return The offset.
+ *
+ * This function allocates and initialises a new memory table in
+ * @p mem.
  */
 unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
 
 /**
- * @brief Allocate memory, returns table index (ent).
+ * @brief Allocate memory, returns table index.
+ *
+ * @param[in,out] mem The memory file.
+ * @param[in] mtabadr The table offset.
+ * @param[in] sz The table size.
+ * @param[in] tag The table tag.
+ * @return The table index.
  */
 unsigned int xpost_memory_table_alloc (
         Xpost_Memory_File *mem,
@@ -225,15 +237,26 @@ unsigned int xpost_memory_table_alloc (
         unsigned int tag);
 
 /**
- * @brief Find the table and relative entity index for an absolute entity index.
+ * @brief Find the table and relative entity index for an absolute
+ * entity index.
+ *
+ * @param[in,out] mem The memory file.
+ * @param[out] atab The table.
+ * @param [in,out] aent The entity.
  */
 void xpost_memory_table_find_relative (
         Xpost_Memory_File *mem,
-        /*@out@*/ Xpost_Memory_Table **atab,
-        /*@in/out@*/ unsigned int *aent);
+        Xpost_Memory_Table **atab,
+        unsigned int *aent);
 
 /**
  * @brief Get the address from an entity.
+ *
+ * @param[in,out] mem The memory file.
+ * @param [in] ent The entity.
+ * @return The adress.
+ *
+ * This function returns the address of the entity @p ent in @p mem.
  */
 unsigned int xpost_memory_table_get_addr (
         Xpost_Memory_File *mem,
@@ -241,6 +264,12 @@ unsigned int xpost_memory_table_get_addr (
 
 /**
  * @brief Get the size of an entity.
+ *
+ * @param[in,out] mem The memory file.
+ * @param [in] ent The entity.
+ * @return The size.
+ *
+ * This function returns the size of the entity @p ent in @p mem.
  */
 unsigned int xpost_memory_table_get_size (
         Xpost_Memory_File *mem,
@@ -248,33 +277,49 @@ unsigned int xpost_memory_table_get_size (
 
 /**
  * @brief Fetch a value from a composite object.
+ *
+ * @param[in,out] mem The memory file.
+ * @param[in] ent The entity.
+ * @param[in] offset The offset.
+ * @param[in] sz The entity size.
+ * @param[out] dest A buffer
+ *
+ * FIXME...
  */
 void xpost_memory_get (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int offset,
         unsigned int sz,
-        /*@out@*/ void *dest);
+        void *dest);
 
 /**
  * @brief Put a value into a composite object.
+ *
+ * @param[in,out] mem The memory file.
+ * @param[in] ent The entity.
+ * @param[in] offset The offset.
+ * @param[in] sz The entity size.
+ * @param[in] src A buffer
+ *
+ * FIXME...
  */
 void xpost_memory_put (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int offset,
         unsigned int sz,
-        /*@in@*/ void *src);
+        const void *src);
 
 /**
  * @brief Dump the memory table data and associated memory
  * locations from the given memory file to stdout.
  *
- * @param mem The memory file.
+ * @param[in] mem The memory file.
  *
  * This function dumps to stdout the data and associated memory of
  * the table in @p mem.
  */
-void xpost_memory_table_dump (Xpost_Memory_File *mem);
+void xpost_memory_table_dump (const Xpost_Memory_File *mem);
 
 #endif

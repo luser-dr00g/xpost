@@ -265,7 +265,7 @@ unsigned int xpost_memory_table_init (Xpost_Memory_File *mem)
     unsigned int adr;
 
     adr = xpost_memory_file_alloc(mem, sizeof(Xpost_Memory_Table));
-    tab = (void *)(mem->base + adr);
+    tab = (Xpost_Memory_Table *)(mem->base + adr);
     tab->nexttab = 0;
     tab->nextent = 0;
     return adr;
@@ -279,12 +279,12 @@ unsigned int xpost_memory_table_alloc (Xpost_Memory_File *mem,
 {
     unsigned int ent;
     unsigned int adr;
-    Xpost_Memory_Table *tab = (void *)(mem->base + mtabadr);
+    Xpost_Memory_Table *tab = (Xpost_Memory_Table *)(mem->base + mtabadr);
     int ntab = 0;
 
     while (tab->nextent >= XPOST_MEMORY_TABLE_SIZE)
     {
-        tab = (void *)(mem->base + tab->nexttab);
+        tab = (Xpost_Memory_Table *)(mem->base + tab->nexttab);
         ++ntab;
     }
 
@@ -312,10 +312,10 @@ unsigned int xpost_memory_table_alloc (Xpost_Memory_File *mem,
 
 void xpost_memory_table_find_relative (
         Xpost_Memory_File *mem,
-        /*@out@*/ Xpost_Memory_Table **atab,
-        /*@in/out@*/ unsigned int *aent)
+        Xpost_Memory_Table **atab,
+        unsigned int *aent)
 {
-    *atab = (void *)(mem->base);
+    *atab = (Xpost_Memory_Table *)(mem->base);
     while (*aent >= XPOST_MEMORY_TABLE_SIZE)
     {
         *aent -= XPOST_MEMORY_TABLE_SIZE;
@@ -323,7 +323,7 @@ void xpost_memory_table_find_relative (
         {
             error(unregistered, "ent doesn't exist");
         }
-        *atab = (void *)(mem->base + (*atab)->nexttab);
+        *atab = (Xpost_Memory_Table *)(mem->base + (*atab)->nexttab);
     }
 }
 
@@ -353,7 +353,7 @@ void xpost_memory_get (
         unsigned int ent,
         unsigned int offset,
         unsigned int sz,
-        /*@out@*/ void *dest)
+        void *dest)
 {
     Xpost_Memory_Table *tab;
     xpost_memory_table_find_relative(mem, &tab, &ent);
@@ -369,7 +369,7 @@ void xpost_memory_put (
         unsigned int ent,
         unsigned int offset,
         unsigned int sz,
-        /*@in@*/ void *src)
+        const void *src)
 {
     Xpost_Memory_Table *tab;
     xpost_memory_table_find_relative(mem, &tab, &ent);
@@ -381,7 +381,7 @@ void xpost_memory_put (
 }
 
 
-void xpost_memory_table_dump (Xpost_Memory_File *mem)
+void xpost_memory_table_dump (const Xpost_Memory_File *mem)
 {
     unsigned int i;
     unsigned int e = 0;
@@ -389,7 +389,7 @@ void xpost_memory_table_dump (Xpost_Memory_File *mem)
     Xpost_Memory_Table *tab;
 
 next_table:
-    tab = (void *)(mem->base + mtabadr);
+    tab = (Xpost_Memory_Table *)(mem->base + mtabadr);
     printf("nexttab: 0x%04x\n", tab->nexttab);
     printf("nextent: %u\n", tab->nextent);
     for (i = 0; i < tab->nextent; i++, e++)
