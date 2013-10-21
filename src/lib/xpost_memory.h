@@ -188,7 +188,7 @@ void xpost_memory_file_grow (
  * This function allocate @p sz bytes to @p mem and returns the
  * offset. If sz is 0, it just returns the offset.
  *
- * Note: May call xpost_memory_file_grow which may invalidate all pointers
+ * @note May call xpost_memory_file_grow which may invalidate all pointers
  * derived from mem->base. MUST recalculate all VM pointers after this
  * function.
  */
@@ -220,7 +220,7 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem);
  * @p mem.
  *
  * MUST recalculate all VM pointers after this function.
- * See note in xpost_memory_file_alloc.
+ * See note in xpost_memory_file_alloc().
  */
 unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
 
@@ -234,7 +234,7 @@ unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
  * @return The table index.
  *
  * MUST recalculate all VM pointers after this function.
- * See note in xpost_memory_file_alloc.
+ * See note in xpost_memory_file_alloc().
  */
 unsigned int xpost_memory_table_alloc (
         Xpost_Memory_File *mem,
