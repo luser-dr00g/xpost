@@ -188,7 +188,7 @@ void xpost_memory_file_grow (
  * This function allocate @p sz bytes to @p mem and returns the
  * offset. If sz is 0, it just returns the offset.
  *
- * Note: May call xpost_memory_file_grow which will invalidate all pointers
+ * Note: May call xpost_memory_file_grow which may invalidate all pointers
  * derived from mem->base. MUST recalculate all VM pointers after this
  * function.
  */
@@ -212,6 +212,9 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem);
 
 /**
  * @brief Allocate and Initialize a new table.
+ *
+ * MUST recalculate all VM pointers after this function.
+ * See note in xpost_memory_file_alloc.
  */
 unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
 
@@ -242,11 +245,57 @@ unsigned int xpost_memory_table_get_addr (
         unsigned int ent);
 
 /**
+ * @brief Set the address for an entity.
+ */
+void xpost_memory_table_set_addr (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int addr);
+
+/**
  * @brief Get the size of an entity.
  */
 unsigned int xpost_memory_table_get_size (
         Xpost_Memory_File *mem,
         unsigned int ent);
+
+/**
+ * @brief Set the size for an entity.
+ */
+void xpost_memory_table_set_size (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int size);
+
+/**
+ * @brief Get the mark field of an entity.
+ */
+unsigned int xpost_memory_table_get_mark (
+        Xpost_Memory_File *mem,
+        unsigned int ent);
+
+/**
+ * @brief Set the mark field for an entity.
+ */
+void xpost_memory_table_set_mark (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int mark);
+
+/**
+ * @brief Get the tag of an entity.
+ */
+unsigned int xpost_memory_table_get_tag (
+        Xpost_Memory_File *mem,
+        unsigned int ent);
+
+/**
+ * @brief Set the tag for an entity.
+ */
+void xpost_memory_table_set_tag (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int tag);
 
 /**
  * @brief Fetch a value from a composite object.
