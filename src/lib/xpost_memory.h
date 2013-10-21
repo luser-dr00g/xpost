@@ -242,7 +242,7 @@ unsigned int xpost_memory_table_alloc (
  *
  * @param[in,out] mem The memory file.
  * @param[out] atab The table.
- * @param [in,out] aent The entity.
+ * @param[in,out] aent The entity.
  */
 void xpost_memory_table_find_relative (
         Xpost_Memory_File *mem,
@@ -253,7 +253,7 @@ void xpost_memory_table_find_relative (
  * @brief Get the address from an entity.
  *
  * @param[in,out] mem The memory file.
- * @param [in] ent The entity.
+ * @param[in] ent The entity.
  * @return The adress.
  *
  * This function returns the address of the entity @p ent in @p mem.
@@ -266,7 +266,7 @@ unsigned int xpost_memory_table_get_addr (
  * @brief Get the size of an entity.
  *
  * @param[in,out] mem The memory file.
- * @param [in] ent The entity.
+ * @param[in] ent The entity.
  * @return The size.
  *
  * This function returns the size of the entity @p ent in @p mem.
