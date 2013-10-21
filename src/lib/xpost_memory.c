@@ -48,7 +48,7 @@ static void error(int err, char *msg)
 {
     (void)err;
     fprintf(stderr, "error: %s\n", msg);
-    exit(1);
+    exit(EXIT_FAILURE);
 }
 
 /* FIXME: use autotools to check if getpagesize exists ? */
@@ -273,10 +273,10 @@ unsigned int xpost_memory_table_init (Xpost_Memory_File *mem)
 
 
 unsigned int xpost_memory_table_alloc (Xpost_Memory_File *mem,
-        unsigned int mtabadr,
         unsigned int sz,
         unsigned int tag)
 {
+    unsigned int mtabadr = 0;
     unsigned int ent;
     unsigned int adr;
     Xpost_Memory_Table *tab = (void *)(mem->base + mtabadr);
@@ -338,6 +338,17 @@ unsigned int xpost_memory_table_get_addr (
 }
 
 
+void xpost_memory_table_set_addr (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int addr)
+{
+    Xpost_Memory_Table *tab;
+    xpost_memory_table_find_relative(mem, &tab, &ent);
+    tab->tab[ent].adr = addr;
+}
+
+
 unsigned int xpost_memory_table_get_size (
         Xpost_Memory_File *mem,
         unsigned int ent)
@@ -345,6 +356,59 @@ unsigned int xpost_memory_table_get_size (
     Xpost_Memory_Table *tab;
     xpost_memory_table_find_relative(mem, &tab, &ent);
     return tab->tab[ent].sz;
+}
+
+
+void xpost_memory_table_set_size (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int size)
+{
+    Xpost_Memory_Table *tab;
+    xpost_memory_table_find_relative(mem, &tab, &ent);
+    tab->tab[ent].sz = size;
+}
+
+
+unsigned int xpost_memory_table_get_mark (
+        Xpost_Memory_File *mem,
+        unsigned int ent)
+{
+    Xpost_Memory_Table *tab;
+    xpost_memory_table_find_relative(mem, &tab, &ent);
+    return tab->tab[ent].mark;
+}
+
+
+void xpost_memory_table_set_mark (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int mark)
+{
+    Xpost_Memory_Table *tab;
+    xpost_memory_table_find_relative(mem, &tab, &ent);
+    tab->tab[ent].mark = mark;
+}
+
+
+unsigned int xpost_memory_table_get_tag (
+        Xpost_Memory_File *mem,
+        unsigned int ent)
+{
+    Xpost_Memory_Table *tab;
+    xpost_memory_table_find_relative(mem, &tab, &ent);
+    return tab->tab[ent].tag;
+}
+
+
+void xpost_memory_table_set_tag (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int tag)
+{
+    Xpost_Memory_Table *tab;
+    xpost_memory_table_find_relative(mem, &tab, &ent);
+    tab->tab[ent].tag = tag;
 }
 
 
