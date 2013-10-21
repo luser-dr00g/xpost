@@ -7,6 +7,7 @@
  * #Xpost_Memory_Table.
  */
 
+
 /*
  *
  * Macros
@@ -28,6 +29,50 @@
  * address calcuation that may not be pipeline-friendly.
  */
 #define XPOST_MEMORY_TABLE_SIZE 200
+
+
+/*
+ *
+ * Enums
+ *
+ */
+
+/**
+ * @typedef Xpost_Memory_Table_Mark_Data
+ *
+ * There are 4 "virtual" bitfields packed in what is assumed to be a
+ * 32-bit unsigned field. These values are used in masking and
+ * shifting operations to access the fields in a direct, portable
+ * manner.
+ */
+typedef enum
+{
+    XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK       = 0xFF000000,
+    XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET     = 24,
+    XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_MASK   = 0x00FF0000,
+    XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET = 16,
+    XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_MASK   = 0x0000FF00,
+    XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET = 8,
+    XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK   = 0x000000FF,
+    XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET = 0,
+} Xpost_Memory_Table_Mark_Data;
+
+/**
+ * @typedef Xpost_Memory_Table_Special
+ * @brief Special entities occupy the first few slots of the first
+ * #Xpost_Memory_Table in the #Xpost_Memory_File.
+ */
+typedef enum
+{
+    XPOST_MEMORY_TABLE_SPECIAL_FREE,
+    XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK,
+    XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST,
+    XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK,
+    XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE,
+    XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME,
+    XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
+} Xpost_Memory_Table_Special;
+
 
 /*
  *
@@ -71,42 +116,6 @@ typedef struct
     } tab [ XPOST_MEMORY_TABLE_SIZE ];
 } Xpost_Memory_Table;
 
-/**
- * @typedef Xpost_Memory_Table_Mark_Data
- *
- * There are 4 "virtual" bitfields packed in what is assumed to be a
- * 32-bit unsigned field. These values are used in masking and
- * shifting operations to access the fields in a direct, portable
- * manner.
- */
-typedef enum
-{
-    XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK = 0xFF000000,
-    XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET = 24,
-    XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_MASK = 0x00FF0000,
-    XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET = 16,
-    XPOST_MEMORY_TABLE_MARK_DATA_LOLEVEL_MASK = 0x0000FF00,
-    XPOST_MEMORY_TABLE_MARK_DATA_LOLEVEL_OFFSET = 8,
-    XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK = 0x000000FF,
-    XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET = 0,
-} Xpost_Memory_Table_Mark_Data;
-
-/**
- * @typedef Xpost_Memory_Table_Special
- * @brief Special entities occupy the first few slots of the first
- * #Xpost_Memory_Table in the #Xpost_Memory_File.
- */
-typedef enum
-{
-    XPOST_MEMORY_TABLE_SPECIAL_FREE,
-    XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK,
-    XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST,
-    XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK,
-    XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE,
-    XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME,
-    XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
-} Xpost_Memory_Table_Special;
-
 /*
  *
  * Variables
@@ -119,11 +128,16 @@ typedef enum
  */
 extern unsigned int xpost_memory_pagesize /*= getpagesize()*/; /*= 4096 on 32bit Linux*/
 
+
 /*
  *
  * Functions
  *
  */
+
+/*
+   Xpost_Memory_File functions
+*/
 
 /**
  * @brief Initialize the memory file, possibly from file specified by
@@ -135,7 +149,10 @@ extern unsigned int xpost_memory_pagesize /*= getpagesize()*/; /*= 4096 on 32bit
  * This function initializes the memory file @p mem, possibly from
  * file specified by the file descriptor @p fd.
  */
-void xpost_memory_file_init (Xpost_Memory_File *mem, int fd);
+void xpost_memory_file_init (
+        Xpost_Memory_File *mem,
+        char *fname,
+        int fd);
 
 /**
  * @brief Destroy the given memory file, possibly writing to file.
@@ -156,10 +173,12 @@ void xpost_memory_file_exit (Xpost_Memory_File *mem);
  *
  * This function increases the memory used by @p mem by @p sz bites.
  */
-void xpost_memory_file_grow (Xpost_Memory_File *mem, unsigned int sz);
+void xpost_memory_file_grow (
+        Xpost_Memory_File *mem,
+        unsigned int sz);
 
 /**
- * @brief Allocate memory in the gven memory file and return offset.
+ * @brief Allocate memory in the given memory file and return offset.
  *
  * @param mem The memory file.
  * @param sz The new size.
@@ -167,8 +186,14 @@ void xpost_memory_file_grow (Xpost_Memory_File *mem, unsigned int sz);
  *
  * This function allocate @p sz bytes to @p mem and returns the
  * offset. If sz is 0, it just returns the offset.
+ *
+ * May call xpost_memory_file_grow which will invalidate all pointers
+ * derived from mem->base. MUST recalculate all VM pointers after this
+ * function.
  */
-unsigned int xpost_memory_file_alloc (Xpost_Memory_File *mem, unsigned int sz);
+unsigned int xpost_memory_file_alloc (
+        Xpost_Memory_File *mem,
+        unsigned int sz);
 
 /**
  * @brief Dump the given memory file metadata and contents to stdout.
@@ -179,15 +204,76 @@ unsigned int xpost_memory_file_alloc (Xpost_Memory_File *mem, unsigned int sz);
  */
 void xpost_memory_file_dump (Xpost_Memory_File *mem);
 
+
+/*
+   Xpost_Memory_Table functions
+*/
+
 /**
- * @brief Dump the given memory table data and associated memory
- * locations to stdout.
- *
- * @param mem The memory table.
- * @param mtabadr ???
- *
- * This function dumps to stdout the data and associated memory of @p mem.
+ * @brief Allocate and Initialize a new table.
  */
-void xpost_memory_table_dump (Xpost_Memory_Table *mem, unsigned int mtabadr);
+unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
+
+/**
+ * @brief Allocate memory, returns table index (ent).
+ */
+unsigned int xpost_memory_table_alloc (
+        Xpost_Memory_File *mem,
+        unsigned int mtabadr,
+        unsigned int sz,
+        unsigned int tag);
+
+/**
+ * @brief Find the table and relative entity index for an absolute entity index.
+ */
+void xpost_memory_table_find_relative (
+        Xpost_Memory_File *mem,
+        /*@out@*/ Xpost_Memory_Table **atab,
+        /*@in/out@*/ unsigned int *aent);
+
+/**
+ * @brief Get the address from an entity.
+ */
+unsigned int xpost_memory_table_get_addr (
+        Xpost_Memory_File *mem,
+        unsigned int ent);
+
+/**
+ * @brief Get the size of an entity.
+ */
+unsigned int xpost_memory_table_get_size (
+        Xpost_Memory_File *mem,
+        unsigned int ent);
+
+/**
+ * @brief Fetch a value from a composite object.
+ */
+void xpost_memory_get (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int offset,
+        unsigned int sz,
+        /*@out@*/ void *dest);
+
+/**
+ * @brief Put a value into a composite object.
+ */
+void xpost_memory_put (
+        Xpost_Memory_File *mem,
+        unsigned int ent,
+        unsigned int offset,
+        unsigned int sz,
+        /*@in@*/ void *src);
+
+/**
+ * @brief Dump the memory table data and associated memory
+ * locations from the given memory file to stdout.
+ *
+ * @param mem The memory file.
+ *
+ * This function dumps to stdout the data and associated memory of
+ * the table in @p mem.
+ */
+void xpost_memory_table_dump (Xpost_Memory_File *mem);
 
 #endif

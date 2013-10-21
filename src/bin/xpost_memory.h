@@ -1,7 +1,7 @@
 #ifndef XPOST_M_H
 #define XPOST_M_H
 
-/** \file xpost_memory.c
+/** \file xpost_memory.h
     mfile and mtab - the memory management data structures.
 
     An mfile is a container representing *half* of virtual memory,
