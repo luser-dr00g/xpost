@@ -314,7 +314,7 @@ char *xpost_object_type_names[]
 /**
  * @brief Construct a booleantype object with the given value.
  *
- * @param b A boolean value.
+ * @param[in] b A boolean value.
  * @return A new object.
  *
  * This function constructs a booleantype object with value @p b.
@@ -326,7 +326,7 @@ Xpost_Object xpost_cons_bool (bool b);
 /**
  * @brief Construct an integertype object with the given value.
  *
- * @param i An integer value, typically defined as int32_t.
+ * @param[in] i An integer value, typically defined as int32_t.
  * @return A new object.
  *
  * This function constructs an integertype object with value @p i.
@@ -338,7 +338,7 @@ Xpost_Object xpost_cons_int (integer i);
 /**
  * @brief Construct a realtype object with the given value.
  *
- * @param r A real value, typically defined as float.
+ * @param[in] r A real value, typically defined as float.
  * @return A new object.
  *
  * This function constructs a realtype object with value @p r.
@@ -359,7 +359,7 @@ Xpost_Object xpost_cons_real (real r);
 /**
  * @brief Return the object's type, it. the tag with flags masked-off.
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return The type of the object as an #Xpost_Object_Type.
  *
  * This function returns the type of the object @p obj, that is the tag
@@ -370,7 +370,7 @@ Xpost_Object_Type xpost_object_get_type (Xpost_Object obj);
 /**
  * @brief Determine whether the object is composite or not (ie. simple).
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return 1 if the object is composite, 0 otherwise.
  *
  * This function returns 1 if the object @p obj is one of the composite
@@ -382,7 +382,7 @@ int xpost_object_is_composite (Xpost_Object obj);
 /**
  * @brief Determine whether the object is executable or not.
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return 1 if the object is executable, 0 otherwise.
  *
  * This function returns 1 if the object @p obj is executable, 0
@@ -397,7 +397,7 @@ int xpost_object_is_exe (Xpost_Object obj);
 /**
  * @brief Determine whether the object is literal or not.
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return 1 if the object is literal, 0 otherwise.
  *
  * This function returns 1 if the object @p obj is literal, 0
@@ -412,7 +412,7 @@ int xpost_object_is_lit (Xpost_Object obj);
 /**
  * @brief Yield the access-field from the object's tag.
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return The access-field from the object's tag.
  *
  * This function returns the access-field from the tag of @p obj
@@ -430,8 +430,8 @@ Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj);
 /**
  * @brief Return object with access-field set to access.
  *
- * @param obj The object.
- * @param access New access-field value.
+ * @param[in] obj The object.
+ * @param[in] access New access-field value.
  * @return The modified object.
  *
  * This function sets the access-field in @p obj to @p access.
@@ -447,7 +447,7 @@ Xpost_Object xpost_object_set_access (
 /**
  * @brief Determine whether the object is readable or not.
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return 1 if the object is readable, 0 otherwise.
  *
  * This function checks the access permissions of @p obj,
@@ -462,7 +462,7 @@ int xpost_object_is_readable (Xpost_Object obj);
 /**
  * @brief Determine whether the object is writable or not.
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return 1 if the object is writeable, 0 otherwise.
  *
  * This function checks the access permissions of @p obj.
@@ -474,7 +474,7 @@ int xpost_object_is_writeable (Xpost_Object obj);
 /**
  * @brief Convert object to executable.
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return A new object with executable attribute set to executable.
  *
  * The name 'cvx' is borrowed from the Postscript language.
@@ -486,7 +486,7 @@ Xpost_Object xpost_object_cvx (Xpost_Object obj);
 /**
  * @brief Convert object to literal.
  *
- * @param obj The object.
+ * @param[in] obj The object.
  * @return A new object with executable attribute set to literal.
  *
  * The name 'cvlit' is borrowed from the Postscript language.
@@ -505,7 +505,7 @@ Xpost_Object xpost_object_cvlit (Xpost_Object obj);
 /**
  * @brief print a dump of the object contents to stdout
  *
- * @param obj The object to dump.
+ * @param[in] obj The object to dump.
  *
  * This function can print the raw object's contents,
  * discriminated by type. It can print the values of
