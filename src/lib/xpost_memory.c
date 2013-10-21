@@ -40,37 +40,44 @@ typedef bool _Bool;
 #include "xpost_memory.h"
 
 /* stubs */
-void error(int err, char *msg);
+
+/* FIXME: use xpost_log instead */
+
 enum { rangecheck, VMerror, unregistered };
-void error(int err, char *msg)
+static void error(int err, char *msg)
 {
     (void)err;
     fprintf(stderr, "error: %s\n", msg);
     exit(1);
 }
 
-
+/* FIXME: use autotools to check if getpagesize exists ? */
 unsigned int xpost_memory_pagesize /*= getpagesize()*/ = 4096;
 
 
 void xpost_memory_file_init (
         Xpost_Memory_File *mem,
-        char *fname,
+        const char *fname,
         int fd)
 {
     struct stat buf;
     size_t sz = xpost_memory_pagesize;
 
     if(fname)
-        strcpy(mem->fname, fname);
+    {
+        strncpy(mem->fname, fname, sizeof(mem->fname));
+        mem->fname[sizeof(mem->fname) - 1] = '\0';
+    }
     else
         mem->fname[0] = '\0';
 
     mem->fd = fd;
     if (fd != -1){
-        if (fstat(fd, &buf) == 0) {
+        if (fstat(fd, &buf) == 0)
+        {
             sz = buf.st_size;
-            if (sz < xpost_memory_pagesize) {
+            if (sz < xpost_memory_pagesize)
+            {
                 sz = xpost_memory_pagesize;
 #ifdef HAVE_MMAP
                 ftruncate(fd, sz);
@@ -88,10 +95,12 @@ void xpost_memory_file_init (
             | MAP_AUTOGROW
 # endif
             | (fd == -1? MAP_ANONYMOUS : 0), fd, 0);
-    if (mem->base == MAP_FAILED) { // .
+    if (mem->base == MAP_FAILED)
+    { // .
 #else
     mem->base = malloc(sz);
-    if (mem->base == NULL) { // ..
+    if (mem->base == NULL)
+    { // ..
 #endif
         error(VMerror, "VM error: failed to allocate memory-file data");
         exit(EXIT_FAILURE);
@@ -113,7 +122,8 @@ void xpost_memory_file_exit (Xpost_Memory_File *mem)
 #ifdef HAVE_MMAP
     munmap(mem->base, mem->max);
 #else
-    if (mem->fd != -1) {
+    if (mem->fd != -1)
+    {
         (void) lseek(mem->fd, 0, SEEK_SET);
         write(mem->fd, mem->base, mem->used);
     }
@@ -123,11 +133,13 @@ void xpost_memory_file_exit (Xpost_Memory_File *mem)
     mem->used = 0;
     mem->max = 0;
 
-    if (mem->fd != -1) {
+    if (mem->fd != -1)
+    {
         close(mem->fd);
         mem->fd = -1;
     }
-    if (mem->fname[0] != '\0') {
+    if (mem->fname[0] != '\0')
+    {
         struct stat sb;
         if (stat(mem->fname, &sb) == 0)
             remove(mem->fname);
@@ -161,10 +173,12 @@ void xpost_memory_file_grow (
             mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
             mem->fd, 0);
 # endif
-    if (tmp == MAP_FAILED) {
+    if (tmp == MAP_FAILED)
+    {
 #else
     tmp = realloc(mem->base, sz);
-    if (tmp == NULL) {
+    if (tmp == NULL)
+    {
 #endif
         error(VMerror, "unable to grow memory");
 #ifdef HAVE_MMAP
@@ -187,7 +201,8 @@ unsigned int xpost_memory_file_alloc (
 {
     unsigned int adr = mem->used;
 
-    if (sz) {
+    if (sz)
+    {
         if (sz + mem->used >= mem->max)
             xpost_memory_file_grow(mem, sz);
 
@@ -198,7 +213,7 @@ unsigned int xpost_memory_file_alloc (
 }
 
 
-void xpost_memory_file_dump (Xpost_Memory_File *mem)
+void xpost_memory_file_dump (const Xpost_Memory_File *mem)
 {
     unsigned int u,v;
 
@@ -210,10 +225,14 @@ void xpost_memory_file_dump (Xpost_Memory_File *mem)
             mem->used, mem->used,
             mem->max, mem->max,
             mem->start);
-    for (u=0; u < mem->used; u++) {
-        if (u%16 == 0) {
-            if (u != 0) {
-                for (v= u-16; v < u; v++) {
+    for (u = 0; u < mem->used; u++)
+    {
+        if (u%16 == 0)
+        {
+            if (u != 0)
+            {
+                for (v = u-16; v < u; v++)
+                {
                     (void)putchar(
                             isprint(mem->base[v]) ?
                             mem->base[v] : '.');
@@ -223,11 +242,14 @@ void xpost_memory_file_dump (Xpost_Memory_File *mem)
         }
         printf("%02x ", mem->base[u]);
     }
-    if ((u-1)%16 != 0) { // did not print in the last iteration of the loop
-        for (v= u; u%16 != 0; v++) {
+    if ((u-1)%16 != 0)
+    { // did not print in the last iteration of the loop
+        for (v = u; u%16 != 0; v++)
+        {
             printf("   ");
         }
-        for (v= u - (u%16); v < u; v++) {
+        for (v = u - (u%16); v < u; v++)
+        {
             (void)putchar(
                     isprint(mem->base[v]) ?
                     mem->base[v] : '.');
@@ -260,7 +282,8 @@ unsigned int xpost_memory_table_alloc (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab = (void *)(mem->base + mtabadr);
     int ntab = 0;
 
-    while (tab->nextent >= XPOST_MEMORY_TABLE_SIZE) {
+    while (tab->nextent >= XPOST_MEMORY_TABLE_SIZE)
+    {
         tab = (void *)(mem->base + tab->nexttab);
         ++ntab;
     }
@@ -275,7 +298,8 @@ unsigned int xpost_memory_table_alloc (Xpost_Memory_File *mem,
     tab->tab[ent].sz = sz;
     tab->tab[ent].tag = tag;
 
-    if (tab->nextent == XPOST_MEMORY_TABLE_SIZE) {
+    if (tab->nextent == XPOST_MEMORY_TABLE_SIZE)
+    {
         unsigned int newtab = xpost_memory_table_init(mem);
         ent += ntab*XPOST_MEMORY_TABLE_SIZE; //recalc
         xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
@@ -292,9 +316,11 @@ void xpost_memory_table_find_relative (
         /*@in/out@*/ unsigned int *aent)
 {
     *atab = (void *)(mem->base);
-    while (*aent >= XPOST_MEMORY_TABLE_SIZE) {
+    while (*aent >= XPOST_MEMORY_TABLE_SIZE)
+    {
         *aent -= XPOST_MEMORY_TABLE_SIZE;
-        if ((*atab)->nexttab == 0) {
+        if ((*atab)->nexttab == 0)
+        {
             error(unregistered, "ent doesn't exist");
         }
         *atab = (void *)(mem->base + (*atab)->nexttab);
@@ -366,8 +392,9 @@ next_table:
     tab = (void *)(mem->base + mtabadr);
     printf("nexttab: 0x%04x\n", tab->nexttab);
     printf("nextent: %u\n", tab->nextent);
-    for (i=0; i < tab->nextent; i++, e++) {
-        unsigned u;
+    for (i = 0; i < tab->nextent; i++, e++)
+    {
+        unsigned int u;
         printf("ent %d (%d): "
                 "adr %u 0x%04x, "
                 "sz [%u], "
@@ -386,7 +413,8 @@ next_table:
                 (tab->tab[i].mark
                     & XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK)
                     >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);
-        for (u=0; u < tab->tab[i].sz; u++) {
+        for (u = 0; u < tab->tab[i].sz; u++)
+        {
             printf(" %02x%c",
                     mem->base[ tab->tab[i].adr + u ],
                     isprint(mem->base[ tab->tab[i].adr + u]) ?
@@ -395,7 +423,8 @@ next_table:
         }
         (void)puts("");
     }
-    if (tab->nextent == XPOST_MEMORY_TABLE_SIZE) {
+    if (tab->nextent == XPOST_MEMORY_TABLE_SIZE)
+    {
         mtabadr = tab->nexttab;
         goto next_table;
     }

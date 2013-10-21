@@ -143,21 +143,22 @@ extern unsigned int xpost_memory_pagesize /*= getpagesize()*/; /*= 4096 on 32bit
  * @brief Initialize the memory file, possibly from file specified by
  * the given file descriptor.
  *
- * @param mem The memory file.
- * @param fd The file descriptor.
+ * @param[in,out] mem The memory file.
+ * @param[in] fname 
+ * @param[in] fd The file descriptor.
  *
  * This function initializes the memory file @p mem, possibly from
  * file specified by the file descriptor @p fd.
  */
 void xpost_memory_file_init (
         Xpost_Memory_File *mem,
-        char *fname,
+        const char *fname,
         int fd);
 
 /**
  * @brief Destroy the given memory file, possibly writing to file.
  *
- * @param mem The memory file.
+ * @param[in,out] mem The memory file.
  *
  * This function destroys the memory file @p mem, possibly writing to
  * the file passed to xpost_memory_file_init().
@@ -168,8 +169,8 @@ void xpost_memory_file_exit (Xpost_Memory_File *mem);
  * @brief Resize the given memory file, possibly moving and
  * invalidating all vm pointers.
  *
- * @param mem The memory file
- * @param sz The size to increase.
+ * @param[in,out] mem The memory file
+ * @param[in] sz The size to increase.
  *
  * This function increases the memory used by @p mem by @p sz bites.
  */
@@ -180,8 +181,8 @@ void xpost_memory_file_grow (
 /**
  * @brief Allocate memory in the given memory file and return offset.
  *
- * @param mem The memory file.
- * @param sz The new size.
+ * @param[in,out] mem The memory file.
+ * @param[in] sz The new size.
  * @return The offset.
  *
  * This function allocate @p sz bytes to @p mem and returns the
@@ -198,11 +199,11 @@ unsigned int xpost_memory_file_alloc (
 /**
  * @brief Dump the given memory file metadata and contents to stdout.
  *
- * @param mem The memory file.
+ * @param[in] mem The memory file.
  *
  * This function dumps to stdout the metadata of @p mem.
  */
-void xpost_memory_file_dump (Xpost_Memory_File *mem);
+void xpost_memory_file_dump (const Xpost_Memory_File *mem);
 
 
 /*
