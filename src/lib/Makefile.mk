@@ -5,11 +5,13 @@ includes_HEADERS = src/lib/xpost.h
 includesdir = $(pkgincludedir)-@VMAJ@
 
 src_lib_libxpost_la_SOURCES = \
+src/lib/xpost_log.c \
 src/lib/xpost_main.c \
-src/lib/xpost_object.c \
 src/lib/xpost_memory.c \
-src/lib/xpost_object.h \
+src/lib/xpost_object.c \
+src/lib/xpost_log.h \
 src/lib/xpost_memory.h \
+src/lib/xpost_object.h \
 src/lib/xpost_private.h
 
 src_lib_libxpost_la_CPPFLAGS = \
