@@ -53,11 +53,11 @@
  */
 typedef enum
 {
-    XPOST_LOG_LEVEL_ERR,
-    XPOST_LOG_LEVEL_WARN,
-    XPOST_LOG_LEVEL_INFO,
-    XPOST_LOG_LEVEL_DBG,
-    XPOST_LOG_LEVEL_LAST
+    XPOST_LOG_LEVEL_ERR, /**< Error log level */
+    XPOST_LOG_LEVEL_WARN, /**< Warning log level */
+    XPOST_LOG_LEVEL_INFO, /**< Information log level */
+    XPOST_LOG_LEVEL_DBG, /**< Debug log level */
+    XPOST_LOG_LEVEL_LAST  /**< Count of default log levels */
 } Xpost_Log_Level;
 
 /**
@@ -71,6 +71,14 @@ typedef void (*Xpost_Log_Print_Cb)(Xpost_Log_Level level,
                                    const char *fmt,
                                    void *data,
                                    va_list args);
+
+/**
+ * @brief Initialize the logging method.
+ *
+ * This function initializes the logging facilities. Currently, it only
+ * gets the value of the environment variable XPOST_LOG_LEVEL if it
+ * exists.
+ */
 void xpost_log_init(void);
 
 /**
