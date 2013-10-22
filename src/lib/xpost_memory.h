@@ -228,7 +228,6 @@ unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
  * @brief Allocate memory, returns table index.
  *
  * @param[in,out] mem The memory file.
- * @param[in] mtabadr The table offset.
  * @param[in] sz The table size.
  * @param[in] tag The table tag.
  * @return The table index.
