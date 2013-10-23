@@ -113,7 +113,7 @@ typedef struct
         unsigned int sz; /**< size of allocation */
         unsigned int mark; /**< garbage collection metadata */
         unsigned int tag; /**< type of object using this allocation, if needed */
-    } tab [ XPOST_MEMORY_TABLE_SIZE ];
+    } tab [ XPOST_MEMORY_TABLE_SIZE ]; /**< table entries in this segment */
 } Xpost_Memory_Table;
 
 /*
