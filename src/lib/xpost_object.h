@@ -154,9 +154,12 @@ typedef dword addr;
  */
 typedef struct
 {
-    word tag;
-    word pad0;
-    dword padw;
+    word tag; /**< (marktype, operatortype or nametype) | flags */
+    word pad0; /**< == 0 */
+    dword padw; /**< payload: an unsigned integer,
+                  0 in a marktype object,
+                  used for opcode in an operatortype object,
+                  used for name index in a nametype object. */
 } Xpost_Object_Mark;
 
 /**
@@ -165,9 +168,9 @@ typedef struct
  */
 typedef struct
 {
-    word tag;
-    word pad;
-    integer val;
+    word tag; /**< integertype | flags */
+    word pad; /**< == 0 */
+    integer val; /**< payload integer value */
 } Xpost_Object_Int;
 
 /**
@@ -176,9 +179,9 @@ typedef struct
  */
 typedef struct
 {
-    word tag;
-    word pad;
-    real val;
+    word tag; /**< realtype | flags */
+    word pad; /**< == 0 */
+    real val; /**< payload floating-point value */
 } Xpost_Object_Real;
 
 /**
@@ -188,9 +191,11 @@ typedef struct
  */
 typedef struct
 {
-    word tag;
-    word sign_exp;
-    dword fraction;
+    word tag; /**< extendedtype |
+                ( XPOST_OBJECT_TAG_DATA_EXTENDED_INT
+                or XPOST_OBJECT_TAG_DATA_EXTENDED_REAL ) | other flags */
+    word sign_exp; /**< sign and exponent from a double */
+    dword fraction; /**< truncated fraction from a double */
 } Xpost_Object_Extended;
 
 /**
@@ -199,10 +204,14 @@ typedef struct
  */
 typedef struct
 {
-    word tag;
-    word sz;
-    word ent;
-    word off;
+    word tag; /**< (stringtype, arraytype, or dicttype) | flags */
+    word sz; /**< number of bytes in string,
+                   number of objects in array,
+                   number of key-value pairs in dict */
+    word ent; /**< entity. Absolute index into Xpost_Memory_Table */
+    word off; /**< byte offset in string,
+                    object offset in array,
+                    index in dict (only during `forall` operator) */
 } Xpost_Object_Comp;
 
 /**
@@ -211,9 +220,9 @@ typedef struct
  */
 typedef struct
 {
-    word tag;
-    word lev;
-    dword stk;
+    word tag; /**< savetype */
+    word lev; /**< save-level, index into Save stack */
+    dword stk; /**< address of Saverec stack */
 } Xpost_Object_Save;
 
 /**
@@ -226,10 +235,10 @@ typedef struct
  */
 typedef struct
 {
-    word tag;
-    word pad;
-    word src;
-    word cpy;
+    word tag; /**< arraytype or dicttype */
+    word pad; /**< == 0 */
+    word src; /**< entity number of source, the allocation being used */
+    word cpy; /**< entity number of copy, the copy to revert to in restore */
 } Xpost_Object_Saverec;
 
 /**
@@ -242,9 +251,9 @@ typedef struct
  */
 typedef struct
 {
-    word tag;
-    word off;
-    void *ptr;
+    word tag; /**< globtype */
+    word off; /**< index into the filename array */
+    void *ptr; /**< ptr to the glob_t struct */
 } Xpost_Object_Glob;
 
 /*

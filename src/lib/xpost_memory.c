@@ -37,6 +37,7 @@ typedef bool _Bool;
 #endif
 
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 
 /* stubs */
@@ -47,15 +48,16 @@ enum { rangecheck, VMerror, unregistered };
 static void error(int err, char *msg)
 {
     (void)err;
-    fprintf(stderr, "error: %s\n", msg);
-    exit(EXIT_FAILURE);
+    XPOST_LOG_ERR("error: %d %s\n" err, msg);
+    //fprintf(stderr, "error: %s\n", msg);
+    //exit(EXIT_FAILURE);
 }
 
 /* FIXME: use autotools to check if getpagesize exists ? */
 unsigned int xpost_memory_pagesize /*= getpagesize()*/ = 4096;
 
 
-void xpost_memory_file_init (
+int xpost_memory_file_init (
         Xpost_Memory_File *mem,
         const char *fname,
         int fd)
@@ -103,7 +105,8 @@ void xpost_memory_file_init (
     { // ..
 #endif
         error(VMerror, "VM error: failed to allocate memory-file data");
-        exit(EXIT_FAILURE);
+        return 0;
+        //exit(EXIT_FAILURE);
     } // . ..
     mem->used = 0;
     mem->max = sz;
@@ -114,10 +117,12 @@ void xpost_memory_file_init (
 #endif
     if (fd == -1)
         memset(mem->base, 0, mem->max);
+
+    return 1;
 }
 
 
-void xpost_memory_file_exit (Xpost_Memory_File *mem)
+int xpost_memory_file_exit (Xpost_Memory_File *mem)
 {
 #ifdef HAVE_MMAP
     munmap(mem->base, mem->max);
@@ -145,9 +150,11 @@ void xpost_memory_file_exit (Xpost_Memory_File *mem)
             remove(mem->fname);
         mem->fname[0] = '\0';
     }
+
+    return 1;
 }
 
-void xpost_memory_file_grow (
+int xpost_memory_file_grow (
         Xpost_Memory_File *mem,
         unsigned int sz)
 {
@@ -192,6 +199,8 @@ void xpost_memory_file_grow (
     }
     mem->base = tmp;
     mem->max = sz;
+
+    return 1;
 }
 
 
