@@ -48,14 +48,14 @@ static
 int puff (context *ctx,
           char *buf,
           int nbuf,
-          object *src,
-          int (*next)(context *ctx, object *src),
-          void (*back)(context *ctx, int c, object *src));
+          Xpost_Object *src,
+          int (*next)(context *ctx, Xpost_Object *src),
+          void (*back)(context *ctx, int c, Xpost_Object *src));
 static
-object toke (context *ctx,
-             object *src,
-             int (*next)(context *ctx, object *src),
-             void (*back)(context *ctx, int c, object *src));
+Xpost_Object toke (context *ctx,
+             Xpost_Object *src,
+             int (*next)(context *ctx, Xpost_Object *src),
+             void (*back)(context *ctx, int c, Xpost_Object *src));
 
 static
 int ishash (int c)
@@ -167,12 +167,12 @@ int fsm_check (char *s,
 }
 
 static
-object grok (context *ctx,
+Xpost_Object grok (context *ctx,
              char *s,
              int ns,
-             object *src,
-             int (*next)(context *ctx, object *src),
-             void (*back)(context *ctx, int c, object *src))
+             Xpost_Object *src,
+             int (*next)(context *ctx, Xpost_Object *src),
+             void (*back)(context *ctx, int c, Xpost_Object *src))
 {
     if (ns == NBUF) error(limitcheck, "grok buf maxxed");
     s[ns] = '\0';  //fsm_check & consname  terminate on \0
@@ -182,7 +182,7 @@ object grok (context *ctx,
         num = strtol(s, NULL, 10);
         if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
             error(limitcheck, "grok integer out of range");
-        return consint(num);
+        return xpost_cons_int(num);
     }
 
     else if (fsm_check(s, ns, fsm_rad, accept_rad)) {
@@ -193,7 +193,7 @@ object grok (context *ctx,
         num = strtol(s+1, NULL, base);
         if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
             error(limitcheck, "grok radixnumber out of range");
-        return consint(num);
+        return xpost_cons_int(num);
     }
 
     else if (fsm_check(s, ns, fsm_real, accept_real)) {
@@ -201,7 +201,7 @@ object grok (context *ctx,
         num = strtod(s, NULL);
         if ((num == HUGE_VAL || num == -HUGE_VAL) && errno==ERANGE)
             error(limitcheck, "grok real out of range");
-        return consreal(num);
+        return xpost_cons_real(num);
     }
 
     else switch(*s) {
@@ -241,7 +241,7 @@ object grok (context *ctx,
                       if (sp-s > NBUF) error(limitcheck, "grok string exceeds buf");
                       else *sp++ = c;
                   }
-                  return cvlit(consbst(ctx, sp-s, s));
+                  return xpost_object_cvlit(consbst(ctx, sp-s, s));
               }
 
     case '<': {
@@ -249,7 +249,7 @@ object grok (context *ctx,
                   char d, *x = "0123456789ABCDEF", *sp = s;
                   c = next(ctx, src);
                   if (c == '<') {
-                      return cvx(consname(ctx, "<<"));
+                      return xpost_object_cvx(consname(ctx, "<<"));
                   }
                   back(ctx, c, src);
                   while (c = next(ctx, src), c != '>' && c != EOF) {
@@ -269,57 +269,57 @@ object grok (context *ctx,
                       if (sp-s > NBUF) error(limitcheck, "grok hexstring exceeds buf");
                       *sp++ = d;
                   }
-                  return cvlit(consbst(ctx, sp-s, s));
+                  return xpost_object_cvlit(consbst(ctx, sp-s, s));
               }
 
     case '>': {
                   int c;
                   if ((c = next(ctx, src)) == '>') {
-                      return cvx(consname(ctx, ">>"));
+                      return xpost_object_cvx(consname(ctx, ">>"));
                   } else error(syntaxerror, "grok bare angle bracket >");
               }
               return null; //not reached
 
     case '{': { // This is the one part that makes it a recursive-descent parser
-                  object tail;
+                  Xpost_Object tail;
                   tail = consname(ctx, "}");
                   push(ctx->lo, ctx->os, mark);
                   while (1) {
-                      object t = toke(ctx, src, next, back);
+                      Xpost_Object t = toke(ctx, src, next, back);
                       if (objcmp(ctx, t, tail) == 0)
                           break;
                       push(ctx->lo, ctx->os, t);
                   }
                   arrtomark(ctx);  // ie. the /] operator
-                  return cvx(pop(ctx->lo, ctx->os));
+                  return xpost_object_cvx(pop(ctx->lo, ctx->os));
               }
 
     case '/': {
                   *s = next(ctx, src);
                   //ns = puff(ctx, s, NBUF, src, next, back);
                   if (ns && *s == '/') {
-                      object ret;
+                      Xpost_Object ret;
                       ns = puff(ctx, s, NBUF, src, next, back);
                       if (ns == NBUF) error(limitcheck, "grok immediate name exceeds buf");
                       s[ns] = '\0';
-                      //push(ctx->lo, ctx->os, cvx(consname(ctx, s)));
+                      //push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, s)));
                       //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
                       if (DEBUGLOAD)
                           printf("\ntoken: loading immediate name %s\n", s);
-                      Aload(ctx, cvx(consname(ctx, s)));
+                      Aload(ctx, xpost_object_cvx(consname(ctx, s)));
                       ret = pop(ctx->lo, ctx->os);
                       if (DEBUGLOAD)
-                          dumpobject(ret);
+                          xpost_object_dump(ret);
                       return ret;
                   } else {
                       ns = 1 + puff(ctx, s+1, NBUF-1, src, next, back);
                   }
                   if (ns == NBUF) error(limitcheck, "grok name exceeds buf");
                   s[ns] = '\0';
-                  return cvlit(consname(ctx, s));
+                  return xpost_object_cvlit(consname(ctx, s));
               }
     default: {
-                 return cvx(consname(ctx, s));
+                 return xpost_object_cvx(consname(ctx, s));
              }
     }
 }
@@ -329,8 +329,8 @@ object grok (context *ctx,
 static
 int snip (context *ctx,
           char *buf,
-          object *src,
-          int (*next)(context *ctx, object *src))
+          Xpost_Object *src,
+          int (*next)(context *ctx, Xpost_Object *src))
 {
     int c;
     do {
@@ -353,9 +353,9 @@ static
 int puff (context *ctx,
           char *buf,
           int nbuf,
-          object *src,
-          int (*next)(context *ctx, object *src),
-          void (*back)(context *ctx, int c, object *src))
+          Xpost_Object *src,
+          int (*next)(context *ctx, Xpost_Object *src),
+          void (*back)(context *ctx, int c, Xpost_Object *src))
 {
     int c;
     char *s = buf;
@@ -369,14 +369,14 @@ int puff (context *ctx,
 
 
 static
-object toke (context *ctx,
-             object *src,
-             int (*next)(context *ctx, object *src),
-             void (*back)(context *ctx, int c, object *src))
+Xpost_Object toke (context *ctx,
+             Xpost_Object *src,
+             int (*next)(context *ctx, Xpost_Object *src),
+             void (*back)(context *ctx, int c, Xpost_Object *src))
 {
     char buf[NBUF] = "";
     int sta;  // status, and size
-    object o;
+    Xpost_Object o;
     sta = snip(ctx, buf, src, next);
     if (!sta)
         return null;
@@ -389,35 +389,35 @@ object toke (context *ctx,
 
 static
 int Fnext(context *ctx,
-          object *F)
+          Xpost_Object *F)
 {
     return fgetc(filefile(ctx->lo, *F));
 }
 static
 void Fback(context *ctx,
            int c,
-           object *F)
+           Xpost_Object *F)
 {
     (void)ungetc(c, filefile(ctx->lo, *F));
 }
 static
 void Ftoken (context *ctx,
-             object F)
+             Xpost_Object F)
 {
-    object t;
+    Xpost_Object t;
     if (!filestatus(ctx->lo, F)) error(ioerror, "Ftoken");
     t = toke(ctx, &F, Fnext, Fback);
-    if (type(t) != nulltype) {
+    if (xpost_object_get_type(t) != nulltype) {
         push(ctx->lo, ctx->os, t);
-        push(ctx->lo, ctx->os, consbool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(true));
     } else {
-        push(ctx->lo, ctx->os, consbool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(false));
     }
 }
 
 static
 int Snext(context *ctx,
-          object *S)
+          Xpost_Object *S)
 {
     int ret;
     if (S->comp_.sz == 0) return EOF;
@@ -429,7 +429,7 @@ int Snext(context *ctx,
 static
 void Sback(context *ctx,
            int c,
-           object *S)
+           Xpost_Object *S)
 {
     --S->comp_.off;
     ++S->comp_.sz;
@@ -437,24 +437,24 @@ void Sback(context *ctx,
 }
 static
 void Stoken (context *ctx,
-             object S)
+             Xpost_Object S)
 {
-    object t;
+    Xpost_Object t;
     t = toke(ctx, &S, Snext, Sback);
-    if (type(t) != nulltype) {
+    if (xpost_object_get_type(t) != nulltype) {
         push(ctx->lo, ctx->os, S);
         push(ctx->lo, ctx->os, t);
-        push(ctx->lo, ctx->os, consbool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(true));
     } else {
-        push(ctx->lo, ctx->os, consbool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(false));
     }
 }
 
 void initoptok(context *ctx,
-               object sd)
+               Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 

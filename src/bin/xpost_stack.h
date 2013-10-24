@@ -13,7 +13,7 @@
 typedef struct {
     unsigned nextseg;
     unsigned top;
-    object data[STACKSEGSZ];
+    Xpost_Object data[STACKSEGSZ];
 } stack;
 
 /* create a stack data structure. returns vm address */
@@ -29,20 +29,20 @@ void sfree(mfile *mem, unsigned stackadr);
 unsigned count(mfile *mem, unsigned stackadr);
 
 /* push an object on top of the stack */
-void push(mfile *mem, unsigned stackadr, object o);
+void push(mfile *mem, unsigned stackadr, Xpost_Object o);
 
 /* index the stack from the top down, fetching object */
-object top(mfile *mem, unsigned stackadr, integer i);
+Xpost_Object top(mfile *mem, unsigned stackadr, integer i);
 /* index the stack from the top down, replacing object */
-void pot(mfile *mem, unsigned stackadr, integer i, object o);
+void pot(mfile *mem, unsigned stackadr, integer i, Xpost_Object o);
 
 /* index the stack from the bottom up, fetching object */
-object bot(mfile *mem, unsigned stackadr, integer i);
+Xpost_Object bot(mfile *mem, unsigned stackadr, integer i);
 /* index the stack from the bottom up, replacing object */
-void tob(mfile *mem, unsigned stacadr, integer i, object o);
+void tob(mfile *mem, unsigned stacadr, integer i, Xpost_Object o);
 
 /* pop the stack. remove and return top object */
-object pop(mfile *mem, unsigned stackadr);
+Xpost_Object pop(mfile *mem, unsigned stackadr);
 /*int pop(mfile *mem, unsigned stackadr, object *po);*/
 
 #endif

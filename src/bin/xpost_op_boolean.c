@@ -62,130 +62,130 @@ typedef bool _Bool;
    test equal */
 static
 void Aeq (context *ctx,
-          object x,
-          object y)
+          Xpost_Object x,
+          Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) == 0));
+    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) == 0));
 }
 
 /* any1 any2  ne  bool
    test not equal */
 static
 void Ane (context *ctx,
-          object x,
-          object y)
+          Xpost_Object x,
+          Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) != 0));
+    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) != 0));
 }
 
 /* any1 any2  ge  bool
    test greater or equal */
 static
 void Age (context *ctx,
-          object x,
-          object y)
+          Xpost_Object x,
+          Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) >= 0));
+    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) >= 0));
 }
 
 /* any1 any2  gt  bool
    test greater than */
 static
 void Agt (context *ctx,
-          object x,
-          object y)
+          Xpost_Object x,
+          Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) > 0));
+    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) > 0));
 }
 
 /* any1 any2  le  bool
    test less or equal */
 static
 void Ale (context *ctx,
-          object x,
-          object y)
+          Xpost_Object x,
+          Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) <= 0));
+    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) <= 0));
 }
 
 /* any1 any2  lt  bool
    test less than */
 static
 void Alt (context *ctx,
-          object x,
-          object y)
+          Xpost_Object x,
+          Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(objcmp(ctx,x,y) < 0));
+    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) < 0));
 }
 
 /* bool1|int1 bool2|int2  and  bool3|int3
    logical|bitwise and */
 static
 void Band (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(x.int_.val & y.int_.val));
+    push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val & y.int_.val));
 }
 
 static
 void Iand (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consint(x.int_.val & y.int_.val));
+    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val & y.int_.val));
 }
 
 /* bool1|int1  not  bool2|int2
    logical|bitwise not */
 static
 void Bnot (context *ctx,
-           object x)
+           Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consbool( ! x.int_.val ));
+    push(ctx->lo, ctx->os, xpost_cons_bool( ! x.int_.val ));
 }
 
 static
 void Inot (context *ctx,
-           object x)
+           Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consint( ~ x.int_.val ));
+    push(ctx->lo, ctx->os, xpost_cons_int( ~ x.int_.val ));
 }
 
 /* bool1|int1 bool2|int2  or  bool3|int3
    logical|bitwise inclusive or */
 static
 void Bor (context *ctx,
-          object x,
-          object y)
+          Xpost_Object x,
+          Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(x.int_.val | y.int_.val));
+    push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val | y.int_.val));
 }
 
 static
 void Ior (context *ctx,
-          object x,
-          object y)
+          Xpost_Object x,
+          Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consint(x.int_.val | y.int_.val));
+    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val | y.int_.val));
 }
 
 /* bool1|int1 bool2|int2  xor  bool3|int3
    exclusive or */
 static
 void Bxor (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consbool(x.int_.val ^ y.int_.val));
+    push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val ^ y.int_.val));
 }
 
 static
 void Ixor (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consint(x.int_.val ^ y.int_.val));
+    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val ^ y.int_.val));
 }
 
 // true
@@ -196,21 +196,21 @@ void Ixor (context *ctx,
    bitwise shift of int1 (positive is left) */
 static
 void Ibitshift (context *ctx,
-                object x,
-                object y)
+                Xpost_Object x,
+                Xpost_Object y)
 {
     if (y.int_.val >= 0)
-        push(ctx->lo, ctx->os, consint(x.int_.val << y.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val << y.int_.val));
     else
-        push(ctx->lo, ctx->os, consint(
+        push(ctx->lo, ctx->os, xpost_cons_int(
                     (unsigned long)x.int_.val >> -y.int_.val));
 }
 
 void initopb(context *ctx,
-             object sd)
+             Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
@@ -228,8 +228,8 @@ void initopb(context *ctx,
     op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "xor", Bxor, 1, 2, booleantype, booleantype); INSTALL;
     op = consoper(ctx, "xor", Ixor, 1, 2, integertype, integertype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "true"), consbool(true));
-    bdcput(ctx, sd, consname(ctx, "false"), consbool(false));
+    bdcput(ctx, sd, consname(ctx, "true"), xpost_cons_bool(true));
+    bdcput(ctx, sd, consname(ctx, "false"), xpost_cons_bool(false));
     op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL); */

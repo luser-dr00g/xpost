@@ -16,42 +16,42 @@
    "bar" functions select the mfile from a context, using the FBANK flag.
 */
 
-/** \fn object consarr(mfile *mem, unsigned sz)
-  consarr - construct an array object
-  in the mtab of specified mfile
+/**
+ * @brief consarr - construct an array object
+ * in the mtab of specified mfile
 */
-object consarr(mfile *mem, unsigned sz);
+Xpost_Object consarr(mfile *mem, unsigned sz);
 
-/** \fn object consbar(context *ctx, unsigned sz)
-  consbar - construct an array object
-  selecting mfile according to ctx->vmmode
+/**
+ * @brief consbar - construct an array object
+ * selecting mfile according to ctx->vmmode
 */
-object consbar(context *ctx, unsigned sz);
+Xpost_Object consbar(context *ctx, unsigned sz);
 
-/** \fn void arrput(mfile *mem, object a, integer i, object o)
-   store value in an array
+/** 
+   * @brief store value in an array
 */
-void arrput(mfile *mem, object a, integer i, object o);
+void arrput(mfile *mem, Xpost_Object a, integer i, Xpost_Object o);
 
-/** \fn void barput(context *ctx, object a, integer i, object o)
-   store value in a banked array
+/** 
+ * @brief store value in a banked array
 */
-void barput(context *ctx, object a, integer i, object o);
+void barput(context *ctx, Xpost_Object a, integer i, Xpost_Object o);
 
-/** \fn object arrget(mfile *mem, object a, integer i)
-   extract value from an array
+/** 
+ * @brief extract value from an array
 */
-object arrget(mfile *mem, object a, integer i);
+Xpost_Object arrget(mfile *mem, Xpost_Object a, integer i);
 
-/** \fn object barget(context *ctx, object a, integer i)
-   extract value from a banked array
+/** 
+ * @brief extract value from a banked array
 */
-object barget(context *ctx, object a, integer i);
+Xpost_Object barget(context *ctx, Xpost_Object a, integer i);
 
-/** \fn object arrgetinterval(object a, integer s, integer n)
-   adjust the size and offset fields in the object
-   (works for strings, too)
+/** 
+ * @brief adjust the size and offset fields in the object
+ * (works for strings, too)
 */
-object arrgetinterval(object a, integer s, integer n);
+Xpost_Object arrgetinterval(Xpost_Object a, integer s, integer n);
 
 #endif

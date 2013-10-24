@@ -36,15 +36,15 @@ typedef bool _Bool;
 #include "xpost_op_dict.h"
 
 int DEBUGLOAD = 0;
-void Awhere(context *ctx, object K); /* forward decl */
+void Awhere(context *ctx, Xpost_Object K); /* forward decl */
 
 /* int  dict  dict
    create dictionary with capacity for int elements */
 static
 void Idict(context *ctx,
-           object I)
+           Xpost_Object I)
 {
-    push(ctx->lo, ctx->os, cvlit(consbdc(ctx, I.int_.val)));
+    push(ctx->lo, ctx->os, xpost_object_cvlit(consbdc(ctx, I.int_.val)));
 }
 
 /* -  <<  mark
@@ -56,7 +56,7 @@ static
 void dictomark(context *ctx)
 {
     int i;
-    object d, k, v;
+    Xpost_Object d, k, v;
     Zcounttomark(ctx);
     i = pop(ctx->lo, ctx->os).int_.val;
     d = consbdc(ctx, i);
@@ -73,9 +73,9 @@ void dictomark(context *ctx)
    number of key-value pairs in dict */
 static
 void Dlength(context *ctx,
-             object D)
+             Xpost_Object D)
 {
-    push(ctx->lo, ctx->os, consint(diclength(
+    push(ctx->lo, ctx->os, xpost_cons_int(diclength(
                     bank(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
 }
@@ -84,9 +84,9 @@ void Dlength(context *ctx,
    capacity of dict */
 static
 void Dmaxlength(context *ctx,
-                object D)
+                Xpost_Object D)
 {
-    push(ctx->lo, ctx->os, consint(dicmaxlength(
+    push(ctx->lo, ctx->os, xpost_cons_int(dicmaxlength(
                     bank(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
 }
@@ -95,7 +95,7 @@ void Dmaxlength(context *ctx,
    push dict on dict stack */
 static
 void Dbegin(context *ctx,
-            object D)
+            Xpost_Object D)
 {
     push(ctx->lo, ctx->ds, D);
 }
@@ -114,10 +114,10 @@ void Zend(context *ctx)
    associate key with value in current dict */
 static
 void Adef(context *ctx,
-          object K,
-          object V)
+          Xpost_Object K,
+          Xpost_Object V)
 {
-    //object D = top(ctx->lo, ctx->ds, 0);
+    //Xpost_Object D = top(ctx->lo, ctx->ds, 0);
     //dumpdic(bank(ctx, D), D); puts("");
     bdcput(ctx, top(ctx->lo, ctx->ds, 0), K, V);
     //puts("!def!");
@@ -127,18 +127,18 @@ void Adef(context *ctx,
 /* key  load  value
    search dict stack for key and return associated value */
 void Aload(context *ctx,
-           object K)
+           Xpost_Object K)
 {
     int i;
     int z = count(ctx->lo, ctx->ds);
     if (DEBUGLOAD) {
         printf("\nload:");
-        dumpobject(K);
+        xpost_object_dump(K);
         dumpstack(ctx->lo, ctx->ds);
     }
 
     for (i = 0; i < z; i++) {
-        object D = top(ctx->lo,ctx->ds,i);
+        Xpost_Object D = top(ctx->lo,ctx->ds,i);
 
     if (DEBUGLOAD) {
         dumpdic(bank(ctx, D), D);
@@ -157,7 +157,7 @@ void Aload(context *ctx,
         dumpmfile(ctx->gl);
         dumpmtab(ctx->gl, 0);
         dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
-        dumpobject(K);
+        xpost_object_dump(K);
     }
 
     error(undefined, "Aload");
@@ -167,10 +167,10 @@ void Aload(context *ctx,
    replace topmost definition of key */
 static
 void Astore(context *ctx,
-            object K,
-            object V)
+            Xpost_Object K,
+            Xpost_Object V)
 {
-    object D;
+    Xpost_Object D;
     Awhere(ctx, K);
     if (pop(ctx->lo, ctx->os).int_.val) {
         D = pop(ctx->lo, ctx->os);
@@ -184,8 +184,8 @@ void Astore(context *ctx,
    get value associated with key in dict */
 static
 void DAget(context *ctx,
-           object D,
-           object K)
+           Xpost_Object D,
+           Xpost_Object K)
 {
     push(ctx->lo, ctx->os, bdcget(ctx, D, K));
 }
@@ -194,9 +194,9 @@ void DAget(context *ctx,
    associate key with value in dict */
 static
 void DAAput(context *ctx,
-            object D,
-            object K,
-            object V)
+            Xpost_Object D,
+            Xpost_Object K,
+            Xpost_Object V)
 {
     bdcput(ctx, D, K, V);
 }
@@ -205,8 +205,8 @@ void DAAput(context *ctx,
    remove key and its value in dict */
 static
 void DAundef(context *ctx,
-             object D,
-             object K)
+             Xpost_Object D,
+             Xpost_Object K)
 {
     bdcundef(ctx, D, K);
 }
@@ -215,56 +215,56 @@ void DAundef(context *ctx,
    test whether key is in dict */
 static
 void DAknown(context *ctx,
-             object D,
-             object K)
+             Xpost_Object D,
+             Xpost_Object K)
 {
 #if 0
     printf("\nknown: ");
-    dumpobject(D);
+    xpost_object_dump(D);
     dumpdic(bank(ctx, D), D); puts("");
-    dumpobject(K);
+    xpost_object_dump(K);
 #endif
-    push(ctx->lo, ctx->os, consbool(dicknown(ctx, bank(ctx, D), D, K)));
+    push(ctx->lo, ctx->os, xpost_cons_bool(dicknown(ctx, bank(ctx, D), D, K)));
 }
 
 
 /* key  where  dict true -or- false
    find dict in which key is defined */
 void Awhere(context *ctx,
-            object K)
+            Xpost_Object K)
 {
     int i;
     int z = count(ctx->lo, ctx->ds);
     for (i = 0; i < z; i++) {
-        object D = top(ctx->lo, ctx->ds, i);
+        Xpost_Object D = top(ctx->lo, ctx->ds, i);
         if (dicknown(ctx, bank(ctx, D), D, K)) {
             push(ctx->lo, ctx->os, D);
-            push(ctx->lo, ctx->os, consbool(true));
+            push(ctx->lo, ctx->os, xpost_cons_bool(true));
             return;
         }
     }
-    push(ctx->lo, ctx->os, consbool(false));
+    push(ctx->lo, ctx->os, xpost_cons_bool(false));
 }
 
 /* dict1 dict2  copy  dict2
    copy contents of dict1 to dict2 */
 static
 void Dcopy(context *ctx,
-           object S,
-           object D)
+           Xpost_Object S,
+           Xpost_Object D)
 {
     int i, sz;
     mfile *mem;
     unsigned ad;
     dichead *dp;
-    object *tp;
+    Xpost_Object *tp;
     mem = bank(ctx, S);
     sz = dicmaxlength(mem, S);
     ad = adrent(mem, S.comp_.ent);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
     for (i=0; i < sz+1; i++) {
-        if (type(tp[2 * i]) != nulltype) {
+        if (xpost_object_get_type(tp[2 * i]) != nulltype) {
             bdcput(ctx, D, tp[2*i], tp[2*i+1]);
         }
     }
@@ -273,8 +273,8 @@ void Dcopy(context *ctx,
 
 static
 void DPforall (context *ctx,
-               object D,
-               object P)
+               Xpost_Object D,
+               Xpost_Object P)
 {
     mfile *mem = bank(ctx, D);
     assert(mem->base);
@@ -282,17 +282,17 @@ void DPforall (context *ctx,
     if (D.comp_.off <= D.comp_.sz) { // not finished?
         unsigned ad;
         dichead *dp;
-        object *tp;
+        Xpost_Object *tp;
         ad = adrent(mem, D.comp_.ent);
         dp = (void *)(mem->base + ad); 
         tp = (void *)(mem->base + ad + sizeof(dichead)); 
 
         for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) { // find next pair
-            if (type(tp[2 * D.comp_.off]) != nulltype) { // found
-                object k,v;
+            if (xpost_object_get_type(tp[2 * D.comp_.off]) != nulltype) { // found
+                Xpost_Object k,v;
 
                 k = tp[2 * D.comp_.off];
-                if (type(k) == extendedtype)
+                if (xpost_object_get_type(k) == extendedtype)
                     k = unextend(k);
                 v = tp[2 * D.comp_.off + 1];
                 push(ctx->lo, ctx->os, k);
@@ -302,7 +302,7 @@ void DPforall (context *ctx,
                 push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
                 //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
                 push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-                push(ctx->lo, ctx->es, cvlit(P));
+                push(ctx->lo, ctx->es, xpost_object_cvlit(P));
                 ++D.comp_.off;
                 push(ctx->lo, ctx->es, D);
 
@@ -334,14 +334,14 @@ void Zcurrentdict(context *ctx)
 static
 void Zcountdictstack(context *ctx)
 {
-    push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->ds)));
+    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, ctx->ds)));
 }
 
 /* array  dictstack  subarray
    copy dict stack into array */
 static
 void Adictstack(context *ctx,
-                object A)
+                Xpost_Object A)
 {
     int z = count(ctx->lo, ctx->ds);
     int i;
@@ -360,10 +360,10 @@ void cleardictstack(context *ctx)
 }
 
 void initopdi(context *ctx,
-              object sd)
+              Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     op = consoper(ctx, "dict", Idict, 1, 1, integertype); INSTALL;

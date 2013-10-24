@@ -3,6 +3,6 @@
 
 /* packedarray operators */
 
-void initoppa(context *ctx, object sd);
+void initoppa(context *ctx, Xpost_Object sd);
 
 #endif

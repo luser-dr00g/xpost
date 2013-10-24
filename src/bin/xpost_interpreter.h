@@ -26,7 +26,7 @@ typedef struct {
     unsigned vmmode;
     unsigned state;
     unsigned quit;
-    object currentobject;
+    Xpost_Object currentobject;
     struct opcuts opcuts;
 } context;
 
@@ -58,7 +58,7 @@ context *ctxcid(unsigned cid);
 void initcontext(context *ctx);
 void exitcontext(context *ctx);
 /*@dependent@*/
-mfile *bank(context *ctx, object o);
+mfile *bank(context *ctx, Xpost_Object o);
 
 extern int TRACE;
 

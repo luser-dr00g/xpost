@@ -37,9 +37,9 @@ typedef bool _Bool;
 
 /* convert an integertype object to a realtype object */
 static
-object promote(object o)
+Xpost_Object promote(Xpost_Object o)
 {
-    return consreal(o.int_.val);
+    return xpost_cons_real(o.int_.val);
 }
 
 /* copied from the header file for reference:
@@ -83,8 +83,8 @@ void dumpoper(context *ctx,
 {
     oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     oper op = optab[opcode];
-    mark_ nm = { nametype | FBANK, 0, op.name };
-    object str = strname(ctx, (object)nm);
+    Xpost_Object_Mark nm = { nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK, 0, op.name };
+    Xpost_Object str = strname(ctx, (Xpost_Object)nm);
     char *s = charstr(ctx, str);
     signat *sig = (void *)(ctx->gl->base + op.sigadr);
     printf("<operator %d %d:%*s %p>",
@@ -93,9 +93,9 @@ void dumpoper(context *ctx,
             (void *)sig[0].fp );
 }
 
-object operfromcode(int opcode)
+Xpost_Object operfromcode(int opcode)
 {
-    object op;
+    Xpost_Object op;
     op.mark_.tag = operatortype;
     op.mark_.pad0 = 0;
     op.mark_.padw = opcode;
@@ -110,14 +110,14 @@ object operfromcode(int opcode)
    values whose presence and types should be checked,
    there should follow 'in' number of typenames passed after 'in'.
    */
-object consoper(context *ctx,
+Xpost_Object consoper(context *ctx,
                 char *name,
                 /*@null@*/ void (*fp)(),
                 int out,
                 int in, ...)
 {
-    object nm;
-    object o;
+    Xpost_Object nm;
+    Xpost_Object o;
     int opcode;
     int i;
     unsigned si;
@@ -210,7 +210,7 @@ qword digest(context *ctx,
 
     (void)ctx;
     for (i=0; i < 8; i++) {
-        byte t = type(top(mem, stacadr, i));
+        byte t = xpost_object_get_type(top(mem, stacadr, i));
         if (t == invalidtype) break;
         a |= (qword)t << ((unsigned)i * 8);
     }
@@ -273,22 +273,22 @@ void opexec(context *ctx,
         pass = true;
         t = (void *)(ctx->gl->base + sp[i].t);
         for (j=0; j < sp[i].in; j++) {
-            object el = top(ctx->lo, ctx->os, j);
+            Xpost_Object el = top(ctx->lo, ctx->os, j);
             if (t[j] == anytype) continue;
-            if (t[j] == type(el)) continue;
+            if (t[j] == xpost_object_get_type(el)) continue;
             if (t[j] == numbertype
-                    && (type(el) == integertype
-                        || type(el) == realtype) ) continue;
+                    && (xpost_object_get_type(el) == integertype
+                        || xpost_object_get_type(el) == realtype) ) continue;
             if (t[j] == floattype) {
-                if (type(el) == integertype) {
+                if (xpost_object_get_type(el) == integertype) {
                     pot(ctx->lo, ctx->os, j, el = promote(el));
                     continue;
                 }
-                if (type(el) == realtype) continue;
+                if (xpost_object_get_type(el) == realtype) continue;
             }
             if (t[j] == proctype
-                    && type(el) == arraytype
-                    && isx(el)) continue;
+                    && xpost_object_get_type(el) == arraytype
+                    && xpost_object_is_exe(el)) continue;
             pass = false;
             err = typecheck;
             errmsg = "opexec";
@@ -308,13 +308,13 @@ call:
     if (ctx->currentobject.tag == operatortype 
             && ctx->currentobject.mark_.padw == opcode) {
         ctx->currentobject.mark_.pad0 = sp[i].in; 
-        ctx->currentobject.tag |= FOPARGSINHOLD;
+        ctx->currentobject.tag |= XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD;
     } else {
         /* Not executing current op.
            HOLD may *not* be assumed to contain currentobject's arguments.
            clear the flag.
         */
-        ctx->currentobject.tag &= ~FOPARGSINHOLD;
+        ctx->currentobject.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD;
     }
 
     holdn(ctx, ctx->lo, ctx->os, sp[i].in);
@@ -370,9 +370,9 @@ void breakhere(context *ctx)
    all initop?* functions, installing all operators */
 void initop(context *ctx)
 {
-    object op;
-    object n;
-    object sd;
+    Xpost_Object op;
+    Xpost_Object n;
+    Xpost_Object sd;
     mtab *tab;
     unsigned ent;
     oper *optab;

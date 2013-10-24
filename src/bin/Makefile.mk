@@ -15,7 +15,6 @@ src/bin/xpost_name.c \
 src/bin/xpost_stack.c \
 src/bin/xpost_save.c \
 src/bin/xpost_string.c \
-src/bin/xpost_object.c \
 src/bin/xpost_operator.c \
 src/bin/xpost_op_array.c \
 src/bin/xpost_op_boolean.c \
@@ -42,7 +41,6 @@ src/bin/xpost_log.h \
 src/bin/xpost_main.h \
 src/bin/xpost_memory.h \
 src/bin/xpost_name.h \
-src/bin/xpost_object.h \
 src/bin/xpost_op_array.h \
 src/bin/xpost_op_boolean.h \
 src/bin/xpost_op_control.h \
@@ -78,11 +76,14 @@ endif
 src_bin_itp_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 -DPACKAGE_INSTALL_DIR=\"$(prefix)/\" \
--DTESTMODULE_ITP
+-DTESTMODULE_ITP \
+-I$(top_srcdir)/src/lib
 
 src_bin_itp_CFLAGS = @XPOST_BIN_CFLAGS@
 
-src_bin_itp_LDADD = -lm
+src_bin_itp_LDADD = \
+src/lib/libxpost.la \
+-lm
 
 if HAVE_SPLINT
 splint_process = splint \

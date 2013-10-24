@@ -5,6 +5,6 @@
 
 void Zcounttomark (context *ctx);
 
-void initops(context *ctx, object sd);
+void initops(context *ctx, Xpost_Object sd);
 
 #endif

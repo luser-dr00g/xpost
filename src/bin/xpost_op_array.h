@@ -4,6 +4,6 @@
 /* array operators */
 
 void arrtomark(context *ctx);
-void initopar(context *ctx, object sd);
+void initopar(context *ctx, Xpost_Object sd);
 
 #endif

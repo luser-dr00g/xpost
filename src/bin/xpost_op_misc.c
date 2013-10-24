@@ -75,21 +75,22 @@ typedef bool _Bool;
 #include "xpost_op_misc.h"
 
 static
-object bind (context *ctx,
-             object p)
+Xpost_Object bind (context *ctx,
+             Xpost_Object p)
 {
-    object t, d;
+    Xpost_Object t, d;
     int i, j, z;
     for (i = 0; i < p.comp_.sz; i++) {
         t = barget(ctx, p, i);
-        switch(type(t)){
+        switch(xpost_object_get_type(t)){
+        default: break;
         case nametype:
             z = count(ctx->lo, ctx->ds);
             for (j = 0; j < z; j++) {
                 d = top(ctx->lo, ctx->ds, j);
                 if (dicknown(ctx, bank(ctx,d), d, t)) {
                     t = bdcget(ctx, d, t);
-                    if (type(t) == operatortype) {
+                    if (xpost_object_get_type(t) == operatortype) {
                         barput(ctx, p, i, t);
                     }
                     break;
@@ -97,18 +98,18 @@ object bind (context *ctx,
             }
             break;
         case arraytype:
-            if (isx(t)) {
+            if (xpost_object_is_exe(t)) {
                 t = bind(ctx, t);
                 barput(ctx, p, i, t);
             }
         }
     }
-    return setfaccess(p, readonly);
+    return xpost_object_set_access(p, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
 }
 
 static
 void Pbind (context *ctx,
-            object P)
+            Xpost_Object P)
 {
     push(ctx->lo, ctx->os, bind(ctx, P));
 }
@@ -124,12 +125,12 @@ void realtime (context *ctx)
 #else
         sec = time(NULL) * 1000;
 #endif
-    push(ctx->lo, ctx->os, consint(sec));
+    push(ctx->lo, ctx->os, xpost_cons_int(sec));
 }
 
 static
 void Sgetenv (context *ctx,
-              object S)
+              Xpost_Object S)
 {
     char *s;
     char *str;
@@ -147,12 +148,12 @@ void Sgetenv (context *ctx,
 
 static
 void SSputenv (context *ctx,
-              object N,
-              object S)
+              Xpost_Object N,
+              Xpost_Object S)
 {
     char *n, *s, *r;
     n = charstr(ctx, N);
-    if (type(S) == nulltype) {
+    if (xpost_object_get_type(S) == nulltype) {
         s = "";
         r = alloca(N.comp_.sz + 1);
         memcpy(r, n, N.comp_.sz);
@@ -215,10 +216,10 @@ void dumpvm (context *ctx)
 }
 
 void initopx(context *ctx,
-             object sd)
+             Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 

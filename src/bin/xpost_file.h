@@ -6,13 +6,13 @@
    for the FILE *
    */
 
-object consfile(mfile *mem, /*@NULL@*/ FILE *fp);
-object fileopen(mfile *mem, char *fn, char *mode);
-FILE *filefile(mfile *mem, object f);
-bool filestatus(mfile *mem, object f);
-long filebytesavailable(mfile *mem, object f);
-void fileclose(mfile *mem, object f);
-object fileread(mfile *mem, object f);
-void filewrite(mfile *mem, object f, object b);
+Xpost_Object consfile(mfile *mem, /*@NULL@*/ FILE *fp);
+Xpost_Object fileopen(mfile *mem, char *fn, char *mode);
+FILE *filefile(mfile *mem, Xpost_Object f);
+bool filestatus(mfile *mem, Xpost_Object f);
+long filebytesavailable(mfile *mem, Xpost_Object f);
+void fileclose(mfile *mem, Xpost_Object f);
+Xpost_Object fileread(mfile *mem, Xpost_Object f);
+void filewrite(mfile *mem, Xpost_Object f, Xpost_Object b);
 
 #endif

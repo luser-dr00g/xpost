@@ -101,137 +101,137 @@ bool mulwillover(long x,
    num1 plus num2 */
 static
 void Iadd (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
     if (addwillover(x.int_.val, y.int_.val))
-        push(ctx->lo, ctx->os, consreal((real)x.int_.val + y.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val + y.int_.val));
     else
-        push(ctx->lo, ctx->os, consint(x.int_.val + y.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val + y.int_.val));
 }
 
 static
 void Radd (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consreal(x.real_.val + y.real_.val));
+    push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val + y.real_.val));
 }
 
 /* num1 num2  div  quotient
    num1 divided by num2 */
 static
 void Rdiv (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consreal(x.real_.val / y.real_.val));
+    push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val / y.real_.val));
 }
 
 /* num1 num2  idiv  quotient
    integer divide */
 static
 void Iidiv (context *ctx,
-            object x,
-            object y)
+            Xpost_Object x,
+            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consint(x.int_.val / y.int_.val));
+    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val / y.int_.val));
 }
 
 /* num1 num2  mod  remainder
    num1 mod num2 */
 static
 void Imod (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consint(x.int_.val % y.int_.val));
+    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val % y.int_.val));
 }
 
 /* num1 num2  mul  product
    num1 times num2 */
 static
 void Imul (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
     if (mulwillover(x.int_.val, y.int_.val))
-        push(ctx->lo, ctx->os, consreal((real)x.int_.val * y.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val * y.int_.val));
     else
-        push(ctx->lo, ctx->os, consint(x.int_.val * y.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val * y.int_.val));
 }
 
 static
 void Rmul (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consreal(x.real_.val * y.real_.val));
+    push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val * y.real_.val));
 }
 
 /* num1 num2  sub  difference
    num1 minus num2 */
 static
 void Isub (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
     if (subwillunder(x.int_.val, y.int_.val))
-        push(ctx->lo, ctx->os, consreal((real)x.int_.val - y.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val - y.int_.val));
     else
-        push(ctx->lo, ctx->os, consint(x.int_.val - y.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val - y.int_.val));
 }
 
 static
 void Rsub (context *ctx,
-           object x,
-           object y)
+           Xpost_Object x,
+           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, consreal(x.real_.val - y.real_.val));
+    push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val - y.real_.val));
 }
 
 /* num1  abs  num2
    absolute value of num1 */
 static
 void Iabs (context *ctx,
-           object x)
+           Xpost_Object x)
 {
     if (x.int_.val == INT_MIN)
-        push(ctx->lo, ctx->os, consreal(- (real)INT_MIN));
+        push(ctx->lo, ctx->os, xpost_cons_real(- (real)INT_MIN));
     else
-        push(ctx->lo, ctx->os, consint(x.int_.val>0? x.int_.val: -x.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val>0? x.int_.val: -x.int_.val));
 }
 
 static
 void Rabs (context *ctx,
-           object x)
+           Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consreal(fabs(x.real_.val)));
+    push(ctx->lo, ctx->os, xpost_cons_real(fabs(x.real_.val)));
 }
 
 /* num1  neg  num2
    negative of num1 */
 static
 void Ineg (context *ctx,
-           object x)
+           Xpost_Object x)
 {
     if (x.int_.val == INT_MIN)
-        push(ctx->lo, ctx->os, consreal(- (real)INT_MIN));
+        push(ctx->lo, ctx->os, xpost_cons_real(- (real)INT_MIN));
     else
-        push(ctx->lo, ctx->os, consint(-x.int_.val));
+        push(ctx->lo, ctx->os, xpost_cons_int(-x.int_.val));
 }
 
 static
 void Rneg (context *ctx,
-           object x)
+           Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consreal(-x.real_.val));
+    push(ctx->lo, ctx->os, xpost_cons_real(-x.real_.val));
 }
 
 /* stub for integer  floor, ceiling, round, truncate */
 static
 void Istet (context *ctx,
-            object x)
+            Xpost_Object x)
 {
     push(ctx->lo, ctx->os, x);
 }
@@ -240,32 +240,32 @@ void Istet (context *ctx,
    ceiling of num1 */
 static
 void Rceiling (context *ctx,
-               object x)
+               Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consreal(ceil(x.real_.val)));
+    push(ctx->lo, ctx->os, xpost_cons_real(ceil(x.real_.val)));
 }
 
 /* num1  floor  num2
    floor of num1 */
 static
 void Rfloor (context *ctx,
-             object x)
+             Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consreal(floor(x.real_.val)));
+    push(ctx->lo, ctx->os, xpost_cons_real(floor(x.real_.val)));
 }
 
 /* num1  round  num2
    round num1 to nearest integer */
 static
 void Rround (context *ctx,
-             object x)
+             Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consreal(floor(x.real_.val + 0.5)));
+    push(ctx->lo, ctx->os, xpost_cons_real(floor(x.real_.val + 0.5)));
 #if 0
     if (x.real_.val > 0)
-        push(ctx->lo, ctx->os, consreal(round(x.real_.val)));
+        push(ctx->lo, ctx->os, xpost_cons_real(round(x.real_.val)));
     else
-        push(ctx->lo, ctx->os, consreal(rint(x.real_.val)));
+        push(ctx->lo, ctx->os, xpost_cons_real(rint(x.real_.val)));
 #endif
 }
 
@@ -273,81 +273,81 @@ void Rround (context *ctx,
    remove fractional part of num1 */
 static
 void Rtruncate (context *ctx,
-                object x)
+                Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consreal(trunc(x.real_.val)));
+    push(ctx->lo, ctx->os, xpost_cons_real(trunc(x.real_.val)));
 }
 
 /* num1  sqrt  num2
    square root of num1 */
 static
 void Rsqrt (context *ctx,
-            object x)
+            Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consreal(sqrt(x.real_.val)));
+    push(ctx->lo, ctx->os, xpost_cons_real(sqrt(x.real_.val)));
 }
 
 /* num den  atan  angle
    arctangent of num/den in degrees */
 static
 void Ratan (context *ctx,
-            object num,
-            object den)
+            Xpost_Object num,
+            Xpost_Object den)
 {
     real ang = atan2(num.real_.val * RAD_PER_DEG, den.real_.val * RAD_PER_DEG) / RAD_PER_DEG;
     if (ang < 0.0) ang += 360.0;
-    push(ctx->lo, ctx->os, consreal(ang));
+    push(ctx->lo, ctx->os, xpost_cons_real(ang));
 }
 
 /* angle  cos  real
    cosine of angle (degrees) */
 static
 void Rcos (context *ctx,
-           object x)
+           Xpost_Object x)
 {
     push(ctx->lo, ctx->os,
-            consreal(cos(RAD_PER_DEG * x.real_.val)));
+            xpost_cons_real(cos(RAD_PER_DEG * x.real_.val)));
 }
 
 /* angle  sin  real
    sine of angle (degrees) */
 static
 void Rsin (context *ctx,
-           object x)
+           Xpost_Object x)
 {
     push(ctx->lo, ctx->os,
-            consreal(sin(RAD_PER_DEG * x.real_.val)));
+            xpost_cons_real(sin(RAD_PER_DEG * x.real_.val)));
 }
 
 /* base exponent  exp  real
    raise base to exponent power */
 static
 void Rexp (context *ctx,
-           object base,
-           object expn)
+           Xpost_Object base,
+           Xpost_Object expn)
 {
     if (base.real_.val < 0)
         expn.real_.val = trunc(expn.real_.val);
     push(ctx->lo, ctx->os,
-            consreal(pow(base.real_.val, expn.real_.val)));
+            xpost_cons_real(pow(base.real_.val, expn.real_.val)));
 }
 
 /* num  ln  real
    natural logarithm of num */
 static
 void Rln (context *ctx,
-          object x)
+          Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, consreal(log(x.real_.val)));
+    push(ctx->lo, ctx->os, xpost_cons_real(log(x.real_.val)));
 }
 
 /* num  log  real
    logarithm (base 10) */
 static
 void Rlog (context *ctx,
-           object x)
+           Xpost_Object x)
 {
-    push(ctx->lo, ctx->es, consreal(log10(x.real_.val)));
+    push(ctx->lo, ctx->es, xpost_cons_real(log10(x.real_.val)));
 }
 
 /* -  rand  int
@@ -360,14 +360,14 @@ void Zrand (context *ctx)
     x = ctx->rand_next << 16;
     ctx->rand_next = ctx->rand_next * 1103515245 + 12345;
     x |= ctx->rand_next & 0xffff;
-    push(ctx->lo, ctx->es, consint(x & 0x7fffffff));
+    push(ctx->lo, ctx->es, xpost_cons_int(x & 0x7fffffff));
 }
 
 /* int  srand  -
    set random number seed */
 static
 void Isrand (context *ctx,
-             object seed)
+             Xpost_Object seed)
 {
     ctx->rand_next = seed.int_.val;
 }
@@ -377,14 +377,14 @@ void Isrand (context *ctx,
 static
 void Zrrand (context *ctx)
 {
-    push(ctx->lo, ctx->es, consint(ctx->rand_next));
+    push(ctx->lo, ctx->es, xpost_cons_int(ctx->rand_next));
 }
 
 void initopm (context *ctx,
-              object sd)
+              Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     //RAD_PER_DEG = PI / 180.0;

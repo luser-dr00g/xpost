@@ -61,9 +61,9 @@ void initsave (mfile *mem)
 
 /* push a new save object on the save stack
    this object is itself a stack (contains a stackadr) */
-object save (mfile *mem)
+Xpost_Object save (mfile *mem)
 {
-    object v;
+    Xpost_Object v;
     v.tag = savetype;
     v.save_.lev = count(mem, adrent(mem, VS));
     v.save_.stk = initstack(mem);
@@ -114,10 +114,10 @@ void stash(mfile *mem,
            unsigned ent)
 {
     mtab *tab;
-    object o;
+    Xpost_Object o;
     unsigned tlev;
     unsigned rent = ent;
-    object sav = top(mem, adrent(mem, VS), 0);
+    Xpost_Object sav = top(mem, adrent(mem, VS), 0);
 
     findtabent(mem, &tab, &rent);
     tlev = sav.save_.lev;
@@ -138,7 +138,7 @@ void stash(mfile *mem,
 void restore(mfile *mem)
 {
     unsigned v;
-    object sav;
+    Xpost_Object sav;
     mtab *stab, *ctab;
     unsigned cnt;
     unsigned sent, cent;
@@ -147,7 +147,7 @@ void restore(mfile *mem)
     sav = pop(mem, v); // save-object (stack of saverec_'s)
     cnt = count(mem, sav.save_.stk);
     while (cnt--) {
-        object rec;
+        Xpost_Object rec;
         unsigned hold;
         rec = pop(mem, sav.save_.stk);
         sent = rec.saverec_.src;
@@ -175,7 +175,7 @@ void init (mfile *mem)
     initsave(mem);
 }
 
-void show (char *msg, mfile *mem, object a)
+void show (char *msg, mfile *mem, Xpost_Object a)
 {
     printf("%s ", msg);
     printf("%d ", arrget(mem, a, 0).int_.val);
@@ -185,18 +185,18 @@ void show (char *msg, mfile *mem, object a)
 int main (void)
 {
     mfile *mem = &mf;
-    object a;
+    Xpost_Object a;
     printf("\n^test v\n");
     init(mem);
 
     a = consarr(mem, 2);
-    arrput(mem, a, 0, consint(33));
-    arrput(mem, a, 1, consint(66));
+    arrput(mem, a, 0, xpost_cons_int(33));
+    arrput(mem, a, 1, xpost_cons_int(66));
     show("initial", mem, a);
 
     //object v = 
     (void)save(mem);
-    arrput(mem, a, 0, consint(77));
+    arrput(mem, a, 0, xpost_cons_int(77));
     show("save and alter", mem, a);
 
     restore(mem);
