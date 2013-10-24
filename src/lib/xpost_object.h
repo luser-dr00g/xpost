@@ -154,10 +154,12 @@ typedef dword addr;
  */
 typedef struct
 {
-    word tag; /**< (marktype, operatortype or nametype) | flags */
+    word tag; /**< (marktype, filetype, operatortype or nametype) | flags */
     word pad0; /**< == 0 */
     dword padw; /**< payload: an unsigned integer,
                   0 in a marktype object,
+                  used for an ent (memory table index)
+                      which addresses the FILE * in a filetype object,
                   used for opcode in an operatortype object,
                   used for name index in a nametype object. */
 } Xpost_Object_Mark;
