@@ -38,7 +38,7 @@ void dumpnames(context *ctx)
 {
     unsigned stk;
     unsigned cnt, i;
-    object str;
+    Xpost_Object str;
     char *s;
 
     stk = adrent(ctx->gl, NAMES);
@@ -180,12 +180,12 @@ unsigned addname(context *ctx,
        mark_.pad0 set to zero
        mark_.padw contains NAMES stack index
  */
-object consname(context *ctx,
+Xpost_Object consname(context *ctx,
                 char *s)
 {
     unsigned u;
     unsigned t;
-    object o;
+    Xpost_Object o;
 
     u = tstsearch(ctx->lo, adrent(ctx->lo, NAMET), s);
     if (!u) {
@@ -197,11 +197,11 @@ object consname(context *ctx,
             tab = (void *)mem->base; //recalc pointer
             tab->tab[NAMET].adr = t;
             u = addname(ctx, s); // obeys vmmode
-            o.mark_.tag = nametype | (ctx->vmmode==GLOBAL?FBANK:0);
+            o.mark_.tag = nametype | (ctx->vmmode==GLOBAL?XPOST_OBJECT_TAG_DATA_FLAG_BANK:0);
             o.mark_.pad0 = 0;
             o.mark_.padw = u;
         } else {
-            o.mark_.tag = nametype | FBANK; // global
+            o.mark_.tag = nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK; // global
             o.mark_.pad0 = 0;
             o.mark_.padw = u;
         }
@@ -217,13 +217,13 @@ object consname(context *ctx,
             string <- name
     yield the string object from the name string stack
     */
-object strname(context *ctx,
-               object n)
+Xpost_Object strname(context *ctx,
+               Xpost_Object n)
 {
     mfile *mem = bank(ctx, n);
     unsigned names = adrent(mem, NAMES);
-    object str = bot(mem, names, n.mark_.padw);
-    //str.tag |= FBANK;
+    Xpost_Object str = bot(mem, names, n.mark_.padw);
+    //str.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     return str;
 }
 
@@ -264,45 +264,45 @@ int main(void) {
     ctx->vmmode = LOCAL;
 
     printf("pop ");
-    dumpobject(consname(ctx, "pop"));
+    xpost_object_dump(consname(ctx, "pop"));
     printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
     //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
 
     printf("apple ");
-    dumpobject(consname(ctx, "apple"));
-    dumpobject(consname(ctx, "apple"));
+    xpost_object_dump(consname(ctx, "apple"));
+    xpost_object_dump(consname(ctx, "apple"));
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
     //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
 
     printf("banana ");
-    dumpobject(consname(ctx, "banana"));
-    dumpobject(consname(ctx, "banana"));
+    xpost_object_dump(consname(ctx, "banana"));
+    xpost_object_dump(consname(ctx, "banana"));
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
     //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
 
     printf("currant ");
-    dumpobject(consname(ctx, "currant"));
-    dumpobject(consname(ctx, "currant"));
+    xpost_object_dump(consname(ctx, "currant"));
+    xpost_object_dump(consname(ctx, "currant"));
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
     //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
 
     printf("apple ");
-    dumpobject(consname(ctx, "apple"));
+    xpost_object_dump(consname(ctx, "apple"));
     printf("banana ");
-    dumpobject(consname(ctx, "banana"));
+    xpost_object_dump(consname(ctx, "banana"));
     printf("currant ");
-    dumpobject(consname(ctx, "currant"));
+    xpost_object_dump(consname(ctx, "currant"));
     printf("date ");
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    dumpobject(consname(ctx, "date"));
+    xpost_object_dump(consname(ctx, "date"));
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
     dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
     //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
     printf("elderberry ");
-    dumpobject(consname(ctx, "elderberry"));
+    xpost_object_dump(consname(ctx, "elderberry"));
 
     printf("pop ");
-    dumpobject(consname(ctx, "pop"));
+    xpost_object_dump(consname(ctx, "pop"));
 
     //dumpmfile(ctx->gl);
     //dumpmtab(ctx->gl, 0);

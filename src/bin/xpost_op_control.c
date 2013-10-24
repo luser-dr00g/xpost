@@ -63,15 +63,15 @@ typedef bool _Bool;
 
 static
 void Aexec (context *ctx,
-            object O)
+            Xpost_Object O)
 {
     push(ctx->lo, ctx->es, O);
 }
 
 static
 void BPif (context *ctx,
-           object B,
-           object P)
+           Xpost_Object B,
+           Xpost_Object P)
 {
     if (B.int_.val)
         push(ctx->lo, ctx->es, P);
@@ -79,9 +79,9 @@ void BPif (context *ctx,
 
 static
 void BPPifelse (context *ctx,
-                object B,
-                object Then,
-                object Else)
+                Xpost_Object B,
+                Xpost_Object Then,
+                Xpost_Object Else)
 {
     if (B.int_.val)
         push(ctx->lo, ctx->es, Then);
@@ -91,10 +91,10 @@ void BPPifelse (context *ctx,
 
 static
 void IIIPfor (context *ctx,
-              object init,
-              object incr,
-              object lim,
-              object P)
+              Xpost_Object init,
+              Xpost_Object incr,
+              Xpost_Object lim,
+              Xpost_Object P)
 {
     integer i = init.int_.val;
     integer j = incr.int_.val;
@@ -106,20 +106,20 @@ void IIIPfor (context *ctx,
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
     //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, cvlit(P));
+    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     push(ctx->lo, ctx->es, lim);
     push(ctx->lo, ctx->es, incr);
-    push(ctx->lo, ctx->es, consint(i + j));
+    push(ctx->lo, ctx->es, xpost_cons_int(i + j));
     push(ctx->lo, ctx->es, P);
     push(ctx->lo, ctx->es, init);
 }
 
 static
 void RRRPfor (context *ctx,
-              object init,
-              object incr,
-              object lim,
-              object P)
+              Xpost_Object init,
+              Xpost_Object incr,
+              Xpost_Object lim,
+              Xpost_Object P)
 {
     real i = init.real_.val;
     real j = incr.real_.val;
@@ -130,60 +130,60 @@ void RRRPfor (context *ctx,
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
     //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, cvlit(P));
+    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     push(ctx->lo, ctx->es, lim);
     push(ctx->lo, ctx->es, incr);
-    push(ctx->lo, ctx->es, consreal(i + j));
+    push(ctx->lo, ctx->es, xpost_cons_real(i + j));
     push(ctx->lo, ctx->es, P);
     push(ctx->lo, ctx->es, init);
 }
 
 static
 void IPrepeat (context *ctx,
-               object n,
-               object P)
+               Xpost_Object n,
+               Xpost_Object P)
 {
     if (n.int_.val <= 0) return;
     //push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.repeat));
     //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, cvlit(P));
-    push(ctx->lo, ctx->es, consint(n.int_.val - 1));
+    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+    push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1));
     push(ctx->lo, ctx->es, P);
 }
 
 static
 void Ploop (context *ctx,
-            object P)
+            Xpost_Object P)
 {
     //push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.loop));
     //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, cvlit(P));
+    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     push(ctx->lo, ctx->es, P);
 }
 
 static
 void Zexit (context *ctx)
 {
-    //object opfor = consoper(ctx, "for", NULL,0,0);
-    object opfor = operfromcode(ctx->opcuts.opfor);
-    //object oprepeat = consoper(ctx, "repeat", NULL,0,0);
-    object oprepeat = operfromcode(ctx->opcuts.repeat);
-    //object oploop = consoper(ctx, "loop", NULL,0,0);
-    object oploop = operfromcode(ctx->opcuts.loop);
-    //object opforall = consoper(ctx, "forall", NULL,0,0);
-    object opforall = operfromcode(ctx->opcuts.forall);
-    object x;
+    //Xpost_Object opfor = consoper(ctx, "for", NULL,0,0);
+    Xpost_Object opfor = operfromcode(ctx->opcuts.opfor);
+    //Xpost_Object oprepeat = consoper(ctx, "repeat", NULL,0,0);
+    Xpost_Object oprepeat = operfromcode(ctx->opcuts.repeat);
+    //Xpost_Object oploop = consoper(ctx, "loop", NULL,0,0);
+    Xpost_Object oploop = operfromcode(ctx->opcuts.loop);
+    //Xpost_Object opforall = consoper(ctx, "forall", NULL,0,0);
+    Xpost_Object opforall = operfromcode(ctx->opcuts.forall);
+    Xpost_Object x;
 
 #if 0
     printf("\nexit\n");
-    dumpobject(opfor);
-    dumpobject(oprepeat);
-    dumpobject(oploop);
-    dumpobject(opforall);
+    xpost_object_dump(opfor);
+    xpost_object_dump(oprepeat);
+    xpost_object_dump(oploop);
+    xpost_object_dump(opforall);
 
     dumpstack(ctx->lo, ctx->os);
     dumpstack(ctx->lo, ctx->es);
@@ -192,7 +192,7 @@ void Zexit (context *ctx)
 
     while (1) {
         x = pop(ctx->lo, ctx->es);
-        //dumpobject(x);
+        //xpost_object_dump(x);
         if ( (objcmp(ctx, x, opfor)    == 0)
           || (objcmp(ctx, x, oprepeat) == 0)
           || (objcmp(ctx, x, oploop)   == 0)
@@ -216,13 +216,13 @@ void Zexit (context *ctx)
 static
 void Zstop(context *ctx)
 {
-    object f = consbool(false);
+    Xpost_Object f = xpost_cons_bool(false);
     int c = count(ctx->lo, ctx->es);
-    object x;
+    Xpost_Object x;
     while (c--) {
         x = pop(ctx->lo, ctx->es);
         if(objcmp(ctx, f, x) == 0) {
-            push(ctx->lo, ctx->os, consbool(true));
+            push(ctx->lo, ctx->os, xpost_cons_bool(true));
             return;
         }
     }
@@ -231,21 +231,21 @@ void Zstop(context *ctx)
 
 static
 void Astopped(context *ctx,
-              object o)
+              Xpost_Object o)
 {
-    push(ctx->lo, ctx->es, consbool(false));
+    push(ctx->lo, ctx->es, xpost_cons_bool(false));
     push(ctx->lo, ctx->es, o);
 }
 
 static
 void Zcountexecstack(context *ctx)
 {
-    push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->es)));
+    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, ctx->es)));
 }
 
 static
 void Aexecstack(context *ctx,
-                object A)
+                Xpost_Object A)
 {
     int z = count(ctx->lo, ctx->es);
     int i;
@@ -263,10 +263,10 @@ void Zquit(context *ctx)
 }
 
 void initopc (context *ctx,
-              object sd)
+              Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 

@@ -27,16 +27,16 @@ typedef bool _Bool;
 /* construct a stringtype object
    with optional string value
    */
-object consstr(mfile *mem,
+Xpost_Object consstr(mfile *mem,
                unsigned sz,
                /*@NULL@*/ char *ini)
 {
     unsigned ent;
-    object o;
+    Xpost_Object o;
     //ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int), 0);
     ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype);
     if (ini) put(mem, ent, 0, sz, ini);
-    o.tag = stringtype | (unlimited << FACCESSO);
+    o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;
     o.comp_.ent = ent;
     o.comp_.off = 0;
@@ -46,14 +46,14 @@ object consstr(mfile *mem,
 /* construct a banked string object
    with optional string value
    */
-object consbst(context *ctx,
+Xpost_Object consbst(context *ctx,
                unsigned sz,
                /*@NULL@*/ char *ini)
 {
-    object s;
+    Xpost_Object s;
     s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
     if (ctx->vmmode==GLOBAL)
-        s.tag |= FBANK;
+        s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     return s;
 }
 
@@ -64,7 +64,7 @@ object consbst(context *ctx,
     */
 /*@dependent@*/
 char *charstr(context *ctx,
-              object S)
+              Xpost_Object S)
 {
     mfile *f;
     mtab *tab;
@@ -77,7 +77,7 @@ char *charstr(context *ctx,
 
 /* put a value at index into a string */
 void strput(mfile *mem,
-            object s,
+            Xpost_Object s,
             integer i,
             integer c)
 {
@@ -87,7 +87,7 @@ void strput(mfile *mem,
 
 /* put a value at index into a banked string */
 void bstput(context *ctx,
-            object s,
+            Xpost_Object s,
             integer i,
             integer c)
 {
@@ -96,7 +96,7 @@ void bstput(context *ctx,
 
 /* get a value from a string at index */
 integer strget(mfile *mem,
-               object s,
+               Xpost_Object s,
                integer i)
 {
     byte b;
@@ -106,7 +106,7 @@ integer strget(mfile *mem,
 
 /* get a value from a banked string at index */
 integer bstget(context *ctx,
-               object s,
+               Xpost_Object s,
                integer i)
 {
     return strget(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i);
@@ -121,7 +121,7 @@ mfile mem;
 
 int main (void)
 {
-    object s;
+    Xpost_Object s;
     int i;
     printf("\n^ st.c\n");
     initmem(&mem, "x.mem");

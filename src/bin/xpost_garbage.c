@@ -86,7 +86,7 @@ int marked(mfile *mem,
 
 /* recursively mark an object */
 static
-void markobject(context *ctx, mfile *mem, object o, int markall);
+void markobject(context *ctx, mfile *mem, Xpost_Object o, int markall);
 
 /* recursively mark a dictionary */
 static
@@ -96,7 +96,7 @@ void markdict(context *ctx,
         int markall)
 {
     dichead *dp = (void *)(mem->base + adr);
-    object *tp = (void *)(mem->base + adr + sizeof(dichead));
+    Xpost_Object *tp = (void *)(mem->base + adr + sizeof(dichead));
     int j;
 
     for (j=0; j < DICTABN(dp->sz); j++) {
@@ -112,7 +112,7 @@ void markarray(context *ctx,
         unsigned sz,
         int markall)
 {
-    object *op = (void *)(mem->base + adr);
+    Xpost_Object *op = (void *)(mem->base + adr);
     unsigned j;
 
     for (j=0; j < sz; j++) {
@@ -124,14 +124,15 @@ void markarray(context *ctx,
 static
 void markobject(context *ctx,
         mfile *mem,
-        object o,
+        Xpost_Object o,
         int markall)
 {
-    switch(type(o)) {
+    switch(xpost_object_get_type(o)) {
+    default: break;
 
     case arraytype:
 #ifdef DEBUG_GC
-    printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
+    printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) {
             if (markall)
@@ -147,7 +148,7 @@ void markobject(context *ctx,
 
     case dicttype:
 #ifdef DEBUG_GC
-    printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
+    printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) {
             if (markall)
@@ -163,7 +164,7 @@ void markobject(context *ctx,
 
     case stringtype:
 #ifdef DEBUG_GC
-    printf("markobject: %s %d\n", types[type(o)], o.comp_.sz);
+    printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
 #endif
         if (bank(ctx, o) != mem) {
             if (markall)
@@ -647,7 +648,7 @@ int test_garbage_collect()
 {
     init_test_garbage();
     {
-        object str;
+        Xpost_Object str;
         unsigned pre, post, sz, ret;
 
         pre = ctx->lo->used;
@@ -665,14 +666,14 @@ int test_garbage_collect()
         assert(ret >= sz);
     }
     {
-        object arr;
+        Xpost_Object arr;
         unsigned pre, post, sz, ret;
 
         pre = ctx->lo->used;
 	arr = consbar(ctx, 5);
-	barput(ctx, arr, 0, consint(12));
-	barput(ctx, arr, 1, consint(13));
-	barput(ctx, arr, 2, consint(14));
+	barput(ctx, arr, 0, xpost_cons_int(12));
+	barput(ctx, arr, 1, xpost_cons_int(13));
+	barput(ctx, arr, 2, xpost_cons_int(14));
 	barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
 	barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
 	post = ctx->lo->used;
@@ -728,33 +729,33 @@ int main(void) {
     mem = ctx->lo;
     stac = ctx->os;
 
-    push(mem, stac, consint(5));
-    push(mem, stac, consint(6));
-    push(mem, stac, consreal(7.0));
-    object ar;
+    push(mem, stac, xpost_cons_int(5));
+    push(mem, stac, xpost_cons_int(6));
+    push(mem, stac, xpost_cons_real(7.0));
+    Xpost_Object ar;
     ar = consarr(mem, 3);
     int i;
     for (i=0; i < 3; i++)
         arrput(mem, ar, i, pop(mem, stac));
     push(mem, stac, ar);                   /* array on stack */
 
-    push(mem, stac, consint(1));
-    push(mem, stac, consint(2));
-    push(mem, stac, consint(3));
+    push(mem, stac, xpost_cons_int(1));
+    push(mem, stac, xpost_cons_int(2));
+    push(mem, stac, xpost_cons_int(3));
     ar = consarr(mem, 3);
     for (i=0; i < 3; i++)
         arrput(mem, ar, i, pop(mem, stac));
-    dumpobject(ar);
+    xpost_object_dump(ar);
     /* array not on stack */
 
 #define CNT_STR(x) sizeof(x), x
     push(mem, stac, consstr(mem, CNT_STR("string on stack")));
 
-    dumpobject(consstr(mem, CNT_STR("string not on stack")));
+    xpost_object_dump(consstr(mem, CNT_STR("string not on stack")));
 
     collect(mem);
     push(mem, stac, consstr(mem, CNT_STR("string on stack")));
-    dumpobject(consstr(mem, CNT_STR("string not on stack")));
+    xpost_object_dump(consstr(mem, CNT_STR("string not on stack")));
 
     collect(mem);
     dumpmfile(mem);

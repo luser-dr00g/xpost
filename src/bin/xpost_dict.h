@@ -37,92 +37,92 @@ typedef struct {
    DICTABSZ yields the size in bytes of the table
    for a dict of size n
 */
-#define DICTABSZ(n) (DICTABN(n) * sizeof(object))
+#define DICTABSZ(n) (DICTABN(n) * sizeof(Xpost_Object))
 
-/*! \fn int objcmp(context *ctx, object l, object r)
+/*! 
    compare objects (<,=,>) :: (-(x),0,+(x))
 */
-int objcmp(context *ctx, object l, object r);
+int objcmp(context *ctx, Xpost_Object l, Xpost_Object r);
 
-/*! \fn object consdic( mfile *mem, unsigned sz)
+/*! 
    construct dictionary
    in mtab of specified mfile
 */
-object consdic(/*@dependent@*/ mfile *mem, unsigned sz);
+Xpost_Object consdic(/*@dependent@*/ mfile *mem, unsigned sz);
 
-/*! \fn object consbdc(context *ctx, unsigned sz)
+/*! 
    construct dictionary
    selected mtab with ctx->vmmode
 */
-object consbdc(context *ctx, unsigned sz);
+Xpost_Object consbdc(context *ctx, unsigned sz);
 
-/*! \fn unsigned diclength( mfile *mem, object d)
+/*! 
    investigate current number of entries in dictionary
  */
-unsigned diclength(/*@dependent@*/ mfile *mem, object d);
+unsigned diclength(/*@dependent@*/ mfile *mem, Xpost_Object d);
 
-/*! \fn unsigned dicmaxlength( mfile *mem, object d)
+/*! 
    investigate current maximum size of dictionary
  */
-unsigned dicmaxlength(/*@dependent@*/ mfile *mem, object d);
+unsigned dicmaxlength(/*@dependent@*/ mfile *mem, Xpost_Object d);
 
-/*! \fn bool dicfull( mfile *mem, object d)
+/*! 
    investigate if size == maximum size.
  */
-bool dicfull(/*@dependent@*/ mfile *mem, object d);
+bool dicfull(/*@dependent@*/ mfile *mem, Xpost_Object d);
 
-/*! \fn void dumpdic(mfile *mem, object d)
+/*! 
    print a dump of the diction contents to stdout
 */
-void dumpdic(mfile *mem, object d);
+void dumpdic(mfile *mem, Xpost_Object d);
 
-/*! \fn double doubleextended (object e)
+/*! 
    return a double value containing the truncated value from 
    an extendedtype object
 */
-double doubleextended (object e);
+double doubleextended (Xpost_Object e);
 
-/*! \fn object unextend (object e)
+/*! 
    convert an extendedtype object back to its original
    integer- or real-type object.
 */
-object unextend (object e);
+Xpost_Object unextend (Xpost_Object e);
 
-/*! \fn bool dicknown(context *ctx,  mfile *mem, object d, object k)
+/*! 
    test dictionary for key
  */
-bool dicknown(context *ctx, /*@dependent@*/ mfile *mem, object d, object k);
+bool dicknown(context *ctx, /*@dependent@*/ mfile *mem, Xpost_Object d, Xpost_Object k);
 
-/*! \fn object dicget(context *ctx,  mfile *mem, object d, object k)
+/*! 
    lookup value using key in dictionary
 */
-object dicget(context *ctx, /*@dependent@*/ mfile *mem, object d, object k);
+Xpost_Object dicget(context *ctx, /*@dependent@*/ mfile *mem, Xpost_Object d, Xpost_Object k);
 
-/*! \fn object bdcget(context *ctx, object d, object k)
+/*! 
    lookup value using key in banked dictionary
 */
-object bdcget(context *ctx, object d, object k);
+Xpost_Object bdcget(context *ctx, Xpost_Object d, Xpost_Object k);
 
-/*! \fn void dicput(context *ctx,  mfile *mem, object d, object k, object v)
+/*! 
    store key and value in dictionary
 */
-void dicput(context *ctx, /*@dependent@*/ mfile *mem, object d, object k, object v);
+void dicput(context *ctx, /*@dependent@*/ mfile *mem, Xpost_Object d, Xpost_Object k, Xpost_Object v);
 
-/*! \fn void bdcput(context *ctx, object d, object k, object v)
+/*! 
    store key and value in banked dictionary
 */
-void bdcput(context *ctx, object d, object k, object v);
+void bdcput(context *ctx, Xpost_Object d, Xpost_Object k, Xpost_Object v);
 
-/*! \fn void dicundef(context *ctx, mfile *mem, object d, object k)
+/*! 
    undefine key in dictionary
    NOT IMPLEMENTED
 */
-void dicundef(context *ctx, mfile *mem, object d, object k);
+void dicundef(context *ctx, mfile *mem, Xpost_Object d, Xpost_Object k);
 
-/*! \fn void bdcundef(context *ctx, object d, object k)
+/*! 
    undefine key in banked dictionary
    NOT IMPLEMENTED
 */
-void bdcundef(context *ctx, object d, object k);
+void bdcundef(context *ctx, Xpost_Object d, Xpost_Object k);
 
 #endif

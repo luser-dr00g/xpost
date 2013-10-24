@@ -41,23 +41,23 @@ typedef bool _Bool;
    set the current save level in the "mark" field,
    wrap it up in an object.
 */
-object consarr(mfile *mem,
+Xpost_Object consarr(mfile *mem,
                unsigned sz)
 {
     unsigned ent;
     unsigned rent;
     unsigned cnt;
     mtab *tab;
-    object o;
+    Xpost_Object o;
     unsigned i;
 
     assert(mem->base);
 
-    //unsigned ent = mtalloc(mem, 0, sz * sizeof(object), 0);
+    //unsigned ent = mtalloc(mem, 0, sz * sizeof(Xpost_Object), 0);
     if (sz == 0) {
         ent = 0;
     } else {
-        ent = gballoc(mem, (unsigned)(sz * sizeof(object)), arraytype);
+        ent = gballoc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype);
         tab = (void *)(mem->base);
         rent = ent;
         findtabent(mem, &tab, &rent);
@@ -66,11 +66,13 @@ object consarr(mfile *mem,
                 (cnt << LLEVO) | (cnt << TLEVO) );
 
         for (i = 0; i < sz; i++)
-            put(mem, ent, i, (unsigned)sizeof(object), &null);
+            put(mem, ent, i, (unsigned)sizeof(Xpost_Object), &null);
     }
 
-    //return (object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0};
-    o.tag = arraytype | (unlimited << FACCESSO);
+    //return (Xpost_Object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0};
+    o.tag = arraytype
+        | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
+                << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = (word)sz;
     o.comp_.ent = (word)ent;
     o.comp_.off = 0;
@@ -81,13 +83,13 @@ object consarr(mfile *mem,
    call consarr,
    set BANK flag.
 */
-object consbar(context *ctx,
+Xpost_Object consbar(context *ctx,
                unsigned sz)
 {
-    object a = consarr(ctx->vmmode==GLOBAL?
+    Xpost_Object a = consarr(ctx->vmmode==GLOBAL?
             ctx->gl: ctx->lo, sz);
     if (ctx->vmmode==GLOBAL)
-        a.tag |= FBANK;
+        a.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     return a;
 }
 
@@ -95,29 +97,29 @@ object consbar(context *ctx,
    call put.
 */
 void arrput(mfile *mem,
-            object a,
+            Xpost_Object a,
             integer i,
-            object o)
+            Xpost_Object o)
 {
     if (!stashed(mem, a.comp_.ent))
         stash(mem, arraytype, a.comp_.sz, a.comp_.ent);
     if (i > a.comp_.sz)
         error(rangecheck, "arrput");
-    put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(object), &o);
+    put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
 }
 
 /** Select mfile according to BANK flag,
    call arrput.
 */
 void barput(context *ctx,
-            object a,
+            Xpost_Object a,
             integer i,
-            object o)
+            Xpost_Object o)
 {
     mfile *mem = bank(ctx, a);
     if (!ignoreinvalidaccess) {
         if ( mem == ctx->gl
-                && iscomposite(o)
+                && xpost_object_is_composite(o)
                 && mem != bank(ctx, o))
             error(invalidaccess, "local value into global array");
     }
@@ -126,19 +128,19 @@ void barput(context *ctx,
 }
 
 /* call get. */
-object arrget(mfile *mem,
-              object a,
+Xpost_Object arrget(mfile *mem,
+              Xpost_Object a,
               integer i)
 {
-    object o;
-    get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(object)), &o);
+    Xpost_Object o;
+    get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
     return o;
 }
 
 /* Select mfile according to BANK flag,
    call arrget. */
-object barget(context *ctx,
-              object a,
+Xpost_Object barget(context *ctx,
+              Xpost_Object a,
               integer i)
 {
     return arrget(bank(ctx, a) /*a.tag&FBANK? ctx->gl: ctx->lo*/, a, i);
@@ -150,7 +152,7 @@ object barget(context *ctx,
    the same comp_ substructure. So this function is used everywhere
    for strings and dicts. It does not touch VM.
  */
-object arrgetinterval(object a,
+Xpost_Object arrgetinterval(Xpost_Object a,
                       integer off,
                       integer sz)
 {
@@ -182,8 +184,8 @@ int main(void) {
 
     enum { SIZE = 10 };
     printf("\n^test ar.c\n");
-    printf("allocating array occupying %zu bytes\n", SIZE*sizeof(object));
-    object a = consarr(mem, SIZE);
+    printf("allocating array occupying %zu bytes\n", SIZE*sizeof(Xpost_Object));
+    Xpost_Object a = consarr(mem, SIZE);
 
     //printf("the memory table:\n"); dumpmtab(mem, 0);
 
@@ -191,13 +193,13 @@ int main(void) {
     int i;
     for (i=0; i < SIZE; i++) {
         printf("%d ", i+1);
-        arrput(mem, a, i, consint( i+1 ));
+        arrput(mem, a, i, xpost_cons_int( i+1 ));
     }
     puts("");
 
     printf("and accessing.\n");
     for (i=0; i < SIZE; i++) {
-        object t;
+        Xpost_Object t;
         t = arrget(mem, a, i);
         printf("%d: %d\n", i, t.int_.val);
     }

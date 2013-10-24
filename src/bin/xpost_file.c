@@ -119,17 +119,17 @@ f_tmpfile(void)
    default is writable.
    eg.
     FILE *fp = fopen(...);
-    object f = readonly(consfile(fp)).
+    Xpost_Object f = readonly(consfile(fp)).
  */
-object consfile(mfile *mem,
+Xpost_Object consfile(mfile *mem,
         /*@NULL@*/ FILE *fp)
 {
-    object f;
+    Xpost_Object f;
 
 #ifdef DEBUG_FILE
     printf("consfile %p\n", fp);
 #endif
-    f.tag = filetype | (unlimited << FACCESSO);
+    f.tag = filetype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *), 0);
     f.mark_.padw = gballoc(mem, sizeof(FILE *), filetype);
     put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
@@ -230,18 +230,18 @@ done:
 
 /* check for "special" filenames,
    fallback to fopen. */
-object fileopen(mfile *mem,
+Xpost_Object fileopen(mfile *mem,
         char *fn,
         char *mode)
 {
-    object f;
+    Xpost_Object f;
     f.tag = filetype;
 
     if (strcmp(fn, "%stdin")==0) {
         if (strcmp(mode, "r")!=0) error(invalidfileaccess, "fileopen");
         f = consfile(mem, stdin);
-        f.tag &= ~FACCESS;
-        f.tag |= (readonly << FACCESSO);
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stdout")==0) {
         if (strcmp(mode, "w")!=0) error(invalidfileaccess, "fileopen");
         f = consfile(mem, stdout);
@@ -250,12 +250,12 @@ object fileopen(mfile *mem,
         f = consfile(mem, stderr);
     } else if (strcmp(fn, "%lineedit")==0) {
         f = consfile(mem, lineedit(stdin));
-        f.tag &= ~FACCESS;
-        f.tag |= (readonly << FACCESSO);
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%statementedit")==0) {
         f = consfile(mem, statementedit(stdin));
-        f.tag &= ~FACCESS;
-        f.tag |= (readonly << FACCESSO);
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else {
         FILE *fp;
 #ifdef DEBUG_FILE
@@ -271,12 +271,12 @@ object fileopen(mfile *mem,
         }
         f = consfile(mem, fp);
         if (strcmp(mode, "r")==0){
-            f.tag &= ~FACCESS;
-            f.tag |= (readonly << FACCESSO);
+            f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+            f.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
         }
     }
 
-    f.tag |= FLIT;
+    f.tag |= XPOST_OBJECT_TAG_DATA_FLAG_LIT;
     return f;
 }
 
@@ -284,7 +284,7 @@ object fileopen(mfile *mem,
            FILE* <- filetype object
    yield the FILE* from a filetype object */
 FILE *filefile(mfile *mem,
-               object f)
+               Xpost_Object f)
 {
     FILE *fp;
     get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
@@ -293,14 +293,14 @@ FILE *filefile(mfile *mem,
 
 /* make sure the FILE* is not null */
 bool filestatus(mfile *mem,
-                object f)
+                Xpost_Object f)
 {
     return filefile(mem, f) != NULL;
 }
 
 /* call fstat. */
 long filebytesavailable(mfile *mem,
-                        object f)
+                        Xpost_Object f)
 {
     int ret;
     FILE *fp;
@@ -322,7 +322,7 @@ long filebytesavailable(mfile *mem,
 /* close the file,
    NULL the FILE*. */
 void fileclose(mfile *mem,
-               object f)
+               Xpost_Object f)
 {
     FILE *fp;
 
@@ -339,18 +339,18 @@ void fileclose(mfile *mem,
 
 /* if the file is valid,
    read a byte. */
-object fileread(mfile *mem,
-                object f)
+Xpost_Object fileread(mfile *mem,
+                Xpost_Object f)
 {
     if (!filestatus(mem, f)) error(ioerror, "fileread");
-    return consint(fgetc(filefile(mem, f)));
+    return xpost_cons_int(fgetc(filefile(mem, f)));
 }
 
 /* if the file is valid,
    write a byte. */
 void filewrite(mfile *mem,
-               object f,
-               object b)
+               Xpost_Object f,
+               Xpost_Object b)
 {
     if (!filestatus(mem, f)) error(ioerror, "filewrite");
     if (fputc(b.int_.val, filefile(mem, f)) == EOF)

@@ -40,7 +40,7 @@ typedef struct oper {
     unsigned sigadr;
 } oper;
 
-enum typepat { anytype = NTYPES /*stringtype + 1*/,
+enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
     floattype, numbertype, proctype };
 
 #define MAXOPS 180
@@ -48,15 +48,15 @@ enum typepat { anytype = NTYPES /*stringtype + 1*/,
 
 void initoptab(context *ctx);
 void dumpoper(context *ctx, int opcode);
-object operfromcode(int opcode);
+Xpost_Object operfromcode(int opcode);
 
-object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
+Xpost_Object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
 
 void opexec(context *ctx, unsigned opcode);
 
 #define INSTALL \
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)), \
-    n.mark_.tag = nametype|FBANK, n.mark_.pad0 = 0, \
+    n.mark_.tag = nametype|XPOST_OBJECT_TAG_DATA_FLAG_BANK, n.mark_.pad0 = 0, \
     n.mark_.padw = optab[op.mark_.padw].name, \
     bdcput(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc

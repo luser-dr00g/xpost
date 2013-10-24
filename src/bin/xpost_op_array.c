@@ -39,8 +39,8 @@ typedef bool _Bool;
 /* helper function */
 static
 void a_copy (context *ctx,
-             object S,
-             object D)
+             Xpost_Object S,
+             Xpost_Object D)
 {
     unsigned i;
     for (i = 0; i < S.comp_.sz; i++)
@@ -51,9 +51,9 @@ void a_copy (context *ctx,
    create array of length int */
 static
 void Iarray (context *ctx,
-             object I)
+             Xpost_Object I)
 {
-    push(ctx->lo, ctx->os, cvlit(consbar(ctx, I.int_.val)));
+    push(ctx->lo, ctx->os, xpost_object_cvlit(consbar(ctx, I.int_.val)));
 }
 
 /* -  [  mark
@@ -65,7 +65,7 @@ void Iarray (context *ctx,
 void arrtomark (context *ctx)
 {
     int i;
-    object a, v;
+    Xpost_Object a, v;
     Zcounttomark(ctx);
     i = pop(ctx->lo, ctx->os).int_.val;
     a = consbar(ctx, i);
@@ -74,24 +74,24 @@ void arrtomark (context *ctx)
         barput(ctx, a, i-1, v);
     }
     (void)pop(ctx->lo, ctx->os); // pop mark
-    push(ctx->lo, ctx->os, cvlit(a));
+    push(ctx->lo, ctx->os, xpost_object_cvlit(a));
 }
 
 /* array  length  int
    number of elements in array */
 static
 void Alength (context *ctx,
-              object A)
+              Xpost_Object A)
 {
-    push(ctx->lo, ctx->os, consint(A.comp_.sz));
+    push(ctx->lo, ctx->os, xpost_cons_int(A.comp_.sz));
 }
 
 /* array index  get  any
    get array element indexed by index */
 static
 void Aget (context *ctx,
-           object A,
-           object I)
+           Xpost_Object A,
+           Xpost_Object I)
 {
     push(ctx->lo, ctx->os, barget(ctx, A, I.int_.val));
 }
@@ -100,9 +100,9 @@ void Aget (context *ctx,
    put any into array at index */
 static
 void Aput(context *ctx,
-          object A,
-          object I,
-          object O)
+          Xpost_Object A,
+          Xpost_Object I,
+          Xpost_Object O)
 {
     barput(ctx, A, I.int_.val, O);
 }
@@ -111,9 +111,9 @@ void Aput(context *ctx,
    subarray of array starting at index for count elements */
 static
 void Agetinterval (context *ctx,
-                   object A,
-                   object I,
-                   object L)
+                   Xpost_Object A,
+                   Xpost_Object I,
+                   Xpost_Object L)
 {
     push(ctx->lo, ctx->os, arrgetinterval(A, I.int_.val, L.int_.val));
 }
@@ -122,9 +122,9 @@ void Agetinterval (context *ctx,
    replace subarray of array1 starting at index by array2 */
 static
 void Aputinterval (context *ctx,
-                   object D,
-                   object I,
-                   object S)
+                   Xpost_Object D,
+                   Xpost_Object I,
+                   Xpost_Object S)
 {
     if (I.int_.val + S.comp_.sz > D.comp_.sz)
         error(rangecheck, "putinterval");
@@ -135,7 +135,7 @@ void Aputinterval (context *ctx,
    push all elements of array on stack */
 static
 void Aaload (context *ctx,
-             object A)
+             Xpost_Object A)
 {
     int i;
 
@@ -148,7 +148,7 @@ void Aaload (context *ctx,
    pop elements from stack into array */
 static
 void Aastore (context *ctx,
-              object A)
+              Xpost_Object A)
 {
     int i;
 
@@ -161,8 +161,8 @@ void Aastore (context *ctx,
    copy elements of array1 to initial subarray of array2 */
 static
 void Acopy (context *ctx,
-            object S,
-            object D)
+            Xpost_Object S,
+            Xpost_Object D)
 {
     if (D.comp_.sz < S.comp_.sz)
         error(rangecheck, "Acopy");
@@ -174,8 +174,8 @@ void Acopy (context *ctx,
    execute proc for each element of array */
 static
 void Aforall(context *ctx,
-             object A,
-             object P)
+             Xpost_Object A,
+             Xpost_Object P)
 {
     if (A.comp_.sz == 0)
         return;
@@ -185,9 +185,9 @@ void Aforall(context *ctx,
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
     //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, cvlit(P));
-    push(ctx->lo, ctx->es, cvlit(arrgetinterval(A, 1, A.comp_.sz - 1)));
-    if (isx(A)) {
+    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+    push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(A, 1, A.comp_.sz - 1)));
+    if (xpost_object_is_exe(A)) {
         //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
         push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
     }
@@ -196,10 +196,10 @@ void Aforall(context *ctx,
 }
 
 void initopar (context *ctx,
-               object sd)
+               Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     op = consoper(ctx, "array", Iarray, 1, 1,

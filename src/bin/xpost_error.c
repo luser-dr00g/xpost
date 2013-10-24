@@ -35,7 +35,7 @@ typedef bool _Bool;
 
 //#define EMITONERROR
 
-char *errorname[] = { ERRORS(AS_STR) };
+char *errorname[] = { ERRORS(XPOST_OBJECT_AS_STR) };
 
 volatile char *errormsg = "";
 
@@ -59,7 +59,7 @@ void error(unsigned err,
        if jmpbuf is not set */
     fprintf(stderr, "\nError: %s", errorname[err]);
     fprintf(stderr, "\nObject: ");
-    dumpobject(itpdata->ctab[0].currentobject);
+    xpost_object_dump(itpdata->ctab[0].currentobject);
     fprintf(stderr, "\nExtra: %s", msg);
     perror("\nlast system error:");
 
@@ -97,8 +97,8 @@ void error(unsigned err,
 void onerror(context *ctx,
         unsigned err)
 {
-    object sd;
-    object dollarerror;
+    Xpost_Object sd;
+    Xpost_Object dollarerror;
     char *errmsg; 
     stack *sp;
 
@@ -115,8 +115,8 @@ void onerror(context *ctx,
 #endif
 
     //reset stack
-    if (type(ctx->currentobject) == operatortype
-            && ctx->currentobject.tag & FOPARGSINHOLD) {
+    if (xpost_object_get_type(ctx->currentobject) == operatortype
+            && ctx->currentobject.tag & XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD) {
         int n = ctx->currentobject.mark_.pad0;
         int i;
         for (i=0; i < n; i++) {
@@ -148,7 +148,7 @@ void onerror(context *ctx,
 
     push(ctx->lo, ctx->os, ctx->currentobject);
     //printf("6\n");
-    push(ctx->lo, ctx->os, cvlit(consname(ctx, errorname[err])));
+    push(ctx->lo, ctx->os, xpost_object_cvlit(consname(ctx, errorname[err])));
     //printf("7\n");
     push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
     //printf("8\n");

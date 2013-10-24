@@ -63,7 +63,7 @@ typedef bool _Bool;
    discard top element */
 static
 void Apop (context *ctx,
-           object x)
+           Xpost_Object x)
 {
     (void)ctx;
     (void)x;
@@ -73,8 +73,8 @@ void Apop (context *ctx,
    exchange top two elements */
 static
 void AAexch (context *ctx,
-             object x,
-             object y)
+             Xpost_Object x,
+             Xpost_Object y)
 {
     push(ctx->lo, ctx->os, y);
     push(ctx->lo, ctx->os, x);
@@ -84,7 +84,7 @@ void AAexch (context *ctx,
    duplicate top element */
 static
 void Adup (context *ctx,
-           object x)
+           Xpost_Object x)
 {
     push(ctx->lo, ctx->os, x);
     push(ctx->lo, ctx->os, x);
@@ -94,7 +94,7 @@ void Adup (context *ctx,
    duplicate top n elements */
 static
 void Icopy (context *ctx,
-            object n)
+            Xpost_Object n)
 {
     int i;
     if (n.int_.val < 0) error(rangecheck, "Icopy");
@@ -107,7 +107,7 @@ void Icopy (context *ctx,
    duplicate arbitrary element */
 static
 void Iindex (context *ctx,
-             object n)
+             Xpost_Object n)
 {
     if (n.int_.val < 0) error(rangecheck, "Iindex");
     if ((unsigned)n.int_.val >= count(ctx->lo, ctx->os)) error(stackunderflow, "Iindex");
@@ -119,10 +119,10 @@ void Iindex (context *ctx,
    roll n elements j times */
 static
 void IIroll (context *ctx,
-             object N,
-             object J)
+             Xpost_Object N,
+             Xpost_Object J)
 {
-    object *t;
+    Xpost_Object *t;
     int i;
     int n = N.int_.val;
     int j = J.int_.val;
@@ -132,7 +132,7 @@ void IIroll (context *ctx,
     j %= n;
     if (j == 0) return;
     
-    t = alloca((n-j) * sizeof(object));
+    t = alloca((n-j) * sizeof(Xpost_Object));
     for (i = 0; i < n-j; i++)
         t[i] = top(ctx->lo, ctx->os, n - 1 - i);
     for (i = 0; i < j; i++)
@@ -156,7 +156,7 @@ void Zclear (context *ctx)
 static
 void Zcount (context *ctx)
 {
-    push(ctx->lo, ctx->os, consint(count(ctx->lo, ctx->os)));
+    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, ctx->os)));
 }
 
 /* -  mark  mark
@@ -168,7 +168,7 @@ void Zcount (context *ctx)
 static
 void Zcleartomark (context *ctx)
 {
-    object o;
+    Xpost_Object o;
     do {
         o = pop(ctx->lo, ctx->os);
     } while (o.tag != marktype);
@@ -183,7 +183,7 @@ void Zcounttomark (context *ctx)
     z = count(ctx->lo, ctx->os);
     for (i = 0; i < z; i++) {
         if (top(ctx->lo, ctx->os, i).tag == marktype) {
-            push(ctx->lo, ctx->os, consint(i));
+            push(ctx->lo, ctx->os, xpost_cons_int(i));
             return;
         }
     }
@@ -223,10 +223,10 @@ void Zcounttomark (context *ctx)
    */
 
 void initops(context *ctx,
-             object sd)
+             Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
     op = consoper(ctx, "pop", Apop, 0, 1, anytype); INSTALL;

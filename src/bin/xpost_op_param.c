@@ -37,7 +37,7 @@ typedef bool _Bool;
 #include "xpost_op_param.h"
 
 static
-void vmreclaim (context *ctx, object I) {
+void vmreclaim (context *ctx, Xpost_Object I) {
     switch (I.int_.val) {
     default: error(rangecheck, "invalid argument");
     case -2: /* disable automatic collection in local and global vm */
@@ -63,16 +63,16 @@ void vmstatus (context *ctx) {
     used = ctx->gl->used + ctx->lo->used;
     max = ctx->gl->max + ctx->lo->max;
 
-    push(ctx->lo, ctx->os, consint(lev));
-    push(ctx->lo, ctx->os, consint(used));
-    push(ctx->lo, ctx->os, consint(max));
+    push(ctx->lo, ctx->os, xpost_cons_int(lev));
+    push(ctx->lo, ctx->os, xpost_cons_int(used));
+    push(ctx->lo, ctx->os, xpost_cons_int(max));
 }
 
 void initopparam(context *ctx,
-             object sd)
+             Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 

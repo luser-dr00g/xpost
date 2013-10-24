@@ -68,7 +68,7 @@ void Zsave (context *ctx)
 
 static
 void Vrestore (context *ctx,
-               object V)
+               Xpost_Object V)
 {
     int z = count(ctx->lo, adrent(ctx->lo, VS));
     while(z > V.save_.lev) {
@@ -79,7 +79,7 @@ void Vrestore (context *ctx,
 
 static
 void Bsetglobal (context *ctx,
-                 object B)
+                 Xpost_Object B)
 {
     ctx->vmmode = B.int_.val? GLOBAL: LOCAL;
 }
@@ -87,22 +87,22 @@ void Bsetglobal (context *ctx,
 static
 void Zcurrentglobal (context *ctx)
 {
-    push(ctx->lo, ctx->os, consbool(ctx->vmmode==GLOBAL));
+    push(ctx->lo, ctx->os, xpost_cons_bool(ctx->vmmode==GLOBAL));
 }
 
 static
 void Agcheck (context *ctx,
-              object A)
+              Xpost_Object A)
 {
-    object r;
-    switch(type(A)) {
+    Xpost_Object r;
+    switch(xpost_object_get_type(A)) {
     default:
-            r = consbool(false); break;
+            r = xpost_cons_bool(false); break;
     case stringtype:
     case nametype:
     case dicttype:
     case arraytype:
-            r = consbool((A.tag&FBANK)!=0);
+            r = xpost_cons_bool((A.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)!=0);
     }
     push(ctx->lo, ctx->os, r);
 }
@@ -110,16 +110,16 @@ void Agcheck (context *ctx,
 static
 void Zvmstatus (context *ctx)
 {
-    push(ctx->lo, ctx->os, consint(count(ctx->lo, adrent(ctx->lo, VS))));
-    push(ctx->lo, ctx->os, consint(ctx->lo->used));
-    push(ctx->lo, ctx->os, consint(ctx->lo->max));
+    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, adrent(ctx->lo, VS))));
+    push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->used));
+    push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->max));
 }
 
 void initopv(context *ctx,
-             object sd)
+             Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 

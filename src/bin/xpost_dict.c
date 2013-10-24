@@ -78,34 +78,34 @@ typedef struct {
           -value if L < R
  */
 int objcmp(context *ctx,
-           object L,
-           object R)
+           Xpost_Object L,
+           Xpost_Object R)
 {
     // fold nearly-comparable types to comparable
-    if (type(L) != type(R)) {
-        if (type(L) == integertype && type(R) == realtype) {
-            L = consreal(L.int_.val);
+    if (xpost_object_get_type(L) != xpost_object_get_type(R)) {
+        if (xpost_object_get_type(L) == integertype && xpost_object_get_type(R) == realtype) {
+            L = xpost_cons_real(L.int_.val);
             goto cont;
         }
-        if (type(R) == integertype && type(L) == realtype) {
-            R = consreal(R.int_.val);
+        if (xpost_object_get_type(R) == integertype && xpost_object_get_type(L) == realtype) {
+            R = xpost_cons_real(R.int_.val);
             goto cont;
         }
-        if (type(L) == nametype && type(R) == stringtype) {
+        if (xpost_object_get_type(L) == nametype && xpost_object_get_type(R) == stringtype) {
             L = strname(ctx, L);
             goto cont;
         }
-        if (type(R) == nametype && type(L) == stringtype) {
+        if (xpost_object_get_type(R) == nametype && xpost_object_get_type(L) == stringtype) {
             R = strname(ctx, R);
             goto cont;
         }
-        return type(L) - type(R);
+        return xpost_object_get_type(L) - xpost_object_get_type(R);
     }
 
 cont:
-    switch (type(L)) {
+    switch (xpost_object_get_type(L)) {
         default:
-            fprintf(stderr, "unhandled type (%s) in objcmp", types[type(L)]);
+            fprintf(stderr, "unhandled type (%s) in objcmp", xpost_object_type_names[xpost_object_get_type(L)]);
             error(unregistered, "");
             return -1;
 
@@ -130,13 +130,13 @@ cont:
 
         case operatortype:  return L.mark_.padw - R.mark_.padw;
 
-        case nametype: return (L.tag&FBANK)==(R.tag&FBANK)?
+        case nametype: return (L.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)==(R.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)?
                                 (signed)(L.mark_.padw - R.mark_.padw):
-                                    (signed)((L.tag&FBANK) - (R.tag&FBANK));
+                                    (signed)((L.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK) - (R.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK));
 
         case dicttype: /*@fallthrough@*/ //return !( L.comp_.ent == R.comp_.ent );
         case arraytype: return !( L.comp_.sz == R.comp_.sz
-                                && (L.tag&FBANK) == (R.tag&FBANK)
+                                && (L.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK) == (R.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)
                                 && L.comp_.ent == R.comp_.ent
                                 && L.comp_.off == R.comp_.off ); // 0 if all eq
 
@@ -148,16 +148,16 @@ cont:
 
 /* more like scrambled eggs */
 static
-unsigned hash(object k)
+unsigned hash(Xpost_Object k)
 {
     unsigned h;
-    h = (type(k) << 1) /* ignore flags */
+    h = (xpost_object_get_type(k) << 1) /* ignore flags */
         + (k.comp_.sz << 3)
         + (k.comp_.ent << 7)
         + (k.comp_.off << 5);
 #ifdef DEBUGDIC
     printf("\nhash(");
-    dumpobject(k);
+    xpost_object_dump(k);
     printf(")=%d", h);
 #endif
     return h;
@@ -168,22 +168,22 @@ unsigned hash(object k)
    extract the "pointer" from the entity,
    Initialize a dichead in memory,
    just after the head, clear a table of pairs. */
-object consdic(mfile *mem,
+Xpost_Object consdic(mfile *mem,
                unsigned sz)
 {
     mtab *tab;
-    object d;
+    Xpost_Object d;
     unsigned rent;
     unsigned cnt;
     unsigned ad;
     dichead *dp;
-    object *tp;
+    Xpost_Object *tp;
     unsigned i;
 
     if (sz < 5) sz = 5;
 
     assert(mem->base);
-    d.tag = dicttype | (unlimited << FACCESSO);
+    d.tag = dicttype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     d.comp_.sz = sz;
     d.comp_.off = 0;
     //d.comp_.ent = mtalloc(mem, 0, sizeof(dichead) + DICTABSZ(sz), 0 );
@@ -215,18 +215,18 @@ object consdic(mfile *mem,
 /* select mfile according to vmmode,
    call consdic,
    set the BANK flag. */
-object consbdc(context *ctx,
+Xpost_Object consbdc(context *ctx,
                unsigned sz)
 {
-    object d = consdic(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
+    Xpost_Object d = consdic(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (ctx->vmmode == GLOBAL)
-        d.tag |= FBANK;
+        d.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     return d;
 }
 
 /* get the nused field from the dichead */
 unsigned diclength(mfile *mem,
-                   object d)
+                   Xpost_Object d)
 {
     dichead *dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
     return dp->nused;
@@ -234,7 +234,7 @@ unsigned diclength(mfile *mem,
 
 /* get the sz field from the dichead */
 unsigned dicmaxlength(mfile *mem,
-                      object d)
+                      Xpost_Object d)
 {
     dichead *dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
     return dp->sz;
@@ -245,15 +245,15 @@ unsigned dicmaxlength(mfile *mem,
    swap adrs in the two table slots. */
 static
 void dicgrow(context *ctx,
-             object d)
+             Xpost_Object d)
 {
     mfile *mem;
     unsigned sz;
     unsigned newsz;
     unsigned ad;
     dichead *dp;
-    object *tp;
-    object n;
+    Xpost_Object *tp;
+    Xpost_Object n;
     unsigned i;
 
     mem = bank(ctx, d);
@@ -269,7 +269,7 @@ void dicgrow(context *ctx,
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
     for ( i=0; i < sz; i++)
         //if (objcmp(ctx, tp[2*i], null) != 0) {
-        if (type(tp[2*i]) != nulltype) {
+        if (xpost_object_get_type(tp[2*i]) != nulltype) {
             dicput(ctx, mem, n, tp[2*i], tp[2*i+1]);
         }
 #ifdef DEBUGDIC
@@ -303,26 +303,26 @@ void dicgrow(context *ctx,
 
 /* is it full? (y/n) */
 bool dicfull(mfile *mem,
-             object d)
+             Xpost_Object d)
 {
     return diclength(mem, d) == dicmaxlength(mem, d);
 }
 
 /* print a dump of the dictionary data */
 void dumpdic(mfile *mem,
-             object d)
+             Xpost_Object d)
 {
     unsigned ad = adrent(mem, d.comp_.ent);
     dichead *dp = (void *)(mem->base + ad);
-    object *tp = (void *)(mem->base + ad + sizeof(dichead));
+    Xpost_Object *tp = (void *)(mem->base + ad + sizeof(dichead));
     unsigned sz = (dp->sz + 1);
     unsigned i;
 
     printf("\n");
     for (i=0; i < sz; i++) {
         printf("%d:", i);
-        if (type(tp[2*i]) != nulltype) {
-            dumpobject(tp[2*i]);
+        if (xpost_object_get_type(tp[2*i]) != nulltype) {
+            xpost_object_dump(tp[2*i]);
         }
     }
 }
@@ -332,19 +332,19 @@ void dumpdic(mfile *mem,
 //n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag
 //     in order to unextend() later.
 static
-object consextended (double d)
+Xpost_Object consextended (double d)
 {
     unsigned long long r = *(unsigned long long *)&d;
-    extended_ e;
+    Xpost_Object_Extended e;
     e.tag = extendedtype;
     e.sign_exp = (r>>52) & 0x7FF;
     e.fraction = (r>>20) & 0xFFFFFFFF;
-    return (object) e;
+    return (Xpost_Object) e;
 }
 
 /* adapter:
    double <- extendedtype object */
-double doubleextended (object e)
+double doubleextended (Xpost_Object e)
 {
     unsigned long long r;
     double d;
@@ -357,15 +357,15 @@ double doubleextended (object e)
 
 /* convert an extendedtype object to integertype or realtype 
    depending upon flag */
-object unextend (object e)
+Xpost_Object unextend (Xpost_Object e)
 {
-    object o;
+    Xpost_Object o;
     double d = doubleextended(e);
 
-    if (e.tag & EXTENDEDINT) {
-        o = consint(d);
-    } else if (e.tag & EXTENDEDREAL) {
-        o = consreal(d);
+    if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_INT) {
+        o = xpost_cons_int(d);
+    } else if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_REAL) {
+        o = xpost_cons_real(d);
     } else {
         error(unregistered, "unextend: invalid extended number object");
     }
@@ -374,10 +374,11 @@ object unextend (object e)
 
 /* make key the proper type for hashing */
 static
-object clean_key (context *ctx,
-                  object k)
+Xpost_Object clean_key (context *ctx,
+                  Xpost_Object k)
 {
-    switch(type(k)) {
+    switch(xpost_object_get_type(k)) {
+    default: break;
     case stringtype: {
         char *s = alloca(k.comp_.sz+1);
         memcpy(s, charstr(ctx, k), k.comp_.sz);
@@ -387,11 +388,11 @@ object clean_key (context *ctx,
     break;
     case integertype:
         k = consextended(k.int_.val);
-        k.tag |= EXTENDEDINT;
+        k.tag |= XPOST_OBJECT_TAG_DATA_EXTENDED_INT;
     break;
     case realtype:
         k = consextended(k.real_.val);
-        k.tag |= EXTENDEDREAL;
+        k.tag |= XPOST_OBJECT_TAG_DATA_EXTENDED_REAL;
     break;
     }
     return k;
@@ -407,14 +408,14 @@ object clean_key (context *ctx,
    returns a pointer to the desired pair (if found)), or a null-pair. */
 /*@dependent@*/ /*@null@*/
 static
-object *diclookup(context *ctx,
+Xpost_Object *diclookup(context *ctx,
         /*@dependent@*/ mfile *mem,
-        object d,
-        object k)
+        Xpost_Object d,
+        Xpost_Object k)
 {
     unsigned ad;
     dichead *dp;
-    object *tp;
+    Xpost_Object *tp;
     unsigned sz;
     unsigned h;
     unsigned i;
@@ -430,7 +431,7 @@ object *diclookup(context *ctx,
     i = h;
 #ifdef DEBUGDIC
     printf("diclookup(");
-    dumpobject(k);
+    xpost_object_dump(k);
     printf(");");
     printf("%%%d=%d",sz, h);
 #endif
@@ -448,27 +449,27 @@ object *diclookup(context *ctx,
 /* see if lookup returns a non-null pair. */
 bool dicknown(context *ctx,
         /*@dependent@*/ mfile *mem,
-        object d,
-        object k)
+        Xpost_Object d,
+        Xpost_Object k)
 {
-    object *r;
+    Xpost_Object *r;
 
     r = diclookup(ctx, mem, d, k);
     if (r == NULL) return false;
-    return type(*r) != nulltype;
+    return xpost_object_get_type(*r) != nulltype;
 }
 
 /* call diclookup,
    return the value if the key is non-null. */
-object dicget(context *ctx,
+Xpost_Object dicget(context *ctx,
         /*@dependent@*/ mfile *mem,
-        object d,
-        object k)
+        Xpost_Object d,
+        Xpost_Object k)
 {
-    object *e;
+    Xpost_Object *e;
 
     e = diclookup(ctx, mem, d, k);
-    if (e == NULL || type(e[0]) == nulltype) {
+    if (e == NULL || xpost_object_get_type(e[0]) == nulltype) {
         error(undefined, "dicget");
         return null;
     }
@@ -477,11 +478,11 @@ object dicget(context *ctx,
 
 /* select mfile according to BANK field,
    call dicget. */
-object bdcget(context *ctx,
-        object d,
-        object k)
+Xpost_Object bdcget(context *ctx,
+        Xpost_Object d,
+        Xpost_Object k)
 {
-    return dicget(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k);
+    return dicget(ctx, bank(ctx, d) /*d.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK?ctx->gl:ctx->lo*/, d, k);
 }
 
 /* save data if not save at this level,
@@ -492,11 +493,11 @@ object bdcget(context *ctx,
        update value. */
 void dicput(context *ctx,
         mfile *mem,
-        object d,
-        object k,
-        object v)
+        Xpost_Object d,
+        Xpost_Object k,
+        Xpost_Object v)
 {
-    object *e;
+    Xpost_Object *e;
     dichead *dp;
 
 retry:
@@ -508,11 +509,11 @@ retry:
         dicgrow(ctx, d);
         goto retry;
     }
-    if (type(e[0]) == invalidtype) {
+    if (xpost_object_get_type(e[0]) == invalidtype) {
         fprintf(stderr, "warning: invalidtype key in dict\n");
         e[0] = null;
     }
-    if (type(e[0]) == nulltype) {
+    if (xpost_object_get_type(e[0]) == nulltype) {
         if (dicfull(mem, d)) {
             //error("dict full");
             //grow dict!
@@ -529,32 +530,32 @@ retry:
 /* select mfile according to BANK field,
    call dicput. */
 void bdcput(context *ctx,
-        object d,
-        object k,
-        object v)
+        Xpost_Object d,
+        Xpost_Object k,
+        Xpost_Object v)
 {
     mfile *mem = bank(ctx, d);
     if (!ignoreinvalidaccess) {
         if ( mem == ctx->gl
-                && iscomposite(k)
+                && xpost_object_is_composite(k)
                 && mem != bank(ctx, k))
             error(invalidaccess, "local key into global dict");
         if ( mem == ctx->gl
-                && iscomposite(v)
+                && xpost_object_is_composite(v)
                 && mem != bank(ctx, v)) {
-            dumpobject(v);
+            xpost_object_dump(v);
             error(invalidaccess, "local value into global dict");
         }
     }
 
-    dicput(ctx, bank(ctx, d) /*d.tag&FBANK?ctx->gl:ctx->lo*/, d, k, v);
+    dicput(ctx, bank(ctx, d) /*d.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK?ctx->gl:ctx->lo*/, d, k, v);
 }
 
 /* undefine key from dict */
 void dicundef(context *ctx,
         mfile *mem,
-        object d,
-        object k)
+        Xpost_Object d,
+        Xpost_Object k)
 {
     if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
     //find slot for key
@@ -565,8 +566,8 @@ void dicundef(context *ctx,
 
 /* undefine key from banked dict */
 void bdcundef(context *ctx,
-        object d,
-        object k)
+        Xpost_Object d,
+        Xpost_Object k)
 {
     dicundef(ctx, bank(ctx, d), d, k);
 }
@@ -589,18 +590,18 @@ int main(void) {
     printf("\n^test di.c\n");
     init();
 
-    object d;
+    Xpost_Object d;
     d = consbdc(ctx, 12);
     printf("1 2 def\n");
-    bdcput(ctx, d, consint(1), consint(2));
+    bdcput(ctx, d, xpost_cons_int(1), xpost_cons_int(2));
     printf("3 4 def\n");
-    bdcput(ctx, d, consint(3), consint(4));
+    bdcput(ctx, d, xpost_cons_int(3), xpost_cons_int(4));
 
     printf("1 load =\n");
-    dumpobject(bdcget(ctx, d, consint(1)));
-    //dumpobject(bdcget(ctx, d, consint(2))); // error("undefined");
+    xpost_object_dump(bdcget(ctx, d, xpost_cons_int(1)));
+    //xpost_object_dump(bdcget(ctx, d, xpost_cons_int(2))); // error("undefined");
     printf("\n3 load =\n");
-    dumpobject(bdcget(ctx, d, consint(3)));
+    xpost_object_dump(bdcget(ctx, d, xpost_cons_int(3)));
 
 
     //dumpmfile(ctx->gl);

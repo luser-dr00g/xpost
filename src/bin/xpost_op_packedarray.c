@@ -63,38 +63,38 @@ typedef bool _Bool;
 
 static
 void packedarray (context *ctx,
-                  object n)
+                  Xpost_Object n)
 {
     int i;
-    object a, v;
+    Xpost_Object a, v;
     a = consbar(ctx, n.int_.val);
     
     for (i=n.int_.val; i > 0; i--) {
         v = pop(ctx->lo, ctx->os);
         barput(ctx, a, i-1, v);
     }
-    a = setfaccess(cvlit(a), readonly);
+    a = xpost_object_set_access(xpost_object_cvlit(a), XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
     push(ctx->lo, ctx->os, a);
 }
 
 static
 void setpacking (context *ctx,
-                 object b)
+                 Xpost_Object b)
 {
-    object sd = bot(ctx->lo, ctx->ds, 0);
+    Xpost_Object sd = bot(ctx->lo, ctx->ds, 0);
     bdcput(ctx, sd, consname(ctx, "currentpacking"), b);
 }
 
 void initoppa(context *ctx,
-              object sd)
+              Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 
     op = consoper(ctx, "packedarray", packedarray, 1, 1, integertype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "currentpacking"), consbool(false));
+    bdcput(ctx, sd, consname(ctx, "currentpacking"), xpost_cons_bool(false));
     op = consoper(ctx, "setpacking", setpacking, 0, 1, booleantype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);

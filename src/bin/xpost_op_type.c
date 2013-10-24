@@ -65,85 +65,85 @@ typedef bool _Bool;
 
 static
 void Atype(context *ctx,
-           object o)
+           Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, cvx(consname(ctx, types[type(o)])));
+    push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, xpost_object_type_names[xpost_object_get_type(o)])));
 }
 
 static
 void Acvlit(context *ctx,
-            object o)
+            Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, cvlit(o));
+    push(ctx->lo, ctx->os, xpost_object_cvlit(o));
 }
 
 static
 void Acvx(context *ctx,
-          object o)
+          Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, cvx(o));
+    push(ctx->lo, ctx->os, xpost_object_cvx(o));
 }
 
 static
 void Axcheck(context *ctx,
-             object o)
+             Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, consbool(isx(o)));
+    push(ctx->lo, ctx->os, xpost_cons_bool(xpost_object_is_exe(o)));
 }
 
 static
 void Aexecuteonly(context *ctx,
-                  object o)
+                  Xpost_Object o)
 {
-    o.tag &= ~FACCESS;
-    o.tag |= (executeonly << FACCESSO);
+    o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    o.tag |= (XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     push(ctx->lo, ctx->os, o);
 }
 
 static
 void Anoaccess(context *ctx,
-               object o)
+               Xpost_Object o)
 {
-    o.tag &= ~FACCESS;
-    o.tag |= (noaccess << FACCESSO);
+    o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    o.tag |= (XPOST_OBJECT_TAG_ACCESS_NONE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     push(ctx->lo, ctx->os, o);
 }
 
 static
 void Areadonly(context *ctx,
-               object o)
+               Xpost_Object o)
 {
-    o.tag &= ~FACCESS;
-    o.tag |= (readonly << FACCESSO);
+    o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    o.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     push(ctx->lo, ctx->os, o);
 }
 
 static
 void Archeck(context *ctx,
-             object o)
+             Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, consbool( (o.tag & FACCESS) >> FACCESSO >= readonly ));
+    push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
 }
 
 static
 void Awcheck(context *ctx,
-             object o)
+             Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, consbool( (o.tag & FACCESS) >> FACCESSO == unlimited ));
+    push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
 }
 
 static
 void Ncvi(context *ctx,
-          object n)
+          Xpost_Object n)
 {
-    if (type(n) == realtype)
-        n = consint(n.real_.val);
+    if (xpost_object_get_type(n) == realtype)
+        n = xpost_cons_int(n.real_.val);
     push(ctx->lo, ctx->os, n);
 }
 
 static
 void Scvi(context *ctx,
-          object s)
+          Xpost_Object s)
 {
     double dbl;
     long num;
@@ -164,12 +164,12 @@ void Scvi(context *ctx,
         error(limitcheck, "Scvi");
     */
 
-    push(ctx->lo, ctx->os, consint(num));
+    push(ctx->lo, ctx->os, xpost_cons_int(num));
 }
 
 static
 void Scvn(context *ctx,
-          object s)
+          Xpost_Object s)
 {
     char *t = alloca(s.comp_.sz+1);
     memcpy(t, charstr(ctx, s), s.comp_.sz);
@@ -179,16 +179,16 @@ void Scvn(context *ctx,
 
 static
 void Ncvr(context *ctx,
-          object n)
+          Xpost_Object n)
 {
-    if (type(n) == integertype)
-        n = consreal(n.int_.val);
+    if (xpost_object_get_type(n) == integertype)
+        n = xpost_cons_real(n.int_.val);
     push(ctx->lo, ctx->os, n);
 }
 
 static
 void Scvr(context *ctx,
-          object str)
+          Xpost_Object str)
 {
     double num;
     char *s = alloca(str.comp_.sz + 1);
@@ -197,7 +197,7 @@ void Scvr(context *ctx,
     num = strtod(s, NULL);
     if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
         error(limitcheck, "Scvr");
-    push(ctx->lo, ctx->os, consreal(num));
+    push(ctx->lo, ctx->os, xpost_cons_real(num));
 }
 
 static
@@ -221,12 +221,12 @@ int conv_rad(int num,
 
 static
 void NRScvrs (context *ctx,
-              object num,
-              object rad,
-              object str)
+              Xpost_Object num,
+              Xpost_Object rad,
+              Xpost_Object str)
 {
     int r, n;
-    if (type(num) == realtype) num = consint(num.real_.val);
+    if (xpost_object_get_type(num) == realtype) num = xpost_cons_int(num.real_.val);
     r = rad.int_.val;
     if (r < 2 || r > 36) error(rangecheck, "NRScvrs");
     n = conv_rad(num.int_.val, r, charstr(ctx, str), str.comp_.sz);
@@ -298,8 +298,8 @@ int conv_real (real num,
 
 static
 void AScvs (context *ctx,
-            object any,
-            object str)
+            Xpost_Object any,
+            Xpost_Object str)
 {
     char nostringval[] = "-nostringval-";
     char strue[] = "true";
@@ -307,7 +307,7 @@ void AScvs (context *ctx,
     char smark[] = "-mark-";
     int n;
 
-    switch(type(any)) {
+    switch(xpost_object_get_type(any)) {
     default:
         if (str.comp_.sz < sizeof(nostringval)-1) error(rangecheck, "AScvs");
         memcpy(charstr(ctx, str), nostringval, sizeof(nostringval)-1);
@@ -358,7 +358,7 @@ void AScvs (context *ctx,
         {
             oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
             oper op = optab[any.mark_.padw];
-            mark_ nm = { nametype | FBANK, 0, op.name };
+            Xpost_Object_Mark nm = { nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK, 0, op.name };
             any.mark_ = nm;
         }
         /*@fallthrough@*/
@@ -376,10 +376,10 @@ void AScvs (context *ctx,
 }
 
 void initopt (context *ctx,
-              object sd)
+              Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
     assert(ctx->gl->base);
     optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
 

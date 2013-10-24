@@ -75,10 +75,10 @@ typedef bool _Bool;
 
 static
 void Sfile (context *ctx,
-            object fn,
-            object mode)
+            Xpost_Object fn,
+            Xpost_Object mode)
 {
-    object f;
+    Xpost_Object f;
     char *cfn, *cmode;
     cfn = alloca(fn.comp_.sz + 1);
     memcpy(cfn, charstr(ctx, fn), fn.comp_.sz);
@@ -88,37 +88,37 @@ void Sfile (context *ctx,
     cmode[mode.comp_.sz] = '\0';
 
     f = fileopen(ctx->lo, cfn, cmode);
-    push(ctx->lo, ctx->os, cvlit(f));
+    push(ctx->lo, ctx->os, xpost_object_cvlit(f));
 }
 
 static
 void Fclosefile (context *ctx,
-                 object f)
+                 Xpost_Object f)
 {
     fileclose(ctx->lo, f);
 }
 
 static
 void Fread (context *ctx,
-            object f)
+            Xpost_Object f)
 {
-    object b;
-    if (!isreadable(f)) error(invalidaccess, "Fread");
+    Xpost_Object b;
+    if (!xpost_object_is_readable(f)) error(invalidaccess, "Fread");
     b = fileread(ctx->lo, f);
     if (b.int_.val != EOF) {
         push(ctx->lo, ctx->os, b);
-        push(ctx->lo, ctx->os, consbool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(true));
     } else {
-        push(ctx->lo, ctx->os, consbool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(false));
     }
 }
 
 static
 void Fwrite (context *ctx,
-             object f,
-             object i)
+             Xpost_Object f,
+             Xpost_Object i)
 {
-    if (!iswriteable(f)) error(invalidaccess, "Fwrite");
+    if (!xpost_object_is_writeable(f)) error(invalidaccess, "Fwrite");
     filewrite(ctx->lo, f, i);
 }
 
@@ -126,8 +126,8 @@ char *hex = "0123456789" "ABCDEF" "abcdef";
 
 static
 void Freadhexstring (context *ctx,
-                     object F,
-                     object S)
+                     Xpost_Object F,
+                     Xpost_Object S)
 {
     int n;
     int c[2];
@@ -135,7 +135,7 @@ void Freadhexstring (context *ctx,
     FILE *f;
     char *s;
     if (!filestatus(ctx->lo, F)) error(ioerror, "Freadhexstring");
-    if (!isreadable(F)) error(invalidaccess, "Freadhexstring");
+    if (!xpost_object_is_readable(F)) error(invalidaccess, "Freadhexstring");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
 
@@ -157,19 +157,19 @@ void Freadhexstring (context *ctx,
     }
     S.comp_.sz = n;
     push(ctx->lo, ctx->os, S);
-    push(ctx->lo, ctx->os, consbool(!eof));
+    push(ctx->lo, ctx->os, xpost_cons_bool(!eof));
 }
 
 static
 void Fwritehexstring (context *ctx,
-                      object F,
-                      object S)
+                      Xpost_Object F,
+                      Xpost_Object S)
 {
     int n;
     FILE *f;
     char *s;
     if (!filestatus(ctx->lo, F)) error(ioerror, "Fwritehexstring");
-    if (!iswriteable(F)) error(invalidaccess, "Fwritehexstring");
+    if (!xpost_object_is_writeable(F)) error(invalidaccess, "Fwritehexstring");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
 
@@ -181,36 +181,36 @@ void Fwritehexstring (context *ctx,
 
 static
 void Freadstring (context *ctx,
-                  object F,
-                  object S)
+                  Xpost_Object F,
+                  Xpost_Object S)
 {
     int n;
     FILE *f;
     char *s;
     if (!filestatus(ctx->lo, F)) error(ioerror, "Freadstring");
-    if (!isreadable(F)) error(invalidaccess, "Freadstring");
+    if (!xpost_object_is_readable(F)) error(invalidaccess, "Freadstring");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
     n = fread(s, 1, S.comp_.sz, f);
     if (n == S.comp_.sz) {
         push(ctx->lo, ctx->os, S);
-        push(ctx->lo, ctx->os, consbool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(true));
     } else {
         S.comp_.sz = n;
         push(ctx->lo, ctx->os, S);
-        push(ctx->lo, ctx->os, consbool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(false));
     }
 }
 
 static
 void Fwritestring (context *ctx,
-                   object F,
-                   object S)
+                   Xpost_Object F,
+                   Xpost_Object S)
 {
     FILE *f;
     char *s;
     if (!filestatus(ctx->lo, F)) error(ioerror, "Fwritestring");
-    if (!iswriteable(F)) error(invalidaccess, "Fwritestring");
+    if (!xpost_object_is_writeable(F)) error(invalidaccess, "Fwritestring");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
     if (fwrite(s, 1, S.comp_.sz, f) != S.comp_.sz)
@@ -219,14 +219,14 @@ void Fwritestring (context *ctx,
 
 static
 void Freadline (context *ctx,
-                object F,
-                object S)
+                Xpost_Object F,
+                Xpost_Object S)
 {
     FILE *f;
     char *s;
     int n, c = ' ';
     if (!filestatus(ctx->lo, F)) error(ioerror, "Freadline");
-    if (!iswriteable(F)) error(invalidaccess, "Freadline");
+    if (!xpost_object_is_writeable(F)) error(invalidaccess, "Freadline");
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
     for (n=0; n < S.comp_.sz; n++) {
@@ -237,14 +237,14 @@ void Freadline (context *ctx,
     if (n == S.comp_.sz && c != '\n') error(rangecheck, "Freadline");
     S.comp_.sz = n;
     push(ctx->lo, ctx->os, S);
-    push(ctx->lo, ctx->os, consbool(c != EOF));
+    push(ctx->lo, ctx->os, xpost_cons_bool(c != EOF));
 }
 
 static
 void Fbytesavailable (context *ctx,
-                      object F)
+                      Xpost_Object F)
 {
-    push(ctx->lo, ctx->os, consint(filebytesavailable(ctx->lo, F)));
+    push(ctx->lo, ctx->os, xpost_cons_int(filebytesavailable(ctx->lo, F)));
 }
 
 static
@@ -258,13 +258,13 @@ void Zflush (context *ctx)
 
 static
 void Fflushfile (context *ctx,
-                 object F)
+                 Xpost_Object F)
 {
     int ret;
     FILE *f;
     if (!filestatus(ctx->lo, F)) return;
     f = filefile(ctx->lo, F);
-    if (iswriteable(F)) {
+    if (xpost_object_is_writeable(F)) {
         ret = fflush(f);
         if (ret != 0) error(ioerror, "fflush did not return 0");
     } else {
@@ -278,7 +278,7 @@ void Fflushfile (context *ctx,
 
 static
 void Fresetfile (context *ctx,
-                 object F)
+                 Xpost_Object F)
 {
     FILE *f;
     if (!filestatus(ctx->lo, F)) return;
@@ -290,9 +290,9 @@ void Fresetfile (context *ctx,
 
 static
 void Fstatus (context *ctx,
-              object F)
+              Xpost_Object F)
 {
-    push(ctx->lo, ctx->os, consbool(filestatus(ctx->lo, F)));
+    push(ctx->lo, ctx->os, xpost_cons_bool(filestatus(ctx->lo, F)));
 }
 
 static
@@ -300,10 +300,10 @@ void Zcurrentfile (context *ctx)
 {
     int z = count(ctx->lo, ctx->es);
     int i;
-    object o;
+    Xpost_Object o;
     for (i=0; i<z; i++) {
         o = top(ctx->lo, ctx->es, i);
-        if (type(o) == filetype) {
+        if (xpost_object_get_type(o) == filetype) {
             push(ctx->lo, ctx->os, o);
             return;
         }
@@ -313,7 +313,7 @@ void Zcurrentfile (context *ctx)
 
 static
 void deletefile (context *ctx,
-                 object S)
+                 Xpost_Object S)
 {
     char *s;
     int ret;
@@ -328,8 +328,8 @@ void deletefile (context *ctx,
 
 static
 void renamefile (context *ctx,
-                 object Old,
-                 object New)
+                 Xpost_Object Old,
+                 Xpost_Object New)
 {
     char *old, *new;
     int ret;
@@ -347,9 +347,9 @@ void renamefile (context *ctx,
 
 static
 void contfilenameforall (context *ctx,
-                         object oglob,
-                         object Proc,
-                         object Scr)
+                         Xpost_Object oglob,
+                         Xpost_Object Proc,
+                         Xpost_Object Scr)
 {
     glob_t *globbuf;
     char *str;
@@ -362,7 +362,7 @@ void contfilenameforall (context *ctx,
         push(ctx->lo, ctx->es, Scr);
         //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
         push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-        push(ctx->lo, ctx->es, cvlit(Proc));
+        push(ctx->lo, ctx->es, xpost_object_cvlit(Proc));
         ++oglob.glob_.off;
         push(ctx->lo, ctx->es, oglob);
 
@@ -382,13 +382,13 @@ void contfilenameforall (context *ctx,
 
 static
 void filenameforall (context *ctx,
-                     object Tmp,
-                     object Proc,
-                     object Scr)
+                     Xpost_Object Tmp,
+                     Xpost_Object Proc,
+                     Xpost_Object Scr)
 {
     char *tmp;
     glob_t *globbuf;
-    object oglob;
+    Xpost_Object oglob;
     int ret;
 
     tmp = charstr(ctx, Tmp);
@@ -401,14 +401,14 @@ void filenameforall (context *ctx,
     oglob.glob_.off = 0;
     oglob.glob_.ptr = globbuf;
 
-    contfilenameforall(ctx, oglob, Proc, cvlit(Scr));
+    contfilenameforall(ctx, oglob, Proc, xpost_object_cvlit(Scr));
 }
 
 //#endif
 
 static
 void Sprint (context *ctx,
-             object S)
+             Xpost_Object S)
 {
     size_t ret;
     char *s;
@@ -420,7 +420,7 @@ void Sprint (context *ctx,
 
 static
 void Becho (context *ctx,
-            object b)
+            Xpost_Object b)
 {
     (void)ctx;
     if (b.int_.val)
@@ -430,10 +430,10 @@ void Becho (context *ctx,
 }
 
 void initopf (context *ctx,
-              object sd)
+              Xpost_Object sd)
 {
     oper *optab;
-    object n,op;
+    Xpost_Object n,op;
 
     assert(ctx->gl->base);
 

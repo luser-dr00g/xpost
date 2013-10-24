@@ -5,7 +5,7 @@
 
 extern int DEBUGLOAD;
 
-void Aload(context *ctx, object K);
-void initopdi(context *ctx, object sd);
+void Aload(context *ctx, Xpost_Object K);
+void initopdi(context *ctx, Xpost_Object sd);
 
 #endif

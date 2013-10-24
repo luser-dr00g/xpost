@@ -237,7 +237,7 @@ void initcontext(context *ctx)
     initop(ctx); /* populate the optab (and systemdict) with operators */
 
     {
-        object gd; //globaldict
+        Xpost_Object gd; //globaldict
         gd = consbdc(ctx, 100);
         bdcput(ctx, bot(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
         push(ctx->lo, ctx->ds, gd);
@@ -248,7 +248,7 @@ void initcontext(context *ctx)
     (void)consname(ctx, "interest"); /* middle of the start */
     (void)consname(ctx, "solitaire"); /* middle of the end */
     {
-        object ud; //userdict
+        Xpost_Object ud; //userdict
         ud = consbdc(ctx, 100);
         bdcput(ctx, ud, consname(ctx, "userdict"), ud);
         push(ctx->lo, ctx->ds, ud);
@@ -337,9 +337,9 @@ void exititp(itp *itpptr)
 /* return the global or local memory file for the composite object */
 /*@dependent@*/
 mfile *bank(context *ctx,
-            object o)
+            Xpost_Object o)
 {
-    return o.tag&FBANK? ctx->gl : ctx->lo;
+    return o.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK? ctx->gl : ctx->lo;
 }
 
 
@@ -373,7 +373,7 @@ void evalpush(context *ctx)
 static
 void evalload(context *ctx)
 {
-    object s = strname(ctx, top(ctx->lo, ctx->es, 0));
+    Xpost_Object s = strname(ctx, top(ctx->lo, ctx->es, 0));
     if (TRACE)
         printf("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
 
@@ -382,7 +382,7 @@ void evalload(context *ctx)
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
     opexec(ctx, ctx->opcuts.load);
-    if (isx(top(ctx->lo, ctx->os, 0))) {
+    if (xpost_object_is_exe(top(ctx->lo, ctx->os, 0))) {
         push(ctx->lo, ctx->es,
                 pop(ctx->lo, ctx->os));
     }
@@ -392,7 +392,7 @@ void evalload(context *ctx)
 static
 void evaloperator(context *ctx)
 {
-    object op = pop(ctx->lo, ctx->es);
+    Xpost_Object op = pop(ctx->lo, ctx->es);
 
     if (TRACE)
         dumpoper(ctx, op.mark_.padw);
@@ -403,8 +403,8 @@ void evaloperator(context *ctx)
 static
 void evalarray(context *ctx)
 {
-    object a = pop(ctx->lo, ctx->es);
-    object b;
+    Xpost_Object a = pop(ctx->lo, ctx->es);
+    Xpost_Object b;
 
     switch (a.comp_.sz) {
     default /* > 1 */:
@@ -412,7 +412,7 @@ void evalarray(context *ctx)
         /*@fallthrough@*/
     case 1:
         b = barget(ctx, a, 0);
-        if (type(b) == arraytype)
+        if (xpost_object_get_type(b) == arraytype)
             push(ctx->lo, ctx->os, b);
         else
             push(ctx->lo, ctx->es, b);
@@ -425,7 +425,7 @@ void evalarray(context *ctx)
 static
 void evalstring(context *ctx)
 {
-    object b,t,s;
+    Xpost_Object b,t,s;
 
     s = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, s);
@@ -437,7 +437,7 @@ void evalstring(context *ctx)
         t = pop(ctx->lo, ctx->os);
         s = pop(ctx->lo, ctx->os);
         push(ctx->lo, ctx->es, s);
-        push(ctx->lo, type(t)==arraytype? ctx->os: ctx->es, t);
+        push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
     }
 }
 
@@ -445,7 +445,7 @@ void evalstring(context *ctx)
 static
 void evalfile(context *ctx)
 {
-    object b,f,t;
+    Xpost_Object b,f,t;
 
     f = pop(ctx->lo, ctx->es);
     push(ctx->lo, ctx->os, f);
@@ -456,7 +456,7 @@ void evalfile(context *ctx)
     if (b.int_.val) {
         t = pop(ctx->lo, ctx->os);
         push(ctx->lo, ctx->es, f);
-        push(ctx->lo, type(t)==arraytype? ctx->os: ctx->es, t);
+        push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
     } else {
 		fileclose(ctx->lo, f);
 	}
@@ -479,7 +479,7 @@ evalfunc *evalcontext = evalpush;
 evalfunc *evalname = evalload;
 
 /* install the evaltype functions (possibly via pointers) in the jump table */
-evalfunc *evaltype[NTYPES + 1];
+evalfunc *evaltype[XPOST_OBJECT_NTYPES + 1];
 #define AS_EVALINIT(_) evaltype[ _ ## type ] = eval ## _ ;
 
 /* use above macro to initialize function table
@@ -488,13 +488,13 @@ evalfunc *evaltype[NTYPES + 1];
 static
 void initevaltype(void)
 {
-    TYPES(AS_EVALINIT)
+    XPOST_OBJECT_TYPES(AS_EVALINIT)
 }
 
 /* one iteration of the central loop */
 void eval(context *ctx)
 {
-    object t = top(ctx->lo, ctx->es, 0);
+    Xpost_Object t = top(ctx->lo, ctx->es, 0);
 
     ctx->currentobject = t;
     assert(ctx);
@@ -506,7 +506,7 @@ void eval(context *ctx)
     if (TRACE) {
         printf("\neval\n");
         printf("Executing: ");
-        dumpobject(t);
+        xpost_object_dump(t);
         printf("\n");
         printf("Stack: ");
         dumpstack(ctx->lo, ctx->os);
@@ -519,8 +519,8 @@ void eval(context *ctx)
         printf("\n");
     }
 
-    if ( isx(t) ) /* if executable */
-        evaltype[type(t)](ctx);
+    if ( xpost_object_is_exe(t) ) /* if executable */
+        evaltype[xpost_object_get_type(t)](ctx);
     else
         evalpush(ctx);
 }
@@ -571,7 +571,7 @@ void initalldata(void)
     initevaltype();
 
     /* allocate the top-level itpdata data structure. */
-    null = cvlit(null);
+    null = xpost_object_cvlit(null);
     itpdata = malloc(sizeof*itpdata);
     if (!itpdata) error(unregistered, "itpdata=malloc failed");
     memset(itpdata, 0, sizeof*itpdata);
@@ -588,20 +588,20 @@ void initalldata(void)
     ctx = &itpdata->ctab[0];
 }
 
-void setdatadir(context *ctx, object sd)
+void setdatadir(context *ctx, Xpost_Object sd)
 {
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
 	if (is_installed) {
 		bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
-            cvlit(consbst(ctx,
+            xpost_object_cvlit(consbst(ctx,
 					CNT_STR(PACKAGE_DATA_DIR))));
 		bdcput(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
-			cvlit(consbst(ctx,
+			xpost_object_cvlit(consbst(ctx,
 					CNT_STR(PACKAGE_INSTALL_DIR))));
 	} 
 	bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
-			cvlit(consbst(ctx,
+			xpost_object_cvlit(consbst(ctx,
 					strlen(exedir), exedir)));
     ctx->vmmode = LOCAL;
 }
@@ -615,7 +615,7 @@ void loadinitps(context *ctx)
 #ifndef S_SPLINT_S
 	if (is_installed)
 		push(ctx->lo, ctx->es,
-			cvx(consbst(ctx,
+			xpost_object_cvx(consbst(ctx,
              CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
 	else {
 		char buf[1024];
@@ -623,7 +623,7 @@ void loadinitps(context *ctx)
 				"(%s/../../data/init.ps) (r) file cvx exec",
 				exedir);
 		push(ctx->lo, ctx->es,
-			cvx(consbst(ctx,
+			xpost_object_cvx(consbst(ctx,
 					strlen(buf), buf)));
 	}
 #endif
@@ -631,7 +631,7 @@ void loadinitps(context *ctx)
     mainloop(ctx);
 }
 
-void copyudtosd(context *ctx, object ud, object sd)
+void copyudtosd(context *ctx, Xpost_Object ud, Xpost_Object sd)
 {
     /* copy userdict names to systemdict
         Problem: This is clearly an invalidaccess,
@@ -648,7 +648,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 
 void createitp()
 {
-    object sd, ud;
+    Xpost_Object sd, ud;
 
     test_memory();
     test_garbage_collect();
@@ -674,21 +674,21 @@ ignoreinvalidaccess = 1;
 ignoreinvalidaccess = 0;
 
     /* make systemdict readonly */
-    bdcput(ctx, sd, consname(ctx, "systemdict"), setfaccess(sd,readonly));
-    tob(ctx->lo, ctx->ds, 0, setfaccess(sd, readonly));
+    bdcput(ctx, sd, consname(ctx, "systemdict"), xpost_object_set_access(sd,XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    tob(ctx->lo, ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
 }
 
 
 void runitp(void)
 {
-    object gsav, lsav;
+    Xpost_Object gsav, lsav;
     int glev, llev;
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0)); 
         /* `start` proc defined in init.ps */
-    push(ctx->lo, ctx->es, cvx(consname(ctx, "start")));
+    push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "start")));
 
     gsav = save(ctx->gl);
     lsav = save(ctx->lo);

@@ -35,7 +35,7 @@ typedef bool _Bool;
 typedef struct {
     unsigned nextseg;
     unsigned top;
-    object data[STACKSEGSZ];
+    Xpost_Object data[STACKSEGSZ];
 } stack;
 */
 
@@ -61,7 +61,7 @@ void dumpstack(mfile *mem,
     while (1) {
         for (i=0; i < s->top; i++) {
             printf("%d:", a++);
-            dumpobject(s->data[i]);
+            xpost_object_dump(s->data[i]);
         }
         if (i != STACKSEGSZ) break;
         s = (void *)(mem->base + s->nextseg);
@@ -99,7 +99,7 @@ unsigned count(mfile *mem,
 /* push an object on the stack */
 void push(mfile *mem,
           unsigned stackadr,
-          object o)
+          Xpost_Object o)
 {
     unsigned newst;
     unsigned stadr;
@@ -127,7 +127,7 @@ void push(mfile *mem,
 
 
 /* index the stack from top-down */
-object top(mfile *mem,
+Xpost_Object top(mfile *mem,
            unsigned stacadr,
            integer i)
 {
@@ -141,14 +141,14 @@ object top(mfile *mem,
 void pot (mfile *mem,
           unsigned stacadr,
           integer i,
-          object o)
+          Xpost_Object o)
 {
     int cnt = count(mem, stacadr);
     tob(mem, stacadr, cnt - 1 - i, o);
 }
 
 /* index from bottom up */
-object bot (mfile *mem,
+Xpost_Object bot (mfile *mem,
             unsigned stacadr,
             integer i)
 {
@@ -167,7 +167,7 @@ object bot (mfile *mem,
 void tob (mfile *mem,
           unsigned stacadr,
           integer i,
-          object o)
+          Xpost_Object o)
 {
     stack *s = (void *)(mem->base + stacadr);
 
@@ -181,7 +181,7 @@ void tob (mfile *mem,
 }
 
 /* pop an object off the stack, return object */
-object pop (mfile *mem,
+Xpost_Object pop (mfile *mem,
             unsigned stackadr)
 {
     stack *s = (void *)(mem->base + stackadr);
@@ -230,10 +230,10 @@ int main()
     printf("\n^test s.c\n");
     printf("test stack by reversing a sequence\n");
     //object a = { .int_.val = 2 }, b = ( .int_.val = 12 }, c = { .int_.val = 0xF00 };
-    object a = consint(2);
-    object b = consint(12);
-    object c = consint(0xF00);
-    object x = a, y = b, z = c;
+    Xpost_Object a = xpost_cons_int(2);
+    Xpost_Object b = xpost_cons_int(12);
+    Xpost_Object c = xpost_cons_int(0xF00);
+    Xpost_Object x = a, y = b, z = c;
     printf("x = %d, y = %d, z = %d\n", x.int_.val, y.int_.val, z.int_.val);
 
     push(&mem, s, a);
@@ -254,9 +254,9 @@ int main()
     printf("bot(1): %d\n", bot(&mem, t, 1).int_.val);
     printf("bot(2): %d\n", bot(&mem, t, 2).int_.val);
     printf("tob(2, 55)\n");
-    tob(&mem, t, 2, consint(55));
+    tob(&mem, t, 2, xpost_cons_int(55));
     printf("pot(1, 37)\n");
-    pot(&mem, t, 1, consint(37));
+    pot(&mem, t, 1, xpost_cons_int(37));
 
     x = pop(&mem, t); /* x = a */
     y = pop(&mem, t); /* y = b */

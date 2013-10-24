@@ -16,7 +16,7 @@ typedef struct tst {
 
 void dumpnames(context *ctx);
 void initnames(context *ctx);
-object consname(context *ctx, char *s);
-object strname(context *ctx, object n);
+Xpost_Object consname(context *ctx, char *s);
+Xpost_Object strname(context *ctx, Xpost_Object n);
 
 #endif
