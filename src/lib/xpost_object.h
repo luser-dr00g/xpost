@@ -110,6 +110,9 @@ typedef enum
     XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY, /**< WRITE= no,  READ= no,  EXEC= yes  */
     XPOST_OBJECT_TAG_ACCESS_READ_ONLY,    /**< WRITE= no,  READ= yes, EXEC= yes, files: READ  */
     XPOST_OBJECT_TAG_ACCESS_UNLIMITED,    /**< WRITE= yes, READ= yes, EXEC= yes, files: WRITE */
+
+    XPOST_OBJECT_TAG_ACCESS_FILE_WRITE = 1, /**< file is writeable */
+    XPOST_OBJECT_TAG_ACCESS_FILE_READ  = 2, /**< file is readable */
 } Xpost_Object_Tag_Access;
 
 
