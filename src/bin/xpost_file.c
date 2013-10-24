@@ -103,10 +103,10 @@ f_tmpfile(void)
 
 
 /* filetype objects use a slightly different interpretation
-   of the access flags.
-   'unlimited' designates a writable file
-   'readonly' designates a readable file
-   The only oddity here is that 'unlimited' means "not readable".
+   of the access field.
+   It uses two flags rather than a 2-bit number.
+   XPOST_OBJECT_TAG_ACCESS_FLAG_WRITE designates a writable file
+   XPOST_OBJECT_TAG_ACCESS_FLAG_READ designates a readable file
    */
 
 /* construct a file object.
@@ -129,7 +129,7 @@ Xpost_Object consfile(mfile *mem,
 #ifdef DEBUG_FILE
     printf("consfile %p\n", fp);
 #endif
-    f.tag = filetype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
     //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *), 0);
     f.mark_.padw = gballoc(mem, sizeof(FILE *), filetype);
     put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
@@ -241,21 +241,23 @@ Xpost_Object fileopen(mfile *mem,
         if (strcmp(mode, "r")!=0) error(invalidfileaccess, "fileopen");
         f = consfile(mem, stdin);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-        f.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stdout")==0) {
         if (strcmp(mode, "w")!=0) error(invalidfileaccess, "fileopen");
         f = consfile(mem, stdout);
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stderr")==0) {
         if (strcmp(mode, "w")!=0) error(invalidfileaccess, "fileopen");
         f = consfile(mem, stderr);
     } else if (strcmp(fn, "%lineedit")==0) {
         f = consfile(mem, lineedit(stdin));
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-        f.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%statementedit")==0) {
         f = consfile(mem, statementedit(stdin));
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-        f.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else {
         FILE *fp;
 #ifdef DEBUG_FILE
@@ -272,8 +274,19 @@ Xpost_Object fileopen(mfile *mem,
         f = consfile(mem, fp);
         if (strcmp(mode, "r")==0){
             f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-            f.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+            f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        } else if (strcmp(mode, "r+")==0){
+            f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+            f.tag |= ( (XPOST_OBJECT_TAG_ACCESS_FILE_READ
+                    | XPOST_OBJECT_TAG_ACCESS_FILE_WRITE)
+                    << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        } else if (strcmp(mode, "w")==0){
+            f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+            f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        } else {
+            error(ioerror, "bad mode string");
         }
+
     }
 
     f.tag |= XPOST_OBJECT_TAG_DATA_FLAG_LIT;

@@ -165,7 +165,7 @@ int xpost_object_is_readable(Xpost_Object obj)
     if (xpost_object_get_type(obj) == filetype)
     {
         return xpost_object_get_access(obj)
-            == XPOST_OBJECT_TAG_ACCESS_READ_ONLY;
+            & XPOST_OBJECT_TAG_ACCESS_FILE_READ;
     }
     else
     {
@@ -176,8 +176,16 @@ int xpost_object_is_readable(Xpost_Object obj)
 
 int xpost_object_is_writeable (Xpost_Object obj)
 {
-    return xpost_object_get_access(obj)
-        == XPOST_OBJECT_TAG_ACCESS_UNLIMITED;
+    if (xpost_object_get_type(obj) == filetype)
+    {
+        return xpost_object_get_access(obj)
+            & XPOST_OBJECT_TAG_ACCESS_FILE_WRITE;
+    }
+    else
+    {
+        return xpost_object_get_access(obj)
+            == XPOST_OBJECT_TAG_ACCESS_UNLIMITED;
+    }
 }
 
 Xpost_Object xpost_object_cvx (Xpost_Object obj)
