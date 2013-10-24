@@ -168,8 +168,8 @@ int xpost_memory_file_init (
 int xpost_memory_file_exit (Xpost_Memory_File *mem);
 
 /**
- * @brief Resize the given memory file, possibly moving and
- * invalidating all vm pointers.
+ * @brief Resize the given memory file, possibly moving the memory
+ * and invalidating all vm pointers.
  *
  * @param[in,out] mem The memory file
  * @param[in] sz The size to increase.
@@ -186,18 +186,22 @@ int xpost_memory_file_grow (
  *
  * @param[in,out] mem The memory file.
  * @param[in] sz The new size.
- * @return The offset.
+ * @param[out] addr The offset.
+ * @return 1 on success, 0 on failure.
  *
- * This function allocate @p sz bytes to @p mem and returns the
- * offset. If sz is 0, it just returns the offset.
+ * This function attempts to allocate @p sz bytes to @p mem and
+ * if successful, copies the offset into @p addr.
+ * If sz is 0, it just copies the offset and does not allocate any
+ * memory at that address.
  *
  * @note May call xpost_memory_file_grow which may invalidate all pointers
  * derived from mem->base. MUST recalculate all VM pointers after this
  * function.
  */
-unsigned int xpost_memory_file_alloc (
+int xpost_memory_file_alloc (
         Xpost_Memory_File *mem,
-        unsigned int sz);
+        unsigned int sz,
+        unsigned int *addr);
 
 /**
  * @brief Dump the given memory file metadata and contents to stdout.
@@ -217,31 +221,42 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem);
  * @brief Allocate and Initialize a new table and return the offset.
  *
  * @param[in,out] mem The memory file.
- * @return The offset.
+ * @param[out] addr The offset.
+ * @return 1 on success, 0 on failure.
  *
- * This function allocates and initialises a new memory table in
- * @p mem.
+ * This function attempts to allocate and initialise
+ * a new memory table in @p mem.
+ * If successful, the offset of the allocated memory relative to
+ * mem->base is stored through the @p addr pointer.
  *
  * MUST recalculate all VM pointers after this function.
  * See note in xpost_memory_file_alloc().
  */
-unsigned int xpost_memory_table_init (Xpost_Memory_File *mem);
+int xpost_memory_table_init (
+        Xpost_Memory_File *mem,
+        unsigned int *addr);
 
 /**
  * @brief Allocate memory, returns table index.
  *
  * @param[in,out] mem The memory file.
- * @param[in] sz The table size.
- * @param[in] tag The table tag.
- * @return The table index.
+ * @param[in] sz The allocation size.
+ * @param[in] tag The allocation tag.
+ * @param[out] entity The table index.
+ * @return 1 on success, 0 on failure.
  *
+ * This function attempts to allocate a new VM entity and associated
+ * memory of size @p sz. If successful, the table index for the new
+ * entity is stored through the @p entity pointer.
+ * 
  * MUST recalculate all VM pointers after this function.
  * See note in xpost_memory_file_alloc().
  */
-unsigned int xpost_memory_table_alloc (
+int xpost_memory_table_alloc (
         Xpost_Memory_File *mem,
         unsigned int sz,
-        unsigned int tag);
+        unsigned int tag,
+        unsigned int *entity);
 
 /**
  * @brief Find the table and relative entity index for an absolute
@@ -250,14 +265,14 @@ unsigned int xpost_memory_table_alloc (
  * @param[in,out] mem The memory file.
  * @param[out] atab The table.
  * @param[in,out] aent The entity.
+ * @return 1 on success, 0 on failure.
  *
  * This function takes the memory file and an absolute entity,
  * and writes a pointer to the relevant segment of the table chain
- * into the variable pointed-to by @p atab. It updates the referenced
- * absolute entity index with the index relative to the returned 
- * table segment.
+ * through the @p atab pointer. It updates the referenced
+ * absolute entity index with an index relative to the table segment.
  */
-void xpost_memory_table_find_relative (
+int xpost_memory_table_find_relative (
         Xpost_Memory_File *mem,
         Xpost_Memory_Table **atab,
         unsigned int *aent);
@@ -267,13 +282,16 @@ void xpost_memory_table_find_relative (
  *
  * @param[in] mem The memory file.
  * @param[in] ent The entity.
- * @return The address.
+ * @param[out] addr The address.
+ * @return 1 on success, 0 on failure.
  *
- * This function returns the address of the entity @p ent in @p mem.
+ * If successful, this function stores the address of the entity
+ * @p ent in @p mem, through the @p addr pointer.
  */
-unsigned int xpost_memory_table_get_addr (
+int xpost_memory_table_get_addr (
         Xpost_Memory_File *mem,
-        unsigned int ent);
+        unsigned int ent,
+        unsigned int *addr);
 
 /**
  * @brief Set the address for an entity.
@@ -281,11 +299,12 @@ unsigned int xpost_memory_table_get_addr (
  * @param[in] mem The memory file.
  * @param[in] ent The entity.
  * @param[in] addr The new address.
+ * @return 1 on success, 0 on failure.
  * 
- * This function replaces the address for @p ent in @p mem with 
- * a new address @p addr.
+ * If successful, this function replaces the address for
+ * @p ent in @p mem with a new address @p addr.
  */
-void xpost_memory_table_set_addr (
+int xpost_memory_table_set_addr (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int addr);
@@ -295,13 +314,16 @@ void xpost_memory_table_set_addr (
  *
  * @param[in] mem The memory file.
  * @param[in] ent The entity.
- * @return The size.
+ * @param[out] sz The size.
+ * @return 1 on success, 0 on failure.
  *
- * This function returns the size of the entity @p ent in @p mem.
+ * If successful, this function stores the size of the entity
+ * @p ent in @p mem through the @p sz pointer.
  */
-unsigned int xpost_memory_table_get_size (
+int xpost_memory_table_get_size (
         Xpost_Memory_File *mem,
-        unsigned int ent);
+        unsigned int ent,
+        unsigned int *sz);
 
 /**
  * @brief Set the size for an entity.
@@ -309,11 +331,12 @@ unsigned int xpost_memory_table_get_size (
  * @param[in] mem The memory file.
  * @param[in] ent The entity.
  * @param[in] size The new size.
+ * @return 1 on success, 0 on failure.
  *
- * This function replaces the size for @p ent in @p mem with
- * a new size @p size.
+ * If successful, this function replaces the size for
+ * @p ent in @p mem with a new size @p size.
  */
-void xpost_memory_table_set_size (
+int xpost_memory_table_set_size (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int size);
@@ -323,13 +346,16 @@ void xpost_memory_table_set_size (
  *
  * @param[in] mem The memory file.
  * @param[in] ent The entity.
- * @return The mark field.
+ * @param[out] mark The mark field.
+ * @return 1 on success, 0 on failure.
  *
- * This function returns the mark field of the entity @p ent in @p mem.
+ * If succesful, this function stores the mark field
+ * of the entity @p ent in @p mem through the @p mark pointer.
  */
-unsigned int xpost_memory_table_get_mark (
+int xpost_memory_table_get_mark (
         Xpost_Memory_File *mem,
-        unsigned int ent);
+        unsigned int ent,
+        unsigned int *mark);
 
 /**
  * @brief Set the mark field for an entity.
@@ -337,11 +363,12 @@ unsigned int xpost_memory_table_get_mark (
  * @param[in] mem The memory file.
  * @param[in] ent The entity.
  * @param[in] mark The new mark field.
+ * @return 1 on success, 0 on failure.
  *
- * This function replaces the mark field of the entity @p ent in @p mem
- * with the new value @p mark.
+ * If successful, this function replaces the mark field
+ * of the entity @p ent in @p mem with the new value @p mark.
  */
-void xpost_memory_table_set_mark (
+int xpost_memory_table_set_mark (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int mark);
@@ -351,12 +378,16 @@ void xpost_memory_table_set_mark (
  *
  * @param[in] mem The memory file.
  * @param[in] ent The entity.
+ * @param[out] tag The tag.
+ * @return 1 on success, 0 on failure.
  *
- * This function returns the tag field of the entity @p ent in @p mem.
+ * If successful, this function stores the tag field
+ * of the entity @p ent in @p mem through the @p tag pointer.
  */
-unsigned int xpost_memory_table_get_tag (
+int xpost_memory_table_get_tag (
         Xpost_Memory_File *mem,
-        unsigned int ent);
+        unsigned int ent,
+        unsigned int *tag);
 
 /**
  * @brief Set the tag for an entity.
@@ -364,10 +395,12 @@ unsigned int xpost_memory_table_get_tag (
  * @param[in] mem The memory file.
  * @param[in] ent The entity.
  * @param[in] tag The new tag.
+ * @return 1 on success, 0 on failure.
  *
- * This function replaces the tag field of the entity @p ent in @p mem.
+ * If successful, this function replaces the tag field
+ * of the entity @p ent in @p mem.
  */
-void xpost_memory_table_set_tag (
+int xpost_memory_table_set_tag (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int tag);
@@ -380,12 +413,13 @@ void xpost_memory_table_set_tag (
  * @param[in] offset The offset.
  * @param[in] sz The entity size.
  * @param[out] dest A buffer
+ * @return 1 on success, 0 on failure.
  *
  * This function performs a generic "get" operation from a composite object,
  * or other VM entity such as a file.
  * It is used to retrieve bytes from strings, and objects from arrays.
  */
-void xpost_memory_get (
+int xpost_memory_get (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int offset,
@@ -400,12 +434,13 @@ void xpost_memory_get (
  * @param[in] offset The offset.
  * @param[in] sz The entity size.
  * @param[in] src A buffer
+ * @return 1 on success, 0 on failure.
  *
  * This function performs a generic "put" operation into a composite object,
  * or other VM entity such as a file.
  * It is used to store bytes in strings, and objects in arrays.
  */
-void xpost_memory_put (
+int xpost_memory_put (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int offset,

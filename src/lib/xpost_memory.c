@@ -104,9 +104,9 @@ int xpost_memory_file_init (
     if (mem->base == NULL)
     { // ..
 #endif
-        error(VMerror, "VM error: failed to allocate memory-file data");
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "failed to allocate memory-file data\n");
         return 0;
-        //exit(EXIT_FAILURE);
     } // . ..
     mem->used = 0;
     mem->max = sz;
@@ -159,6 +159,7 @@ int xpost_memory_file_grow (
         unsigned int sz)
 {
     void *tmp;
+    int ret = 1;
 
     if (sz < xpost_memory_pagesize)
         sz = xpost_memory_pagesize;
@@ -187,7 +188,9 @@ int xpost_memory_file_grow (
     if (tmp == NULL)
     {
 #endif
-        error(VMerror, "unable to grow memory");
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "unable to grow memory\n");
+        ret = 0;
 #ifdef HAVE_MMAP
 # ifndef HAVE_MREMAP
         tmp = mmap(NULL, mem->max,
@@ -200,25 +203,35 @@ int xpost_memory_file_grow (
     mem->base = tmp;
     mem->max = sz;
 
-    return 1;
+    return ret;
 }
 
 
-unsigned int xpost_memory_file_alloc (
+int xpost_memory_file_alloc (
         Xpost_Memory_File *mem,
-        unsigned int sz)
+        unsigned int sz,
+        unsigned int *addr)
 {
     unsigned int adr = mem->used;
 
     if (sz)
     {
         if (sz + mem->used >= mem->max)
-            xpost_memory_file_grow(mem, sz);
+        {
+            if (!xpost_memory_file_grow(mem, sz))
+            {
+                XPOST_LOG_ERR("%d %s\n",
+                        VMerror, "unable to allocate memory\n");
+                return 0;
+            }
+        }
 
         mem->used += sz;
         memset(mem->base + adr, 0, sz);
     }
-    return adr;
+
+    *addr = adr;
+    return 1;
 }
 
 
@@ -268,22 +281,33 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
 }
 
 
-unsigned int xpost_memory_table_init (Xpost_Memory_File *mem)
+int xpost_memory_table_init (
+        Xpost_Memory_File *mem,
+        unsigned int *addr)
 {
     Xpost_Memory_Table *tab;
     unsigned int adr;
 
-    adr = xpost_memory_file_alloc(mem, sizeof(Xpost_Memory_Table));
+    if (!xpost_memory_file_alloc(mem, sizeof(Xpost_Memory_Table), &adr))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "unable to initialize table");
+        return 0;
+    }
+
     tab = (Xpost_Memory_Table *)(mem->base + adr);
     tab->nexttab = 0;
     tab->nextent = 0;
-    return adr;
+
+    *addr = adr;
+    return 1;
 }
 
 
-unsigned int xpost_memory_table_alloc (Xpost_Memory_File *mem,
+int xpost_memory_table_alloc (Xpost_Memory_File *mem,
         unsigned int sz,
-        unsigned int tag)
+        unsigned int tag,
+        unsigned int *entity)
 {
     unsigned int mtabadr = 0;
     unsigned int ent;
@@ -300,7 +324,13 @@ unsigned int xpost_memory_table_alloc (Xpost_Memory_File *mem,
     ent = tab->nextent;
     ++tab->nextent;
 
-    adr = xpost_memory_file_alloc(mem, sz);
+    if (!xpost_memory_file_alloc(mem, sz, &adr))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "unable to allocate ent\n");
+        return 0;
+    }
+
     ent += ntab*XPOST_MEMORY_TABLE_SIZE; //recalc
     xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
     tab->tab[ent].adr = adr;
@@ -309,17 +339,23 @@ unsigned int xpost_memory_table_alloc (Xpost_Memory_File *mem,
 
     if (tab->nextent == XPOST_MEMORY_TABLE_SIZE)
     {
-        unsigned int newtab = xpost_memory_table_init(mem);
+        unsigned int newtab;
+        if (!xpost_memory_table_init(mem, &newtab))
+        {
+            XPOST_LOG_ERR("%d %s\n",
+                    VMerror, "unable to extend table chain\n");
+        }
         ent += ntab*XPOST_MEMORY_TABLE_SIZE; //recalc
         xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
         tab->nexttab = newtab;
     }
 
-    return ent + ntab*XPOST_MEMORY_TABLE_SIZE;
+    *entity = ent + ntab*XPOST_MEMORY_TABLE_SIZE;
+    return 1;
 }
 
 
-void xpost_memory_table_find_relative (
+int xpost_memory_table_find_relative (
         Xpost_Memory_File *mem,
         Xpost_Memory_Table **atab,
         unsigned int *aent)
@@ -330,98 +366,153 @@ void xpost_memory_table_find_relative (
         *aent -= XPOST_MEMORY_TABLE_SIZE;
         if ((*atab)->nexttab == 0)
         {
-            error(unregistered, "ent doesn't exist");
+            XPOST_LOG_ERR("%d %s\n",
+                    VMerror, "cannot find table segment for ent");
+            return 0;
         }
         *atab = (Xpost_Memory_Table *)(mem->base + (*atab)->nexttab);
     }
+    return 1;
 }
 
 
-unsigned int xpost_memory_table_get_addr (
+int xpost_memory_table_get_addr (
         Xpost_Memory_File *mem,
-        unsigned int ent)
+        unsigned int ent,
+        unsigned int *addr)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
-    return tab->tab[ent].adr;
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
+    *addr = tab->tab[ent].adr;
+    return 1;
 }
 
 
-void xpost_memory_table_set_addr (
+int xpost_memory_table_set_addr (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int addr)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
     tab->tab[ent].adr = addr;
+    return 1;
 }
 
 
-unsigned int xpost_memory_table_get_size (
+int xpost_memory_table_get_size (
         Xpost_Memory_File *mem,
-        unsigned int ent)
+        unsigned int ent,
+        unsigned int *sz)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
-    return tab->tab[ent].sz;
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
+    *sz = tab->tab[ent].sz;
+    return 1;
 }
 
 
-void xpost_memory_table_set_size (
+int xpost_memory_table_set_size (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int size)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
     tab->tab[ent].sz = size;
+    return 1;
 }
 
 
-unsigned int xpost_memory_table_get_mark (
+int xpost_memory_table_get_mark (
         Xpost_Memory_File *mem,
-        unsigned int ent)
+        unsigned int ent,
+        unsigned int *mark)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
-    return tab->tab[ent].mark;
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
+    *mark = tab->tab[ent].mark;
+    return 1;
 }
 
 
-void xpost_memory_table_set_mark (
+int xpost_memory_table_set_mark (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int mark)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
     tab->tab[ent].mark = mark;
+    return 1;
 }
 
 
-unsigned int xpost_memory_table_get_tag (
+int xpost_memory_table_get_tag (
         Xpost_Memory_File *mem,
-        unsigned int ent)
+        unsigned int ent,
+        unsigned int *tag)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
-    return tab->tab[ent].tag;
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
+    *tag = tab->tab[ent].tag;
+    return 1;
 }
 
 
-void xpost_memory_table_set_tag (
+int xpost_memory_table_set_tag (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int tag)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
     tab->tab[ent].tag = tag;
+    return 1;
 }
 
 
-void xpost_memory_get (
+int xpost_memory_get (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int offset,
@@ -429,15 +520,25 @@ void xpost_memory_get (
         void *dest)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
 
     if (offset*sz > tab->tab[ent].sz)
-        error(rangecheck, "xpost_memory_get: out of bounds");
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                rangecheck, "xpost_memory_get: out of bounds");
+        return 0;
+    }
 
     memcpy(dest, mem->base + tab->tab[ent].adr + offset*sz, sz);
+    return 1;
 }
 
-void xpost_memory_put (
+int xpost_memory_put (
         Xpost_Memory_File *mem,
         unsigned int ent,
         unsigned int offset,
@@ -445,12 +546,22 @@ void xpost_memory_put (
         const void *src)
 {
     Xpost_Memory_Table *tab;
-    xpost_memory_table_find_relative(mem, &tab, &ent);
+    if (!xpost_memory_table_find_relative(mem, &tab, &ent))
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "ent not found");
+        return 0;
+    }
 
     if (offset*sz > tab->tab[ent].sz)
-        error(rangecheck, "xpost_memory_put: out of bounds");
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                rangecheck, "xpost_memory_put: out of bounds");
+        return 0;
+    }
 
     memcpy(mem->base + tab->tab[ent].adr + offset*sz, src, sz);
+    return 1;
 }
 
 
