@@ -102,7 +102,10 @@ typedef enum
 
 /**
  * @enum Xpost_Object_Tag_Access
- * @brief valid values for the ACCESS bitfield
+ * @brief valid values for the ACCESS bitfield in the object's tag.
+ *
+ * Most objects use 4 levels of access, except files which use 2 flags.
+ * Files can therefore be READ, WRITE, or READ|WRITE.
  */
 typedef enum
 {
@@ -111,8 +114,10 @@ typedef enum
     XPOST_OBJECT_TAG_ACCESS_READ_ONLY,    /**< WRITE= no,  READ= yes, EXEC= yes, files: READ  */
     XPOST_OBJECT_TAG_ACCESS_UNLIMITED,    /**< WRITE= yes, READ= yes, EXEC= yes, files: WRITE */
 
-    XPOST_OBJECT_TAG_ACCESS_FILE_WRITE = 1, /**< file is writeable */
-    XPOST_OBJECT_TAG_ACCESS_FILE_READ  = 2, /**< file is readable */
+    /* these 2 are for filetype objects only: */
+
+    XPOST_OBJECT_TAG_ACCESS_FILE_WRITE = 1 << 0, /**< file is writeable */
+    XPOST_OBJECT_TAG_ACCESS_FILE_READ  = 1 << 1, /**< file is readable */
 } Xpost_Object_Tag_Access;
 
 
