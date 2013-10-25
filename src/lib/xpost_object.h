@@ -90,14 +90,15 @@ typedef enum {
 typedef enum
 {
     XPOST_OBJECT_TAG_DATA_TYPE_MASK          = 0x000F, /**< mask to yield Xpost_Object_Type */
-    XPOST_OBJECT_TAG_DATA_FLAG_VALID         = 0x0010, /**< for 'anytype' operator pattern */
-    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK   = 0x0060, /**< 2-bit mask for the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FLAG_VALID         = 01 << 4, /**< for 'anytype' operator pattern */
     XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET = 5,    /**< bitwise offset of the ACCESS field */
-    XPOST_OBJECT_TAG_DATA_FLAG_LIT           = 0x0080,  /**< literal flag: 0=executable, 1=literal */
-    XPOST_OBJECT_TAG_DATA_FLAG_BANK          = 0x0100, /**< select memory-file for composite-object data: 0=local, 1=global */
-    XPOST_OBJECT_TAG_DATA_EXTENDED_INT       = 0x0200, /**< extended object was integer */
-    XPOST_OBJECT_TAG_DATA_EXTENDED_REAL      = 0x0400, /**< extended object was real */
-    XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD  = 0x0800, /* for onerror to reset stack */
+    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK   = 03 <<
+        XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET, /**< 2-bit mask for the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FLAG_LIT           = 01 << 7,  /**< literal flag: 0=executable, 1=literal */
+    XPOST_OBJECT_TAG_DATA_FLAG_BANK          = 01 << 8, /**< select memory-file for composite-object data: 0=local, 1=global */
+    XPOST_OBJECT_TAG_DATA_EXTENDED_INT       = 01 << 9, /**< extended object was integer */
+    XPOST_OBJECT_TAG_DATA_EXTENDED_REAL      = 01 << 10, /**< extended object was real */
+    XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD  = 01 << 11, /* for onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
 /**
