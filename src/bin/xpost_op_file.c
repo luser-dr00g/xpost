@@ -407,6 +407,30 @@ void filenameforall (context *ctx,
 //#endif
 
 static
+void setfileposition (context *ctx,
+            Xpost_Object F,
+            Xpost_Object pos)
+{
+    int ret = fseek(filefile(ctx->lo, F), pos.int_.val, SEEK_SET);
+    if (ret != 0)
+    {
+        error(ioerror, "fseek returned non-zero");
+    }
+}
+
+static
+void fileposition (context *ctx,
+            Xpost_Object F)
+{
+    long pos;
+    pos = ftell(filefile(ctx->lo, F));
+    if (pos == -1)
+        error(ioerror, "ftell returned -1");
+    else
+        push(ctx->lo, ctx->os, xpost_cons_int(pos));
+}
+
+static
 void Sprint (context *ctx,
              Xpost_Object S)
 {
@@ -467,8 +491,8 @@ void initopf (context *ctx,
     ctx->opcuts.contfilenameforall = op.mark_.padw;
     op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype); INSTALL;
 //#endif
-    //setfileposition
-    //fileposition
+    op = consoper(ctx, "setfileposition", setfileposition, 0, 2, filetype, integertype); INSTALL;
+    op = consoper(ctx, "fileposition", fileposition, 1, 1, filetype); INSTALL;
     op = consoper(ctx, "print", Sprint, 0, 1, stringtype); INSTALL;
     //=: see init.ps
     //==: see init.ps
