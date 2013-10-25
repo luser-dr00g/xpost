@@ -61,7 +61,6 @@ _xpost_suite_build(int argc, const char **argv)
         tc = tcase_create(_tests[i].test_case);
         _tests[i].build(tc);
         suite_add_tcase(s, tc);
-        tcase_set_timeout(tc, 0);
     }
 
     return s;
