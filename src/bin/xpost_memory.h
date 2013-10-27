@@ -194,6 +194,6 @@ void put(mfile *mem,
 /** \fn int test_memory()
   perform functionality tests on the memory module.
 */
-int test_memory(void);
+int test_memory();
 
 #endif

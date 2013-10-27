@@ -67,7 +67,7 @@ void exititp(itp *itp);
 
 /* 3 simple top-level functions */
 
-void createitp(void);
+void createitp();
 void runitp(void);
 void destroyitp(void);
 
