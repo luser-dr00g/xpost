@@ -32,6 +32,8 @@ typedef bool _Bool;
 #include "xpost_dict.h"
 #include "xpost_save.h"
 #include "xpost_garbage.h"
+#include "xpost_name.h"
+#include "xpost_operator.h"
 
 #ifdef DEBUG_GC
 #include <stdio.h>
@@ -585,7 +587,6 @@ void init_test_garbage()
     int fd;
     int cid;
     char fname[] = "xmemXXXXXX";
-    mtab *tab;
 
     /* create interpreter and context */
     pgsz = getpagesize();
@@ -644,7 +645,7 @@ void exit_test_garbage()
     initializing = true;
 }
 
-int test_garbage_collect()
+int test_garbage_collect(void)
 {
     init_test_garbage();
     {
@@ -670,21 +671,21 @@ int test_garbage_collect()
         unsigned pre, post, sz, ret;
 
         pre = ctx->lo->used;
-	arr = consbar(ctx, 5);
-	barput(ctx, arr, 0, xpost_cons_int(12));
-	barput(ctx, arr, 1, xpost_cons_int(13));
-	barput(ctx, arr, 2, xpost_cons_int(14));
-	barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
-	barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
-	post = ctx->lo->used;
-	sz = post-pre;
+        arr = consbar(ctx, 5);
+        barput(ctx, arr, 0, xpost_cons_int(12));
+        barput(ctx, arr, 1, xpost_cons_int(13));
+        barput(ctx, arr, 2, xpost_cons_int(14));
+        barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
+        barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
+        post = ctx->lo->used;
+        sz = post-pre;
 
-	push(ctx->lo, ctx->os, arr);
-	assert(collect(ctx->lo, true, false) == 0);
+        push(ctx->lo, ctx->os, arr);
+        assert(collect(ctx->lo, true, false) == 0);
 
-	pop(ctx->lo, ctx->os);
-	ret = collect(ctx->lo, true, false);
-	assert(ret >= sz);
+        pop(ctx->lo, ctx->os);
+        ret = collect(ctx->lo, true, false);
+        assert(ret >= sz);
 
     }
     exit_test_garbage();

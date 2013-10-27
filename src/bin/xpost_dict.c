@@ -62,7 +62,6 @@ typedef bool _Bool;
 #include "xpost_dict.h"  // double-check prototypes
 
 
-
 /*
 typedef struct {
     word tag;
@@ -327,6 +326,13 @@ void dumpdic(mfile *mem,
     }
 }
 
+// strict-aliasing compatible poking of double
+typedef union
+{
+    unsigned long long bits;
+    double             number;
+} IeeeDoubleAsInt;
+
 /* construct an extendedtype object
    from a double value */
 //n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag
@@ -334,11 +340,13 @@ void dumpdic(mfile *mem,
 static
 Xpost_Object consextended (double d)
 {
-    unsigned long long r = *(unsigned long long *)&d;
+    IeeeDoubleAsInt r;
     Xpost_Object_Extended e;
+
+    r.number = d;
     e.tag = extendedtype;
-    e.sign_exp = (r>>52) & 0x7FF;
-    e.fraction = (r>>20) & 0xFFFFFFFF;
+    e.sign_exp = (r.bits>>52) & 0x7FF;
+    e.fraction = (r.bits>>20) & 0xFFFFFFFF;
     return (Xpost_Object) e;
 }
 
@@ -346,13 +354,11 @@ Xpost_Object consextended (double d)
    double <- extendedtype object */
 double doubleextended (Xpost_Object e)
 {
-    unsigned long long r;
-    double d;
+    IeeeDoubleAsInt r;
 
-    r = ((unsigned long long)e.extended_.sign_exp << 52)
-        | ((unsigned long long)e.extended_.fraction << 20);
-    d = *(double *)&r;
-    return d;
+    r.bits = ((unsigned long long)e.extended_.sign_exp << 52)
+             | ((unsigned long long)e.extended_.fraction << 20);
+    return r.number;
 }
 
 /* convert an extendedtype object to integertype or realtype 
@@ -557,6 +563,8 @@ void dicundef(context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
+    (void)ctx; (void)k;
+
     if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
     //find slot for key
     //find last chained key and value with same hash

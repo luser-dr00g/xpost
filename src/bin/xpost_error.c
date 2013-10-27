@@ -100,7 +100,6 @@ void onerror(context *ctx,
     Xpost_Object sd;
     Xpost_Object dollarerror;
     char *errmsg; 
-    stack *sp;
 
     assert(ctx);
     assert(ctx->gl);
@@ -130,7 +129,7 @@ void onerror(context *ctx,
 
     dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
     //printf("3\n");
-    errmsg = errormsg;
+    errmsg = (char *)errormsg;
     //printf("4\n");
     if (err == VMerror) {
         bdcput(ctx, dollarerror,
