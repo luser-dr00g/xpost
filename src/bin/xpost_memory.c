@@ -95,6 +95,20 @@ void dumpmfile(mfile *mem)
 # define XPOST_MODE_READ_WRITE S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
 #endif
 
+/* memfile exists in path */
+static
+int getmemfile(char *fname)
+{
+    int fd;
+    fd = open(
+            fname, //"x.mem",
+            O_RDWR | O_CREAT,
+            XPOST_MODE_READ_WRITE);
+    if (fd == -1)
+        perror(fname);
+    return fd;
+}
+
 /** \fn void initmem(mfile *mem, char *fname, int fd)
   initialize the memory file.
   copies fname into mfile struct.
@@ -113,6 +127,7 @@ void initmem(mfile *mem,
     else
         mem->fname[0] = '\0';
 
+    //if (fname) { fd = getmemfile(fname); }
 
     mem->fd = fd;
     if (fd != -1){
@@ -470,7 +485,7 @@ void exit_test_memory()
     exitmem(&tstmem);
 }
 
-int test_memory (void)
+int test_memory ()
 {
     mfile *mem = &tstmem;
     init_test_memory();
@@ -535,6 +550,7 @@ int main(){
     int ret;
 
     printf("\n^test m.c\n");
+    //printf("getmemfile: %d\n", getmemfile());
 
     ent = mtalloc(&mem, 0, sizeof seven, 0);
     put(&mem, ent, 0, sizeof seven, &seven);
