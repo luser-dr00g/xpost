@@ -97,7 +97,7 @@ unsigned makestack(mfile *mem)
     return initstack(mem);
 }
 
-/* initialize the context list 
+/* initialize the context list
    special entity in the mfile */
 void initctxlist(mfile *mem)
 {
@@ -433,8 +433,8 @@ void evalfile(context *ctx)
         push(ctx->lo, ctx->es, f);
         push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
     } else {
-		fileclose(ctx->lo, f);
-	}
+        fileclose(ctx->lo, f);
+    }
 }
 
 /* interpreter actions for executable types */
@@ -507,7 +507,7 @@ bool jbmainloopset = false;
 /* the big main central interpreter loop. */
 void mainloop(context *ctx)
 {
-    volatile int err; 
+    volatile int err;
 
     if ((err = setjmp(jbmainloop))) {
         onerror(ctx, err);
@@ -567,17 +567,17 @@ static void setdatadir(context *ctx, Xpost_Object sd)
 {
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
-	if (is_installed) {
-		bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
+    if (is_installed) {
+        bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
             xpost_object_cvlit(consbst(ctx,
-					CNT_STR(PACKAGE_DATA_DIR))));
-		bdcput(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
-			xpost_object_cvlit(consbst(ctx,
-					CNT_STR(PACKAGE_INSTALL_DIR))));
-	}
-	bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
-			xpost_object_cvlit(consbst(ctx,
-					strlen(exedir), exedir)));
+                    CNT_STR(PACKAGE_DATA_DIR))));
+        bdcput(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
+            xpost_object_cvlit(consbst(ctx,
+                    CNT_STR(PACKAGE_INSTALL_DIR))));
+    }
+    bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
+            xpost_object_cvlit(consbst(ctx,
+                    strlen(exedir), exedir)));
     ctx->vmmode = LOCAL;
 }
 
@@ -588,19 +588,19 @@ static void loadinitps(context *ctx)
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
 /*splint doesn't like the composed macros*/
 #ifndef S_SPLINT_S
-	if (is_installed)
-		push(ctx->lo, ctx->es,
-			xpost_object_cvx(consbst(ctx,
+    if (is_installed)
+        push(ctx->lo, ctx->es,
+            xpost_object_cvx(consbst(ctx,
              CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
-	else {
-		char buf[1024];
-		snprintf(buf, 1024,
-				"(%s/../../data/init.ps) (r) file cvx exec",
-				exedir);
-		push(ctx->lo, ctx->es,
-			xpost_object_cvx(consbst(ctx,
-					strlen(buf), buf)));
-	}
+    else {
+        char buf[1024];
+        snprintf(buf, 1024,
+                "(%s/../../data/init.ps) (r) file cvx exec",
+                exedir);
+        push(ctx->lo, ctx->es,
+            xpost_object_cvx(consbst(ctx,
+                    strlen(buf), buf)));
+    }
 #endif
     ctx->quit = 0;
     mainloop(ctx);
@@ -615,9 +615,9 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
      */
     bdcput(ctx, sd, consname(ctx, "userdict"), ud);
     bdcput(ctx, sd, consname(ctx, "errordict"),
-            bdcget(ctx, ud, consname(ctx, "errordict")));
+           bdcget(ctx, ud, consname(ctx, "errordict")));
     bdcput(ctx, sd, consname(ctx, "$error"),
-            bdcget(ctx, ud, consname(ctx, "$error")));
+           bdcget(ctx, ud, consname(ctx, "$error")));
 }
 
 
@@ -636,17 +636,17 @@ void createitp(void)
     sd = bot(xpost_ctx->lo, xpost_ctx->ds, 0);
     ud = bot(xpost_ctx->lo, xpost_ctx->ds, 2);
 
-	setdatadir(xpost_ctx, sd);
+    setdatadir(xpost_ctx, sd);
 
-/* FIXME: Squeeze and eliminate this workaround.
-   Ignoring errors is a bad idea.  */
-ignoreinvalidaccess = 1;
+    /* FIXME: Squeeze and eliminate this workaround.
+       Ignoring errors is a bad idea.  */
+    ignoreinvalidaccess = 1;
 
     loadinitps(xpost_ctx);
 
     copyudtosd(xpost_ctx, ud, sd);
 
-ignoreinvalidaccess = 0;
+    ignoreinvalidaccess = 0;
 
     /* make systemdict readonly */
     bdcput(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
@@ -661,7 +661,7 @@ void runitp(void)
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
-    push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0)); 
+    push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0));
         /* `start` proc defined in init.ps */
     push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
 
