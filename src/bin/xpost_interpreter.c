@@ -628,14 +628,22 @@ ignoreinvalidaccess = 0;
 
 void runitp(void)
 {
-    Xpost_Object gsav, lsav;
-    int glev, llev;
+    Xpost_Object gsav;
+    Xpost_Object lsav;
+    //int glev;
+    int llev;
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0)); 
-        /* `start` proc defined in init.ps */
-    push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "start")));
+
+        /* `start` proc defined in init.ps runs `executive` which prompts for user input
+           `startstdin` does not prompt
+         */
+    if (isatty(fileno(stdin)))
+        push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "start")));
+    else
+        push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "startstdin")));
 
     gsav = save(ctx->gl);
     lsav = save(ctx->lo);
