@@ -257,6 +257,8 @@ _xpost_log_fprint_cb(FILE *stream,
 
     if ((int)res != (s + 1))
         fprintf(stderr, "ERROR: %s(): want to write %d bytes, %d written\n", __FUNCTION__, s + 1, res);
+
+    (void)data;
 }
 
 
