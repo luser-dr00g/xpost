@@ -103,7 +103,14 @@ typedef struct {
 } dichead;
 */
 
-/* Compare two objects for "equality". 
+/* strict-aliasing compatible poking of double */
+typedef union
+{
+    unsigned long long bits;
+    double             number;
+} Xpost_Ieee_Double_As_Int;
+
+/* Compare two objects for "equality".
    return 0 if "equal"
           +value if L > R
           -value if L < R
@@ -365,28 +372,27 @@ void dumpdic(mfile *mem,
 static
 Xpost_Object consextended (double d)
 {
-    unsigned long long r = *(unsigned long long *)&d;
+    Xpost_Ieee_Double_As_Int r;
     Xpost_Object_Extended e;
+
+    r.number = d;
     e.tag = extendedtype;
-    e.sign_exp = (r>>52) & 0x7FF;
-    e.fraction = (r>>20) & 0xFFFFFFFF;
-    return (Xpost_Object) e;
+    e.sign_exp = (r.bits >> 52) & 0x7FF;
+    e.fraction = (r.bits >> 20) & 0xFFFFFFFF;
+    return (Xpost_Object)e;
 }
 
 /* adapter:
    double <- extendedtype object */
 double doubleextended (Xpost_Object e)
 {
-    unsigned long long r;
-    double d;
-
-    r = ((unsigned long long)e.extended_.sign_exp << 52)
-        | ((unsigned long long)e.extended_.fraction << 20);
-    d = *(double *)&r;
-    return d;
+    Xpost_Ieee_Double_As_Int r;
+    r.bits = ((unsigned long long)e.extended_.sign_exp << 52)
+             | ((unsigned long long)e.extended_.fraction << 20);
+    return r.number;
 }
 
-/* convert an extendedtype object to integertype or realtype 
+/* convert an extendedtype object to integertype or realtype
    depending upon flag */
 Xpost_Object unextend (Xpost_Object e)
 {
