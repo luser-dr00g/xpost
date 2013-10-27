@@ -24,5 +24,5 @@ unsigned collect(mfile *mem, int dosweep, int markall);
 /* reallocate data, preserving (the maximum of) original contents */
 unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
 
-int test_garbage_collect();
+int test_garbage_collect(void);
 #endif

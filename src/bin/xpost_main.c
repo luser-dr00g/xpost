@@ -4,6 +4,7 @@
 
 int main(int argc, char *argv[])
 {
+    (void)argc;
     printf("xpost_main\n");
 	xpost_is_installed(argv[0]);
 

@@ -262,63 +262,6 @@ void exitcontext(context *ctx)
     exitmem(ctx->lo);
 }
 
-/*
-   fork new process with private global and private local vm
-   (spawn jobserver)
-   */
-static
-unsigned fork1(context *ctx)
-{
-    unsigned newcid;
-    context *newctx;
-
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
-    initlocal(ctx);
-    initglobal(ctx);
-    ctx->vmmode = LOCAL;
-    return newcid;
-}
-
-/*
-   fork new process with shared global vm and private local vm
-   (new "application"?)
-   */
-static
-unsigned fork2(context *ctx)
-{
-    unsigned newcid;
-    context *newctx;
-
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
-    initlocal(ctx);
-    newctx->gl = ctx->gl;
-    addtoctxlist(newctx->gl, newcid);
-    push(newctx->lo, newctx->ds, bot(ctx->lo, ctx->ds, 0)); // systemdict
-    return newcid;
-}
-
-/*
-   fork new process with shared global and shared local vm
-   (lightweight process)
-   */
-static
-unsigned fork3(context *ctx)
-{
-    unsigned newcid;
-    context *newctx;
-
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
-    newctx->lo = ctx->lo;
-    addtoctxlist(newctx->lo, newcid);
-    newctx->gl = ctx->gl;
-    addtoctxlist(newctx->gl, newcid);
-    push(newctx->lo, newctx->ds, bot(ctx->lo, ctx->ds, 0)); // systemdict
-    return newcid;
-}
-
 
 /* initialize itp */
 void inititp(itp *itpptr)
@@ -564,6 +507,7 @@ context *ctx;
 #define CNT_STR(s) sizeof(s)-1, s
 
 /* set global pagesize, initialize eval's jump-table */
+static
 void initalldata(void)
 {
     pgsz = getpagesize();
@@ -588,65 +532,68 @@ void initalldata(void)
     ctx = &itpdata->ctab[0];
 }
 
-void setdatadir(context *ctx, Xpost_Object sd)
+static
+void setdatadir(context *ctx_, Xpost_Object sd)
 {
     /* create a symbol to locate /data files */
-    ctx->vmmode = GLOBAL;
+    ctx_->vmmode = GLOBAL;
 	if (is_installed) {
-		bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
-            xpost_object_cvlit(consbst(ctx,
+		bdcput(ctx_, sd, consname(ctx_, "PACKAGE_DATA_DIR"),
+            xpost_object_cvlit(consbst(ctx_,
 					CNT_STR(PACKAGE_DATA_DIR))));
-		bdcput(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
-			xpost_object_cvlit(consbst(ctx,
+		bdcput(ctx_, sd, consname(ctx_, "PACKAGE_INSTALL_DIR"),
+			xpost_object_cvlit(consbst(ctx_,
 					CNT_STR(PACKAGE_INSTALL_DIR))));
 	} 
-	bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
-			xpost_object_cvlit(consbst(ctx,
+	bdcput(ctx_, sd, consname(ctx_, "EXE_DIR"),
+			xpost_object_cvlit(consbst(ctx_,
 					strlen(exedir), exedir)));
-    ctx->vmmode = LOCAL;
+    ctx_->vmmode = LOCAL;
 }
 
 /* load init.ps and err.ps while systemdict is writeable */
-void loadinitps(context *ctx)
+static
+void loadinitps(context *ctx_)
 {
-    assert(ctx->gl->base);
-    push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
+    assert(ctx_->gl->base);
+    push(ctx_->lo, ctx_->es, consoper(ctx_, "quit", NULL,0,0));
 /*splint doesn't like the composed macros*/
 #ifndef S_SPLINT_S
 	if (is_installed)
-		push(ctx->lo, ctx->es,
-			xpost_object_cvx(consbst(ctx,
+		push(ctx_->lo, ctx_->es,
+			xpost_object_cvx(consbst(ctx_,
              CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
 	else {
 		char buf[1024];
 		snprintf(buf, 1024,
 				"(%s/../../data/init.ps) (r) file cvx exec",
 				exedir);
-		push(ctx->lo, ctx->es,
-			xpost_object_cvx(consbst(ctx,
+		push(ctx_->lo, ctx_->es,
+			xpost_object_cvx(consbst(ctx_,
 					strlen(buf), buf)));
 	}
 #endif
-    ctx->quit = 0;
-    mainloop(ctx);
+    ctx_->quit = 0;
+    mainloop(ctx_);
 }
 
-void copyudtosd(context *ctx, Xpost_Object ud, Xpost_Object sd)
+static
+void copyudtosd(context *ctx_, Xpost_Object ud, Xpost_Object sd)
 {
     /* copy userdict names to systemdict
         Problem: This is clearly an invalidaccess,
         and yet is required by the PLRM. Discussion:
 https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
      */
-    bdcput(ctx, sd, consname(ctx, "userdict"), ud);
-    bdcput(ctx, sd, consname(ctx, "errordict"),
-            bdcget(ctx, ud, consname(ctx, "errordict")));
-    bdcput(ctx, sd, consname(ctx, "$error"),
-            bdcget(ctx, ud, consname(ctx, "$error")));
+    bdcput(ctx_, sd, consname(ctx_, "userdict"), ud);
+    bdcput(ctx_, sd, consname(ctx_, "errordict"),
+            bdcget(ctx_, ud, consname(ctx_, "errordict")));
+    bdcput(ctx_, sd, consname(ctx_, "$error"),
+            bdcget(ctx_, ud, consname(ctx_, "$error")));
 }
 
 
-void createitp()
+void createitp(void)
 {
     Xpost_Object sd, ud;
 
