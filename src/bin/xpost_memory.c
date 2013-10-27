@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -234,7 +235,6 @@ void growmem(mfile *mem,
                unsigned sz)
 {
     void *tmp;
-    int newfd;
 
     //printf("growmem: %p %u + %u\n", mem->base, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
@@ -515,7 +515,7 @@ void exit_test_memory()
     exitmem(&tstmem);
 }
 
-int test_memory ()
+int test_memory (void)
 {
     mfile *mem = &tstmem;
     init_test_memory();

@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,6 +62,8 @@ typedef bool _Bool;
 #include "xpost_string.h"
 #include "xpost_dict.h"
 #include "xpost_save.h"
+#include "xpost_name.h"
+#include "xpost_operator.h"
 #include "xpost_garbage.h"
 
 #ifdef DEBUG_GC
@@ -615,7 +618,6 @@ void init_test_garbage()
     int fd;
     int cid;
     char fname[] = "xmemXXXXXX";
-    mtab *tab;
 
     /* create interpreter and context */
     pgsz = getpagesize();
@@ -664,7 +666,7 @@ void init_test_garbage()
 }
 
 static
-void exit_test_garbage()
+void exit_test_garbage(void)
 {
     exitmem(ctx->lo);
     exitmem(ctx->gl);
@@ -674,7 +676,7 @@ void exit_test_garbage()
     initializing = true;
 }
 
-int test_garbage_collect()
+int test_garbage_collect(void)
 {
     init_test_garbage();
     {

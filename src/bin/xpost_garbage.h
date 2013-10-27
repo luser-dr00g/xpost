@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,5 +55,5 @@ unsigned collect(mfile *mem, int dosweep, int markall);
 /* reallocate data, preserving (the maximum of) original contents */
 unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
 
-int test_garbage_collect();
+int test_garbage_collect(void);
 #endif

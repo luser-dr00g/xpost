@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,5 +46,7 @@ int main(int argc, char *argv[])
 	free(exedir);
 
     return 0;
+
+    (void)argc;
 }
 
