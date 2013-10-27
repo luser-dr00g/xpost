@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -224,6 +225,6 @@ void put(mfile *mem,
 /** \fn int test_memory()
   perform functionality tests on the memory module.
 */
-int test_memory();
+int test_memory(void);
 
 #endif

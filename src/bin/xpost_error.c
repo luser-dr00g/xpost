@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -129,8 +130,7 @@ void onerror(context *ctx,
 {
     Xpost_Object sd;
     Xpost_Object dollarerror;
-    char *errmsg; 
-    stack *sp;
+    char *errmsg;
 
     assert(ctx);
     assert(ctx->gl);
@@ -160,7 +160,8 @@ void onerror(context *ctx,
 
     dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
     //printf("3\n");
-    errmsg = errormsg;
+    /* FIXME: does errormsg need to be volatile ?? If no, below cast is useless */
+    errmsg = (char *)errormsg;
     //printf("4\n");
     if (err == VMerror) {
         bdcput(ctx, dollarerror,

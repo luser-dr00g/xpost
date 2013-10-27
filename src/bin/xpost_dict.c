@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -592,6 +593,9 @@ void dicundef(context *ctx,
     //find last chained key and value with same hash
         //if found: move last key and value to slot
         //not found: write null over key and value
+
+    (void)ctx;
+    (void)k;
 }
 
 /* undefine key from banked dict */

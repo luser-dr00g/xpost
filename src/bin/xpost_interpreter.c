@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -594,7 +595,7 @@ context *ctx;
 #define CNT_STR(s) sizeof(s)-1, s
 
 /* set global pagesize, initialize eval's jump-table */
-void initalldata(void)
+static void initalldata(void)
 {
     pgsz = getpagesize();
     initializing = 1;
@@ -618,7 +619,7 @@ void initalldata(void)
     ctx = &itpdata->ctab[0];
 }
 
-void setdatadir(context *ctx, Xpost_Object sd)
+static void setdatadir(context *ctx, Xpost_Object sd)
 {
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
@@ -629,7 +630,7 @@ void setdatadir(context *ctx, Xpost_Object sd)
 		bdcput(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
 			xpost_object_cvlit(consbst(ctx,
 					CNT_STR(PACKAGE_INSTALL_DIR))));
-	} 
+	}
 	bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
 			xpost_object_cvlit(consbst(ctx,
 					strlen(exedir), exedir)));
@@ -637,7 +638,7 @@ void setdatadir(context *ctx, Xpost_Object sd)
 }
 
 /* load init.ps and err.ps while systemdict is writeable */
-void loadinitps(context *ctx)
+static void loadinitps(context *ctx)
 {
     assert(ctx->gl->base);
     push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
@@ -676,7 +677,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-void createitp()
+void createitp(void)
 {
     Xpost_Object sd, ud;
 
@@ -712,7 +713,7 @@ ignoreinvalidaccess = 0;
 void runitp(void)
 {
     Xpost_Object gsav, lsav;
-    int glev, llev;
+    int llev;
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
