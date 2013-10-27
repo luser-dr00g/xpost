@@ -140,6 +140,7 @@ if test "x${enable_mmap}" = "xyes" ; then
    AC_CHECK_HEADERS([sys/mman.h], [have_mmap="yes"], [have_mmap="no"])
 fi
 
+AC_CHECK_HEADERS([libgen.h])
 
 ### Checks for types
 
@@ -163,7 +164,11 @@ XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-
 
 AC_FUNC_ALLOCA
 
-AC_CHECK_FUNCS([gettimeofday])
+AC_CHECK_FUNCS([gettimeofday dirname])
+
+if ! test "x${ac_cv_func_dirname}" = "xyes" ; then
+   AC_MSG_ERROR([dirname() function is mandatory, exiting...])
+fi
 
 have_mremap="no"
 if test "x${have_mmap}" = "xyes" ; then
