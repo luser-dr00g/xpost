@@ -21,17 +21,19 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OF OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
+
 /* ---------------------------------------------------------------------------
  *
  * Header file supporting a MinGW implementation of an (approximately)
  * POSIX conforming glob() and globfree() API.
  *
  * Written by Keith Marshall <keithmarshall@users.sourceforge.net>
- * Copyright (C) 2011, 2012, MinGW Project.
- * Copyright (C) 2013, Xpost Project.
+ * Copyright (C) 2011, 2012, MinGW Project
+ * Copyright (C) 2013, Vincent Torri
  *
  * ---------------------------------------------------------------------------
  */
+
 #ifndef XPOST_GLOB_H
 #define XPOST_GLOB_H
 
