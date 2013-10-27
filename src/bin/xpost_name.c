@@ -53,6 +53,12 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __MINGW32__
+# include "osmswin.h" /* xpost_getpagesize */
+#else
+# include "osunix.h" /* xpost_getpagesize */
+#endif
+
 #include "xpost_memory.h"  // name structures live in mfiles
 #include "xpost_object.h"  // names are objects, with associated hidden string objects
 #include "xpost_garbage.h"  // strings are allocated using gballoc
@@ -263,7 +269,7 @@ Xpost_Object strname(context *ctx,
 
 /*
 void init(context *ctx) {
-    pgsz = getpagesize();
+    pgsz = xpost_getpagesize();
     ctx->gl = malloc(sizeof(mfile));
     initmem(ctx->gl, "x.mem");
     (void)initmtab(ctx->gl); // create mtab at address zero

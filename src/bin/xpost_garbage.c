@@ -54,6 +54,12 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __MINGW32__
+# include "osmswin.h"
+#else
+# include "osunix.h"
+#endif
+
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -620,7 +626,7 @@ void init_test_garbage()
     char fname[] = "xmemXXXXXX";
 
     /* create interpreter and context */
-    pgsz = getpagesize();
+    pgsz = xpost_getpagesize();
     itpdata = malloc(sizeof*itpdata);
     memset(itpdata, 0, sizeof*itpdata);
     cid = initctxid();

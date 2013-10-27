@@ -29,16 +29,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <stdio.h>
-#include <io.h>
-#include <fcntl.h>
-#include <sys/stat.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
 # define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
+
+#include <io.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "osmswin.h"
 
@@ -63,7 +68,7 @@ int mkstemp(char *template)
     return _open(temp, _O_CREAT |  _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
 }
 
-int getpagesize(void)
+int xpost_getpagesize(void)
 {
     SYSTEM_INFO si;
 

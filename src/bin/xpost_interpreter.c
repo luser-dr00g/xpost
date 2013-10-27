@@ -54,7 +54,12 @@ typedef bool _Bool;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#ifdef __MINGW32__
+# include "osmswin.h" /* mkstemp xpost_getpagesize */
+#else
+# include "osunix.h" /* xpost_getpagesize */
+#endif
 
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
@@ -72,10 +77,6 @@ typedef bool _Bool;
 #include "xpost_op_token.h"  // token operator functions
 #include "xpost_op_dict.h"  // dictionary operator functions
 #include "xpost_pathname.h" // determine whether xpost is installed
-
-#ifdef HAVE_WIN32
-# include "osmswin.h" // mkstemp
-#endif
 
 int TRACE = 0;
 itp *itpdata;
@@ -540,7 +541,7 @@ context *ctx;
 /* set global pagesize, initialize eval's jump-table */
 static void initalldata(void)
 {
-    pgsz = getpagesize();
+    pgsz = xpost_getpagesize();
     initializing = 1;
     initevaltype();
 

@@ -140,7 +140,7 @@ if test "x${enable_mmap}" = "xyes" ; then
    AC_CHECK_HEADERS([sys/mman.h], [have_mmap="yes"], [have_mmap="no"])
 fi
 
-AC_CHECK_HEADERS([libgen.h])
+AC_CHECK_HEADERS([libgen.h unistd.h])
 
 ### Checks for types
 
@@ -170,6 +170,73 @@ if ! test "x${ac_cv_func_dirname}" = "xyes" ; then
    AC_MSG_ERROR([dirname() function is mandatory, exiting...])
 fi
 
+# sysconf
+AC_COMPILE_IFELSE(
+   [AC_LANG_PROGRAM(
+       [[
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+       ]],
+       [[
+long sz;
+sz = sysconf(_SC_PAGESIZE);
+       ]])],
+   [
+    have_sysconf_pagesize="yes"
+    AC_DEFINE([HAVE_SYSCONF_PAGESIZE], [1], [Define to 1 if _SC_PAGESIZE is available with sysconf()])
+   ],
+   [have_sysconf_pagesize="no"])
+
+AC_MSG_CHECKING([whether _SC_PAGESIZE is available with sysconf()])
+AC_MSG_RESULT([${have_sysconf_pagesize}])
+
+if test "x${have_sysconf_pagesize}" = "xno" ; then
+   AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(
+          [[
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+          ]],
+          [[
+long sz;
+sz = sysconf(_SC_PAGE_SIZE);
+          ]])],
+      [
+       have_sysconf_page_size="yes"
+       AC_DEFINE([HAVE_SYSCONF_PAGE_SIZE], [1], [Define to 1 if _SC_PAGE_SIZE is available with sysconf()])
+      ],
+      [have_sysconf_page_size="no"])
+
+   AC_MSG_CHECKING([whether _SC_PAGE_SIZE is available with sysconf()])
+   AC_MSG_RESULT([${have_sysconf_page_size}])
+fi
+
+# getpagesize
+if test "x${have_sysconf_pagesize}" = "xno" && test "x${have_sysconf_page_size}" = "xno" ; then
+   AC_COMPILE_IFELSE(
+      [AC_LANG_PROGRAM(
+          [[
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
+          ]],
+          [[
+long sz;
+sz = getpagesize();
+          ]])],
+      [
+       have_getpagesize="yes"
+       AC_DEFINE([HAVE_GETPAGESIZE], [1], [Define to 1 if getpagesize() is available])
+      ],
+      [have_getpagesize="no"])
+
+   AC_MSG_CHECKING([whether getpagesize() is available])
+   AC_MSG_RESULT([${have_getpagesize}])
+fi
+
+# mremap
 have_mremap="no"
 if test "x${have_mmap}" = "xyes" ; then
    AC_CHECK_FUNCS([mmap mremap])

@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,5 +34,6 @@
 
 void echoon (FILE *f);
 void echooff (FILE *f);
+int xpost_getpagesize(void);
 
 #endif

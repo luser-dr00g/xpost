@@ -51,6 +51,12 @@ typedef bool _Bool;
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
+#ifdef __MINGW32__
+# include "osmswin.h" /* xpost_getpagesize */
+#else
+# include "osunix.h" /* xpost_getpagesize */
+#endif
+
 #include "xpost_memory.h" /* mfile mfalloc findtabent */
 #include "xpost_object.h" /* object size */
 /* typedef long long object; */
@@ -232,7 +238,6 @@ Xpost_Object pop (mfile *mem,
 #ifdef TESTMODULE_S
 
 #include <stdio.h>
-#include <unistd.h>
 
 mfile mem;
 unsigned s, t;
@@ -240,7 +245,7 @@ unsigned s, t;
 /* initialize everything */
 void init (void)
 {
-    pgsz = getpagesize();
+    pgsz = xpost_getpagesize();
     initmem(&mem, "x.mem");
     s = initstack(&mem);
     t = initstack(&mem);

@@ -54,7 +54,6 @@ typedef bool _Bool;
 #include <stdlib.h> /* exit free malloc realloc */
 #include <stdio.h> /* fprintf printf perror */
 #include <string.h> /* memset */
-#include <unistd.h> /* getpagesize */
 
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
@@ -67,7 +66,11 @@ typedef bool _Bool;
 # include <io.h>
 #endif
 
-
+#ifdef __MINGW32__
+# include "osmswin.h"
+#else
+# include "osunix.h"
+#endif
 
 #include "xpost_memory.h"  // double-check prototypes
 #include "xpost_object.h"  // mfiles contain objects
@@ -489,7 +492,7 @@ void init_test_memory()
 {
     int fd;
     char *fname = "x.mem";
-    pgsz = getpagesize();
+    pgsz = xpost_getpagesize();
     fd = open(fname, O_RDWR | O_CREAT, XPOST_MODE_READ_WRITE);
     initmem(&tstmem, fname, fd);
     (void)initmtab(&tstmem);
@@ -549,7 +552,7 @@ mfile mem;
 /* initialize everything */
 void init(void)
 {
-    pgsz = getpagesize();
+    pgsz = xpost_getpagesize();
     initmem(&mem, "x.mem");
     (void)initmtab(&mem); /* create mtab at address zero */
 }
