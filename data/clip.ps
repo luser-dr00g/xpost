@@ -1,0 +1,81 @@
+
+/p2abc { % x0 y0 x1 y1
+    exch 3 index sub
+    exch 2 index sub % x0 y0 dx dy
+    exch         % x0 y0 A B
+    neg
+    2 copy 6 2 roll  % A B x0 y0 A B
+    3 -1 roll mul    % A B x0 A By0
+    3 1 roll mul     % A B By0 Ax0
+    add neg          % A B C
+} def
+
+% following code is from Bill Casselman's Mathematical Illustrations, ch. 5.
+
+/evaluate { %    x y [A B C]
+    aload pop    % x y A B C
+    5 1 roll     % C x y A B
+    3 2 roll mul % C x A By
+    3 1 roll mul % C By Ax
+    add add
+} def
+
+% polygon [A B C]  .  new-polygon
+/hodgman-sutherland { 4 dict begin
+    /f exch def
+    /p exch def
+    /n p length def
+    (n=)print n =
+    n 0 gt {
+
+    /P p n 1 sub get def
+    /d P length 1 sub def
+    /fP P aload pop f evaluate def
+    [
+        p {
+            /Q exch def
+            /fQ Q aload pop f evaluate def
+            (P=)print P ==
+            (Q=)print Q ==
+            (fP=)print fP ==
+            (fQ=)print fQ ==
+            fP 0 le {
+                fQ 0 le {
+                    Q
+                    (Q)=
+                }{
+                    fP 0 lt {
+                        /QP fQ fP sub def
+                        [
+                            fQ P 0 get mul fP Q 0 get mul sub QP div
+                            fQ P 1 get mul fP Q 1 get mul sub QP div
+                        ]
+                        (I)=
+                    } if
+                } ifelse
+            }{
+                fQ 0 le {
+                    fQ 0 lt {
+                        /QP fQ fP sub def
+                        [
+                            fQ P 0 get mul fP Q 0 get mul sub QP div
+                            fQ P 1 get mul fP Q 1 get mul sub QP div
+                        ]
+                        (I)=
+                    } if
+                    Q
+                    (Q)=
+                } if
+            } ifelse
+            /P Q def
+            /fP fQ def
+        } forall
+    ]
+
+    }{ % n==0
+        p
+    } ifelse
+
+end } def
+
+(eof clip.ps)=
