@@ -58,6 +58,10 @@ typedef bool _Bool;
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
 
+#ifdef HAVE_UNISTD_H
+# include <unistd.h> /* ftruncate close */
+#endif
+
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h> /* mmap munmap mremap */
 #endif
