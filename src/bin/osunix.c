@@ -61,12 +61,12 @@ void echooff (FILE *f)
 #ifdef HAVE_SYSCONF_PAGESIZE
 int xpost_getpagesize(void)
 {
-  return (int)sysconfig(_SC_PAGESIZE);
+  return (int)sysconf(_SC_PAGESIZE);
 }
 #elif defined HAVE_SYSCONF_PAGE_SIZE
 int xpost_getpagesize(void)
 {
-  return (int)sysconfig(_SC_PAGE_SIZE);
+  return (int)sysconf(_SC_PAGE_SIZE);
 }
 #elif defined HAVE_GETPAGESIZE
 # define xpost_getpagesize getpagesize
