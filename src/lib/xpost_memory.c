@@ -53,7 +53,6 @@ typedef bool _Bool;
 #include <stdlib.h> /* exit free malloc realloc */
 #include <stdio.h> /* fprintf printf putchar puts */
 #include <string.h> /* memset */
-#include <unistd.h> /* getpagesize */
 
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */

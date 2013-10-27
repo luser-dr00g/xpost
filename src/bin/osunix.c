@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,9 +29,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <stdio.h>
 #include <termios.h>
-#include <unistd.h>
+
+#ifdef HAVE_UNISTD_H
+# include <unistd.h>
+#endif
 
 #include "osunix.h"
 
@@ -49,4 +57,20 @@ void echooff (FILE *f)
     ts.c_lflag &= ~ECHO;
     tcsetattr(fileno(f), TCSANOW, &ts);
 }
+
+#ifdef HAVE_SYSCONF_PAGESIZE
+int xpost_getpagesize(void)
+{
+  return (int)sysconfig(_SC_PAGESIZE);
+}
+#elif defined HAVE_SYSCONF_PAGE_SIZE
+int xpost_getpagesize(void)
+{
+  return (int)sysconfig(_SC_PAGE_SIZE);
+}
+#elif defined HAVE_GETPAGESIZE
+# define xpost_getpagesize getpagesize
+#else
+# error "No way to retrieve the size of a page found"
+#endif
 

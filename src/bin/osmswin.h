@@ -38,7 +38,7 @@ void echooff(FILE *f);
 #ifdef __MINGW32__
 
 int mkstemp(char *template);
-int getpagesize(void);
+int xpost_getpagesize(void);
 
 #endif
 
