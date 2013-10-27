@@ -33,6 +33,12 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 
+#ifndef WIN32_LEAN_AND_MEAN
+# define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#undef WIN32_LEAN_AND_MEAN
+
 #include "osmswin.h"
 
 void echoon(FILE *f)
@@ -44,6 +50,7 @@ void echooff(FILE *f)
 }
 
 #ifdef __MINGW32__
+
 int mkstemp(char *template)
 {
     char *temp;
@@ -54,4 +61,14 @@ int mkstemp(char *template)
 
     return _open(temp, _O_CREAT |  _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
 }
+
+int getpagesize(void)
+{
+    SYSTEM_INFO si;
+
+    GetSystemInfo(&si);
+
+    return si.dwPageSize;
+}
+
 #endif
