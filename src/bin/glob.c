@@ -23,14 +23,17 @@
  */
 
 /* ---------------------------------------------------------------------------
+ *
  * MinGW implementation of (approximately) POSIX conforming glob() and
  * globfree() API functions.
  *
  * Written by Keith Marshall <keithmarshall@users.sourceforge.net>
- * Copyright (C) 2011-2013, MinGW.org Project.
- * Copyright (C) 2013, Xpost Project.
+ * Copyright (C) 2011-2013, MinGW.org Project
+ * Copyright (C) 2013, Vincent Torri
+ *
  * ---------------------------------------------------------------------------
  */
+
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
