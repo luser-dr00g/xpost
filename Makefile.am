@@ -36,7 +36,7 @@ if XPOST_ENABLE_TESTS
 include src/tests/Makefile.mk
 
 check-local:
-	src/tests/.libs/xpost_suite.exe
+	src/tests/.libs/xpost_suite$(EXEEXT)
 
 else
 
