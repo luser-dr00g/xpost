@@ -227,26 +227,6 @@ Xpost_Object consoper(context *ctx,
     return o;
 }
 
-/*
-   idea for a quicker pattern-matching approach
-   */
-static
-qword digest(context *ctx,
-             mfile *mem,
-             unsigned stacadr)
-{
-    qword a = 0;
-    int i;
-
-    (void)ctx;
-    for (i=0; i < 8; i++) {
-        byte t = xpost_object_get_type(top(mem, stacadr, i));
-        if (t == invalidtype) break;
-        a |= (qword)t << ((unsigned)i * 8);
-    }
-    return a;
-}
-
 /* copy top n elements to holding stack & pop them */
 static
 void holdn (context *ctx,

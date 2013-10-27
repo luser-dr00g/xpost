@@ -293,63 +293,6 @@ void exitcontext(context *ctx)
     exitmem(ctx->lo);
 }
 
-/*
-   fork new process with private global and private local vm
-   (spawn jobserver)
-   */
-static
-unsigned fork1(context *ctx)
-{
-    unsigned newcid;
-    context *newctx;
-
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
-    initlocal(ctx);
-    initglobal(ctx);
-    ctx->vmmode = LOCAL;
-    return newcid;
-}
-
-/*
-   fork new process with shared global vm and private local vm
-   (new "application"?)
-   */
-static
-unsigned fork2(context *ctx)
-{
-    unsigned newcid;
-    context *newctx;
-
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
-    initlocal(ctx);
-    newctx->gl = ctx->gl;
-    addtoctxlist(newctx->gl, newcid);
-    push(newctx->lo, newctx->ds, bot(ctx->lo, ctx->ds, 0)); // systemdict
-    return newcid;
-}
-
-/*
-   fork new process with shared global and shared local vm
-   (lightweight process)
-   */
-static
-unsigned fork3(context *ctx)
-{
-    unsigned newcid;
-    context *newctx;
-
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
-    newctx->lo = ctx->lo;
-    addtoctxlist(newctx->lo, newcid);
-    newctx->gl = ctx->gl;
-    addtoctxlist(newctx->gl, newcid);
-    push(newctx->lo, newctx->ds, bot(ctx->lo, ctx->ds, 0)); // systemdict
-    return newcid;
-}
-
 
 /* initialize itp */
 void inititp(itp *itpptr)

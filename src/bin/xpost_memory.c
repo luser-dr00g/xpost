@@ -120,26 +120,6 @@ void dumpmfile(mfile *mem)
     (void)puts("");
 }
 
-#ifdef _WIN32
-# define XPOST_MODE_READ_WRITE _S_IREAD | _S_IWRITE
-#else
-# define XPOST_MODE_READ_WRITE S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
-#endif
-
-/* memfile exists in path */
-static
-int getmemfile(char *fname)
-{
-    int fd;
-    fd = open(
-            fname, //"x.mem",
-            O_RDWR | O_CREAT,
-            XPOST_MODE_READ_WRITE);
-    if (fd == -1)
-        perror(fname);
-    return fd;
-}
-
 /** \fn void initmem(mfile *mem, char *fname, int fd)
   initialize the memory file.
   copies fname into mfile struct.
@@ -497,6 +477,12 @@ void put(mfile *mem,
 }
 
 static mfile tstmem;
+
+#ifdef _WIN32
+# define XPOST_MODE_READ_WRITE _S_IREAD | _S_IWRITE
+#else
+# define XPOST_MODE_READ_WRITE S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH
+#endif
 
 static
 void init_test_memory()
