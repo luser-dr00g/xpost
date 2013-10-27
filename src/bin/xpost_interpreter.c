@@ -533,7 +533,7 @@ void dumpctx(context *ctx)
 //#ifdef TESTMODULE_ITP
 
 /* global shortcut for a single-threaded interpreter */
-context *ctx;
+context *xpost_ctx;
 
 /* string constructor helper for literals */
 #define CNT_STR(s) sizeof(s)-1, s
@@ -560,7 +560,7 @@ static void initalldata(void)
 
     /* set global shortcut to context_0
        (the only context in a single-threaded interpreter) */
-    ctx = &itpdata->ctab[0];
+    xpost_ctx = &itpdata->ctab[0];
 }
 
 static void setdatadir(context *ctx, Xpost_Object sd)
@@ -606,7 +606,7 @@ static void loadinitps(context *ctx)
     mainloop(ctx);
 }
 
-void copyudtosd(context *ctx, Xpost_Object ud, Xpost_Object sd)
+static void copyudtosd(context *ctx, Xpost_Object ud, Xpost_Object sd)
 {
     /* copy userdict names to systemdict
         Problem: This is clearly an invalidaccess,
@@ -633,24 +633,24 @@ void createitp(void)
     initalldata();
 
     /* extract systemdict and userdict for additional definitions */
-    sd = bot(ctx->lo, ctx->ds, 0);
-    ud = bot(ctx->lo, ctx->ds, 2);
+    sd = bot(xpost_ctx->lo, xpost_ctx->ds, 0);
+    ud = bot(xpost_ctx->lo, xpost_ctx->ds, 2);
 
-	setdatadir(ctx, sd);
+	setdatadir(xpost_ctx, sd);
 
 /* FIXME: Squeeze and eliminate this workaround.
    Ignoring errors is a bad idea.  */
 ignoreinvalidaccess = 1;
 
-    loadinitps(ctx);
+    loadinitps(xpost_ctx);
 
-    copyudtosd(ctx, ud, sd);
+    copyudtosd(xpost_ctx, ud, sd);
 
 ignoreinvalidaccess = 0;
 
     /* make systemdict readonly */
-    bdcput(ctx, sd, consname(ctx, "systemdict"), xpost_object_set_access(sd,XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
-    tob(ctx->lo, ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    bdcput(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    tob(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
 }
 
 
@@ -661,27 +661,27 @@ void runitp(void)
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
-    push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0)); 
+    push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0)); 
         /* `start` proc defined in init.ps */
-    push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "start")));
+    push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
 
-    gsav = save(ctx->gl);
-    lsav = save(ctx->lo);
+    gsav = save(xpost_ctx->gl);
+    lsav = save(xpost_ctx->lo);
 
     /* Run! */
     initializing = 0;
-    ctx->quit = 0;
-    mainloop(ctx);
+    xpost_ctx->quit = 0;
+    mainloop(xpost_ctx);
 
     //for ( glev = count(ctx->gl, adrent(ctx->gl, VS));
     //        glev > gsav.save_.lev;
     //        glev-- ) {
-        restore(ctx->gl);
+        restore(xpost_ctx->gl);
     //}
-    for ( llev = count(ctx->lo, adrent(ctx->lo, VS));
+    for ( llev = count(xpost_ctx->lo, adrent(xpost_ctx->lo, VS));
             llev > lsav.save_.lev;
             llev-- ) {
-        restore(ctx->lo);
+        restore(xpost_ctx->lo);
     }
 }
 
