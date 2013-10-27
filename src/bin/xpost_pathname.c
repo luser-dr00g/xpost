@@ -33,6 +33,10 @@
 # include <config.h>
 #endif
 
+#ifdef HAVE_LIBGEN_H
+# include <libgen.h>
+#endif
+
 #include "xpost_main.h"
 
 int is_installed = 0;
