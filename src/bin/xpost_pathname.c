@@ -1,3 +1,5 @@
+#include <libgen.h>
+
 #include "xpost_main.h"
 
 int is_installed = 0;
@@ -14,7 +16,7 @@ int checkexepath (char *exepath)
         if (*slash == '\\') *slash = '/';
     }
 
-    /* global exedir is set in ps systemdict as /EXE_DIR */
+    /* global exedir is defined in ps systemdict as /EXE_DIR */
 	exedir = strdup(exepath);
 	dirname(exedir);
 
@@ -56,6 +58,7 @@ int searchpathforargv0(char *argv0)
        ie. argv[0] is a bare name,
        and no /proc/???/exe links are present
     */
+    (void)argv0;
 	return checkexepath(".");
 }
 
