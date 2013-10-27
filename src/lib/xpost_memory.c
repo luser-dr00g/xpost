@@ -40,18 +40,9 @@ typedef bool _Bool;
 #include "xpost_log.h"
 #include "xpost_memory.h"
 
-/* stubs */
-
-/* FIXME: use xpost_log instead */
+/* stub enum for error codes */
 
 enum { rangecheck, VMerror, unregistered };
-static void error(int err, char *msg)
-{
-    (void)err;
-    XPOST_LOG_ERR("error: %d %s\n", err, msg);
-    //fprintf(stderr, "error: %s\n", msg);
-    //exit(EXIT_FAILURE);
-}
 
 /* FIXME: use autotools to check if getpagesize exists ? */
 unsigned int xpost_memory_pagesize /*= getpagesize()*/ = 4096;
