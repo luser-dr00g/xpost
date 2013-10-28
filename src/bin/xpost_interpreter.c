@@ -55,6 +55,10 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_UNISTD_H
+# include <unistd.h> /* isattty */
+#endif
+
 #ifdef __MINGW32__
 # include "osmswin.h" /* mkstemp xpost_getpagesize */
 #else
@@ -662,8 +666,13 @@ void runitp(void)
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
     push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0));
-        /* `start` proc defined in init.ps */
-    push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
+        /* `start` proc defined in init.ps runs `executive` which prompts for user input
+           'startstdin' does not prompt
+         */
+    if (isatty(fileno(stdin)))
+        push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
+    else
+        push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startstdin")));
 
     gsav = save(xpost_ctx->gl);
     lsav = save(xpost_ctx->lo);
@@ -673,11 +682,7 @@ void runitp(void)
     xpost_ctx->quit = 0;
     mainloop(xpost_ctx);
 
-    //for ( glev = count(ctx->gl, adrent(ctx->gl, VS));
-    //        glev > gsav.save_.lev;
-    //        glev-- ) {
-        restore(xpost_ctx->gl);
-    //}
+    restore(xpost_ctx->gl);
     for ( llev = count(xpost_ctx->lo, adrent(xpost_ctx->lo, VS));
             llev > lsav.save_.lev;
             llev-- ) {

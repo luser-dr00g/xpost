@@ -179,6 +179,15 @@ end
     /executive load stopped
     pop //quit % the operator
 } def
+
+/startstdin {
+    {
+        (%stdin) run
+    } stopped {
+        handleerror
+    } if
+    quit
+} def
 %currentfile flushfile
 
 /prompt {
