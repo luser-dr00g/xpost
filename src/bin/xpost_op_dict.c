@@ -286,12 +286,10 @@ void Dcopy(context *ctx,
     int i, sz;
     mfile *mem;
     unsigned ad;
-    dichead *dp;
     Xpost_Object *tp;
     mem = bank(ctx, S);
     sz = dicmaxlength(mem, S);
     ad = adrent(mem, S.comp_.ent);
-    dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
     for (i=0; i < sz+1; i++) {
         if (xpost_object_get_type(tp[2 * i]) != nulltype) {
@@ -311,10 +309,8 @@ void DPforall (context *ctx,
     D.comp_.sz = dicmaxlength(mem, D); // stash size locally
     if (D.comp_.off <= D.comp_.sz) { // not finished?
         unsigned ad;
-        dichead *dp;
         Xpost_Object *tp;
         ad = adrent(mem, D.comp_.ent);
-        dp = (void *)(mem->base + ad); 
         tp = (void *)(mem->base + ad + sizeof(dichead)); 
 
         for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) { // find next pair
