@@ -162,7 +162,6 @@ typedef enum
 typedef unsigned char byte;
 typedef uint32_t word;      // 2x small size
 typedef uint64_t dword;     // 2x small size
-typedef uint64_t qword;
 typedef int64_t integer;    // 2x small size
 typedef double real;        // 2x small size
 typedef dword addr;         // 2x small size (via dword)
@@ -170,7 +169,6 @@ typedef dword addr;         // 2x small size (via dword)
 typedef unsigned char byte; // assumed 8-bit
 typedef uint16_t word;
 typedef uint32_t dword;
-typedef uint64_t qword;
 typedef int32_t integer;
 typedef float real;        // assumes IEEE 754
 typedef dword addr;
