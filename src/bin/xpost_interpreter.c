@@ -660,7 +660,7 @@ void createitp(void)
 
 void runitp(void)
 {
-    Xpost_Object gsav, lsav;
+    Xpost_Object lsav;
     int llev;
     /* prime the exec stack
        so it starts with 'start',
@@ -674,7 +674,7 @@ void runitp(void)
     else
         push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startstdin")));
 
-    gsav = save(xpost_ctx->gl);
+    (void) save(xpost_ctx->gl);
     lsav = save(xpost_ctx->lo);
 
     /* Run! */
