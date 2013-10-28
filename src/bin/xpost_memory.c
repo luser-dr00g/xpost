@@ -222,7 +222,9 @@ void growmem(mfile *mem,
                unsigned sz)
 {
     void *tmp;
+    int newfd;
 
+    (void)newfd; /* newfd is not used in all compilation paths. this gives spurious warnings. */
     //printf("growmem: %p %u + %u\n", mem->base, mem->max, sz);
     if (sz < pgsz) sz = pgsz;
     else sz = (sz/pgsz + 1) * pgsz;
