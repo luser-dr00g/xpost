@@ -58,7 +58,7 @@ AC_ARG_ENABLE([mmap],
 have_mmap="no"
 
 AC_ARG_ENABLE([tests],
-   [AC_HELP_STRING([--enable-tests], [enable tests @<:@default=disabled@:>@])],
+   [AC_HELP_STRING([--enable-tests], [enable tests @<:@default=no@:>@])],
    [
     if test "x${enableval}" = "xyes" ; then
        enable_tests="yes"
@@ -67,6 +67,17 @@ AC_ARG_ENABLE([tests],
     fi
    ],
    [enable_tests="no"])
+
+AC_ARG_ENABLE([valgrind],
+   [AC_HELP_STRING([--enable-valgrind], [enable running unit tests with valgrind @<:@default=no@:>@])],
+   [
+    if test "x${enableval}" = "xyes" ; then
+       enable_valgrind="yes"
+    else
+       enable_valgrind="no"
+    fi
+   ],
+   [enable_valgrind="no"])
 
 
 ### Default options with respect to host
@@ -116,6 +127,7 @@ AC_SUBST([WC])
 
 ### Checks for libraries
 
+# check
 have_tests="no"
 if test "x${enable_tests}" = "xyes" ; then
    PKG_CHECK_MODULES([CHECK],
@@ -128,6 +140,23 @@ AC_MSG_CHECKING([whether tests are built])
 AC_MSG_RESULT([${have_tests}])
 
 AM_CONDITIONAL(XPOST_ENABLE_TESTS, test "x${have_tests}" = "xyes")
+
+# valgrind
+if test "x${have_tests}" = "xno" ; then
+   enable_valgrind="no"
+fi
+
+have_valgrind="no"
+if test "x${have_tests}" = "xyes" && test "x${enable_valgrind}" = "xyes" ; then
+   AC_CHECK_PROG([VALGRIND], [valgrind], [valgrind], [none])
+   if test "x${VALGRIND}" != "xnone" ; then
+      have_valgrind="yes"
+   fi
+fi
+
+AM_CONDITIONAL([HAVE_VALGRIND], [test "x${have_valgrind}" = "xyes"])
+
+AC_SUBST([VALGRIND])
 
 
 ### Checks for header files
@@ -152,7 +181,18 @@ AC_CHECK_HEADERS([libgen.h unistd.h])
 
 AM_PROG_CC_C_O
 
-XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections])
+xpost_lib_flags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections"
+
+if test "x${have_tests}" = "xyes" ; then
+   xpost_lib_flags="${xpost_lib_flags} -g3 -ggdb3 -02"
+   XPOST_TEST_CPPFLAGS="-DDEBUG"
+else
+   XPOST_TEST_CPPFLAGS="-DNDEBUG"
+fi
+
+AC_SUBST([XPOST_TEST_CPPFLAGS])
+
+XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [${xpost_lib_flags}])
 
 XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections])
 
@@ -284,6 +324,7 @@ echo "  Tests................: yes (make check)"
 else
 echo "  Tests................: no"
 fi
+echo "  Valgrind.............: ${have_valgrind}"
 echo
 echo "Compilation............: make (or gmake)"
 echo "  CPPFLAGS.............: $CPPFLAGS"

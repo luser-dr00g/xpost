@@ -35,8 +35,12 @@ if XPOST_ENABLE_TESTS
 
 include src/tests/Makefile.mk
 
+if HAVE_VALGRIND
+XPOST_VAGRIND = $(top_srcdir)/valgrind_wrapper.sh
+endif
+
 check-local:
-	src/tests/.libs/xpost_suite$(EXEEXT)
+	$(XPOST_VAGRIND) $(top_srcdir)/src/tests/.libs/xpost_suite$(EXEEXT)
 
 else
 
@@ -46,4 +50,6 @@ check-local:
 endif
 
 EXTRA_DIST += \
-m4/xpost.m4
+m4/xpost.m4 \
+valgrind_wrapper.sh \
+glibc.supp
