@@ -406,7 +406,7 @@ void initopdi(context *ctx,
     op = consoper(ctx, "get", DAget, 1, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "put", DAAput, 1, 3,
             dicttype, anytype, anytype); INSTALL;
-    //op = consoper(ctx, "undef", DAundef, 0, 2, dicttype, anytype); INSTALL;
+    op = consoper(ctx, "undef", DAundef, 0, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "known", DAknown, 1, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "where", Awhere, 2, 1, anytype); INSTALL;
     op = consoper(ctx, "copy", Dcopy, 1, 2, dicttype, dicttype); INSTALL;
