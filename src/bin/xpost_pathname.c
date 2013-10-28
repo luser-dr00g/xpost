@@ -131,6 +131,8 @@ int xpost_is_installed (char *argv0)
 	ssize_t len;
     char *libsptr;
 
+    (void)len; // len and buf are used in some, but not all, compilation paths
+    (void)buf;
 	printf("argv0: %s\n", argv0);
 
     /* hack for cygwin and mingw.
@@ -158,7 +160,6 @@ int xpost_is_installed (char *argv0)
 
 	if ((len = readlink("/proc/self/exe", buf, sizeof buf)) != -1) {
 		buf[len] = '\0';
-		//strcat(buf, basename(argv0)); //already there
 	}
 
 	if (len == -1)
