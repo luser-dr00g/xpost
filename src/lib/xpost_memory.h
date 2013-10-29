@@ -77,14 +77,14 @@
  */
 typedef enum
 {
-    XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK       = 0xFF000000,
-    XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET     = 24,
+    XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK       = 0x7F000000,
+    XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET     =     24,
     XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_MASK   = 0x00FF0000,
-    XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET = 16,
+    XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET =       16,
     XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_MASK   = 0x0000FF00,
-    XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET = 8,
+    XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET =         8,
     XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK   = 0x000000FF,
-    XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET = 0
+    XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET =           0
 } Xpost_Memory_Table_Mark_Data;
 
 /**
@@ -119,8 +119,10 @@ typedef enum
  */
 typedef struct
 {
-    int fd; /**< file descriptor associated with this memory/file, or -1 if not used. */
-    char fname[20]; /**< file name associated with this memory/file, or "" if not used. */
+    int fd; /**< file descriptor associated with this memory/file,
+                  or -1 if not used. */
+    char fname[20]; /**< file name associated with this memory/file,
+                          or "" if not used. */
     /*@dependent@*/
     unsigned char *base; /**< pointer to mapped memory */
     unsigned int used;  /**< size used, cursor to free space */
@@ -137,7 +139,8 @@ typedef struct
 typedef struct
 {
     unsigned int nexttab; /**< next table in chain */
-    unsigned int nextent; /**< next slot in table, or #XPOST_MEMORY_TABLE_SIZE if full */
+    unsigned int nextent; /**< next slot in table,
+                                or #XPOST_MEMORY_TABLE_SIZE if full */
     struct {
         unsigned int adr; /**< allocation address */
         unsigned int sz; /**< size of allocation */
@@ -156,7 +159,8 @@ typedef struct
  * @var xpost_memory_pagesize
  * @brief The 'grain' of the memory-file size.
  */
-extern unsigned int xpost_memory_pagesize /*= getpagesize()*/; /*= 4096 on 32bit Linux*/
+extern unsigned int xpost_memory_pagesize /*= getpagesize()*/;
+    /*= 4096 on 32bit Linux, 64k on 32bit MinGW */
 
 
 /*
