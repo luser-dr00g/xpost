@@ -160,17 +160,17 @@ typedef enum
 
 #ifdef WANT_LARGE_OBJECT
 typedef unsigned char byte;
-typedef uint32_t word;      // 2x small size
-typedef uint64_t dword;     // 2x small size
-typedef int64_t integer;    // 2x small size
-typedef double real;        // 2x small size
-typedef dword addr;         // 2x small size (via dword)
+typedef uint32_t word;      /* 2x small size */
+typedef uint64_t dword;     /* 2x small size */
+typedef int64_t integer;    /* 2x small size */
+typedef double real;        /* 2x small size */
+typedef dword addr;         /* 2x small size (via dword) */
 #else
-typedef unsigned char byte; // assumed 8-bit
+typedef unsigned char byte; /* assumed 8-bit */
 typedef uint16_t word;
 typedef uint32_t dword;
 typedef int32_t integer;
-typedef float real;        // assumes IEEE 754
+typedef float real;        /* assumes IEEE 754 */
 typedef dword addr;
 #endif
 
