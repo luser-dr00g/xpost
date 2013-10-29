@@ -598,7 +598,7 @@ static void loadinitps(context *ctx)
              CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
     else {
         char buf[1024];
-        snprintf(buf, 1024,
+        snprintf(buf, sizeof buf,
                 "(%s/../../data/init.ps) (r) file cvx exec",
                 exedir);
         push(ctx->lo, ctx->es,
@@ -617,11 +617,14 @@ static void copyudtosd(context *ctx, Xpost_Object ud, Xpost_Object sd)
         and yet is required by the PLRM. Discussion:
 https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
      */
+
+    ignoreinvalidaccess = 1;
     bdcput(ctx, sd, consname(ctx, "userdict"), ud);
     bdcput(ctx, sd, consname(ctx, "errordict"),
            bdcget(ctx, ud, consname(ctx, "errordict")));
     bdcput(ctx, sd, consname(ctx, "$error"),
            bdcget(ctx, ud, consname(ctx, "$error")));
+    ignoreinvalidaccess = 0;
 }
 
 
@@ -642,15 +645,9 @@ void createitp(void)
 
     setdatadir(xpost_ctx, sd);
 
-    /* FIXME: Squeeze and eliminate this workaround.
-       Ignoring errors is a bad idea.  */
-    ignoreinvalidaccess = 1;
-
     loadinitps(xpost_ctx);
 
     copyudtosd(xpost_ctx, ud, sd);
-
-    ignoreinvalidaccess = 0;
 
     /* make systemdict readonly */
     bdcput(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
