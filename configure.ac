@@ -184,7 +184,7 @@ AM_PROG_CC_C_O
 xpost_lib_flags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections"
 
 if test "x${have_tests}" = "xyes" ; then
-   xpost_lib_flags="${xpost_lib_flags} -g3 -ggdb3 -02"
+   xpost_lib_flags="${xpost_lib_flags} -g3 -ggdb3 -O2"
    XPOST_TEST_CPPFLAGS="-DDEBUG"
 else
    XPOST_TEST_CPPFLAGS="-DNDEBUG"
