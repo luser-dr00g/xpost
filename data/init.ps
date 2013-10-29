@@ -78,6 +78,7 @@ run
 
 /stack { count dup 1 add copy //= repeat pop } def
 
+
 % ==
 24 dict begin
 /==dict currentdict def
@@ -199,6 +200,33 @@ end
     flush
 } def
 
+/setdevparams {
+} def
+/currentdevparams {
+} def
+/setuserparams {
+} def
+/currentuserparams {
+} def
+/setsystemparams {
+} def
+/currentsystemparams {
+} def
+
+/setpagedevice {
+    dup type /dicttype ne {
+        /setpagedevice cvx /typecheck signalerror
+    } if
+} def
+/currentpagedevice {
+} def
+
+
+end % systemdict
+
+userdict begin
+false setglobal
+
 /executive {
     //execdict begin
 
@@ -251,31 +279,6 @@ end
 } bind
 def
 
-/setdevparams {
-} def
-/currentdevparams {
-} def
-/setuserparams {
-} def
-/currentuserparams {
-} def
-/setsystemparams {
-} def
-/currentsystemparams {
-} def
-
-/setpagedevice {
-    dup type /dicttype ne {
-        /setpagedevice cvx /typecheck signalerror
-    } if
-} def
-/currentpagedevice {
-} def
-
-
-end % systemdict
-
-userdict begin
 
 DATA_DIR (/qsort.ps) strcat
 run
