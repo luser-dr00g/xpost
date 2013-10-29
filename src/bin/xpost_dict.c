@@ -189,10 +189,13 @@ static
 unsigned hash(Xpost_Object k)
 {
     unsigned h;
-    h = (xpost_object_get_type(k) << 1) /* ignore flags */
+    h = ( (xpost_object_get_type(k)
+            | (k.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
+            << 1) /* ignore flags (except BANK!) */
         + (k.comp_.sz << 3)
         + (k.comp_.ent << 7)
         + (k.comp_.off << 5);
+    //h = xpost_object_get_type(k); //test collisions.
 #ifdef DEBUGDIC
     printf("\nhash(");
     xpost_object_dump(k);
@@ -537,8 +540,8 @@ void dicput(context *ctx,
     Xpost_Object *e;
     dichead *dp;
 
-retry:
     if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
+retry:
     e = diclookup(ctx, mem, d, k);
     if (e == NULL) {
         //error("dict overfull");
@@ -594,14 +597,66 @@ void dicundef(context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
-    //find slot for key
-    //find last chained key and value with same hash
-        //if found: move last key and value to slot
-        //not found: write null over key and value
+    Xpost_Object *e;
+    unsigned ad;
+    dichead *dp;
+    Xpost_Object *tp;
+    unsigned sz;
+    unsigned h;
+    unsigned i;
+    unsigned last = 0;
+    bool lastisset = false;
+    bool found = false;
 
-    (void)ctx;
-    (void)k;
+    if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
+
+    ad = adrent(mem, d.comp_.ent);
+    dp = (void *)(mem->base + ad);
+    tp = (void *)(mem->base + ad + sizeof(dichead));
+
+    e = diclookup(ctx, mem, d, k); //find slot for key
+    if (e == NULL || objcmp(ctx,e[0],null) == 0) {
+        error(undefined, "dicundef");
+    }
+
+    //find last chained key and value with same hash
+    sz = (dp->sz + 1);
+    h = hash(k) % sz;
+
+    for (i=h; i < sz; i++) 
+        if (h == hash(tp[2*i]) % sz) {
+            last = i;
+            lastisset = true;
+        } else if (objcmp(ctx, tp[2*i], null) == 0) {
+            if (lastisset) {
+                found = true;
+                break;
+            }
+        }
+
+    if (!found)
+        for (i=0; i < h; i++)
+            if (h == hash(tp[2*i]) % sz) {
+                last = i;
+                lastisset = true;
+            } else if (objcmp(ctx, tp[2*i], null) == 0) {
+                if (lastisset) {
+                    found = true;
+                    break;
+                }
+            }
+
+    if (found) { //if found: move last key and value to slot
+        e[0] = tp[2*last];
+        e[1] = tp[2*last+1];
+        tp[2*last] = null;
+        tp[2*last+1] = null;
+    }
+    else { //not found: write null over key and value
+        e[0] = null;
+        e[1] = null;
+    }
+
 }
 
 /* undefine key from banked dict */
