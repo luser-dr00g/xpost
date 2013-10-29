@@ -614,6 +614,8 @@ void dicundef(context *ctx,
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
 
+    k = clean_key(ctx, k);
+
     e = diclookup(ctx, mem, d, k); //find slot for key
     if (e == NULL || objcmp(ctx,e[0],null) == 0) {
         error(undefined, "dicundef");
