@@ -124,16 +124,16 @@ int xpost_memory_file_init (
 # endif
             | (fd == -1? MAP_ANONYMOUS : 0), fd, 0);
     if (mem->base == MAP_FAILED)
-    { // .
+    { /* . */
 #else
     mem->base = malloc(sz);
     if (mem->base == NULL)
-    { // ..
+    { /* .. */
 #endif
         XPOST_LOG_ERR("%d %s\n",
                 VMerror, "failed to allocate memory-file data\n");
         return 0;
-    } // . ..
+    } /* . .. */
     mem->used = 0;
     mem->max = sz;
 #ifndef HAVE_MMAP
@@ -291,7 +291,7 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
         printf("%02x ", mem->base[u]);
     }
     if ((u-1)%16 != 0)
-    { // did not print in the last iteration of the loop
+    { /* did not print in the last iteration of the loop */
         for (v = u; u%16 != 0; v++)
         {
             printf("   ");
@@ -357,8 +357,8 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
         return 0;
     }
 
-    ent += ntab*XPOST_MEMORY_TABLE_SIZE; //recalc
-    xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
+    ent += ntab * XPOST_MEMORY_TABLE_SIZE; /* recalc */
+    xpost_memory_table_find_relative(mem, &tab, &ent); /* recalc */
     tab->tab[ent].adr = adr;
     tab->tab[ent].sz = sz;
     tab->tab[ent].tag = tag;
@@ -371,12 +371,12 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
             XPOST_LOG_ERR("%d %s\n",
                     VMerror, "unable to extend table chain\n");
         }
-        ent += ntab*XPOST_MEMORY_TABLE_SIZE; //recalc
-        xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
+        ent += ntab * XPOST_MEMORY_TABLE_SIZE; /* recalc */
+        xpost_memory_table_find_relative(mem, &tab, &ent); /* recalc */
         tab->nexttab = newtab;
     }
 
-    *entity = ent + ntab*XPOST_MEMORY_TABLE_SIZE;
+    *entity = ent + ntab * XPOST_MEMORY_TABLE_SIZE;
     return 1;
 }
 
@@ -553,14 +553,14 @@ int xpost_memory_get (
         return 0;
     }
 
-    if (offset*sz > tab->tab[ent].sz)
+    if (offset * sz > tab->tab[ent].sz)
     {
         XPOST_LOG_ERR("%d %s\n",
                 rangecheck, "xpost_memory_get: out of bounds");
         return 0;
     }
 
-    memcpy(dest, mem->base + tab->tab[ent].adr + offset*sz, sz);
+    memcpy(dest, mem->base + tab->tab[ent].adr + offset * sz, sz);
     return 1;
 }
 
@@ -579,14 +579,14 @@ int xpost_memory_put (
         return 0;
     }
 
-    if (offset*sz > tab->tab[ent].sz)
+    if (offset * sz > tab->tab[ent].sz)
     {
         XPOST_LOG_ERR("%d %s\n",
                 rangecheck, "xpost_memory_put: out of bounds");
         return 0;
     }
 
-    memcpy(mem->base + tab->tab[ent].adr + offset*sz, src, sz);
+    memcpy(mem->base + tab->tab[ent].adr + offset * sz, src, sz);
     return 1;
 }
 
