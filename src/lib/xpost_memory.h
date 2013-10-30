@@ -141,7 +141,8 @@ typedef struct
     unsigned int nexttab; /**< next table in chain */
     unsigned int nextent; /**< next slot in table,
                                 or #XPOST_MEMORY_TABLE_SIZE if full */
-    struct {
+    struct
+    {
         unsigned int adr; /**< allocation address */
         unsigned int sz; /**< size of allocation */
         unsigned int mark; /**< garbage collection metadata */
@@ -178,7 +179,7 @@ extern unsigned int xpost_memory_pagesize /*= getpagesize()*/;
  * the given file descriptor.
  *
  * @param[in,out] mem The memory file.
- * @param[in] fname 
+ * @param[in] fname The file name.
  * @param[in] fd The file descriptor.
  * @return 1 on success, 0 on failure.
  *
@@ -282,7 +283,7 @@ int xpost_memory_table_init (
  * This function attempts to allocate a new VM entity and associated
  * memory of size @p sz. If successful, the table index for the new
  * entity is stored through the @p entity pointer.
- * 
+ *
  * MUST recalculate all VM pointers after this function.
  * See note in xpost_memory_file_alloc().
  */
@@ -334,7 +335,7 @@ int xpost_memory_table_get_addr (
  * @param[in] ent The entity.
  * @param[in] addr The new address.
  * @return 1 on success, 0 on failure.
- * 
+ *
  * If successful, this function replaces the address for
  * @p ent in @p mem with a new address @p addr.
  */
