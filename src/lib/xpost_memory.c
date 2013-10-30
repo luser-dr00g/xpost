@@ -93,11 +93,11 @@ int xpost_memory_file_init (
 
     if (!mem)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
         return 0;
     }
-    XPOST_LOG_INFO("%s%s%s",
-            "init memory file", fname?" for ":"", fname?fname:"");
+    XPOST_LOG_INFO("init memory file%s%s",
+            fname ? " for " : "", fname ? fname : "");
 
     if(fname)
     {
@@ -139,8 +139,7 @@ int xpost_memory_file_init (
     if (mem->base == NULL)
     { /* .. */
 #endif
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "failed to allocate memory-file data\n");
+        XPOST_LOG_ERR("%d failed to allocate memory-file data", VMerror);
         return 0;
     } /* . .. */
     mem->used = 0;
@@ -161,17 +160,16 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
 {
     if (!mem)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
         return 0;
     }
 
     if (mem->base == NULL)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror,
-                "mem->base is NULL, mem not initialized?");
+        XPOST_LOG_ERR("%d mem->base is NULL, mem not initialized ?", VMerror);
         return 0;
     }
-    XPOST_LOG_INFO("%s", "exit memory file.");
+    XPOST_LOG_INFO("exit memory file");
 
 #ifdef HAVE_MMAP
     munmap(mem->base, mem->max);
@@ -212,16 +210,16 @@ int xpost_memory_file_grow (
 
     if (!mem)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
         return 0;
     }
 
     if (mem->base == NULL)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem->base is NULL");
+        XPOST_LOG_ERR("%d mem->base is NULL", VMerror);
         return 0;
     }
-    XPOST_LOG_INFO("%s", "grow memory file.");
+    XPOST_LOG_INFO("grow memory file.");
 
     if (sz < xpost_memory_pagesize)
         sz = xpost_memory_pagesize;
@@ -250,8 +248,7 @@ int xpost_memory_file_grow (
     if (tmp == NULL)
     {
 #endif
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "unable to grow memory\n");
+        XPOST_LOG_ERR("%d unable to grow memory", VMerror);
         ret = 0;
 #ifdef HAVE_MMAP
 # ifndef HAVE_MREMAP
@@ -278,14 +275,13 @@ int xpost_memory_file_alloc (
 
     if (!mem)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
         return 0;
     }
 
     if (mem->base == NULL)
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "mem->base is NULL, mem not initialized?");
+        XPOST_LOG_ERR("%d mem->base is NULL, mem not initialized ?", VMerror);
         return 0;
     }
 
@@ -297,8 +293,7 @@ int xpost_memory_file_alloc (
         {
             if (!xpost_memory_file_grow(mem, sz))
             {
-                XPOST_LOG_ERR("%d %s\n",
-                        VMerror, "unable to allocate memory\n");
+                XPOST_LOG_ERR("%d unable to allocate memory", VMerror);
                 return 0;
             }
         }
@@ -318,7 +313,7 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
 
     if (!mem)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
         return;
     }
 
@@ -373,14 +368,13 @@ int xpost_memory_table_init (
 
     if (!mem)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
         return 0;
     }
 
     if (!xpost_memory_file_alloc(mem, sizeof(Xpost_Memory_Table), &adr))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "unable to initialize table");
+        XPOST_LOG_ERR("%d unable to initialize table", VMerror);
         return 0;
     }
 
@@ -406,7 +400,7 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
 
     if (!mem)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
         return 0;
     }
 
@@ -423,8 +417,7 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
 
     if (!xpost_memory_file_alloc(mem, sz, &adr))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "unable to allocate ent\n");
+        XPOST_LOG_ERR("%d unable to allocate entity", VMerror);
         return 0;
     }
 
@@ -439,8 +432,7 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
         unsigned int newtab;
         if (!xpost_memory_table_init(mem, &newtab))
         {
-            XPOST_LOG_ERR("%d %s\n",
-                    VMerror, "unable to extend table chain\n");
+            XPOST_LOG_ERR("%d unable to extend table chain", VMerror);
         }
         ent += ntab * XPOST_MEMORY_TABLE_SIZE; /* recalc */
         xpost_memory_table_find_relative(mem, &tab, &ent); /* recalc */
@@ -459,13 +451,13 @@ int xpost_memory_table_find_relative (
 {
     if (!mem)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
         return 0;
     }
 
     if (mem->base == NULL)
     {
-        XPOST_LOG_ERR("%d %s\n", VMerror, "mem->base is NULL");
+        XPOST_LOG_ERR("%d mem->base is NULL", VMerror);
         return 0;
     }
 
@@ -475,8 +467,7 @@ int xpost_memory_table_find_relative (
         *aent -= XPOST_MEMORY_TABLE_SIZE;
         if ((*atab)->nexttab == 0)
         {
-            XPOST_LOG_ERR("%d %s\n",
-                    VMerror, "cannot find table segment for ent");
+            XPOST_LOG_ERR("%d cannot find table segment for ent", VMerror);
             return 0;
         }
         *atab = (Xpost_Memory_Table *)(mem->base + (*atab)->nexttab);
@@ -493,8 +484,7 @@ int xpost_memory_table_get_addr (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
     *addr = tab->tab[ent].adr;
@@ -510,8 +500,7 @@ int xpost_memory_table_set_addr (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
     tab->tab[ent].adr = addr;
@@ -527,8 +516,7 @@ int xpost_memory_table_get_size (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
     *sz = tab->tab[ent].sz;
@@ -544,8 +532,7 @@ int xpost_memory_table_set_size (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
     tab->tab[ent].sz = size;
@@ -561,8 +548,7 @@ int xpost_memory_table_get_mark (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
     *mark = tab->tab[ent].mark;
@@ -578,8 +564,7 @@ int xpost_memory_table_set_mark (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
     tab->tab[ent].mark = mark;
@@ -595,8 +580,7 @@ int xpost_memory_table_get_tag (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
     *tag = tab->tab[ent].tag;
@@ -612,8 +596,7 @@ int xpost_memory_table_set_tag (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
     tab->tab[ent].tag = tag;
@@ -631,15 +614,13 @@ int xpost_memory_get (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
 
     if (offset * sz > tab->tab[ent].sz)
     {
-        XPOST_LOG_ERR("%d %s\n",
-                rangecheck, "xpost_memory_get: out of bounds");
+        XPOST_LOG_ERR("%d out of bounds memory", rangecheck);
         return 0;
     }
 
@@ -657,15 +638,13 @@ int xpost_memory_put (
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d %s\n",
-                VMerror, "ent not found");
+        XPOST_LOG_ERR("%d entity not found", VMerror);
         return 0;
     }
 
     if (offset * sz > tab->tab[ent].sz)
     {
-        XPOST_LOG_ERR("%d %s\n",
-                rangecheck, "xpost_memory_put: out of bounds");
+        XPOST_LOG_ERR("%d out of bounds memory", rangecheck);
         return 0;
     }
 
