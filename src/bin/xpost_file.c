@@ -82,12 +82,12 @@ typedef bool _Bool;
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "xpost_memory.h"  // files store FILE*s in (local) mfile
-#include "xpost_object.h"  // files are objects
-#include "xpost_garbage.h"  // files data allocated with gballoc
-#include "xpost_interpreter.h"  // interpreter
-#include "xpost_error.h"  // file functions may throw errors
-#include "xpost_file.h"  // double-check prototypes
+#include "xpost_memory.h"  /* files store FILE*s in (local) mfile */
+#include "xpost_object.h"  /* files are objects */
+#include "xpost_garbage.h"  /* files data allocated with gballoc */
+#include "xpost_interpreter.h"  /* interpreter */
+#include "xpost_error.h"  /* file functions may throw errors */
+#include "xpost_file.h"  /* double-check prototypes */
 
 #ifdef __MINGW32__
 /*
@@ -159,7 +159,7 @@ Xpost_Object consfile(mfile *mem,
     printf("consfile %p\n", fp);
 #endif
     f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
-    //f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *), 0);
+    /* f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *), 0); */
     f.mark_.padw = gballoc(mem, sizeof(FILE *), filetype);
     put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     return f;

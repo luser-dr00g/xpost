@@ -54,14 +54,14 @@ typedef bool _Bool;
 
 #include <assert.h>
 
-#include "xpost_memory.h"  // arrays live in mfile, accessed via mtab
-#include "xpost_object.h"  // array is an object, containing objects
-#include "xpost_stack.h"  // may count the save stack
-#include "xpost_garbage.h"  // arrays are garbage collected
-#include "xpost_save.h"  // arrays obey save/restore
-#include "xpost_interpreter.h"  // banked arrays may be in global or local mfiles
-#include "xpost_error.h"  // array functions may throw errors
-#include "xpost_array.h"  // double-check prototypes
+#include "xpost_memory.h"  /* arrays live in mfile, accessed via mtab */
+#include "xpost_object.h"  /* array is an object, containing objects */
+#include "xpost_stack.h"  /* may count the save stack */
+#include "xpost_garbage.h"  /* arrays are garbage collected */
+#include "xpost_save.h"  /* arrays obey save/restore */
+#include "xpost_interpreter.h"  /* banked arrays may be in global or local mfiles */
+#include "xpost_error.h"  /* array functions may throw errors */
+#include "xpost_array.h"  /* double-check prototypes */
 
 
 
@@ -83,7 +83,7 @@ Xpost_Object consarr(mfile *mem,
 
     assert(mem->base);
 
-    //unsigned ent = mtalloc(mem, 0, sz * sizeof(Xpost_Object), 0);
+    /* unsigned ent = mtalloc(mem, 0, sz * sizeof(Xpost_Object), 0); */
     if (sz == 0) {
         ent = 0;
     } else {
@@ -99,7 +99,7 @@ Xpost_Object consarr(mfile *mem,
             put(mem, ent, i, (unsigned)sizeof(Xpost_Object), &null);
     }
 
-    //return (Xpost_Object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0};
+    /* return (Xpost_Object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0}; */
     o.tag = arraytype
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
                 << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
@@ -207,17 +207,17 @@ int main(void) {
     inititp(itpdata);
     ctx = &itpdata->ctab[0];
     mem = ctx->lo;
-    //initmem(&mem, "x.mem");
-    //(void)initmtab(&mem);
-    //initfree(&mem);
-    //initsave(&mem);
+    /* initmem(&mem, "x.mem"); */
+    /* (void)initmtab(&mem); */
+    /* initfree(&mem); */
+    /* initsave(&mem); */
 
     enum { SIZE = 10 };
     printf("\n^test ar.c\n");
     printf("allocating array occupying %zu bytes\n", SIZE*sizeof(Xpost_Object));
     Xpost_Object a = consarr(mem, SIZE);
 
-    //printf("the memory table:\n"); dumpmtab(mem, 0);
+    /* printf("the memory table:\n"); dumpmtab(mem, 0); */
 
     printf("test array by filling\n");
     int i;

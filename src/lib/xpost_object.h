@@ -128,7 +128,7 @@ typedef enum
     XPOST_OBJECT_TAG_DATA_FLAG_BANK          = 01 << 8, /**< select memory-file for composite-object data: 0=local, 1=global */
     XPOST_OBJECT_TAG_DATA_EXTENDED_INT       = 01 << 9, /**< extended object was integer */
     XPOST_OBJECT_TAG_DATA_EXTENDED_REAL      = 01 << 10, /**< extended object was real */
-    XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD  = 01 << 11, /* for onerror to reset stack */
+    XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD  = 01 << 11 /* for onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
 /**
@@ -148,7 +148,7 @@ typedef enum
     /* these 2 are for filetype objects only: */
 
     XPOST_OBJECT_TAG_ACCESS_FILE_WRITE = 1 << 0, /**< file is writeable */
-    XPOST_OBJECT_TAG_ACCESS_FILE_READ  = 1 << 1, /**< file is readable */
+    XPOST_OBJECT_TAG_ACCESS_FILE_READ  = 1 << 1 /**< file is readable */
 } Xpost_Object_Tag_Access;
 
 
