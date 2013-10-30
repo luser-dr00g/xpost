@@ -5,6 +5,8 @@
 #include <stdio.h>
 
 #include <check.h>
+
+#include "../lib/xpost_log.h"
 #include "../lib/xpost_memory.h"
 
 #include "xpost_suite.h"
@@ -46,6 +48,7 @@ START_TEST(xpost_memory_not_init)
     int ret;
 
     mem.base = NULL;
+    XPOST_LOG_ERR("you should see an error just below");
     ret = xpost_memory_file_alloc(&mem, 64, &addr);
     ck_assert_int_eq (ret, 0);
     //ck_assert_int_eq (xpost_memory_file_grow(&mem, 4096), 0);
