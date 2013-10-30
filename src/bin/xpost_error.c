@@ -104,6 +104,8 @@ void error(unsigned err,
     dumpstack(ctx->lo, ctx->es);
     printf("\ndictstack: ");
     dumpstack(ctx->lo, ctx->ds);
+    printf("\nholdstack: ");
+    dumpstack(ctx->lo, ctx->hold);
 
     printf("\nLocal VM: ");
     dumpmfile(ctx->lo);
