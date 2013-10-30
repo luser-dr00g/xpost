@@ -61,7 +61,7 @@ typedef struct {
     struct opcuts opcuts;
 } context;
 
-enum { LOCAL, GLOBAL }; //vmmode
+enum { LOCAL, GLOBAL }; /* vmmode */
 #define MAXCONTEXT 10
 #define MAXMFILE 10
 

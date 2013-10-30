@@ -157,7 +157,7 @@ enum markfields {
     LLEVM = 0x0000FF00,
     LLEVO = 8,
     TLEVM = 0x000000FF,
-    TLEVO = 0,
+    TLEVO = 0
 };
 
 /* \def special
@@ -175,7 +175,7 @@ enum special {
     NAMES,
     NAMET,
     BOGUSNAME,
-    OPTAB,  /* this 1 global only */
+    OPTAB  /* this 1 global only */
 };
 
 /** \fn void dumpmtab(mfile *mem, unsigned mtabadr)

@@ -45,7 +45,7 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
    */
 
 #define AS_BARE(a) a ,
-//#define AS_STR(a) #a , //defined in ob.h
+/* #define AS_STR(a) #a , /\* defined in ob.h *\/ */
 
 #define ERRORS(_) \
     _(noerror) \

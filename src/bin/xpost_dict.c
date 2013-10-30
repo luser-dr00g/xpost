@@ -81,16 +81,16 @@ typedef bool _Bool;
 #include <stdlib.h> /* malloc */
 #include <stdio.h>
 
-#include "xpost_memory.h"  // dicts live in mfile, accessed via mtab
-#include "xpost_object.h"  // dict is an object, containing objects
-#include "xpost_stack.h"  // may need to count the save stack
-#include "xpost_garbage.h"  // dicts are garbage collected
-#include "xpost_save.h"  // dicts obey save/restore
-#include "xpost_interpreter.h"  // banked dicts may live in global or local vm
-#include "xpost_error.h"  // dict functions may throw errors
-#include "xpost_string.h"  // may need string functions (convert to name)
-#include "xpost_name.h"  // may need name functions (create name)
-#include "xpost_dict.h"  // double-check prototypes
+#include "xpost_memory.h"  /* dicts live in mfile, accessed via mtab */
+#include "xpost_object.h"  /* dict is an object, containing objects */
+#include "xpost_stack.h"  /* may need to count the save stack */
+#include "xpost_garbage.h"  /* dicts are garbage collected */
+#include "xpost_save.h"  /* dicts obey save/restore */
+#include "xpost_interpreter.h"  /* banked dicts may live in global or local vm */
+#include "xpost_error.h"  /* dict functions may throw errors */
+#include "xpost_string.h"  /* may need string functions (convert to name) */
+#include "xpost_name.h"  /* may need name functions (create name) */
+#include "xpost_dict.h"  /* double-check prototypes */
 
 
 
@@ -119,7 +119,7 @@ int objcmp(context *ctx,
            Xpost_Object L,
            Xpost_Object R)
 {
-    // fold nearly-comparable types to comparable
+    /* fold nearly-comparable types to comparable */
     if (xpost_object_get_type(L) != xpost_object_get_type(R)) {
         if (xpost_object_get_type(L) == integertype && xpost_object_get_type(R) == realtype) {
             L = xpost_cons_real(L.int_.val);
@@ -172,11 +172,11 @@ cont:
                                 (signed)(L.mark_.padw - R.mark_.padw):
                                     (signed)((L.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK) - (R.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK));
 
-        case dicttype: /*@fallthrough@*/ //return !( L.comp_.ent == R.comp_.ent );
+        case dicttype: /*@fallthrough@*/ /*return !( L.comp_.ent == R.comp_.ent ); */
         case arraytype: return !( L.comp_.sz == R.comp_.sz
                                 && (L.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK) == (R.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)
                                 && L.comp_.ent == R.comp_.ent
-                                && L.comp_.off == R.comp_.off ); // 0 if all eq
+                                && L.comp_.off == R.comp_.off ); /* 0 if all eq */
 
         case stringtype: return L.comp_.sz == R.comp_.sz ?
                                 memcmp(charstr(ctx, L), charstr(ctx, R), L.comp_.sz) :
@@ -195,7 +195,7 @@ unsigned hash(Xpost_Object k)
         + (k.comp_.sz << 3)
         + (k.comp_.ent << 7)
         + (k.comp_.off << 5);
-    //h = xpost_object_get_type(k); //test collisions.
+    /* h = xpost_object_get_type(k); /\* test collisions. *\/ */
 #ifdef DEBUGDIC
     printf("\nhash(");
     xpost_object_dump(k);
@@ -227,7 +227,7 @@ Xpost_Object consdic(mfile *mem,
     d.tag = dicttype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     d.comp_.sz = sz;
     d.comp_.off = 0;
-    //d.comp_.ent = mtalloc(mem, 0, sizeof(dichead) + DICTABSZ(sz), 0 );
+    /* d.comp_.ent = mtalloc(mem, 0, sizeof(dichead) + DICTABSZ(sz), 0 ); */
     d.comp_.ent = gballoc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype);
 
     tab = (void *)(mem->base);
@@ -309,7 +309,7 @@ void dicgrow(context *ctx,
     sz = (dp->sz + 1);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
     for ( i=0; i < sz; i++)
-        //if (objcmp(ctx, tp[2*i], null) != 0) {
+        /* if (objcmp(ctx, tp[2*i], null) != 0) { */
         if (xpost_object_get_type(tp[2*i]) != nulltype) {
             dicput(ctx, mem, n, tp[2*i], tp[2*i+1]);
         }
@@ -318,7 +318,7 @@ void dicgrow(context *ctx,
     dumpdic(mem, n);
 #endif
 
-    {   // exchange entities
+    {   /* exchange entities */
         mtab *dtab, *ntab;
         unsigned dent, nent;
         unsigned hold;
@@ -328,12 +328,12 @@ void dicgrow(context *ctx,
         findtabent(mem, &dtab, &dent);
         findtabent(mem, &ntab, &nent);
 
-        // exchange adrs
+        /* exchange adrs */
         hold = dtab->tab[dent].adr;
         dtab->tab[dent].adr = ntab->tab[nent].adr;
         ntab->tab[nent].adr = hold;
 
-        // exchange sizes
+        /* exchange sizes */
         hold = dtab->tab[dent].sz;
         dtab->tab[dent].sz = ntab->tab[nent].sz;
         ntab->tab[nent].sz = hold;
@@ -370,8 +370,8 @@ void dumpdic(mfile *mem,
 
 /* construct an extendedtype object
    from a double value */
-//n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag
-//     in order to unextend() later.
+/*n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag */
+/*     in order to unextend() later. */
 static
 Xpost_Object consextended (double d)
 {
@@ -544,8 +544,8 @@ void dicput(context *ctx,
 retry:
     e = diclookup(ctx, mem, d, k);
     if (e == NULL) {
-        //error("dict overfull");
-        //grow dict!
+        /* rror("dict overfull"); */
+        /* row dict! */
         dicgrow(ctx, d);
         goto retry;
     }
@@ -555,8 +555,8 @@ retry:
     }
     if (xpost_object_get_type(e[0]) == nulltype) {
         if (dicfull(mem, d)) {
-            //error("dict full");
-            //grow dict!
+            /*error("dict full"); */
+            /*grow dict! */
             dicgrow(ctx, d);
             goto retry;
         }
@@ -616,16 +616,16 @@ void dicundef(context *ctx,
 
     k = clean_key(ctx, k);
 
-    e = diclookup(ctx, mem, d, k); //find slot for key
+    e = diclookup(ctx, mem, d, k); /*find slot for key */
     if (e == NULL || objcmp(ctx,e[0],null) == 0) {
         error(undefined, "dicundef");
     }
 
-    //find last chained key and value with same hash
+    /*find last chained key and value with same hash */
     sz = (dp->sz + 1);
     h = hash(k) % sz;
 
-    for (i=h; i < sz; i++) 
+    for (i=h; i < sz; i++)
         if (h == hash(tp[2*i]) % sz) {
             last = i;
             lastisset = true;
@@ -648,13 +648,13 @@ void dicundef(context *ctx,
                 }
             }
 
-    if (found) { //if found: move last key and value to slot
+    if (found) { /* f found: move last key and value to slot */
         e[0] = tp[2*last];
         e[1] = tp[2*last+1];
         tp[2*last] = null;
         tp[2*last+1] = null;
     }
-    else { //not found: write null over key and value
+    else { /* ot found: write null over key and value */
         e[0] = null;
         e[1] = null;
     }
@@ -673,11 +673,11 @@ void bdcundef(context *ctx,
 #ifdef TESTMODULE_DI
 #include <stdio.h>
 
-//context ctx;
+/*context ctx; */
 context *ctx;
 
 void init() {
-    //initcontext(&ctx);
+    /*initcontext(&ctx); */
     itpdata=malloc(sizeof*itpdata);
     inititp(itpdata);
     ctx = &itpdata->ctab[0];
@@ -696,13 +696,13 @@ int main(void) {
 
     printf("1 load =\n");
     xpost_object_dump(bdcget(ctx, d, xpost_cons_int(1)));
-    //xpost_object_dump(bdcget(ctx, d, xpost_cons_int(2))); // error("undefined");
+    /* xpost_object_dump(bdcget(ctx, d, xpost_cons_int(2))); /\* error("undefined"); *\/ */
     printf("\n3 load =\n");
     xpost_object_dump(bdcget(ctx, d, xpost_cons_int(3)));
 
 
-    //dumpmfile(ctx->gl);
-    //dumpmtab(ctx->gl, 0);
+    /*dumpmfile(ctx->gl); */
+    /*dumpmtab(ctx->gl, 0); */
     puts("");
     return 0;
 }

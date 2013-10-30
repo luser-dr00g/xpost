@@ -55,9 +55,9 @@ typedef bool _Bool;
 #include <string.h>
 
 #ifdef __MINGW32__
-# include "osmswin.h"
+# include "osmswin.h" /* mkstemp xpost_getpagesize */
 #else
-# include "osunix.h"
+# include "osunix.h" /* xpost_getpagesize */
 #endif
 
 #include "xpost_memory.h"
@@ -247,10 +247,10 @@ next:
         goto next;
     }
 
-    //if (s->nextseg) { /* maybe not. this is a MARK phase, after all */
-        //sfree(mem, s->nextseg);
-        //s->nextseg = 0;
-    //}
+    /* if (s->nextseg) { /\* maybe not. this is a MARK phase, after all *\/ */
+    /*     sfree(mem, s->nextseg); */
+    /*     s->nextseg = 0; */
+    /* } */
 }
 
 /* mark all allocations referred to by objects in save object's stack of saverec_'s */
@@ -269,8 +269,8 @@ void marksavestack(context *ctx,
 
 next:
     for (i=0; i < s->top; i++) {
-        //markobject(ctx, mem, s->data[i]);
-        //marksavestack(ctx, mem, s->data[i].save_.stk);
+        /* markobject(ctx, mem, s->data[i]); */
+        /* marksavestack(ctx, mem, s->data[i].save_.stk); */
         markent(mem, s->data[i].saverec_.src);
         markent(mem, s->data[i].saverec_.cpy);
         if (s->data[i].saverec_.tag == dicttype) {
@@ -287,7 +287,7 @@ next:
         s = (void *)(mem->base + s->nextseg);
         goto next;
     }
-    
+
     if (s->nextseg) {
         sfree(mem, s->nextseg);
         s->nextseg = 0;
@@ -309,7 +309,7 @@ void marksave(context *ctx,
 
 next:
     for (i=0; i < s->top; i++) {
-        //markobject(ctx, mem, s->data[i]);
+        /* markobject(ctx, mem, s->data[i]); */
         marksavestack(ctx, mem, s->data[i].save_.stk);
     }
     if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
@@ -326,7 +326,7 @@ void initfree(mfile *mem)
     unsigned val = 0;
     assert (ent == FREE);
     put(mem, ent, 0, sizeof(unsigned), &val);
-    
+
     /*
        unsigned ent = mtalloc(mem, 0, 0, 0);
        mtab *tab = (void *)mem->base;
@@ -343,7 +343,7 @@ unsigned mfree(mfile *mem,
     unsigned a;
     unsigned z;
     unsigned sz;
-    //return;
+    /* return; */
 
     if (ent < mem->start)
         return 0;
@@ -364,8 +364,8 @@ unsigned mfree(mfile *mem,
 #ifdef DEBUG_FILE
             printf("gc:mfree closing FILE* %p\n", fp);
             fflush(stdout);
-            //if (fp < 0x1000) return 0;
-			printf("fclose");
+            /* if (fp < 0x1000) return 0; */
+        printf("fclose");
 #endif
             fclose(fp);
             fp = NULL;
@@ -375,7 +375,7 @@ unsigned mfree(mfile *mem,
     tab->tab[rent].tag = 0;
 
     z = adrent(mem, FREE);
-    //printf("freeing %d bytes\n", szent(mem, ent));
+    /* printf("freeing %d bytes\n", szent(mem, ent)); */
 
     /* copy the current free-list head to the data area of the ent. */
     memcpy(mem->base+a, mem->base+z, sizeof(unsigned));
@@ -389,7 +389,7 @@ unsigned mfree(mfile *mem,
 /* discard the free list.
    iterate through tables,
         if element is unmarked and not zero-sized,
-            free it. 
+            free it.
    return reclaimed size
  */
 static
@@ -402,10 +402,10 @@ unsigned sweep(mfile *mem)
     unsigned i;
     unsigned sz = 0;
 
-    z = adrent(mem, FREE); // address of the free list head
+    z = adrent(mem, FREE); /* address of the free list head */
 
-    memcpy(mem->base+z, &zero, sizeof(unsigned)); // discard list
-    //*(unsigned *)(mem->base+z) = 0;
+    memcpy(mem->base+z, &zero, sizeof(unsigned)); /* discard list */
+    /* *(unsigned *)(mem->base+z) = 0; */
 
     /* scan first table */
     tab = (void *)(mem->base);
@@ -444,10 +444,10 @@ unsigned collect(mfile *mem, int dosweep, int markall)
     int isglobal;
     unsigned sz = 0;
 
-    if (initializing) 
+    if (initializing)
         return 0;
 
-    //printf("\ncollect:\n");
+    /* printf("\ncollect:\n"); */
 
     /* determine global/glocal */
     isglobal = false;
@@ -514,7 +514,7 @@ unsigned collect(mfile *mem, int dosweep, int markall)
             }
         }
     }
-    
+
     return sz;
 }
 
@@ -540,14 +540,14 @@ unsigned gballoc(mfile *mem,
         unsigned sz,
         unsigned tag)
 {
-    unsigned z = adrent(mem, FREE); // free pointer
-    unsigned e;                     // working pointer
+    unsigned z = adrent(mem, FREE); /* free pointer */
+    unsigned e;                     /* working pointer */
     static int period = PERIOD;
 
-//#if 0
+/*#if 0 */
 try_again:
-    memcpy(&e, mem->base+z, sizeof(unsigned)); // e = *z
-    while (e) { // e is not zero
+    memcpy(&e, mem->base+z, sizeof(unsigned)); /* e = *z */
+    while (e) { /* e is not zero */
         if (szent(mem,e) >= sz) {
             mtab *tab;
             unsigned ent;
@@ -566,7 +566,7 @@ try_again:
         collect(mem, true, false);
         goto try_again;
     }
-//#endif
+/*#endif */
     return mtalloc(mem, 0, sz, tag);
 }
 
@@ -579,7 +579,7 @@ unsigned mfrealloc(mfile *mem,
     mtab *tab = NULL;
     unsigned newadr;
     unsigned ent;
-    unsigned rent; // relative ent
+    unsigned rent; /* relative ent */
 
 #ifdef DEBUGFREE
     printf("mfrealloc: ");
@@ -662,7 +662,7 @@ void init_test_garbage()
     /* create global OPTAB */
     ctx->vmmode = GLOBAL;
     initoptab(ctx);
-    // ... no initop(). don't need operators for this.
+    /* ... no initop(). don't need operators for this. */
 
     /* only need one stack */
     ctx->vmmode = LOCAL;
@@ -693,14 +693,14 @@ int test_garbage_collect(void)
         str = consbst(ctx, 7, "0123456");
         post = ctx->lo->used;
         sz = post-pre;
-        //printf("str sz=%u\n", sz);
+        /* printf("str sz=%u\n", sz); */
 
         push(ctx->lo, ctx->os, str);
         assert(collect(ctx->lo, true, false) == 0);
 
         pop(ctx->lo, ctx->os);
         ret = collect(ctx->lo, true, false);
-        //printf("collect returned %u\n", ret);
+        /* printf("collect returned %u\n", ret); */
         assert(ret >= sz);
     }
     {
@@ -708,21 +708,21 @@ int test_garbage_collect(void)
         unsigned pre, post, sz, ret;
 
         pre = ctx->lo->used;
-	arr = consbar(ctx, 5);
-	barput(ctx, arr, 0, xpost_cons_int(12));
-	barput(ctx, arr, 1, xpost_cons_int(13));
-	barput(ctx, arr, 2, xpost_cons_int(14));
-	barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
-	barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
-	post = ctx->lo->used;
-	sz = post-pre;
+    arr = consbar(ctx, 5);
+    barput(ctx, arr, 0, xpost_cons_int(12));
+    barput(ctx, arr, 1, xpost_cons_int(13));
+    barput(ctx, arr, 2, xpost_cons_int(14));
+    barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
+    barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
+    post = ctx->lo->used;
+    sz = post-pre;
 
-	push(ctx->lo, ctx->os, arr);
-	assert(collect(ctx->lo, true, false) == 0);
+    push(ctx->lo, ctx->os, arr);
+    assert(collect(ctx->lo, true, false) == 0);
 
-	pop(ctx->lo, ctx->os);
-	ret = collect(ctx->lo, true, false);
-	assert(ret >= sz);
+    pop(ctx->lo, ctx->os);
+    ret = collect(ctx->lo, true, false);
+    assert(ret >= sz);
 
     }
     exit_test_garbage();
@@ -735,22 +735,22 @@ context *ctx;
 mfile *mem;
 unsigned stac;
 
-/*
-void init(void) {
-    initmem(&mem, "x.mem");
-    (void)initmtab(&mem);
-    initfree(&mem);
-    initsave(&mem);
-    initctxlist(&mem);
-    mtab *tab = (void *)mem.base;
-    unsigned ent = mtalloc(&mem, 0, 0);
-    //findtabent(&mem, &tab, &ent);
-    stac = tab->tab[ent].adr = initstack(&mem);
-    //mem.roots[0] = VS;
-    //mem.roots[1] = ent;
-    mem.start = ent+1;
-}
-*/
+
+/* void init(void) { */
+/*     initmem(&mem, "x.mem"); */
+/*     (void)initmtab(&mem); */
+/*     initfree(&mem); */
+/*     initsave(&mem); */
+/*     initctxlist(&mem); */
+/*     mtab *tab = (void *)mem.base; */
+/*     unsigned ent = mtalloc(&mem, 0, 0); */
+/*     /\* findtabent(&mem, &tab, &ent); *\/ */
+/*     stac = tab->tab[ent].adr = initstack(&mem); */
+/*     /\* mem.roots[0] = VS; *\/ */
+/*     /\* mem.roots[1] = ent; *\/ */
+/*     mem.start = ent+1; */
+/* } */
+
 
 extern itp *itpdata;
 
@@ -799,8 +799,8 @@ int main(void) {
     dumpmfile(mem);
     printf("stackaedr: %04x\n", stac);
     dumpmtab(mem, 0);
-    //     ^ent 8 (8): adr 3404 0x0d4c, sz [24], mark _
-    //     ^ 06  00  00  00  6en 67g 20  6en 6fo 74t 20
+    /*     ^ent 8 (8): adr 3404 0x0d4c, sz [24], mark _ */
+    /*     ^ 06  00  00  00  6en 67g 20  6en 6fo 74t 20 */
     printf("gc: look at the mark field . . . . . . . .^\n");
     printf("also, see that the first 4 bytes of strings not on stack\n"
            "have been obliterated to link-up the free list.\n");

@@ -55,16 +55,16 @@ typedef bool _Bool;
 #include <stdlib.h>
 #include <string.h>
 
-#include "xpost_memory.h"  // mfile
-#include "xpost_object.h"  // object
-#include "xpost_stack.h"  // stack
-#include "xpost_interpreter.h"  // access context struct
-#include "xpost_dict.h"  // access dict objects
-#include "xpost_string.h"  // access string objects
-#include "xpost_error.h"  // double-check prototypes
-#include "xpost_name.h"  // create names
+#include "xpost_memory.h"  /* mfile */
+#include "xpost_object.h"  /* object */
+#include "xpost_stack.h"  /* stack */
+#include "xpost_interpreter.h"  /* access context struct */
+#include "xpost_dict.h"  /* access dict objects */
+#include "xpost_string.h"  /* access string objects */
+#include "xpost_error.h"  /* double-check prototypes */
+#include "xpost_name.h"  /* create names */
 
-//#define EMITONERROR
+/*#define EMITONERROR */
 
 char *errorname[] = { ERRORS(XPOST_OBJECT_AS_STR) };
 
@@ -144,7 +144,7 @@ void onerror(context *ctx,
     fprintf(stderr, "err: %s\n", errorname[err]);
 #endif
 
-    //reset stack
+    /* reset stack */
     if (xpost_object_get_type(ctx->currentobject) == operatortype
             && ctx->currentobject.tag & XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD) {
         int n = ctx->currentobject.mark_.pad0;
@@ -154,15 +154,15 @@ void onerror(context *ctx,
         }
     }
 
-    //printf("1\n");
+    /* printf("1\n"); */
     sd = bot(ctx->lo, ctx->ds, 0);
-    //printf("2\n");
+    /* printf("2\n"); */
 
     dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
-    //printf("3\n");
+    /* printf("3\n"); */
     /* FIXME: does errormsg need to be volatile ?? If no, below cast is useless */
     errmsg = (char *)errormsg;
-    //printf("4\n");
+    /* printf("4\n"); */
     if (err == VMerror) {
         bdcput(ctx, dollarerror,
                 consname(ctx, "Extra"),
@@ -175,14 +175,14 @@ void onerror(context *ctx,
                 consbst(ctx, strlen(errmsg), errmsg));
         ctx->vmmode = mode;
     }
-    //printf("5\n");
+    /* printf("5\n"); */
 
     push(ctx->lo, ctx->os, ctx->currentobject);
-    //printf("6\n");
+    /* printf("6\n"); */
     push(ctx->lo, ctx->os, xpost_object_cvlit(consname(ctx, errorname[err])));
-    //printf("7\n");
+    /* printf("7\n"); */
     push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
-    //printf("8\n");
+    /* printf("8\n"); */
 
     in_onerror = false;
 }
