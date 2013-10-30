@@ -7,6 +7,7 @@ src/tests/xpost_suite.h \
 src/tests/xpost_test_memory.c
 
 src_tests_xpost_suite_CPPFLAGS = \
+-I$(top_srcdir)/src/lib \
 @CHECK_CFLAGS@ \
 @XPOST_TEST_CPPFLAGS@
 
