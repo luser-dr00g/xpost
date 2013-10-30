@@ -54,22 +54,22 @@
  */
 
 #define XPOST_OBJECT_TYPES(_) \
-    _(invalid) \
-    _(null) \
-    _(mark) \
-    _(integer) \
-    _(real) \
-    _(array) \
-    _(dict) \
-    _(file) \
-    _(operator) \
-    _(save) \
-    _(name) \
-    _(boolean) \
-    _(context) \
-    _(extended) \
-    _(glob) \
-    _(string) \
+    _(invalid)   /*0*/ \
+    _(null)      /*1*/ \
+    _(mark)      /*2*/ \
+    _(integer)   /*3*/ \
+    _(real)      /*4*/ \
+    _(array)     /*5*/ \
+    _(dict)      /*6*/ \
+    _(file)      /*7*/ \
+    _(operator)  /*8*/ \
+    _(save)      /*9*/ \
+    _(name)     /*10*/ \
+    _(boolean)  /*11*/ \
+    _(context)  /*12*/ \
+    _(extended) /*13*/ \
+    _(glob)     /*14*/ \
+    _(string)   /*15*/ \
 /* #def XPOST_OBJECT_TYPES */
 
 #define XPOST_OBJECT_AS_TYPE(_) \
@@ -120,15 +120,37 @@ typedef enum {
 typedef enum
 {
     XPOST_OBJECT_TAG_DATA_TYPE_MASK          = 0x000F, /**< mask to yield Xpost_Object_Type */
-    XPOST_OBJECT_TAG_DATA_FLAG_VALID         = 01 << 4, /**< for 'anytype' operator pattern */
-    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET = 5,    /**< bitwise offset of the ACCESS field */
-    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK   = 03 <<
-        XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET, /**< 2-bit mask for the ACCESS field */
-    XPOST_OBJECT_TAG_DATA_FLAG_LIT           = 01 << 7,  /**< literal flag: 0=executable, 1=literal */
-    XPOST_OBJECT_TAG_DATA_FLAG_BANK          = 01 << 8, /**< select memory-file for composite-object data: 0=local, 1=global */
-    XPOST_OBJECT_TAG_DATA_EXTENDED_INT       = 01 << 9, /**< extended object was integer */
-    XPOST_OBJECT_TAG_DATA_EXTENDED_REAL      = 01 << 10, /**< extended object was real */
-    XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD  = 01 << 11 /* for onerror to reset stack */
+    XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET = 4,
+    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET,    /**< bitwise offset of the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FLAG_LIT_OFFSET = 
+        XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET + 2,
+    XPOST_OBJECT_TAG_DATA_FLAG_BANK_OFFSET,
+    XPOST_OBJECT_TAG_DATA_EXTENDED_INT_OFFSET,
+    XPOST_OBJECT_TAG_DATA_EXTENDED_REAL_OFFSET,
+    XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD_OFFSET,
+
+    XPOST_OBJECT_TAG_DATA_FLAG_VALID =
+        01 << XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET,
+           /**< for 'anytype' operator pattern */
+    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK =
+        03 << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET,
+            /**< 2-bit mask for the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FLAG_LIT =
+        01 << XPOST_OBJECT_TAG_DATA_FLAG_LIT_OFFSET,
+            /**< literal flag: 0=executable, 1=literal */
+    XPOST_OBJECT_TAG_DATA_FLAG_BANK =
+        01 << XPOST_OBJECT_TAG_DATA_FLAG_BANK_OFFSET,
+            /**< select memory-file for composite-object data:
+              0=local, 1=global */
+    XPOST_OBJECT_TAG_DATA_EXTENDED_INT =
+        01 << XPOST_OBJECT_TAG_DATA_EXTENDED_INT_OFFSET,
+            /**< extended object was integer */
+    XPOST_OBJECT_TAG_DATA_EXTENDED_REAL =
+        01 << XPOST_OBJECT_TAG_DATA_EXTENDED_REAL_OFFSET,
+            /**< extended object was real */
+    XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD =
+        01 << XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD_OFFSET,
+            /* for onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
 /**
