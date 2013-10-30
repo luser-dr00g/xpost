@@ -249,11 +249,10 @@ _xpost_log_fprint_cb(FILE *stream,
 
     _xpost_log_print_prefix_func(stream, level, file, fct, line);
     res = fprintf(stream, str);
+    free(str);
+
     if (res < 0)
-    {
-        free(str);
         return;
-    }
 
     if ((int)res != (s + 1))
         fprintf(stderr, "ERROR: %s(): want to write %d bytes, %d written\n", __FUNCTION__, s + 1, res);
