@@ -50,7 +50,7 @@ typedef bool _Bool;
 
 #include <assert.h>
 #include <ctype.h> /* isprint */
-#include <stdlib.h> /* exit free malloc realloc */
+#include <stdlib.h> /* free malloc realloc */
 #include <stdio.h> /* fprintf printf putchar puts */
 #include <string.h> /* memset */
 
@@ -91,6 +91,12 @@ int xpost_memory_file_init (
     struct stat buf;
     size_t sz = xpost_memory_pagesize;
 
+    if (!mem)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return 0;
+    }
+
     if(fname)
     {
         strncpy(mem->fname, fname, sizeof(mem->fname));
@@ -100,7 +106,8 @@ int xpost_memory_file_init (
         mem->fname[0] = '\0';
 
     mem->fd = fd;
-    if (fd != -1){
+    if (fd != -1)
+    {
         if (fstat(fd, &buf) == 0)
         {
             sz = buf.st_size;
@@ -150,6 +157,19 @@ int xpost_memory_file_init (
 
 int xpost_memory_file_exit (Xpost_Memory_File *mem)
 {
+    if (!mem)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return 0;
+    }
+
+    if (mem->base == NULL)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror,
+                "mem->base is NULL, mem not initialized?");
+        return 0;
+    }
+
 #ifdef HAVE_MMAP
     munmap(mem->base, mem->max);
 #else
@@ -186,6 +206,18 @@ int xpost_memory_file_grow (
 {
     void *tmp;
     int ret = 1;
+
+    if (!mem)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return 0;
+    }
+
+    if (mem->base == NULL)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem->base is NULL");
+        return 0;
+    }
 
     if (sz < xpost_memory_pagesize)
         sz = xpost_memory_pagesize;
@@ -238,7 +270,22 @@ int xpost_memory_file_alloc (
         unsigned int sz,
         unsigned int *addr)
 {
-    unsigned int adr = mem->used;
+    unsigned int adr;
+
+    if (!mem)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return 0;
+    }
+
+    if (mem->base == NULL)
+    {
+        XPOST_LOG_ERR("%d %s\n",
+                VMerror, "mem->base is NULL, mem not initialized?");
+        return 0;
+    }
+
+    adr = mem->used;
 
     if (sz)
     {
@@ -264,6 +311,12 @@ int xpost_memory_file_alloc (
 void xpost_memory_file_dump (const Xpost_Memory_File *mem)
 {
     unsigned int u,v;
+
+    if (!mem)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return;
+    }
 
     printf("{mfile: base = %p, "
             "used = 0x%x (%u), "
@@ -314,6 +367,12 @@ int xpost_memory_table_init (
     Xpost_Memory_Table *tab;
     unsigned int adr;
 
+    if (!mem)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return 0;
+    }
+
     if (!xpost_memory_file_alloc(mem, sizeof(Xpost_Memory_Table), &adr))
     {
         XPOST_LOG_ERR("%d %s\n",
@@ -338,8 +397,16 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
     unsigned int mtabadr = 0;
     unsigned int ent;
     unsigned int adr;
-    Xpost_Memory_Table *tab = (Xpost_Memory_Table *)(mem->base + mtabadr);
+    Xpost_Memory_Table *tab;
     int ntab = 0;
+
+    if (!mem)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return 0;
+    }
+
+    tab = (Xpost_Memory_Table *)(mem->base + mtabadr);
 
     while (tab->nextent >= XPOST_MEMORY_TABLE_SIZE)
     {
@@ -386,6 +453,12 @@ int xpost_memory_table_find_relative (
         Xpost_Memory_Table **atab,
         unsigned int *aent)
 {
+    if (!mem)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return 0;
+    }
+
     *atab = (Xpost_Memory_Table *)(mem->base);
     while (*aent >= XPOST_MEMORY_TABLE_SIZE)
     {
