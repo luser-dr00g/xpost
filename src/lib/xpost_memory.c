@@ -96,6 +96,8 @@ int xpost_memory_file_init (
         XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
         return 0;
     }
+    XPOST_LOG_INFO("%s%s%s",
+            "init memory file", fname?" for ":"", fname?fname:"");
 
     if(fname)
     {
@@ -169,6 +171,7 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
                 "mem->base is NULL, mem not initialized?");
         return 0;
     }
+    XPOST_LOG_INFO("%s", "exit memory file.");
 
 #ifdef HAVE_MMAP
     munmap(mem->base, mem->max);
@@ -218,6 +221,7 @@ int xpost_memory_file_grow (
         XPOST_LOG_ERR("%d %s\n", VMerror, "mem->base is NULL");
         return 0;
     }
+    XPOST_LOG_INFO("%s", "grow memory file.");
 
     if (sz < xpost_memory_pagesize)
         sz = xpost_memory_pagesize;
@@ -456,6 +460,12 @@ int xpost_memory_table_find_relative (
     if (!mem)
     {
         XPOST_LOG_ERR("%d %s\n", VMerror, "mem ptr is NULL");
+        return 0;
+    }
+
+    if (mem->base == NULL)
+    {
+        XPOST_LOG_ERR("%d %s\n", VMerror, "mem->base is NULL");
         return 0;
     }
 
