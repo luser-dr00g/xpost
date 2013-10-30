@@ -150,7 +150,7 @@ typedef struct {
   in a direct, portable manner.
  */
 enum markfields {
-    MARKM = 0xFF000000,
+    MARKM = 0x7F000000,
     MARKO = 24,
     RFCTM = 0x00FF0000,
     RFCTO = 16,
