@@ -6,6 +6,7 @@
 
 #include <check.h>
 
+#include "xpost_main.h"
 #include "xpost_suite.h"
 
 typedef struct
@@ -74,6 +75,12 @@ main(int argc, char **argv)
     int failed_count;
     int i;
 
+    if (!xpost_init())
+    {
+        fprintf(stderr, "Fail to initialize the xpost library\n");
+        return -1;
+    }
+
     for (i = 1; i < argc; i++)
         if ((strcmp(argv[i], "-h") == 0) ||
             (strcmp(argv[i], "--help") == 0))
@@ -96,6 +103,8 @@ main(int argc, char **argv)
     srunner_run_all(sr, CK_ENV);
     failed_count = srunner_ntests_failed(sr);
     srunner_free(sr);
+
+    xpost_quit();
 
     return (failed_count == 0) ? 0 : 255;
 }
