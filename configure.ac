@@ -101,9 +101,9 @@ AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
 ### Checks for programs
 
 # C compiler
-AC_PROG_CC_C89
+AC_PROG_CC_C99
 
-if test "x${ac_cv_prog_cc_c89}" = "xno" ; then
+if test "x${ac_cv_prog_cc_c99}" = "xno" ; then
    AC_MSG_ERROR([Can not find a C99 compliant compiler. Exiting...])
 fi
 
@@ -181,7 +181,7 @@ AC_CHECK_HEADERS([libgen.h unistd.h])
 
 AM_PROG_CC_C_O
 
-xpost_lib_flags="-ansi -pedantic -Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections"
+xpost_lib_flags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections"
 
 if test "x${have_tests}" = "xyes" ; then
    xpost_lib_flags="${xpost_lib_flags} -g3 -ggdb3 -O2"
@@ -194,7 +194,7 @@ AC_SUBST([XPOST_TEST_CPPFLAGS])
 
 XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [${xpost_lib_flags}])
 
-XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-ansi -pedantic -Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections])
+XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections])
 
 
 ### Checks for linker characteristics
