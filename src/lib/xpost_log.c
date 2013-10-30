@@ -35,6 +35,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #ifdef _WIN32
 # include <windows.h>
@@ -104,14 +105,19 @@ _xpost_log_print_prefix_func(FILE *stream,
     {
         case XPOST_LOG_LEVEL_ERR:
             color = FOREGROUND_INTENSITY | FOREGROUND_RED;
+            break;
         case XPOST_LOG_LEVEL_WARN:
             color = FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN;
-        case XPOST_LOG_LEVEL_DBG:
-            color = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
+            break;
         case XPOST_LOG_LEVEL_INFO:
             color = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
+            break;
+        case XPOST_LOG_LEVEL_DBG:
+            color = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
+            break;
         default:
             color = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
+            break;
     }
 
     SetConsoleTextAttribute(std_handle, color);
@@ -268,11 +274,19 @@ _xpost_log_fprint_cb(FILE *stream,
 void
 xpost_log_init(void)
 {
+    char *endptr;
     const char *level;
+    long l;
 
     level = getenv("XPOST_LOG_LEVEL");
     if (level)
-        _xpost_log_level = atoi(level);
+    {
+        l = strtol(level, &endptr, 10);
+        if (!((errno == ERANGE && (l == LONG_MAX || l == LONG_MIN)) ||
+              (errno != 0 && l == 0) ||
+              (endptr == level)))
+            _xpost_log_level = (int)l;
+    }
 }
 
 void
