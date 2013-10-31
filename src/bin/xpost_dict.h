@@ -99,7 +99,7 @@ unsigned dicmaxlength(/*@dependent@*/ mfile *mem, Xpost_Object d);
 /*! 
    investigate if size == maximum size.
  */
-bool dicfull(/*@dependent@*/ mfile *mem, Xpost_Object d);
+int dicfull(/*@dependent@*/ mfile *mem, Xpost_Object d);
 
 /*! 
    print a dump of the diction contents to stdout
@@ -121,7 +121,7 @@ Xpost_Object unextend (Xpost_Object e);
 /*! 
    test dictionary for key
  */
-bool dicknown(context *ctx, /*@dependent@*/ mfile *mem, Xpost_Object d, Xpost_Object k);
+int dicknown(context *ctx, /*@dependent@*/ mfile *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    lookup value using key in dictionary

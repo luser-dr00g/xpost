@@ -334,7 +334,7 @@ FILE *filefile(mfile *mem,
 }
 
 /* make sure the FILE* is not null */
-bool filestatus(mfile *mem,
+int filestatus(mfile *mem,
                 Xpost_Object f)
 {
     return filefile(mem, f) != NULL;

@@ -506,7 +506,7 @@ void eval(context *ctx)
 
 /* the return point from all calls to error() that do not exit() */
 jmp_buf jbmainloop;
-bool jbmainloopset = false;
+int jbmainloopset = false;
 
 /* the big main central interpreter loop. */
 void mainloop(context *ctx)

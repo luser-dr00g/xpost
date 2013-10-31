@@ -78,7 +78,7 @@ extern itp *itpdata;
 extern int initializing;
 extern int ignoreinvalidaccess;
 extern jmp_buf jbmainloop;
-extern bool jbmainloopset;
+extern int jbmainloopset;
 
 mfile *nextltab(void);
 mfile *nextgtab(void);

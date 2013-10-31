@@ -265,7 +265,7 @@ void opexec(context *ctx,
     oper op = optab[opcode];
     signat *sp = (void *)(ctx->gl->base + op.sigadr);
     int i,j;
-    bool pass;
+    int pass;
     int err = unregistered;
     char *errmsg = "unspecified error";
     stack *hold;

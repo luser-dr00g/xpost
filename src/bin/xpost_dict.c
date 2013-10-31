@@ -343,7 +343,7 @@ void dicgrow(context *ctx,
 }
 
 /* is it full? (y/n) */
-bool dicfull(mfile *mem,
+int dicfull(mfile *mem,
              Xpost_Object d)
 {
     return diclength(mem, d) == dicmaxlength(mem, d);
@@ -487,7 +487,7 @@ Xpost_Object *diclookup(context *ctx,
 }
 
 /* see if lookup returns a non-null pair. */
-bool dicknown(context *ctx,
+int dicknown(context *ctx,
         /*@dependent@*/ mfile *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -605,8 +605,8 @@ void dicundef(context *ctx,
     unsigned h;
     unsigned i;
     unsigned last = 0;
-    bool lastisset = false;
-    bool found = false;
+    int lastisset = false;
+    int found = false;
 
     if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
 

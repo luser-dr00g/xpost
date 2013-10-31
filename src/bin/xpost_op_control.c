@@ -129,7 +129,7 @@ void IIIPfor (context *ctx,
     integer i = init.int_.val;
     integer j = incr.int_.val;
     integer n = lim.int_.val;
-    bool up = j > 0;
+    int up = j > 0;
     if (up? i > n : i < n) return;
     assert(ctx->gl->base);
     //push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
@@ -154,7 +154,7 @@ void RRRPfor (context *ctx,
     real i = init.real_.val;
     real j = incr.real_.val;
     real n = lim.real_.val;
-    bool up = j > 0;
+    int up = j > 0;
     if (up? i > n : i < n) return;
     //push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
     push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
