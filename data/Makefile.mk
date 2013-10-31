@@ -2,7 +2,13 @@
 EXTRA_DIST += \
 data/clip.ps \
 data/err.ps \
-data/g.ps \
+data/graphics.ps \
+data/device.ps \
+data/gstate.ps \
+data/matrix.ps \
+data/path.ps \
+data/clip.ps \
+data/paint.ps \
 data/init.ps \
 data/m.pic \
 data/m.ps \
@@ -17,7 +23,13 @@ psfilesdir = $(pkgdatadir)
 psfiles_DATA = \
 data/clip.ps \
 data/err.ps \
-data/g.ps \
+data/graphics.ps \
+data/device.ps \
+data/gstate.ps \
+data/matrix.ps \
+data/path.ps \
+data/clip.ps \
+data/paint.ps \
 data/init.ps \
 data/m.pic \
 data/m.ps \
