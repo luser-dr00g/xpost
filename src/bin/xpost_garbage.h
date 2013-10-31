@@ -32,28 +32,56 @@
 #ifndef XPOST_GC_H
 #define XPOST_GC_H
 
-/* garbage collector
-   */
+/**
+ * @file xpost_garbage.h
+ * @brief The Garbage Collector
+ */
 
-enum {
+
+/**
+ * @enum  Xpost_Garbage_Params
+ * @brief private constants
+ */
+typedef enum {
     PERIOD = 1000  /* number of times to grow before collecting */
-};
+} Xpost_Garbage_Params;
 
-/* initialize the FREE special entity which points to the head of the free list */
+/**
+ * @brief  initialize the FREE special entity which points
+ *         to the head of the free list
+ */
 void initfree(mfile *mem);
+
+/**
+ * @brief  print a dump of the free list
+ */
 void dumpfree(mfile *mem);
 
-/* allocate data, re-using garbage if possible */
+/**
+ * @brief  allocate data, re-using garbage if possible
+ */
 unsigned gballoc(mfile *mem, unsigned sz, unsigned tag);
 
-/* explicitly add ent to free list */
+/**
+ * @brief  explicitly add ent to free list
+ */
 unsigned mfree(mfile *mem, unsigned ent);
 
-/* perform a collection on mfile */
+/**
+ * @brief  Perform a garbage collection on mfile.
+ *
+ * For a local vm, dosweep should be 1 and markall should be 0.
+ * For a global vm, dosweep should be 1 and markall should be 1.
+ */
 unsigned collect(mfile *mem, int dosweep, int markall);
 
-/* reallocate data, preserving (the maximum of) original contents */
+/**
+ * @brief reallocate data, preserving (the maximum of) original contents
+ */
 unsigned mfrealloc(mfile *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
 
+/**
+ * @brief perform a short functionality test
+ */
 int test_garbage_collect(void);
 #endif
