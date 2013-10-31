@@ -1,0 +1,31 @@
+(loading paint.ps)=
+
+% Painting Operators
+
+% -  erasepage  -
+% paint current page white
+/erasepage {
+    gsave
+        0 setgray
+        clippath fill
+    grestore
+} def
+
+% -  fill  -
+% fill current path with current color
+/fill {
+    doclip
+} def
+
+% -  eofill  -
+% fill using even-odd rule
+/eofill {
+} def
+
+% -  stroke  -
+% draw line along current path
+/stroke {
+    strokepath fill
+} def
+
+(eof paint.ps)=
