@@ -94,10 +94,10 @@ typedef bool _Bool;
 #include "xpost_op_math.h"
 
 static
-bool subwillunder(long x, long y);
+int subwillunder(long x, long y);
 
 static
-bool addwillover(long x,
+int addwillover(long x,
                  long y)
 {
     if (y < 0) return subwillunder(x, -y);
@@ -107,7 +107,7 @@ bool addwillover(long x,
 }
 
 static
-bool subwillunder(long x,
+int subwillunder(long x,
                   long y)
 {
     if (y < 0) return addwillover(x, -y);
@@ -117,7 +117,7 @@ bool subwillunder(long x,
 }
 
 static
-bool mulwillover(long x,
+int mulwillover(long x,
                  long y)
 {
     if (x == 0||y == 0) return false;

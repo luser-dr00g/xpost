@@ -113,7 +113,7 @@ Xpost_Object xpost_cons_bool (int b)
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
             << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     obj.int_.pad = 0;
-    obj.int_.val = b;
+    obj.int_.val = !!b;
 
     return xpost_object_cvlit(obj);
 }
