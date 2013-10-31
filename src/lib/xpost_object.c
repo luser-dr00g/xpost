@@ -105,7 +105,7 @@ char *xpost_object_type_names[] =
    Constructors for simple types
 */
 
-Xpost_Object xpost_cons_bool (bool b)
+Xpost_Object xpost_cons_bool (int b)
 {
     Xpost_Object obj;
 
