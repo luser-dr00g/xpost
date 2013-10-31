@@ -7,7 +7,6 @@ data/device.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
-data/clip.ps \
 data/paint.ps \
 data/init.ps \
 data/m.pic \
@@ -28,7 +27,6 @@ data/device.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
-data/clip.ps \
 data/paint.ps \
 data/init.ps \
 data/m.pic \
