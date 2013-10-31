@@ -391,7 +391,7 @@ char *xpost_object_type_names[]
  * It sets the type to booleantype, sets unlimited access, sets the
  * pad to 0, sets the value to @p b. It returns the object as literal.
  */
-Xpost_Object xpost_cons_bool (bool b);
+Xpost_Object xpost_cons_bool (int b);
 
 /**
  * @brief Construct an integertype object with the given value.
