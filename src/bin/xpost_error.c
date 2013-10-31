@@ -33,22 +33,6 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -140,7 +124,7 @@ void onerror(context *ctx,
     assert(ctx->lo);
     assert(ctx->lo->base);
 
-    in_onerror = true;
+    in_onerror = 1;
 
 #ifdef EMITONERROR
     fprintf(stderr, "err: %s\n", errorname[err]);
@@ -186,6 +170,6 @@ void onerror(context *ctx,
     push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
     /* printf("8\n"); */
 
-    in_onerror = false;
+    in_onerror = 0;
 }
 

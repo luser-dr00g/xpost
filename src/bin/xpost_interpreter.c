@@ -33,22 +33,6 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <setjmp.h>
 #include <stdio.h>
@@ -506,7 +490,7 @@ void eval(context *ctx)
 
 /* the return point from all calls to error() that do not exit() */
 jmp_buf jbmainloop;
-int jbmainloopset = false;
+int jbmainloopset = 0;
 
 /* the big main central interpreter loop. */
 void mainloop(context *ctx)
@@ -516,12 +500,12 @@ void mainloop(context *ctx)
     if ((err = setjmp(jbmainloop))) {
         onerror(ctx, err);
     }
-    jbmainloopset = true;
+    jbmainloopset = 1;
 
     while(!ctx->quit)
         eval(ctx);
 
-    jbmainloopset = false;
+    jbmainloopset = 0;
 }
 
 /* print a dump of the context struct */
@@ -690,8 +674,9 @@ void runitp(void)
 void destroyitp(void)
 {
     //dumpoper(ctx, 1); // is this pointer value constant?
-    printf("bye!\n"); fflush(NULL);
-    collect(itpdata->ctab->gl, true, true);
+    printf("bye!\n");
+    fflush(NULL);
+    collect(itpdata->ctab->gl, 1, 1);
     exititp(itpdata);
     free(itpdata);
 }

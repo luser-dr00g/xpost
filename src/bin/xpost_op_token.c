@@ -32,22 +32,6 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h> /* errno */
@@ -172,7 +156,7 @@ static
 int accept_real(int i)
 {
     switch (i) { //case 2:
-        case 6: case 10: return true; default: return false; }
+        case 6: case 10: return 1; default: return 0; }
     //return (i & 3) == 2;  // 2, 6 == 2|4, 10 == 2|8
 }
 
@@ -371,7 +355,7 @@ int snip (context *ctx,
             } while(c != '\n' && c != '\f' && c != EOF);
         }
     } while(c != EOF && isspace(c));
-    if (c == EOF) return false;
+    if (c == EOF) return 0;
     *buf = c;
     return 1; // true, and size of buffer
 }
@@ -439,9 +423,9 @@ void Ftoken (context *ctx,
     t = toke(ctx, &F, Fnext, Fback);
     if (xpost_object_get_type(t) != nulltype) {
         push(ctx->lo, ctx->os, t);
-        push(ctx->lo, ctx->os, xpost_cons_bool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
-        push(ctx->lo, ctx->os, xpost_cons_bool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 
@@ -474,9 +458,9 @@ void Stoken (context *ctx,
     if (xpost_object_get_type(t) != nulltype) {
         push(ctx->lo, ctx->os, S);
         push(ctx->lo, ctx->os, t);
-        push(ctx->lo, ctx->os, xpost_cons_bool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
-        push(ctx->lo, ctx->os, xpost_cons_bool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 

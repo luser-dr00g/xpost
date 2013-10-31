@@ -32,22 +32,6 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL strtod */
@@ -77,10 +61,10 @@ void vmreclaim (context *ctx, Xpost_Object I) {
     case 0: /* enable automatic collection */
              break;
     case 1: /* perform immediate collection in local vm */
-             collect(ctx->lo, true, false);
+             collect(ctx->lo, 1, 0);
              break;
     case 2: /* perform immediate collection in local and global vm */
-             collect(ctx->gl, true, true);
+             collect(ctx->gl, 1, 1);
              break;
     }
 }

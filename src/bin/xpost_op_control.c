@@ -60,22 +60,6 @@ void *alloca (size_t);
 # endif
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
@@ -246,13 +230,13 @@ void Zexit (context *ctx)
 static
 void Zstop(context *ctx)
 {
-    Xpost_Object f = xpost_cons_bool(false);
+    Xpost_Object f = xpost_cons_bool(0);
     int c = count(ctx->lo, ctx->es);
     Xpost_Object x;
     while (c--) {
         x = pop(ctx->lo, ctx->es);
         if(objcmp(ctx, f, x) == 0) {
-            push(ctx->lo, ctx->os, xpost_cons_bool(true));
+            push(ctx->lo, ctx->os, xpost_cons_bool(1));
             return;
         }
     }
@@ -263,7 +247,7 @@ static
 void Astopped(context *ctx,
               Xpost_Object o)
 {
-    push(ctx->lo, ctx->es, xpost_cons_bool(false));
+    push(ctx->lo, ctx->es, xpost_cons_bool(0));
     push(ctx->lo, ctx->es, o);
 }
 

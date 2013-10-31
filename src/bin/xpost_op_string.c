@@ -32,24 +32,7 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
-#include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
 #include "xpost_memory.h"
@@ -140,8 +123,8 @@ int ancsearch(char *str,
     int i;
     for (i = 0; i < seekn; i++)
         if (str[i] != seek[i])
-            return false;
-    return true;
+            return 0;
+    return 1;
 }
 
 static
@@ -159,10 +142,10 @@ void Sanchorsearch(context *ctx,
                     str.comp_.sz - seek.comp_.sz)); /* post */
         push(ctx->lo, ctx->os,
                 arrgetinterval(str, 0, seek.comp_.sz)); /* match */
-        push(ctx->lo, ctx->os, xpost_cons_bool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
         push(ctx->lo, ctx->os, str);
-        push(ctx->lo, ctx->os, xpost_cons_bool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 
@@ -185,12 +168,12 @@ void Ssearch(context *ctx,
                     arrgetinterval(str, i, seek.comp_.sz)); /* match */
             push(ctx->lo, ctx->os,
                     arrgetinterval(str, 0, i)); /* pre */
-            push(ctx->lo, ctx->os, xpost_cons_bool(true));
+            push(ctx->lo, ctx->os, xpost_cons_bool(1));
             return;
         }
     }
     push(ctx->lo, ctx->os, str);
-    push(ctx->lo, ctx->os, xpost_cons_bool(false));
+    push(ctx->lo, ctx->os, xpost_cons_bool(0));
 }
 
 static

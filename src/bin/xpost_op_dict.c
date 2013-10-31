@@ -32,22 +32,6 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 
@@ -269,11 +253,11 @@ void Awhere(context *ctx,
         Xpost_Object D = top(ctx->lo, ctx->ds, i);
         if (dicknown(ctx, bank(ctx, D), D, K)) {
             push(ctx->lo, ctx->os, D);
-            push(ctx->lo, ctx->os, xpost_cons_bool(true));
+            push(ctx->lo, ctx->os, xpost_cons_bool(1));
             return;
         }
     }
-    push(ctx->lo, ctx->os, xpost_cons_bool(false));
+    push(ctx->lo, ctx->os, xpost_cons_bool(0));
 }
 
 /* dict1 dict2  copy  dict2

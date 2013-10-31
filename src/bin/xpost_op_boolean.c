@@ -60,22 +60,6 @@ void *alloca (size_t);
 # endif
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <stdlib.h> /* NULL */
 
@@ -258,8 +242,8 @@ void initopb(context *ctx,
     op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "xor", Bxor, 1, 2, booleantype, booleantype); INSTALL;
     op = consoper(ctx, "xor", Ixor, 1, 2, integertype, integertype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "true"), xpost_cons_bool(true));
-    bdcput(ctx, sd, consname(ctx, "false"), xpost_cons_bool(false));
+    bdcput(ctx, sd, consname(ctx, "true"), xpost_cons_bool(1));
+    bdcput(ctx, sd, consname(ctx, "false"), xpost_cons_bool(0));
     op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL); */
