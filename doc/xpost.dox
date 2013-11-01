@@ -1,0 +1,63 @@
+/**
+ * @mainpage xpost documentation
+ * @author Joshua Ryan
+ * @date 2013
+ * @copyright BSD 3-Clause License
+ *
+ * @section xpost_toc Table of Contents
+ *
+ * @li @ref xpost_intro
+ * @li @ref xpost_design
+ *
+ * @section xpost_intro Introduction
+ *
+ * XPost3 is a work-in-progress Level-2 Postscript
+ * interpreter. Currently it implements the complete Level-1 core
+ * (minus graphics). Level-2 features implemented: growing stacks,
+ * growing dicts, << /dictionary/syntax >>.
+ *
+ * @section xpost_getting Getting xpost
+ *
+ * Xpost source code is hosted in Google Code at the address
+ * http://code.google.com/p/xpost/. It can be checked out with
+ * mercurial, see http://code.google.com/p/xpost/source/checkout.
+ *
+ * @section xpost_compilation Compilation and installation
+ *
+ * @subsection xpost_configuration Configuration
+ *
+ * @verbatim
+./autogen.sh
+   @endverbatim
+ *
+ * To configuring it the following times:
+ *
+ * @verbatim
+./configure
+   @endverbatim
+ *
+ * @subsection xpost_compilation Compilation
+ *
+   @verbatim
+make -j5
+   @endverbatim
+ *
+ * @subsection xpost_installation Installation
+ *
+ * @verbatim
+make install
+   @endverbatim
+ *
+ * @subsection xpost_configure_options Configure options
+ *
+ * - --help : help
+ * - --disable-assert : disable asserts in code
+ *
+ * @subsection xpost_make_rules Make rules
+ *
+ * - doc : build documentation
+ * - splint : run splint, the static analyser
+ * - count : display the number of lines of code, using the wc tool
+ * - maintainer-clean : get back to the state after a checkout
+ * - distcheck : build tar balls
+ */
