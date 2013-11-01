@@ -33,22 +33,6 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -280,16 +264,16 @@ next:
         markent(mem, s->data[i].saverec_.cpy);
         if (s->data[i].saverec_.tag == dicttype) {
             xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
-            markdict(ctx, mem, ad, false);
+            markdict(ctx, mem, ad, 0);
             xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
-            markdict(ctx, mem, ad, false);
+            markdict(ctx, mem, ad, 0);
         }
         if (s->data[i].saverec_.tag == arraytype) {
             unsigned sz = s->data[i].saverec_.pad;
             xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
-            markarray(ctx, mem, ad, sz, false);
+            markarray(ctx, mem, ad, sz, 0);
             xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
-            markarray(ctx, mem, ad, sz, false);
+            markarray(ctx, mem, ad, sz, 0);
         }
     }
     if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
@@ -463,14 +447,14 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
     /* printf("\ncollect:\n"); */
 
     /* determine global/glocal */
-    isglobal = false;
+    isglobal = 0;
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST, &ad);
     cid = (void *)(mem->base + ad);
     for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
         ctx = ctxcid(cid[i]);
         if (mem == ctx->gl) {
-            isglobal = true;
+            isglobal = 1;
             break;
         }
     }
@@ -487,7 +471,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = ctxcid(cid[i]);
-            collect(ctx->lo, false, markall);
+            collect(ctx->lo, 0, markall);
         }
 
     } else {
@@ -597,7 +581,7 @@ try_again:
     }
     if (--period == 0) {
         period = PERIOD;
-        collect(mem, true, false);
+        collect(mem, 1, 0);
         goto try_again;
     }
 /*#endif */
@@ -705,7 +689,7 @@ void init_test_garbage()
     ctx->vmmode = LOCAL;
     ctx->os = ctx->ds = ctx->es = ctx->hold = initstack(ctx->lo);
 
-    initializing = false; /* garbage collector won't run otherwise */
+    initializing = 0; /* garbage collector won't run otherwise */
 }
 
 static
@@ -716,7 +700,7 @@ void exit_test_garbage(void)
     free(itpdata);
     itpdata = NULL;
 
-    initializing = true;
+    initializing = 1;
 }
 
 int test_garbage_collect(void)
@@ -733,10 +717,10 @@ int test_garbage_collect(void)
         /* printf("str sz=%u\n", sz); */
 
         push(ctx->lo, ctx->os, str);
-        assert(collect(ctx->lo, true, false) == 0);
+        assert(collect(ctx->lo, 1, 0) == 0);
 
         pop(ctx->lo, ctx->os);
-        ret = collect(ctx->lo, true, false);
+        ret = collect(ctx->lo, 1, 0);
         /* printf("collect returned %u\n", ret); */
         assert(ret >= sz);
     }
@@ -755,10 +739,10 @@ int test_garbage_collect(void)
     sz = post-pre;
 
     push(ctx->lo, ctx->os, arr);
-    assert(collect(ctx->lo, true, false) == 0);
+    assert(collect(ctx->lo, 1, 0) == 0);
 
     pop(ctx->lo, ctx->os);
-    ret = collect(ctx->lo, true, false);
+    ret = collect(ctx->lo, 1, 0);
     assert(ret >= sz);
 
     }

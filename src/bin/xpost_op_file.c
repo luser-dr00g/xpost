@@ -58,22 +58,6 @@ void *alloca (size_t);
 # endif
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -137,9 +121,9 @@ void Fread (context *ctx,
     b = fileread(ctx->lo, f);
     if (b.int_.val != EOF) {
         push(ctx->lo, ctx->os, b);
-        push(ctx->lo, ctx->os, xpost_cons_bool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
-        push(ctx->lo, ctx->os, xpost_cons_bool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 
@@ -224,11 +208,11 @@ void Freadstring (context *ctx,
     n = fread(s, 1, S.comp_.sz, f);
     if (n == S.comp_.sz) {
         push(ctx->lo, ctx->os, S);
-        push(ctx->lo, ctx->os, xpost_cons_bool(true));
+        push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
         S.comp_.sz = n;
         push(ctx->lo, ctx->os, S);
-        push(ctx->lo, ctx->os, xpost_cons_bool(false));
+        push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 

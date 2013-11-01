@@ -58,22 +58,6 @@ void *alloca (size_t);
 # endif
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL strtod */
@@ -128,7 +112,7 @@ void initoppa(context *ctx,
     optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "packedarray", packedarray, 1, 1, integertype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "currentpacking"), xpost_cons_bool(false));
+    bdcput(ctx, sd, consname(ctx, "currentpacking"), xpost_cons_bool(0));
     op = consoper(ctx, "setpacking", setpacking, 0, 1, booleantype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);

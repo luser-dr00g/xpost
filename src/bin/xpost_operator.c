@@ -33,22 +33,6 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -305,12 +289,12 @@ void opexec(context *ctx,
     for (i=0; i < op.n; i++) { /* try each signature */
         byte *t;
         if (ct < sp[i].in) {
-            pass = false;
+            pass = 0;
             err = stackunderflow;
             errmsg = "opexec";
             continue;
         }
-        pass = true;
+        pass = 1;
         t = (void *)(ctx->gl->base + sp[i].t);
         for (j=0; j < sp[i].in; j++) {
             Xpost_Object el = top(ctx->lo, ctx->os, j);
@@ -329,7 +313,7 @@ void opexec(context *ctx,
             if (t[j] == proctype
                     && xpost_object_get_type(el) == arraytype
                     && xpost_object_is_exe(el)) continue;
-            pass = false;
+            pass = 0;
             err = typecheck;
             errmsg = "opexec";
             break;

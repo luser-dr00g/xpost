@@ -58,22 +58,6 @@ void *alloca (size_t);
 # endif
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
@@ -101,9 +85,9 @@ int addwillover(long x,
                  long y)
 {
     if (y < 0) return subwillunder(x, -y);
-    if (x > LONG_MAX - y) return true;
-    if (y == LONG_MIN) return true;
-    return false;
+    if (x > LONG_MAX - y) return 1;
+    if (y == LONG_MIN) return 1;
+    return 0;
 }
 
 static
@@ -111,20 +95,20 @@ int subwillunder(long x,
                   long y)
 {
     if (y < 0) return addwillover(x, -y);
-    if (x < LONG_MIN + y) return true;
-    if (y == LONG_MIN) return true;
-    return false;
+    if (x < LONG_MIN + y) return 1;
+    if (y == LONG_MIN) return 1;
+    return 0;
 }
 
 static
 int mulwillover(long x,
                  long y)
 {
-    if (x == 0||y == 0) return false;
+    if (x == 0||y == 0) return 0;
     if (x < 0) x = -x;
     if (y < 0) y = -y;
-    if (x > LONG_MAX / y) return true;
-    return false;
+    if (x > LONG_MAX / y) return 1;
+    return 0;
 }
 
 /* num1 num2  add  sum

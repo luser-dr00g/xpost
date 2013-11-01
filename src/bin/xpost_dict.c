@@ -59,22 +59,6 @@ void *alloca (size_t);
 # endif
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -512,7 +496,7 @@ int dicknown(context *ctx,
     Xpost_Object *r;
 
     r = diclookup(ctx, mem, d, k);
-    if (r == NULL) return false;
+    if (r == NULL) return 0;
     return xpost_object_get_type(*r) != nulltype;
 }
 
@@ -624,8 +608,8 @@ void dicundef(context *ctx,
     unsigned h;
     unsigned i;
     unsigned last = 0;
-    int lastisset = false;
-    int found = false;
+    int lastisset = 0;
+    int found = 0;
 
     if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
 
@@ -647,10 +631,10 @@ void dicundef(context *ctx,
     for (i=h; i < sz; i++)
         if (h == hash(tp[2*i]) % sz) {
             last = i;
-            lastisset = true;
+            lastisset = 1;
         } else if (objcmp(ctx, tp[2*i], null) == 0) {
             if (lastisset) {
-                found = true;
+                found = 1;
                 break;
             }
         }
@@ -659,10 +643,10 @@ void dicundef(context *ctx,
         for (i=0; i < h; i++)
             if (h == hash(tp[2*i]) % sz) {
                 last = i;
-                lastisset = true;
+                lastisset = 1;
             } else if (objcmp(ctx, tp[2*i], null) == 0) {
                 if (lastisset) {
-                    found = true;
+                    found = 1;
                     break;
                 }
             }

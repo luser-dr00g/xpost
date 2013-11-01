@@ -32,22 +32,6 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_STDBOOL_H
-# include <stdbool.h>
-#else
-# ifndef HAVE__BOOL
-#  ifdef __cplusplus
-typedef bool _Bool;
-#  else
-#   define _Bool signed char
-#  endif
-# endif
-# define bool _Bool
-# define false 0
-# define true 1
-# define __bool_true_false_are_defined 1
-#endif
-
 #include <stdio.h>
 
 #include "xpost_object.h"
@@ -161,10 +145,10 @@ int xpost_object_is_composite (Xpost_Object obj)
         case stringtype: /*@fallthrough@*/
         case arraytype: /*@fallthrough@*/
         case dicttype:
-            return true;
+            return 1;
         default: break;
     }
-    return false;
+    return 0;
 }
 
 int xpost_object_is_exe(Xpost_Object obj)
