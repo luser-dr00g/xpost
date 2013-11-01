@@ -162,7 +162,6 @@ AC_SUBST([VALGRIND])
 ### Checks for header files
 
 AC_HEADER_ASSERT
-AC_HEADER_STDBOOL
 AC_HEADER_TIME
 
 if test "x${enable_mmap}" = "xyes" ; then
