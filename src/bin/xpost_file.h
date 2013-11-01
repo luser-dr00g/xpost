@@ -36,13 +36,13 @@
    for the FILE *
    */
 
-Xpost_Object consfile(mfile *mem, /*@NULL@*/ FILE *fp);
-Xpost_Object fileopen(mfile *mem, char *fn, char *mode);
-FILE *filefile(mfile *mem, Xpost_Object f);
-int filestatus(mfile *mem, Xpost_Object f);
-long filebytesavailable(mfile *mem, Xpost_Object f);
-void fileclose(mfile *mem, Xpost_Object f);
-Xpost_Object fileread(mfile *mem, Xpost_Object f);
-void filewrite(mfile *mem, Xpost_Object f, Xpost_Object b);
+Xpost_Object consfile(Xpost_Memory_File *mem, /*@NULL@*/ FILE *fp);
+Xpost_Object fileopen(Xpost_Memory_File *mem, char *fn, char *mode);
+FILE *filefile(Xpost_Memory_File *mem, Xpost_Object f);
+int filestatus(Xpost_Memory_File *mem, Xpost_Object f);
+long filebytesavailable(Xpost_Memory_File *mem, Xpost_Object f);
+void fileclose(Xpost_Memory_File *mem, Xpost_Object f);
+Xpost_Object fileread(Xpost_Memory_File *mem, Xpost_Object f);
+void filewrite(Xpost_Memory_File *mem, Xpost_Object f, Xpost_Object b);
 
 #endif

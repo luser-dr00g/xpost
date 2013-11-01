@@ -100,7 +100,12 @@ static
 void Vrestore (context *ctx,
                Xpost_Object V)
 {
-    int z = count(ctx->lo, adrent(ctx->lo, VS));
+    int z;
+    unsigned int vs;
+
+    xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    z = count(ctx->lo, vs);
     while(z > V.save_.lev) {
         restore(ctx->lo);
         z--;
@@ -140,7 +145,11 @@ void Agcheck (context *ctx,
 static
 void Zvmstatus (context *ctx)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, adrent(ctx->lo, VS))));
+    unsigned int vs;
+
+    xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, vs)));
     push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->used));
     push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->max));
 }
@@ -150,8 +159,12 @@ void initopv(context *ctx,
 {
     oper *optab;
     Xpost_Object n,op;
+    unsigned int optadr;
+
     assert(ctx->gl->base);
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "save", Zsave, 1, 0); INSTALL;
     op = consoper(ctx, "restore", Vrestore, 0, 1, savetype); INSTALL;

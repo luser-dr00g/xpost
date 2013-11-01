@@ -209,10 +209,10 @@ unsigned hash(Xpost_Object k)
    extract the "pointer" from the entity,
    Initialize a dichead in memory,
    just after the head, clear a table of pairs. */
-Xpost_Object consdic(mfile *mem,
+Xpost_Object consdic(Xpost_Memory_File *mem,
                unsigned sz)
 {
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     Xpost_Object d;
     unsigned rent;
     unsigned cnt;
@@ -220,6 +220,7 @@ Xpost_Object consdic(mfile *mem,
     dichead *dp;
     Xpost_Object *tp;
     unsigned i;
+    unsigned int vs;
 
     if (sz < 5) sz = 5;
 
@@ -227,17 +228,22 @@ Xpost_Object consdic(mfile *mem,
     d.tag = dicttype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     d.comp_.sz = sz;
     d.comp_.off = 0;
-    /* d.comp_.ent = mtalloc(mem, 0, sizeof(dichead) + DICTABSZ(sz), 0 ); */
+    /* unsigned int ent = xpost_memory_table_alloc(mem,
+           sizeof(dichead) + DICTABSZ(sz), 0, &ent);
+       d.comp_.ent = ent; */
     d.comp_.ent = gballoc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype);
 
     tab = (void *)(mem->base);
     rent = d.comp_.ent;
-    findtabent(mem, &tab, &rent);
-    cnt = count(mem, adrent(mem, VS));
-    tab->tab[rent].mark = ( (0 << MARKO) | (0 << RFCTO) |
-            (cnt << LLEVO) | (cnt << TLEVO) );
+    xpost_memory_table_find_relative(mem, &tab, &rent);
+    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    cnt = count(mem, vs);
+    tab->tab[rent].mark = ( (0 << XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET)
+            | (0 << XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET)
+            | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET)
+            | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET) );
 
-    ad = adrent(mem, d.comp_.ent);
+    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
     dp = (void *)(mem->base + ad); /* clear header */
     dp->tag = dicttype;
     dp->sz = sz;
@@ -266,18 +272,24 @@ Xpost_Object consbdc(context *ctx,
 }
 
 /* get the nused field from the dichead */
-unsigned diclength(mfile *mem,
+unsigned diclength(Xpost_Memory_File *mem,
                    Xpost_Object d)
 {
-    dichead *dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
+    unsigned int da;
+    dichead *dp;
+    xpost_memory_table_get_addr(mem, d.comp_.ent, &da);
+    dp = (void *)(mem->base + da);
     return dp->nused;
 }
 
 /* get the sz field from the dichead */
-unsigned dicmaxlength(mfile *mem,
+unsigned dicmaxlength(Xpost_Memory_File *mem,
                       Xpost_Object d)
 {
-    dichead *dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
+    unsigned int da;
+    dichead *dp;
+    xpost_memory_table_get_addr(mem, d.comp_.ent, &da);
+    dp = (void *)(mem->base + da);
     return dp->sz;
 }
 
@@ -288,7 +300,7 @@ static
 void dicgrow(context *ctx,
              Xpost_Object d)
 {
-    mfile *mem;
+    Xpost_Memory_File *mem;
     unsigned sz;
     unsigned newsz;
     unsigned ad;
@@ -304,7 +316,7 @@ void dicgrow(context *ctx,
 #endif
     n = consdic(mem, newsz = 2 * dicmaxlength(mem, d));
 
-    ad = adrent(mem, d.comp_.ent);
+    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
     dp = (void *)(mem->base + ad);
     sz = (dp->sz + 1);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
@@ -319,14 +331,14 @@ void dicgrow(context *ctx,
 #endif
 
     {   /* exchange entities */
-        mtab *dtab, *ntab;
+        Xpost_Memory_Table *dtab, *ntab;
         unsigned dent, nent;
         unsigned hold;
 
         dent = d.comp_.ent;
         nent = n.comp_.ent;
-        findtabent(mem, &dtab, &dent);
-        findtabent(mem, &ntab, &nent);
+        xpost_memory_table_find_relative(mem, &dtab, &dent);
+        xpost_memory_table_find_relative(mem, &ntab, &nent);
 
         /* exchange adrs */
         hold = dtab->tab[dent].adr;
@@ -343,21 +355,26 @@ void dicgrow(context *ctx,
 }
 
 /* is it full? (y/n) */
-int dicfull(mfile *mem,
+int dicfull(Xpost_Memory_File *mem,
              Xpost_Object d)
 {
     return diclength(mem, d) == dicmaxlength(mem, d);
 }
 
 /* print a dump of the dictionary data */
-void dumpdic(mfile *mem,
+void dumpdic(Xpost_Memory_File *mem,
              Xpost_Object d)
 {
-    unsigned ad = adrent(mem, d.comp_.ent);
-    dichead *dp = (void *)(mem->base + ad);
-    Xpost_Object *tp = (void *)(mem->base + ad + sizeof(dichead));
-    unsigned sz = (dp->sz + 1);
+    unsigned ad;
+    dichead *dp;
+    Xpost_Object *tp;
+    unsigned sz;
     unsigned i;
+
+    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
+    dp = (void *)(mem->base + ad);
+    tp = (void *)(mem->base + ad + sizeof(dichead));
+    sz = (dp->sz + 1);
 
     printf("\n");
     for (i=0; i < sz; i++) {
@@ -449,7 +466,7 @@ Xpost_Object clean_key (context *ctx,
 /*@dependent@*/ /*@null@*/
 static
 Xpost_Object *diclookup(context *ctx,
-        /*@dependent@*/ mfile *mem,
+        /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
 {
@@ -462,7 +479,7 @@ Xpost_Object *diclookup(context *ctx,
 
     k = clean_key(ctx, k);
 
-    ad = adrent(mem, d.comp_.ent);
+    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
     sz = (dp->sz + 1);
@@ -488,7 +505,7 @@ Xpost_Object *diclookup(context *ctx,
 
 /* see if lookup returns a non-null pair. */
 int dicknown(context *ctx,
-        /*@dependent@*/ mfile *mem,
+        /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
 {
@@ -502,7 +519,7 @@ int dicknown(context *ctx,
 /* call diclookup,
    return the value if the key is non-null. */
 Xpost_Object dicget(context *ctx,
-        /*@dependent@*/ mfile *mem,
+        /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
 {
@@ -522,7 +539,7 @@ Xpost_Object bdcget(context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    return dicget(ctx, bank(ctx, d) /*d.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK?ctx->gl:ctx->lo*/, d, k);
+    return dicget(ctx, bank(ctx, d), d, k);
 }
 
 /* save data if not save at this level,
@@ -532,13 +549,14 @@ Xpost_Object bdcget(context *ctx,
        set key,
        update value. */
 void dicput(context *ctx,
-        mfile *mem,
+        Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k,
         Xpost_Object v)
 {
     Xpost_Object *e;
     dichead *dp;
+    unsigned int ad;
 
     if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
 retry:
@@ -560,7 +578,8 @@ retry:
             dicgrow(ctx, d);
             goto retry;
         }
-        dp = (void *)(mem->base + adrent(mem, d.comp_.ent));
+        xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
+        dp = (void *)(mem->base + ad);
         ++ dp->nused;
         e[0] = clean_key(ctx, k);
     }
@@ -574,7 +593,7 @@ void bdcput(context *ctx,
         Xpost_Object k,
         Xpost_Object v)
 {
-    mfile *mem = bank(ctx, d);
+    Xpost_Memory_File *mem = bank(ctx, d);
     if (!ignoreinvalidaccess) {
         if ( mem == ctx->gl
                 && xpost_object_is_composite(k)
@@ -588,12 +607,12 @@ void bdcput(context *ctx,
         }
     }
 
-    dicput(ctx, bank(ctx, d) /*d.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK?ctx->gl:ctx->lo*/, d, k, v);
+    dicput(ctx, bank(ctx, d), d, k, v);
 }
 
 /* undefine key from dict */
 void dicundef(context *ctx,
-        mfile *mem,
+        Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
 {
@@ -610,7 +629,7 @@ void dicundef(context *ctx,
 
     if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
 
-    ad = adrent(mem, d.comp_.ent);
+    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
 
@@ -701,7 +720,7 @@ int main(void) {
     xpost_object_dump(bdcget(ctx, d, xpost_cons_int(3)));
 
 
-    /*dumpmfile(ctx->gl); */
+    /*xpost_memory_file_dump(ctx->gl); */
     /*dumpmtab(ctx->gl, 0); */
     puts("");
     return 0;

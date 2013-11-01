@@ -80,57 +80,57 @@ typedef bool _Bool;
 /* iterate through all tables,
     clear the MARK in the mark. */
 static
-void unmark(mfile *mem)
+void unmark(Xpost_Memory_File *mem)
 {
-    mtab *tab = (void *)(mem->base);
+    Xpost_Memory_Table *tab = (void *)(mem->base);
     unsigned i;
 
     for (i = mem->start; i < tab->nextent; i++) {
-        tab->tab[i].mark &= ~MARKM;
+        tab->tab[i].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
     }
     while (tab->nexttab != 0) {
         tab = (void *)(mem->base + tab->nexttab);
 
         for (i = 0; i < tab->nextent; i++) {
-            tab->tab[i].mark &= ~MARKM;
+            tab->tab[i].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
         }
     }
 }
 
 /* set the MARK in the mark in the tab[ent] */
 static
-void markent(mfile *mem,
+void markent(Xpost_Memory_File *mem,
         unsigned ent)
 {
-    mtab *tab;
+    Xpost_Memory_Table *tab;
 
     if (ent < mem->start)
         return;
 
     tab = (void *)(mem->base);
 
-    findtabent(mem,&tab,&ent);
-    tab->tab[ent].mark |= MARKM;
+    xpost_memory_table_find_relative(mem,&tab,&ent);
+    tab->tab[ent].mark |= XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
 }
 
 /* is it marked? */
 static
-int marked(mfile *mem,
+int marked(Xpost_Memory_File *mem,
         unsigned ent)
 {
-    mtab *tab = (void *)(mem->base);
-    findtabent(mem,&tab,&ent);
-    return (tab->tab[ent].mark & MARKM) >> MARKO;
+    Xpost_Memory_Table *tab = (void *)(mem->base);
+    xpost_memory_table_find_relative(mem,&tab,&ent);
+    return (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) >> XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET;
 }
 
 /* recursively mark an object */
 static
-void markobject(context *ctx, mfile *mem, Xpost_Object o, int markall);
+void markobject(context *ctx, Xpost_Memory_File *mem, Xpost_Object o, int markall);
 
 /* recursively mark a dictionary */
 static
 void markdict(context *ctx,
-        mfile *mem,
+        Xpost_Memory_File *mem,
         unsigned adr,
         int markall)
 {
@@ -146,7 +146,7 @@ void markdict(context *ctx,
 /* recursively mark all elements of array */
 static
 void markarray(context *ctx,
-        mfile *mem,
+        Xpost_Memory_File *mem,
         unsigned adr,
         unsigned sz,
         int markall)
@@ -162,10 +162,12 @@ void markarray(context *ctx,
 /* traverse the contents of composite objects */
 static
 void markobject(context *ctx,
-        mfile *mem,
+        Xpost_Memory_File *mem,
         Xpost_Object o,
         int markall)
 {
+    unsigned int ad;
+
     switch(xpost_object_get_type(o)) {
     default: break;
 
@@ -181,7 +183,8 @@ void markobject(context *ctx,
         }
         if (!marked(mem, o.comp_.ent)) {
             markent(mem, o.comp_.ent);
-            markarray(ctx, mem, adrent(mem, o.comp_.ent), o.comp_.sz, markall);
+            xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
+            markarray(ctx, mem, ad, o.comp_.sz, markall);
         }
         break;
 
@@ -197,7 +200,8 @@ void markobject(context *ctx,
         }
         if (!marked(mem, o.comp_.ent)) {
             markent(mem, o.comp_.ent);
-            markdict(ctx, mem, adrent(mem, o.comp_.ent), markall);
+            xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
+            markdict(ctx, mem, ad, markall);
         }
         break;
 
@@ -227,7 +231,7 @@ void markobject(context *ctx,
 /* mark all allocations referred to by objects in stack */
 static
 void markstack(context *ctx,
-        mfile *mem,
+        Xpost_Memory_File *mem,
         unsigned stackadr,
         int markall)
 {
@@ -256,11 +260,12 @@ next:
 /* mark all allocations referred to by objects in save object's stack of saverec_'s */
 static
 void marksavestack(context *ctx,
-        mfile *mem,
+        Xpost_Memory_File *mem,
         unsigned stackadr)
 {
     stack *s = (void *)(mem->base + stackadr);
     unsigned i;
+    unsigned int ad;
     (void)ctx;
 
 #ifdef DEBUG_GC
@@ -274,13 +279,17 @@ next:
         markent(mem, s->data[i].saverec_.src);
         markent(mem, s->data[i].saverec_.cpy);
         if (s->data[i].saverec_.tag == dicttype) {
-            markdict(ctx, mem, adrent(mem, s->data[i].saverec_.src), false);
-            markdict(ctx, mem, adrent(mem, s->data[i].saverec_.cpy), false);
+            xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
+            markdict(ctx, mem, ad, false);
+            xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
+            markdict(ctx, mem, ad, false);
         }
         if (s->data[i].saverec_.tag == arraytype) {
             unsigned sz = s->data[i].saverec_.pad;
-            markarray(ctx, mem, adrent(mem, s->data[i].saverec_.src), sz, false);
-            markarray(ctx, mem, adrent(mem, s->data[i].saverec_.cpy), sz, false);
+            xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
+            markarray(ctx, mem, ad, sz, false);
+            xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
+            markarray(ctx, mem, ad, sz, false);
         }
     }
     if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
@@ -297,7 +306,7 @@ next:
 /* mark all allocations referred to by objects in save stack */
 static
 void marksave(context *ctx,
-        mfile *mem,
+        Xpost_Memory_File *mem,
         unsigned stackadr)
 {
     stack *s = (void *)(mem->base + stackadr);
@@ -320,25 +329,28 @@ next:
 
 /* free list head is in slot zero
    sz is 0 so gc will ignore it */
-void initfree(mfile *mem)
+void initfree(Xpost_Memory_File *mem)
 {
-    unsigned ent = mtalloc(mem, 0, sizeof(unsigned), 0);
+    unsigned ent;
     unsigned val = 0;
-    assert (ent == FREE);
-    put(mem, ent, 0, sizeof(unsigned), &val);
+
+    xpost_memory_table_alloc(mem, sizeof(unsigned), 0, &ent);
+    assert (ent == XPOST_MEMORY_TABLE_SPECIAL_FREE);
+    xpost_memory_put(mem, ent, 0, sizeof(unsigned), &val);
 
     /*
-       unsigned ent = mtalloc(mem, 0, 0, 0);
-       mtab *tab = (void *)mem->base;
-       tab->tab[ent].adr = mfalloc(mem, sizeof(unsigned));
+       unsigned ent;
+       xpost_memory_table_alloc(mem, 0, 0, &ent);
+       Xpost_Memory_Table *tab = (void *)mem->base;
+       xpost_memory_file_alloc(mem, sizeof(unsigned), &tab->tab[ent].adr);
    */
 }
 
 /* free this ent! returns reclaimed size */
-unsigned mfree(mfile *mem,
+unsigned mfree(Xpost_Memory_File *mem,
         unsigned ent)
 {
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     unsigned rent = ent;
     unsigned a;
     unsigned z;
@@ -348,14 +360,14 @@ unsigned mfree(mfile *mem,
     if (ent < mem->start)
         return 0;
 
-    findtabent(mem, &tab, &rent);
+    xpost_memory_table_find_relative(mem, &tab, &rent);
     a = tab->tab[rent].adr;
     sz = tab->tab[rent].sz;
     if (sz == 0) return 0;
 
     if (tab->tab[rent].tag == filetype) {
         FILE *fp;
-        get(mem, ent, 0, sizeof(FILE *), &fp);
+        xpost_memory_get(mem, ent, 0, sizeof(FILE *), &fp);
         if (fp
                 && fp != stdin
                 && fp != stdout
@@ -369,13 +381,13 @@ unsigned mfree(mfile *mem,
 #endif
             fclose(fp);
             fp = NULL;
-            put(mem, ent, 0, sizeof(FILE *), &fp);
+            xpost_memory_put(mem, ent, 0, sizeof(FILE *), &fp);
         }
     }
     tab->tab[rent].tag = 0;
 
-    z = adrent(mem, FREE);
-    /* printf("freeing %d bytes\n", szent(mem, ent)); */
+    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);
+    /* printf("freeing %d bytes\n", xpost_memory_table_get_size(mem, ent)); */
 
     /* copy the current free-list head to the data area of the ent. */
     memcpy(mem->base+a, mem->base+z, sizeof(unsigned));
@@ -393,16 +405,16 @@ unsigned mfree(mfile *mem,
    return reclaimed size
  */
 static
-unsigned sweep(mfile *mem)
+unsigned sweep(Xpost_Memory_File *mem)
 {
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     int ntab;
     unsigned zero = 0;
     unsigned z;
     unsigned i;
     unsigned sz = 0;
 
-    z = adrent(mem, FREE); /* address of the free list head */
+    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list head */
 
     memcpy(mem->base+z, &zero, sizeof(unsigned)); /* discard list */
     /* *(unsigned *)(mem->base+z) = 0; */
@@ -411,20 +423,20 @@ unsigned sweep(mfile *mem)
     tab = (void *)(mem->base);
     ntab = 0;
     for (i = mem->start; i < tab->nextent; i++) {
-        if ( (tab->tab[i].mark & MARKM) == 0
+        if ( (tab->tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0
                 && tab->tab[i].sz != 0)
             sz += mfree(mem, i);
     }
 
     /* scan linked tables */
-    while (i < TABSZ && tab->nexttab != 0) {
+    while (i < XPOST_MEMORY_TABLE_SIZE && tab->nexttab != 0) {
         tab = (void *)(mem->base + tab->nexttab);
         ++ntab;
 
         for (i = mem->start; i < tab->nextent; i++) {
-            if ( (tab->tab[i].mark & MARKM) == 0
+            if ( (tab->tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0
                     && tab->tab[i].sz != 0)
-                sz += mfree(mem, i + ntab*TABSZ);
+                sz += mfree(mem, i + ntab*XPOST_MEMORY_TABLE_SIZE);
         }
     }
 
@@ -436,13 +448,14 @@ unsigned sweep(mfile *mem)
    sweep.
    return reclaimed size
  */
-unsigned collect(mfile *mem, int dosweep, int markall)
+unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
 {
     unsigned i;
     unsigned *cid;
     context *ctx = NULL;
     int isglobal;
     unsigned sz = 0;
+    unsigned int ad;
 
     if (initializing)
         return 0;
@@ -451,7 +464,9 @@ unsigned collect(mfile *mem, int dosweep, int markall)
 
     /* determine global/glocal */
     isglobal = false;
-    cid = (void *)(mem->base + adrent(mem, CTXLIST));
+    xpost_memory_table_get_addr(mem,
+            XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST, &ad);
+    cid = (void *)(mem->base + ad);
     for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
         ctx = ctxcid(cid[i]);
         if (mem == ctx->gl) {
@@ -463,8 +478,12 @@ unsigned collect(mfile *mem, int dosweep, int markall)
     if (isglobal) {
         unmark(mem);
 
-        marksave(ctx, mem, adrent(mem, VS));
-        markstack(ctx, mem, adrent(mem, NAMES), markall);
+        xpost_memory_table_get_addr(mem,
+                XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &ad);
+        marksave(ctx, mem, ad);
+        xpost_memory_table_get_addr(mem,
+                XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &ad);
+        markstack(ctx, mem, ad, markall);
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = ctxcid(cid[i]);
@@ -474,8 +493,12 @@ unsigned collect(mfile *mem, int dosweep, int markall)
     } else {
         unmark(mem);
 
-        marksave(ctx, mem, adrent(mem, VS));
-        markstack(ctx, mem, adrent(mem, NAMES), markall);
+        xpost_memory_table_get_addr(mem,
+                XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &ad);
+        marksave(ctx, mem, ad);
+        xpost_memory_table_get_addr(mem, 
+                XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &ad);
+        markstack(ctx, mem, ad, markall);
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = ctxcid(cid[i]);
@@ -519,16 +542,20 @@ unsigned collect(mfile *mem, int dosweep, int markall)
 }
 
 /* print a dump of the free list */
-void dumpfree(mfile *mem)
+void dumpfree(Xpost_Memory_File *mem)
 {
     unsigned e;
-    unsigned z = adrent(mem, FREE);;
+    unsigned z;
+    xpost_memory_table_get_addr(mem,
+            XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);;
 
     printf("freelist: ");
     memcpy(&e, mem->base+z, sizeof(unsigned));
     while (e) {
-        printf("%d(%d) ", e, szent(mem, e));
-        z = adrent(mem, e);
+        unsigned int sz;
+        xpost_memory_table_get_size(mem, e, &sz);
+        printf("%d(%d) ", e, sz);
+        xpost_memory_table_get_addr(mem, e, &z);
         memcpy(&e, mem->base+z, sizeof(unsigned));
     }
 }
@@ -536,29 +563,36 @@ void dumpfree(mfile *mem)
 /* scan the free list for a suitably sized bit of memory,
    if the allocator falls back to fresh memory PERIOD times,
         it triggers a collection. */
-unsigned gballoc(mfile *mem,
+unsigned gballoc(Xpost_Memory_File *mem,
         unsigned sz,
         unsigned tag)
 {
-    unsigned z = adrent(mem, FREE); /* free pointer */
+    unsigned z;
     unsigned e;                     /* working pointer */
     static int period = PERIOD;
+    unsigned int rent;
+
+    xpost_memory_table_get_addr(mem,
+            XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
 
 /*#if 0 */
 try_again:
     memcpy(&e, mem->base+z, sizeof(unsigned)); /* e = *z */
     while (e) { /* e is not zero */
-        if (szent(mem,e) >= sz) {
-            mtab *tab;
+        unsigned int tsz;
+        xpost_memory_table_get_size(mem,e, &tsz);
+        if (tsz >= sz) {
+            Xpost_Memory_Table *tab;
             unsigned ent;
-            memcpy(mem->base+z,
-                    mem->base+adrent(mem,e), sizeof(unsigned));
+            unsigned int ad;
+            xpost_memory_table_get_addr(mem,e, &ad);
+            memcpy(mem->base+z, mem->base + ad, sizeof(unsigned));
             ent = e;
-            findtabent(mem, &tab, &ent);
+            xpost_memory_table_find_relative(mem, &tab, &ent);
             tab->tab[ent].tag = tag;
             return e;
         }
-        z = adrent(mem,e);
+        xpost_memory_table_get_addr(mem, e, &z);
         memcpy(&e, mem->base+z, sizeof(unsigned));
     }
     if (--period == 0) {
@@ -567,16 +601,17 @@ try_again:
         goto try_again;
     }
 /*#endif */
-    return mtalloc(mem, 0, sz, tag);
+    xpost_memory_table_alloc(mem, sz, tag, &rent);
+    return rent;
 }
 
 /* allocate new entry, copy data, steal its adr, stash old adr, free it */
-unsigned mfrealloc(mfile *mem,
+unsigned mfrealloc(Xpost_Memory_File *mem,
         unsigned oldadr,
         unsigned oldsize,
         unsigned newsize)
 {
-    mtab *tab = NULL;
+    Xpost_Memory_Table *tab = NULL;
     unsigned newadr;
     unsigned ent;
     unsigned rent; /* relative ent */
@@ -588,8 +623,9 @@ unsigned mfrealloc(mfile *mem,
 #endif
 
     /* allocate new entry */
-    rent = ent = mtalloc(mem, 0, newsize, 0);
-    findtabent(mem, &tab, &rent);
+    xpost_memory_table_alloc(mem, newsize, 0, &ent);
+    rent = ent;
+    xpost_memory_table_find_relative(mem, &tab, &rent);
 
     /* steal its adr */
     newadr = tab->tab[rent].adr;
@@ -624,9 +660,10 @@ void init_test_garbage()
     int fd;
     int cid;
     char fname[] = "xmemXXXXXX";
+    unsigned int tadr;
 
     /* create interpreter and context */
-    pgsz = xpost_getpagesize();
+    xpost_memory_pagesize = xpost_getpagesize();
     itpdata = malloc(sizeof*itpdata);
     memset(itpdata, 0, sizeof*itpdata);
     cid = initctxid();
@@ -636,25 +673,25 @@ void init_test_garbage()
     /* create global memory file */
     ctx->gl = nextgtab();
     fd = mkstemp(fname);
-    initmem(ctx->gl, fname, fd);
-    (void)initmtab(ctx->gl);
+    xpost_memory_file_init(ctx->gl, fname, fd);
+    xpost_memory_table_init(ctx->gl, &tadr);
     initfree(ctx->gl);
     initsave(ctx->gl);
     initctxlist(ctx->gl);
     addtoctxlist(ctx->gl, ctx->id);
-    ctx->gl->start = OPTAB + 1;
+    ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1;
 
     /* create local memory file */
     ctx->lo = nextltab();
     strcpy(fname, "xmemXXXXXX");
     fd = mkstemp(fname);
-    initmem(ctx->lo, fname, fd);
-    (void)initmtab(ctx->lo);
+    xpost_memory_file_init(ctx->lo, fname, fd);
+    xpost_memory_table_init(ctx->lo, &tadr);
     initfree(ctx->lo);
     initsave(ctx->lo);
     initctxlist(ctx->lo);
     addtoctxlist(ctx->lo, ctx->id);
-    ctx->lo->start = BOGUSNAME + 1;
+    ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME + 1;
 
     /* create names in both mfiles */
     initnames(ctx);
@@ -674,8 +711,8 @@ void init_test_garbage()
 static
 void exit_test_garbage(void)
 {
-    exitmem(ctx->lo);
-    exitmem(ctx->gl);
+    xpost_memory_file_exit(ctx->lo);
+    xpost_memory_file_exit(ctx->gl);
     free(itpdata);
     itpdata = NULL;
 
@@ -732,21 +769,21 @@ int test_garbage_collect(void)
 #ifdef TESTMODULE_GC
 
 context *ctx;
-mfile *mem;
+Xpost_Memory_File *mem;
 unsigned stac;
 
 
 /* void init(void) { */
-/*     initmem(&mem, "x.mem"); */
-/*     (void)initmtab(&mem); */
+/*     xpost_memory_file_init(&mem, "x.mem"); */
+/*     (void)xpost_memory_table_init(&mem); */
 /*     initfree(&mem); */
 /*     initsave(&mem); */
 /*     initctxlist(&mem); */
-/*     mtab *tab = (void *)mem.base; */
-/*     unsigned ent = mtalloc(&mem, 0, 0); */
-/*     /\* findtabent(&mem, &tab, &ent); *\/ */
+/*     Xpost_Memory_Table *tab = (void *)mem.base; */
+/*     unsigned ent = xpost_memory_table_alloc(&mem, 0, 0); */
+/*     /\* xpost_memory_table_find_relative(&mem, &tab, &ent); *\/ */
 /*     stac = tab->tab[ent].adr = initstack(&mem); */
-/*     /\* mem.roots[0] = VS; *\/ */
+/*     /\* mem.roots[0] = XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK; *\/ */
 /*     /\* mem.roots[1] = ent; *\/ */
 /*     mem.start = ent+1; */
 /* } */
@@ -796,7 +833,7 @@ int main(void) {
     xpost_object_dump(consstr(mem, CNT_STR("string not on stack")));
 
     collect(mem);
-    dumpmfile(mem);
+    xpost_memory_file_dump(mem);
     printf("stackaedr: %04x\n", stac);
     dumpmtab(mem, 0);
     /*     ^ent 8 (8): adr 3404 0x0d4c, sz [24], mark _ */

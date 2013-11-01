@@ -77,7 +77,8 @@ void dumpnames(context *ctx)
     Xpost_Object str;
     char *s;
 
-    stk = adrent(ctx->gl, NAMES);
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &stk);
     cnt = count(ctx->gl, stk);
     printf("global names:\n");
     for (i=0; i < cnt; i++){
@@ -85,7 +86,8 @@ void dumpnames(context *ctx)
         s = charstr(ctx, str);
         printf("%d: %*s\n", i, str.comp_.sz, s);
     }
-    stk = adrent(ctx->lo, NAMES);
+    xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &stk);
     cnt = count(ctx->lo, stk);
     printf("local names:\n");
     for (i=0; i < cnt; i++) {
@@ -95,47 +97,52 @@ void dumpnames(context *ctx)
     }
 }
 
-/* initialize the name special entities NAMES, NAMET */
+/* initialize the name special entities XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, NAMET */
 void initnames(context *ctx)
 {
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     unsigned ent;
     unsigned t;
     unsigned mode;
+    unsigned int nstk;
 
     mode = ctx->vmmode;
     ctx->vmmode = GLOBAL;
-    ent = mtalloc(ctx->gl, 0, 0, 0); //gl:NAMES
-    assert(ent == NAMES);
-    ent = mtalloc(ctx->gl, 0, 0, 0); //gl:NAMET
-    assert(ent == NAMET);
+    xpost_memory_table_alloc(ctx->gl, 0, 0, &ent); //gl:NAMES
+    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK);
+    xpost_memory_table_alloc(ctx->gl, 0, 0, &ent); //gl:NAMET
+    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE);
 
     t = initstack(ctx->gl);
     tab = (void *)ctx->gl->base; //recalc pointer
-    tab->tab[NAMES].adr = t;
-    tab->tab[NAMET].adr = 0;
-    push(ctx->gl, adrent(ctx->gl, NAMES), consbst(ctx, CNT_STR("_not_a_name_")));
-    assert (top(ctx->gl, adrent(ctx->gl, NAMES), 0).comp_.ent == BOGUSNAME);
+    tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK].adr = t;
+    tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = 0;
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &nstk);
+    push(ctx->gl, nstk, consbst(ctx, CNT_STR("_not_a_name_")));
+    assert (top(ctx->gl, nstk, 0).comp_.ent == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
 
     ctx->vmmode = LOCAL;
-    ent = mtalloc(ctx->lo, 0, 0, 0); //lo:NAMES
-    assert(ent == NAMES);
-    ent = mtalloc(ctx->lo, 0, 0, 0); //lo:NAMET
-    assert(ent == NAMET);
+    xpost_memory_table_alloc(ctx->lo, 0, 0, &ent); //lo:NAMES
+    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK);
+    xpost_memory_table_alloc(ctx->lo, 0, 0, &ent); //lo:NAMET
+    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE);
 
     t = initstack(ctx->lo);
     tab = (void *)ctx->lo->base; //recalc pointer
-    tab->tab[NAMES].adr = t;
-    tab->tab[NAMET].adr = 0;
-    push(ctx->lo, adrent(ctx->lo, NAMES), consbst(ctx, CNT_STR("_not_a_name_")));
-    assert (top(ctx->lo, adrent(ctx->lo, NAMES), 0).comp_.ent == BOGUSNAME);
+    tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK].adr = t;
+    tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = 0;
+    xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &nstk);
+    push(ctx->lo, nstk, consbst(ctx, CNT_STR("_not_a_name_")));
+    assert (top(ctx->lo, nstk, 0).comp_.ent == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
 
     ctx->vmmode = mode;
 }
 
 /* perform a search using the ternary search tree */
 static
-unsigned tstsearch(mfile *mem,
+unsigned tstsearch(Xpost_Memory_File *mem,
                    unsigned tadr,
                    char *s)
 {
@@ -155,15 +162,16 @@ unsigned tstsearch(mfile *mem,
 
 /* add a string to the ternary search tree */
 static
-unsigned tstinsert(mfile *mem,
+unsigned tstinsert(Xpost_Memory_File *mem,
                    unsigned tadr,
                    char *s)
 {
     tst *p;
     unsigned t; //temporary
+    unsigned int nstk;
 
     if (!tadr) {
-        tadr = mfalloc(mem, sizeof(tst));
+        xpost_memory_file_alloc(mem, sizeof(tst), &tadr);
         p = (void *)(mem->base + tadr);
         p->val = *s;
         p->lo = p->eq = p->hi = 0;
@@ -179,7 +187,9 @@ unsigned tstinsert(mfile *mem,
             p = (void *)(mem->base + tadr); //recalc pointer
             p->eq = t;
         }else {
-            p->eq = count(mem, adrent(mem, NAMES)); /* payload when val == '\0' */
+            xpost_memory_table_get_addr(mem,
+                    XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &nstk);
+            p->eq = count(mem, nstk); /* payload when val == '\0' */
         }
     } else {
         t = tstinsert(mem, p->hi, s);
@@ -194,11 +204,15 @@ static
 unsigned addname(context *ctx,
                  char *s)
 {
-    mfile *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
-    unsigned names = adrent(mem, NAMES);
-    unsigned u = count(mem, names);
+    Xpost_Memory_File *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
+    unsigned names;
+    unsigned u;
 
-    //dumpmfile(ctx->gl);
+    xpost_memory_table_get_addr(mem,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
+    u = count(mem, names);
+
+    //xpost_memory_file_dump(ctx->gl);
     //dumpmtab(ctx->gl, 0);
     //unsigned vmmode = ctx->vmmode;
     //ctx->vmmode = GLOBAL;
@@ -214,7 +228,7 @@ unsigned addname(context *ctx,
    returns a generic object with
        nametype tag with BANK field, 
        mark_.pad0 set to zero
-       mark_.padw contains NAMES stack index
+       mark_.padw contains XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK stack index
  */
 Xpost_Object consname(context *ctx,
                 char *s)
@@ -222,16 +236,21 @@ Xpost_Object consname(context *ctx,
     unsigned u;
     unsigned t;
     Xpost_Object o;
+    unsigned int tstk;
 
-    u = tstsearch(ctx->lo, adrent(ctx->lo, NAMET), s);
+    xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE, &tstk);
+    u = tstsearch(ctx->lo, tstk, s);
     if (!u) {
-        u = tstsearch(ctx->gl, adrent(ctx->gl, NAMET), s);
+        xpost_memory_table_get_addr(ctx->gl,
+                XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE, &tstk);
+        u = tstsearch(ctx->gl, tstk, s);
         if (!u) {
-            mfile *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
-            mtab *tab = (void *)mem->base;
-            t = tstinsert(mem, tab->tab[NAMET].adr, s);
+            Xpost_Memory_File *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
+            Xpost_Memory_Table *tab = (void *)mem->base;
+            t = tstinsert(mem, tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr, s);
             tab = (void *)mem->base; //recalc pointer
-            tab->tab[NAMET].adr = t;
+            tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = t;
             u = addname(ctx, s); // obeys vmmode
             o.mark_.tag = nametype | (ctx->vmmode==GLOBAL?XPOST_OBJECT_TAG_DATA_FLAG_BANK:0);
             o.mark_.pad0 = 0;
@@ -256,9 +275,12 @@ Xpost_Object consname(context *ctx,
 Xpost_Object strname(context *ctx,
                Xpost_Object n)
 {
-    mfile *mem = bank(ctx, n);
-    unsigned names = adrent(mem, NAMES);
-    Xpost_Object str = bot(mem, names, n.mark_.padw);
+    Xpost_Memory_File *mem = bank(ctx, n);
+    unsigned names;
+    Xpost_Object str;
+    xpost_memory_table_get_addr(mem,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
+    str = bot(mem, names, n.mark_.padw);
     //str.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     return str;
 }
@@ -269,13 +291,13 @@ Xpost_Object strname(context *ctx,
 
 /*
 void init(context *ctx) {
-    pgsz = xpost_getpagesize();
-    ctx->gl = malloc(sizeof(mfile));
-    initmem(ctx->gl, "x.mem");
-    (void)initmtab(ctx->gl); // create mtab at address zero
-    //(void)mtalloc(ctx->gl, 0, 0, 0); //FREE
+    xpost_memory_pagesize = xpost_getpagesize();
+    ctx->gl = malloc(sizeof(Xpost_Memory_File));
+    xpost_memory_file_init(ctx->gl, "x.mem");
+    (void)xpost_memory_table_init(ctx->gl); // create mtab at address zero
+    //(void)xpost_memory_table_alloc(ctx->gl, 0, 0, 0); //FREE
     initfree(ctx->gl);
-    (void)mtalloc(ctx->gl, 0, 0, 0); //VS
+    (void)xpost_memory_table_alloc(ctx->gl, 0, 0, 0); //VS
     initctxlist(ctx->gl);
 
     initnames(ctx);
@@ -301,26 +323,26 @@ int main(void) {
 
     printf("pop ");
     xpost_object_dump(consname(ctx, "pop"));
-    printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
+    printf("NAMES at %u\n", xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK));
+    //dumpstack(ctx->gl, xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK)); puts("");
 
     printf("apple ");
     xpost_object_dump(consname(ctx, "apple"));
     xpost_object_dump(consname(ctx, "apple"));
-    //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
+    //printf("NAMES at %u\n", xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK));
+    //dumpstack(ctx->gl, xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK)); puts("");
 
     printf("banana ");
     xpost_object_dump(consname(ctx, "banana"));
     xpost_object_dump(consname(ctx, "banana"));
-    //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
+    //printf("NAMES at %u\n", xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK));
+    //dumpstack(ctx->gl, xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK)); puts("");
 
     printf("currant ");
     xpost_object_dump(consname(ctx, "currant"));
     xpost_object_dump(consname(ctx, "currant"));
-    //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    //dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
+    //printf("NAMES at %u\n", xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK));
+    //dumpstack(ctx->gl, xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK)); puts("");
 
     printf("apple ");
     xpost_object_dump(consname(ctx, "apple"));
@@ -329,18 +351,18 @@ int main(void) {
     printf("currant ");
     xpost_object_dump(consname(ctx, "currant"));
     printf("date ");
-    //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
+    //printf("NAMES at %u\n", xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK));
     xpost_object_dump(consname(ctx, "date"));
-    //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES)); puts("");
-    //printf("NAMES at %u\n", adrent(ctx->gl, NAMES));
+    //printf("NAMES at %u\n", xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK));
+    dumpstack(ctx->gl, xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK)); puts("");
+    //printf("NAMES at %u\n", xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK));
     printf("elderberry ");
     xpost_object_dump(consname(ctx, "elderberry"));
 
     printf("pop ");
     xpost_object_dump(consname(ctx, "pop"));
 
-    //dumpmfile(ctx->gl);
+    //xpost_memory_file_dump(ctx->gl);
     //dumpmtab(ctx->gl, 0);
     puts("");
     return 0;

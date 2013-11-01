@@ -79,7 +79,8 @@ void error(unsigned err,
         char *msg)
 {
     context *ctx;
-
+    unsigned int gnad;
+    unsigned int lnad;
 
     errormsg = msg;
     if (!initializing && jbmainloopset && !in_onerror) {
@@ -108,16 +109,20 @@ void error(unsigned err,
     dumpstack(ctx->lo, ctx->hold);
 
     printf("\nLocal VM: ");
-    dumpmfile(ctx->lo);
-    dumpmtab(ctx->lo, 0);
+    xpost_memory_file_dump(ctx->lo);
+    xpost_memory_table_dump(ctx->lo);
     printf("\nGlobal VM: ");
-    dumpmfile(ctx->gl);
-    dumpmtab(ctx->gl, 0);
+    xpost_memory_file_dump(ctx->gl);
+    xpost_memory_table_dump(ctx->gl);
 
     printf("\nGlobal Name Stack: ");
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &gnad);
+    dumpstack(ctx->gl, gnad);
     printf("\nLocal Name Stack: ");
-    dumpstack(ctx->lo, adrent(ctx->lo, NAMES));
+    xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &lnad);
+    dumpstack(ctx->lo, lnad);
 
     exit(EXIT_FAILURE);
 }

@@ -87,7 +87,7 @@ itp *itpdata;
 int initializing = 1;
 int ignoreinvalidaccess = 0;
 
-static unsigned makestack(mfile *mem);
+static unsigned makestack(Xpost_Memory_File *mem);
 void eval(context *ctx);
 void mainloop(context *ctx);
 void dumpctx(context *ctx);
@@ -96,34 +96,34 @@ void xit(void);
 
 /* build a stack, return address */
 static
-unsigned makestack(mfile *mem)
+unsigned makestack(Xpost_Memory_File *mem)
 {
     return initstack(mem);
 }
 
 /* initialize the context list
    special entity in the mfile */
-void initctxlist(mfile *mem)
+void initctxlist(Xpost_Memory_File *mem)
 {
     unsigned ent;
-    mtab *tab;
-    ent = mtalloc(mem, 0, MAXCONTEXT * sizeof(unsigned), 0);
-    assert(ent == CTXLIST);
+    Xpost_Memory_Table *tab;
+    xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned), 0, &ent);
+    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
     tab = (void *)mem->base;
-    memset(mem->base + tab->tab[CTXLIST].adr, 0,
+    memset(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr, 0,
             MAXCONTEXT * sizeof(unsigned));
 }
 
 /* add a context ID to the context list in mfile */
-void addtoctxlist(mfile *mem,
+void addtoctxlist(Xpost_Memory_File *mem,
                   unsigned cid)
 {
     int i;
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     unsigned *ctxlist;
 
     tab = (void *)mem->base;
-    ctxlist = (void *)(mem->base + tab->tab[CTXLIST].adr);
+    ctxlist = (void *)(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr);
     // find first empty
     for (i=0; i < MAXCONTEXT; i++) {
         if (ctxlist[i] == 0) {
@@ -135,7 +135,7 @@ void addtoctxlist(mfile *mem,
 }
 
 /* find the next unused mfile in the global memory table */
-mfile *nextgtab(void)
+Xpost_Memory_File *nextgtab(void)
 {
     int i;
 
@@ -144,7 +144,7 @@ mfile *nextgtab(void)
             return &itpdata->gtab[i];
         }
     }
-    error(unregistered, "cannot allocate mfile, gtab exhausted");
+    error(unregistered, "cannot allocate Xpost_Memory_File, gtab exhausted");
     exit(EXIT_FAILURE);
 }
 
@@ -155,27 +155,29 @@ void initglobal(context *ctx)
 {
     char g_filenam[] = "gmemXXXXXX";
     int fd;
+    unsigned int tadr;
+
     ctx->vmmode = GLOBAL;
 
     /* allocate and initialize global vm */
-    //ctx->gl = malloc(sizeof(mfile));
+    //ctx->gl = malloc(sizeof(Xpost_Memory_File));
     //ctx->gl = &itpdata->gtab[0];
     ctx->gl = nextgtab();
 
     fd = mkstemp(g_filenam);
 
-    initmem(ctx->gl, g_filenam, fd);
-    (void)initmtab(ctx->gl);
+    xpost_memory_file_init(ctx->gl, g_filenam, fd);
+    xpost_memory_table_init(ctx->gl, &tadr);
     initfree(ctx->gl);
     initsave(ctx->gl);
     initctxlist(ctx->gl);
     addtoctxlist(ctx->gl, ctx->id);
 
-    ctx->gl->start = OPTAB + 1; /* so OPTAB is not collected and not scanned. */
+    ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1; /* so OPTAB is not collected and not scanned. */
 }
 
 /* find the next unused mfile in the local memory table */
-mfile *nextltab(void)
+Xpost_Memory_File *nextltab(void)
 {
     int i;
     for (i=0; i < MAXMFILE; i++) {
@@ -183,7 +185,7 @@ mfile *nextltab(void)
             return &itpdata->ltab[i];
         }
     }
-    error(unregistered, "cannot allocate mfile, ltab exhausted");
+    error(unregistered, "cannot allocate Xpost_Memory_File, ltab exhausted");
     exit(EXIT_FAILURE);
 }
 
@@ -195,22 +197,24 @@ void initlocal(context *ctx)
 {
     char l_filenam[] = "lmemXXXXXX";
     int fd;
+    unsigned int tadr;
+
     ctx->vmmode = LOCAL;
 
     /* allocate and initialize local vm */
-    //ctx->lo = malloc(sizeof(mfile));
+    //ctx->lo = malloc(sizeof(Xpost_Memory_File));
     //ctx->lo = &itpdata->ltab[0];
     ctx->lo = nextltab();
 
     fd = mkstemp(l_filenam);
 
-    initmem(ctx->lo, l_filenam, fd);
-    (void)initmtab(ctx->lo);
+    xpost_memory_file_init(ctx->lo, l_filenam, fd);
+    xpost_memory_table_init(ctx->lo, &tadr);
     initfree(ctx->lo);
     initsave(ctx->lo);
     initctxlist(ctx->lo);
     addtoctxlist(ctx->lo, ctx->id);
-    //ctx->lo->roots[0] = VS;
+    //ctx->lo->roots[0] = XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK;
 
     ctx->os = makestack(ctx->lo);
     ctx->es = makestack(ctx->lo);
@@ -218,8 +222,8 @@ void initlocal(context *ctx)
     ctx->hold = makestack(ctx->lo);
     //ctx->lo->roots[1] = DS;
     //ctx->lo->start = HOLD + 1; /* so HOLD is not collected and not scanned. */
-    //ctx->lo->start = CTXLIST + 1;
-    ctx->lo->start = BOGUSNAME + 1;
+    //ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST + 1;
+    ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME + 1;
 }
 
 
@@ -294,8 +298,8 @@ void initcontext(context *ctx)
 /* destroy context */
 void exitcontext(context *ctx)
 {
-    exitmem(ctx->gl);
-    exitmem(ctx->lo);
+    xpost_memory_file_exit(ctx->gl);
+    xpost_memory_file_exit(ctx->lo);
 }
 
 
@@ -315,7 +319,7 @@ void exititp(itp *itpptr)
 
 /* return the global or local memory file for the composite object */
 /*@dependent@*/
-mfile *bank(context *ctx,
+Xpost_Memory_File *bank(context *ctx,
             Xpost_Object o)
 {
     return o.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK? ctx->gl : ctx->lo;
@@ -527,10 +531,10 @@ void mainloop(context *ctx)
 /* print a dump of the context struct */
 void dumpctx(context *ctx)
 {
-    dumpmfile(ctx->gl);
-    dumpmtab(ctx->gl, 0);
-    dumpmfile(ctx->lo);
-    dumpmtab(ctx->lo, 0);
+    xpost_memory_file_dump(ctx->gl);
+    xpost_memory_table_dump(ctx->gl);
+    xpost_memory_file_dump(ctx->lo);
+    xpost_memory_table_dump(ctx->lo);
     dumpnames(ctx);
 }
 
@@ -545,7 +549,7 @@ context *xpost_ctx;
 /* set global pagesize, initialize eval's jump-table */
 static void initalldata(void)
 {
-    pgsz = xpost_getpagesize();
+    xpost_memory_pagesize = xpost_getpagesize();
     initializing = 1;
     initevaltype();
 
@@ -632,7 +636,7 @@ void createitp(void)
 {
     Xpost_Object sd, ud;
 
-    test_memory();
+    //test_memory();
     test_garbage_collect();
     nextid = 0; //reset process counter
 
@@ -659,6 +663,8 @@ void runitp(void)
 {
     Xpost_Object lsav;
     int llev;
+    unsigned int vs;
+
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
@@ -680,9 +686,12 @@ void runitp(void)
     mainloop(xpost_ctx);
 
     restore(xpost_ctx->gl);
-    for ( llev = count(xpost_ctx->lo, adrent(xpost_ctx->lo, VS));
+    xpost_memory_table_get_addr(xpost_ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    for ( llev = count(xpost_ctx->lo, vs);
             llev > lsav.save_.lev;
-            llev-- ) {
+            llev-- )
+    {
         restore(xpost_ctx->lo);
     }
 }

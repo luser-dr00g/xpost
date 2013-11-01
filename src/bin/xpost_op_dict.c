@@ -182,11 +182,14 @@ void Aload(context *ctx,
     }
 
     if (DEBUGLOAD) {
-        dumpmfile(ctx->lo);
-        dumpmtab(ctx->lo, 0);
-        dumpmfile(ctx->gl);
-        dumpmtab(ctx->gl, 0);
-        dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+        unsigned int names;
+        xpost_memory_file_dump(ctx->lo);
+        xpost_memory_table_dump(ctx->lo);
+        xpost_memory_file_dump(ctx->gl);
+        xpost_memory_table_dump(ctx->gl);
+        xpost_memory_table_get_addr(ctx->gl,
+                XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
+        dumpstack(ctx->gl, names);
         xpost_object_dump(K);
     }
 
@@ -284,12 +287,12 @@ void Dcopy(context *ctx,
            Xpost_Object D)
 {
     int i, sz;
-    mfile *mem;
+    Xpost_Memory_File *mem;
     unsigned ad;
     Xpost_Object *tp;
     mem = bank(ctx, S);
     sz = dicmaxlength(mem, S);
-    ad = adrent(mem, S.comp_.ent);
+    xpost_memory_table_get_addr(mem, S.comp_.ent, &ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
     for (i=0; i < sz+1; i++) {
         if (xpost_object_get_type(tp[2 * i]) != nulltype) {
@@ -304,13 +307,13 @@ void DPforall (context *ctx,
                Xpost_Object D,
                Xpost_Object P)
 {
-    mfile *mem = bank(ctx, D);
+    Xpost_Memory_File *mem = bank(ctx, D);
     assert(mem->base);
     D.comp_.sz = dicmaxlength(mem, D); // stash size locally
     if (D.comp_.off <= D.comp_.sz) { // not finished?
         unsigned ad;
         Xpost_Object *tp;
-        ad = adrent(mem, D.comp_.ent);
+        xpost_memory_table_get_addr(mem, D.comp_.ent, &ad);
         tp = (void *)(mem->base + ad + sizeof(dichead)); 
 
         for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) { // find next pair
@@ -390,8 +393,12 @@ void initopdi(context *ctx,
 {
     oper *optab;
     Xpost_Object n,op;
+    unsigned int optadr;
+
     assert(ctx->gl->base);
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
     op = consoper(ctx, "dict", Idict, 1, 1, integertype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "<<"), mark);
     op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;

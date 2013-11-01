@@ -73,16 +73,16 @@ typedef struct {
 } saverec_;
 */
 
-/* create a stack in slot VS.
+/* create a stack in slot XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK.
    sz is 0 so gc will ignore it. */
-void initsave (mfile *mem)
+void initsave (Xpost_Memory_File *mem)
 {
     unsigned t;
     unsigned ent;
-    mtab *tab;
+    Xpost_Memory_Table *tab;
 
-    ent = mtalloc(mem, 0, 0, 0); /* allocate an entry of zero length */
-    assert(ent == VS);
+    xpost_memory_table_alloc(mem, 0, 0, &ent); /* allocate an entry of zero length */
+    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK);
 
     t = initstack(mem);
     tab = (void *)mem->base;
@@ -91,45 +91,54 @@ void initsave (mfile *mem)
 
 /* push a new save object on the save stack
    this object is itself a stack (contains a stackadr) */
-Xpost_Object save (mfile *mem)
+Xpost_Object save (Xpost_Memory_File *mem)
 {
     Xpost_Object v;
+    unsigned int vs;
+
     v.tag = savetype;
-    v.save_.lev = count(mem, adrent(mem, VS));
+    xpost_memory_table_get_addr(mem,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    v.save_.lev = count(mem, vs);
     v.save_.stk = initstack(mem);
-    push(mem, adrent(mem, VS), v);
+    push(mem, vs, v);
     return v;
 }
 
 /* check ent's tlev against current save level (save-stack count) */
-unsigned stashed (mfile *mem,
+unsigned stashed (Xpost_Memory_File *mem,
                   unsigned ent)
 {
-    //object sav = top(mem, adrent(mem, VS), 0);
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     unsigned cnt;
     unsigned tlev;
+    unsigned int vs;
 
-    cnt = count(mem, adrent(mem, VS));
-    findtabent(mem, &tab, &ent);
-    tlev = (tab->tab[ent].mark & TLEVM) >> TLEVO;
+    xpost_memory_table_get_addr(mem,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    cnt = count(mem, vs);
+    xpost_memory_table_find_relative(mem, &tab, &ent);
+    tlev = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK)
+        >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET;
 
     return tlev == cnt;
 }
 
 /* make a clone of ent, return new ent */
-unsigned copy(mfile *mem,
+unsigned copy(Xpost_Memory_File *mem,
               unsigned ent)
 {
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     unsigned new;
     unsigned tent = ent;
+    unsigned int adr;
 
-    findtabent(mem, &tab, &ent);
+    xpost_memory_table_find_relative(mem, &tab, &ent);
     new = gballoc(mem, tab->tab[ent].sz, tab->tab[ent].tag);
     ent = tent;
-    findtabent(mem, &tab, &ent); //recalc
-    memcpy(mem->base + adrent(mem, new),
+    xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
+    xpost_memory_table_get_addr(mem, new, &adr);
+    memcpy(mem->base + adr,
             mem->base + tab->tab[ent].adr,
             tab->tab[ent].sz);
 
@@ -138,21 +147,26 @@ unsigned copy(mfile *mem,
 
 /* set tlev for ent to current save level
    push saverec relating ent to saved copy */
-void stash(mfile *mem,
+void stash(Xpost_Memory_File *mem,
            unsigned tag,
            unsigned pad,
            unsigned ent)
 {
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     Xpost_Object o;
     unsigned tlev;
     unsigned rent = ent;
-    Xpost_Object sav = top(mem, adrent(mem, VS), 0);
+    Xpost_Object sav;
+    unsigned int adr;
 
-    findtabent(mem, &tab, &rent);
+    xpost_memory_table_get_addr(mem,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &adr);
+    sav = top(mem, adr, 0);
+
+    xpost_memory_table_find_relative(mem, &tab, &rent);
     tlev = sav.save_.lev;
-    tab->tab[rent].mark &= ~TLEVM; // clear TLEV field
-    tab->tab[rent].mark |= (tlev << TLEVO);  // set TLEV field
+    tab->tab[rent].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK; // clear TLEV field
+    tab->tab[rent].mark |= (tlev << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);  // set TLEV field
 
     o.saverec_.tag = tag;
     o.saverec_.pad = pad;
@@ -165,15 +179,15 @@ void stash(mfile *mem,
         exchange adrs between src and cpy
         pop saverec
     pop save stack */
-void restore(mfile *mem)
+void restore(Xpost_Memory_File *mem)
 {
     unsigned v;
     Xpost_Object sav;
-    mtab *stab, *ctab;
+    Xpost_Memory_Table *stab, *ctab;
     unsigned cnt;
     unsigned sent, cent;
 
-    v = adrent(mem, VS); // save-stack address
+    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &v); // save-stack address
     sav = pop(mem, v); // save-object (stack of saverec_'s)
     cnt = count(mem, sav.save_.stk);
     while (cnt--) {
@@ -182,8 +196,8 @@ void restore(mfile *mem)
         rec = pop(mem, sav.save_.stk);
         sent = rec.saverec_.src;
         cent = rec.saverec_.cpy;
-        findtabent(mem, &stab, &sent);
-        findtabent(mem, &ctab, &cent);
+        xpost_memory_table_find_relative(mem, &stab, &sent);
+        xpost_memory_table_find_relative(mem, &ctab, &cent);
         hold = stab->tab[sent].adr;                 // tmp = src
         stab->tab[sent].adr = ctab->tab[cent].adr;  // src = cpy
         ctab->tab[cent].adr = hold;                 // cpy = tmp
@@ -195,17 +209,17 @@ void restore(mfile *mem)
 #include "xpost_array.h"
 #include <stdio.h>
 
-mfile mf;
+Xpost_Memory_File mf;
 
-void init (mfile *mem)
+void init (Xpost_Memory_File *mem)
 {
-    initmem(mem, "x.mem");
-    (void)initmtab(mem);
+    xpost_memory_file_init(mem, "x.mem");
+    (void)xpost_memory_table_init(mem);
     initfree(mem);
     initsave(mem);
 }
 
-void show (char *msg, mfile *mem, Xpost_Object a)
+void show (char *msg, Xpost_Memory_File *mem, Xpost_Object a)
 {
     printf("%s ", msg);
     printf("%d ", arrget(mem, a, 0).int_.val);
@@ -214,7 +228,7 @@ void show (char *msg, mfile *mem, Xpost_Object a)
 
 int main (void)
 {
-    mfile *mem = &mf;
+    Xpost_Memory_File *mem = &mf;
     Xpost_Object a;
     printf("\n^test v\n");
     init(mem);

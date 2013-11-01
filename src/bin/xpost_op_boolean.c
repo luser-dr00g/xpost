@@ -241,8 +241,12 @@ void initopb(context *ctx,
 {
     oper *optab;
     Xpost_Object n,op;
+    unsigned int optadr;
+
     assert(ctx->gl->base);
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "ne", Ane, 1, 2, anytype, anytype); INSTALL;

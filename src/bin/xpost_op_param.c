@@ -88,8 +88,11 @@ void vmreclaim (context *ctx, Xpost_Object I) {
 static
 void vmstatus (context *ctx) {
     int lev, used, max;
+    unsigned int vstk;
 
-    lev = count(ctx->lo, adrent(ctx->lo, VS));
+    xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk);
+    lev = count(ctx->lo, vstk);
     used = ctx->gl->used + ctx->lo->used;
     max = ctx->gl->max + ctx->lo->max;
 
@@ -103,8 +106,12 @@ void initopparam(context *ctx,
 {
     oper *optab;
     Xpost_Object n,op;
+    unsigned int optadr;
+
     assert(ctx->gl->base);
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "vmreclaim", vmreclaim, 0, 1, integertype); INSTALL;
     op = consoper(ctx, "vmstatus", vmstatus, 3, 0); INSTALL;

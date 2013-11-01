@@ -71,32 +71,38 @@ typedef bool _Bool;
    set the current save level in the "mark" field,
    wrap it up in an object.
 */
-Xpost_Object consarr(mfile *mem,
+Xpost_Object consarr(Xpost_Memory_File *mem,
                unsigned sz)
 {
     unsigned ent;
     unsigned rent;
     unsigned cnt;
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     Xpost_Object o;
     unsigned i;
+    unsigned int vs;
 
     assert(mem->base);
 
-    /* unsigned ent = mtalloc(mem, 0, sz * sizeof(Xpost_Object), 0); */
+    /* unsigned ent;
+       xpost_memory_table_alloc(mem, sz * sizeof(Xpost_Object), 0, &ent); */
     if (sz == 0) {
         ent = 0;
     } else {
         ent = gballoc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype);
         tab = (void *)(mem->base);
         rent = ent;
-        findtabent(mem, &tab, &rent);
-        cnt = count(mem, adrent(mem, VS));
-        tab->tab[rent].mark = ( (0 << MARKO) | (0 << RFCTO) |
-                (cnt << LLEVO) | (cnt << TLEVO) );
+        xpost_memory_table_find_relative(mem, &tab, &rent);
+        xpost_memory_table_get_addr(mem,
+                XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+        cnt = count(mem, vs);
+        tab->tab[rent].mark = ( (0 << XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET)
+                | (0 << XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET)
+                | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET)
+                | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET) );
 
         for (i = 0; i < sz; i++)
-            put(mem, ent, i, (unsigned)sizeof(Xpost_Object), &null);
+            xpost_memory_put(mem, ent, i, (unsigned)sizeof(Xpost_Object), &null);
     }
 
     /* return (Xpost_Object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0}; */
@@ -126,7 +132,7 @@ Xpost_Object consbar(context *ctx,
 /** Copy if necessary,
    call put.
 */
-void arrput(mfile *mem,
+void arrput(Xpost_Memory_File *mem,
             Xpost_Object a,
             integer i,
             Xpost_Object o)
@@ -135,10 +141,10 @@ void arrput(mfile *mem,
         stash(mem, arraytype, a.comp_.sz, a.comp_.ent);
     if (i > a.comp_.sz)
         error(rangecheck, "arrput");
-    put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
+    xpost_memory_put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
 }
 
-/** Select mfile according to BANK flag,
+/** Select Xpost_Memory_File according to BANK flag,
    call arrput.
 */
 void barput(context *ctx,
@@ -146,7 +152,7 @@ void barput(context *ctx,
             integer i,
             Xpost_Object o)
 {
-    mfile *mem = bank(ctx, a);
+    Xpost_Memory_File *mem = bank(ctx, a);
     if (!ignoreinvalidaccess) {
         if ( mem == ctx->gl
                 && xpost_object_is_composite(o)
@@ -158,22 +164,22 @@ void barput(context *ctx,
 }
 
 /* call get. */
-Xpost_Object arrget(mfile *mem,
+Xpost_Object arrget(Xpost_Memory_File *mem,
               Xpost_Object a,
               integer i)
 {
     Xpost_Object o;
-    get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
+    xpost_memory_get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
     return o;
 }
 
-/* Select mfile according to BANK flag,
+/* Select Xpost_Memory_File according to BANK flag,
    call arrget. */
 Xpost_Object barget(context *ctx,
               Xpost_Object a,
               integer i)
 {
-    return arrget(bank(ctx, a) /*a.tag&FBANK? ctx->gl: ctx->lo*/, a, i);
+    return arrget(bank(ctx, a), a, i);
 }
 
 /* adjust the offset and size fields in the object.
@@ -199,7 +205,7 @@ Xpost_Object arrgetinterval(Xpost_Object a,
 #include <string.h>
 
 context *ctx;
-mfile *mem;
+Xpost_Memory_File *mem;
 
 int main(void) {
     itpdata = malloc(sizeof*itpdata);
@@ -207,8 +213,8 @@ int main(void) {
     inititp(itpdata);
     ctx = &itpdata->ctab[0];
     mem = ctx->lo;
-    /* initmem(&mem, "x.mem"); */
-    /* (void)initmtab(&mem); */
+    /* xpost_memory_file_init(&mem, "x.mem"); */
+    /* (void)xpost_memory_table_init(&mem); */
     /* initfree(&mem); */
     /* initsave(&mem); */
 

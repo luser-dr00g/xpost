@@ -150,7 +150,7 @@ f_tmpfile(void)
     FILE *fp = fopen(...);
     Xpost_Object f = readonly(consfile(fp)).
  */
-Xpost_Object consfile(mfile *mem,
+Xpost_Object consfile(Xpost_Memory_File *mem,
         /*@NULL@*/ FILE *fp)
 {
     Xpost_Object f;
@@ -159,9 +159,9 @@ Xpost_Object consfile(mfile *mem,
     printf("consfile %p\n", fp);
 #endif
     f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
-    /* f.mark_.padw = mtalloc(mem, 0, sizeof(FILE *), 0); */
+    /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
     f.mark_.padw = gballoc(mem, sizeof(FILE *), filetype);
-    put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+    xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     return f;
 }
 
@@ -259,7 +259,7 @@ done:
 
 /* check for "special" filenames,
    fallback to fopen. */
-Xpost_Object fileopen(mfile *mem,
+Xpost_Object fileopen(Xpost_Memory_File *mem,
         char *fn,
         char *mode)
 {
@@ -325,23 +325,23 @@ Xpost_Object fileopen(mfile *mem,
 /* adapter:
            FILE* <- filetype object
    yield the FILE* from a filetype object */
-FILE *filefile(mfile *mem,
+FILE *filefile(Xpost_Memory_File *mem,
                Xpost_Object f)
 {
     FILE *fp;
-    get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+    xpost_memory_get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     return fp;
 }
 
 /* make sure the FILE* is not null */
-int filestatus(mfile *mem,
+int filestatus(Xpost_Memory_File *mem,
                 Xpost_Object f)
 {
     return filefile(mem, f) != NULL;
 }
 
 /* call fstat. */
-long filebytesavailable(mfile *mem,
+long filebytesavailable(Xpost_Memory_File *mem,
                         Xpost_Object f)
 {
     int ret;
@@ -363,7 +363,7 @@ long filebytesavailable(mfile *mem,
 
 /* close the file,
    NULL the FILE*. */
-void fileclose(mfile *mem,
+void fileclose(Xpost_Memory_File *mem,
                Xpost_Object f)
 {
     FILE *fp;
@@ -375,13 +375,13 @@ void fileclose(mfile *mem,
 #endif
         fclose(fp);
         fp = NULL;
-        put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+        xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     }
 }
 
 /* if the file is valid,
    read a byte. */
-Xpost_Object fileread(mfile *mem,
+Xpost_Object fileread(Xpost_Memory_File *mem,
                 Xpost_Object f)
 {
     if (!filestatus(mem, f)) error(ioerror, "fileread");
@@ -390,7 +390,7 @@ Xpost_Object fileread(mfile *mem,
 
 /* if the file is valid,
    write a byte. */
-void filewrite(mfile *mem,
+void filewrite(Xpost_Memory_File *mem,
                Xpost_Object f,
                Xpost_Object b)
 {

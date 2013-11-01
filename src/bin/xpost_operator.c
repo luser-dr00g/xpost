@@ -100,24 +100,39 @@ int noop = 0;
 /* allocate the OPTAB structure in VM */
 void initoptab (context *ctx)
 {
-    unsigned ent = mtalloc(ctx->gl, 0, MAXOPS * sizeof(oper), 0);
-    mtab *tab = (void *)(ctx->gl);
-    assert(ent == OPTAB);
-    findtabent(ctx->gl, &tab, &ent);
+    unsigned ent;
+    Xpost_Memory_Table *tab;
+
+    xpost_memory_table_alloc(ctx->gl, MAXOPS * sizeof(oper), 0, &ent);
+    tab = (void *)(ctx->gl);
+    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE);
+    xpost_memory_table_find_relative(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // so gc will ignore it
-    //printf("ent: %d\nOPTAB: %d\n", ent, (int)OPTAB);
+    //printf("ent: %d\nOPTAB: %d\n", ent, (int)XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE);
 }
 
 /* print a dump of the operator struct given opcode */
 void dumpoper(context *ctx,
               int opcode)
 {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
-    oper op = optab[opcode];
-    Xpost_Object_Mark nm = { nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK, 0, op.name };
-    Xpost_Object str = strname(ctx, (Xpost_Object)nm);
-    char *s = charstr(ctx, str);
-    signat *sig = (void *)(ctx->gl->base + op.sigadr);
+    oper *optab;
+    oper op;
+    Xpost_Object_Mark nm;
+    Xpost_Object str;
+    char *s;
+    signat *sig;
+    unsigned int adr;
+
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &adr);
+    optab = (void *)(ctx->gl->base + adr);
+    op = optab[opcode];
+    nm.tag = nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+    nm.pad0 = 0;
+    nm.padw = op.name;
+    str = strname(ctx, (Xpost_Object)nm);
+    s = charstr(ctx, str);
+    sig = (void *)(ctx->gl->base + op.sigadr);
     printf("<operator %d %d:%*s %p>",
             opcode,
             str.comp_.sz, str.comp_.sz, s,
@@ -157,11 +172,14 @@ Xpost_Object consoper(context *ctx,
     signat *sp;
     oper *optab;
     oper op;
+    unsigned int optadr;
 
     //fprintf(stderr, "name: %s\n", name);
     assert(ctx->gl->base);
 
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
 
     if (!(in < STACKSEGSZ)) {
         printf("!(in < STACKSEGSZ) in consoper(%s, %d. %d)\n", name, out, in);
@@ -174,7 +192,7 @@ Xpost_Object consoper(context *ctx,
     nm = consname(ctx, name);
     ctx->vmmode = vmmode;
 
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    optab = (void *)(ctx->gl->base + optadr);
     for (opcode = 0; optab[opcode].name != nm.mark_.padw; opcode++) {
         if (opcode == noop) break;
     }
@@ -184,8 +202,8 @@ Xpost_Object consoper(context *ctx,
         if (opcode == noop) { /* a new operator */
             unsigned adr;
             if (noop == MAXOPS-1) error(unregistered, "optab too small!\n");
-            adr = mfalloc(ctx->gl, sizeof(signat));
-            optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc
+            xpost_memory_file_alloc(ctx->gl, sizeof(signat), &adr);
+            optab = (void *)(ctx->gl->base + optadr); // recalc
             op.name = nm.mark_.padw;
             op.n = 1;
             op.sigadr = adr;
@@ -197,15 +215,19 @@ Xpost_Object consoper(context *ctx,
                     optab[opcode].sigadr,
                     optab[opcode].n * sizeof(signat),
                     (optab[opcode].n + 1) * sizeof(signat));
-            optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc
+            optab = (void *)(ctx->gl->base + optadr); // recalc
             optab[opcode].sigadr = t;
 
             si = optab[opcode].n++; /* index of last sig */
         }
 
         sp = (void *)(ctx->gl->base + optab[opcode].sigadr);
-        sp[si].t = mfalloc(ctx->gl, in);
-        optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc
+        {
+            unsigned int ad;
+            xpost_memory_file_alloc(ctx->gl, in, &ad);
+            sp[si].t = ad;
+        }
+        optab = (void *)(ctx->gl->base + optadr); // recalc
         sp = (void *)(ctx->gl->base + optab[opcode].sigadr); // recalc
         {
             va_list args;
@@ -231,15 +253,15 @@ Xpost_Object consoper(context *ctx,
 /* copy top n elements to holding stack & pop them */
 static
 void holdn (context *ctx,
-            mfile *mem,
+            Xpost_Memory_File *mem,
             unsigned stacadr,
             int n)
 {
     stack *hold;
     int j;
 
-    assert(n < TABSZ);
-    hold = (void *)(ctx->lo->base + ctx->hold /*adrent(ctx->lo, HOLD)*/);
+    assert(n < XPOST_MEMORY_TABLE_SIZE);
+    hold = (void *)(ctx->lo->base + ctx->hold);
     hold->top = 0; /* clear HOLD */
     for (j=n; j--;) {
     //j = n;
@@ -261,15 +283,22 @@ void holdn (context *ctx,
 void opexec(context *ctx,
             unsigned opcode)
 {
-    oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
-    oper op = optab[opcode];
-    signat *sp = (void *)(ctx->gl->base + op.sigadr);
+    oper *optab;
+    oper op;
+    signat *sp;
     int i,j;
     int pass;
     int err = unregistered;
     char *errmsg = "unspecified error";
     stack *hold;
     int ct;
+    unsigned int optadr;
+
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
+    op = optab[opcode];
+    sp = (void *)(ctx->gl->base + op.sigadr);
 
     ct = count(ctx->lo, ctx->os);
     if (op.n == 0) error(unregistered, "opexec");
@@ -329,7 +358,7 @@ call:
     }
 
     holdn(ctx, ctx->lo, ctx->os, sp[i].in);
-    hold = (void *)(ctx->lo->base + ctx->hold /*adrent(ctx->lo, HOLD)*/ );
+    hold = (void *)(ctx->lo->base + ctx->hold);
 
     switch(sp[i].in) {
         case 0: sp[i].fp(ctx); break;
@@ -384,19 +413,22 @@ void initop(context *ctx)
     Xpost_Object op;
     Xpost_Object n;
     Xpost_Object sd;
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     unsigned ent;
     oper *optab;
+    unsigned int optadr;
 
     sd = consbdc(ctx, SDSIZE);
     bdcput(ctx, sd, consname(ctx, "systemdict"), sd);
     push(ctx->lo, ctx->ds, sd);
     tab = NULL;
     ent = sd.comp_.ent;
-    findtabent(ctx->gl, &tab, &ent);
+    xpost_memory_table_find_relative(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // make systemdict immune to collection
 
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
 #ifdef DEBUGOP
     dumpdic(ctx->gl, sd); fflush(NULL);
     puts("");

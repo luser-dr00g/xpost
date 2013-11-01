@@ -78,7 +78,7 @@ int objcmp(context *ctx, Xpost_Object l, Xpost_Object r);
    construct dictionary
    in mtab of specified mfile
 */
-Xpost_Object consdic(/*@dependent@*/ mfile *mem, unsigned sz);
+Xpost_Object consdic(/*@dependent@*/ Xpost_Memory_File *mem, unsigned sz);
 
 /*! 
    construct dictionary
@@ -89,22 +89,22 @@ Xpost_Object consbdc(context *ctx, unsigned sz);
 /*! 
    investigate current number of entries in dictionary
  */
-unsigned diclength(/*@dependent@*/ mfile *mem, Xpost_Object d);
+unsigned diclength(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
 
 /*! 
    investigate current maximum size of dictionary
  */
-unsigned dicmaxlength(/*@dependent@*/ mfile *mem, Xpost_Object d);
+unsigned dicmaxlength(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
 
 /*! 
    investigate if size == maximum size.
  */
-int dicfull(/*@dependent@*/ mfile *mem, Xpost_Object d);
+int dicfull(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
 
 /*! 
    print a dump of the diction contents to stdout
 */
-void dumpdic(mfile *mem, Xpost_Object d);
+void dumpdic(Xpost_Memory_File *mem, Xpost_Object d);
 
 /*! 
    return a double value containing the truncated value from 
@@ -121,12 +121,12 @@ Xpost_Object unextend (Xpost_Object e);
 /*! 
    test dictionary for key
  */
-int dicknown(context *ctx, /*@dependent@*/ mfile *mem, Xpost_Object d, Xpost_Object k);
+int dicknown(context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    lookup value using key in dictionary
 */
-Xpost_Object dicget(context *ctx, /*@dependent@*/ mfile *mem, Xpost_Object d, Xpost_Object k);
+Xpost_Object dicget(context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    lookup value using key in banked dictionary
@@ -136,7 +136,7 @@ Xpost_Object bdcget(context *ctx, Xpost_Object d, Xpost_Object k);
 /*! 
    store key and value in dictionary
 */
-void dicput(context *ctx, /*@dependent@*/ mfile *mem, Xpost_Object d, Xpost_Object k, Xpost_Object v);
+void dicput(context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k, Xpost_Object v);
 
 /*! 
    store key and value in banked dictionary
@@ -147,7 +147,7 @@ void bdcput(context *ctx, Xpost_Object d, Xpost_Object k, Xpost_Object v);
    undefine key in dictionary
    NOT IMPLEMENTED
 */
-void dicundef(context *ctx, mfile *mem, Xpost_Object d, Xpost_Object k);
+void dicundef(context *ctx, Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    undefine key in banked dictionary

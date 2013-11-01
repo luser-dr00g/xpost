@@ -221,8 +221,12 @@ void initopst(context *ctx,
 {
     oper *optab;
     Xpost_Object n,op;
+    unsigned int optadr;
+
     assert(ctx->gl->base);
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
     op = consoper(ctx, "string", Istring, 1, 1,
             integertype); INSTALL;
     op = consoper(ctx, "length", Slength, 1, 1,

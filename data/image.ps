@@ -1,4 +1,22 @@
-(loading img.ps...)=
+(loading image.ps...)=
+
+/IMAGE <<
+    /Create { % width height depth IMAGE  .  -
+        begin{depth height width}{exch def}forall
+        end
+    }
+    /Putpix { }
+    /Getpix { }
+    /DrawLine { }
+    /DrawRect { }
+    /FillRect { }
+    /FillPoly { }
+    /Emit { }
+>> def
+
+currentfile flushfile
+
+{ % pop % Rough draft ...
 
 /img8 { % w h  img8  [img]
     dup array 3 1 roll % a w h
@@ -194,7 +212,7 @@
 
 % x1 y1 x2 y2 x3 y3 x4 y4  .  x5 y5 true
 %                             false
-% inspired by the code at http://alienryderflex.com/intersect/
+% inspired by the code at http: / / alienryderflex.com/intersect/
 /intersect { 8 dict begin
     {Dy Dx Cy Cx By Bx Ay Ax}{exch def}forall
     {
@@ -347,49 +365,55 @@ end } def
     end
 } def
 
-/fillpolygon8 //fillpolygon8yx def
+%/fillpolygon8 //fillpolygon8yx def
+
+} pop
 
 {
-/p 20 20 img8 def
-p 1 1 5 putpix8
-p 2 2 6 putpix8
-p 3 3 7 putpix8
-p 2 2 9 15 9 drawline8
-p 3 3 14 14 4 drawrect8
-p (mysavedimg.pgm) saveimg8
-} pop%exec
 
-%/p (mysavedimg.pgm) loadimg8 { def p printimg8 } if
+    {
+    /p 20 20 img8 def
+    p 1 1 5 putpix8
+    p 2 2 6 putpix8
+    p 3 3 7 putpix8
+    p 2 2 9 15 9 drawline8
+    p 3 3 14 14 4 drawrect8
+    p (mysavedimg.pgm) saveimg8
+    } pop%exec
+
+    %/p (mysavedimg.pgm) loadimg8 { def p printimg8 } if
 
 
-{
-/p 8 8 img8 def
-<<
-    /A [ {0 6 2 0} {3 0 7 7} {1 4 6 4} ]
-    /B [ {0 0 0 7} {1 0 6 0} {6 1 6 3} {1 3 6 3} {6 4 6 6} {1 6 6 6} ]
-    /C [ {6 0 1 0} {1 1 0 2} {0 2 0 5} {1 5 2 7} {3 6 7 6} ]
-    /D [ {0 0 0 7} {0 6 5 6} {5 5 6 4} {6 4 6 1} {5 1 4 0} {4 0 0 0} ]
->>
-{
-    exch (#)print =
-        pstack
-    { p exch {}forall 1 drawline8 } forall p printimg8 
-    p erase8
-} forall
-} pop%exec
+    {
+    /p 8 8 img8 def
+    <<
+        /A [ {0 6 2 0} {3 0 7 7} {1 4 6 4} ]
+        /B [ {0 0 0 7} {1 0 6 0} {6 1 6 3} {1 3 6 3} {6 4 6 6} {1 6 6 6} ]
+        /C [ {6 0 1 0} {1 1 0 2} {0 2 0 5} {1 5 2 7} {3 6 7 6} ]
+        /D [ {0 0 0 7} {0 6 5 6} {5 5 6 4} {6 4 6 1} {5 1 4 0} {4 0 0 0} ]
+    >>
+    {
+        exch (#)print =
+            pstack
+        { p exch {}forall 1 drawline8 } forall p printimg8 
+        p erase8
+    } forall
+    } pop%exec
 
-{
-/im 14 14 img8 def
-im [ [4 1] [7 13] [11 2] ] 1 fillpolygon8simple
-im [ [5 2] [6 10] [9 4] ] 2 fillpolygon8simple
-im printimg8
-} pop%exec
+    {
+    /im 14 14 img8 def
+    im [ [4 1] [7 13] [11 2] ] 1 fillpolygon8simple
+    im [ [5 2] [6 10] [9 4] ] 2 fillpolygon8simple
+    im printimg8
+    } pop%exec
 
-{
-/im 15 15 img8 def
-im [ [4 1] [7 13] [11 2] ] 1 fillpolygon8
-%im [ [5 2] [6 10] [9 4] ] 2 fillpolygon8
-im printimg8
-} exec
+    {
+    /im 15 15 img8 def
+    im [ [4 1] [7 13] [11 2] ] 1 fillpolygon8
+    %im [ [5 2] [6 10] [9 4] ] 2 fillpolygon8
+    im printimg8
+    } exec
+
+} pop
 
 (eof img.ps)=

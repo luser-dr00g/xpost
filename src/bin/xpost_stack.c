@@ -57,7 +57,7 @@ typedef bool _Bool;
 # include "osunix.h" /* xpost_getpagesize */
 #endif
 
-#include "xpost_memory.h" /* mfile mfalloc findtabent */
+#include "xpost_memory.h" /* mfile xpost_memory_file_alloc findtabent */
 #include "xpost_object.h" /* object size */
 /* typedef long long object; */
 #include "xpost_interpreter.h"
@@ -75,17 +75,20 @@ typedef struct {
 
 /* allocate a stack segment,
    return address */
-unsigned initstack(mfile *mem)
+unsigned initstack(Xpost_Memory_File *mem)
 {
-    unsigned adr = mfalloc(mem, sizeof(stack));
-    stack *s = (void *)(mem->base + adr);
+    unsigned adr;
+    stack *s;
+
+    xpost_memory_file_alloc(mem, sizeof(stack), &adr);
+    s = (void *)(mem->base + adr);
     s->nextseg = 0;
     s->top = 0;
     return adr;
 }
 
 /* print a dump of the stack */
-void dumpstack(mfile *mem,
+void dumpstack(Xpost_Memory_File *mem,
                unsigned stackadr)
 {
     stack *s = (void *)(mem->base + stackadr);
@@ -103,22 +106,22 @@ void dumpstack(mfile *mem,
 }
 
 /* free a stack segment */
-void sfree(mfile *mem,
+void sfree(Xpost_Memory_File *mem,
            unsigned stackadr)
 {
     stack *s = (void *)(mem->base + stackadr);
-    mtab *tab;
+    Xpost_Memory_Table *tab;
     unsigned e;
     if (s->nextseg) sfree(mem, s->nextseg);
-    e = mtalloc(mem, 0, 0, 0); /* allocate entry with 0 size */
-    findtabent(mem, &tab, &e);
+    xpost_memory_table_alloc(mem, 0, 0, &e); /* allocate entry with 0 size */
+    xpost_memory_table_find_relative(mem, &tab, &e);
     tab->tab[e].adr = stackadr; /* insert address */
     tab->tab[e].sz = sizeof(stack); /* insert size */
     /* discard */
 }
 
 /* count the stack */
-unsigned count(mfile *mem,
+unsigned count(Xpost_Memory_File *mem,
                unsigned stackadr)
 {
     stack *s = (void *)(mem->base + stackadr);
@@ -131,7 +134,7 @@ unsigned count(mfile *mem,
 }
 
 /* push an object on the stack */
-void push(mfile *mem,
+void push(Xpost_Memory_File *mem,
           unsigned stackadr,
           Xpost_Object o)
 {
@@ -161,7 +164,7 @@ void push(mfile *mem,
 
 
 /* index the stack from top-down */
-Xpost_Object top(mfile *mem,
+Xpost_Object top(Xpost_Memory_File *mem,
            unsigned stacadr,
            integer i)
 {
@@ -172,7 +175,7 @@ Xpost_Object top(mfile *mem,
 
 /* index from top-down and put item there.
    inverse of top. */
-void pot (mfile *mem,
+void pot (Xpost_Memory_File *mem,
           unsigned stacadr,
           integer i,
           Xpost_Object o)
@@ -182,7 +185,7 @@ void pot (mfile *mem,
 }
 
 /* index from bottom up */
-Xpost_Object bot (mfile *mem,
+Xpost_Object bot (Xpost_Memory_File *mem,
             unsigned stacadr,
             integer i)
 {
@@ -198,7 +201,7 @@ Xpost_Object bot (mfile *mem,
 
 /* index from bottom-up and put item there.
    inverse of bot. */
-void tob (mfile *mem,
+void tob (Xpost_Memory_File *mem,
           unsigned stacadr,
           integer i,
           Xpost_Object o)
@@ -215,7 +218,7 @@ void tob (mfile *mem,
 }
 
 /* pop an object off the stack, return object */
-Xpost_Object pop (mfile *mem,
+Xpost_Object pop (Xpost_Memory_File *mem,
             unsigned stackadr)
 {
     stack *s = (void *)(mem->base + stackadr);
@@ -239,21 +242,21 @@ Xpost_Object pop (mfile *mem,
 
 #include <stdio.h>
 
-mfile mem;
+Xpost_Memory_File mem;
 unsigned s, t;
 
 /* initialize everything */
 void init (void)
 {
-    pgsz = xpost_getpagesize();
-    initmem(&mem, "x.mem");
+    xpost_memory_pagesize = xpost_getpagesize();
+    xpost_memory_file_init(&mem, "x.mem");
     s = initstack(&mem);
     t = initstack(&mem);
 }
 
 void xit (void)
 {
-    exitmem(&mem);
+    xpost_memory_file_exit(&mem);
 }
 
 int main()

@@ -32,7 +32,7 @@
 #define XPOST_SAVE_H
 
 /* save/restore
-   Each mfile has a special entity (VS) which holds the address
+   Each mfile has a special entity (XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK) which holds the address
    of the "save stack". This stack holds save objects.
 
    The save object contains an address of a(nother) stack,
@@ -44,12 +44,12 @@
    to check-if-copying-is-necessary
    and copy-the-value-and-add-saverec-to-current-savelevel-stack
 
-   mem[mtab[VS].adr] = Master Save stack
+   mem[mtab[XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK].adr] = Master Save stack
    -- save object = { lev=0, stk=... }
    -- save object = { lev=1, stk=... }
       -- saverec
       -- saverec
-   -- save object = { lev=2, stk=... }  <-- top of VS, current savelevel stack
+   -- save object = { lev=2, stk=... }  <-- top of XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, current savelevel stack
       mem[save.save_.stk] = Save Object's stack
       -- saverec
       -- saverec
@@ -57,11 +57,11 @@
 
    */
 
-void initsave(mfile *mem);
-Xpost_Object save(mfile *mem);
-unsigned stashed(mfile *mem, unsigned ent);
-unsigned copy(mfile *mem, unsigned ent);
-void stash(mfile *mem, unsigned tag, unsigned pad, unsigned ent);
-void restore(mfile *mem);
+void initsave(Xpost_Memory_File *mem);
+Xpost_Object save(Xpost_Memory_File *mem);
+unsigned stashed(Xpost_Memory_File *mem, unsigned ent);
+unsigned copy(Xpost_Memory_File *mem, unsigned ent);
+void stash(Xpost_Memory_File *mem, unsigned tag, unsigned pad, unsigned ent);
+void restore(Xpost_Memory_File *mem);
 
 #endif

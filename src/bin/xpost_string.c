@@ -57,15 +57,15 @@ typedef bool _Bool;
 /* construct a stringtype object
    with optional string value
    */
-Xpost_Object consstr(mfile *mem,
+Xpost_Object consstr(Xpost_Memory_File *mem,
                unsigned sz,
                /*@NULL@*/ char *ini)
 {
     unsigned ent;
     Xpost_Object o;
-    //ent = mtalloc(mem, 0, (sz/sizeof(int) + 1)*sizeof(int), 0);
+    //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
     ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype);
-    if (ini) put(mem, ent, 0, sz, ini);
+    if (ini) xpost_memory_put(mem, ent, 0, sz, ini);
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;
     o.comp_.ent = ent;
@@ -96,23 +96,23 @@ Xpost_Object consbst(context *ctx,
 char *charstr(context *ctx,
               Xpost_Object S)
 {
-    mfile *f;
-    mtab *tab;
+    Xpost_Memory_File *f;
+    Xpost_Memory_Table *tab;
     unsigned ent = S.comp_.ent;
     f = bank(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
-    findtabent(f, &tab, &ent);
+    xpost_memory_table_find_relative(f, &tab, &ent);
     return (void *)(f->base + tab->tab[ent].adr + S.comp_.off);
 }
 
 
 /* put a value at index into a string */
-void strput(mfile *mem,
+void strput(Xpost_Memory_File *mem,
             Xpost_Object s,
             integer i,
             integer c)
 {
     byte b = c;
-    put(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
+    xpost_memory_put(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
 }
 
 /* put a value at index into a banked string */
@@ -125,12 +125,12 @@ void bstput(context *ctx,
 }
 
 /* get a value from a string at index */
-integer strget(mfile *mem,
+integer strget(Xpost_Memory_File *mem,
                Xpost_Object s,
                integer i)
 {
     byte b;
-    get(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
+    xpost_memory_get(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
     return b;
 }
 
@@ -147,15 +147,15 @@ integer bstget(context *ctx,
 
 #define CNT_STR(s) sizeof(s), s
 
-mfile mem;
+Xpost_Memory_File mem;
 
 int main (void)
 {
     Xpost_Object s;
     int i;
     printf("\n^ st.c\n");
-    initmem(&mem, "x.mem");
-    (void)initmtab(&mem);
+    xpost_memory_file_init(&mem, "x.mem");
+    (void)xpost_memory_table_init(&mem);
 
     s = consstr(&mem, CNT_STR("This is a string"));
     for (i=0; i < s.comp_.sz; i++) {

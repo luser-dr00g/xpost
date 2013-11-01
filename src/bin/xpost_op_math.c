@@ -415,8 +415,12 @@ void initopm (context *ctx,
 {
     oper *optab;
     Xpost_Object n,op;
+    unsigned int optadr;
+
     assert(ctx->gl->base);
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
     //RAD_PER_DEG = PI / 180.0;
 
     op = consoper(ctx, "add", Iadd, 1, 2, integertype, integertype); INSTALL;

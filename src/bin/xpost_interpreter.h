@@ -51,7 +51,7 @@ struct opcuts {
 
 typedef struct {
     unsigned id;
-    /*@dependent@*/ mfile *gl, *lo;
+    /*@dependent@*/ Xpost_Memory_File *gl, *lo;
     unsigned os, es, ds, hold;
     unsigned long rand_next;
     unsigned vmmode;
@@ -68,8 +68,8 @@ enum { LOCAL, GLOBAL }; /* vmmode */
 typedef struct {
     context ctab[MAXCONTEXT];
     unsigned cid;
-    mfile gtab[MAXMFILE];
-    mfile ltab[MAXMFILE];
+    Xpost_Memory_File gtab[MAXMFILE];
+    Xpost_Memory_File ltab[MAXMFILE];
 } itp;
 
 
@@ -80,16 +80,16 @@ extern int ignoreinvalidaccess;
 extern jmp_buf jbmainloop;
 extern int jbmainloopset;
 
-mfile *nextltab(void);
-mfile *nextgtab(void);
-void initctxlist(mfile *mem);
-void addtoctxlist(mfile *mem, unsigned cid);
+Xpost_Memory_File *nextltab(void);
+Xpost_Memory_File *nextgtab(void);
+void initctxlist(Xpost_Memory_File *mem);
+void addtoctxlist(Xpost_Memory_File *mem, unsigned cid);
 unsigned initctxid(void);
 context *ctxcid(unsigned cid);
 void initcontext(context *ctx);
 void exitcontext(context *ctx);
 /*@dependent@*/
-mfile *bank(context *ctx, Xpost_Object o);
+Xpost_Memory_File *bank(context *ctx, Xpost_Object o);
 
 extern int TRACE;
 

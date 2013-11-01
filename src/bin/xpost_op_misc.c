@@ -228,21 +228,26 @@ void debugloadoff (context *ctx)
 static
 void Odumpnames (context *ctx)
 {
+    unsigned int names;
     printf("\nGlobal Name stack: ");
-    dumpstack(ctx->gl, adrent(ctx->gl, NAMES));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
+    dumpstack(ctx->gl, names);
     (void)puts("");
     printf("\nLocal Name stack: ");
-    dumpstack(ctx->lo, adrent(ctx->lo, NAMES));
+    xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
+    dumpstack(ctx->lo, names);
     (void)puts("");
 }
 
 static
 void dumpvm (context *ctx)
 {
-    dumpmfile(ctx->lo);
-    dumpmtab(ctx->lo, 0);
-    dumpmfile(ctx->gl);
-    dumpmtab(ctx->gl, 0);
+    xpost_memory_file_dump(ctx->lo);
+    xpost_memory_table_dump(ctx->lo);
+    xpost_memory_file_dump(ctx->gl);
+    xpost_memory_table_dump(ctx->gl);
 }
 
 void initopx(context *ctx,
@@ -250,8 +255,12 @@ void initopx(context *ctx,
 {
     oper *optab;
     Xpost_Object n,op;
+    unsigned int optadr;
+
     assert(ctx->gl->base);
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "null"), null);

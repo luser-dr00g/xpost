@@ -386,9 +386,17 @@ void AScvs (context *ctx,
 
     case operatortype:
         {
-            oper *optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
-            oper op = optab[any.mark_.padw];
-            Xpost_Object_Mark nm = { nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK, 0, op.name };
+            unsigned int optadr;
+            oper *optab;
+            oper op;
+            Xpost_Object_Mark nm;
+            xpost_memory_table_get_addr(ctx->gl,
+                    XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+            optab = (void *)(ctx->gl->base + optadr);
+            op = optab[any.mark_.padw];
+            nm.tag = nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+            nm.pad0 = 0;
+            nm.padw = op.name;
             any.mark_ = nm;
         }
         /*@fallthrough@*/
@@ -410,8 +418,12 @@ void initopt (context *ctx,
 {
     oper *optab;
     Xpost_Object n,op;
+    unsigned int optadr;
+
     assert(ctx->gl->base);
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB));
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "type", Atype, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "cvlit", Acvlit, 1, 1, anytype); INSTALL;

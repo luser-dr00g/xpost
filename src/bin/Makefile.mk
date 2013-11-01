@@ -9,7 +9,6 @@ src/bin/xpost_file.c \
 src/bin/xpost_garbage.c \
 src/bin/xpost_interpreter.c \
 src/bin/xpost_main.c \
-src/bin/xpost_memory.c \
 src/bin/xpost_name.c \
 src/bin/xpost_stack.c \
 src/bin/xpost_save.c \
@@ -37,7 +36,6 @@ src/bin/xpost_file.h \
 src/bin/xpost_garbage.h \
 src/bin/xpost_interpreter.h \
 src/bin/xpost_main.h \
-src/bin/xpost_memory.h \
 src/bin/xpost_name.h \
 src/bin/xpost_op_array.h \
 src/bin/xpost_op_boolean.h \

@@ -47,32 +47,32 @@ typedef struct {
 } stack;
 
 /* create a stack data structure. returns vm address */
-unsigned initstack(mfile *mem);
+unsigned initstack(Xpost_Memory_File *mem);
 
 /* dump the contents of a stack to stdout using dumpobject */
-void dumpstack(mfile *mem, unsigned stackadr);
+void dumpstack(Xpost_Memory_File *mem, unsigned stackadr);
 
 /* free a stack, and all succeeding segments */
-void sfree(mfile *mem, unsigned stackadr);
+void sfree(Xpost_Memory_File *mem, unsigned stackadr);
 
 /* count elements on stack */
-unsigned count(mfile *mem, unsigned stackadr);
+unsigned count(Xpost_Memory_File *mem, unsigned stackadr);
 
 /* push an object on top of the stack */
-void push(mfile *mem, unsigned stackadr, Xpost_Object o);
+void push(Xpost_Memory_File *mem, unsigned stackadr, Xpost_Object o);
 
 /* index the stack from the top down, fetching object */
-Xpost_Object top(mfile *mem, unsigned stackadr, integer i);
+Xpost_Object top(Xpost_Memory_File *mem, unsigned stackadr, integer i);
 /* index the stack from the top down, replacing object */
-void pot(mfile *mem, unsigned stackadr, integer i, Xpost_Object o);
+void pot(Xpost_Memory_File *mem, unsigned stackadr, integer i, Xpost_Object o);
 
 /* index the stack from the bottom up, fetching object */
-Xpost_Object bot(mfile *mem, unsigned stackadr, integer i);
+Xpost_Object bot(Xpost_Memory_File *mem, unsigned stackadr, integer i);
 /* index the stack from the bottom up, replacing object */
-void tob(mfile *mem, unsigned stacadr, integer i, Xpost_Object o);
+void tob(Xpost_Memory_File *mem, unsigned stacadr, integer i, Xpost_Object o);
 
 /* pop the stack. remove and return top object */
-Xpost_Object pop(mfile *mem, unsigned stackadr);
-/*int pop(mfile *mem, unsigned stackadr, object *po);*/
+Xpost_Object pop(Xpost_Memory_File *mem, unsigned stackadr);
+/*int pop(Xpost_Memory_File *mem, unsigned stackadr, object *po);*/
 
 #endif

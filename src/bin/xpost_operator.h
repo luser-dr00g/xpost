@@ -85,11 +85,14 @@ Xpost_Object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out
 void opexec(context *ctx, unsigned opcode);
 
 #define INSTALL \
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)), \
-    n.mark_.tag = nametype|XPOST_OBJECT_TAG_DATA_FLAG_BANK, n.mark_.pad0 = 0, \
+    xpost_memory_table_get_addr(ctx->gl, \
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr), \
+    optab = (void *)(ctx->gl->base + optadr), \
+    n.mark_.tag = nametype|XPOST_OBJECT_TAG_DATA_FLAG_BANK, \
+    n.mark_.pad0 = 0, \
     n.mark_.padw = optab[op.mark_.padw].name, \
     bdcput(ctx, sd, n, op), \
-    optab = (void *)(ctx->gl->base + adrent(ctx->gl, OPTAB)); // recalc
+    optab = (void *)(ctx->gl->base + optadr); // recalc
 
 void initop(context *ctx);
 
