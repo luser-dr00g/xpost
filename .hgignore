@@ -33,6 +33,7 @@ stamp-h1
 *.Po
 *.o
 *.exe
+src/tests/xpost_suite
 *.la
 *.lo
 itp
