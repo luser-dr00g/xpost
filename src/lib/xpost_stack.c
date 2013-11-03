@@ -209,5 +209,3 @@ Xpost_Object xpost_stack_pop (Xpost_Memory_File *mem,
 
     return s->data[--s->top]; /* pop value */
 }
-
-
