@@ -1,20 +1,108 @@
 (loading image.ps...)=
 
-/IMAGE <<
-    /Create { % width height depth IMAGE  .  -
-        begin{depth height width}{exch def}forall
-        end
-    }
-    /Putpix { }
-    /Getpix { }
-    /DrawLine { }
-    /DrawRect { }
-    /FillRect { }
-    /FillPoly { }
-    /Emit { }
+/PGMIMAGE <<
+    /Create { % width height IMAGE  .  -
+    dup maxlength dict copy
+    begin{height width}{exch def}forall
+        /ImgData height array def
+        0 1 height 1 sub {
+            ImgData exch width string put
+        } for
+    currentdict
+    end }
+
+    /.to-int { round cvi }
+    /Putpix { % val x y IMAGE  .  -
+    begin
+        .to-int exch .to-int exch
+        ImgData exch get 3 1 roll put
+    end }
+
+    /Getpix { % x y IMAGE  .  val
+    begin
+        .to-int exch .to-int exch
+        ImgData exch get exch get
+    end }
+
+
+    /.sign { dup 0 le { 0 lt { -1 }{ 0 } ifelse }{ pop 1 } ifelse }
+
+    /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
+    begin {y2 x2 y1 x2 val}{exch def}forall
+        /x x1 def
+        /y y1 def
+        x2 x1 sub  dup abs /dx exch def
+            .sign /s1 exch def
+        y2 y1 sub  dup abs /dy exch def
+            .sign /s2 exch def
+        /interchange dy dx gt def
+        interchange { /dx dy /dy dx def def } if
+        /e 2 dy mul dx sub def
+        1 1 dx { pop
+            val x y currentdict PutPix
+            {
+                e 0 ge not {exit} if
+                interchange {
+                    /x x s1 add def
+                }{
+                    /y y s2 add def
+                } ifelse
+                /e e 2 dx mul sub def
+            } loop
+            interchange {
+                /y y s2 add def
+            }{
+                /x x s1 add def
+            } ifelse
+            /e e 2 dy mul add def
+        } for
+    end }
+
+    %  -----|
+    %  |    |
+    %  |    |
+    %  |-----
+    /DrawRect { % val x y w h IMAGE  .  -
+    begin {h w y x val}{exch def}forall
+        0 1 h 1 sub {
+            x 2 copy % h x h x
+            exch y add val 3 1 roll currentdict PutPix
+            w add
+            exch y add 1 add val 3 1 roll currentdict PutPix
+        } for
+        1 1 w {
+            x add y 2 copy % x+w y x+w y
+            val 3 1 roll currentdict PutPix
+            h add exch 1 sub exch
+            val 3 1 roll currentdict PutPix
+        } for
+    end }
+
+    /FillRect { % val x y w h IMAGE  .  -
+    begin {h w y x val}{exch def}forall
+        val 0 1 w { x add
+            0 1 h { y add
+                3 copy currentdict PutPix
+                pop pop
+            } for
+        } for
+    end }
+
+    /FillPoly {
+    begin
+    end }
+
+    /Emit {
+    begin
+    end }
 >> def
 
-currentfile flushfile
+
+
+
+
+%currentfile flushfile
+
 
 { % pop % Rough draft ...
 
@@ -416,4 +504,4 @@ end } def
 
 } pop
 
-(eof img.ps)=
+(eof image.ps)=
