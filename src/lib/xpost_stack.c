@@ -36,8 +36,8 @@
 #include <stdio.h> /* printf */
 
 #include "xpost_log.h"
-#include "xpost_memory.h"
 #include "xpost_object.h"
+#include "xpost_memory.h"
 #include "xpost_stack.h"
 
 /* stub */
@@ -65,8 +65,10 @@ void xpost_stack_dump (Xpost_Memory_File *mem,
     unsigned int a;
 
     a = 0;
-    while (1) {
-        for (i = 0; i < s->top; i++) {
+    while (1)
+    {
+        for (i = 0; i < s->top; i++)
+        {
             printf("%d:", a++);
             xpost_object_dump(s->data[i]);
         }
@@ -97,7 +99,8 @@ int xpost_stack_count (Xpost_Memory_File *mem,
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned int ct = 0;
-    while (s->top == XPOST_STACK_SEGMENT_SIZE) {
+    while (s->top == XPOST_STACK_SEGMENT_SIZE)
+    {
         ct += XPOST_STACK_SEGMENT_SIZE;
         s = (Xpost_Stack *)(mem->base + s->nextseg);
     }
@@ -113,22 +116,28 @@ int xpost_stack_push (Xpost_Memory_File *mem,
     int ret;
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr); /* load the stack */
 
-    while (s->top == XPOST_STACK_SEGMENT_SIZE) { /* find top segement */
+    while (s->top == XPOST_STACK_SEGMENT_SIZE)
+    {
+        /* find top segement */
         s = (Xpost_Stack *)(mem->base + s->nextseg);
     }
 
     s->data[s->top++] = obj; /* push value */
 
     /* if push filled the topmost segment, link a new one. */
-    if (s->top == XPOST_STACK_SEGMENT_SIZE) {
-        if (s->nextseg == 0) {
+    if (s->top == XPOST_STACK_SEGMENT_SIZE)
+    {
+        if (s->nextseg == 0)
+        {
             stadr = (unsigned char *)s - mem->base;
             ret = xpost_stack_init(mem, &newst);
             if (!ret)
                 return 0;
             s = (Xpost_Stack *)(mem->base + stadr);
             s->nextseg = newst;
-        } else {
+        }
+        else
+        {
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             s->top = 0;
         }
@@ -161,7 +170,8 @@ Xpost_Object xpost_stack_bottomup_fetch (Xpost_Memory_File *mem,
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
 
     /* find desired segment */
-    while (i >= XPOST_STACK_SEGMENT_SIZE) {
+    while (i >= XPOST_STACK_SEGMENT_SIZE)
+    {
         i -= XPOST_STACK_SEGMENT_SIZE;
         s = (Xpost_Stack *)(mem->base + s->nextseg);
     }
@@ -176,9 +186,11 @@ int xpost_stack_bottomup_replace (Xpost_Memory_File *mem,
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
 
     /* find desired segment */
-    while (i >= XPOST_STACK_SEGMENT_SIZE) {
+    while (i >= XPOST_STACK_SEGMENT_SIZE)
+    {
         i -= XPOST_STACK_SEGMENT_SIZE;
-        if (s->nextseg == 0) {
+        if (s->nextseg == 0)
+        {
             XPOST_LOG_ERR("%d can't find stack segment for index",
                     unregistered);
             return 0;
@@ -196,11 +208,13 @@ Xpost_Object xpost_stack_pop (Xpost_Memory_File *mem,
     Xpost_Stack *p = NULL;
 
     /* find top 2 segments */
-    while (s->top >= XPOST_STACK_SEGMENT_SIZE) {
+    while (s->top >= XPOST_STACK_SEGMENT_SIZE)
+    {
         p = s;
         s = (Xpost_Stack *)(mem->base + stackadr);
     }
-    if (s->top == 0) {
+    if (s->top == 0)
+    {
         if (p != NULL)
             s = p; /* back up if top is empty */
         else
