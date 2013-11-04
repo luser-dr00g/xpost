@@ -32,7 +32,7 @@
 #define XPOST_STACK_H
 
 /* MUST #include "xpost_object.h" before this file */
-#include "xpost_memory.h"
+/* MUST #include "xpost_memory.h" before this file */
 
 /**
  * @brief Number of object in one segment of the stack.
