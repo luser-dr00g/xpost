@@ -685,5 +685,3 @@ next_table:
         goto next_table;
     }
 }
-
-
