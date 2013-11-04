@@ -31,8 +31,13 @@
 #ifndef XPOST_STACK_H
 #define XPOST_STACK_H
 
-/* MUST #include "xpost_object.h" before this file */
-/* MUST #include "xpost_memory.h" before this file */
+#ifndef XPOST_OBJECT_H
+# error MUST #include "xpost_object.h" before this file
+#endif
+
+#ifndef XPOST_MEMORY_H
+# error MUST #include "xpost_memory.h" before this file
+#endif
 
 /**
  * @brief Number of object in one segment of the stack.
