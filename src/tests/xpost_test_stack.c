@@ -7,6 +7,7 @@
 #include <check.h>
 
 #include "xpost_memory.h"
+#include "xpost_object.h"
 #include "xpost_stack.h"
 
 #include "xpost_suite.h"
