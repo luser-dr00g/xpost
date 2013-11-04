@@ -31,6 +31,7 @@
 #ifndef XPOST_STACK_H
 #define XPOST_STACK_H
 
+#include "xpost_object.h"
 #include "xpost_memory.h"
 
 /**
