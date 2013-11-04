@@ -1,0 +1,10 @@
+# glibc:
+# Syscall param timer_create(evp) points to uninitialised byte(s)
+#    at 0x405FBCF: timer_create (in /usr/lib/i686/librt-2.17.so)
+
+{
+  timer_create
+  Memcheck:Param
+  timer_create(evp)
+  fun:timer_create
+}
