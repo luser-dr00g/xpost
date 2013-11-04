@@ -76,13 +76,13 @@ void vmstatus (context *ctx) {
 
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk);
-    lev = count(ctx->lo, vstk);
+    lev = xpost_stack_count(ctx->lo, vstk);
     used = ctx->gl->used + ctx->lo->used;
     max = ctx->gl->max + ctx->lo->max;
 
-    push(ctx->lo, ctx->os, xpost_cons_int(lev));
-    push(ctx->lo, ctx->os, xpost_cons_int(used));
-    push(ctx->lo, ctx->os, xpost_cons_int(max));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(lev));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(used));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(max));
 }
 
 void initopparam(context *ctx,

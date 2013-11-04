@@ -82,7 +82,9 @@ void xit(void);
 static
 unsigned makestack(Xpost_Memory_File *mem)
 {
-    return initstack(mem);
+    unsigned int ret;
+    xpost_stack_init(mem, &ret);
+    return ret;
 }
 
 /* initialize the context list
@@ -263,8 +265,8 @@ void initcontext(context *ctx)
     {
         Xpost_Object gd; //globaldict
         gd = consbdc(ctx, 100);
-        bdcput(ctx, bot(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
-        push(ctx->lo, ctx->ds, gd);
+        bdcput(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
+        xpost_stack_push(ctx->lo, ctx->ds, gd);
     }
 
     ctx->vmmode = LOCAL;
@@ -275,7 +277,7 @@ void initcontext(context *ctx)
         Xpost_Object ud; //userdict
         ud = consbdc(ctx, 100);
         bdcput(ctx, ud, consname(ctx, "userdict"), ud);
-        push(ctx->lo, ctx->ds, ud);
+        xpost_stack_push(ctx->lo, ctx->ds, ud);
     }
 }
 
@@ -325,33 +327,33 @@ void evalquit(context *ctx)
 static
 void evalpop(context *ctx)
 {
-    (void)pop(ctx->lo, ctx->es);
+    (void)xpost_stack_pop(ctx->lo, ctx->es);
 }
 
 /* pop the execution stack onto the operand stack */
 static
 void evalpush(context *ctx)
 {
-    push(ctx->lo, ctx->os,
-            pop(ctx->lo, ctx->es) );
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_stack_pop(ctx->lo, ctx->es) );
 }
 
 /* load executable name */
 static
 void evalload(context *ctx)
 {
-    Xpost_Object s = strname(ctx, top(ctx->lo, ctx->es, 0));
+    Xpost_Object s = strname(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
     if (TRACE)
         printf("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
 
-    push(ctx->lo, ctx->os,
-            pop(ctx->lo, ctx->es));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_stack_pop(ctx->lo, ctx->es));
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
     opexec(ctx, ctx->opcuts.load);
-    if (xpost_object_is_exe(top(ctx->lo, ctx->os, 0))) {
-        push(ctx->lo, ctx->es,
-                pop(ctx->lo, ctx->os));
+    if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0))) {
+        xpost_stack_push(ctx->lo, ctx->es,
+                xpost_stack_pop(ctx->lo, ctx->os));
     }
 }
 
@@ -359,7 +361,7 @@ void evalload(context *ctx)
 static
 void evaloperator(context *ctx)
 {
-    Xpost_Object op = pop(ctx->lo, ctx->es);
+    Xpost_Object op = xpost_stack_pop(ctx->lo, ctx->es);
 
     if (TRACE)
         dumpoper(ctx, op.mark_.padw);
@@ -370,19 +372,19 @@ void evaloperator(context *ctx)
 static
 void evalarray(context *ctx)
 {
-    Xpost_Object a = pop(ctx->lo, ctx->es);
+    Xpost_Object a = xpost_stack_pop(ctx->lo, ctx->es);
     Xpost_Object b;
 
     switch (a.comp_.sz) {
     default /* > 1 */:
-        push(ctx->lo, ctx->es, arrgetinterval(a, 1, a.comp_.sz - 1) );
+        xpost_stack_push(ctx->lo, ctx->es, arrgetinterval(a, 1, a.comp_.sz - 1) );
         /*@fallthrough@*/
     case 1:
         b = barget(ctx, a, 0);
         if (xpost_object_get_type(b) == arraytype)
-            push(ctx->lo, ctx->os, b);
+            xpost_stack_push(ctx->lo, ctx->os, b);
         else
-            push(ctx->lo, ctx->es, b);
+            xpost_stack_push(ctx->lo, ctx->es, b);
         /*@fallthrough@*/
     case 0: /* drop */;
     }
@@ -394,17 +396,17 @@ void evalstring(context *ctx)
 {
     Xpost_Object b,t,s;
 
-    s = pop(ctx->lo, ctx->es);
-    push(ctx->lo, ctx->os, s);
+    s = xpost_stack_pop(ctx->lo, ctx->es);
+    xpost_stack_push(ctx->lo, ctx->os, s);
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     opexec(ctx, ctx->opcuts.token);
-    b = pop(ctx->lo, ctx->os);
+    b = xpost_stack_pop(ctx->lo, ctx->os);
     if (b.int_.val) {
-        t = pop(ctx->lo, ctx->os);
-        s = pop(ctx->lo, ctx->os);
-        push(ctx->lo, ctx->es, s);
-        push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
+        t = xpost_stack_pop(ctx->lo, ctx->os);
+        s = xpost_stack_pop(ctx->lo, ctx->os);
+        xpost_stack_push(ctx->lo, ctx->es, s);
+        xpost_stack_push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
     }
 }
 
@@ -414,16 +416,16 @@ void evalfile(context *ctx)
 {
     Xpost_Object b,f,t;
 
-    f = pop(ctx->lo, ctx->es);
-    push(ctx->lo, ctx->os, f);
+    f = xpost_stack_pop(ctx->lo, ctx->es);
+    xpost_stack_push(ctx->lo, ctx->os, f);
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     opexec(ctx, ctx->opcuts.token);
-    b = pop(ctx->lo, ctx->os);
+    b = xpost_stack_pop(ctx->lo, ctx->os);
     if (b.int_.val) {
-        t = pop(ctx->lo, ctx->os);
-        push(ctx->lo, ctx->es, f);
-        push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
+        t = xpost_stack_pop(ctx->lo, ctx->os);
+        xpost_stack_push(ctx->lo, ctx->es, f);
+        xpost_stack_push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
     } else {
         fileclose(ctx->lo, f);
     }
@@ -461,7 +463,7 @@ void initevaltype(void)
 /* one iteration of the central loop */
 void eval(context *ctx)
 {
-    Xpost_Object t = top(ctx->lo, ctx->es, 0);
+    Xpost_Object t = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
 
     ctx->currentobject = t;
     assert(ctx);
@@ -476,13 +478,13 @@ void eval(context *ctx)
         xpost_object_dump(t);
         printf("\n");
         printf("Stack: ");
-        dumpstack(ctx->lo, ctx->os);
+        xpost_stack_dump(ctx->lo, ctx->os);
         printf("\n");
         printf("Dict Stack: ");
-        dumpstack(ctx->lo, ctx->ds);
+        xpost_stack_dump(ctx->lo, ctx->ds);
         printf("\n");
         printf("Exec Stack: ");
-        dumpstack(ctx->lo, ctx->es);
+        xpost_stack_dump(ctx->lo, ctx->es);
         printf("\n");
     }
 
@@ -491,6 +493,7 @@ void eval(context *ctx)
     else
         evalpush(ctx);
 }
+
 
 /* the return point from all calls to error() that do not exit() */
 jmp_buf jbmainloop;
@@ -577,11 +580,11 @@ static void setdatadir(context *ctx, Xpost_Object sd)
 static void loadinitps(context *ctx)
 {
     assert(ctx->gl->base);
-    push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
 /*splint doesn't like the composed macros*/
 #ifndef S_SPLINT_S
     if (is_installed)
-        push(ctx->lo, ctx->es,
+        xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(consbst(ctx,
              CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
     else {
@@ -589,7 +592,7 @@ static void loadinitps(context *ctx)
         snprintf(buf, sizeof buf,
                 "(%s/../../data/init.ps) (r) file cvx exec",
                 exedir);
-        push(ctx->lo, ctx->es,
+        xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(consbst(ctx,
                     strlen(buf), buf)));
     }
@@ -628,8 +631,8 @@ void createitp(void)
     initalldata();
 
     /* extract systemdict and userdict for additional definitions */
-    sd = bot(xpost_ctx->lo, xpost_ctx->ds, 0);
-    ud = bot(xpost_ctx->lo, xpost_ctx->ds, 2);
+    sd = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0);
+    ud = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 2);
 
     setdatadir(xpost_ctx, sd);
 
@@ -639,7 +642,7 @@ void createitp(void)
 
     /* make systemdict readonly */
     bdcput(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
-    tob(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
 }
 
 
@@ -652,14 +655,14 @@ void runitp(void)
     /* prime the exec stack
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
-    push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0));
+    xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0));
         /* `start` proc defined in init.ps runs `executive` which prompts for user input
            'startstdin' does not prompt
          */
     if (isatty(fileno(stdin)))
-        push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
     else
-        push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startstdin")));
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startstdin")));
 
     (void) save(xpost_ctx->gl);
     lsav = save(xpost_ctx->lo);
@@ -672,7 +675,7 @@ void runitp(void)
     restore(xpost_ctx->gl);
     xpost_memory_table_get_addr(xpost_ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-    for ( llev = count(xpost_ctx->lo, vs);
+    for ( llev = xpost_stack_count(xpost_ctx->lo, vs);
             llev > lsav.save_.lev;
             llev-- )
     {

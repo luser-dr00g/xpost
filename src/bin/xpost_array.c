@@ -79,7 +79,7 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
         xpost_memory_table_find_relative(mem, &tab, &rent);
         xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-        cnt = count(mem, vs);
+        cnt = xpost_stack_count(mem, vs);
         tab->tab[rent].mark = ( (0 << XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET)
                 | (0 << XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET)
                 | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET)

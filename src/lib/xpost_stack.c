@@ -198,7 +198,7 @@ Xpost_Object xpost_stack_pop (Xpost_Memory_File *mem,
     /* find top 2 segments */
     while (s->top >= XPOST_STACK_SEGMENT_SIZE) {
         p = s;
-        s = (Xpost_Stack *)(mem->base + stackadr);
+        s = (Xpost_Stack *)(mem->base + s->nextseg);
     }
     if (s->top == 0) {
         if (p != NULL)

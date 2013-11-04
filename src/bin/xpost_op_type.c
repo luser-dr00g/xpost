@@ -81,28 +81,28 @@ static
 void Atype(context *ctx,
            Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, xpost_object_type_names[xpost_object_get_type(o)])));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, xpost_object_type_names[xpost_object_get_type(o)])));
 }
 
 static
 void Acvlit(context *ctx,
             Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, xpost_object_cvlit(o));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(o));
 }
 
 static
 void Acvx(context *ctx,
           Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, xpost_object_cvx(o));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(o));
 }
 
 static
 void Axcheck(context *ctx,
              Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(xpost_object_is_exe(o)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(xpost_object_is_exe(o)));
 }
 
 static
@@ -111,7 +111,7 @@ void Aexecuteonly(context *ctx,
 {
     o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     o.tag |= (XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-    push(ctx->lo, ctx->os, o);
+    xpost_stack_push(ctx->lo, ctx->os, o);
 }
 
 static
@@ -120,7 +120,7 @@ void Anoaccess(context *ctx,
 {
     o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     o.tag |= (XPOST_OBJECT_TAG_ACCESS_NONE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-    push(ctx->lo, ctx->os, o);
+    xpost_stack_push(ctx->lo, ctx->os, o);
 }
 
 static
@@ -129,21 +129,21 @@ void Areadonly(context *ctx,
 {
     o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     o.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-    push(ctx->lo, ctx->os, o);
+    xpost_stack_push(ctx->lo, ctx->os, o);
 }
 
 static
 void Archeck(context *ctx,
              Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
 }
 
 static
 void Awcheck(context *ctx,
              Xpost_Object o)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
 }
 
 static
@@ -152,7 +152,7 @@ void Ncvi(context *ctx,
 {
     if (xpost_object_get_type(n) == realtype)
         n = xpost_cons_int(n.real_.val);
-    push(ctx->lo, ctx->os, n);
+    xpost_stack_push(ctx->lo, ctx->os, n);
 }
 
 static
@@ -178,7 +178,7 @@ void Scvi(context *ctx,
         error(limitcheck, "Scvi");
     */
 
-    push(ctx->lo, ctx->os, xpost_cons_int(num));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(num));
 }
 
 static
@@ -188,7 +188,7 @@ void Scvn(context *ctx,
     char *t = alloca(s.comp_.sz+1);
     memcpy(t, charstr(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
-    push(ctx->lo, ctx->os, consname(ctx, t));
+    xpost_stack_push(ctx->lo, ctx->os, consname(ctx, t));
 }
 
 static
@@ -197,7 +197,7 @@ void Ncvr(context *ctx,
 {
     if (xpost_object_get_type(n) == integertype)
         n = xpost_cons_real(n.int_.val);
-    push(ctx->lo, ctx->os, n);
+    xpost_stack_push(ctx->lo, ctx->os, n);
 }
 
 static
@@ -211,7 +211,7 @@ void Scvr(context *ctx,
     num = strtod(s, NULL);
     if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
         error(limitcheck, "Scvr");
-    push(ctx->lo, ctx->os, xpost_cons_real(num));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(num));
 }
 
 static
@@ -246,7 +246,7 @@ void NRScvrs (context *ctx,
     n = conv_rad(num.int_.val, r, charstr(ctx, str), str.comp_.sz);
     if (n == -1) error(rangecheck, "NRScvrs");
     if (n < str.comp_.sz) str.comp_.sz = n;
-    push(ctx->lo, ctx->os, str);
+    xpost_stack_push(ctx->lo, ctx->os, str);
 }
 
 static
@@ -394,7 +394,7 @@ void AScvs (context *ctx,
         break;
     }
 
-    push(ctx->lo, ctx->os, str);
+    xpost_stack_push(ctx->lo, ctx->os, str);
 }
 
 void initopt (context *ctx,

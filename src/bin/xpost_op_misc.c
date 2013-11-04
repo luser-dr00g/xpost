@@ -99,9 +99,9 @@ Xpost_Object bind (context *ctx,
         switch(xpost_object_get_type(t)){
         default: break;
         case nametype:
-            z = count(ctx->lo, ctx->ds);
+            z = xpost_stack_count(ctx->lo, ctx->ds);
             for (j = 0; j < z; j++) {
-                d = top(ctx->lo, ctx->ds, j);
+                d = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, j);
                 if (dicknown(ctx, bank(ctx,d), d, t)) {
                     t = bdcget(ctx, d, t);
                     if (xpost_object_get_type(t) == operatortype) {
@@ -125,7 +125,7 @@ static
 void Pbind (context *ctx,
             Xpost_Object P)
 {
-    push(ctx->lo, ctx->os, bind(ctx, P));
+    xpost_stack_push(ctx->lo, ctx->os, bind(ctx, P));
 }
 
 static
@@ -139,7 +139,7 @@ void realtime (context *ctx)
 #else
         sec = time(NULL) * 1000;
 #endif
-    push(ctx->lo, ctx->os, xpost_cons_int(sec));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(sec));
 }
 
 static
@@ -155,7 +155,7 @@ void Sgetenv (context *ctx,
     str[S.comp_.sz] = '\0';
     r = getenv(str);
     if (r)
-        push(ctx->lo, ctx->os, consbst(ctx, strlen(r), r));
+        xpost_stack_push(ctx->lo, ctx->os, consbst(ctx, strlen(r), r));
     else
         error(undefined, "getenv returned NULL");
 }
@@ -216,12 +216,12 @@ void Odumpnames (context *ctx)
     printf("\nGlobal Name stack: ");
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
-    dumpstack(ctx->gl, names);
+    xpost_stack_dump(ctx->gl, names);
     (void)puts("");
     printf("\nLocal Name stack: ");
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
-    dumpstack(ctx->lo, names);
+    xpost_stack_dump(ctx->lo, names);
     (void)puts("");
 }
 

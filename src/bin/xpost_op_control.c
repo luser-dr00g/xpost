@@ -79,7 +79,7 @@ static
 void Aexec (context *ctx,
             Xpost_Object O)
 {
-    push(ctx->lo, ctx->es, O);
+    xpost_stack_push(ctx->lo, ctx->es, O);
 }
 
 static
@@ -88,7 +88,7 @@ void BPif (context *ctx,
            Xpost_Object P)
 {
     if (B.int_.val)
-        push(ctx->lo, ctx->es, P);
+        xpost_stack_push(ctx->lo, ctx->es, P);
 }
 
 static
@@ -98,9 +98,9 @@ void BPPifelse (context *ctx,
                 Xpost_Object Else)
 {
     if (B.int_.val)
-        push(ctx->lo, ctx->es, Then);
+        xpost_stack_push(ctx->lo, ctx->es, Then);
     else
-        push(ctx->lo, ctx->es, Else);
+        xpost_stack_push(ctx->lo, ctx->es, Else);
 }
 
 static
@@ -116,16 +116,16 @@ void IIIPfor (context *ctx,
     int up = j > 0;
     if (up? i > n : i < n) return;
     assert(ctx->gl->base);
-    //push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
-    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    push(ctx->lo, ctx->es, lim);
-    push(ctx->lo, ctx->es, incr);
-    push(ctx->lo, ctx->es, xpost_cons_int(i + j));
-    push(ctx->lo, ctx->es, P);
-    push(ctx->lo, ctx->es, init);
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+    xpost_stack_push(ctx->lo, ctx->es, lim);
+    xpost_stack_push(ctx->lo, ctx->es, incr);
+    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(i + j));
+    xpost_stack_push(ctx->lo, ctx->es, P);
+    xpost_stack_push(ctx->lo, ctx->es, init);
 }
 
 static
@@ -140,16 +140,16 @@ void RRRPfor (context *ctx,
     real n = lim.real_.val;
     int up = j > 0;
     if (up? i > n : i < n) return;
-    //push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
-    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    push(ctx->lo, ctx->es, lim);
-    push(ctx->lo, ctx->es, incr);
-    push(ctx->lo, ctx->es, xpost_cons_real(i + j));
-    push(ctx->lo, ctx->es, P);
-    push(ctx->lo, ctx->es, init);
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+    xpost_stack_push(ctx->lo, ctx->es, lim);
+    xpost_stack_push(ctx->lo, ctx->es, incr);
+    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_real(i + j));
+    xpost_stack_push(ctx->lo, ctx->es, P);
+    xpost_stack_push(ctx->lo, ctx->es, init);
 }
 
 static
@@ -158,25 +158,25 @@ void IPrepeat (context *ctx,
                Xpost_Object P)
 {
     if (n.int_.val <= 0) return;
-    //push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.repeat));
-    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1));
-    push(ctx->lo, ctx->es, P);
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.repeat));
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1));
+    xpost_stack_push(ctx->lo, ctx->es, P);
 }
 
 static
 void Ploop (context *ctx,
             Xpost_Object P)
 {
-    //push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.loop));
-    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    push(ctx->lo, ctx->es, P);
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.loop));
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+    xpost_stack_push(ctx->lo, ctx->es, P);
 }
 
 static
@@ -199,13 +199,13 @@ void Zexit (context *ctx)
     xpost_object_dump(oploop);
     xpost_object_dump(opforall);
 
-    dumpstack(ctx->lo, ctx->os);
-    dumpstack(ctx->lo, ctx->es);
+    xpost_stack_dump(ctx->lo, ctx->os);
+    xpost_stack_dump(ctx->lo, ctx->es);
     printf("\n");
 #endif
 
     while (1) {
-        x = pop(ctx->lo, ctx->es);
+        x = xpost_stack_pop(ctx->lo, ctx->es);
         //xpost_object_dump(x);
         if ( (objcmp(ctx, x, opfor)    == 0)
           || (objcmp(ctx, x, oprepeat) == 0)
@@ -218,7 +218,7 @@ void Zexit (context *ctx)
 
 #if 0
     printf("result:");
-    dumpstack(ctx->lo, ctx->es);
+    xpost_stack_dump(ctx->lo, ctx->es);
 #endif
 }
 
@@ -231,12 +231,12 @@ static
 void Zstop(context *ctx)
 {
     Xpost_Object f = xpost_cons_bool(0);
-    int c = count(ctx->lo, ctx->es);
+    int c = xpost_stack_count(ctx->lo, ctx->es);
     Xpost_Object x;
     while (c--) {
-        x = pop(ctx->lo, ctx->es);
+        x = xpost_stack_pop(ctx->lo, ctx->es);
         if(objcmp(ctx, f, x) == 0) {
-            push(ctx->lo, ctx->os, xpost_cons_bool(1));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
             return;
         }
     }
@@ -247,25 +247,25 @@ static
 void Astopped(context *ctx,
               Xpost_Object o)
 {
-    push(ctx->lo, ctx->es, xpost_cons_bool(0));
-    push(ctx->lo, ctx->es, o);
+    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_bool(0));
+    xpost_stack_push(ctx->lo, ctx->es, o);
 }
 
 static
 void Zcountexecstack(context *ctx)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, ctx->es)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->es)));
 }
 
 static
 void Aexecstack(context *ctx,
                 Xpost_Object A)
 {
-    int z = count(ctx->lo, ctx->es);
+    int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
     for (i=0; i < z; i++)
-        barput(ctx, A, i, bot(ctx->lo, ctx->es, i));
-    push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+        barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
+    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
 }
 
 //TODO start

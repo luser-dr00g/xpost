@@ -77,7 +77,7 @@ void *alloca (size_t);
 static
 void Zsave (context *ctx)
 {
-    push(ctx->lo, ctx->os, save(ctx->lo));
+    xpost_stack_push(ctx->lo, ctx->os, save(ctx->lo));
 }
 
 static
@@ -89,7 +89,7 @@ void Vrestore (context *ctx,
 
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-    z = count(ctx->lo, vs);
+    z = xpost_stack_count(ctx->lo, vs);
     while(z > V.save_.lev) {
         restore(ctx->lo);
         z--;
@@ -106,7 +106,7 @@ void Bsetglobal (context *ctx,
 static
 void Zcurrentglobal (context *ctx)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(ctx->vmmode==GLOBAL));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(ctx->vmmode==GLOBAL));
 }
 
 static
@@ -123,7 +123,7 @@ void Agcheck (context *ctx,
     case arraytype:
             r = xpost_cons_bool((A.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)!=0);
     }
-    push(ctx->lo, ctx->os, r);
+    xpost_stack_push(ctx->lo, ctx->os, r);
 }
 
 static
@@ -133,9 +133,9 @@ void Zvmstatus (context *ctx)
 
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, vs)));
-    push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->used));
-    push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->max));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, vs)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->used));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->max));
 }
 
 void initopv(context *ctx,

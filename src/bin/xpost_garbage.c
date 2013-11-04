@@ -219,7 +219,7 @@ void markstack(context *ctx,
         unsigned stackadr,
         int markall)
 {
-    stack *s = (void *)(mem->base + stackadr);
+    Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned i;
 
 #ifdef DEBUG_GC
@@ -230,13 +230,13 @@ next:
     for (i=0; i < s->top; i++) {
         markobject(ctx, mem, s->data[i], markall);
     }
-    if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
-        s = (void *)(mem->base + s->nextseg);
+    if (i==XPOST_STACK_SEGMENT_SIZE) { /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
+        s = (Xpost_Stack *)(mem->base + s->nextseg);
         goto next;
     }
 
     /* if (s->nextseg) { /\* maybe not. this is a MARK phase, after all *\/ */
-    /*     sfree(mem, s->nextseg); */
+    /*     xpost_stack_free(mem, s->nextseg); */
     /*     s->nextseg = 0; */
     /* } */
 }
@@ -247,7 +247,7 @@ void marksavestack(context *ctx,
         Xpost_Memory_File *mem,
         unsigned stackadr)
 {
-    stack *s = (void *)(mem->base + stackadr);
+    Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned i;
     unsigned int ad;
     (void)ctx;
@@ -276,13 +276,13 @@ next:
             markarray(ctx, mem, ad, sz, 0);
         }
     }
-    if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
-        s = (void *)(mem->base + s->nextseg);
+    if (i==XPOST_STACK_SEGMENT_SIZE) { /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
+        s = (Xpost_Stack *)(mem->base + s->nextseg);
         goto next;
     }
 
     if (s->nextseg) {
-        sfree(mem, s->nextseg);
+        xpost_stack_free(mem, s->nextseg);
         s->nextseg = 0;
     }
 }
@@ -293,7 +293,7 @@ void marksave(context *ctx,
         Xpost_Memory_File *mem,
         unsigned stackadr)
 {
-    stack *s = (void *)(mem->base + stackadr);
+    Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned i;
 
 #ifdef DEBUG_GC
@@ -305,7 +305,7 @@ next:
         /* markobject(ctx, mem, s->data[i]); */
         marksavestack(ctx, mem, s->data[i].save_.stk);
     }
-    if (i==STACKSEGSZ) { /* ie. s->top == STACKSEGSZ */
+    if (i==XPOST_STACK_SEGMENT_SIZE) { /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         s = (void *)(mem->base + s->nextseg);
         goto next;
     }
@@ -687,7 +687,8 @@ void init_test_garbage()
 
     /* only need one stack */
     ctx->vmmode = LOCAL;
-    ctx->os = ctx->ds = ctx->es = ctx->hold = initstack(ctx->lo);
+    xpost_stack_init(ctx->lo, &ctx->hold);
+    ctx->os = ctx->ds = ctx->es = ctx->hold;
 
     initializing = 0; /* garbage collector won't run otherwise */
 }
@@ -716,10 +717,10 @@ int test_garbage_collect(void)
         sz = post-pre;
         /* printf("str sz=%u\n", sz); */
 
-        push(ctx->lo, ctx->os, str);
+        xpost_stack_push(ctx->lo, ctx->os, str);
         assert(collect(ctx->lo, 1, 0) == 0);
 
-        pop(ctx->lo, ctx->os);
+        xpost_stack_pop(ctx->lo, ctx->os);
         ret = collect(ctx->lo, 1, 0);
         /* printf("collect returned %u\n", ret); */
         assert(ret >= sz);
@@ -738,10 +739,10 @@ int test_garbage_collect(void)
     post = ctx->lo->used;
     sz = post-pre;
 
-    push(ctx->lo, ctx->os, arr);
+    xpost_stack_push(ctx->lo, ctx->os, arr);
     assert(collect(ctx->lo, 1, 0) == 0);
 
-    pop(ctx->lo, ctx->os);
+    xpost_stack_pop(ctx->lo, ctx->os);
     ret = collect(ctx->lo, 1, 0);
     assert(ret >= sz);
 
@@ -788,32 +789,32 @@ int main(void) {
     mem = ctx->lo;
     stac = ctx->os;
 
-    push(mem, stac, xpost_cons_int(5));
-    push(mem, stac, xpost_cons_int(6));
-    push(mem, stac, xpost_cons_real(7.0));
+    xpost_stack_push(mem, stac, xpost_cons_int(5));
+    xpost_stack_push(mem, stac, xpost_cons_int(6));
+    xpost_stack_push(mem, stac, xpost_cons_real(7.0));
     Xpost_Object ar;
     ar = consarr(mem, 3);
     int i;
     for (i=0; i < 3; i++)
-        arrput(mem, ar, i, pop(mem, stac));
-    push(mem, stac, ar);                   /* array on stack */
+        arrput(mem, ar, i, xpost_stack_pop(mem, stac));
+    xpost_stack_push(mem, stac, ar);                   /* array on stack */
 
-    push(mem, stac, xpost_cons_int(1));
-    push(mem, stac, xpost_cons_int(2));
-    push(mem, stac, xpost_cons_int(3));
+    xpost_stack_push(mem, stac, xpost_cons_int(1));
+    xpost_stack_push(mem, stac, xpost_cons_int(2));
+    xpost_stack_push(mem, stac, xpost_cons_int(3));
     ar = consarr(mem, 3);
     for (i=0; i < 3; i++)
-        arrput(mem, ar, i, pop(mem, stac));
+        arrput(mem, ar, i, xpost_stack_pop(mem, stac));
     xpost_object_dump(ar);
     /* array not on stack */
 
 #define CNT_STR(x) sizeof(x), x
-    push(mem, stac, consstr(mem, CNT_STR("string on stack")));
+    xpost_stack_push(mem, stac, consstr(mem, CNT_STR("string on stack")));
 
     xpost_object_dump(consstr(mem, CNT_STR("string not on stack")));
 
     collect(mem);
-    push(mem, stac, consstr(mem, CNT_STR("string on stack")));
+    xpost_stack_push(mem, stac, consstr(mem, CNT_STR("string on stack")));
     xpost_object_dump(consstr(mem, CNT_STR("string not on stack")));
 
     collect(mem);

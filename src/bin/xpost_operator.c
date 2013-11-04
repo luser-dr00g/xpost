@@ -165,11 +165,11 @@ Xpost_Object consoper(context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    if (!(in < STACKSEGSZ)) {
-        printf("!(in < STACKSEGSZ) in consoper(%s, %d. %d)\n", name, out, in);
+    if (!(in < XPOST_STACK_SEGMENT_SIZE)) {
+        printf("!(in < XPOST_STACK_SEGMENT_SIZE) in consoper(%s, %d. %d)\n", name, out, in);
         exit(EXIT_FAILURE);
     }
-    //assert(in < STACKSEGSZ); // or else opexec can't call it using HOLD
+    //assert(in < XPOST_STACK_SEGMENT_SIZE); // or else opexec can't call it using HOLD
 
     vmmode=ctx->vmmode;
     ctx->vmmode = GLOBAL;
@@ -241,7 +241,7 @@ void holdn (context *ctx,
             unsigned stacadr,
             int n)
 {
-    stack *hold;
+    Xpost_Stack *hold;
     int j;
 
     assert(n < XPOST_MEMORY_TABLE_SIZE);
@@ -251,12 +251,12 @@ void holdn (context *ctx,
     //j = n;
     //while (j) {
         //j--;
-        push(ctx->lo, ctx->hold, top(mem, stacadr, j));
+        xpost_stack_push(ctx->lo, ctx->hold, xpost_stack_topdown_fetch(mem, stacadr, j));
     }
     for (j=n; j--;) {
     //j = n;
     //while (j) {
-        (void)pop(mem, stacadr);
+        (void)xpost_stack_pop(mem, stacadr);
         //j--;
     }
 }
@@ -274,7 +274,7 @@ void opexec(context *ctx,
     int pass;
     int err = unregistered;
     char *errmsg = "unspecified error";
-    stack *hold;
+    Xpost_Stack *hold;
     int ct;
     unsigned int optadr;
 
@@ -284,7 +284,7 @@ void opexec(context *ctx,
     op = optab[opcode];
     sp = (void *)(ctx->gl->base + op.sigadr);
 
-    ct = count(ctx->lo, ctx->os);
+    ct = xpost_stack_count(ctx->lo, ctx->os);
     if (op.n == 0) error(unregistered, "opexec");
     for (i=0; i < op.n; i++) { /* try each signature */
         byte *t;
@@ -297,7 +297,7 @@ void opexec(context *ctx,
         pass = 1;
         t = (void *)(ctx->gl->base + sp[i].t);
         for (j=0; j < sp[i].in; j++) {
-            Xpost_Object el = top(ctx->lo, ctx->os, j);
+            Xpost_Object el = xpost_stack_topdown_fetch(ctx->lo, ctx->os, j);
             if (t[j] == anytype) continue;
             if (t[j] == xpost_object_get_type(el)) continue;
             if (t[j] == numbertype
@@ -305,7 +305,7 @@ void opexec(context *ctx,
                         || xpost_object_get_type(el) == realtype) ) continue;
             if (t[j] == floattype) {
                 if (xpost_object_get_type(el) == integertype) {
-                    pot(ctx->lo, ctx->os, j, el = promote(el));
+                    xpost_stack_topdown_replace(ctx->lo, ctx->os, j, el = promote(el));
                     continue;
                 }
                 if (xpost_object_get_type(el) == realtype) continue;
@@ -404,7 +404,7 @@ void initop(context *ctx)
 
     sd = consbdc(ctx, SDSIZE);
     bdcput(ctx, sd, consname(ctx, "systemdict"), sd);
-    push(ctx->lo, ctx->ds, sd);
+    xpost_stack_push(ctx->lo, ctx->ds, sd);
     tab = NULL;
     ent = sd.comp_.ent;
     xpost_memory_table_find_relative(ctx->gl, &tab, &ent);
@@ -462,11 +462,11 @@ void initop(context *ctx)
     initoppa(ctx, sd);
     initopparam(ctx, sd);
 
-    //push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
+    //xpost_stack_push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
 #ifdef DEBUGOP
     printf("final sd:\n");
-    dumpstack(ctx->lo, ctx->ds);
+    xpost_stack_dump(ctx->lo, ctx->ds);
     dumpdic(ctx->gl, sd); fflush(NULL);
 #endif
 }

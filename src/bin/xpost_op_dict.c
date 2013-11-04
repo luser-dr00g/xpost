@@ -58,7 +58,7 @@ static
 void Idict(context *ctx,
            Xpost_Object I)
 {
-    push(ctx->lo, ctx->os, xpost_object_cvlit(consbdc(ctx, I.int_.val)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbdc(ctx, I.int_.val)));
 }
 
 /* -  <<  mark
@@ -72,15 +72,15 @@ void dictomark(context *ctx)
     int i;
     Xpost_Object d, k, v;
     Zcounttomark(ctx);
-    i = pop(ctx->lo, ctx->os).int_.val;
+    i = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
     d = consbdc(ctx, i);
     for ( ; i > 0; i -= 2){
-        v = pop(ctx->lo, ctx->os);
-        k = pop(ctx->lo, ctx->os);
+        v = xpost_stack_pop(ctx->lo, ctx->os);
+        k = xpost_stack_pop(ctx->lo, ctx->os);
         bdcput(ctx, d, k, v);
     }
-    (void)pop(ctx->lo, ctx->os); // pop mark
-    push(ctx->lo, ctx->os, d);
+    (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
+    xpost_stack_push(ctx->lo, ctx->os, d);
 }
 
 /* dict  length  int
@@ -89,7 +89,7 @@ static
 void Dlength(context *ctx,
              Xpost_Object D)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(diclength(
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(diclength(
                     bank(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
 }
@@ -100,7 +100,7 @@ static
 void Dmaxlength(context *ctx,
                 Xpost_Object D)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(dicmaxlength(
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(dicmaxlength(
                     bank(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
 }
@@ -111,7 +111,7 @@ static
 void Dbegin(context *ctx,
             Xpost_Object D)
 {
-    push(ctx->lo, ctx->ds, D);
+    xpost_stack_push(ctx->lo, ctx->ds, D);
 }
 
 /* -  end  -
@@ -119,9 +119,9 @@ void Dbegin(context *ctx,
 static
 void Zend(context *ctx)
 {
-    if (count(ctx->lo, ctx->ds) <= 3)
+    if (xpost_stack_count(ctx->lo, ctx->ds) <= 3)
         error(dictstackunderflow, "end");
-    (void)pop(ctx->lo, ctx->ds);
+    (void)xpost_stack_pop(ctx->lo, ctx->ds);
 }
 
 /* key value  def  -
@@ -131,9 +131,9 @@ void Adef(context *ctx,
           Xpost_Object K,
           Xpost_Object V)
 {
-    //Xpost_Object D = top(ctx->lo, ctx->ds, 0);
+    //Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
     //dumpdic(bank(ctx, D), D); puts("");
-    bdcput(ctx, top(ctx->lo, ctx->ds, 0), K, V);
+    bdcput(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
     //puts("!def!");
     //dumpdic(bank(ctx, D), D); puts("");
 }
@@ -144,15 +144,15 @@ void Aload(context *ctx,
            Xpost_Object K)
 {
     int i;
-    int z = count(ctx->lo, ctx->ds);
+    int z = xpost_stack_count(ctx->lo, ctx->ds);
     if (DEBUGLOAD) {
         printf("\nload:");
         xpost_object_dump(K);
-        dumpstack(ctx->lo, ctx->ds);
+        xpost_stack_dump(ctx->lo, ctx->ds);
     }
 
     for (i = 0; i < z; i++) {
-        Xpost_Object D = top(ctx->lo,ctx->ds,i);
+        Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo,ctx->ds,i);
 
     if (DEBUGLOAD) {
         dumpdic(bank(ctx, D), D);
@@ -160,7 +160,7 @@ void Aload(context *ctx,
     }
 
         if (dicknown(ctx, bank(ctx, D), D, K)) {
-            push(ctx->lo, ctx->os, bdcget(ctx, D, K));
+            xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, D, K));
             return;
         }
     }
@@ -173,7 +173,7 @@ void Aload(context *ctx,
         xpost_memory_table_dump(ctx->gl);
         xpost_memory_table_get_addr(ctx->gl,
                 XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
-        dumpstack(ctx->gl, names);
+        xpost_stack_dump(ctx->gl, names);
         xpost_object_dump(K);
     }
 
@@ -189,10 +189,10 @@ void Astore(context *ctx,
 {
     Xpost_Object D;
     Awhere(ctx, K);
-    if (pop(ctx->lo, ctx->os).int_.val) {
-        D = pop(ctx->lo, ctx->os);
+    if (xpost_stack_pop(ctx->lo, ctx->os).int_.val) {
+        D = xpost_stack_pop(ctx->lo, ctx->os);
     } else {
-        D = top(ctx->lo, ctx->ds, 0);
+        D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
     }
     bdcput(ctx, D, K, V);
 }
@@ -204,7 +204,7 @@ void DAget(context *ctx,
            Xpost_Object D,
            Xpost_Object K)
 {
-    push(ctx->lo, ctx->os, bdcget(ctx, D, K));
+    xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, D, K));
 }
 
 /* dict key value  put  -
@@ -241,7 +241,7 @@ void DAknown(context *ctx,
     dumpdic(bank(ctx, D), D); puts("");
     xpost_object_dump(K);
 #endif
-    push(ctx->lo, ctx->os, xpost_cons_bool(dicknown(ctx, bank(ctx, D), D, K)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(dicknown(ctx, bank(ctx, D), D, K)));
 }
 
 
@@ -251,16 +251,16 @@ void Awhere(context *ctx,
             Xpost_Object K)
 {
     int i;
-    int z = count(ctx->lo, ctx->ds);
+    int z = xpost_stack_count(ctx->lo, ctx->ds);
     for (i = 0; i < z; i++) {
-        Xpost_Object D = top(ctx->lo, ctx->ds, i);
+        Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
         if (dicknown(ctx, bank(ctx, D), D, K)) {
-            push(ctx->lo, ctx->os, D);
-            push(ctx->lo, ctx->os, xpost_cons_bool(1));
+            xpost_stack_push(ctx->lo, ctx->os, D);
+            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
             return;
         }
     }
-    push(ctx->lo, ctx->os, xpost_cons_bool(0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
 }
 
 /* dict1 dict2  copy  dict2
@@ -283,7 +283,7 @@ void Dcopy(context *ctx,
             bdcput(ctx, D, tp[2*i], tp[2*i+1]);
         }
     }
-    push(ctx->lo, ctx->os, D);
+    xpost_stack_push(ctx->lo, ctx->os, D);
 }
 
 static
@@ -308,18 +308,18 @@ void DPforall (context *ctx,
                 if (xpost_object_get_type(k) == extendedtype)
                     k = unextend(k);
                 v = tp[2 * D.comp_.off + 1];
-                push(ctx->lo, ctx->os, k);
-                push(ctx->lo, ctx->os, v);
+                xpost_stack_push(ctx->lo, ctx->os, k);
+                xpost_stack_push(ctx->lo, ctx->os, v);
 
-                //push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-                push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
-                //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-                push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-                push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+                //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
+                xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
+                //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+                xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+                xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
                 ++D.comp_.off;
-                push(ctx->lo, ctx->es, D);
+                xpost_stack_push(ctx->lo, ctx->es, D);
 
-                push(ctx->lo, ctx->es, P);
+                xpost_stack_push(ctx->lo, ctx->es, P);
                 return;
             }
         }
@@ -331,7 +331,7 @@ void DPforall (context *ctx,
 static
 void Zcurrentdict(context *ctx)
 {
-    push(ctx->lo, ctx->os, top(ctx->lo, ctx->ds, 0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0));
 }
 
 /* -  errordict  dict   % error handler dictionary : err.ps
@@ -347,7 +347,7 @@ void Zcurrentdict(context *ctx)
 static
 void Zcountdictstack(context *ctx)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, ctx->ds)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->ds)));
 }
 
 /* array  dictstack  subarray
@@ -356,19 +356,19 @@ static
 void Adictstack(context *ctx,
                 Xpost_Object A)
 {
-    int z = count(ctx->lo, ctx->ds);
+    int z = xpost_stack_count(ctx->lo, ctx->ds);
     int i;
     for (i=0; i < z; i++)
-        barput(ctx, A, i, bot(ctx->lo, ctx->ds, i));
-    push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+        barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, i));
+    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
 }
 
 static
 void cleardictstack(context *ctx)
 {
-    int z = count(ctx->lo, ctx->ds);
+    int z = xpost_stack_count(ctx->lo, ctx->ds);
     while (z-- > 3) {
-        (void)pop(ctx->lo, ctx->ds);
+        (void)xpost_stack_pop(ctx->lo, ctx->ds);
     }
 }
 

@@ -102,7 +102,7 @@ void Sfile (context *ctx,
     cmode[mode.comp_.sz] = '\0';
 
     f = fileopen(ctx->lo, cfn, cmode);
-    push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
 }
 
 static
@@ -120,10 +120,10 @@ void Fread (context *ctx,
     if (!xpost_object_is_readable(f)) error(invalidaccess, "Fread");
     b = fileread(ctx->lo, f);
     if (b.int_.val != EOF) {
-        push(ctx->lo, ctx->os, b);
-        push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, b);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
-        push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 
@@ -170,8 +170,8 @@ void Freadhexstring (context *ctx,
              | (strchr(hex, toupper(c[1])) - hex);
     }
     S.comp_.sz = n;
-    push(ctx->lo, ctx->os, S);
-    push(ctx->lo, ctx->os, xpost_cons_bool(!eof));
+    xpost_stack_push(ctx->lo, ctx->os, S);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(!eof));
 }
 
 static
@@ -207,12 +207,12 @@ void Freadstring (context *ctx,
     s = charstr(ctx, S);
     n = fread(s, 1, S.comp_.sz, f);
     if (n == S.comp_.sz) {
-        push(ctx->lo, ctx->os, S);
-        push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, S);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
         S.comp_.sz = n;
-        push(ctx->lo, ctx->os, S);
-        push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, S);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 
@@ -250,15 +250,15 @@ void Freadline (context *ctx,
     }
     if (n == S.comp_.sz && c != '\n') error(rangecheck, "Freadline");
     S.comp_.sz = n;
-    push(ctx->lo, ctx->os, S);
-    push(ctx->lo, ctx->os, xpost_cons_bool(c != EOF));
+    xpost_stack_push(ctx->lo, ctx->os, S);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(c != EOF));
 }
 
 static
 void Fbytesavailable (context *ctx,
                       Xpost_Object F)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(filebytesavailable(ctx->lo, F)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(filebytesavailable(ctx->lo, F)));
 }
 
 static
@@ -306,23 +306,23 @@ static
 void Fstatus (context *ctx,
               Xpost_Object F)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(filestatus(ctx->lo, F)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(filestatus(ctx->lo, F)));
 }
 
 static
 void Zcurrentfile (context *ctx)
 {
-    int z = count(ctx->lo, ctx->es);
+    int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
     Xpost_Object o;
     for (i=0; i<z; i++) {
-        o = top(ctx->lo, ctx->es, i);
+        o = xpost_stack_topdown_fetch(ctx->lo, ctx->es, i);
         if (xpost_object_get_type(o) == filetype) {
-            push(ctx->lo, ctx->os, o);
+            xpost_stack_push(ctx->lo, ctx->os, o);
             return;
         }
     }
-    push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
+    xpost_stack_push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
 }
 
 static
@@ -371,14 +371,14 @@ void contfilenameforall (context *ctx,
     int len;
     globbuf = oglob.glob_.ptr;
     if (oglob.glob_.off < globbuf->gl_pathc) {
-        //push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
-        push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.contfilenameforall));
-        push(ctx->lo, ctx->es, Scr);
-        //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-        push(ctx->lo, ctx->es, xpost_object_cvlit(Proc));
+        //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
+        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.contfilenameforall));
+        xpost_stack_push(ctx->lo, ctx->es, Scr);
+        //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+        xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(Proc));
         ++oglob.glob_.off;
-        push(ctx->lo, ctx->es, oglob);
+        xpost_stack_push(ctx->lo, ctx->es, oglob);
 
         str = charstr(ctx, Scr);
         src = globbuf->gl_pathv[ oglob.glob_.off-1 ];
@@ -386,8 +386,8 @@ void contfilenameforall (context *ctx,
         if (len > Scr.comp_.sz)
             error(rangecheck, "contfilenameforall");
         memcpy(str, src, len);
-        push(ctx->lo, ctx->os, arrgetinterval(Scr, 0, len));
-        push(ctx->lo, ctx->es, Proc);
+        xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(Scr, 0, len));
+        xpost_stack_push(ctx->lo, ctx->es, Proc);
 
     } else {
         globfree(globbuf);
@@ -441,7 +441,7 @@ void fileposition (context *ctx,
     if (pos == -1)
         error(ioerror, "ftell returned -1");
     else
-        push(ctx->lo, ctx->os, xpost_cons_int(pos));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(pos));
 }
 
 static

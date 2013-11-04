@@ -52,9 +52,10 @@
 
 char *errorname[] = { ERRORS(XPOST_OBJECT_AS_STR) };
 
+static int in_onerror;
+
 volatile char *errormsg = "";
 
-static int in_onerror;
 
 /* placeholder error function */
 /* ultimately, this will do a longjmp back
@@ -84,13 +85,13 @@ void error(unsigned err,
 
     ctx = &itpdata->ctab[0];
     printf("\nopstack: ");
-    dumpstack(ctx->lo, ctx->os);
+    xpost_stack_dump(ctx->lo, ctx->os);
     printf("\nexecstack: ");
-    dumpstack(ctx->lo, ctx->es);
+    xpost_stack_dump(ctx->lo, ctx->es);
     printf("\ndictstack: ");
-    dumpstack(ctx->lo, ctx->ds);
+    xpost_stack_dump(ctx->lo, ctx->ds);
     printf("\nholdstack: ");
-    dumpstack(ctx->lo, ctx->hold);
+    xpost_stack_dump(ctx->lo, ctx->hold);
 
     printf("\nLocal VM: ");
     xpost_memory_file_dump(ctx->lo);
@@ -102,15 +103,14 @@ void error(unsigned err,
     printf("\nGlobal Name Stack: ");
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &gnad);
-    dumpstack(ctx->gl, gnad);
+    xpost_stack_dump(ctx->gl, gnad);
     printf("\nLocal Name Stack: ");
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &lnad);
-    dumpstack(ctx->lo, lnad);
+    xpost_stack_dump(ctx->lo, lnad);
 
     exit(EXIT_FAILURE);
 }
-
 
 /* called by itp:loop() after longjmp from error()
    pushes postscript-level error procedures
@@ -129,6 +129,11 @@ void onerror(context *ctx,
     assert(ctx->lo);
     assert(ctx->lo->base);
 
+    if (in_onerror) {
+        fprintf(stderr, "LOOP in error handler\nabort\n");
+        exit(1);
+    }
+
     in_onerror = 1;
 
 #ifdef EMITONERROR
@@ -141,12 +146,12 @@ void onerror(context *ctx,
         int n = ctx->currentobject.mark_.pad0;
         int i;
         for (i=0; i < n; i++) {
-            push(ctx->lo, ctx->os, bot(ctx->lo, ctx->hold, i));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_stack_bottomup_fetch(ctx->lo, ctx->hold, i));
         }
     }
 
     /* printf("1\n"); */
-    sd = bot(ctx->lo, ctx->ds, 0);
+    sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
     /* printf("2\n"); */
 
     dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
@@ -168,13 +173,14 @@ void onerror(context *ctx,
     }
     /* printf("5\n"); */
 
-    push(ctx->lo, ctx->os, ctx->currentobject);
+    xpost_stack_push(ctx->lo, ctx->os, ctx->currentobject);
     /* printf("6\n"); */
-    push(ctx->lo, ctx->os, xpost_object_cvlit(consname(ctx, errorname[err])));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consname(ctx, errorname[err])));
     /* printf("7\n"); */
-    push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
+    xpost_stack_push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
     /* printf("8\n"); */
 
     in_onerror = 0;
 }
+
 

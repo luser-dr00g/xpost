@@ -67,7 +67,7 @@ static
 void Iarray (context *ctx,
              Xpost_Object I)
 {
-    push(ctx->lo, ctx->os, xpost_object_cvlit(consbar(ctx, I.int_.val)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbar(ctx, I.int_.val)));
 }
 
 /* -  [  mark
@@ -81,14 +81,14 @@ void arrtomark (context *ctx)
     int i;
     Xpost_Object a, v;
     Zcounttomark(ctx);
-    i = pop(ctx->lo, ctx->os).int_.val;
+    i = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
     a = consbar(ctx, i);
     for ( ; i > 0; i--){
-        v = pop(ctx->lo, ctx->os);
+        v = xpost_stack_pop(ctx->lo, ctx->os);
         barput(ctx, a, i-1, v);
     }
-    (void)pop(ctx->lo, ctx->os); // pop mark
-    push(ctx->lo, ctx->os, xpost_object_cvlit(a));
+    (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(a));
 }
 
 /* array  length  int
@@ -97,7 +97,7 @@ static
 void Alength (context *ctx,
               Xpost_Object A)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(A.comp_.sz));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(A.comp_.sz));
 }
 
 /* array index  get  any
@@ -107,7 +107,7 @@ void Aget (context *ctx,
            Xpost_Object A,
            Xpost_Object I)
 {
-    push(ctx->lo, ctx->os, barget(ctx, A, I.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, I.int_.val));
 }
 
 /* array index any  put  -
@@ -129,7 +129,7 @@ void Agetinterval (context *ctx,
                    Xpost_Object I,
                    Xpost_Object L)
 {
-    push(ctx->lo, ctx->os, arrgetinterval(A, I.int_.val, L.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, I.int_.val, L.int_.val));
 }
 
 /* array1 index array2  putinterval  -
@@ -154,8 +154,8 @@ void Aaload (context *ctx,
     int i;
 
     for (i = 0; i < A.comp_.sz; i++)
-        push(ctx->lo, ctx->os, barget(ctx, A, i));
-    push(ctx->lo, ctx->os, A);
+        xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, i));
+    xpost_stack_push(ctx->lo, ctx->os, A);
 }
 
 /* any0..anyN-1 array  astore  array
@@ -167,8 +167,8 @@ void Aastore (context *ctx,
     int i;
 
     for (i = A.comp_.sz - 1; i >= 0; i--)
-        barput(ctx, A, i, pop(ctx->lo, ctx->os));
-    push(ctx->lo, ctx->os, A);
+        barput(ctx, A, i, xpost_stack_pop(ctx->lo, ctx->os));
+    xpost_stack_push(ctx->lo, ctx->os, A);
 }
 
 /* array1 array2  copy  subarray2
@@ -181,7 +181,7 @@ void Acopy (context *ctx,
     if (D.comp_.sz < S.comp_.sz)
         error(rangecheck, "Acopy");
     a_copy(ctx, S, D);
-    push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
+    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
 }
 
 /* array proc  forall  -
@@ -195,18 +195,18 @@ void Aforall(context *ctx,
         return;
 
     assert(ctx->gl->base);
-    //push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
-    //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
-    push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(A, 1, A.comp_.sz - 1)));
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
+    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(A, 1, A.comp_.sz - 1)));
     if (xpost_object_is_exe(A)) {
-        //push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+        //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
     }
-    push(ctx->lo, ctx->es, P);
-    push(ctx->lo, ctx->os, barget(ctx, A, 0));
+    xpost_stack_push(ctx->lo, ctx->es, P);
+    xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, 0));
 }
 
 void initopar (context *ctx,

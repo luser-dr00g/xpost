@@ -68,7 +68,7 @@ void initsave (Xpost_Memory_File *mem)
     xpost_memory_table_alloc(mem, 0, 0, &ent); /* allocate an entry of zero length */
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK);
 
-    t = initstack(mem);
+    xpost_stack_init(mem, &t);
     tab = (void *)mem->base;
     tab->tab[ent].adr = t;
 }
@@ -83,9 +83,9 @@ Xpost_Object save (Xpost_Memory_File *mem)
     v.tag = savetype;
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-    v.save_.lev = count(mem, vs);
-    v.save_.stk = initstack(mem);
-    push(mem, vs, v);
+    v.save_.lev = xpost_stack_count(mem, vs);
+    xpost_stack_init(mem, &v.save_.stk);
+    xpost_stack_push(mem, vs, v);
     return v;
 }
 
@@ -100,7 +100,7 @@ unsigned stashed (Xpost_Memory_File *mem,
 
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-    cnt = count(mem, vs);
+    cnt = xpost_stack_count(mem, vs);
     xpost_memory_table_find_relative(mem, &tab, &ent);
     tlev = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK)
         >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET;
@@ -145,7 +145,7 @@ void stash(Xpost_Memory_File *mem,
 
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &adr);
-    sav = top(mem, adr, 0);
+    sav = xpost_stack_topdown_fetch(mem, adr, 0);
 
     xpost_memory_table_find_relative(mem, &tab, &rent);
     tlev = sav.save_.lev;
@@ -156,7 +156,7 @@ void stash(Xpost_Memory_File *mem,
     o.saverec_.pad = pad;
     o.saverec_.src = ent;
     o.saverec_.cpy = copy(mem, ent);
-    push(mem, sav.save_.stk, o);
+    xpost_stack_push(mem, sav.save_.stk, o);
 }
 
 /* for each saverec from current save stack
@@ -172,12 +172,12 @@ void restore(Xpost_Memory_File *mem)
     unsigned sent, cent;
 
     xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &v); // save-stack address
-    sav = pop(mem, v); // save-object (stack of saverec_'s)
-    cnt = count(mem, sav.save_.stk);
+    sav = xpost_stack_pop(mem, v); // save-object (stack of saverec_'s)
+    cnt = xpost_stack_count(mem, sav.save_.stk);
     while (cnt--) {
         Xpost_Object rec;
         unsigned hold;
-        rec = pop(mem, sav.save_.stk);
+        rec = xpost_stack_pop(mem, sav.save_.stk);
         sent = rec.saverec_.src;
         cent = rec.saverec_.cpy;
         xpost_memory_table_find_relative(mem, &stab, &sent);
@@ -186,7 +186,7 @@ void restore(Xpost_Memory_File *mem)
         stab->tab[sent].adr = ctab->tab[cent].adr;  // src = cpy
         ctab->tab[cent].adr = hold;                 // cpy = tmp
     }
-    sfree(mem, sav.save_.stk);
+    xpost_stack_free(mem, sav.save_.stk);
 }
 
 #ifdef TESTMODULE_V

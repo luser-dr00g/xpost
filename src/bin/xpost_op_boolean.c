@@ -79,7 +79,7 @@ void Aeq (context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) == 0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) == 0));
 }
 
 /* any1 any2  ne  bool
@@ -89,7 +89,7 @@ void Ane (context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) != 0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) != 0));
 }
 
 /* any1 any2  ge  bool
@@ -99,7 +99,7 @@ void Age (context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) >= 0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) >= 0));
 }
 
 /* any1 any2  gt  bool
@@ -109,7 +109,7 @@ void Agt (context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) > 0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) > 0));
 }
 
 /* any1 any2  le  bool
@@ -119,7 +119,7 @@ void Ale (context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) <= 0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) <= 0));
 }
 
 /* any1 any2  lt  bool
@@ -129,7 +129,7 @@ void Alt (context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) < 0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) < 0));
 }
 
 /* bool1|int1 bool2|int2  and  bool3|int3
@@ -139,7 +139,7 @@ void Band (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val & y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val & y.int_.val));
 }
 
 static
@@ -147,7 +147,7 @@ void Iand (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val & y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val & y.int_.val));
 }
 
 /* bool1|int1  not  bool2|int2
@@ -156,14 +156,14 @@ static
 void Bnot (context *ctx,
            Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool( ! x.int_.val ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( ! x.int_.val ));
 }
 
 static
 void Inot (context *ctx,
            Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int( ~ x.int_.val ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int( ~ x.int_.val ));
 }
 
 /* bool1|int1 bool2|int2  or  bool3|int3
@@ -173,7 +173,7 @@ void Bor (context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val | y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val | y.int_.val));
 }
 
 static
@@ -181,7 +181,7 @@ void Ior (context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val | y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val | y.int_.val));
 }
 
 /* bool1|int1 bool2|int2  xor  bool3|int3
@@ -191,7 +191,7 @@ void Bxor (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val ^ y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val ^ y.int_.val));
 }
 
 static
@@ -199,7 +199,7 @@ void Ixor (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val ^ y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val ^ y.int_.val));
 }
 
 // true
@@ -214,9 +214,9 @@ void Ibitshift (context *ctx,
                 Xpost_Object y)
 {
     if (y.int_.val >= 0)
-        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val << y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val << y.int_.val));
     else
-        push(ctx->lo, ctx->os, xpost_cons_int(
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(
                     (unsigned long)x.int_.val >> -y.int_.val));
 }
 

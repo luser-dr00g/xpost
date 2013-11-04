@@ -297,15 +297,15 @@ Xpost_Object grok (context *ctx,
     case '{': { // This is the one part that makes it a recursive-descent parser
                   Xpost_Object tail;
                   tail = consname(ctx, "}");
-                  push(ctx->lo, ctx->os, mark);
+                  xpost_stack_push(ctx->lo, ctx->os, mark);
                   while (1) {
                       Xpost_Object t = toke(ctx, src, next, back);
                       if (objcmp(ctx, t, tail) == 0)
                           break;
-                      push(ctx->lo, ctx->os, t);
+                      xpost_stack_push(ctx->lo, ctx->os, t);
                   }
                   arrtomark(ctx);  // ie. the /] operator
-                  return xpost_object_cvx(pop(ctx->lo, ctx->os));
+                  return xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
               }
 
     case '/': {
@@ -316,12 +316,12 @@ Xpost_Object grok (context *ctx,
                       ns = puff(ctx, s, NBUF, src, next, back);
                       if (ns == NBUF) error(limitcheck, "grok immediate name exceeds buf");
                       s[ns] = '\0';
-                      //push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, s)));
+                      //xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, s)));
                       //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
                       if (DEBUGLOAD)
                           printf("\ntoken: loading immediate name %s\n", s);
                       Aload(ctx, xpost_object_cvx(consname(ctx, s)));
-                      ret = pop(ctx->lo, ctx->os);
+                      ret = xpost_stack_pop(ctx->lo, ctx->os);
                       if (DEBUGLOAD)
                           xpost_object_dump(ret);
                       return ret;
@@ -422,10 +422,10 @@ void Ftoken (context *ctx,
     if (!filestatus(ctx->lo, F)) error(ioerror, "Ftoken");
     t = toke(ctx, &F, Fnext, Fback);
     if (xpost_object_get_type(t) != nulltype) {
-        push(ctx->lo, ctx->os, t);
-        push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, t);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
-        push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 
@@ -456,11 +456,11 @@ void Stoken (context *ctx,
     Xpost_Object t;
     t = toke(ctx, &S, Snext, Sback);
     if (xpost_object_get_type(t) != nulltype) {
-        push(ctx->lo, ctx->os, S);
-        push(ctx->lo, ctx->os, t);
-        push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, S);
+        xpost_stack_push(ctx->lo, ctx->os, t);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
-        push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
 }
 

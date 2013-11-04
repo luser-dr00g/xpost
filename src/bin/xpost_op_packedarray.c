@@ -84,18 +84,18 @@ void packedarray (context *ctx,
     a = consbar(ctx, n.int_.val);
     
     for (i=n.int_.val; i > 0; i--) {
-        v = pop(ctx->lo, ctx->os);
+        v = xpost_stack_pop(ctx->lo, ctx->os);
         barput(ctx, a, i-1, v);
     }
     a = xpost_object_set_access(xpost_object_cvlit(a), XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
-    push(ctx->lo, ctx->os, a);
+    xpost_stack_push(ctx->lo, ctx->os, a);
 }
 
 static
 void setpacking (context *ctx,
                  Xpost_Object b)
 {
-    Xpost_Object sd = bot(ctx->lo, ctx->ds, 0);
+    Xpost_Object sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
     bdcput(ctx, sd, consname(ctx, "currentpacking"), b);
 }
 

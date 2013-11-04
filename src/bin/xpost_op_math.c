@@ -119,9 +119,9 @@ void Iadd (context *ctx,
            Xpost_Object y)
 {
     if (addwillover(x.int_.val, y.int_.val))
-        push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val + y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val + y.int_.val));
     else
-        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val + y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val + y.int_.val));
 }
 
 static
@@ -129,7 +129,7 @@ void Radd (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val + y.real_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val + y.real_.val));
 }
 
 /* num1 num2  div  quotient
@@ -139,7 +139,7 @@ void Rdiv (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val / y.real_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val / y.real_.val));
 }
 
 /* num1 num2  idiv  quotient
@@ -149,7 +149,7 @@ void Iidiv (context *ctx,
             Xpost_Object x,
             Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val / y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val / y.int_.val));
 }
 
 /* num1 num2  mod  remainder
@@ -159,7 +159,7 @@ void Imod (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val % y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val % y.int_.val));
 }
 
 /* num1 num2  mul  product
@@ -170,9 +170,9 @@ void Imul (context *ctx,
            Xpost_Object y)
 {
     if (mulwillover(x.int_.val, y.int_.val))
-        push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val * y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val * y.int_.val));
     else
-        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val * y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val * y.int_.val));
 }
 
 static
@@ -180,7 +180,7 @@ void Rmul (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val * y.real_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val * y.real_.val));
 }
 
 /* num1 num2  sub  difference
@@ -191,9 +191,9 @@ void Isub (context *ctx,
            Xpost_Object y)
 {
     if (subwillunder(x.int_.val, y.int_.val))
-        push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val - y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val - y.int_.val));
     else
-        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val - y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val - y.int_.val));
 }
 
 static
@@ -201,7 +201,7 @@ void Rsub (context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val - y.real_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val - y.real_.val));
 }
 
 /* num1  abs  num2
@@ -211,16 +211,16 @@ void Iabs (context *ctx,
            Xpost_Object x)
 {
     if (x.int_.val == INT_MIN)
-        push(ctx->lo, ctx->os, xpost_cons_real(- (real)INT_MIN));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(- (real)INT_MIN));
     else
-        push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val>0? x.int_.val: -x.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val>0? x.int_.val: -x.int_.val));
 }
 
 static
 void Rabs (context *ctx,
            Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(fabs(x.real_.val)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(fabs(x.real_.val)));
 }
 
 /* num1  neg  num2
@@ -230,16 +230,16 @@ void Ineg (context *ctx,
            Xpost_Object x)
 {
     if (x.int_.val == INT_MIN)
-        push(ctx->lo, ctx->os, xpost_cons_real(- (real)INT_MIN));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(- (real)INT_MIN));
     else
-        push(ctx->lo, ctx->os, xpost_cons_int(-x.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(-x.int_.val));
 }
 
 static
 void Rneg (context *ctx,
            Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(-x.real_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(-x.real_.val));
 }
 
 /* stub for integer  floor, ceiling, round, truncate */
@@ -247,7 +247,7 @@ static
 void Istet (context *ctx,
             Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, x);
+    xpost_stack_push(ctx->lo, ctx->os, x);
 }
 
 /* num1  ceiling  num2
@@ -256,7 +256,7 @@ static
 void Rceiling (context *ctx,
                Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(ceil(x.real_.val)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(ceil(x.real_.val)));
 }
 
 /* num1  floor  num2
@@ -265,7 +265,7 @@ static
 void Rfloor (context *ctx,
              Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(floor(x.real_.val)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(floor(x.real_.val)));
 }
 
 /* num1  round  num2
@@ -274,12 +274,12 @@ static
 void Rround (context *ctx,
              Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(floor(x.real_.val + 0.5)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(floor(x.real_.val + 0.5)));
 #if 0
     if (x.real_.val > 0)
-        push(ctx->lo, ctx->os, xpost_cons_real(round(x.real_.val)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(round(x.real_.val)));
     else
-        push(ctx->lo, ctx->os, xpost_cons_real(rint(x.real_.val)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(rint(x.real_.val)));
 #endif
 }
 
@@ -289,7 +289,7 @@ static
 void Rtruncate (context *ctx,
                 Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(trunc(x.real_.val)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(trunc(x.real_.val)));
 }
 
 /* num1  sqrt  num2
@@ -298,7 +298,7 @@ static
 void Rsqrt (context *ctx,
             Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(sqrt(x.real_.val)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(sqrt(x.real_.val)));
 }
 
 /* num den  atan  angle
@@ -310,7 +310,7 @@ void Ratan (context *ctx,
 {
     real ang = atan2(num.real_.val * RAD_PER_DEG, den.real_.val * RAD_PER_DEG) / RAD_PER_DEG;
     if (ang < 0.0) ang += 360.0;
-    push(ctx->lo, ctx->os, xpost_cons_real(ang));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(ang));
 }
 
 /* angle  cos  real
@@ -319,7 +319,7 @@ static
 void Rcos (context *ctx,
            Xpost_Object x)
 {
-    push(ctx->lo, ctx->os,
+    xpost_stack_push(ctx->lo, ctx->os,
             xpost_cons_real(cos(RAD_PER_DEG * x.real_.val)));
 }
 
@@ -329,7 +329,7 @@ static
 void Rsin (context *ctx,
            Xpost_Object x)
 {
-    push(ctx->lo, ctx->os,
+    xpost_stack_push(ctx->lo, ctx->os,
             xpost_cons_real(sin(RAD_PER_DEG * x.real_.val)));
 }
 
@@ -342,7 +342,7 @@ void Rexp (context *ctx,
 {
     if (base.real_.val < 0)
         expn.real_.val = trunc(expn.real_.val);
-    push(ctx->lo, ctx->os,
+    xpost_stack_push(ctx->lo, ctx->os,
             xpost_cons_real(pow(base.real_.val, expn.real_.val)));
 }
 
@@ -352,7 +352,7 @@ static
 void Rln (context *ctx,
           Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, xpost_cons_real(log(x.real_.val)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(log(x.real_.val)));
 }
 
 /* num  log  real
@@ -361,7 +361,7 @@ static
 void Rlog (context *ctx,
            Xpost_Object x)
 {
-    push(ctx->lo, ctx->es, xpost_cons_real(log10(x.real_.val)));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_real(log10(x.real_.val)));
 }
 
 /* -  rand  int
@@ -374,7 +374,7 @@ void Zrand (context *ctx)
     x = ctx->rand_next << 16;
     ctx->rand_next = ctx->rand_next * 1103515245 + 12345;
     x |= ctx->rand_next & 0xffff;
-    push(ctx->lo, ctx->es, xpost_cons_int(x & 0x7fffffff));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(x & 0x7fffffff));
 }
 
 /* int  srand  -
@@ -391,7 +391,7 @@ void Isrand (context *ctx,
 static
 void Zrrand (context *ctx)
 {
-    push(ctx->lo, ctx->es, xpost_cons_int(ctx->rand_next));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(ctx->rand_next));
 }
 
 void initopm (context *ctx,

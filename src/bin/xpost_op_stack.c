@@ -90,8 +90,8 @@ void AAexch (context *ctx,
              Xpost_Object x,
              Xpost_Object y)
 {
-    push(ctx->lo, ctx->os, y);
-    push(ctx->lo, ctx->os, x);
+    xpost_stack_push(ctx->lo, ctx->os, y);
+    xpost_stack_push(ctx->lo, ctx->os, x);
 }
 
 /* any  dup  any any
@@ -100,8 +100,8 @@ static
 void Adup (context *ctx,
            Xpost_Object x)
 {
-    push(ctx->lo, ctx->os, x);
-    push(ctx->lo, ctx->os, x);
+    xpost_stack_push(ctx->lo, ctx->os, x);
+    xpost_stack_push(ctx->lo, ctx->os, x);
 }
 
 /* any1..anyN N  copy  any1..anyN any1..anyN
@@ -112,9 +112,9 @@ void Icopy (context *ctx,
 {
     int i;
     if (n.int_.val < 0) error(rangecheck, "Icopy");
-    if ((unsigned)n.int_.val > count(ctx->lo, ctx->os)) error(stackunderflow, "Icopy");
+    if (n.int_.val > xpost_stack_count(ctx->lo, ctx->os)) error(stackunderflow, "Icopy");
     for (i=0; i < n.int_.val; i++)
-        push(ctx->lo, ctx->os, top(ctx->lo, ctx->os, n.int_.val - 1));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val - 1));
 }
 
 /* anyN..any0 N  index  anyN..any0 anyN
@@ -124,9 +124,9 @@ void Iindex (context *ctx,
              Xpost_Object n)
 {
     if (n.int_.val < 0) error(rangecheck, "Iindex");
-    if ((unsigned)n.int_.val >= count(ctx->lo, ctx->os)) error(stackunderflow, "Iindex");
+    if (n.int_.val >= xpost_stack_count(ctx->lo, ctx->os)) error(stackunderflow, "Iindex");
     //printf("index %d\n", n.int_.val);
-    push(ctx->lo, ctx->os, top(ctx->lo, ctx->os, n.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val));
 }
 
 /* a(n-1)..a(0) n j  roll  a((j-1)mod n)..a(0) a(n-1)..a(j mod n)
@@ -148,12 +148,12 @@ void IIroll (context *ctx,
     
     t = alloca((n-j) * sizeof(Xpost_Object));
     for (i = 0; i < n-j; i++)
-        t[i] = top(ctx->lo, ctx->os, n - 1 - i);
+        t[i] = xpost_stack_topdown_fetch(ctx->lo, ctx->os, n - 1 - i);
     for (i = 0; i < j; i++)
-        pot(ctx->lo, ctx->os, n - 1 - i,
-                top(ctx->lo, ctx->os, j - 1 - i));
+        xpost_stack_topdown_replace(ctx->lo, ctx->os, n - 1 - i,
+                xpost_stack_topdown_fetch(ctx->lo, ctx->os, j - 1 - i));
     for (i = 0; i < n-j; i++)
-        pot(ctx->lo, ctx->os, n - j - 1 - i, t[i]);
+        xpost_stack_topdown_replace(ctx->lo, ctx->os, n - j - 1 - i, t[i]);
 }
 
 /* |- any1..anyN  clear  |-
@@ -161,7 +161,7 @@ void IIroll (context *ctx,
 static
 void Zclear (context *ctx)
 {
-    stack *s = (void *)(ctx->lo->base + ctx->os);
+    Xpost_Stack *s = (void *)(ctx->lo->base + ctx->os);
     s->top = 0;
 }
 
@@ -170,7 +170,7 @@ void Zclear (context *ctx)
 static
 void Zcount (context *ctx)
 {
-    push(ctx->lo, ctx->os, xpost_cons_int(count(ctx->lo, ctx->os)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->os)));
 }
 
 /* -  mark  mark
@@ -184,7 +184,7 @@ void Zcleartomark (context *ctx)
 {
     Xpost_Object o;
     do {
-        o = pop(ctx->lo, ctx->os);
+        o = xpost_stack_pop(ctx->lo, ctx->os);
     } while (o.tag != marktype);
 }
 
@@ -194,10 +194,10 @@ void Zcounttomark (context *ctx)
 {
     unsigned i;
     unsigned z;
-    z = count(ctx->lo, ctx->os);
+    z = xpost_stack_count(ctx->lo, ctx->os);
     for (i = 0; i < z; i++) {
-        if (top(ctx->lo, ctx->os, i).tag == marktype) {
-            push(ctx->lo, ctx->os, xpost_cons_int(i));
+        if (xpost_stack_topdown_fetch(ctx->lo, ctx->os, i).tag == marktype) {
+            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(i));
             return;
         }
     }
