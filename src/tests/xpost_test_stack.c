@@ -14,10 +14,11 @@
 
 START_TEST(xpost_stack)
 {
-    Xpost_Memory_File mem = {0};
+    Xpost_Memory_File mem;
     unsigned int stack;
     int ret;
 
+    memset(&mem, 0, sizeof(Xpost_Memory_File));
     ret = xpost_memory_file_init(&mem, NULL, -1);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
@@ -33,13 +34,14 @@ END_TEST
 
 START_TEST(xpost_stack_push_pop)
 {
-    Xpost_Memory_File mem = {0};
+    Xpost_Memory_File mem;
     unsigned int stack;
     int segsize = XPOST_STACK_SEGMENT_SIZE;
     int i;
     Xpost_Object obj;
     int ret;
 
+    memset(&mem, 0, sizeof(Xpost_Memory_File));
     ret = xpost_memory_file_init(&mem, NULL, -1);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
