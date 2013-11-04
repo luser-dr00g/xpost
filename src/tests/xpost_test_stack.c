@@ -6,9 +6,8 @@
 
 #include <check.h>
 
-#include "../lib/xpost_log.h"
-#include "../lib/xpost_memory.h"
-#include "../lib/xpost_stack.h"
+#include "xpost_memory.h"
+#include "xpost_stack.h"
 
 #include "xpost_suite.h"
 
