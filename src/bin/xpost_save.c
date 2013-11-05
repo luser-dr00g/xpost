@@ -38,7 +38,6 @@
 #include "xpost_memory.h"  // save/restore works with mtabs
 #include "xpost_object.h"  // save/restore examines objects
 #include "xpost_stack.h"  // save/restore manipulates (internal) stacks
-#include "xpost_interpreter.h"  //
 #include "xpost_garbage.h"  //
 #include "xpost_save.h"  // double-check prototypes
 
@@ -109,7 +108,7 @@ unsigned stashed (Xpost_Memory_File *mem,
 }
 
 /* make a clone of ent, return new ent */
-unsigned copy(Xpost_Memory_File *mem,
+static unsigned copy(Xpost_Memory_File *mem,
               unsigned ent)
 {
     Xpost_Memory_Table *tab;
