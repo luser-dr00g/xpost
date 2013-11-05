@@ -77,7 +77,7 @@ _xpost_log_print_prefix_func(FILE *stream,
     CONSOLE_SCREEN_BUFFER_INFO scbi;
     HANDLE std_handle;
     DWORD console;
-    DWORD color;
+    WORD color;
     char *str;
     DWORD res;
     int s;
@@ -101,6 +101,8 @@ _xpost_log_print_prefix_func(FILE *stream,
     s = snprintf(str, s + 1, "%s", _xpost_log_level_names[level]);
     if (s == -1)
         goto free_str;
+
+    str[s] = '\0';
 
     switch (level)
     {
@@ -147,6 +149,8 @@ _xpost_log_print_prefix_func(FILE *stream,
     if (s == -1)
         goto free_str;
 
+    str[s] = '\0';
+
     if (!WriteConsole(std_handle, str, s, &res, NULL))
     {
         goto free_str;
@@ -168,6 +172,8 @@ _xpost_log_print_prefix_func(FILE *stream,
     s = snprintf(str, s + 1, "%s() ", fct);
     if (s == -1)
         goto free_str;
+
+    str[s] = '\0';
 
     SetConsoleTextAttribute(std_handle, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
     if (!WriteConsole(std_handle, str, s, &res, NULL))
