@@ -328,7 +328,7 @@ typedef struct
 {
     word tag; /**< magictype */
     word pad;
-    struct Xpost_Magic_Get_Set_Pair *pair; /**< pointer to struct containing getter/setter function pointers */
+    struct Xpost_Magic_Pair *pair; /**< pointer to struct containing getter/setter function pointers */
 } Xpost_Object_Magic;
 
 /*
@@ -357,6 +357,7 @@ typedef union
     Xpost_Object_Save save_;
     Xpost_Object_Saverec saverec_;
     Xpost_Object_Glob glob_;
+    Xpost_Object_Magic magic_;
 } Xpost_Object;
 
 
