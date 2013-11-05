@@ -135,7 +135,7 @@ Xpost_Object xpost_cons_real (real r)
 
 Xpost_Object_Type xpost_object_get_type (Xpost_Object obj)
 {
-    return obj.tag & XPOST_OBJECT_TAG_DATA_TYPE_MASK;
+    return (Xpost_Object_Type)(obj.tag & XPOST_OBJECT_TAG_DATA_TYPE_MASK);
 }
 
 int xpost_object_is_composite (Xpost_Object obj)
@@ -163,8 +163,8 @@ int xpost_object_is_lit(Xpost_Object obj)
 
 Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj)
 {
-    return (obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK)
-        >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET;
+    return (Xpost_Object_Tag_Access)((obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >>
+                                     XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
 }
 
 Xpost_Object xpost_object_set_access (Xpost_Object obj, Xpost_Object_Tag_Access access)
