@@ -28,6 +28,7 @@ end %userdict
 
 
 /TESTGRAPHICS where {pop}{ currentfile flushfile} ifelse
+(TESTGRAPHICS graphics)=
 
 initgraphics
 
@@ -133,7 +134,6 @@ doclip
 { (closepath) 1 args }
 pathforall
 
-{
-} pop
+clear
 
 (eof graphics.ps)=

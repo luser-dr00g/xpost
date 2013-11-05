@@ -109,12 +109,15 @@
 
     /FillRect { % val x y w h IMAGE  .  -
     begin {h w y x val}{exch def}forall
-        val 0 1 w { x add
-            0 1 h { y add
-                3 copy currentdict PutPix
-                pop pop
+        val 0 1 w { x add  % val x
+            0 1 h { y add  % val x y
+                3 copy currentdict  % val x y val x y
+                PutPix  % val x y
+                pop  % val x
             } for
+            pop % val
         } for
+        pop % -
     end }
 
 
@@ -272,7 +275,15 @@
     end }
 >> def
 
+/TESTGRAPHICS where {pop
+    (TESTGRAPHICS image)=
+    /dev 40 20 newPGMIMAGEdevice def
+    55 1 1 38 17 dev dup /DrawLine get exec
+    77 9 14 3 3 dev dup /FillRect get exec
+    dev dup /Emit get exec
+    pstack()=
 
+} if
 
 
 
