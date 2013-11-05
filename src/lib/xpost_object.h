@@ -206,9 +206,9 @@ typedef dword addr;
 
 /**
  * @struct Xpost_Object_Mark
- * @brief A generic object: 2 words and a double-word.
+ * @brief A generic object: tag word, pad word, and a double-word.
  *
- * To avoid too many structure, many types use .mark_.padw
+ * To avoid too many structures, many types use .mark_.padw
  * to hold an unsigned integer (eg. operatortype, nametype, filetype).
  * Of course, if a type needs to use pad0, that's a sign that
  * it needs its own struct.
@@ -290,10 +290,10 @@ typedef struct
 
 /**
  * @struct Xpost_Object_Saverec
- * @brief The saverec_ type overlays an object so that it can be stacked.
+ * @brief The saverec type overlays an object so that it can be stacked.
  *
- * The saverec_ type is not available as a (Postscript) user type.
- *  saverec_s occupy the "current save stack" referred to by the
+ * The saverec type is not available as a (Postscript) user type.
+ *  saverec's occupy the "current save stack" referred to by the
  * stk field of a save object.
  */
 typedef struct
@@ -309,8 +309,8 @@ typedef struct
  * @brief The globtype object exists only for passing between
  *        iterations of filenameforall.
  *
- * There are no constructors for this type. It has no use outside
- * the filenameforall looping construct.
+ * The globtype object is not available as a (Postscript) user type.
+ * It has no use outside the filenameforall looping construct.
  */
 typedef struct
 {
@@ -318,6 +318,18 @@ typedef struct
     word off; /**< index into the filename array */
     void *ptr; /**< ptr to the glob_t struct */
 } Xpost_Object_Glob;
+
+/**
+ * @struct Xpost_Object_Magic
+ * @brief The magictype object exist as dictionary values where they
+ *        are treated specially by the dicput and dicget functions.
+ */
+typedef struct
+{
+    word tag; /**< magictype */
+    word pad;
+    struct Xpost_Magic_Get_Set_Pair *pair; /**< pointer to struct containing getter/setter function pointers */
+} Xpost_Object_Magic;
 
 /*
  *
@@ -526,8 +538,8 @@ Xpost_Object xpost_object_set_access (
  * specially for filetypes. Regular objects have read access if the
  * value is greater than executeonly.
  *
- * Filetype objects have read access only if the value is equal
- * to readonly.
+ * Filetype objects use the access field as 2 independent flags.
+ * A file is readable if the FILE_READ flag is set.
  */
 int xpost_object_is_readable (Xpost_Object obj);
 
@@ -537,8 +549,12 @@ int xpost_object_is_readable (Xpost_Object obj);
  * @param[in] obj The object.
  * @return 1 if the object is writeable, 0 otherwise.
  *
- * This function checks the access permissions of @p obj.
- * An object is writeable if its access is equal to unlimited.
+ * This function checks the access permissions of @p obj,
+ * specially for filetypes. Regular objects have write access if
+ * the value is equal to unlimited.
+ *
+ * Filetype objects use the access field as 2 independent flags.
+ * A file is writeable if the FILE_WRITE flag is set.
  */
 int xpost_object_is_writeable (Xpost_Object obj);
 
