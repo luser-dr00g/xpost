@@ -57,6 +57,11 @@ typedef struct {
     word pad;
 } dichead;
 
+typedef struct Xpost_Magic_Pair {
+    int (*get)(context *ctx, Xpost_Object dict, Xpost_Object key, Xpost_Object *pval);
+    int (*put)(context *ctx, Xpost_Object dict, Xpost_Object key, Xpost_Object val);
+} Xpost_Magic_Pair;
+
 /*! \def DICTABN
    DICTABN yields the number of real entries in the table
    for a dict of size n

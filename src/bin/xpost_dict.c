@@ -510,9 +510,16 @@ Xpost_Object dicget(context *ctx,
     Xpost_Object *e;
 
     e = diclookup(ctx, mem, d, k);
-    if (e == NULL || xpost_object_get_type(e[0]) == nulltype) {
+    if (e == NULL || xpost_object_get_type(e[0]) == nulltype)
+    {
         error(undefined, "dicget");
         return null;
+    }
+    else if (xpost_object_get_type(e[1]) == magictype)
+    {
+        Xpost_Object ret;
+        e[1].magic_.pair->get(ctx, d, k, &ret);
+        return ret;
     }
     return e[1];
 }
@@ -543,19 +550,24 @@ void dicput(context *ctx,
     unsigned int ad;
 
     if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
+
 retry:
     e = diclookup(ctx, mem, d, k);
-    if (e == NULL) {
-        /* rror("dict overfull"); */
-        /* row dict! */
+
+    if (e == NULL)
+    {
+        /* error("dict overfull"); */
+        /* grow dict! */
         dicgrow(ctx, d);
         goto retry;
     }
-    if (xpost_object_get_type(e[0]) == invalidtype) {
+    else if (xpost_object_get_type(e[0]) == invalidtype)
+    {
         fprintf(stderr, "warning: invalidtype key in dict\n");
         e[0] = null;
     }
-    if (xpost_object_get_type(e[0]) == nulltype) {
+    else if (xpost_object_get_type(e[0]) == nulltype)
+    {
         if (dicfull(mem, d)) {
             /*error("dict full"); */
             /*grow dict! */
@@ -566,6 +578,11 @@ retry:
         dp = (void *)(mem->base + ad);
         ++ dp->nused;
         e[0] = clean_key(ctx, k);
+    }
+    else if (xpost_object_get_type(e[1]) == magictype)
+    {
+        e[1].magic_.pair->put(ctx, d, k, v);
+        return;
     }
     e[1] = v;
 }
