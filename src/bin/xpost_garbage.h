@@ -41,6 +41,11 @@
 /**
  * @enum  Xpost_Garbage_Params
  * @brief private constants
+ *
+ * FIXME: PLRM describes garbage collection control to be based on
+ * number of bytes allocated, not the number of allocations.
+ * Also this should be a variable accessible through `setsystemparams`
+ * operator.
  */
 typedef enum {
     PERIOD = 2000  /* number of times to grow before collecting */
@@ -70,8 +75,15 @@ unsigned mfree(Xpost_Memory_File *mem, unsigned ent);
 /**
  * @brief  Perform a garbage collection on mfile.
  *
+ * dosweep controls whether a sweep is performed; if not this
+ * is just a marking operation. markall controls whether 
+ * collect() should follow links across vm boundaries.
+ *
  * For a local vm, dosweep should be 1 and markall should be 0.
  * For a global vm, dosweep should be 1 and markall should be 1.
+ *
+ * For a global vm, collect() calls itself recursively upon each
+ * associated local vm, with dosweep = 0, markall = 1.
  */
 unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall);
 
