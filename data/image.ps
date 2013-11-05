@@ -1,9 +1,13 @@
 (loading image.ps...)=
 
+/newPGMIMAGEdevice { % width height  .  IMAGE
+    PGMIMAGE dup /Create get exec
+} def
+
 /PGMIMAGE <<
-    /Create { % width height IMAGE  .  -
-    dup maxlength dict copy
-    begin{height width}{exch def}forall
+    /Create { % width height IMAGE  .  IMAGE'
+    dup length dict copy
+    begin {/height /width}{exch def}forall
         /ImgData height array def
         0 1 height 1 sub {
             ImgData exch width string put
@@ -12,13 +16,13 @@
     end }
 
     /.to-int { round cvi }
-    /Putpix { % val x y IMAGE  .  -
+    /PutPix { % val x y IMAGE  .  -
     begin
         .to-int exch .to-int exch
         ImgData exch get 3 1 roll put
     end }
 
-    /Getpix { % x y IMAGE  .  val
+    /GetPix { % x y IMAGE  .  val
     begin
         .to-int exch .to-int exch
         ImgData exch get exch get
@@ -88,12 +92,158 @@
         } for
     end }
 
-    /FillPoly {
-    begin
-    end }
+
+    /.maxmin {
+        2 copy
+        dup maxy gt { /maxy exch def }{ pop } ifelse
+        dup maxx gt { /maxx exch def }{ pop } ifelse
+        dup miny lt { /miny exch def }{ pop } ifelse
+        dup minx lt { /minx exch def }{ pop } ifelse
+    }
+
+    % x1 y1 x2 y2 x3 y3 x4 y4  .  x5 y5 true
+    %                             false
+    % inspired by the code at http: / / alienryderflex.com/intersect/
+    /.intersect { 8 dict begin
+        {Dy Dx Cy Cx By Bx Ay Ax}{exch def}forall
+        {
+            % reject degenerate line
+            Ax Bx eq Ay By eq and Cx Dx eq Cy Dy eq and or {stop} if
+
+            % reject coinciding endpoints
+            Ax Cx eq Ay Cy eq and Bx Cx eq By Cy eq and or
+            Ax Dx eq Ay Dy eq and or Bx Dx eq By Dy eq and or {stop} if
+
+            % translate by -Ax,-Ay
+            /Bx Bx Ax sub def /By By Ay sub def
+            /Cx Cx Ax sub def /Cy Cy Ay sub def
+            /Dx Dx Ax sub def /Dy Dy Ay sub def
+
+            % length of AB
+            /distAB Bx Bx mul By By mul add sqrt def
+
+            % rotate AB to x-axis
+            /theCos Bx distAB div def
+            /theSin By distAB div def
+            /newX Cx theCos mul Cy theSin mul add def
+            /Cy   Cy theCos mul Cx theSin mul sub def /Cx newX def
+            /newX Dx theCos mul Dy theSin mul add def
+            /Dy   Dy theCos mul Dx theSin mul sub def /Dx newX def
+
+            % no intersection
+            Cy 0 lt Dy 0 lt and Cy 0 ge Dy 0 ge and or {stop} if
+
+            /ABpos Dx Cx Dx sub Dy mul Dy Cy sub div add def
+            ABpos 0 lt ABpos distAB gt or {stop} if % intersection not on segment
+            Ax ABpos theCos mul add
+            Ay ABpos theSin mul add
+        } stopped not
+    end } def
+
+    /FillPoly { % val polygon IMAGE  .  -
+    begin {poly val}{exch def}forall
+
+        /minx 16#7fffffff def
+        /miny minx def
+        /maxx minx neg def
+        /maxy maxx def
+        poly {
+            aload pop .maxmin
+        } forall
+
+        % intersect polygon edges with scanlines
+        /P poly poly length 1 sub get def
+        [
+        poly {
+            /Q exch def
+            a 0 get length 1 sub        % [ x_max
+            miny floor cvi .5 add       % [ x_max miny.5
+            1                           % [ x_max miny.5 1
+            maxy ceiling cvi .5 sub     % [ x_max miny.5 1 maxy-.5
+            {                           % [ ... x_max y
+                1 index exch            % [ ... x_max x_max y
+                0 1 index               % [ ... x_max x_max y 0 y
+                P aload pop Q aload pop % [ ... x_max  x_max y  0 y  Px Py  Qx Qy
+                .intersect {
+                    2 array astore exch % [ ... [x y] x_max
+                } if
+            } for
+            pop
+            /P Q def
+        } forall
+        ]        % [list-of-x/y-intersections
+
+        % sort list
+        dup { % comparitor
+            1 index 1 get
+            1 index 1 get
+            eq {
+                exch 0 get
+                exch 0 get
+                lt
+            }{
+                exch 1 get
+                exch 1 get
+                lt
+            } ifelse
+        } qsort   % [sorted-list-of-intersections]
+        %pstack
+
+        aload length 2 idiv { % repeat
+            exch aload pop
+            3 2 roll aload pop
+            pop                        % xa ya xb
+            3 2 roll                   % ya xb xa
+            exch 1 exch                % ya xa 1 xb
+            { % for                    % ya x
+                val exch               % ya val x
+                2 index                % ya val x ya 
+                currentdict PutPix
+            } for
+            pop
+        } repeat
+
+    end } %FillPoly
+
+    /.printpgm { % dump PGM format to stdout
+        (P2\n)=only
+        dup 0 get length =only %w
+        ( )=only
+        dup length =only %h
+        (\n)=only
+        (255\n)=only %max
+        {{=only( )=only}forall(\n)=only}forall %data
+        (\n)=only
+    } def
+
+    /.writepgm { % img (filename)
+        (w) file
+        2 dict begin
+        {/f /a}{exch def}forall
+        f (P2\n) writestring
+        f a 0 get length =string cvs writestring
+        f ( ) writestring
+        f a length =string cvs writestring
+        f (\n255\n) writestring
+        a {
+            {
+                =string cvs dup length exch
+                    f exch writestring
+                    neg 4 add { f ( ) writestring } repeat
+            } forall
+            f (\n) writestring
+        } forall
+        f closefile
+        end
+    } def
 
     /Emit {
     begin
+        /OutputFileName where { pop
+            ImgData OutputFileName .writepgm
+        }{
+            ImgData .printpgm
+        } ifelse
     end }
 >> def
 
