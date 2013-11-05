@@ -69,7 +69,8 @@
     _(context)  /*12*/ \
     _(extended) /*13*/ \
     _(glob)     /*14*/ \
-    _(string)   /*15*/ \
+    _(magic)    /*15*/ \
+    _(string)   /*16*/ \
 /* #def XPOST_OBJECT_TYPES */
 
 #define XPOST_OBJECT_AS_TYPE(_) \
@@ -119,15 +120,16 @@ typedef enum {
  */
 typedef enum
 {
-    XPOST_OBJECT_TAG_DATA_TYPE_MASK          = 0x000F, /**< mask to yield Xpost_Object_Type */
-    XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET = 4,
+    XPOST_OBJECT_TAG_DATA_TYPE_MASK          = 0x001F, /**< mask to yield Xpost_Object_Type */
+    XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET = 5, /* first flag, bit offset to a point above the type mask */
     XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET,    /**< bitwise offset of the ACCESS field */
     XPOST_OBJECT_TAG_DATA_FLAG_LIT_OFFSET =
-        XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET + 2,
+        XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET + 2, /* access is a 2-bit field, lit must make room */
     XPOST_OBJECT_TAG_DATA_FLAG_BANK_OFFSET,
     XPOST_OBJECT_TAG_DATA_EXTENDED_INT_OFFSET,
     XPOST_OBJECT_TAG_DATA_EXTENDED_REAL_OFFSET,
     XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD_OFFSET,
+    XPOST_OBJECT_TAG_DATA_NBITS,  /* this MUST be < 16, the size of the tag field */
 
     XPOST_OBJECT_TAG_DATA_FLAG_VALID =
         01 << XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET,
@@ -149,7 +151,7 @@ typedef enum
         01 << XPOST_OBJECT_TAG_DATA_EXTENDED_REAL_OFFSET,
             /**< extended object was real */
     XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD =
-        01 << XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD_OFFSET,
+        01 << XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD_OFFSET
             /* for onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
