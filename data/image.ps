@@ -1,8 +1,33 @@
 (loading image.ps...)=
 
-/newPGMIMAGEdevice { % width height  .  IMAGE
+/newPGMIMAGEdevice { % width height  .  IMAGE-device-dict
     PGMIMAGE dup /Create get exec
 } def
+
+% PGMIMAGE device handles 8bit images.
+%
+% It uses the full range 0-255 of values and does not calculate
+% the actual maximum value in the data before transmitting. MaxVal
+% is always 255.
+%
+% In the list of procedures below, PGMIMAGE is the Class dictionary,
+% IMAGE is an instance returned by Create.
+%
+% procedures:
+%           width height PGMIMAGE  Create  ->  IMAGE
+%                   val x y IMAGE  PutPix  ->  -
+%                       x y IMAGE  GetPix  ->  val
+%           val x1 y1 x2 y2 IMAGE  DrawLine  ->  -
+%      val x y width height IMAGE  DrawRect  ->  -
+%      val x y width height IMAGE  FillRect  ->  -
+%               val polygon IMAGE  FillPoly  ->  -
+%                           IMAGE  Emit  ->  -
+% eg:
+% PS> /dev 40 20 newPGMIMAGEdevice def
+% PS> 55 1 1 38 17 dev dup /DrawLine get exec
+% PS> 77 9 14 3 3 dev dup /FillRect get exec
+% PS> dev dup /Emit get exec
+%
 
 /PGMIMAGE <<
     /Create { % width height IMAGE  .  IMAGE'
