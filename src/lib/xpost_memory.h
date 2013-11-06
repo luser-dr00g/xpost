@@ -184,7 +184,7 @@ extern unsigned int xpost_memory_pagesize /*= getpagesize()*/;
  * @return 1 on success, 0 on failure.
  *
  * This function initializes the memory file @p mem, possibly from
- * file specified by the file descriptor @p fd.
+ * file specified by the file descriptor @p fd, if not -1.
  */
 int xpost_memory_file_init (
         Xpost_Memory_File *mem,

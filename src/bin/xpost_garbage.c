@@ -38,6 +38,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef HAVE_UNISTD_H
+# include <unistd.h> /* close */
+#endif
+
 #ifdef __MINGW32__
 # include "osmswin.h" /* mkstemp xpost_getpagesize */
 #else
@@ -639,16 +643,18 @@ static
 context *ctx;
 
 static
-void init_test_garbage()
+int init_test_garbage()
 {
     int fd;
     int cid;
     char fname[] = "xmemXXXXXX";
     unsigned int tadr;
+    int ret;
 
     /* create interpreter and context */
     xpost_memory_pagesize = xpost_getpagesize();
     itpdata = malloc(sizeof*itpdata);
+    if (!itpdata) return 0;
     memset(itpdata, 0, sizeof*itpdata);
     cid = initctxid();
     ctx = ctxcid(cid);
@@ -657,7 +663,12 @@ void init_test_garbage()
     /* create global memory file */
     ctx->gl = nextgtab();
     fd = mkstemp(fname);
-    xpost_memory_file_init(ctx->gl, fname, fd);
+    ret = xpost_memory_file_init(ctx->gl, fname, fd);
+    if (!ret)
+    {
+        close(fd);
+        return 0;
+    }
     xpost_memory_table_init(ctx->gl, &tadr);
     initfree(ctx->gl);
     initsave(ctx->gl);
@@ -669,7 +680,13 @@ void init_test_garbage()
     ctx->lo = nextltab();
     strcpy(fname, "xmemXXXXXX");
     fd = mkstemp(fname);
-    xpost_memory_file_init(ctx->lo, fname, fd);
+    ret = xpost_memory_file_init(ctx->lo, fname, fd);
+    if (!ret)
+    {
+        close(fd);
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
     xpost_memory_table_init(ctx->lo, &tadr);
     initfree(ctx->lo);
     initsave(ctx->lo);
@@ -691,6 +708,8 @@ void init_test_garbage()
     ctx->os = ctx->ds = ctx->es = ctx->hold;
 
     initializing = 0; /* garbage collector won't run otherwise */
+
+    return 1;
 }
 
 static
@@ -706,7 +725,9 @@ void exit_test_garbage(void)
 
 int test_garbage_collect(void)
 {
-    init_test_garbage();
+    if (!init_test_garbage())
+        return 0;
+
     {
         Xpost_Object str;
         unsigned pre, post, sz, ret;
@@ -730,25 +751,25 @@ int test_garbage_collect(void)
         unsigned pre, post, sz, ret;
 
         pre = ctx->lo->used;
-    arr = consbar(ctx, 5);
-    barput(ctx, arr, 0, xpost_cons_int(12));
-    barput(ctx, arr, 1, xpost_cons_int(13));
-    barput(ctx, arr, 2, xpost_cons_int(14));
-    barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
-    barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
-    post = ctx->lo->used;
-    sz = post-pre;
+        arr = consbar(ctx, 5);
+        barput(ctx, arr, 0, xpost_cons_int(12));
+        barput(ctx, arr, 1, xpost_cons_int(13));
+        barput(ctx, arr, 2, xpost_cons_int(14));
+        barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
+        barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
+        post = ctx->lo->used;
+        sz = post-pre;
 
-    xpost_stack_push(ctx->lo, ctx->os, arr);
-    assert(collect(ctx->lo, 1, 0) == 0);
+        xpost_stack_push(ctx->lo, ctx->os, arr);
+        assert(collect(ctx->lo, 1, 0) == 0);
 
-    xpost_stack_pop(ctx->lo, ctx->os);
-    ret = collect(ctx->lo, 1, 0);
-    assert(ret >= sz);
+        xpost_stack_pop(ctx->lo, ctx->os);
+        ret = collect(ctx->lo, 1, 0);
+        assert(ret >= sz);
 
     }
     exit_test_garbage();
-    return 0;
+    return 1;
 }
 
 #ifdef TESTMODULE_GC

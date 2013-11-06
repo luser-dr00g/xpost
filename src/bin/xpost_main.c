@@ -35,18 +35,26 @@
 
 int main(int argc, char *argv[])
 {
-    printf("xpost_main\n");
-	xpost_is_installed(argv[0]);
+    (void)argc;
 
-    createitp();
+    printf("xpost_main\n");
+
+    xpost_log_init();
+
+	xpost_is_installed(argv[0]); /* mallocs char* exedir */
+
+    if (!createitp()) {
+        XPOST_LOG_ERR("Failed to initialize.");
+        return EXIT_FAILURE;
+    }
 
     runitp();
 
     destroyitp();
-	free(exedir);
+
+	free(exedir); 
 
     return 0;
 
-    (void)argc;
 }
 
