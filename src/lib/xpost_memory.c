@@ -34,6 +34,7 @@
 
 #include <assert.h>
 #include <ctype.h> /* isprint */
+#include <errno.h>
 #include <stdlib.h> /* free malloc realloc */
 #include <stdio.h> /* fprintf printf putchar puts */
 #include <string.h> /* memset */
@@ -101,7 +102,10 @@ int xpost_memory_file_init (
             {
                 sz = xpost_memory_pagesize;
 #ifdef HAVE_MMAP
-                ftruncate(fd, sz);
+                if (ftruncate(fd, sz) == -1) {
+                    XPOST_LOG_ERR("ftruncate returned -1");
+                    XPOST_LOG_ERR("strerror: %s", strerror(errno));
+                }
 #endif
             }
         }
@@ -212,14 +216,20 @@ int xpost_memory_file_grow (
     sz += mem->max;
 
 #ifdef HAVE_MMAP
-    ftruncate(mem->fd, sz);
+    if (ftruncate(mem->fd, sz) == -1) {
+        XPOST_LOG_ERR("ftruncate returned -1");
+        XPOST_LOG_ERR("strerror: %s", strerror(errno));
+    }
 # ifdef HAVE_MREMAP
     tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
 # else
     msync(mem->base, mem->used, MS_SYNC);
     munmap(mem->base, mem->max);
     lseek(mem->fd, 0, SEEK_SET);
-    ftruncate(mem->fd, sz);
+    if (ftruncate(mem->fd, sz) == -1) {
+        XPOST_LOG_ERR("ftruncate returned -1");
+        XPOST_LOG_ERR("strerror: %s", strerror(errno));
+    }
     tmp = mmap(NULL, sz,
             PROT_READ | PROT_WRITE,
             mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
