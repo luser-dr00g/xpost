@@ -620,12 +620,14 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-void createitp(void)
+int createitp(void)
 {
     Xpost_Object sd, ud;
 
     //test_memory();
-    test_garbage_collect();
+    if (!test_garbage_collect())
+        return 0;
+
     nextid = 0; //reset process counter
 
     /* Allocate and initialize all interpreter data structures. */
@@ -644,6 +646,8 @@ void createitp(void)
     /* make systemdict readonly */
     bdcput(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
     xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+
+    return 1;
 }
 
 

@@ -40,6 +40,7 @@
 #include <string.h>
 
 
+#include "xpost_log.h"
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks
