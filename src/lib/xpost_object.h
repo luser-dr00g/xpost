@@ -31,7 +31,6 @@
 #ifndef XPOST_OBJECT_H
 #define XPOST_OBJECT_H
 
-#include <inttypes.h>
 
 /**
  * @file xpost_object.h
