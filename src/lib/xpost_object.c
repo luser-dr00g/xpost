@@ -48,14 +48,12 @@
 #ifdef WANT_LARGE_OBJECT
 # define XPOST_FMT_WORD(_)    PRI ## _ ## 32
 # define XPOST_FMT_DWORD(_)   PRI ## _ ## 64
-# define XPOST_FMT_QWORD(_)   PRI ## _ ## 64
 # define XPOST_FMT_INTEGER(_) PRI ## _ ## 64
 # define XPOST_FMT_REAL       "f"
 # define XPOST_FMT_ADDR       PRIx64
 #else
 # define XPOST_FMT_WORD(_)    PRI ## _ ## 16
 # define XPOST_FMT_DWORD(_)   PRI ## _ ## 32
-# define XPOST_FMT_QWORD(_)   PRI ## _ ## 64
 # define XPOST_FMT_INTEGER(_) PRI ## _ ## 32
 # define XPOST_FMT_REAL       "f"
 # define XPOST_FMT_ADDR       PRIx32
