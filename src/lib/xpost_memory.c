@@ -120,9 +120,6 @@ int xpost_memory_file_init (
             sz,
             PROT_READ|PROT_WRITE,
             (fd == -1? MAP_PRIVATE : MAP_SHARED)
-# ifndef HAVE_MREMAP
-            | MAP_AUTOGROW
-# endif
             | (fd == -1? MAP_ANONYMOUS : 0), fd, 0);
     if (mem->base == MAP_FAILED)
     { /* . */
