@@ -52,12 +52,13 @@
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks
+#include "xpost_context.h"
 #include "xpost_interpreter.h" // uses: context itp MAXCONTEXT MAXMFILE
+#include "xpost_garbage.h"  //  test garbage collector
+#include "xpost_save.h"  // save/restore vm
 #include "xpost_error.h"  // interpreter catches errors
 #include "xpost_string.h"  // eval functions examine strings
 #include "xpost_array.h"  // eval functions examine arrays
-#include "xpost_garbage.h"  // interpreter initializes garbage collector
-#include "xpost_save.h"  // interpreter initializes save/restore stacks
 #include "xpost_name.h"  // eval functions examine names
 #include "xpost_dict.h"  // eval functions examine dicts
 #include "xpost_file.h"  // eval functions examine files
@@ -71,21 +72,11 @@ itp *itpdata;
 int initializing = 1;
 int ignoreinvalidaccess = 0;
 
-static unsigned makestack(Xpost_Memory_File *mem);
 void eval(context *ctx);
 void mainloop(context *ctx);
 void dumpctx(context *ctx);
 void init(void);
 void xit(void);
-
-/* build a stack, return address */
-static
-unsigned makestack(Xpost_Memory_File *mem)
-{
-    unsigned int ret;
-    xpost_stack_init(mem, &ret);
-    return ret;
-}
 
 /* initialize the context list
    special entity in the mfile */
@@ -134,34 +125,6 @@ Xpost_Memory_File *nextgtab(void)
     exit(EXIT_FAILURE);
 }
 
-/* set up global vm in the context
- */
-static
-void initglobal(context *ctx)
-{
-    char g_filenam[] = "gmemXXXXXX";
-    int fd;
-    unsigned int tadr;
-
-    ctx->vmmode = GLOBAL;
-
-    /* allocate and initialize global vm */
-    //ctx->gl = malloc(sizeof(Xpost_Memory_File));
-    //ctx->gl = &itpdata->gtab[0];
-    ctx->gl = nextgtab();
-
-    fd = mkstemp(g_filenam);
-
-    xpost_memory_file_init(ctx->gl, g_filenam, fd);
-    xpost_memory_table_init(ctx->gl, &tadr);
-    initfree(ctx->gl);
-    initsave(ctx->gl);
-    initctxlist(ctx->gl);
-    addtoctxlist(ctx->gl, ctx->id);
-
-    ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1; /* so OPTAB is not collected and not scanned. */
-}
-
 /* find the next unused mfile in the local memory table */
 Xpost_Memory_File *nextltab(void)
 {
@@ -173,43 +136,6 @@ Xpost_Memory_File *nextltab(void)
     }
     error(unregistered, "cannot allocate Xpost_Memory_File, ltab exhausted");
     exit(EXIT_FAILURE);
-}
-
-/* set up local vm in the context
-   allocates all stacks
- */
-static
-void initlocal(context *ctx)
-{
-    char l_filenam[] = "lmemXXXXXX";
-    int fd;
-    unsigned int tadr;
-
-    ctx->vmmode = LOCAL;
-
-    /* allocate and initialize local vm */
-    //ctx->lo = malloc(sizeof(Xpost_Memory_File));
-    //ctx->lo = &itpdata->ltab[0];
-    ctx->lo = nextltab();
-
-    fd = mkstemp(l_filenam);
-
-    xpost_memory_file_init(ctx->lo, l_filenam, fd);
-    xpost_memory_table_init(ctx->lo, &tadr);
-    initfree(ctx->lo);
-    initsave(ctx->lo);
-    initctxlist(ctx->lo);
-    addtoctxlist(ctx->lo, ctx->id);
-    //ctx->lo->roots[0] = XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK;
-
-    ctx->os = makestack(ctx->lo);
-    ctx->es = makestack(ctx->lo);
-    ctx->ds = makestack(ctx->lo);
-    ctx->hold = makestack(ctx->lo);
-    //ctx->lo->roots[1] = DS;
-    //ctx->lo->start = HOLD + 1; /* so HOLD is not collected and not scanned. */
-    //ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST + 1;
-    ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME + 1;
 }
 
 
@@ -240,54 +166,6 @@ context *ctxcid(unsigned cid)
 }
 
 
-/* initialize context
-   allocates operator table
-   allocates systemdict
-   populates systemdict and optab with operators
- */
-void initcontext(context *ctx)
-{
-    ctx->id = initctxid();
-    initlocal(ctx);
-    initglobal(ctx);
-
-    initnames(ctx); /* NAMES NAMET */
-    ctx->vmmode = GLOBAL;
-
-    initoptab(ctx); /* allocate and zero the optab structure */
-
-    (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
-    (void)consname(ctx, "getinterval"); /* middle of the start */
-    (void)consname(ctx, "setmiterlimit"); /* middle of the end */
-
-    initop(ctx); /* populate the optab (and systemdict) with operators */
-
-    {
-        Xpost_Object gd; //globaldict
-        gd = consbdc(ctx, 100);
-        bdcput(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
-        xpost_stack_push(ctx->lo, ctx->ds, gd);
-    }
-
-    ctx->vmmode = LOCAL;
-    (void)consname(ctx, "minimal"); /* seed the tree with a word from the middle of the alphabet */
-    (void)consname(ctx, "interest"); /* middle of the start */
-    (void)consname(ctx, "solitaire"); /* middle of the end */
-    {
-        Xpost_Object ud; //userdict
-        ud = consbdc(ctx, 100);
-        bdcput(ctx, ud, consname(ctx, "userdict"), ud);
-        xpost_stack_push(ctx->lo, ctx->ds, ud);
-    }
-}
-
-/* destroy context */
-void exitcontext(context *ctx)
-{
-    xpost_memory_file_exit(ctx->gl);
-    xpost_memory_file_exit(ctx->lo);
-}
-
 
 /* initialize itp */
 void inititp(itp *itpptr)
@@ -302,14 +180,6 @@ void exititp(itp *itpptr)
     exitcontext(&itpptr->ctab[0]);
 }
 
-
-/* return the global or local memory file for the composite object */
-/*@dependent@*/
-Xpost_Memory_File *bank(context *ctx,
-            Xpost_Object o)
-{
-    return o.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK? ctx->gl : ctx->lo;
-}
 
 
 /* function type for interpreter action pointers */

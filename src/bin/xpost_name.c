@@ -47,6 +47,7 @@
 #include "xpost_object.h"  // names are objects, with associated hidden string objects
 #include "xpost_garbage.h"  // strings are allocated using gballoc
 #include "xpost_stack.h"  // name strings live on a stack
+#include "xpost_context.h"
 #include "xpost_interpreter.h"  // initialize interpreter to test
 #include "xpost_string.h"  // access string objects
 #include "xpost_name.h"  // double-check prototypes

@@ -102,9 +102,13 @@ int xpost_memory_file_init (
             {
                 sz = xpost_memory_pagesize;
 #ifdef HAVE_MMAP
-                if (ftruncate(fd, sz) == -1) {
-                    XPOST_LOG_ERR("ftruncate returned -1");
-                    XPOST_LOG_ERR("strerror: %s", strerror(errno));
+                if (fd != -1)
+                {
+                    if (ftruncate(fd, sz) == -1)
+                    {
+                        XPOST_LOG_ERR("ftruncate(%d, %d) returned -1", fd, sz);
+                        XPOST_LOG_ERR("strerror: %s", strerror(errno));
+                    }
                 }
 #endif
             }
@@ -216,9 +220,13 @@ int xpost_memory_file_grow (
     sz += mem->max;
 
 #ifdef HAVE_MMAP
-    if (ftruncate(mem->fd, sz) == -1) {
-        XPOST_LOG_ERR("ftruncate returned -1");
-        XPOST_LOG_ERR("strerror: %s", strerror(errno));
+    if (mem->fd != -1)
+    {
+        if (ftruncate(mem->fd, sz) == -1)
+        {
+            XPOST_LOG_ERR("ftruncate(%d, %d) returned -1", mem->fd, sz);
+            XPOST_LOG_ERR("strerror: %s", strerror(errno));
+        }
     }
 # ifdef HAVE_MREMAP
     tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
@@ -226,9 +234,13 @@ int xpost_memory_file_grow (
     msync(mem->base, mem->used, MS_SYNC);
     munmap(mem->base, mem->max);
     lseek(mem->fd, 0, SEEK_SET);
-    if (ftruncate(mem->fd, sz) == -1) {
-        XPOST_LOG_ERR("ftruncate returned -1");
-        XPOST_LOG_ERR("strerror: %s", strerror(errno));
+    if (mem->fd != -1)
+    {
+        if (ftruncate(mem->fd, sz) == -1)
+        {
+            XPOST_LOG_ERR("ftruncate(%d, %d) returned -1", mem->fd, sz);
+            XPOST_LOG_ERR("strerror: %s", strerror(errno));
+        }
     }
     tmp = mmap(NULL, sz,
             PROT_READ | PROT_WRITE,
