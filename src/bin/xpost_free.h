@@ -29,6 +29,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef XPOST_FREE_H
+#define XPOST_FREE_H
+
 /**
  * @brief  initialize the FREE special entity which points
  *         to the head of the free list
@@ -61,3 +64,4 @@ unsigned mfree(Xpost_Memory_File *mem, unsigned ent);
  */
 unsigned mfrealloc(Xpost_Memory_File *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
 
+#endif
