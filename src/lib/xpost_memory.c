@@ -228,21 +228,31 @@ int xpost_memory_file_grow (
 # ifdef HAVE_MREMAP
     tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
 # else
-    msync(mem->base, mem->used, MS_SYNC);
-    munmap(mem->base, mem->max);
-    lseek(mem->fd, 0, SEEK_SET);
     if (mem->fd != -1)
     {
+        msync(mem->base, mem->used, MS_SYNC);
+        munmap(mem->base, mem->max);
+        lseek(mem->fd, 0, SEEK_SET);
         if (ftruncate(mem->fd, sz) == -1)
         {
             XPOST_LOG_ERR("ftruncate(%d, %d) returned -1", mem->fd, sz);
             XPOST_LOG_ERR("strerror: %s", strerror(errno));
         }
+        tmp = mmap(NULL, sz,
+                PROT_READ | PROT_WRITE,
+                mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
+                mem->fd, 0);
     }
-    tmp = mmap(NULL, sz,
-            PROT_READ | PROT_WRITE,
-            mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
-            mem->fd, 0);
+    else
+    {
+        tmp = mmap(NULL, sz,
+                PROT_READ | PROT_WRITE,
+                mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
+                mem->fd, 0);
+        if (tmp != MAP_FAILED) {
+            memcpy(tmp, mem->base, mem->used);
+        }
+    }
 # endif
     if (tmp == MAP_FAILED)
     {
@@ -259,6 +269,8 @@ int xpost_memory_file_grow (
                 PROT_READ|PROT_WRITE,
                 mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
                 mem->fd, 0);
+# else
+        munmap(mem->base, mem->max);
 # endif
 #endif
     }
