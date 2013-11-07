@@ -219,7 +219,7 @@ void evalload(context *ctx)
             xpost_stack_pop(ctx->lo, ctx->es));
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
-    opexec(ctx, ctx->opcuts.load);
+    opexec(ctx, ctx->opcode_shortcuts.load);
     if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0))) {
         xpost_stack_push(ctx->lo, ctx->es,
                 xpost_stack_pop(ctx->lo, ctx->os));
@@ -269,7 +269,7 @@ void evalstring(context *ctx)
     xpost_stack_push(ctx->lo, ctx->os, s);
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
-    opexec(ctx, ctx->opcuts.token);
+    opexec(ctx, ctx->opcode_shortcuts.token);
     b = xpost_stack_pop(ctx->lo, ctx->os);
     if (b.int_.val) {
         t = xpost_stack_pop(ctx->lo, ctx->os);
@@ -289,7 +289,7 @@ void evalfile(context *ctx)
     xpost_stack_push(ctx->lo, ctx->os, f);
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
-    opexec(ctx, ctx->opcuts.token);
+    opexec(ctx, ctx->opcode_shortcuts.token);
     b = xpost_stack_pop(ctx->lo, ctx->os);
     if (b.int_.val) {
         t = xpost_stack_pop(ctx->lo, ctx->os);

@@ -413,7 +413,7 @@ void initopt (context *ctx,
     op = consoper(ctx, "type", Atype, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "cvlit", Acvlit, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "cvx", Acvx, 1, 1, anytype); INSTALL;
-    ctx->opcuts.cvx = op.mark_.padw;
+    ctx->opcode_shortcuts.cvx = op.mark_.padw;
     op = consoper(ctx, "xcheck", Axcheck, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "executeonly", Aexecuteonly, 1, 1, anytype); INSTALL;
     op = consoper(ctx, "noaccess", Anoaccess, 1, 1, anytype); INSTALL;

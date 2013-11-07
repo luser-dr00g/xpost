@@ -118,9 +118,9 @@ void IIIPfor (context *ctx,
     if (up? i > n : i < n) return;
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor));
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     xpost_stack_push(ctx->lo, ctx->es, lim);
     xpost_stack_push(ctx->lo, ctx->es, incr);
@@ -142,9 +142,9 @@ void RRRPfor (context *ctx,
     int up = j > 0;
     if (up? i > n : i < n) return;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.opfor));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor));
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     xpost_stack_push(ctx->lo, ctx->es, lim);
     xpost_stack_push(ctx->lo, ctx->es, incr);
@@ -160,9 +160,9 @@ void IPrepeat (context *ctx,
 {
     if (n.int_.val <= 0) return;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.repeat));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.repeat));
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1));
     xpost_stack_push(ctx->lo, ctx->es, P);
@@ -173,9 +173,9 @@ void Ploop (context *ctx,
             Xpost_Object P)
 {
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.loop));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.loop));
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     xpost_stack_push(ctx->lo, ctx->es, P);
 }
@@ -184,13 +184,13 @@ static
 void Zexit (context *ctx)
 {
     //Xpost_Object opfor = consoper(ctx, "for", NULL,0,0);
-    Xpost_Object opfor = operfromcode(ctx->opcuts.opfor);
+    Xpost_Object opfor = operfromcode(ctx->opcode_shortcuts.opfor);
     //Xpost_Object oprepeat = consoper(ctx, "repeat", NULL,0,0);
-    Xpost_Object oprepeat = operfromcode(ctx->opcuts.repeat);
+    Xpost_Object oprepeat = operfromcode(ctx->opcode_shortcuts.repeat);
     //Xpost_Object oploop = consoper(ctx, "loop", NULL,0,0);
-    Xpost_Object oploop = operfromcode(ctx->opcuts.loop);
+    Xpost_Object oploop = operfromcode(ctx->opcode_shortcuts.loop);
     //Xpost_Object opforall = consoper(ctx, "forall", NULL,0,0);
-    Xpost_Object opforall = operfromcode(ctx->opcuts.forall);
+    Xpost_Object opforall = operfromcode(ctx->opcode_shortcuts.forall);
     Xpost_Object x;
 
 #if 0
@@ -296,11 +296,11 @@ void initopc (context *ctx,
             integertype, integertype, integertype, proctype); INSTALL;
     op = consoper(ctx, "for", RRRPfor, 0, 4, \
             floattype, floattype, floattype, proctype); INSTALL;
-    ctx->opcuts.opfor = op.mark_.padw;
+    ctx->opcode_shortcuts.opfor = op.mark_.padw;
     op = consoper(ctx, "repeat", IPrepeat, 0, 2, integertype, proctype); INSTALL;
-    ctx->opcuts.repeat = op.mark_.padw;
+    ctx->opcode_shortcuts.repeat = op.mark_.padw;
     op = consoper(ctx, "loop", Ploop, 0, 1, proctype); INSTALL;
-    ctx->opcuts.loop = op.mark_.padw;
+    ctx->opcode_shortcuts.loop = op.mark_.padw;
     op = consoper(ctx, "exit", Zexit, 0, 0); INSTALL;
     op = consoper(ctx, "stop", Zstop, 0, 0); INSTALL;
     op = consoper(ctx, "stopped", Astopped, 0, 1, anytype); INSTALL;

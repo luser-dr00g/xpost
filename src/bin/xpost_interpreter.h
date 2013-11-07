@@ -32,13 +32,18 @@
 #ifndef XPOST_ITP_H
 #define XPOST_ITP_H
 
-/* the interpreter
-       eval actions
-       core interpreter loop
-       bank utility function for extracting from the context the mfile relevant to an object
+/**
+ * @brief the interpreter
+
+ * The interpreter module manages the itpdata structure, allocating
+ * contexts from a table, and allocating memory files to the contexts
+ * also from tables. The itpdata structure thus encapsulates the entire
+ * dynamic state of the interpreter as a whole.
+ *
+ * The interpreter module also contains functions for eval actions,
+ * the core interpreter loop,
    */
 
-enum { LOCAL, GLOBAL }; /* vmmode */
 #define MAXCONTEXT 10
 #define MAXMFILE 10
 
