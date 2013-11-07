@@ -39,6 +39,9 @@ typedef struct
 
 } context;
 
+void initctxlist(Xpost_Memory_File *mem);
+void addtoctxlist(Xpost_Memory_File *mem, unsigned cid);
+
 /**
  * @brief initialize the context structure
  */

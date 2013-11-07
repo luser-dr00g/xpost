@@ -64,8 +64,6 @@ extern int jbmainloopset;
 
 Xpost_Memory_File *nextltab(void);
 Xpost_Memory_File *nextgtab(void);
-void initctxlist(Xpost_Memory_File *mem);
-void addtoctxlist(Xpost_Memory_File *mem, unsigned cid);
 unsigned initctxid(void);
 context *ctxcid(unsigned cid);
 

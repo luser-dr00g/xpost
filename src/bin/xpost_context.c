@@ -29,8 +29,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <assert.h>
+#include <stdio.h> /* FILE* */
+#include <stdlib.h> /* mkstemp */
+#include <string.h> /* memset */
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h> /* isattty */
@@ -47,6 +49,7 @@
 #include "xpost_stack.h"
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
+#include "xpost_error.h"
 #include "xpost_garbage.h"  //  initializes garbage collector
 #include "xpost_save.h"  // initializes save/restore stacks
 #include "xpost_name.h"  // create names
@@ -54,6 +57,40 @@
 #include "xpost_operator.h"  // eval functions call operators
 #include "xpost_op_token.h"  // token operator functions
 #include "xpost_op_dict.h"  // dictionary operator functions
+
+/* initialize the context list
+   special entity in the mfile */
+void initctxlist(Xpost_Memory_File *mem)
+{
+    unsigned ent;
+    Xpost_Memory_Table *tab;
+    xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned), 0, &ent);
+    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
+    tab = (void *)mem->base;
+    memset(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr, 0,
+            MAXCONTEXT * sizeof(unsigned));
+}
+
+/* add a context ID to the context list in mfile */
+void addtoctxlist(Xpost_Memory_File *mem,
+                  unsigned cid)
+{
+    int i;
+    Xpost_Memory_Table *tab;
+    unsigned *ctxlist;
+
+    tab = (void *)mem->base;
+    ctxlist = (void *)(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr);
+    // find first empty
+    for (i=0; i < MAXCONTEXT; i++) {
+        if (ctxlist[i] == 0) {
+            ctxlist[i] = cid;
+            return;
+        }
+    }
+    error(unregistered, "ctxlist full");
+}
+
 
 /* build a stack, return address */
 static

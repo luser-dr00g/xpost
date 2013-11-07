@@ -77,39 +77,6 @@ void mainloop(context *ctx);
 void init(void);
 void xit(void);
 
-/* initialize the context list
-   special entity in the mfile */
-void initctxlist(Xpost_Memory_File *mem)
-{
-    unsigned ent;
-    Xpost_Memory_Table *tab;
-    xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned), 0, &ent);
-    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
-    tab = (void *)mem->base;
-    memset(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr, 0,
-            MAXCONTEXT * sizeof(unsigned));
-}
-
-/* add a context ID to the context list in mfile */
-void addtoctxlist(Xpost_Memory_File *mem,
-                  unsigned cid)
-{
-    int i;
-    Xpost_Memory_Table *tab;
-    unsigned *ctxlist;
-
-    tab = (void *)mem->base;
-    ctxlist = (void *)(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr);
-    // find first empty
-    for (i=0; i < MAXCONTEXT; i++) {
-        if (ctxlist[i] == 0) {
-            ctxlist[i] = cid;
-            return;
-        }
-    }
-    error(unregistered, "ctxlist full");
-}
-
 /* find the next unused mfile in the global memory table */
 Xpost_Memory_File *nextgtab(void)
 {
