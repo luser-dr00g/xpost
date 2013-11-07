@@ -29,51 +29,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef XPOST_GC_H
-#define XPOST_GC_H
+/**
+ * @brief  initialize the FREE special entity which points
+ *         to the head of the free list
+ */
+void initfree(Xpost_Memory_File *mem);
 
 /**
- * @file xpost_garbage.h
- * @brief The Garbage Collector
+ * @brief  print a dump of the free list
  */
-
-
-/**
- * @enum  Xpost_Garbage_Params
- * @brief private constants
- *
- * FIXME: PLRM describes garbage collection control to be based on
- * number of bytes allocated, not the number of allocations.
- * Also this should be a variable accessible through `setvmthreshold`
- * and `setsystemparams` operators.
- * PLRM, appendix C describes this variable, which is expected in the 
- * dictionary argument of `setsystemparams`, and returned by
- * `currentsystemparams`:
- *    VMThreshold   integer   The frequency of automatic garbage collection,
- *                           which is triggered whenever this many bytes have
- *                           been allocated since the previous collection.
- */
-typedef enum {
-    PERIOD = 2000  /* number of times to grow before collecting */
-} Xpost_Garbage_Params;
+void dumpfree(Xpost_Memory_File *mem);
 
 /**
- * @brief  Perform a garbage collection on mfile.
- *
- * dosweep controls whether a sweep is performed; if not this
- * is just a marking operation. markall controls whether 
- * collect() should follow links across vm boundaries.
- *
- * For a local vm, dosweep should be 1 and markall should be 0.
- * For a global vm, dosweep should be 1 and markall should be 1.
- *
- * For a global vm, collect() calls itself recursively upon each
- * associated local vm, with dosweep = 0, markall = 1.
+ * @brief  allocate data, re-using garbage if possible
  */
-unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall);
+unsigned gballoc(Xpost_Memory_File *mem, unsigned sz, unsigned tag);
 
 /**
- * @brief perform a short functionality test
+ * @brief  explicitly add ent to free list
  */
-int test_garbage_collect(void);
-#endif
+unsigned mfree(Xpost_Memory_File *mem, unsigned ent);
+
+/**
+ * @brief reallocate data, preserving (the maximum of) original contents
+ */
+unsigned mfrealloc(Xpost_Memory_File *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
+

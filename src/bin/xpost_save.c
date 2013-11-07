@@ -35,11 +35,11 @@
 #include <assert.h>
 #include <string.h>
 
-#include "xpost_memory.h"  // save/restore works with mtabs
-#include "xpost_object.h"  // save/restore examines objects
-#include "xpost_stack.h"  // save/restore manipulates (internal) stacks
-#include "xpost_garbage.h"  //
-#include "xpost_save.h"  // double-check prototypes
+#include "xpost_memory.h"  /* save/restore works with mtabs */
+#include "xpost_object.h"  /* save/restore examines objects */
+#include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */
+#include "xpost_save.h"  /* double-check prototypes */
+#include "xpost_free.h"  /* allocate copies with gballoc  */
 
 /*
 typedef struct {
@@ -189,6 +189,7 @@ void restore(Xpost_Memory_File *mem)
 }
 
 #ifdef TESTMODULE_V
+#include "xpost_free.h"
 #include "xpost_array.h"
 #include <stdio.h>
 

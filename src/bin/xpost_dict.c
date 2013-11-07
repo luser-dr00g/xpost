@@ -68,7 +68,7 @@ void *alloca (size_t);
 #include "xpost_memory.h"  /* dicts live in mfile, accessed via mtab */
 #include "xpost_object.h"  /* dict is an object, containing objects */
 #include "xpost_stack.h"  /* may need to count the save stack */
-#include "xpost_garbage.h"  /* dicts are garbage collected */
+#include "xpost_free.h"  /* dicts are allocated from the free list */
 #include "xpost_save.h"  /* dicts obey save/restore */
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  /* banked dicts may live in global or local vm */
