@@ -55,8 +55,6 @@
 #include "xpost_name.h"  // create names
 #include "xpost_dict.h"  // create dicts in context
 #include "xpost_operator.h"  // eval functions call operators
-#include "xpost_op_token.h"  // token operator functions
-#include "xpost_op_dict.h"  // dictionary operator functions
 
 /* initialize the context list
    special entity in the mfile */
