@@ -51,7 +51,13 @@ unsigned gballoc(Xpost_Memory_File *mem, unsigned sz, unsigned tag);
 unsigned mfree(Xpost_Memory_File *mem, unsigned ent);
 
 /**
- * @brief reallocate data, preserving (the maximum of) original contents
+ * @brief reallocate data, preserving original contents
+ 
+ * Use the free-list and tables to now provide a realloc for 
+ * "raw" vm addresses (mem->base offsets rather than ents).
+ * Assumes new size is larger than old size.
+  
+ * Allocate new entry, copy data, steal its adr, stash old adr, free it.
  */
 unsigned mfrealloc(Xpost_Memory_File *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
 

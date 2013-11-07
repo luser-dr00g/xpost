@@ -173,7 +173,12 @@ try_again:
     return rent;
 }
 
-/* allocate new entry, copy data, steal its adr, stash old adr, free it */
+/*
+   use the free-list and tables to now provide a realloc for 
+   "raw" vm addresses (mem->base offsets rather than ents).
+  
+   Allocate new entry, copy data, steal its adr, stash old adr, free it.
+ */
 unsigned mfrealloc(Xpost_Memory_File *mem,
         unsigned oldadr,
         unsigned oldsize,
