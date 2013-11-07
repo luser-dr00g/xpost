@@ -41,6 +41,7 @@
 #include "xpost_memory.h"  // accesses mfile
 #include "xpost_object.h"  // operators are objects
 #include "xpost_stack.h"  // uses a stack for argument passing
+#include "xpost_context.h"
 #include "xpost_interpreter.h"  // works with context struct
 #include "xpost_error.h"  // operator functions may throw errors
 #include "xpost_string.h"  // uses string function to dump operator name

@@ -39,6 +39,7 @@
 #include "xpost_object.h"
 #include "xpost_stack.h"
 #include "xpost_save.h"
+#include "xpost_context.h"
 #include "xpost_interpreter.h"
 #include "xpost_error.h"
 #include "xpost_string.h"

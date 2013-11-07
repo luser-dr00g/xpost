@@ -42,6 +42,7 @@
 #include "xpost_memory.h"  /* mfile */
 #include "xpost_object.h"  /* object */
 #include "xpost_stack.h"  /* stack */
+#include "xpost_context.h"
 #include "xpost_interpreter.h"  /* access context struct */
 #include "xpost_dict.h"  /* access dict objects */
 #include "xpost_string.h"  /* access string objects */
