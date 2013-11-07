@@ -1,3 +1,5 @@
+#ifndef XPOST_CONTEXT_H
+#define XPOST_CONTEXT_H
 
 /**
  * @brief valid values for context::vmmode
@@ -64,3 +66,4 @@ Xpost_Memory_File *bank(context *ctx, Xpost_Object o);
  */
 void dumpctx(context *ctx);
 
+#endif
