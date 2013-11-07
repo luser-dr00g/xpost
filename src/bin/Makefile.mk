@@ -7,6 +7,7 @@ src/bin/xpost_dict.c \
 src/bin/xpost_error.c \
 src/bin/xpost_file.c \
 src/bin/xpost_garbage.c \
+src/bin/xpost_free.c \
 src/bin/xpost_context.c \
 src/bin/xpost_interpreter.c \
 src/bin/xpost_main.c \
@@ -34,6 +35,7 @@ src/bin/xpost_dict.h \
 src/bin/xpost_error.h \
 src/bin/xpost_file.h \
 src/bin/xpost_garbage.h \
+src/bin/xpost_free.h \
 src/bin/xpost_context.h \
 src/bin/xpost_interpreter.h \
 src/bin/xpost_main.h \

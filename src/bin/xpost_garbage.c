@@ -60,6 +60,7 @@
 #include "xpost_name.h"
 #include "xpost_operator.h"
 #include "xpost_garbage.h"
+#include "xpost_free.h"
 
 #ifdef DEBUG_GC
 #include <stdio.h>
@@ -316,77 +317,6 @@ next:
     }
 }
 
-/* free list head is in slot zero
-   sz is 0 so gc will ignore it */
-void initfree(Xpost_Memory_File *mem)
-{
-    unsigned ent;
-    unsigned val = 0;
-
-    xpost_memory_table_alloc(mem, sizeof(unsigned), 0, &ent);
-    assert (ent == XPOST_MEMORY_TABLE_SPECIAL_FREE);
-    xpost_memory_put(mem, ent, 0, sizeof(unsigned), &val);
-
-    /*
-       unsigned ent;
-       xpost_memory_table_alloc(mem, 0, 0, &ent);
-       Xpost_Memory_Table *tab = (void *)mem->base;
-       xpost_memory_file_alloc(mem, sizeof(unsigned), &tab->tab[ent].adr);
-   */
-}
-
-/* free this ent! returns reclaimed size */
-unsigned mfree(Xpost_Memory_File *mem,
-        unsigned ent)
-{
-    Xpost_Memory_Table *tab;
-    unsigned rent = ent;
-    unsigned a;
-    unsigned z;
-    unsigned sz;
-    /* return; */
-
-    if (ent < mem->start)
-        return 0;
-
-    xpost_memory_table_find_relative(mem, &tab, &rent);
-    a = tab->tab[rent].adr;
-    sz = tab->tab[rent].sz;
-    if (sz == 0) return 0;
-
-    if (tab->tab[rent].tag == filetype) {
-        FILE *fp;
-        xpost_memory_get(mem, ent, 0, sizeof(FILE *), &fp);
-        if (fp
-                && fp != stdin
-                && fp != stdout
-                && fp != stderr) {
-            tab->tab[rent].tag = 0;
-#ifdef DEBUG_FILE
-            printf("gc:mfree closing FILE* %p\n", fp);
-            fflush(stdout);
-            /* if (fp < 0x1000) return 0; */
-        printf("fclose");
-#endif
-            fclose(fp);
-            fp = NULL;
-            xpost_memory_put(mem, ent, 0, sizeof(FILE *), &fp);
-        }
-    }
-    tab->tab[rent].tag = 0;
-
-    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);
-    /* printf("freeing %d bytes\n", xpost_memory_table_get_size(mem, ent)); */
-
-    /* copy the current free-list head to the data area of the ent. */
-    memcpy(mem->base+a, mem->base+z, sizeof(unsigned));
-
-    /* copy the ent number into the free-list head */
-    memcpy(mem->base+z, &ent, sizeof(unsigned));
-
-    return sz;
-}
-
 /* discard the free list.
    iterate through tables,
         if element is unmarked and not zero-sized,
@@ -528,116 +458,6 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
     }
 
     return sz;
-}
-
-/* print a dump of the free list */
-void dumpfree(Xpost_Memory_File *mem)
-{
-    unsigned e;
-    unsigned z;
-    xpost_memory_table_get_addr(mem,
-            XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);;
-
-    printf("freelist: ");
-    memcpy(&e, mem->base+z, sizeof(unsigned));
-    while (e) {
-        unsigned int sz;
-        xpost_memory_table_get_size(mem, e, &sz);
-        printf("%d(%d) ", e, sz);
-        xpost_memory_table_get_addr(mem, e, &z);
-        memcpy(&e, mem->base+z, sizeof(unsigned));
-    }
-}
-
-/* scan the free list for a suitably sized bit of memory,
-   if the allocator falls back to fresh memory PERIOD times,
-        it triggers a collection. */
-unsigned gballoc(Xpost_Memory_File *mem,
-        unsigned sz,
-        unsigned tag)
-{
-    unsigned z;
-    unsigned e;                     /* working pointer */
-    static int period = PERIOD;
-    unsigned int rent;
-
-    xpost_memory_table_get_addr(mem,
-            XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
-
-/*#if 0 */
-try_again:
-    memcpy(&e, mem->base+z, sizeof(unsigned)); /* e = *z */
-    while (e) { /* e is not zero */
-        unsigned int tsz;
-        xpost_memory_table_get_size(mem,e, &tsz);
-        if (tsz >= sz) {
-            Xpost_Memory_Table *tab;
-            unsigned ent;
-            unsigned int ad;
-            xpost_memory_table_get_addr(mem,e, &ad);
-            memcpy(mem->base+z, mem->base + ad, sizeof(unsigned));
-            ent = e;
-            xpost_memory_table_find_relative(mem, &tab, &ent);
-            tab->tab[ent].tag = tag;
-            return e;
-        }
-        xpost_memory_table_get_addr(mem, e, &z);
-        memcpy(&e, mem->base+z, sizeof(unsigned));
-    }
-    if (--period == 0) {
-        period = PERIOD;
-        collect(mem, 1, 0);
-        goto try_again;
-    }
-/*#endif */
-    xpost_memory_table_alloc(mem, sz, tag, &rent);
-    return rent;
-}
-
-/* allocate new entry, copy data, steal its adr, stash old adr, free it */
-unsigned mfrealloc(Xpost_Memory_File *mem,
-        unsigned oldadr,
-        unsigned oldsize,
-        unsigned newsize)
-{
-    Xpost_Memory_Table *tab = NULL;
-    unsigned newadr;
-    unsigned ent;
-    unsigned rent; /* relative ent */
-
-#ifdef DEBUGFREE
-    printf("mfrealloc: ");
-    printf("initial ");
-    dumpfree(mem);
-#endif
-
-    /* allocate new entry */
-    xpost_memory_table_alloc(mem, newsize, 0, &ent);
-    rent = ent;
-    xpost_memory_table_find_relative(mem, &tab, &rent);
-
-    /* steal its adr */
-    newadr = tab->tab[rent].adr;
-
-    /* copy data */
-    memcpy(mem->base + newadr, mem->base + oldadr, oldsize);
-
-    /* stash old adr */
-    tab->tab[rent].adr = oldadr;
-    tab->tab[rent].sz = oldsize;
-
-    /* free it */
-    (void) mfree(mem, ent);
-
-#ifdef DEBUGFREE
-    printf("final ");
-    dumpfree(mem);
-    printf("\n");
-    dumpmtab(mem, 0);
-    fflush(NULL);
-#endif
-
-    return newadr;
 }
 
 static
