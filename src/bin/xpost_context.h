@@ -26,4 +26,5 @@ void initcontext(context *ctx);
 void exitcontext(context *ctx);
 /*@dependent@*/
 Xpost_Memory_File *bank(context *ctx, Xpost_Object o);
+void dumpctx(context *ctx);
 
