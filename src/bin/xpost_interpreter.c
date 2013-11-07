@@ -74,7 +74,6 @@ int ignoreinvalidaccess = 0;
 
 void eval(context *ctx);
 void mainloop(context *ctx);
-void dumpctx(context *ctx);
 void init(void);
 void xit(void);
 
@@ -384,16 +383,6 @@ void mainloop(context *ctx)
         eval(ctx);
 
     jbmainloopset = 0;
-}
-
-/* print a dump of the context struct */
-void dumpctx(context *ctx)
-{
-    xpost_memory_file_dump(ctx->gl);
-    xpost_memory_table_dump(ctx->gl);
-    xpost_memory_file_dump(ctx->lo);
-    xpost_memory_table_dump(ctx->lo);
-    dumpnames(ctx);
 }
 
 //#ifdef TESTMODULE_ITP

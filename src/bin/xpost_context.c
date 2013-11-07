@@ -188,6 +188,16 @@ Xpost_Memory_File *bank(context *ctx,
 }
 
 
+/* print a dump of the context struct */
+void dumpctx(context *ctx)
+{
+    xpost_memory_file_dump(ctx->gl);
+    xpost_memory_table_dump(ctx->gl);
+    xpost_memory_file_dump(ctx->lo);
+    xpost_memory_table_dump(ctx->lo);
+    dumpnames(ctx);
+}
+
 /*
    fork new process with private global and private local vm
    (spawn jobserver)
