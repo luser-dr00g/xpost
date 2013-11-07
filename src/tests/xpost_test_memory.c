@@ -3,6 +3,7 @@
 #endif
 
 #include <stdio.h>
+#include <string.h>
 
 #include <check.h>
 
@@ -58,15 +59,24 @@ END_TEST
 
 START_TEST(xpost_memory_grow)
 {
+    char memorypat[] = "preserve this data across grow()";
     Xpost_Memory_File mem = {0};
+    unsigned int addr;
     int ret;
 
     ret = xpost_memory_file_init(&mem, NULL, -1);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
+
+    ret = xpost_memory_file_alloc(&mem, sizeof memorypat, &addr);
+    ck_assert_int_eq (ret, 1);
+    strcpy((char *)mem.base + addr, memorypat);
+
     ret = xpost_memory_file_grow(&mem, 4096);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
+    ck_assert_str_eq ((char *)mem.base + addr, memorypat);
+
     ret = xpost_memory_file_exit(&mem);
     ck_assert_int_eq (ret, 1);
 }
