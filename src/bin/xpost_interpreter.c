@@ -63,8 +63,6 @@
 #include "xpost_dict.h"  // eval functions examine dicts
 #include "xpost_file.h"  // eval functions examine files
 #include "xpost_operator.h"  // eval functions call operators
-#include "xpost_op_token.h"  // token operator functions
-#include "xpost_op_dict.h"  // dictionary operator functions
 #include "xpost_pathname.h" // determine whether xpost is installed
 
 int TRACE = 0;
