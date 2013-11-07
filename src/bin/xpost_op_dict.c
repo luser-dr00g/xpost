@@ -313,9 +313,9 @@ void DPforall (context *ctx,
                 xpost_stack_push(ctx->lo, ctx->os, v);
 
                 //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-                xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
+                xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall));
                 //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-                xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+                xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
                 xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
                 ++D.comp_.off;
                 xpost_stack_push(ctx->lo, ctx->es, D);
@@ -393,7 +393,7 @@ void initopdi(context *ctx,
     op = consoper(ctx, "end", Zend, 0, 0); INSTALL;
     op = consoper(ctx, "def", Adef, 0, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "load", Aload, 1, 1, anytype); INSTALL;
-    ctx->opcuts.load = op.mark_.padw;
+    ctx->opcode_shortcuts.load = op.mark_.padw;
     op = consoper(ctx, "store", Astore, 0, 2, anytype, anytype); INSTALL;
     op = consoper(ctx, "get", DAget, 1, 2, dicttype, anytype); INSTALL;
     op = consoper(ctx, "put", DAAput, 1, 3,
@@ -403,7 +403,7 @@ void initopdi(context *ctx,
     op = consoper(ctx, "where", Awhere, 2, 1, anytype); INSTALL;
     op = consoper(ctx, "copy", Dcopy, 1, 2, dicttype, dicttype); INSTALL;
     op = consoper(ctx, "forall", DPforall, 0, 2, dicttype, proctype); INSTALL;
-    ctx->opcuts.forall = op.mark_.padw;
+    ctx->opcode_shortcuts.forall = op.mark_.padw;
     op = consoper(ctx, "currentdict", Zcurrentdict, 1, 0); INSTALL;
     op = consoper(ctx, "countdictstack", Zcountdictstack, 1, 0); INSTALL;
     op = consoper(ctx, "dictstack", Adictstack, 1, 1, arraytype); INSTALL;

@@ -373,10 +373,10 @@ void contfilenameforall (context *ctx,
     globbuf = oglob.glob_.ptr;
     if (oglob.glob_.off < globbuf->gl_pathc) {
         //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
-        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.contfilenameforall));
+        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.contfilenameforall));
         xpost_stack_push(ctx->lo, ctx->es, Scr);
         //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
         xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(Proc));
         ++oglob.glob_.off;
         xpost_stack_push(ctx->lo, ctx->es, oglob);
@@ -506,7 +506,7 @@ void initopf (context *ctx,
     op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype); INSTALL;
 //#ifndef HAVE_WIN32
     op = consoper(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
-    ctx->opcuts.contfilenameforall = op.mark_.padw;
+    ctx->opcode_shortcuts.contfilenameforall = op.mark_.padw;
     op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype); INSTALL;
 //#endif
     op = consoper(ctx, "setfileposition", setfileposition, 0, 2, filetype, integertype); INSTALL;

@@ -185,14 +185,14 @@ void Sforall(context *ctx,
     if (S.comp_.sz == 0) return;
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall));
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(S, 1, S.comp_.sz-1)));
     if (xpost_object_is_exe(S)) {
         //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     }
     xpost_stack_push(ctx->lo, ctx->es, P);
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(bstget(ctx, S, 0)));

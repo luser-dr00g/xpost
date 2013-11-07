@@ -197,15 +197,15 @@ void Aforall(context *ctx,
 
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.forall));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall));
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(A, 1, A.comp_.sz - 1)));
     xpost_stack_push(ctx->lo, ctx->es, P);
     if (xpost_object_is_exe(A)) {
         //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcuts.cvx));
+        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     }
     xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, 0));
 }
