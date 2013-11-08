@@ -68,10 +68,9 @@ enum { rangecheck, VMerror, unregistered };
 unsigned int xpost_memory_pagesize /*= getpagesize()*/ = 4096;
 
 
-int xpost_memory_file_init (
-        Xpost_Memory_File *mem,
-        const char *fname,
-        int fd)
+int xpost_memory_file_init (Xpost_Memory_File *mem,
+                            const char *fname,
+                            int fd)
 {
     struct stat buf;
     size_t sz = xpost_memory_pagesize;
@@ -82,7 +81,7 @@ int xpost_memory_file_init (
         return 0;
     }
     XPOST_LOG_INFO("init memory file%s%s",
-            fname ? " for " : "", fname ? fname : "");
+                   fname ? " for " : "", fname ? fname : "");
 
     if(fname)
     {
@@ -105,10 +104,8 @@ int xpost_memory_file_init (
                 if (fd != -1)
                 {
                     if (ftruncate(fd, sz) == -1)
-                    {
-                        XPOST_LOG_ERR("ftruncate(%d, %d) returned -1", fd, sz);
-                        XPOST_LOG_ERR("strerror: %s", strerror(errno));
-                    }
+                        XPOST_LOG_ERR("ftruncate(%d, %d) returned -1 (error: %s)",
+                                      fd, sz, strerror(errno));
                 }
 #endif
             }
@@ -117,10 +114,11 @@ int xpost_memory_file_init (
 
 #ifdef HAVE_MMAP
     mem->base = mmap(NULL,
-            sz,
-            PROT_READ|PROT_WRITE,
-            (fd == -1? MAP_PRIVATE : MAP_SHARED)
-            | (fd == -1? MAP_ANONYMOUS : 0), fd, 0);
+                     sz,
+                     PROT_READ|PROT_WRITE,
+                     (fd == -1 ? MAP_PRIVATE   : MAP_SHARED) |
+                     (fd == -1 ? MAP_ANONYMOUS : 0),
+                     fd, 0);
     if (mem->base == MAP_FAILED)
     { /* . */
 #else
@@ -138,10 +136,8 @@ int xpost_memory_file_init (
     if (fd != -1)
     {
         if (read(fd, mem->base, sz) == -1)
-        {
-            XPOST_LOG_ERR("%d failed to read memory file", VMerror);
-            XPOST_LOG_ERR("strerror: %s", strerror(errno));
-        }
+            XPOST_LOG_ERR("%d failed to read memory file (error: %s)",
+                          VMerror, strerror(errno));
     }
 #endif
     if (fd == -1)
@@ -173,10 +169,8 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
     {
         (void) lseek(mem->fd, 0, SEEK_SET);
         if (write(mem->fd, mem->base, mem->used) == -1)
-        {
-            XPOST_LOG_ERR("%d unable to write memory file", VMerror);
-            XPOST_LOG_ERR("strerror: %s", strerror(errno));
-        }
+            XPOST_LOG_ERR("%d unable to write memory file (error: %s)",
+                          VMerror, strerror(errno));
     }
     free(mem->base);
 #endif
@@ -200,9 +194,8 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
     return 1;
 }
 
-int xpost_memory_file_grow (
-        Xpost_Memory_File *mem,
-        unsigned int sz)
+int xpost_memory_file_grow (Xpost_Memory_File *mem,
+                            unsigned int sz)
 {
     void *tmp;
     int ret = 1;
@@ -218,22 +211,21 @@ int xpost_memory_file_grow (
         XPOST_LOG_ERR("%d mem->base is NULL", VMerror);
         return 0;
     }
-    XPOST_LOG_INFO("grow memory file.");
 
     if (sz < xpost_memory_pagesize)
         sz = xpost_memory_pagesize;
     else
-        sz = (sz/xpost_memory_pagesize + 1) * xpost_memory_pagesize;
+        sz = (sz / xpost_memory_pagesize + 1) * xpost_memory_pagesize;
     sz += mem->max;
+
+    XPOST_LOG_INFO("grow memory file (old: %d  new: %d)", mem->max, sz);
 
 #ifdef HAVE_MMAP
     if (mem->fd != -1)
     {
         if (ftruncate(mem->fd, sz) == -1)
-        {
-            XPOST_LOG_ERR("ftruncate(%d, %d) returned -1", mem->fd, sz);
-            XPOST_LOG_ERR("strerror: %s", strerror(errno));
-        }
+            XPOST_LOG_ERR("ftruncate(%d, %d) returned -1 (error: %s)",
+                          mem->fd, sz, strerror(errno));
     }
 # ifdef HAVE_MREMAP
     tmp = mremap(mem->base, mem->max, sz, MREMAP_MAYMOVE);
@@ -244,22 +236,22 @@ int xpost_memory_file_grow (
         munmap(mem->base, mem->max);
         lseek(mem->fd, 0, SEEK_SET);
         if (ftruncate(mem->fd, sz) == -1)
-        {
-            XPOST_LOG_ERR("ftruncate(%d, %d) returned -1", mem->fd, sz);
-            XPOST_LOG_ERR("strerror: %s", strerror(errno));
-        }
+            XPOST_LOG_ERR("ftruncate(%d, %d) returned -1 (error: %s)",
+                          mem->fd, sz, strerror(errno));
+
         tmp = mmap(NULL, sz,
-                PROT_READ | PROT_WRITE,
-                mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
-                mem->fd, 0);
+                   PROT_READ | PROT_WRITE,
+                   MAP_SHARED,
+                   mem->fd, 0);
     }
     else
     {
         tmp = mmap(NULL, sz,
-                PROT_READ | PROT_WRITE,
-                mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
-                mem->fd, 0);
-        if (tmp != MAP_FAILED) {
+                   PROT_READ | PROT_WRITE,
+                   MAP_ANONYMOUS | MAP_PRIVATE,
+                   mem->fd, 0);
+        if (tmp != MAP_FAILED)
+        {
             memcpy(tmp, mem->base, mem->used);
         }
     }
@@ -267,7 +259,7 @@ int xpost_memory_file_grow (
     if (tmp == MAP_FAILED)
     {
 #else
-                        /* initialize mem (valgrind) */
+    /* initialize mem (valgrind) */
     memset(mem->base + mem->used, 0, mem->max - mem->used);
     tmp = realloc(mem->base, sz);
     if (tmp == NULL)
@@ -278,9 +270,9 @@ int xpost_memory_file_grow (
 #ifdef HAVE_MMAP
 # ifndef HAVE_MREMAP
         tmp = mmap(NULL, mem->max,
-                PROT_READ|PROT_WRITE,
-                mem->fd == -1? MAP_ANONYMOUS|MAP_PRIVATE : MAP_SHARED,
-                mem->fd, 0);
+                   PROT_READ | PROT_WRITE,
+                   mem->fd == -1 ? MAP_ANONYMOUS | MAP_PRIVATE : MAP_SHARED,
+                   mem->fd, 0);
 # else
         munmap(mem->base, mem->max);
 # endif
@@ -293,10 +285,9 @@ int xpost_memory_file_grow (
 }
 
 
-int xpost_memory_file_alloc (
-        Xpost_Memory_File *mem,
-        unsigned int sz,
-        unsigned int *addr)
+int xpost_memory_file_alloc (Xpost_Memory_File *mem,
+                             unsigned int sz,
+                             unsigned int *addr)
 {
     unsigned int adr;
 
@@ -358,11 +349,9 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
         {
             if (u != 0)
             {
-                for (v = u-16; v < u; v++)
+                for (v = u - 16; v < u; v++)
                 {
-                    (void)putchar(
-                            isprint(mem->base[v]) ?
-                            mem->base[v] : '.');
+                    (void)putchar(isprint(mem->base[v]) ? mem->base[v] : '.');
                 }
             }
             printf("\n%06u %04x: ", u, u);
@@ -375,20 +364,17 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
         {
             printf("   ");
         }
-        for (v = u - (u%16); v < u; v++)
+        for (v = u - (u % 16); v < u; v++)
         {
-            (void)putchar(
-                    isprint(mem->base[v]) ?
-                    mem->base[v] : '.');
+            (void)putchar(isprint(mem->base[v]) ? mem->base[v] : '.');
         }
     }
     (void)puts("");
 }
 
 
-int xpost_memory_table_init (
-        Xpost_Memory_File *mem,
-        unsigned int *addr)
+int xpost_memory_table_init (Xpost_Memory_File *mem,
+                             unsigned int *addr)
 {
     Xpost_Memory_Table *tab;
     unsigned int adr;
@@ -415,9 +401,9 @@ int xpost_memory_table_init (
 
 
 int xpost_memory_table_alloc (Xpost_Memory_File *mem,
-        unsigned int sz,
-        unsigned int tag,
-        unsigned int *entity)
+                              unsigned int sz,
+                              unsigned int tag,
+                              unsigned int *entity)
 {
     unsigned int mtabadr = 0;
     unsigned int ent;
@@ -471,10 +457,9 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
 }
 
 
-int xpost_memory_table_find_relative (
-        Xpost_Memory_File *mem,
-        Xpost_Memory_Table **atab,
-        unsigned int *aent)
+int xpost_memory_table_find_relative (Xpost_Memory_File *mem,
+                                      Xpost_Memory_Table **atab,
+                                      unsigned int *aent)
 {
     if (!mem)
     {
@@ -503,10 +488,9 @@ int xpost_memory_table_find_relative (
 }
 
 
-int xpost_memory_table_get_addr (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int *addr)
+int xpost_memory_table_get_addr (Xpost_Memory_File *mem,
+                                 unsigned int ent,
+                                 unsigned int *addr)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -519,10 +503,9 @@ int xpost_memory_table_get_addr (
 }
 
 
-int xpost_memory_table_set_addr (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int addr)
+int xpost_memory_table_set_addr (Xpost_Memory_File *mem,
+                                 unsigned int ent,
+                                 unsigned int addr)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -535,10 +518,9 @@ int xpost_memory_table_set_addr (
 }
 
 
-int xpost_memory_table_get_size (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int *sz)
+int xpost_memory_table_get_size (Xpost_Memory_File *mem,
+                                 unsigned int ent,
+                                 unsigned int *sz)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -551,10 +533,9 @@ int xpost_memory_table_get_size (
 }
 
 
-int xpost_memory_table_set_size (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int size)
+int xpost_memory_table_set_size (Xpost_Memory_File *mem,
+                                 unsigned int ent,
+                                 unsigned int size)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -567,10 +548,9 @@ int xpost_memory_table_set_size (
 }
 
 
-int xpost_memory_table_get_mark (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int *mark)
+int xpost_memory_table_get_mark (Xpost_Memory_File *mem,
+                                 unsigned int ent,
+                                 unsigned int *mark)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -583,10 +563,9 @@ int xpost_memory_table_get_mark (
 }
 
 
-int xpost_memory_table_set_mark (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int mark)
+int xpost_memory_table_set_mark (Xpost_Memory_File *mem,
+                                 unsigned int ent,
+                                 unsigned int mark)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -599,10 +578,9 @@ int xpost_memory_table_set_mark (
 }
 
 
-int xpost_memory_table_get_tag (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int *tag)
+int xpost_memory_table_get_tag (Xpost_Memory_File *mem,
+                                unsigned int ent,
+                                unsigned int *tag)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -615,10 +593,9 @@ int xpost_memory_table_get_tag (
 }
 
 
-int xpost_memory_table_set_tag (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int tag)
+int xpost_memory_table_set_tag (Xpost_Memory_File *mem,
+                                unsigned int ent,
+                                unsigned int tag)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -631,12 +608,11 @@ int xpost_memory_table_set_tag (
 }
 
 
-int xpost_memory_get (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int offset,
-        unsigned int sz,
-        void *dest)
+int xpost_memory_get (Xpost_Memory_File *mem,
+                      unsigned int ent,
+                      unsigned int offset,
+                      unsigned int sz,
+                      void *dest)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -655,12 +631,11 @@ int xpost_memory_get (
     return 1;
 }
 
-int xpost_memory_put (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int offset,
-        unsigned int sz,
-        const void *src)
+int xpost_memory_put (Xpost_Memory_File *mem,
+                      unsigned int ent,
+                      unsigned int offset,
+                      unsigned int sz,
+                      const void *src)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
