@@ -37,7 +37,7 @@
 #include <errno.h>
 #include <stdlib.h> /* free malloc realloc */
 #include <stdio.h> /* fprintf printf putchar puts */
-#include <string.h> /* memset */
+#include <string.h> /* memset strerror */
 
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
@@ -136,7 +136,13 @@ int xpost_memory_file_init (
 #ifndef HAVE_MMAP
     /* read file into malloc'd memory */
     if (fd != -1)
-        read(fd, mem->base, sz);
+    {
+        if (read(fd, mem->base, sz) == -1)
+        {
+            XPOST_LOG_ERR("%d failed to read memory file", VMerror);
+            XPOST_LOG_ERR("strerror: %s", strerror(errno));
+        }
+    }
 #endif
     if (fd == -1)
         memset(mem->base, 0, mem->max);
@@ -166,7 +172,11 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
     if (mem->fd != -1)
     {
         (void) lseek(mem->fd, 0, SEEK_SET);
-        write(mem->fd, mem->base, mem->used);
+        if (write(mem->fd, mem->base, mem->used) == -1)
+        {
+            XPOST_LOG_ERR("%d unable to write memory file", VMerror);
+            XPOST_LOG_ERR("strerror: %s", strerror(errno));
+        }
     }
     free(mem->base);
 #endif
