@@ -51,7 +51,15 @@
 #endif
 
 #ifdef _WIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+# undef WIN32_LEAN_AND_MEAN
 # include <io.h>
+# define read(f, p, s) _read(f, p, s)
+# define lseek(f, p, fl) _lseek(f, p, fl)
+# define close(f) _close(f)
 #endif
 
 
@@ -74,6 +82,10 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
 {
     struct stat buf;
     size_t sz = xpost_memory_pagesize;
+#ifdef _WIN32
+    HANDLE h;
+    HANDLE fm;
+#endif
 
     if (!mem)
     {
@@ -100,7 +112,7 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
             if (sz < xpost_memory_pagesize)
             {
                 sz = xpost_memory_pagesize;
-#ifdef HAVE_MMAP
+#if defined (HAVE_MMAP) || defined (_WIN32)
                 if (fd != -1)
                 {
                     if (ftruncate(fd, sz) == -1)
@@ -112,7 +124,34 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
         }
     }
 
-#ifdef HAVE_MMAP
+
+#ifdef _WIN32
+    if (fd == -1)
+        h = INVALID_HANDLE_VALUE;
+    else
+    {
+        h = (HANDLE)_get_osfhandle(fd);
+        if (h == INVALID_HANDLE_VALUE)
+        {
+            XPOST_LOG_ERR("Invalid handle");
+            close(fd);
+            return 0;
+        }
+    }
+
+    fm = CreateFileMapping(h, NULL, PAGE_EXECUTE_READWRITE, 0, 0, NULL);
+    if (!fm)
+    {
+        XPOST_LOG_ERR("CreateFileMapping failed");
+        if (fd != -1) close(fd);
+        return 0;
+    }
+
+    mem->base = (unsigned char *)MapViewOfFile(fm, FILE_MAP_ALL_ACCESS, 0, 0, sz);
+    CloseHandle(fm);
+    if (!mem->base)
+    {
+#elif defined (HAVE_MMAP)
     mem->base = mmap(NULL,
                      sz,
                      PROT_READ|PROT_WRITE,
@@ -162,7 +201,9 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
     }
     XPOST_LOG_INFO("exit memory file");
 
-#ifdef HAVE_MMAP
+#ifdef _WIN32
+    UnmapViewOfFile(mem->base);
+#elif defined (HAVE_MMAP)
     munmap(mem->base, mem->max);
 #else
     if (mem->fd != -1)
@@ -197,6 +238,10 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
 int xpost_memory_file_grow (Xpost_Memory_File *mem,
                             unsigned int sz)
 {
+#ifdef _WIN32
+    HANDLE h;
+    HANDLE fm;
+#endif
     void *tmp;
     int ret = 1;
 
@@ -220,7 +265,54 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
 
     XPOST_LOG_INFO("grow memory file (old: %d  new: %d)", mem->max, sz);
 
-#ifdef HAVE_MMAP
+#ifdef _WIN32
+    lseek(mem->fd, 0, SEEK_SET);
+    if (ftruncate(mem->fd, sz) == -1)
+    {
+        XPOST_LOG_ERR("ftruncate(%d, %d) returned -1 (error: %s)",
+                      mem->fd, sz, strerror(errno));
+    }
+
+    if (mem->fd != -1)
+    {
+        if (ftruncate(mem->fd, sz) == -1)
+        {
+            XPOST_LOG_ERR("ftruncate(%d, %d) returned -1", mem->fd, sz);
+            XPOST_LOG_ERR("strerror: %s", strerror(errno));
+        }
+    }
+
+    if (mem->fd == -1)
+        h = INVALID_HANDLE_VALUE;
+    else
+    {
+        h = (HANDLE)_get_osfhandle(mem->fd);
+        if (h == INVALID_HANDLE_VALUE)
+        {
+            XPOST_LOG_ERR("Invalid handle");
+            close(mem->fd);
+            return 0;
+        }
+    }
+
+    fm = CreateFileMapping(h, NULL, PAGE_EXECUTE_READWRITE, 0, 0, NULL);
+    if (!fm)
+    {
+        XPOST_LOG_ERR("CreateFileMapping failed");
+        if (mem->fd != -1) close(mem->fd);
+        return 0;
+    }
+
+    tmp = MapViewOfFile(fm, FILE_MAP_ALL_ACCESS, 0, 0, sz);
+    CloseHandle(fm);
+    if (tmp)
+    {
+        memcpy(tmp, mem->base, mem->used);
+        UnmapViewOfFile(mem->base);
+    }
+    else
+    {
+#elif defined (HAVE_MMAP)
     if (mem->fd != -1)
     {
         if (ftruncate(mem->fd, sz) == -1)
@@ -267,6 +359,7 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
 #endif
         XPOST_LOG_ERR("%d unable to grow memory", VMerror);
         ret = 0;
+    /* FIXME: this should really be there ? */
 #ifdef HAVE_MMAP
 # ifndef HAVE_MREMAP
         tmp = mmap(NULL, mem->max,
@@ -278,7 +371,7 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
 # endif
 #endif
     }
-    mem->base = tmp;
+    mem->base = (unsigned char *)tmp;
     mem->max = sz;
 
     return ret;
