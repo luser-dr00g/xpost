@@ -340,9 +340,9 @@ unsigned fork1(Xpost_Context *ctx)
 
     newcid = xpost_interpreter_cid_init();
     newctx = xpost_interpreter_cid_get_context(newcid);
-    initlocal(ctx);
-    initglobal(ctx);
-    ctx->vmmode = LOCAL;
+    initlocal(newctx);
+    initglobal(newctx);
+    newctx->vmmode = LOCAL;
     return newcid;
 }
 
