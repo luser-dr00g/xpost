@@ -40,7 +40,7 @@
 
 /* free list head is in slot zero
    sz is 0 so gc will ignore it */
-void initfree(Xpost_Memory_File *mem)
+void xpost_free_init(Xpost_Memory_File *mem)
 {
     unsigned ent;
     unsigned val = 0;
@@ -58,7 +58,7 @@ void initfree(Xpost_Memory_File *mem)
 }
 
 /* free this ent! returns reclaimed size */
-unsigned mfree(Xpost_Memory_File *mem,
+unsigned xpost_free_memory_ent(Xpost_Memory_File *mem,
         unsigned ent)
 {
     Xpost_Memory_Table *tab;
@@ -85,7 +85,7 @@ unsigned mfree(Xpost_Memory_File *mem,
                 && fp != stderr) {
             tab->tab[rent].tag = 0;
 #ifdef DEBUG_FILE
-            printf("gc:mfree closing FILE* %p\n", fp);
+            printf("gc:xpost_free_memory_ent closing FILE* %p\n", fp);
             fflush(stdout);
             /* if (fp < 0x1000) return 0; */
         printf("fclose");
@@ -110,7 +110,7 @@ unsigned mfree(Xpost_Memory_File *mem,
 }
 
 /* print a dump of the free list */
-void dumpfree(Xpost_Memory_File *mem)
+void xpost_free_dump(Xpost_Memory_File *mem)
 {
     unsigned e;
     unsigned z;
@@ -131,7 +131,7 @@ void dumpfree(Xpost_Memory_File *mem)
 /* scan the free list for a suitably sized bit of memory,
    if the allocator falls back to fresh memory PERIOD times,
         it triggers a collection. */
-unsigned gballoc(Xpost_Memory_File *mem,
+unsigned xpost_free_alloc(Xpost_Memory_File *mem,
         unsigned sz,
         unsigned tag)
 {
@@ -179,7 +179,7 @@ try_again:
   
    Allocate new entry, copy data, steal its adr, stash old adr, free it.
  */
-unsigned mfrealloc(Xpost_Memory_File *mem,
+unsigned xpost_free_realloc(Xpost_Memory_File *mem,
         unsigned oldadr,
         unsigned oldsize,
         unsigned newsize)
@@ -190,9 +190,9 @@ unsigned mfrealloc(Xpost_Memory_File *mem,
     unsigned rent; /* relative ent */
 
 #ifdef DEBUGFREE
-    printf("mfrealloc: ");
+    printf("xpost_free_realloc: ");
     printf("initial ");
-    dumpfree(mem);
+    xpost_free_dump(mem);
 #endif
 
     /* allocate new entry */
@@ -211,11 +211,11 @@ unsigned mfrealloc(Xpost_Memory_File *mem,
     tab->tab[rent].sz = oldsize;
 
     /* free it */
-    (void) mfree(mem, ent);
+    (void) xpost_free_memory_ent(mem, ent);
 
 #ifdef DEBUGFREE
     printf("final ");
-    dumpfree(mem);
+    xpost_free_dump(mem);
     printf("\n");
     dumpmtab(mem, 0);
     fflush(NULL);

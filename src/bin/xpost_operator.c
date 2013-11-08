@@ -45,7 +45,7 @@
 #include "xpost_interpreter.h"  // works with context struct
 #include "xpost_error.h"  // operator functions may throw errors
 #include "xpost_string.h"  // uses string function to dump operator name
-#include "xpost_free.h"  // allocate using gballoc
+#include "xpost_free.h"  // allocate using xpost_free_alloc
 #include "xpost_name.h"  // operator objects have associated names
 #include "xpost_dict.h"  // install operators in systemdict, a dict
 #include "xpost_operator.h"  // double-check prototypes
@@ -196,7 +196,7 @@ Xpost_Object consoper(context *ctx,
             ++noop;
             si = 0;
         } else { /* increase sig table by 1 */
-            t = mfrealloc(ctx->gl,
+            t = xpost_free_realloc(ctx->gl,
                     optab[opcode].sigadr,
                     optab[opcode].n * sizeof(signat),
                     (optab[opcode].n + 1) * sizeof(signat));

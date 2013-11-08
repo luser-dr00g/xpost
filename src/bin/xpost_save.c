@@ -39,7 +39,7 @@
 #include "xpost_object.h"  /* save/restore examines objects */
 #include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */
 #include "xpost_save.h"  /* double-check prototypes */
-#include "xpost_free.h"  /* allocate copies with gballoc  */
+#include "xpost_free.h"  /* allocate copies with xpost_free_alloc  */
 
 /*
 typedef struct {
@@ -117,7 +117,7 @@ static unsigned copy(Xpost_Memory_File *mem,
     unsigned int adr;
 
     xpost_memory_table_find_relative(mem, &tab, &ent);
-    new = gballoc(mem, tab->tab[ent].sz, tab->tab[ent].tag);
+    new = xpost_free_alloc(mem, tab->tab[ent].sz, tab->tab[ent].tag);
     ent = tent;
     xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
     xpost_memory_table_get_addr(mem, new, &adr);
@@ -199,7 +199,7 @@ void init (Xpost_Memory_File *mem)
 {
     xpost_memory_file_init(mem, "x.mem");
     (void)xpost_memory_table_init(mem);
-    initfree(mem);
+    xpost_free_init(mem);
     initsave(mem);
 }
 

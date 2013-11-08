@@ -68,7 +68,7 @@ void *alloca (size_t);
 
 #include "xpost_memory.h"  /* files store FILE*s in (local) mfile */
 #include "xpost_object.h"  /* files are objects */
-#include "xpost_free.h"  /* files data allocated with gballoc */
+#include "xpost_free.h"  /* files data allocated with xpost_free_alloc */
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  /* interpreter */
 #include "xpost_error.h"  /* file functions may throw errors */
@@ -145,7 +145,7 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
 #endif
     f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
     /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
-    f.mark_.padw = gballoc(mem, sizeof(FILE *), filetype);
+    f.mark_.padw = xpost_free_alloc(mem, sizeof(FILE *), filetype);
     xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     return f;
 }

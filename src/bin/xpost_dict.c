@@ -189,7 +189,7 @@ unsigned hash(Xpost_Object k)
     return h;
 }
 
-/* allocate an entity with gballoc,
+/* allocate an entity with xpost_free_alloc,
    set the save level in the mark,
    extract the "pointer" from the entity,
    Initialize a dichead in memory,
@@ -216,7 +216,7 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
     /* unsigned int ent = xpost_memory_table_alloc(mem,
            sizeof(dichead) + DICTABSZ(sz), 0, &ent);
        d.comp_.ent = ent; */
-    d.comp_.ent = gballoc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype);
+    d.comp_.ent = xpost_free_alloc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype);
 
     tab = (void *)(mem->base);
     rent = d.comp_.ent;
@@ -335,7 +335,7 @@ void dicgrow(context *ctx,
         dtab->tab[dent].sz = ntab->tab[nent].sz;
         ntab->tab[nent].sz = hold;
 
-        mfree(mem, n.comp_.ent);
+        xpost_free_memory_ent(mem, n.comp_.ent);
     }
 }
 
