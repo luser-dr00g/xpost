@@ -69,7 +69,7 @@ Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid);
 
 extern int TRACE;
 
-void xpost_interpreter_init(Xpost_Interpreter *itp);
+int xpost_interpreter_init(Xpost_Interpreter *itp);
 void xpost_interpreter_exit(Xpost_Interpreter *itp);
 
 /* 3 simple top-level functions */

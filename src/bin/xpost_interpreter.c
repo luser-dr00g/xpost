@@ -132,10 +132,19 @@ Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid)
 
 
 /* initialize itpdata */
-void xpost_interpreter_init(Xpost_Interpreter *itpptr)
+int xpost_interpreter_init(Xpost_Interpreter *itpptr)
 {
-    xpost_context_init(&itpptr->ctab[0]);
+    int ret;
+
+    ret = xpost_context_init(&itpptr->ctab[0]);
+    if (!ret)
+    {
+        return 0;
+    }
+
     itpptr->cid = itpptr->ctab[0].id;
+
+    return 1;
 }
 
 /* destroy itpdata */
@@ -359,8 +368,11 @@ Xpost_Context *xpost_ctx;
 #define CNT_STR(s) sizeof(s)-1, s
 
 /* set global pagesize, initialize eval's jump-table */
-static void initalldata(void)
+static
+int initalldata(void)
 {
+    int ret;
+
     xpost_memory_pagesize = xpost_getpagesize();
     initializing = 1;
     initevaltype();
@@ -376,11 +388,17 @@ static void initalldata(void)
        populate OPTAB and systemdict with operators.
        push systemdict, globaldict, and userdict on dict stack
      */
-    xpost_interpreter_init(itpdata);
+    ret = xpost_interpreter_init(itpdata);
+    if (!ret)
+    {
+        return 0;
+    }
 
     /* set global shortcut to context_0
        (the only context in a single-threaded interpreter) */
     xpost_ctx = &itpdata->ctab[0];
+
+    return 1;
 }
 
 static void setdatadir(Xpost_Context *ctx, Xpost_Object sd)
@@ -447,6 +465,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 int xpost_create(void)
 {
     Xpost_Object sd, ud;
+    int ret;
 
     //test_memory();
     if (!test_garbage_collect())
@@ -455,7 +474,11 @@ int xpost_create(void)
     nextid = 0; //reset process counter
 
     /* Allocate and initialize all interpreter data structures. */
-    initalldata();
+    ret = initalldata();
+    if (!ret)
+    {
+        return 0;
+    }
 
     /* extract systemdict and userdict for additional definitions */
     sd = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0);
