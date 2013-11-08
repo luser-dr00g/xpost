@@ -29,13 +29,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <assert.h>
 #include <stdio.h> /* FILE* */
 #include <stdlib.h> /* mkstemp */
 #include <string.h> /* memset */
 
 #ifdef HAVE_UNISTD_H
-# include <unistd.h> /* isattty */
+# include <unistd.h> /* isattty close */
 #endif
 
 #ifdef __MINGW32__
@@ -102,11 +106,12 @@ unsigned makestack(Xpost_Memory_File *mem)
 /* set up global vm in the context
  */
 static
-void initglobal(Xpost_Context *ctx)
+int initglobal(Xpost_Context *ctx)
 {
     char g_filenam[] = "gmemXXXXXX";
     int fd;
     unsigned int tadr;
+    int ret;
 
     ctx->vmmode = GLOBAL;
 
@@ -117,14 +122,22 @@ void initglobal(Xpost_Context *ctx)
 
     fd = mkstemp(g_filenam);
 
-    xpost_memory_file_init(ctx->gl, g_filenam, fd);
+    ret = xpost_memory_file_init(ctx->gl, g_filenam, fd);
+    if (!ret)
+    {
+        close(fd);
+        return 0;
+    }
     xpost_memory_table_init(ctx->gl, &tadr);
     xpost_free_init(ctx->gl);
     initsave(ctx->gl);
     xpost_context_init_ctxlist(ctx->gl);
     xpost_context_append_ctxlist(ctx->gl, ctx->id);
 
-    ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1; /* so OPTAB is not collected and not scanned. */
+            /* so OPTAB is not collected and not scanned. */
+    ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1;
+
+    return 1;
 }
 
 
@@ -132,11 +145,12 @@ void initglobal(Xpost_Context *ctx)
    allocates all stacks
  */
 static
-void initlocal(Xpost_Context *ctx)
+int initlocal(Xpost_Context *ctx)
 {
     char l_filenam[] = "lmemXXXXXX";
     int fd;
     unsigned int tadr;
+    int ret;
 
     ctx->vmmode = LOCAL;
 
@@ -147,7 +161,13 @@ void initlocal(Xpost_Context *ctx)
 
     fd = mkstemp(l_filenam);
 
-    xpost_memory_file_init(ctx->lo, l_filenam, fd);
+    ret = xpost_memory_file_init(ctx->lo, l_filenam, fd);
+    if (!ret)
+    {
+        close(fd);
+        return 0;
+    }
+
     xpost_memory_table_init(ctx->lo, &tadr);
     xpost_free_init(ctx->lo);
     initsave(ctx->lo);
@@ -163,6 +183,8 @@ void initlocal(Xpost_Context *ctx)
     //ctx->lo->start = HOLD + 1; /* so HOLD is not collected and not scanned. */
     //ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST + 1;
     ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME + 1;
+
+    return 1;
 }
 
 
@@ -171,11 +193,22 @@ void initlocal(Xpost_Context *ctx)
    allocates systemdict
    populates systemdict and optab with operators
  */
-void xpost_context_init(Xpost_Context *ctx)
+int xpost_context_init(Xpost_Context *ctx)
 {
+    int ret;
+
     ctx->id = xpost_interpreter_cid_init();
-    initlocal(ctx);
-    initglobal(ctx);
+    ret = initlocal(ctx);
+    if (!ret)
+    {
+        return 0;
+    }
+    ret = initglobal(ctx);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
 
     initnames(ctx); /* NAMES NAMET */
     ctx->vmmode = GLOBAL;
@@ -205,6 +238,8 @@ void xpost_context_init(Xpost_Context *ctx)
         bdcput(ctx, ud, consname(ctx, "userdict"), ud);
         xpost_stack_push(ctx->lo, ctx->ds, ud);
     }
+
+    return 1;
 }
 
 /* destroy context */

@@ -47,7 +47,7 @@ void xpost_context_append_ctxlist(Xpost_Memory_File *mem, unsigned cid);
 /**
  * @brief initialize the context structure
  */
-void xpost_context_init(Xpost_Context *ctx);
+int xpost_context_init(Xpost_Context *ctx);
 
 /**
  * @brief destroy the context structure, and all components
