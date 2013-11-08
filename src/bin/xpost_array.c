@@ -104,7 +104,7 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
    call consarr,
    set BANK flag.
 */
-Xpost_Object consbar(context *ctx,
+Xpost_Object consbar(Xpost_Context *ctx,
                unsigned sz)
 {
     Xpost_Object a = consarr(ctx->vmmode==GLOBAL?
@@ -132,16 +132,16 @@ void arrput(Xpost_Memory_File *mem,
 /** Select Xpost_Memory_File according to BANK flag,
    call arrput.
 */
-void barput(context *ctx,
+void barput(Xpost_Context *ctx,
             Xpost_Object a,
             integer i,
             Xpost_Object o)
 {
-    Xpost_Memory_File *mem = bank(ctx, a);
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, a);
     if (!ignoreinvalidaccess) {
         if ( mem == ctx->gl
                 && xpost_object_is_composite(o)
-                && mem != bank(ctx, o))
+                && mem != xpost_context_select_memory(ctx, o))
             error(invalidaccess, "local value into global array");
     }
 
@@ -160,11 +160,11 @@ Xpost_Object arrget(Xpost_Memory_File *mem,
 
 /* Select Xpost_Memory_File according to BANK flag,
    call arrget. */
-Xpost_Object barget(context *ctx,
+Xpost_Object barget(Xpost_Context *ctx,
               Xpost_Object a,
               integer i)
 {
-    return arrget(bank(ctx, a), a, i);
+    return arrget(xpost_context_select_memory(ctx, a), a, i);
 }
 
 /* adjust the offset and size fields in the object.
@@ -189,7 +189,7 @@ Xpost_Object arrgetinterval(Xpost_Object a,
 #include <stdlib.h>
 #include <string.h>
 
-context *ctx;
+Xpost_Context *ctx;
 Xpost_Memory_File *mem;
 
 int main(void) {

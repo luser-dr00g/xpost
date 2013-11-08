@@ -83,7 +83,7 @@ static
 int noop = 0;
 
 /* allocate the OPTAB structure in VM */
-void initoptab (context *ctx)
+void initoptab (Xpost_Context *ctx)
 {
     unsigned ent;
     Xpost_Memory_Table *tab;
@@ -97,7 +97,7 @@ void initoptab (context *ctx)
 }
 
 /* print a dump of the operator struct given opcode */
-void dumpoper(context *ctx,
+void dumpoper(Xpost_Context *ctx,
               int opcode)
 {
     oper *optab;
@@ -141,7 +141,7 @@ Xpost_Object operfromcode(int opcode)
    values whose presence and types should be checked,
    there should follow 'in' number of typenames passed after 'in'.
    */
-Xpost_Object consoper(context *ctx,
+Xpost_Object consoper(Xpost_Context *ctx,
                 char *name,
                 /*@null@*/ void (*fp)(),
                 int out,
@@ -237,7 +237,7 @@ Xpost_Object consoper(context *ctx,
 
 /* copy top n elements to holding stack & pop them */
 static
-void holdn (context *ctx,
+void holdn (Xpost_Context *ctx,
             Xpost_Memory_File *mem,
             unsigned stacadr,
             int n)
@@ -265,7 +265,7 @@ void holdn (context *ctx,
 /* execute an operator function by opcode
    the opcode is the payload of an operator object
  */
-void opexec(context *ctx,
+void opexec(Xpost_Context *ctx,
             unsigned opcode)
 {
     oper *optab;
@@ -385,7 +385,7 @@ call:
    just as it's about to read the next token.
  */
 static
-void breakhere(context *ctx)
+void breakhere(Xpost_Context *ctx)
 {
     (void)ctx;
     return;
@@ -393,7 +393,7 @@ void breakhere(context *ctx)
 
 /* create systemdict and call
    all initop?* functions, installing all operators */
-void initop(context *ctx)
+void initop(Xpost_Context *ctx)
 {
     Xpost_Object op;
     Xpost_Object n;

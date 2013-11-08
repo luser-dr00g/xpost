@@ -58,7 +58,7 @@
 
 /* initialize the context list
    special entity in the mfile */
-void initctxlist(Xpost_Memory_File *mem)
+void xpost_context_init_ctxlist(Xpost_Memory_File *mem)
 {
     unsigned ent;
     Xpost_Memory_Table *tab;
@@ -70,7 +70,7 @@ void initctxlist(Xpost_Memory_File *mem)
 }
 
 /* add a context ID to the context list in mfile */
-void addtoctxlist(Xpost_Memory_File *mem,
+void xpost_context_append_ctxlist(Xpost_Memory_File *mem,
                   unsigned cid)
 {
     int i;
@@ -102,7 +102,7 @@ unsigned makestack(Xpost_Memory_File *mem)
 /* set up global vm in the context
  */
 static
-void initglobal(context *ctx)
+void initglobal(Xpost_Context *ctx)
 {
     char g_filenam[] = "gmemXXXXXX";
     int fd;
@@ -121,8 +121,8 @@ void initglobal(context *ctx)
     xpost_memory_table_init(ctx->gl, &tadr);
     xpost_free_init(ctx->gl);
     initsave(ctx->gl);
-    initctxlist(ctx->gl);
-    addtoctxlist(ctx->gl, ctx->id);
+    xpost_context_init_ctxlist(ctx->gl);
+    xpost_context_append_ctxlist(ctx->gl, ctx->id);
 
     ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1; /* so OPTAB is not collected and not scanned. */
 }
@@ -132,7 +132,7 @@ void initglobal(context *ctx)
    allocates all stacks
  */
 static
-void initlocal(context *ctx)
+void initlocal(Xpost_Context *ctx)
 {
     char l_filenam[] = "lmemXXXXXX";
     int fd;
@@ -151,8 +151,8 @@ void initlocal(context *ctx)
     xpost_memory_table_init(ctx->lo, &tadr);
     xpost_free_init(ctx->lo);
     initsave(ctx->lo);
-    initctxlist(ctx->lo);
-    addtoctxlist(ctx->lo, ctx->id);
+    xpost_context_init_ctxlist(ctx->lo);
+    xpost_context_append_ctxlist(ctx->lo, ctx->id);
     //ctx->lo->roots[0] = XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK;
 
     ctx->os = makestack(ctx->lo);
@@ -171,7 +171,7 @@ void initlocal(context *ctx)
    allocates systemdict
    populates systemdict and optab with operators
  */
-void initcontext(context *ctx)
+void xpost_context_init(Xpost_Context *ctx)
 {
     ctx->id = initctxid();
     initlocal(ctx);
@@ -208,7 +208,7 @@ void initcontext(context *ctx)
 }
 
 /* destroy context */
-void exitcontext(context *ctx)
+void xpost_context_exit(Xpost_Context *ctx)
 {
     xpost_memory_file_exit(ctx->gl);
     xpost_memory_file_exit(ctx->lo);
@@ -216,7 +216,7 @@ void exitcontext(context *ctx)
 
 /* return the global or local memory file for the composite object */
 /*@dependent@*/
-Xpost_Memory_File *bank(context *ctx,
+Xpost_Memory_File *xpost_context_select_memory(Xpost_Context *ctx,
             Xpost_Object o)
 {
     return o.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK? ctx->gl : ctx->lo;
@@ -224,7 +224,7 @@ Xpost_Memory_File *bank(context *ctx,
 
 
 /* print a dump of the context struct */
-void dumpctx(context *ctx)
+void xpost_context_dump(Xpost_Context *ctx)
 {
     xpost_memory_file_dump(ctx->gl);
     xpost_memory_table_dump(ctx->gl);
@@ -238,10 +238,10 @@ void dumpctx(context *ctx)
    (spawn jobserver)
    */
 static
-unsigned fork1(context *ctx)
+unsigned fork1(Xpost_Context *ctx)
 {
     unsigned newcid;
-    context *newctx;
+    Xpost_Context *newctx;
 
     newcid = initctxid();
     newctx = ctxcid(newcid);
@@ -256,16 +256,16 @@ unsigned fork1(context *ctx)
    (new "application"?)
    */
 static
-unsigned fork2(context *ctx)
+unsigned fork2(Xpost_Context *ctx)
 {
     unsigned newcid;
-    context *newctx;
+    Xpost_Context *newctx;
 
     newcid = initctxid();
     newctx = ctxcid(newcid);
     initlocal(ctx);
     newctx->gl = ctx->gl;
-    addtoctxlist(newctx->gl, newcid);
+    xpost_context_append_ctxlist(newctx->gl, newcid);
     xpost_stack_push(newctx->lo, newctx->ds,
             xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)); // systemdict
     return newcid;
@@ -276,17 +276,17 @@ unsigned fork2(context *ctx)
    (lightweight process)
    */
 static
-unsigned fork3(context *ctx)
+unsigned fork3(Xpost_Context *ctx)
 {
     unsigned newcid;
-    context *newctx;
+    Xpost_Context *newctx;
 
     newcid = initctxid();
     newctx = ctxcid(newcid);
     newctx->lo = ctx->lo;
-    addtoctxlist(newctx->lo, newcid);
+    xpost_context_append_ctxlist(newctx->lo, newcid);
     newctx->gl = ctx->gl;
-    addtoctxlist(newctx->gl, newcid);
+    xpost_context_append_ctxlist(newctx->gl, newcid);
     xpost_stack_push(newctx->lo, newctx->ds, 
             xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)); // systemdict
     return newcid;

@@ -70,8 +70,8 @@ itp *itpdata;
 int initializing = 1;
 int ignoreinvalidaccess = 0;
 
-void eval(context *ctx);
-void mainloop(context *ctx);
+void eval(Xpost_Context *ctx);
+void mainloop(Xpost_Context *ctx);
 void init(void);
 void xit(void);
 
@@ -123,7 +123,7 @@ unsigned initctxid(void)
 /* adapter:
            ctx <- cid
    yield pointer to context struct given cid */
-context *ctxcid(unsigned cid)
+Xpost_Context *ctxcid(unsigned cid)
 {
     //TODO reject cid 0
     return &itpdata->ctab[ (cid-1) % MAXCONTEXT ];
@@ -134,39 +134,39 @@ context *ctxcid(unsigned cid)
 /* initialize itp */
 void inititp(itp *itpptr)
 {
-    initcontext(&itpptr->ctab[0]);
+    xpost_context_init(&itpptr->ctab[0]);
     itpptr->cid = itpptr->ctab[0].id;
 }
 
 /* destroy itp */
 void exititp(itp *itpptr)
 {
-    exitcontext(&itpptr->ctab[0]);
+    xpost_context_exit(&itpptr->ctab[0]);
 }
 
 
 
 /* function type for interpreter action pointers */
 typedef
-void evalfunc(context *ctx);
+void evalfunc(Xpost_Context *ctx);
 
 /* quit the interpreter */
 static
-void evalquit(context *ctx)
+void evalquit(Xpost_Context *ctx)
 {
     ++ctx->quit;
 }
 
 /* pop the execution stack */
 static
-void evalpop(context *ctx)
+void evalpop(Xpost_Context *ctx)
 {
     (void)xpost_stack_pop(ctx->lo, ctx->es);
 }
 
 /* pop the execution stack onto the operand stack */
 static
-void evalpush(context *ctx)
+void evalpush(Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os,
             xpost_stack_pop(ctx->lo, ctx->es) );
@@ -174,7 +174,7 @@ void evalpush(context *ctx)
 
 /* load executable name */
 static
-void evalload(context *ctx)
+void evalload(Xpost_Context *ctx)
 {
     Xpost_Object s = strname(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
     if (TRACE)
@@ -193,7 +193,7 @@ void evalload(context *ctx)
 
 /* execute operator */
 static
-void evaloperator(context *ctx)
+void evaloperator(Xpost_Context *ctx)
 {
     Xpost_Object op = xpost_stack_pop(ctx->lo, ctx->es);
 
@@ -204,7 +204,7 @@ void evaloperator(context *ctx)
 
 /* extract head (&tail) of array */
 static
-void evalarray(context *ctx)
+void evalarray(Xpost_Context *ctx)
 {
     Xpost_Object a = xpost_stack_pop(ctx->lo, ctx->es);
     Xpost_Object b;
@@ -226,7 +226,7 @@ void evalarray(context *ctx)
 
 /* extract token from string */
 static
-void evalstring(context *ctx)
+void evalstring(Xpost_Context *ctx)
 {
     Xpost_Object b,t,s;
 
@@ -246,7 +246,7 @@ void evalstring(context *ctx)
 
 /* extract token from file */
 static
-void evalfile(context *ctx)
+void evalfile(Xpost_Context *ctx)
 {
     Xpost_Object b,f,t;
 
@@ -296,7 +296,7 @@ void initevaltype(void)
 }
 
 /* one iteration of the central loop */
-void eval(context *ctx)
+void eval(Xpost_Context *ctx)
 {
     Xpost_Object t = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
 
@@ -335,7 +335,7 @@ jmp_buf jbmainloop;
 int jbmainloopset = 0;
 
 /* the big main central interpreter loop. */
-void mainloop(context *ctx)
+void mainloop(Xpost_Context *ctx)
 {
     volatile int err;
 
@@ -353,7 +353,7 @@ void mainloop(context *ctx)
 //#ifdef TESTMODULE_ITP
 
 /* global shortcut for a single-threaded interpreter */
-context *xpost_ctx;
+Xpost_Context *xpost_ctx;
 
 /* string constructor helper for literals */
 #define CNT_STR(s) sizeof(s)-1, s
@@ -383,7 +383,7 @@ static void initalldata(void)
     xpost_ctx = &itpdata->ctab[0];
 }
 
-static void setdatadir(context *ctx, Xpost_Object sd)
+static void setdatadir(Xpost_Context *ctx, Xpost_Object sd)
 {
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
@@ -402,7 +402,7 @@ static void setdatadir(context *ctx, Xpost_Object sd)
 }
 
 /* load init.ps and err.ps while systemdict is writeable */
-static void loadinitps(context *ctx)
+static void loadinitps(Xpost_Context *ctx)
 {
     assert(ctx->gl->base);
     xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
@@ -426,7 +426,7 @@ static void loadinitps(context *ctx)
     mainloop(ctx);
 }
 
-static void copyudtosd(context *ctx, Xpost_Object ud, Xpost_Object sd)
+static void copyudtosd(Xpost_Context *ctx, Xpost_Object ud, Xpost_Object sd)
 {
     /* copy userdict names to systemdict
         Problem: This is clearly an invalidaccess,

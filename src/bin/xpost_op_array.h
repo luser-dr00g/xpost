@@ -33,7 +33,7 @@
 
 /* array operators */
 
-void arrtomark(context *ctx);
-void initopar(context *ctx, Xpost_Object sd);
+void arrtomark(Xpost_Context *ctx);
+void initopar(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

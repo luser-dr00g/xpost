@@ -77,7 +77,7 @@ void *alloca (size_t);
 #include "xpost_op_packedarray.h"
 
 static
-void packedarray (context *ctx,
+void packedarray (Xpost_Context *ctx,
                   Xpost_Object n)
 {
     int i;
@@ -93,14 +93,14 @@ void packedarray (context *ctx,
 }
 
 static
-void setpacking (context *ctx,
+void setpacking (Xpost_Context *ctx,
                  Xpost_Object b)
 {
     Xpost_Object sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
     bdcput(ctx, sd, consname(ctx, "currentpacking"), b);
 }
 
-void initoppa(context *ctx,
+void initoppa(Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;

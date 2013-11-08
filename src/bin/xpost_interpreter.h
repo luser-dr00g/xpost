@@ -48,7 +48,7 @@
 #define MAXMFILE 10
 
 typedef struct {
-    context ctab[MAXCONTEXT];
+    Xpost_Context ctab[MAXCONTEXT];
     unsigned cid;
     Xpost_Memory_File gtab[MAXMFILE];
     Xpost_Memory_File ltab[MAXMFILE];
@@ -65,7 +65,7 @@ extern int jbmainloopset;
 Xpost_Memory_File *nextltab(void);
 Xpost_Memory_File *nextgtab(void);
 unsigned initctxid(void);
-context *ctxcid(unsigned cid);
+Xpost_Context *ctxcid(unsigned cid);
 
 extern int TRACE;
 

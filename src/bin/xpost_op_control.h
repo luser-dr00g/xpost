@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_CONTROL_H
 #define XPOST_OP_CONTROL_H
 
-void initopc (context *ctx, Xpost_Object sd);
+void initopc (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

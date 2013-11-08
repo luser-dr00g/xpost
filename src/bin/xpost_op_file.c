@@ -89,7 +89,7 @@ void *alloca (size_t);
 #endif
 
 static
-void Sfile (context *ctx,
+void Sfile (Xpost_Context *ctx,
             Xpost_Object fn,
             Xpost_Object mode)
 {
@@ -107,14 +107,14 @@ void Sfile (context *ctx,
 }
 
 static
-void Fclosefile (context *ctx,
+void Fclosefile (Xpost_Context *ctx,
                  Xpost_Object f)
 {
     fileclose(ctx->lo, f);
 }
 
 static
-void Fread (context *ctx,
+void Fread (Xpost_Context *ctx,
             Xpost_Object f)
 {
     Xpost_Object b;
@@ -129,7 +129,7 @@ void Fread (context *ctx,
 }
 
 static
-void Fwrite (context *ctx,
+void Fwrite (Xpost_Context *ctx,
              Xpost_Object f,
              Xpost_Object i)
 {
@@ -140,7 +140,7 @@ void Fwrite (context *ctx,
 char *hex = "0123456789" "ABCDEF" "abcdef";
 
 static
-void Freadhexstring (context *ctx,
+void Freadhexstring (Xpost_Context *ctx,
                      Xpost_Object F,
                      Xpost_Object S)
 {
@@ -176,7 +176,7 @@ void Freadhexstring (context *ctx,
 }
 
 static
-void Fwritehexstring (context *ctx,
+void Fwritehexstring (Xpost_Context *ctx,
                       Xpost_Object F,
                       Xpost_Object S)
 {
@@ -195,7 +195,7 @@ void Fwritehexstring (context *ctx,
 }
 
 static
-void Freadstring (context *ctx,
+void Freadstring (Xpost_Context *ctx,
                   Xpost_Object F,
                   Xpost_Object S)
 {
@@ -218,7 +218,7 @@ void Freadstring (context *ctx,
 }
 
 static
-void Fwritestring (context *ctx,
+void Fwritestring (Xpost_Context *ctx,
                    Xpost_Object F,
                    Xpost_Object S)
 {
@@ -233,7 +233,7 @@ void Fwritestring (context *ctx,
 }
 
 static
-void Freadline (context *ctx,
+void Freadline (Xpost_Context *ctx,
                 Xpost_Object F,
                 Xpost_Object S)
 {
@@ -256,14 +256,14 @@ void Freadline (context *ctx,
 }
 
 static
-void Fbytesavailable (context *ctx,
+void Fbytesavailable (Xpost_Context *ctx,
                       Xpost_Object F)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(filebytesavailable(ctx->lo, F)));
 }
 
 static
-void Zflush (context *ctx)
+void Zflush (Xpost_Context *ctx)
 {
     int ret;
     (void)ctx;
@@ -272,7 +272,7 @@ void Zflush (context *ctx)
 }
 
 static
-void Fflushfile (context *ctx,
+void Fflushfile (Xpost_Context *ctx,
                  Xpost_Object F)
 {
     int ret;
@@ -292,7 +292,7 @@ void Fflushfile (context *ctx,
 #ifndef HAVE_WIN32
 
 static
-void Fresetfile (context *ctx,
+void Fresetfile (Xpost_Context *ctx,
                  Xpost_Object F)
 {
     FILE *f;
@@ -304,14 +304,14 @@ void Fresetfile (context *ctx,
 #endif
 
 static
-void Fstatus (context *ctx,
+void Fstatus (Xpost_Context *ctx,
               Xpost_Object F)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(filestatus(ctx->lo, F)));
 }
 
 static
-void Zcurrentfile (context *ctx)
+void Zcurrentfile (Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
@@ -327,7 +327,7 @@ void Zcurrentfile (context *ctx)
 }
 
 static
-void deletefile (context *ctx,
+void deletefile (Xpost_Context *ctx,
                  Xpost_Object S)
 {
     char *s;
@@ -342,7 +342,7 @@ void deletefile (context *ctx,
 }
 
 static
-void renamefile (context *ctx,
+void renamefile (Xpost_Context *ctx,
                  Xpost_Object Old,
                  Xpost_Object New)
 {
@@ -361,7 +361,7 @@ void renamefile (context *ctx,
 //#ifndef HAVE_WIN32
 
 static
-void contfilenameforall (context *ctx,
+void contfilenameforall (Xpost_Context *ctx,
                          Xpost_Object oglob,
                          Xpost_Object Proc,
                          Xpost_Object Scr)
@@ -396,7 +396,7 @@ void contfilenameforall (context *ctx,
 }
 
 static
-void filenameforall (context *ctx,
+void filenameforall (Xpost_Context *ctx,
                      Xpost_Object Tmp,
                      Xpost_Object Proc,
                      Xpost_Object Scr)
@@ -422,7 +422,7 @@ void filenameforall (context *ctx,
 //#endif
 
 static
-void setfileposition (context *ctx,
+void setfileposition (Xpost_Context *ctx,
             Xpost_Object F,
             Xpost_Object pos)
 {
@@ -434,7 +434,7 @@ void setfileposition (context *ctx,
 }
 
 static
-void fileposition (context *ctx,
+void fileposition (Xpost_Context *ctx,
             Xpost_Object F)
 {
     long pos;
@@ -446,7 +446,7 @@ void fileposition (context *ctx,
 }
 
 static
-void Sprint (context *ctx,
+void Sprint (Xpost_Context *ctx,
              Xpost_Object S)
 {
     size_t ret;
@@ -458,7 +458,7 @@ void Sprint (context *ctx,
 }
 
 static
-void Becho (context *ctx,
+void Becho (Xpost_Context *ctx,
             Xpost_Object b)
 {
     (void)ctx;
@@ -468,7 +468,7 @@ void Becho (context *ctx,
         echooff(stdin);
 }
 
-void initopf (context *ctx,
+void initopf (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;

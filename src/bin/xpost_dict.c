@@ -100,7 +100,7 @@ typedef union
           +value if L > R
           -value if L < R
  */
-int objcmp(context *ctx,
+int objcmp(Xpost_Context *ctx,
            Xpost_Object L,
            Xpost_Object R)
 {
@@ -247,7 +247,7 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
 /* select mfile according to vmmode,
    call consdic,
    set the BANK flag. */
-Xpost_Object consbdc(context *ctx,
+Xpost_Object consbdc(Xpost_Context *ctx,
                unsigned sz)
 {
     Xpost_Object d = consdic(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
@@ -282,7 +282,7 @@ unsigned dicmaxlength(Xpost_Memory_File *mem,
    copy over all non-null key/value pairs,
    swap adrs in the two table slots. */
 static
-void dicgrow(context *ctx,
+void dicgrow(Xpost_Context *ctx,
              Xpost_Object d)
 {
     Xpost_Memory_File *mem;
@@ -294,7 +294,7 @@ void dicgrow(context *ctx,
     Xpost_Object n;
     unsigned i;
 
-    mem = bank(ctx, d);
+    mem = xpost_context_select_memory(ctx, d);
 #ifdef DEBUGDIC
     printf("DI growing dict\n");
     dumpdic(mem, d);
@@ -416,7 +416,7 @@ Xpost_Object unextend (Xpost_Object e)
 
 /* make key the proper type for hashing */
 static
-Xpost_Object clean_key (context *ctx,
+Xpost_Object clean_key (Xpost_Context *ctx,
                   Xpost_Object k)
 {
     switch(xpost_object_get_type(k)) {
@@ -450,7 +450,7 @@ Xpost_Object clean_key (context *ctx,
    returns a pointer to the desired pair (if found)), or a null-pair. */
 /*@dependent@*/ /*@null@*/
 static
-Xpost_Object *diclookup(context *ctx,
+Xpost_Object *diclookup(Xpost_Context *ctx,
         /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -489,7 +489,7 @@ Xpost_Object *diclookup(context *ctx,
 }
 
 /* see if lookup returns a non-null pair. */
-int dicknown(context *ctx,
+int dicknown(Xpost_Context *ctx,
         /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -503,7 +503,7 @@ int dicknown(context *ctx,
 
 /* call diclookup,
    return the value if the key is non-null. */
-Xpost_Object dicget(context *ctx,
+Xpost_Object dicget(Xpost_Context *ctx,
         /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -527,11 +527,11 @@ Xpost_Object dicget(context *ctx,
 
 /* select mfile according to BANK field,
    call dicget. */
-Xpost_Object bdcget(context *ctx,
+Xpost_Object bdcget(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    return dicget(ctx, bank(ctx, d), d, k);
+    return dicget(ctx, xpost_context_select_memory(ctx, d), d, k);
 }
 
 /* save data if not save at this level,
@@ -540,7 +540,7 @@ Xpost_Object bdcget(context *ctx,
        increase nused,
        set key,
        update value. */
-void dicput(context *ctx,
+void dicput(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k,
@@ -590,30 +590,30 @@ retry:
 
 /* select mfile according to BANK field,
    call dicput. */
-void bdcput(context *ctx,
+void bdcput(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k,
         Xpost_Object v)
 {
-    Xpost_Memory_File *mem = bank(ctx, d);
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, d);
     if (!ignoreinvalidaccess) {
         if ( mem == ctx->gl
                 && xpost_object_is_composite(k)
-                && mem != bank(ctx, k))
+                && mem != xpost_context_select_memory(ctx, k))
             error(invalidaccess, "local key into global dict");
         if ( mem == ctx->gl
                 && xpost_object_is_composite(v)
-                && mem != bank(ctx, v)) {
+                && mem != xpost_context_select_memory(ctx, v)) {
             xpost_object_dump(v);
             error(invalidaccess, "local value into global dict");
         }
     }
 
-    dicput(ctx, bank(ctx, d), d, k, v);
+    dicput(ctx, xpost_context_select_memory(ctx, d), d, k, v);
 }
 
 /* undefine key from dict */
-void dicundef(context *ctx,
+void dicundef(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -683,22 +683,22 @@ void dicundef(context *ctx,
 }
 
 /* undefine key from banked dict */
-void bdcundef(context *ctx,
+void bdcundef(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    dicundef(ctx, bank(ctx, d), d, k);
+    dicundef(ctx, xpost_context_select_memory(ctx, d), d, k);
 }
 
 
 #ifdef TESTMODULE_DI
 #include <stdio.h>
 
-/*context ctx; */
-context *ctx;
+/*Xpost_Context ctx; */
+Xpost_Context *ctx;
 
 void init() {
-    /*initcontext(&ctx); */
+    /*xpost_context_init(&ctx); */
     itpdata=malloc(sizeof*itpdata);
     inititp(itpdata);
     ctx = &itpdata->ctab[0];

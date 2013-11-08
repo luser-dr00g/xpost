@@ -76,13 +76,13 @@ enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
 #define MAXOPS 180
 #define SDSIZE 10
 
-void initoptab(context *ctx);
-void dumpoper(context *ctx, int opcode);
+void initoptab(Xpost_Context *ctx);
+void dumpoper(Xpost_Context *ctx, int opcode);
 Xpost_Object operfromcode(int opcode);
 
-Xpost_Object consoper(context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
+Xpost_Object consoper(Xpost_Context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
 
-void opexec(context *ctx, unsigned opcode);
+void opexec(Xpost_Context *ctx, unsigned opcode);
 
 #define INSTALL \
     xpost_memory_table_get_addr(ctx->gl, \
@@ -94,6 +94,6 @@ void opexec(context *ctx, unsigned opcode);
     bdcput(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + optadr); // recalc
 
-void initop(context *ctx);
+void initop(Xpost_Context *ctx);
 
 #endif

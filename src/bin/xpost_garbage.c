@@ -115,11 +115,11 @@ int marked(Xpost_Memory_File *mem,
 
 /* recursively mark an object */
 static
-void markobject(context *ctx, Xpost_Memory_File *mem, Xpost_Object o, int markall);
+void markobject(Xpost_Context *ctx, Xpost_Memory_File *mem, Xpost_Object o, int markall);
 
 /* recursively mark a dictionary */
 static
-void markdict(context *ctx,
+void markdict(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned adr,
         int markall)
@@ -135,7 +135,7 @@ void markdict(context *ctx,
 
 /* recursively mark all elements of array */
 static
-void markarray(context *ctx,
+void markarray(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned adr,
         unsigned sz,
@@ -151,7 +151,7 @@ void markarray(context *ctx,
 
 /* traverse the contents of composite objects */
 static
-void markobject(context *ctx,
+void markobject(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object o,
         int markall)
@@ -165,9 +165,9 @@ void markobject(context *ctx,
 #ifdef DEBUG_GC
     printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
 #endif
-        if (bank(ctx, o) != mem) {
+        if (xpost_context_select_memory(ctx, o) != mem) {
             if (markall)
-                mem = bank(ctx, o);
+                mem = xpost_context_select_memory(ctx, o);
             else
                 break;
         }
@@ -182,9 +182,9 @@ void markobject(context *ctx,
 #ifdef DEBUG_GC
     printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
 #endif
-        if (bank(ctx, o) != mem) {
+        if (xpost_context_select_memory(ctx, o) != mem) {
             if (markall)
-                mem = bank(ctx, o);
+                mem = xpost_context_select_memory(ctx, o);
             else
                 break;
         }
@@ -199,9 +199,9 @@ void markobject(context *ctx,
 #ifdef DEBUG_GC
     printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
 #endif
-        if (bank(ctx, o) != mem) {
+        if (xpost_context_select_memory(ctx, o) != mem) {
             if (markall)
-                mem = bank(ctx, o);
+                mem = xpost_context_select_memory(ctx, o);
             else
                 break;
         }
@@ -220,7 +220,7 @@ void markobject(context *ctx,
 
 /* mark all allocations referred to by objects in stack */
 static
-void markstack(context *ctx,
+void markstack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned stackadr,
         int markall)
@@ -249,7 +249,7 @@ next:
 
 /* mark all allocations referred to by objects in save object's stack of saverec_'s */
 static
-void marksavestack(context *ctx,
+void marksavestack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned stackadr)
 {
@@ -295,7 +295,7 @@ next:
 
 /* mark all allocations referred to by objects in save stack */
 static
-void marksave(context *ctx,
+void marksave(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned stackadr)
 {
@@ -371,7 +371,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
 {
     unsigned i;
     unsigned *cid;
-    context *ctx = NULL;
+    Xpost_Context *ctx = NULL;
     int isglobal;
     unsigned sz = 0;
     unsigned int ad;
@@ -461,7 +461,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
 }
 
 static
-context *ctx;
+Xpost_Context *ctx;
 
 static
 int init_test_garbage()
@@ -493,8 +493,8 @@ int init_test_garbage()
     xpost_memory_table_init(ctx->gl, &tadr);
     xpost_free_init(ctx->gl);
     initsave(ctx->gl);
-    initctxlist(ctx->gl);
-    addtoctxlist(ctx->gl, ctx->id);
+    xpost_context_init_ctxlist(ctx->gl);
+    xpost_context_append_ctxlist(ctx->gl, ctx->id);
     ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1;
 
     /* create local memory file */
@@ -511,8 +511,8 @@ int init_test_garbage()
     xpost_memory_table_init(ctx->lo, &tadr);
     xpost_free_init(ctx->lo);
     initsave(ctx->lo);
-    initctxlist(ctx->lo);
-    addtoctxlist(ctx->lo, ctx->id);
+    xpost_context_init_ctxlist(ctx->lo);
+    xpost_context_append_ctxlist(ctx->lo, ctx->id);
     ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME + 1;
 
     /* create names in both mfiles */
@@ -595,7 +595,7 @@ int test_garbage_collect(void)
 
 #ifdef TESTMODULE_GC
 
-context *ctx;
+Xpost_Context *ctx;
 Xpost_Memory_File *mem;
 unsigned stac;
 
@@ -605,7 +605,7 @@ unsigned stac;
 /*     (void)xpost_memory_table_init(&mem); */
 /*     xpost_free_init(&mem); */
 /*     initsave(&mem); */
-/*     initctxlist(&mem); */
+/*     xpost_context_init_ctxlist(&mem); */
 /*     Xpost_Memory_Table *tab = (void *)mem.base; */
 /*     unsigned ent = xpost_memory_table_alloc(&mem, 0, 0); */
 /*     /\* xpost_memory_table_find_relative(&mem, &tab, &ent); *\/ */

@@ -44,9 +44,9 @@ typedef struct tst {
              hi;
 } tst;
 
-void dumpnames(context *ctx);
-void initnames(context *ctx);
-Xpost_Object consname(context *ctx, char *s);
-Xpost_Object strname(context *ctx, Xpost_Object n);
+void dumpnames(Xpost_Context *ctx);
+void initnames(Xpost_Context *ctx);
+Xpost_Object consname(Xpost_Context *ctx, char *s);
+Xpost_Object strname(Xpost_Context *ctx, Xpost_Object n);
 
 #endif

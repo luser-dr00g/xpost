@@ -2,11 +2,11 @@
 #define XPOST_CONTEXT_H
 
 /**
- * @brief valid values for context::vmmode
+ * @brief valid values for Xpost_Context::vmmode
  */
 enum { LOCAL, GLOBAL };
 
-/** @struct context
+/** @struct Xpost_Context
  *
  */
 typedef struct
@@ -39,31 +39,31 @@ typedef struct
     unsigned state;  /**< process state: running, blocked, iowait */
     unsigned quit;  /**< if 1 cause mainloop() to return, if 0 keep looping */
 
-} context;
+} Xpost_Context;
 
-void initctxlist(Xpost_Memory_File *mem);
-void addtoctxlist(Xpost_Memory_File *mem, unsigned cid);
+void xpost_context_init_ctxlist(Xpost_Memory_File *mem);
+void xpost_context_append_ctxlist(Xpost_Memory_File *mem, unsigned cid);
 
 /**
  * @brief initialize the context structure
  */
-void initcontext(context *ctx);
+void xpost_context_init(Xpost_Context *ctx);
 
 /**
  * @brief destroy the context structure, and all components
  */
-void exitcontext(context *ctx);
+void xpost_context_exit(Xpost_Context *ctx);
 
 /**
  * @brief utility function for extracting from the context
  *        the mfile relevant to an object
  */
 /*@dependent@*/
-Xpost_Memory_File *bank(context *ctx, Xpost_Object o);
+Xpost_Memory_File *xpost_context_select_memory(Xpost_Context *ctx, Xpost_Object o);
 
 /**
  * @brief print a dump of the context structure data to stdout
  */
-void dumpctx(context *ctx);
+void xpost_context_dump(Xpost_Context *ctx);
 
 #endif

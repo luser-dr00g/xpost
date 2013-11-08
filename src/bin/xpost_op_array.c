@@ -53,7 +53,7 @@
 
 /* helper function */
 static
-void a_copy (context *ctx,
+void a_copy (Xpost_Context *ctx,
              Xpost_Object S,
              Xpost_Object D)
 {
@@ -65,7 +65,7 @@ void a_copy (context *ctx,
 /* int  array  array
    create array of length int */
 static
-void Iarray (context *ctx,
+void Iarray (Xpost_Context *ctx,
              Xpost_Object I)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbar(ctx, I.int_.val)));
@@ -77,7 +77,7 @@ void Iarray (context *ctx,
 
 /* mark obj0..objN-1  ]  array
    end array construction */
-void arrtomark (context *ctx)
+void arrtomark (Xpost_Context *ctx)
 {
     int i;
     Xpost_Object a, v;
@@ -95,7 +95,7 @@ void arrtomark (context *ctx)
 /* array  length  int
    number of elements in array */
 static
-void Alength (context *ctx,
+void Alength (Xpost_Context *ctx,
               Xpost_Object A)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(A.comp_.sz));
@@ -104,7 +104,7 @@ void Alength (context *ctx,
 /* array index  get  any
    get array element indexed by index */
 static
-void Aget (context *ctx,
+void Aget (Xpost_Context *ctx,
            Xpost_Object A,
            Xpost_Object I)
 {
@@ -114,7 +114,7 @@ void Aget (context *ctx,
 /* array index any  put  -
    put any into array at index */
 static
-void Aput(context *ctx,
+void Aput(Xpost_Context *ctx,
           Xpost_Object A,
           Xpost_Object I,
           Xpost_Object O)
@@ -125,7 +125,7 @@ void Aput(context *ctx,
 /* array index count  getinterval  subarray
    subarray of array starting at index for count elements */
 static
-void Agetinterval (context *ctx,
+void Agetinterval (Xpost_Context *ctx,
                    Xpost_Object A,
                    Xpost_Object I,
                    Xpost_Object L)
@@ -136,7 +136,7 @@ void Agetinterval (context *ctx,
 /* array1 index array2  putinterval  -
    replace subarray of array1 starting at index by array2 */
 static
-void Aputinterval (context *ctx,
+void Aputinterval (Xpost_Context *ctx,
                    Xpost_Object D,
                    Xpost_Object I,
                    Xpost_Object S)
@@ -149,7 +149,7 @@ void Aputinterval (context *ctx,
 /* array  aload  a0..aN-1 array
    push all elements of array on stack */
 static
-void Aaload (context *ctx,
+void Aaload (Xpost_Context *ctx,
              Xpost_Object A)
 {
     int i;
@@ -162,7 +162,7 @@ void Aaload (context *ctx,
 /* any0..anyN-1 array  astore  array
    pop elements from stack into array */
 static
-void Aastore (context *ctx,
+void Aastore (Xpost_Context *ctx,
               Xpost_Object A)
 {
     int i;
@@ -175,7 +175,7 @@ void Aastore (context *ctx,
 /* array1 array2  copy  subarray2
    copy elements of array1 to initial subarray of array2 */
 static
-void Acopy (context *ctx,
+void Acopy (Xpost_Context *ctx,
             Xpost_Object S,
             Xpost_Object D)
 {
@@ -188,7 +188,7 @@ void Acopy (context *ctx,
 /* array proc  forall  -
    execute proc for each element of array */
 static
-void Aforall(context *ctx,
+void Aforall(Xpost_Context *ctx,
              Xpost_Object A,
              Xpost_Object P)
 {
@@ -210,7 +210,7 @@ void Aforall(context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, 0));
 }
 
-void initopar (context *ctx,
+void initopar (Xpost_Context *ctx,
                Xpost_Object sd)
 {
     oper *optab;

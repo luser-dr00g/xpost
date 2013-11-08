@@ -77,14 +77,14 @@ void *alloca (size_t);
 #include "xpost_op_control.h"
 
 static
-void Aexec (context *ctx,
+void Aexec (Xpost_Context *ctx,
             Xpost_Object O)
 {
     xpost_stack_push(ctx->lo, ctx->es, O);
 }
 
 static
-void BPif (context *ctx,
+void BPif (Xpost_Context *ctx,
            Xpost_Object B,
            Xpost_Object P)
 {
@@ -93,7 +93,7 @@ void BPif (context *ctx,
 }
 
 static
-void BPPifelse (context *ctx,
+void BPPifelse (Xpost_Context *ctx,
                 Xpost_Object B,
                 Xpost_Object Then,
                 Xpost_Object Else)
@@ -105,7 +105,7 @@ void BPPifelse (context *ctx,
 }
 
 static
-void IIIPfor (context *ctx,
+void IIIPfor (Xpost_Context *ctx,
               Xpost_Object init,
               Xpost_Object incr,
               Xpost_Object lim,
@@ -130,7 +130,7 @@ void IIIPfor (context *ctx,
 }
 
 static
-void RRRPfor (context *ctx,
+void RRRPfor (Xpost_Context *ctx,
               Xpost_Object init,
               Xpost_Object incr,
               Xpost_Object lim,
@@ -154,7 +154,7 @@ void RRRPfor (context *ctx,
 }
 
 static
-void IPrepeat (context *ctx,
+void IPrepeat (Xpost_Context *ctx,
                Xpost_Object n,
                Xpost_Object P)
 {
@@ -169,7 +169,7 @@ void IPrepeat (context *ctx,
 }
 
 static
-void Ploop (context *ctx,
+void Ploop (Xpost_Context *ctx,
             Xpost_Object P)
 {
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
@@ -181,7 +181,7 @@ void Ploop (context *ctx,
 }
 
 static
-void Zexit (context *ctx)
+void Zexit (Xpost_Context *ctx)
 {
     //Xpost_Object opfor = consoper(ctx, "for", NULL,0,0);
     Xpost_Object opfor = operfromcode(ctx->opcode_shortcuts.opfor);
@@ -229,7 +229,7 @@ void Zexit (context *ctx)
    search for 'false' and push a 'true'.  */
 
 static
-void Zstop(context *ctx)
+void Zstop(Xpost_Context *ctx)
 {
     Xpost_Object f = xpost_cons_bool(0);
     int c = xpost_stack_count(ctx->lo, ctx->es);
@@ -245,7 +245,7 @@ void Zstop(context *ctx)
 }
 
 static
-void Astopped(context *ctx,
+void Astopped(Xpost_Context *ctx,
               Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_bool(0));
@@ -253,13 +253,13 @@ void Astopped(context *ctx,
 }
 
 static
-void Zcountexecstack(context *ctx)
+void Zcountexecstack(Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->es)));
 }
 
 static
-void Aexecstack(context *ctx,
+void Aexecstack(Xpost_Context *ctx,
                 Xpost_Object A)
 {
     int z = xpost_stack_count(ctx->lo, ctx->es);
@@ -272,12 +272,12 @@ void Aexecstack(context *ctx,
 //TODO start
 
 static
-void Zquit(context *ctx)
+void Zquit(Xpost_Context *ctx)
 {
     ctx->quit = 1;
 }
 
-void initopc (context *ctx,
+void initopc (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;

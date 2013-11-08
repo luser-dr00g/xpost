@@ -61,7 +61,7 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
 /* construct a banked string object
    with optional string value
    */
-Xpost_Object consbst(context *ctx,
+Xpost_Object consbst(Xpost_Context *ctx,
                unsigned sz,
                /*@NULL@*/ char *ini)
 {
@@ -78,13 +78,13 @@ Xpost_Object consbst(context *ctx,
     string in a stringtype object
     */
 /*@dependent@*/
-char *charstr(context *ctx,
+char *charstr(Xpost_Context *ctx,
               Xpost_Object S)
 {
     Xpost_Memory_File *f;
     Xpost_Memory_Table *tab;
     unsigned ent = S.comp_.ent;
-    f = bank(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
+    f = xpost_context_select_memory(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
     xpost_memory_table_find_relative(f, &tab, &ent);
     return (void *)(f->base + tab->tab[ent].adr + S.comp_.off);
 }
@@ -101,12 +101,12 @@ void strput(Xpost_Memory_File *mem,
 }
 
 /* put a value at index into a banked string */
-void bstput(context *ctx,
+void bstput(Xpost_Context *ctx,
             Xpost_Object s,
             integer i,
             integer c)
 {
-    strput(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
+    strput(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
 }
 
 /* get a value from a string at index */
@@ -120,11 +120,11 @@ integer strget(Xpost_Memory_File *mem,
 }
 
 /* get a value from a banked string at index */
-integer bstget(context *ctx,
+integer bstget(Xpost_Context *ctx,
                Xpost_Object s,
                integer i)
 {
-    return strget(bank(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i);
+    return strget(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i);
 }
 
 #ifdef TESTMODULE_ST

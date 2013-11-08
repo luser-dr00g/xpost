@@ -76,7 +76,7 @@ void *alloca (size_t);
 /* any1 any2  eq  bool
    test equal */
 static
-void Aeq (context *ctx,
+void Aeq (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -86,7 +86,7 @@ void Aeq (context *ctx,
 /* any1 any2  ne  bool
    test not equal */
 static
-void Ane (context *ctx,
+void Ane (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -96,7 +96,7 @@ void Ane (context *ctx,
 /* any1 any2  ge  bool
    test greater or equal */
 static
-void Age (context *ctx,
+void Age (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -106,7 +106,7 @@ void Age (context *ctx,
 /* any1 any2  gt  bool
    test greater than */
 static
-void Agt (context *ctx,
+void Agt (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -116,7 +116,7 @@ void Agt (context *ctx,
 /* any1 any2  le  bool
    test less or equal */
 static
-void Ale (context *ctx,
+void Ale (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -126,7 +126,7 @@ void Ale (context *ctx,
 /* any1 any2  lt  bool
    test less than */
 static
-void Alt (context *ctx,
+void Alt (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -136,7 +136,7 @@ void Alt (context *ctx,
 /* bool1|int1 bool2|int2  and  bool3|int3
    logical|bitwise and */
 static
-void Band (context *ctx,
+void Band (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -144,7 +144,7 @@ void Band (context *ctx,
 }
 
 static
-void Iand (context *ctx,
+void Iand (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -154,14 +154,14 @@ void Iand (context *ctx,
 /* bool1|int1  not  bool2|int2
    logical|bitwise not */
 static
-void Bnot (context *ctx,
+void Bnot (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( ! x.int_.val ));
 }
 
 static
-void Inot (context *ctx,
+void Inot (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int( ~ x.int_.val ));
@@ -170,7 +170,7 @@ void Inot (context *ctx,
 /* bool1|int1 bool2|int2  or  bool3|int3
    logical|bitwise inclusive or */
 static
-void Bor (context *ctx,
+void Bor (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -178,7 +178,7 @@ void Bor (context *ctx,
 }
 
 static
-void Ior (context *ctx,
+void Ior (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -188,7 +188,7 @@ void Ior (context *ctx,
 /* bool1|int1 bool2|int2  xor  bool3|int3
    exclusive or */
 static
-void Bxor (context *ctx,
+void Bxor (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -196,7 +196,7 @@ void Bxor (context *ctx,
 }
 
 static
-void Ixor (context *ctx,
+void Ixor (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -210,7 +210,7 @@ void Ixor (context *ctx,
 /* int1 shift  bitshift  int2
    bitwise shift of int1 (positive is left) */
 static
-void Ibitshift (context *ctx,
+void Ibitshift (Xpost_Context *ctx,
                 Xpost_Object x,
                 Xpost_Object y)
 {
@@ -221,7 +221,7 @@ void Ibitshift (context *ctx,
                     (unsigned long)x.int_.val >> -y.int_.val));
 }
 
-void initopb(context *ctx,
+void initopb(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;
