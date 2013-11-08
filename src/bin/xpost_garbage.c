@@ -387,7 +387,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
             XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST, &ad);
     cid = (void *)(mem->base + ad);
     for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
-        ctx = ctxcid(cid[i]);
+        ctx = xpost_interpreter_cid_get_context(cid[i]);
         if (mem == ctx->gl) {
             isglobal = 1;
             break;
@@ -405,7 +405,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
         markstack(ctx, mem, ad, markall);
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
-            ctx = ctxcid(cid[i]);
+            ctx = xpost_interpreter_cid_get_context(cid[i]);
             collect(ctx->lo, 0, markall);
         }
 
@@ -420,7 +420,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
         markstack(ctx, mem, ad, markall);
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
-            ctx = ctxcid(cid[i]);
+            ctx = xpost_interpreter_cid_get_context(cid[i]);
 
 #ifdef DEBUG_GC
             printf("marking os\n");
@@ -451,7 +451,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
         sz += sweep(mem);
         if (isglobal) {
             for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
-                ctx = ctxcid(cid[i]);
+                ctx = xpost_interpreter_cid_get_context(cid[i]);
                 sz += sweep(ctx->lo);
             }
         }
@@ -477,12 +477,12 @@ int init_test_garbage()
     itpdata = malloc(sizeof*itpdata);
     if (!itpdata) return 0;
     memset(itpdata, 0, sizeof*itpdata);
-    cid = initctxid();
-    ctx = ctxcid(cid);
+    cid = xpost_interpreter_cid_init();
+    ctx = xpost_interpreter_cid_get_context(cid);
     ctx->id = cid;
 
     /* create global memory file */
-    ctx->gl = nextgtab();
+    ctx->gl = xpost_interpreter_alloc_global_memory();
     fd = mkstemp(fname);
     ret = xpost_memory_file_init(ctx->gl, fname, fd);
     if (!ret)
@@ -498,7 +498,7 @@ int init_test_garbage()
     ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1;
 
     /* create local memory file */
-    ctx->lo = nextltab();
+    ctx->lo = xpost_interpreter_alloc_local_memory();
     strcpy(fname, "xmemXXXXXX");
     fd = mkstemp(fname);
     ret = xpost_memory_file_init(ctx->lo, fname, fd);
@@ -616,12 +616,12 @@ unsigned stac;
 /* } */
 
 
-extern itp *itpdata;
+extern Xpost_Interpreter *itpdata;
 
 void init(void) {
     itpdata = malloc(sizeof*itpdata);
     memset(itpdata, 0, sizeof*itpdata);
-    inititp(itpdata);
+    xpost_interpreter_init(itpdata);
 }
 
 int main(void) {

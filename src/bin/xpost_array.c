@@ -195,7 +195,7 @@ Xpost_Memory_File *mem;
 int main(void) {
     itpdata = malloc(sizeof*itpdata);
     memset(itpdata, 0, sizeof*itpdata);
-    inititp(itpdata);
+    xpost_interpreter_init(itpdata);
     ctx = &itpdata->ctab[0];
     mem = ctx->lo;
     /* xpost_memory_file_init(&mem, "x.mem"); */

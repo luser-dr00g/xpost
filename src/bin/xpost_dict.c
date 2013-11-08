@@ -700,7 +700,7 @@ Xpost_Context *ctx;
 void init() {
     /*xpost_context_init(&ctx); */
     itpdata=malloc(sizeof*itpdata);
-    inititp(itpdata);
+    xpost_interpreter_init(itpdata);
     ctx = &itpdata->ctab[0];
 }
 
