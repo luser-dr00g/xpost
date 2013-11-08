@@ -41,7 +41,7 @@ typedef struct
 
 } Xpost_Context;
 
-void xpost_context_init_ctxlist(Xpost_Memory_File *mem);
+int xpost_context_init_ctxlist(Xpost_Memory_File *mem);
 void xpost_context_append_ctxlist(Xpost_Memory_File *mem, unsigned cid);
 
 /**

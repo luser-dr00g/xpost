@@ -38,6 +38,7 @@
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  // banked strings may live in local or global vm
 #include "xpost_string.h"  // double-check prototypes
+#include "xpost_error.h"
 
 /* construct a stringtype object
    with optional string value
@@ -49,7 +50,8 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
     unsigned ent;
     Xpost_Object o;
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
-    ent = xpost_free_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype);
+    if (!xpost_free_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype, &ent))
+        error(VMerror, "consstr cannot allocate string");
     if (ini) xpost_memory_put(mem, ent, 0, sz, ini);
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;

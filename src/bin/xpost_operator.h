@@ -76,7 +76,7 @@ enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
 #define MAXOPS 180
 #define SDSIZE 10
 
-void initoptab(Xpost_Context *ctx);
+int initoptab(Xpost_Context *ctx);
 void dumpoper(Xpost_Context *ctx, int opcode);
 Xpost_Object operfromcode(int opcode);
 

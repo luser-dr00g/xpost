@@ -83,17 +83,24 @@ static
 int noop = 0;
 
 /* allocate the OPTAB structure in VM */
-void initoptab (Xpost_Context *ctx)
+int initoptab (Xpost_Context *ctx)
 {
     unsigned ent;
     Xpost_Memory_Table *tab;
+    int ret;
 
-    xpost_memory_table_alloc(ctx->gl, MAXOPS * sizeof(oper), 0, &ent);
+    ret = xpost_memory_table_alloc(ctx->gl, MAXOPS * sizeof(oper), 0, &ent);
+    if (!ret)
+    {
+        return 0;
+    }
     tab = (void *)(ctx->gl);
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE);
     xpost_memory_table_find_relative(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // so gc will ignore it
     //printf("ent: %d\nOPTAB: %d\n", ent, (int)XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE);
+
+    return 1;
 }
 
 /* print a dump of the operator struct given opcode */

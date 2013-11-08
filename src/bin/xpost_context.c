@@ -62,15 +62,23 @@
 
 /* initialize the context list
    special entity in the mfile */
-void xpost_context_init_ctxlist(Xpost_Memory_File *mem)
+int xpost_context_init_ctxlist(Xpost_Memory_File *mem)
 {
     unsigned ent;
     Xpost_Memory_Table *tab;
-    xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned), 0, &ent);
+    int ret;
+
+    ret = xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned), 0, &ent);
+    if (!ret)
+    {
+        return 0;
+    }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
     tab = (void *)mem->base;
     memset(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr, 0,
             MAXCONTEXT * sizeof(unsigned));
+
+    return 1;
 }
 
 /* add a context ID to the context list in mfile */
@@ -134,9 +142,24 @@ int initglobal(Xpost_Context *ctx)
         xpost_memory_file_exit(ctx->gl);
         return 0;
     }
-    xpost_free_init(ctx->gl);
-    initsave(ctx->gl);
-    xpost_context_init_ctxlist(ctx->gl);
+    ret = xpost_free_init(ctx->gl);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
+    ret = initsave(ctx->gl);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
+    ret = xpost_context_init_ctxlist(ctx->gl);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
     xpost_context_append_ctxlist(ctx->gl, ctx->id);
 
             /* so OPTAB is not collected and not scanned. */
@@ -179,9 +202,24 @@ int initlocal(Xpost_Context *ctx)
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
-    xpost_free_init(ctx->lo);
-    initsave(ctx->lo);
-    xpost_context_init_ctxlist(ctx->lo);
+    ret = xpost_free_init(ctx->lo);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
+    ret = initsave(ctx->lo);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
+    ret = xpost_context_init_ctxlist(ctx->lo);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
     xpost_context_append_ctxlist(ctx->lo, ctx->id);
     //ctx->lo->roots[0] = XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK;
 
@@ -220,10 +258,22 @@ int xpost_context_init(Xpost_Context *ctx)
         return 0;
     }
 
-    initnames(ctx); /* NAMES NAMET */
+    ret = initnames(ctx); /* NAMES NAMET */
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
     ctx->vmmode = GLOBAL;
 
-    initoptab(ctx); /* allocate and zero the optab structure */
+    ret = initoptab(ctx); /* allocate and zero the optab structure */
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
 
     (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
     (void)consname(ctx, "getinterval"); /* middle of the start */

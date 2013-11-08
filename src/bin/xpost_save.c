@@ -40,6 +40,8 @@
 #include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */
 #include "xpost_save.h"  /* double-check prototypes */
 #include "xpost_free.h"  /* allocate copies with xpost_free_alloc  */
+#include "xpost_context.h" /* context for error */
+#include "xpost_error.h" /* error */
 
 /*
 typedef struct {
@@ -58,18 +60,25 @@ typedef struct {
 
 /* create a stack in slot XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK.
    sz is 0 so gc will ignore it. */
-void initsave (Xpost_Memory_File *mem)
+int initsave (Xpost_Memory_File *mem)
 {
     unsigned t;
     unsigned ent;
     Xpost_Memory_Table *tab;
+    int ret;
 
-    xpost_memory_table_alloc(mem, 0, 0, &ent); /* allocate an entry of zero length */
+    ret = xpost_memory_table_alloc(mem, 0, 0, &ent); /* allocate an entry of zero length */
+    if (!ret)
+    {
+        return 0;
+    }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK);
 
     xpost_stack_init(mem, &t);
     tab = (void *)mem->base;
     tab->tab[ent].adr = t;
+
+    return 1;
 }
 
 /* push a new save object on the save stack
@@ -117,7 +126,8 @@ static unsigned copy(Xpost_Memory_File *mem,
     unsigned int adr;
 
     xpost_memory_table_find_relative(mem, &tab, &ent);
-    new = xpost_free_alloc(mem, tab->tab[ent].sz, tab->tab[ent].tag);
+    if (!xpost_free_alloc(mem, tab->tab[ent].sz, tab->tab[ent].tag, &new))
+        error(VMerror, "copy cannot allocate entity to backup object");
     ent = tent;
     xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
     xpost_memory_table_get_addr(mem, new, &adr);

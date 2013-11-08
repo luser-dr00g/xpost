@@ -74,7 +74,8 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
     if (sz == 0) {
         ent = 0;
     } else {
-        ent = xpost_free_alloc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype);
+        if (!xpost_free_alloc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype, &ent ))
+            error(VMerror, "consarr cannot allocate array");
         tab = (void *)(mem->base);
         rent = ent;
         xpost_memory_table_find_relative(mem, &tab, &rent);
