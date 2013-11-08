@@ -257,6 +257,8 @@ int xpost_memory_file_grow (
     if (tmp == MAP_FAILED)
     {
 #else
+                        /* initialize mem (valgrind) */
+    memset(mem->base + mem->used, 0, mem->max - mem->used);
     tmp = realloc(mem->base, sz);
     if (tmp == NULL)
     {
