@@ -77,7 +77,7 @@ void *alloca (size_t);
 /* any  pop  -
    discard top element */
 static
-void Apop (context *ctx,
+void Apop (Xpost_Context *ctx,
            Xpost_Object x)
 {
     (void)ctx;
@@ -87,7 +87,7 @@ void Apop (context *ctx,
 /* any1 any2  exch  any2 any1
    exchange top two elements */
 static
-void AAexch (context *ctx,
+void AAexch (Xpost_Context *ctx,
              Xpost_Object x,
              Xpost_Object y)
 {
@@ -98,7 +98,7 @@ void AAexch (context *ctx,
 /* any  dup  any any
    duplicate top element */
 static
-void Adup (context *ctx,
+void Adup (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, x);
@@ -108,7 +108,7 @@ void Adup (context *ctx,
 /* any1..anyN N  copy  any1..anyN any1..anyN
    duplicate top n elements */
 static
-void Icopy (context *ctx,
+void Icopy (Xpost_Context *ctx,
             Xpost_Object n)
 {
     int i;
@@ -121,7 +121,7 @@ void Icopy (context *ctx,
 /* anyN..any0 N  index  anyN..any0 anyN
    duplicate arbitrary element */
 static
-void Iindex (context *ctx,
+void Iindex (Xpost_Context *ctx,
              Xpost_Object n)
 {
     if (n.int_.val < 0) error(rangecheck, "Iindex");
@@ -133,7 +133,7 @@ void Iindex (context *ctx,
 /* a(n-1)..a(0) n j  roll  a((j-1)mod n)..a(0) a(n-1)..a(j mod n)
    roll n elements j times */
 static
-void IIroll (context *ctx,
+void IIroll (Xpost_Context *ctx,
              Xpost_Object N,
              Xpost_Object J)
 {
@@ -160,7 +160,7 @@ void IIroll (context *ctx,
 /* |- any1..anyN  clear  |-
    discard all elements */
 static
-void Zclear (context *ctx)
+void Zclear (Xpost_Context *ctx)
 {
     Xpost_Stack *s = (void *)(ctx->lo->base + ctx->os);
     s->top = 0;
@@ -169,7 +169,7 @@ void Zclear (context *ctx)
 /* |- any1..anyN  count  |- any1..anyN N
    count elements on stack */
 static
-void Zcount (context *ctx)
+void Zcount (Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->os)));
 }
@@ -181,7 +181,7 @@ void Zcount (context *ctx)
 /* mark obj1..objN  cleartomark  -
    discard elements down through mark */
 static
-void Zcleartomark (context *ctx)
+void Zcleartomark (Xpost_Context *ctx)
 {
     Xpost_Object o;
     do {
@@ -191,7 +191,7 @@ void Zcleartomark (context *ctx)
 
 /* mark obj1..objN  counttomark  N
    count elements down to mark */
-void Zcounttomark (context *ctx)
+void Zcounttomark (Xpost_Context *ctx)
 {
     unsigned i;
     unsigned z;
@@ -237,7 +237,7 @@ void Zcounttomark (context *ctx)
    suspend current context momentarily
    */
 
-void initops(context *ctx,
+void initops(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;

@@ -48,21 +48,21 @@
 #include "xpost_op_string.h"
 
 static
-void Istring(context *ctx,
+void Istring(Xpost_Context *ctx,
              Xpost_Object I)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbst(ctx, I.int_.val, NULL)));
 }
 
 static
-void Slength(context *ctx,
+void Slength(Xpost_Context *ctx,
              Xpost_Object S)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(S.comp_.sz));
 }
 
 static
-void s_copy(context *ctx,
+void s_copy(Xpost_Context *ctx,
             Xpost_Object S,
             Xpost_Object D)
 {
@@ -72,7 +72,7 @@ void s_copy(context *ctx,
 }
 
 static
-void Scopy(context *ctx,
+void Scopy(Xpost_Context *ctx,
            Xpost_Object S,
            Xpost_Object D)
 {
@@ -82,7 +82,7 @@ void Scopy(context *ctx,
 }
 
 static
-void Sget(context *ctx,
+void Sget(Xpost_Context *ctx,
           Xpost_Object S,
           Xpost_Object I)
 {
@@ -90,7 +90,7 @@ void Sget(context *ctx,
 }
 
 static
-void Sput(context *ctx,
+void Sput(Xpost_Context *ctx,
           Xpost_Object S,
           Xpost_Object I,
           Xpost_Object C)
@@ -99,7 +99,7 @@ void Sput(context *ctx,
 }
 
 static
-void Sgetinterval(context *ctx,
+void Sgetinterval(Xpost_Context *ctx,
                   Xpost_Object S,
                   Xpost_Object I,
                   Xpost_Object L)
@@ -108,7 +108,7 @@ void Sgetinterval(context *ctx,
 }
 
 static
-void Sputinterval(context *ctx,
+void Sputinterval(Xpost_Context *ctx,
                   Xpost_Object D,
                   Xpost_Object I,
                   Xpost_Object S)
@@ -129,7 +129,7 @@ int ancsearch(char *str,
 }
 
 static
-void Sanchorsearch(context *ctx,
+void Sanchorsearch(Xpost_Context *ctx,
                    Xpost_Object str,
                    Xpost_Object seek)
 {
@@ -151,7 +151,7 @@ void Sanchorsearch(context *ctx,
 }
 
 static
-void Ssearch(context *ctx,
+void Ssearch(Xpost_Context *ctx,
              Xpost_Object str,
              Xpost_Object seek)
 {
@@ -178,7 +178,7 @@ void Ssearch(context *ctx,
 }
 
 static
-void Sforall(context *ctx,
+void Sforall(Xpost_Context *ctx,
              Xpost_Object S,
              Xpost_Object P)
 {
@@ -200,7 +200,7 @@ void Sforall(context *ctx,
 
 // token : see optok.c
 
-void initopst(context *ctx,
+void initopst(Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;

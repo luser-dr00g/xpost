@@ -56,7 +56,7 @@ Xpost_Object consarr(Xpost_Memory_File *mem, unsigned sz);
  * @brief consbar - construct an array object
  * selecting mfile according to ctx->vmmode
 */
-Xpost_Object consbar(context *ctx, unsigned sz);
+Xpost_Object consbar(Xpost_Context *ctx, unsigned sz);
 
 /** 
    * @brief store value in an array
@@ -66,7 +66,7 @@ void arrput(Xpost_Memory_File *mem, Xpost_Object a, integer i, Xpost_Object o);
 /** 
  * @brief store value in a banked array
 */
-void barput(context *ctx, Xpost_Object a, integer i, Xpost_Object o);
+void barput(Xpost_Context *ctx, Xpost_Object a, integer i, Xpost_Object o);
 
 /** 
  * @brief extract value from an array
@@ -76,7 +76,7 @@ Xpost_Object arrget(Xpost_Memory_File *mem, Xpost_Object a, integer i);
 /** 
  * @brief extract value from a banked array
 */
-Xpost_Object barget(context *ctx, Xpost_Object a, integer i);
+Xpost_Object barget(Xpost_Context *ctx, Xpost_Object a, integer i);
 
 /** 
  * @brief adjust the size and offset fields in the object

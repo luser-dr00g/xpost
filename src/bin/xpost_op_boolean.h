@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_BOOLEAN_H
 #define XPOST_OP_BOOLEAN_H
 
-void initopb(context *ctx, Xpost_Object sd);
+void initopb(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

@@ -60,17 +60,17 @@
 enum { NBUF = BUFSIZ };
 
 static
-int puff (context *ctx,
+int puff (Xpost_Context *ctx,
           char *buf,
           int nbuf,
           Xpost_Object *src,
-          int (*next)(context *ctx, Xpost_Object *src),
-          void (*back)(context *ctx, int c, Xpost_Object *src));
+          int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+          void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src));
 static
-Xpost_Object toke (context *ctx,
+Xpost_Object toke (Xpost_Context *ctx,
              Xpost_Object *src,
-             int (*next)(context *ctx, Xpost_Object *src),
-             void (*back)(context *ctx, int c, Xpost_Object *src));
+             int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+             void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src));
 
 static
 int ishash (int c)
@@ -182,12 +182,12 @@ int fsm_check (char *s,
 }
 
 static
-Xpost_Object grok (context *ctx,
+Xpost_Object grok (Xpost_Context *ctx,
              char *s,
              int ns,
              Xpost_Object *src,
-             int (*next)(context *ctx, Xpost_Object *src),
-             void (*back)(context *ctx, int c, Xpost_Object *src))
+             int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+             void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src))
 {
     if (ns == NBUF) error(limitcheck, "grok buf maxxed");
     s[ns] = '\0';  //fsm_check & consname  terminate on \0
@@ -342,10 +342,10 @@ Xpost_Object grok (context *ctx,
 /* read until a non-whitespace, non-comment char.
    "prime" the buffer.  */
 static
-int snip (context *ctx,
+int snip (Xpost_Context *ctx,
           char *buf,
           Xpost_Object *src,
-          int (*next)(context *ctx, Xpost_Object *src))
+          int (*next)(Xpost_Context *ctx, Xpost_Object *src))
 {
     int c;
     do {
@@ -365,12 +365,12 @@ int snip (context *ctx,
    read into buf any regular characters,
    if we read one too many, put it back, unless whitespace. */
 static
-int puff (context *ctx,
+int puff (Xpost_Context *ctx,
           char *buf,
           int nbuf,
           Xpost_Object *src,
-          int (*next)(context *ctx, Xpost_Object *src),
-          void (*back)(context *ctx, int c, Xpost_Object *src))
+          int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+          void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src))
 {
     int c;
     char *s = buf;
@@ -384,10 +384,10 @@ int puff (context *ctx,
 
 
 static
-Xpost_Object toke (context *ctx,
+Xpost_Object toke (Xpost_Context *ctx,
              Xpost_Object *src,
-             int (*next)(context *ctx, Xpost_Object *src),
-             void (*back)(context *ctx, int c, Xpost_Object *src))
+             int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+             void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src))
 {
     char buf[NBUF] = "";
     int sta;  // status, and size
@@ -403,20 +403,20 @@ Xpost_Object toke (context *ctx,
 
 
 static
-int Fnext(context *ctx,
+int Fnext(Xpost_Context *ctx,
           Xpost_Object *F)
 {
     return fgetc(filefile(ctx->lo, *F));
 }
 static
-void Fback(context *ctx,
+void Fback(Xpost_Context *ctx,
            int c,
            Xpost_Object *F)
 {
     (void)ungetc(c, filefile(ctx->lo, *F));
 }
 static
-void Ftoken (context *ctx,
+void Ftoken (Xpost_Context *ctx,
              Xpost_Object F)
 {
     Xpost_Object t;
@@ -431,7 +431,7 @@ void Ftoken (context *ctx,
 }
 
 static
-int Snext(context *ctx,
+int Snext(Xpost_Context *ctx,
           Xpost_Object *S)
 {
     int ret;
@@ -442,7 +442,7 @@ int Snext(context *ctx,
     return ret;
 }
 static
-void Sback(context *ctx,
+void Sback(Xpost_Context *ctx,
            int c,
            Xpost_Object *S)
 {
@@ -451,7 +451,7 @@ void Sback(context *ctx,
     charstr(ctx, *S)[0] = c;
 }
 static
-void Stoken (context *ctx,
+void Stoken (Xpost_Context *ctx,
              Xpost_Object S)
 {
     Xpost_Object t;
@@ -465,7 +465,7 @@ void Stoken (context *ctx,
     }
 }
 
-void initoptok(context *ctx,
+void initoptok(Xpost_Context *ctx,
                Xpost_Object sd)
 {
     oper *optab;

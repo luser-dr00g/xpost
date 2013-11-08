@@ -76,13 +76,13 @@ void *alloca (size_t);
 #include "xpost_op_save.h"
 
 static
-void Zsave (context *ctx)
+void Zsave (Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, save(ctx->lo));
 }
 
 static
-void Vrestore (context *ctx,
+void Vrestore (Xpost_Context *ctx,
                Xpost_Object V)
 {
     int z;
@@ -98,20 +98,20 @@ void Vrestore (context *ctx,
 }
 
 static
-void Bsetglobal (context *ctx,
+void Bsetglobal (Xpost_Context *ctx,
                  Xpost_Object B)
 {
     ctx->vmmode = B.int_.val? GLOBAL: LOCAL;
 }
 
 static
-void Zcurrentglobal (context *ctx)
+void Zcurrentglobal (Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(ctx->vmmode==GLOBAL));
 }
 
 static
-void Agcheck (context *ctx,
+void Agcheck (Xpost_Context *ctx,
               Xpost_Object A)
 {
     Xpost_Object r;
@@ -128,7 +128,7 @@ void Agcheck (context *ctx,
 }
 
 static
-void Zvmstatus (context *ctx)
+void Zvmstatus (Xpost_Context *ctx)
 {
     unsigned int vs;
 
@@ -139,7 +139,7 @@ void Zvmstatus (context *ctx)
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->max));
 }
 
-void initopv(context *ctx,
+void initopv(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;

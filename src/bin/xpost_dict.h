@@ -58,8 +58,8 @@ typedef struct {
 } dichead;
 
 typedef struct Xpost_Magic_Pair {
-    int (*get)(context *ctx, Xpost_Object dict, Xpost_Object key, Xpost_Object *pval);
-    int (*put)(context *ctx, Xpost_Object dict, Xpost_Object key, Xpost_Object val);
+    int (*get)(Xpost_Context *ctx, Xpost_Object dict, Xpost_Object key, Xpost_Object *pval);
+    int (*put)(Xpost_Context *ctx, Xpost_Object dict, Xpost_Object key, Xpost_Object val);
 } Xpost_Magic_Pair;
 
 /*! \def DICTABN
@@ -77,7 +77,7 @@ typedef struct Xpost_Magic_Pair {
 /*! 
    compare objects (<,=,>) :: (-(x),0,+(x))
 */
-int objcmp(context *ctx, Xpost_Object l, Xpost_Object r);
+int objcmp(Xpost_Context *ctx, Xpost_Object l, Xpost_Object r);
 
 /*! 
    construct dictionary
@@ -89,7 +89,7 @@ Xpost_Object consdic(/*@dependent@*/ Xpost_Memory_File *mem, unsigned sz);
    construct dictionary
    selected mtab with ctx->vmmode
 */
-Xpost_Object consbdc(context *ctx, unsigned sz);
+Xpost_Object consbdc(Xpost_Context *ctx, unsigned sz);
 
 /*! 
    investigate current number of entries in dictionary
@@ -126,38 +126,38 @@ Xpost_Object unextend (Xpost_Object e);
 /*! 
    test dictionary for key
  */
-int dicknown(context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
+int dicknown(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    lookup value using key in dictionary
 */
-Xpost_Object dicget(context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
+Xpost_Object dicget(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    lookup value using key in banked dictionary
 */
-Xpost_Object bdcget(context *ctx, Xpost_Object d, Xpost_Object k);
+Xpost_Object bdcget(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k);
 
 /*! 
    store key and value in dictionary
 */
-void dicput(context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k, Xpost_Object v);
+void dicput(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k, Xpost_Object v);
 
 /*! 
    store key and value in banked dictionary
 */
-void bdcput(context *ctx, Xpost_Object d, Xpost_Object k, Xpost_Object v);
+void bdcput(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k, Xpost_Object v);
 
 /*! 
    undefine key in dictionary
    NOT IMPLEMENTED
 */
-void dicundef(context *ctx, Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
+void dicundef(Xpost_Context *ctx, Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    undefine key in banked dictionary
    NOT IMPLEMENTED
 */
-void bdcundef(context *ctx, Xpost_Object d, Xpost_Object k);
+void bdcundef(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k);
 
 #endif

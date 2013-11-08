@@ -33,6 +33,6 @@
 
 /* string operators */
 
-void initopst(context *ctx, Xpost_Object sd);
+void initopst(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

@@ -90,7 +90,7 @@ void *alloca (size_t);
 #include "xpost_op_misc.h"
 
 static
-Xpost_Object bind (context *ctx,
+Xpost_Object bind (Xpost_Context *ctx,
              Xpost_Object p)
 {
     Xpost_Object t, d;
@@ -103,7 +103,7 @@ Xpost_Object bind (context *ctx,
             z = xpost_stack_count(ctx->lo, ctx->ds);
             for (j = 0; j < z; j++) {
                 d = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, j);
-                if (dicknown(ctx, bank(ctx,d), d, t)) {
+                if (dicknown(ctx, xpost_context_select_memory(ctx,d), d, t)) {
                     t = bdcget(ctx, d, t);
                     if (xpost_object_get_type(t) == operatortype) {
                         barput(ctx, p, i, t);
@@ -123,14 +123,14 @@ Xpost_Object bind (context *ctx,
 }
 
 static
-void Pbind (context *ctx,
+void Pbind (Xpost_Context *ctx,
             Xpost_Object P)
 {
     xpost_stack_push(ctx->lo, ctx->os, bind(ctx, P));
 }
 
 static
-void realtime (context *ctx)
+void realtime (Xpost_Context *ctx)
 {
     double sec;
 #ifdef HAVE_GETTIMEOFDAY
@@ -144,7 +144,7 @@ void realtime (context *ctx)
 }
 
 static
-void Sgetenv (context *ctx,
+void Sgetenv (Xpost_Context *ctx,
               Xpost_Object S)
 {
     char *s;
@@ -162,7 +162,7 @@ void Sgetenv (context *ctx,
 }
 
 static
-void SSputenv (context *ctx,
+void SSputenv (Xpost_Context *ctx,
               Xpost_Object N,
               Xpost_Object S)
 {
@@ -185,33 +185,33 @@ void SSputenv (context *ctx,
 }
 
 static
-void traceon (context *ctx)
+void traceon (Xpost_Context *ctx)
 {
     (void)ctx;
     TRACE = 1;
 }
 static
-void traceoff (context *ctx)
+void traceoff (Xpost_Context *ctx)
 {
     (void)ctx;
     TRACE = 0;
 }
 
 static
-void debugloadon (context *ctx)
+void debugloadon (Xpost_Context *ctx)
 {
     (void)ctx;
     DEBUGLOAD = 1;
 }
 static
-void debugloadoff (context *ctx)
+void debugloadoff (Xpost_Context *ctx)
 {
     (void)ctx;
     DEBUGLOAD = 0;
 }
 
 static
-void Odumpnames (context *ctx)
+void Odumpnames (Xpost_Context *ctx)
 {
     unsigned int names;
     printf("\nGlobal Name stack: ");
@@ -227,7 +227,7 @@ void Odumpnames (context *ctx)
 }
 
 static
-void dumpvm (context *ctx)
+void dumpvm (Xpost_Context *ctx)
 {
     xpost_memory_file_dump(ctx->lo);
     xpost_memory_table_dump(ctx->lo);
@@ -235,7 +235,7 @@ void dumpvm (context *ctx)
     xpost_memory_table_dump(ctx->gl);
 }
 
-void initopx(context *ctx,
+void initopx(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;

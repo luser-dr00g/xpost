@@ -51,12 +51,12 @@
 #include "xpost_op_dict.h"
 
 int DEBUGLOAD = 0;
-void Awhere(context *ctx, Xpost_Object K); /* forward decl */
+void Awhere(Xpost_Context *ctx, Xpost_Object K); /* forward decl */
 
 /* int  dict  dict
    create dictionary with capacity for int elements */
 static
-void Idict(context *ctx,
+void Idict(Xpost_Context *ctx,
            Xpost_Object I)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbdc(ctx, I.int_.val)));
@@ -68,7 +68,7 @@ void Idict(context *ctx,
 /* mark k_1 v_1 ... k_N v_N  >>  dict
    construct dictionary from pairs on stack */
 static
-void dictomark(context *ctx)
+void dictomark(Xpost_Context *ctx)
 {
     int i;
     Xpost_Object d, k, v;
@@ -87,29 +87,29 @@ void dictomark(context *ctx)
 /* dict  length  int
    number of key-value pairs in dict */
 static
-void Dlength(context *ctx,
+void Dlength(Xpost_Context *ctx,
              Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(diclength(
-                    bank(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
+                    xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
 }
 
 /* dict  maxlength  int
    capacity of dict */
 static
-void Dmaxlength(context *ctx,
+void Dmaxlength(Xpost_Context *ctx,
                 Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(dicmaxlength(
-                    bank(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
+                    xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
 }
 
 /* dict  begin  -
    push dict on dict stack */
 static
-void Dbegin(context *ctx,
+void Dbegin(Xpost_Context *ctx,
             Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->ds, D);
@@ -118,7 +118,7 @@ void Dbegin(context *ctx,
 /* -  end  -
    pop dict stack */
 static
-void Zend(context *ctx)
+void Zend(Xpost_Context *ctx)
 {
     if (xpost_stack_count(ctx->lo, ctx->ds) <= 3)
         error(dictstackunderflow, "end");
@@ -128,20 +128,20 @@ void Zend(context *ctx)
 /* key value  def  -
    associate key with value in current dict */
 static
-void Adef(context *ctx,
+void Adef(Xpost_Context *ctx,
           Xpost_Object K,
           Xpost_Object V)
 {
     //Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
-    //dumpdic(bank(ctx, D), D); puts("");
+    //dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
     bdcput(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
     //puts("!def!");
-    //dumpdic(bank(ctx, D), D); puts("");
+    //dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
 }
 
 /* key  load  value
    search dict stack for key and return associated value */
-void Aload(context *ctx,
+void Aload(Xpost_Context *ctx,
            Xpost_Object K)
 {
     int i;
@@ -156,11 +156,11 @@ void Aload(context *ctx,
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo,ctx->ds,i);
 
     if (DEBUGLOAD) {
-        dumpdic(bank(ctx, D), D);
+        dumpdic(xpost_context_select_memory(ctx, D), D);
         (void)puts("");
     }
 
-        if (dicknown(ctx, bank(ctx, D), D, K)) {
+        if (dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)) {
             xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, D, K));
             return;
         }
@@ -184,7 +184,7 @@ void Aload(context *ctx,
 /* key value  store  -
    replace topmost definition of key */
 static
-void Astore(context *ctx,
+void Astore(Xpost_Context *ctx,
             Xpost_Object K,
             Xpost_Object V)
 {
@@ -201,7 +201,7 @@ void Astore(context *ctx,
 /* dict key  get  any
    get value associated with key in dict */
 static
-void DAget(context *ctx,
+void DAget(Xpost_Context *ctx,
            Xpost_Object D,
            Xpost_Object K)
 {
@@ -211,7 +211,7 @@ void DAget(context *ctx,
 /* dict key value  put  -
    associate key with value in dict */
 static
-void DAAput(context *ctx,
+void DAAput(Xpost_Context *ctx,
             Xpost_Object D,
             Xpost_Object K,
             Xpost_Object V)
@@ -222,7 +222,7 @@ void DAAput(context *ctx,
 /* dict key  undef  -
    remove key and its value in dict */
 static
-void DAundef(context *ctx,
+void DAundef(Xpost_Context *ctx,
              Xpost_Object D,
              Xpost_Object K)
 {
@@ -232,30 +232,30 @@ void DAundef(context *ctx,
 /* dict key  known  bool
    test whether key is in dict */
 static
-void DAknown(context *ctx,
+void DAknown(Xpost_Context *ctx,
              Xpost_Object D,
              Xpost_Object K)
 {
 #if 0
     printf("\nknown: ");
     xpost_object_dump(D);
-    dumpdic(bank(ctx, D), D); puts("");
+    dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
     xpost_object_dump(K);
 #endif
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(dicknown(ctx, bank(ctx, D), D, K)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)));
 }
 
 
 /* key  where  dict true -or- false
    find dict in which key is defined */
-void Awhere(context *ctx,
+void Awhere(Xpost_Context *ctx,
             Xpost_Object K)
 {
     int i;
     int z = xpost_stack_count(ctx->lo, ctx->ds);
     for (i = 0; i < z; i++) {
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
-        if (dicknown(ctx, bank(ctx, D), D, K)) {
+        if (dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)) {
             xpost_stack_push(ctx->lo, ctx->os, D);
             xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
             return;
@@ -267,7 +267,7 @@ void Awhere(context *ctx,
 /* dict1 dict2  copy  dict2
    copy contents of dict1 to dict2 */
 static
-void Dcopy(context *ctx,
+void Dcopy(Xpost_Context *ctx,
            Xpost_Object S,
            Xpost_Object D)
 {
@@ -275,7 +275,7 @@ void Dcopy(context *ctx,
     Xpost_Memory_File *mem;
     unsigned ad;
     Xpost_Object *tp;
-    mem = bank(ctx, S);
+    mem = xpost_context_select_memory(ctx, S);
     sz = dicmaxlength(mem, S);
     xpost_memory_table_get_addr(mem, S.comp_.ent, &ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
@@ -288,11 +288,11 @@ void Dcopy(context *ctx,
 }
 
 static
-void DPforall (context *ctx,
+void DPforall (Xpost_Context *ctx,
                Xpost_Object D,
                Xpost_Object P)
 {
-    Xpost_Memory_File *mem = bank(ctx, D);
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, D);
     assert(mem->base);
     D.comp_.sz = dicmaxlength(mem, D); // stash size locally
     if (D.comp_.off <= D.comp_.sz) { // not finished?
@@ -330,7 +330,7 @@ void DPforall (context *ctx,
 /* -  currentdict  dict
    push current dict on operand stack */
 static
-void Zcurrentdict(context *ctx)
+void Zcurrentdict(Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0));
 }
@@ -346,7 +346,7 @@ void Zcurrentdict(context *ctx)
 /* -  countdictstack  int
    count elements on dict stack */
 static
-void Zcountdictstack(context *ctx)
+void Zcountdictstack(Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->ds)));
 }
@@ -354,7 +354,7 @@ void Zcountdictstack(context *ctx)
 /* array  dictstack  subarray
    copy dict stack into array */
 static
-void Adictstack(context *ctx,
+void Adictstack(Xpost_Context *ctx,
                 Xpost_Object A)
 {
     int z = xpost_stack_count(ctx->lo, ctx->ds);
@@ -365,7 +365,7 @@ void Adictstack(context *ctx,
 }
 
 static
-void cleardictstack(context *ctx)
+void cleardictstack(Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->ds);
     while (z-- > 3) {
@@ -373,7 +373,7 @@ void cleardictstack(context *ctx)
     }
 }
 
-void initopdi(context *ctx,
+void initopdi(Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;

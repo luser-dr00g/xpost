@@ -64,7 +64,7 @@ volatile char *errormsg = "";
 void error(unsigned err,
         char *msg)
 {
-    context *ctx;
+    Xpost_Context *ctx;
     unsigned int gnad;
     unsigned int lnad;
 
@@ -117,7 +117,7 @@ void error(unsigned err,
    pushes postscript-level error procedures
    and resumes normal execution.
  */
-void onerror(context *ctx,
+void onerror(Xpost_Context *ctx,
         unsigned err)
 {
     Xpost_Object sd;

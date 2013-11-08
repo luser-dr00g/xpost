@@ -33,6 +33,6 @@
 
 /* packedarray operators */
 
-void initoppa(context *ctx, Xpost_Object sd);
+void initoppa(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

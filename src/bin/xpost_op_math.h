@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_MATH_H
 #define XPOST_OP_MATH_H
 
-void initopm (context *ctx, Xpost_Object sd);
+void initopm (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

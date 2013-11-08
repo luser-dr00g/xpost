@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_SAVE_H
 #define XPOST_OP_SAVE_H
 
-void initopv(context *ctx, Xpost_Object sd);
+void initopv(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

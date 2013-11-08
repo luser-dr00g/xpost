@@ -55,7 +55,7 @@
 #define CNT_STR(s) sizeof(s)-1, s
 
 /* print a dump of the name string stacks, global and local */
-void dumpnames(context *ctx)
+void dumpnames(Xpost_Context *ctx)
 {
     unsigned stk;
     unsigned cnt, i;
@@ -83,7 +83,7 @@ void dumpnames(context *ctx)
 }
 
 /* initialize the name special entities XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, NAMET */
-void initnames(context *ctx)
+void initnames(Xpost_Context *ctx)
 {
     Xpost_Memory_Table *tab;
     unsigned ent;
@@ -186,7 +186,7 @@ unsigned tstinsert(Xpost_Memory_File *mem,
 
 /* add the name to the name stack, return index */
 static
-unsigned addname(context *ctx,
+unsigned addname(Xpost_Context *ctx,
                  char *s)
 {
     Xpost_Memory_File *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
@@ -215,7 +215,7 @@ unsigned addname(context *ctx,
        mark_.pad0 set to zero
        mark_.padw contains XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK stack index
  */
-Xpost_Object consname(context *ctx,
+Xpost_Object consname(Xpost_Context *ctx,
                 char *s)
 {
     unsigned u;
@@ -257,10 +257,10 @@ Xpost_Object consname(context *ctx,
             string <- name
     yield the string object from the name string stack
     */
-Xpost_Object strname(context *ctx,
+Xpost_Object strname(Xpost_Context *ctx,
                Xpost_Object n)
 {
-    Xpost_Memory_File *mem = bank(ctx, n);
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, n);
     unsigned names;
     Xpost_Object str;
     xpost_memory_table_get_addr(mem,
@@ -275,7 +275,7 @@ Xpost_Object strname(context *ctx,
 #include <unistd.h>
 
 /*
-void init(context *ctx) {
+void init(Xpost_Context *ctx) {
     xpost_memory_pagesize = xpost_getpagesize();
     ctx->gl = malloc(sizeof(Xpost_Memory_File));
     xpost_memory_file_init(ctx->gl, "x.mem");
@@ -283,14 +283,14 @@ void init(context *ctx) {
     //(void)xpost_memory_table_alloc(ctx->gl, 0, 0, 0); //FREE
     xpost_free_init(ctx->gl);
     (void)xpost_memory_table_alloc(ctx->gl, 0, 0, 0); //VS
-    initctxlist(ctx->gl);
+    xpost_context_init_ctxlist(ctx->gl);
 
     initnames(ctx);
 }
-context ctx;
+Xpost_Context ctx;
 */
 
-context *ctx;
+Xpost_Context *ctx;
 
 void init(void) {
     itpdata = malloc(sizeof*itpdata);
