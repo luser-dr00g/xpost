@@ -45,7 +45,7 @@
 
 #include "xpost_memory.h"  // name structures live in mfiles
 #include "xpost_object.h"  // names are objects, with associated hidden string objects
-#include "xpost_free.h"  // strings are allocated using gballoc
+#include "xpost_free.h"  // strings are allocated using xpost_free_alloc
 #include "xpost_stack.h"  // name strings live on a stack
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  // initialize interpreter to test
@@ -281,7 +281,7 @@ void init(context *ctx) {
     xpost_memory_file_init(ctx->gl, "x.mem");
     (void)xpost_memory_table_init(ctx->gl); // create mtab at address zero
     //(void)xpost_memory_table_alloc(ctx->gl, 0, 0, 0); //FREE
-    initfree(ctx->gl);
+    xpost_free_init(ctx->gl);
     (void)xpost_memory_table_alloc(ctx->gl, 0, 0, 0); //VS
     initctxlist(ctx->gl);
 

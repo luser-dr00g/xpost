@@ -36,22 +36,22 @@
  * @brief  initialize the FREE special entity which points
  *         to the head of the free list
  */
-void initfree(Xpost_Memory_File *mem);
+void xpost_free_init(Xpost_Memory_File *mem);
 
 /**
  * @brief  print a dump of the free list
  */
-void dumpfree(Xpost_Memory_File *mem);
+void xpost_free_dump(Xpost_Memory_File *mem);
 
 /**
  * @brief  allocate data, re-using garbage if possible
  */
-unsigned gballoc(Xpost_Memory_File *mem, unsigned sz, unsigned tag);
+unsigned xpost_free_alloc(Xpost_Memory_File *mem, unsigned sz, unsigned tag);
 
 /**
  * @brief  explicitly add ent to free list
  */
-unsigned mfree(Xpost_Memory_File *mem, unsigned ent);
+unsigned xpost_free_memory_ent(Xpost_Memory_File *mem, unsigned ent);
 
 /**
  * @brief reallocate data, preserving original contents
@@ -62,6 +62,6 @@ unsigned mfree(Xpost_Memory_File *mem, unsigned ent);
   
  * Allocate new entry, copy data, steal its adr, stash old adr, free it.
  */
-unsigned mfrealloc(Xpost_Memory_File *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
+unsigned xpost_free_realloc(Xpost_Memory_File *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
 
 #endif

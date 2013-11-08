@@ -51,7 +51,7 @@
 
 
 /**
-  Allocate an entity with gballoc,
+  Allocate an entity with xpost_free_alloc,
    find the appropriate mtab,
    set the current save level in the "mark" field,
    wrap it up in an object.
@@ -74,7 +74,7 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
     if (sz == 0) {
         ent = 0;
     } else {
-        ent = gballoc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype);
+        ent = xpost_free_alloc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype);
         tab = (void *)(mem->base);
         rent = ent;
         xpost_memory_table_find_relative(mem, &tab, &rent);
@@ -200,7 +200,7 @@ int main(void) {
     mem = ctx->lo;
     /* xpost_memory_file_init(&mem, "x.mem"); */
     /* (void)xpost_memory_table_init(&mem); */
-    /* initfree(&mem); */
+    /* xpost_free_init(&mem); */
     /* initsave(&mem); */
 
     enum { SIZE = 10 };

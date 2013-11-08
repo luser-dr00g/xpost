@@ -34,7 +34,7 @@
 
 #include "xpost_memory.h"  // strings live in mfile, accessed via mtab
 #include "xpost_object.h"  // strings are objects
-#include "xpost_free.h"  // strings are allocated using gballoc
+#include "xpost_free.h"  // strings are allocated using xpost_free_alloc
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  // banked strings may live in local or global vm
 #include "xpost_string.h"  // double-check prototypes
@@ -49,7 +49,7 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
     unsigned ent;
     Xpost_Object o;
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
-    ent = gballoc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype);
+    ent = xpost_free_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype);
     if (ini) xpost_memory_put(mem, ent, 0, sz, ini);
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;

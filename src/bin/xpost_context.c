@@ -119,7 +119,7 @@ void initglobal(context *ctx)
 
     xpost_memory_file_init(ctx->gl, g_filenam, fd);
     xpost_memory_table_init(ctx->gl, &tadr);
-    initfree(ctx->gl);
+    xpost_free_init(ctx->gl);
     initsave(ctx->gl);
     initctxlist(ctx->gl);
     addtoctxlist(ctx->gl, ctx->id);
@@ -149,7 +149,7 @@ void initlocal(context *ctx)
 
     xpost_memory_file_init(ctx->lo, l_filenam, fd);
     xpost_memory_table_init(ctx->lo, &tadr);
-    initfree(ctx->lo);
+    xpost_free_init(ctx->lo);
     initsave(ctx->lo);
     initctxlist(ctx->lo);
     addtoctxlist(ctx->lo, ctx->id);

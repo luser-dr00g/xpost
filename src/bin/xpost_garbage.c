@@ -344,7 +344,7 @@ unsigned sweep(Xpost_Memory_File *mem)
     for (i = mem->start; i < tab->nextent; i++) {
         if ( (tab->tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0
                 && tab->tab[i].sz != 0)
-            sz += mfree(mem, i);
+            sz += xpost_free_memory_ent(mem, i);
     }
 
     /* scan linked tables */
@@ -355,7 +355,7 @@ unsigned sweep(Xpost_Memory_File *mem)
         for (i = mem->start; i < tab->nextent; i++) {
             if ( (tab->tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0
                     && tab->tab[i].sz != 0)
-                sz += mfree(mem, i + ntab*XPOST_MEMORY_TABLE_SIZE);
+                sz += xpost_free_memory_ent(mem, i + ntab*XPOST_MEMORY_TABLE_SIZE);
         }
     }
 
@@ -491,7 +491,7 @@ int init_test_garbage()
         return 0;
     }
     xpost_memory_table_init(ctx->gl, &tadr);
-    initfree(ctx->gl);
+    xpost_free_init(ctx->gl);
     initsave(ctx->gl);
     initctxlist(ctx->gl);
     addtoctxlist(ctx->gl, ctx->id);
@@ -509,7 +509,7 @@ int init_test_garbage()
         return 0;
     }
     xpost_memory_table_init(ctx->lo, &tadr);
-    initfree(ctx->lo);
+    xpost_free_init(ctx->lo);
     initsave(ctx->lo);
     initctxlist(ctx->lo);
     addtoctxlist(ctx->lo, ctx->id);
@@ -603,7 +603,7 @@ unsigned stac;
 /* void init(void) { */
 /*     xpost_memory_file_init(&mem, "x.mem"); */
 /*     (void)xpost_memory_table_init(&mem); */
-/*     initfree(&mem); */
+/*     xpost_free_init(&mem); */
 /*     initsave(&mem); */
 /*     initctxlist(&mem); */
 /*     Xpost_Memory_Table *tab = (void *)mem.base; */
