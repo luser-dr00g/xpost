@@ -43,14 +43,14 @@ int main(int argc, char *argv[])
 
 	xpost_is_installed(argv[0]); /* mallocs char* exedir */
 
-    if (!createitp()) {
+    if (!xpost_create()) {
         XPOST_LOG_ERR("Failed to initialize.");
         return EXIT_FAILURE;
     }
 
-    runitp();
+    xpost_run();
 
-    destroyitp();
+    xpost_destroy();
 
 	free(exedir); 
 

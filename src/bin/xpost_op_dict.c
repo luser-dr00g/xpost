@@ -338,7 +338,7 @@ void Zcurrentdict(Xpost_Context *ctx)
 /* -  errordict  dict   % error handler dictionary : err.ps
    -  $error  dict      % error control and status dictionary : err.ps
    -  systemdict  dict  % system dictionary : op.c init.ps
-   -  userdict  dict    % writeable dictionary in local VM : itp.c
+   -  userdict  dict    % writeable dictionary in local VM : xpost_context.c
    %-  globaldict  dict  % writeable dictionary in global VM
    %-  statusdict  dict  % product-dependent dictionary
    */

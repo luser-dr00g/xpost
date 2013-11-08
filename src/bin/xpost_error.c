@@ -113,7 +113,7 @@ void error(unsigned err,
     exit(EXIT_FAILURE);
 }
 
-/* called by itp:loop() after longjmp from error()
+/* called by xpost_interpreter:loop() after longjmp from error()
    pushes postscript-level error procedures
    and resumes normal execution.
  */

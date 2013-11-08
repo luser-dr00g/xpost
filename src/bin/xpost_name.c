@@ -295,7 +295,7 @@ Xpost_Context *ctx;
 void init(void) {
     itpdata = malloc(sizeof*itpdata);
     memset(itpdata, 0, sizeof*itpdata);
-    inititp(itpdata);
+    xpost_interpreter_init(itpdata);
     ctx = &itpdata->ctab[0];
     ctx->vmmode = GLOBAL;
 }

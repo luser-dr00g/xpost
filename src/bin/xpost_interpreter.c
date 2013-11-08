@@ -66,7 +66,7 @@
 #include "xpost_pathname.h" // determine whether xpost is installed
 
 int TRACE = 0;
-itp *itpdata;
+Xpost_Interpreter *itpdata;
 int initializing = 1;
 int ignoreinvalidaccess = 0;
 
@@ -76,7 +76,7 @@ void init(void);
 void xit(void);
 
 /* find the next unused mfile in the global memory table */
-Xpost_Memory_File *nextgtab(void)
+Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
 {
     int i;
 
@@ -90,7 +90,7 @@ Xpost_Memory_File *nextgtab(void)
 }
 
 /* find the next unused mfile in the local memory table */
-Xpost_Memory_File *nextltab(void)
+Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
 {
     int i;
     for (i=0; i < MAXMFILE; i++) {
@@ -110,10 +110,10 @@ unsigned nextid = 0;
 /* allocate a context-id and associated context struct
    returns cid;
  */
-unsigned initctxid(void)
+unsigned xpost_interpreter_cid_init(void)
 {
     unsigned startid = nextid;
-    while ( ctxcid(++nextid)->state != 0 ) {
+    while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 ) {
         if (nextid == startid + MAXCONTEXT)
             error(unregistered, "ctab full. cannot create new process");
     }
@@ -123,7 +123,7 @@ unsigned initctxid(void)
 /* adapter:
            ctx <- cid
    yield pointer to context struct given cid */
-Xpost_Context *ctxcid(unsigned cid)
+Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid)
 {
     //TODO reject cid 0
     return &itpdata->ctab[ (cid-1) % MAXCONTEXT ];
@@ -131,15 +131,15 @@ Xpost_Context *ctxcid(unsigned cid)
 
 
 
-/* initialize itp */
-void inititp(itp *itpptr)
+/* initialize itpdata */
+void xpost_interpreter_init(Xpost_Interpreter *itpptr)
 {
     xpost_context_init(&itpptr->ctab[0]);
     itpptr->cid = itpptr->ctab[0].id;
 }
 
-/* destroy itp */
-void exititp(itp *itpptr)
+/* destroy itpdata */
+void xpost_interpreter_exit(Xpost_Interpreter *itpptr)
 {
     xpost_context_exit(&itpptr->ctab[0]);
 }
@@ -376,7 +376,7 @@ static void initalldata(void)
        populate OPTAB and systemdict with operators.
        push systemdict, globaldict, and userdict on dict stack
      */
-    inititp(itpdata);
+    xpost_interpreter_init(itpdata);
 
     /* set global shortcut to context_0
        (the only context in a single-threaded interpreter) */
@@ -444,7 +444,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-int createitp(void)
+int xpost_create(void)
 {
     Xpost_Object sd, ud;
 
@@ -475,7 +475,7 @@ int createitp(void)
 }
 
 
-void runitp(void)
+void xpost_run(void)
 {
     Xpost_Object lsav;
     int llev;
@@ -512,13 +512,13 @@ void runitp(void)
     }
 }
 
-void destroyitp(void)
+void xpost_destroy(void)
 {
     //dumpoper(ctx, 1); // is this pointer value constant?
     printf("bye!\n");
     fflush(NULL);
     collect(itpdata->ctab->gl, 1, 1);
-    exititp(itpdata);
+    xpost_interpreter_exit(itpdata);
     free(itpdata);
 }
 

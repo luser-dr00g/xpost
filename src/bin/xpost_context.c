@@ -113,7 +113,7 @@ void initglobal(Xpost_Context *ctx)
     /* allocate and initialize global vm */
     //ctx->gl = malloc(sizeof(Xpost_Memory_File));
     //ctx->gl = &itpdata->gtab[0];
-    ctx->gl = nextgtab();
+    ctx->gl = xpost_interpreter_alloc_global_memory();
 
     fd = mkstemp(g_filenam);
 
@@ -143,7 +143,7 @@ void initlocal(Xpost_Context *ctx)
     /* allocate and initialize local vm */
     //ctx->lo = malloc(sizeof(Xpost_Memory_File));
     //ctx->lo = &itpdata->ltab[0];
-    ctx->lo = nextltab();
+    ctx->lo = xpost_interpreter_alloc_local_memory();
 
     fd = mkstemp(l_filenam);
 
@@ -173,7 +173,7 @@ void initlocal(Xpost_Context *ctx)
  */
 void xpost_context_init(Xpost_Context *ctx)
 {
-    ctx->id = initctxid();
+    ctx->id = xpost_interpreter_cid_init();
     initlocal(ctx);
     initglobal(ctx);
 
@@ -243,8 +243,8 @@ unsigned fork1(Xpost_Context *ctx)
     unsigned newcid;
     Xpost_Context *newctx;
 
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
+    newcid = xpost_interpreter_cid_init();
+    newctx = xpost_interpreter_cid_get_context(newcid);
     initlocal(ctx);
     initglobal(ctx);
     ctx->vmmode = LOCAL;
@@ -261,8 +261,8 @@ unsigned fork2(Xpost_Context *ctx)
     unsigned newcid;
     Xpost_Context *newctx;
 
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
+    newcid = xpost_interpreter_cid_init();
+    newctx = xpost_interpreter_cid_get_context(newcid);
     initlocal(ctx);
     newctx->gl = ctx->gl;
     xpost_context_append_ctxlist(newctx->gl, newcid);
@@ -281,8 +281,8 @@ unsigned fork3(Xpost_Context *ctx)
     unsigned newcid;
     Xpost_Context *newctx;
 
-    newcid = initctxid();
-    newctx = ctxcid(newcid);
+    newcid = xpost_interpreter_cid_init();
+    newctx = xpost_interpreter_cid_get_context(newcid);
     newctx->lo = ctx->lo;
     xpost_context_append_ctxlist(newctx->lo, newcid);
     newctx->gl = ctx->gl;
