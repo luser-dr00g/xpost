@@ -206,6 +206,7 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
     Xpost_Object *tp;
     unsigned i;
     unsigned int vs;
+    unsigned int ent;
 
     if (sz < 5) sz = 5;
 
@@ -216,7 +217,9 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
     /* unsigned int ent = xpost_memory_table_alloc(mem,
            sizeof(dichead) + DICTABSZ(sz), 0, &ent);
        d.comp_.ent = ent; */
-    d.comp_.ent = xpost_free_alloc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype);
+    if (!xpost_free_alloc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype, &ent))
+        error(VMerror, "consdic cannot allocate dictionary");
+    d.comp_.ent = ent;
 
     tab = (void *)(mem->base);
     rent = d.comp_.ent;

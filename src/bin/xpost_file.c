@@ -139,13 +139,16 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
         /*@NULL@*/ FILE *fp)
 {
     Xpost_Object f;
+    unsigned int ent;
 
 #ifdef DEBUG_FILE
     printf("consfile %p\n", fp);
 #endif
     f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
     /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
-    f.mark_.padw = xpost_free_alloc(mem, sizeof(FILE *), filetype);
+    if (!xpost_free_alloc(mem, sizeof(FILE *), filetype, &ent))
+        error(VMerror, "consfile cannot allocate file record");
+    f.mark_.padw = ent;
     xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     return f;
 }

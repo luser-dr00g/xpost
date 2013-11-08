@@ -84,19 +84,28 @@ void dumpnames(Xpost_Context *ctx)
 }
 
 /* initialize the name special entities XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, NAMET */
-void initnames(Xpost_Context *ctx)
+int initnames(Xpost_Context *ctx)
 {
     Xpost_Memory_Table *tab;
     unsigned ent;
     unsigned t;
     unsigned mode;
     unsigned int nstk;
+    int ret;
 
     mode = ctx->vmmode;
     ctx->vmmode = GLOBAL;
-    xpost_memory_table_alloc(ctx->gl, 0, 0, &ent); //gl:NAMES
+    ret = xpost_memory_table_alloc(ctx->gl, 0, 0, &ent); //gl:NAMES
+    if (!ret)
+    {
+        return 0;
+    }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK);
-    xpost_memory_table_alloc(ctx->gl, 0, 0, &ent); //gl:NAMET
+    ret = xpost_memory_table_alloc(ctx->gl, 0, 0, &ent); //gl:NAMET
+    if (!ret)
+    {
+        return 0;
+    }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE);
 
     xpost_stack_init(ctx->gl, &t);
@@ -109,9 +118,17 @@ void initnames(Xpost_Context *ctx)
     assert (xpost_stack_topdown_fetch(ctx->gl, nstk, 0).comp_.ent == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
 
     ctx->vmmode = LOCAL;
-    xpost_memory_table_alloc(ctx->lo, 0, 0, &ent); //lo:NAMES
+    ret = xpost_memory_table_alloc(ctx->lo, 0, 0, &ent); //lo:NAMES
+    if (!ret)
+    {
+        return 0;
+    }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK);
-    xpost_memory_table_alloc(ctx->lo, 0, 0, &ent); //lo:NAMET
+    ret = xpost_memory_table_alloc(ctx->lo, 0, 0, &ent); //lo:NAMET
+    if (!ret)
+    {
+        return 0;
+    }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE);
 
     xpost_stack_init(ctx->lo, &t);
@@ -124,6 +141,8 @@ void initnames(Xpost_Context *ctx)
     assert (xpost_stack_topdown_fetch(ctx->lo, nstk, 0).comp_.ent == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
 
     ctx->vmmode = mode;
+
+    return 1;
 }
 
 /* perform a search using the ternary search tree */

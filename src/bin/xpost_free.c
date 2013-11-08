@@ -44,12 +44,17 @@
 
 /* free list head is in slot zero
    sz is 0 so gc will ignore it */
-void xpost_free_init(Xpost_Memory_File *mem)
+int xpost_free_init(Xpost_Memory_File *mem)
 {
     unsigned ent;
     unsigned val = 0;
+    int ret;
 
-    xpost_memory_table_alloc(mem, sizeof(unsigned), 0, &ent);
+    ret = xpost_memory_table_alloc(mem, sizeof(unsigned), 0, &ent);
+    if (!ret)
+    {
+        return 0;
+    }
     assert (ent == XPOST_MEMORY_TABLE_SPECIAL_FREE);
     xpost_memory_put(mem, ent, 0, sizeof(unsigned), &val);
 
@@ -59,6 +64,7 @@ void xpost_free_init(Xpost_Memory_File *mem)
        Xpost_Memory_Table *tab = (void *)mem->base;
        xpost_memory_file_alloc(mem, sizeof(unsigned), &tab->tab[ent].adr);
    */
+    return 1;
 }
 
 /* free this ent! returns reclaimed size */
@@ -135,9 +141,10 @@ void xpost_free_dump(Xpost_Memory_File *mem)
 /* scan the free list for a suitably sized bit of memory,
    if the allocator falls back to fresh memory PERIOD times,
         it triggers a collection. */
-unsigned xpost_free_alloc(Xpost_Memory_File *mem,
+int xpost_free_alloc(Xpost_Memory_File *mem,
         unsigned sz,
-        unsigned tag)
+        unsigned tag,
+        unsigned int *entity)
 {
     unsigned z;
     unsigned e;                     /* working pointer */
@@ -162,7 +169,8 @@ try_again:
             ent = e;
             xpost_memory_table_find_relative(mem, &tab, &ent);
             tab->tab[ent].tag = tag;
-            return e;
+            *entity = e;
+            return 1;
         }
         xpost_memory_table_get_addr(mem, e, &z);
         memcpy(&e, mem->base+z, sizeof(unsigned));
@@ -173,8 +181,15 @@ try_again:
         goto try_again;
     }
 /*#endif */
-    xpost_memory_table_alloc(mem, sz, tag, &rent);
-    return rent;
+    if (xpost_memory_table_alloc(mem, sz, tag, &rent))
+    {
+        *entity = rent;
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 /*

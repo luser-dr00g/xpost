@@ -496,9 +496,24 @@ int init_test_garbage()
         xpost_memory_file_exit(ctx->gl);
         return 0;
     }
-    xpost_free_init(ctx->gl);
-    initsave(ctx->gl);
-    xpost_context_init_ctxlist(ctx->gl);
+    ret = xpost_free_init(ctx->gl);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
+    ret = initsave(ctx->gl);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
+    ret = xpost_context_init_ctxlist(ctx->gl);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
     xpost_context_append_ctxlist(ctx->gl, ctx->id);
     ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1;
 
@@ -516,21 +531,52 @@ int init_test_garbage()
     ret = xpost_memory_table_init(ctx->lo, &tadr);
     if (!ret)
     {
+        xpost_memory_file_exit(ctx->gl);
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
-    xpost_free_init(ctx->lo);
-    initsave(ctx->lo);
-    xpost_context_init_ctxlist(ctx->lo);
+    ret = xpost_free_init(ctx->lo);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
+    ret = initsave(ctx->lo);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
+    ret = xpost_context_init_ctxlist(ctx->lo);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
     xpost_context_append_ctxlist(ctx->lo, ctx->id);
     ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME + 1;
 
     /* create names in both mfiles */
-    initnames(ctx);
+    ret = initnames(ctx);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
 
     /* create global OPTAB */
     ctx->vmmode = GLOBAL;
-    initoptab(ctx);
+    ret = initoptab(ctx);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
     /* ... no initop(). don't need operators for this. */
 
     /* only need one stack */

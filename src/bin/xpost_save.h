@@ -57,7 +57,7 @@
 
    */
 
-void initsave(Xpost_Memory_File *mem);
+int initsave(Xpost_Memory_File *mem);
 Xpost_Object save(Xpost_Memory_File *mem);
 unsigned stashed(Xpost_Memory_File *mem, unsigned ent);
 void stash(Xpost_Memory_File *mem, unsigned tag, unsigned pad, unsigned ent);

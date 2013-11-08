@@ -36,7 +36,7 @@
  * @brief  initialize the FREE special entity which points
  *         to the head of the free list
  */
-void xpost_free_init(Xpost_Memory_File *mem);
+int xpost_free_init(Xpost_Memory_File *mem);
 
 /**
  * @brief  print a dump of the free list
@@ -46,12 +46,16 @@ void xpost_free_dump(Xpost_Memory_File *mem);
 /**
  * @brief  allocate data, re-using garbage if possible
  */
-unsigned xpost_free_alloc(Xpost_Memory_File *mem, unsigned sz, unsigned tag);
+int xpost_free_alloc(Xpost_Memory_File *mem,
+                     unsigned sz,
+                     unsigned tag,
+                     unsigned int *entity);
 
 /**
  * @brief  explicitly add ent to free list
  */
-unsigned xpost_free_memory_ent(Xpost_Memory_File *mem, unsigned ent);
+unsigned xpost_free_memory_ent(Xpost_Memory_File *mem,
+                               unsigned ent);
 
 /**
  * @brief reallocate data, preserving original contents
