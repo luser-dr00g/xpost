@@ -490,7 +490,12 @@ int init_test_garbage()
         close(fd);
         return 0;
     }
-    xpost_memory_table_init(ctx->gl, &tadr);
+    ret = xpost_memory_table_init(ctx->gl, &tadr);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
     xpost_free_init(ctx->gl);
     initsave(ctx->gl);
     xpost_context_init_ctxlist(ctx->gl);
@@ -508,7 +513,12 @@ int init_test_garbage()
         xpost_memory_file_exit(ctx->gl);
         return 0;
     }
-    xpost_memory_table_init(ctx->lo, &tadr);
+    ret = xpost_memory_table_init(ctx->lo, &tadr);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
     xpost_free_init(ctx->lo);
     initsave(ctx->lo);
     xpost_context_init_ctxlist(ctx->lo);

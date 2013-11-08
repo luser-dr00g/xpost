@@ -49,6 +49,7 @@
 #include "xpost_stack.h"  // name strings live on a stack
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  // initialize interpreter to test
+#include "xpost_error.h"
 #include "xpost_string.h"  // access string objects
 #include "xpost_name.h"  // double-check prototypes
 
@@ -156,7 +157,8 @@ unsigned tstinsert(Xpost_Memory_File *mem,
     unsigned int nstk;
 
     if (!tadr) {
-        xpost_memory_file_alloc(mem, sizeof(tst), &tadr);
+        if (!xpost_memory_file_alloc(mem, sizeof(tst), &tadr))
+            error(VMerror, "tstinsert cannot allocate tree node");
         p = (void *)(mem->base + tadr);
         p->val = *s;
         p->lo = p->eq = p->hi = 0;

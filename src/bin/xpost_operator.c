@@ -187,7 +187,8 @@ Xpost_Object consoper(Xpost_Context *ctx,
         if (opcode == noop) { /* a new operator */
             unsigned adr;
             if (noop == MAXOPS-1) error(unregistered, "optab too small!\n");
-            xpost_memory_file_alloc(ctx->gl, sizeof(signat), &adr);
+            if (!xpost_memory_file_alloc(ctx->gl, sizeof(signat), &adr))
+                error(VMerror, "consoper cannot allocate signature block");
             optab = (void *)(ctx->gl->base + optadr); // recalc
             op.name = nm.mark_.padw;
             op.n = 1;
@@ -209,7 +210,8 @@ Xpost_Object consoper(Xpost_Context *ctx,
         sp = (void *)(ctx->gl->base + optab[opcode].sigadr);
         {
             unsigned int ad;
-            xpost_memory_file_alloc(ctx->gl, in, &ad);
+            if (!xpost_memory_file_alloc(ctx->gl, in, &ad))
+                error(VMerror, "consoper cannot allocate type block");
             sp[si].t = ad;
         }
         optab = (void *)(ctx->gl->base + optadr); // recalc
