@@ -338,6 +338,7 @@ unsigned fork1(Xpost_Context *ctx)
     unsigned newcid;
     Xpost_Context *newctx;
 
+    (void)ctx;
     newcid = xpost_interpreter_cid_init();
     newctx = xpost_interpreter_cid_get_context(newcid);
     initlocal(newctx);
