@@ -139,7 +139,7 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
         }
     }
 
-    fm = CreateFileMapping(h, NULL, PAGE_READWRITE, sz & 0xffff0000, sz & 0x0000ffff, NULL);
+    fm = CreateFileMapping(h, NULL, PAGE_READWRITE, sz >> 32, sz & 0xffffffff, NULL);
     if (!fm)
     {
         XPOST_LOG_ERR("CreateFileMapping failed (%ld)", GetLastError());
@@ -263,7 +263,9 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
         sz = (sz / xpost_memory_pagesize + 1) * xpost_memory_pagesize;
     sz += mem->max;
 
-    XPOST_LOG_INFO("grow memory file (old: %d  new: %d)", mem->max, sz);
+    XPOST_LOG_INFO("grow memory file%s%s (old: %d  new: %d)",
+                   mem->fname ? " for " : "", mem->fname ? mem->fname : "",
+                   mem->max, sz);
 
 #ifdef _WIN32
     if (mem->fd != -1)
@@ -288,10 +290,10 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
         }
     }
 
-    fm = CreateFileMapping(h, NULL, PAGE_EXECUTE_READWRITE, sz & 0xffff0000, sz & 0x0000ffff, NULL);
+    fm = CreateFileMapping(h, NULL, PAGE_READWRITE, (size_t)sz >> 32, sz & 0xffffffff, NULL);
     if (!fm)
     {
-        XPOST_LOG_ERR("CreateFileMapping failed");
+        XPOST_LOG_ERR("CreateFileMapping failed (%ld)", GetLastError());
         if (mem->fd != -1) close(mem->fd);
         return 0;
     }
