@@ -44,19 +44,27 @@
    with optional string value
    */
 Xpost_Object consstr(Xpost_Memory_File *mem,
-               unsigned sz,
-               /*@NULL@*/ char *ini)
+                     unsigned sz,
+                     /*@NULL@*/ char *ini)
 {
     unsigned ent;
     Xpost_Object o;
+    int ret;
+
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
     if (!xpost_free_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype, &ent))
         error(VMerror, "consstr cannot allocate string");
-    if (ini) xpost_memory_put(mem, ent, 0, sz, ini);
+    if (ini)
+        ret = xpost_memory_put(mem, ent, 0, sz, ini);
+    if (!ret)
+    {
+        error(unregistered, "consstr cannot store initial value in string");
+    }
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;
     o.comp_.ent = ent;
     o.comp_.off = 0;
+
     return o;
 }
 
@@ -64,8 +72,8 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
    with optional string value
    */
 Xpost_Object consbst(Xpost_Context *ctx,
-               unsigned sz,
-               /*@NULL@*/ char *ini)
+                     unsigned sz,
+                     /*@NULL@*/ char *ini)
 {
     Xpost_Object s;
     s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
@@ -99,7 +107,13 @@ void strput(Xpost_Memory_File *mem,
             integer c)
 {
     byte b = c;
-    xpost_memory_put(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
+    int ret;
+
+    ret = xpost_memory_put(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
+    if (!ret)
+    {
+        error(rangecheck, "strput");
+    }
 }
 
 /* put a value at index into a banked string */
@@ -117,7 +131,14 @@ integer strget(Xpost_Memory_File *mem,
                integer i)
 {
     byte b;
-    xpost_memory_get(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
+    int ret;
+
+    ret = xpost_memory_get(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
+    if (!ret)
+    {
+        error(rangecheck, "strget cannot access byte in string");
+    }
+
     return b;
 }
 

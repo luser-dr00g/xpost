@@ -88,7 +88,16 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
                 | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET) );
 
         for (i = 0; i < sz; i++)
-            xpost_memory_put(mem, ent, i, (unsigned)sizeof(Xpost_Object), &null);
+        {
+            int ret;
+
+            ret = xpost_memory_put(mem,
+                    ent, i, (unsigned)sizeof(Xpost_Object), &null);
+            if (!ret)
+            {
+                error(rangecheck, "consarr cannot fill array value");
+            }
+        }
     }
 
     /* return (Xpost_Object){ .comp_.tag = arraytype, .comp_.sz = sz, .comp_.ent = ent, .comp_.off = 0}; */
@@ -155,7 +164,14 @@ Xpost_Object arrget(Xpost_Memory_File *mem,
               integer i)
 {
     Xpost_Object o;
-    xpost_memory_get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
+    int ret;
+
+    ret = xpost_memory_get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
+    if (!ret)
+    {
+        error(rangecheck, "arrget");
+    }
+
     return o;
 }
 
