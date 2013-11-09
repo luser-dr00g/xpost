@@ -37,8 +37,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h" /* Xpost_Memory_File */
 #include "xpost_object.h" /* Xpost_Object */
+#include "xpost_context.h"
+#include "xpost_error.h"
 #include "xpost_garbage.h" /* PERIOD */
 #include "xpost_free.h"
 
@@ -56,7 +59,12 @@ int xpost_free_init(Xpost_Memory_File *mem)
         return 0;
     }
     assert (ent == XPOST_MEMORY_TABLE_SPECIAL_FREE);
-    xpost_memory_put(mem, ent, 0, sizeof(unsigned), &val);
+    ret = xpost_memory_put(mem, ent, 0, sizeof(unsigned), &val);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("xpost_free_init cannot access list head");
+        return 0;
+    }
 
     /*
        unsigned ent;
@@ -88,7 +96,12 @@ unsigned xpost_free_memory_ent(Xpost_Memory_File *mem,
 
     if (tab->tab[rent].tag == filetype) {
         FILE *fp;
-        xpost_memory_get(mem, ent, 0, sizeof(FILE *), &fp);
+        int ret;
+        ret = xpost_memory_get(mem, ent, 0, sizeof(FILE *), &fp);
+        if (!ret)
+        {
+            error(unregistered, "xpost_free_memory_ent cannot load FILE* from FM");
+        }
         if (fp
                 && fp != stdin
                 && fp != stdout
@@ -102,7 +115,12 @@ unsigned xpost_free_memory_ent(Xpost_Memory_File *mem,
 #endif
             fclose(fp);
             fp = NULL;
-            xpost_memory_put(mem, ent, 0, sizeof(FILE *), &fp);
+            ret = xpost_memory_put(mem, ent, 0, sizeof(FILE *), &fp);
+            if (!ret)
+            {
+                error(unregistered,
+                        "xpost_free_memory_ent cannot write NULL over FILE* in VM");
+            }
         }
     }
     tab->tab[rent].tag = 0;
