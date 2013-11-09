@@ -140,6 +140,7 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
 {
     Xpost_Object f;
     unsigned int ent;
+    int ret;
 
 #ifdef DEBUG_FILE
     printf("consfile %p\n", fp);
@@ -149,7 +150,11 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
     if (!xpost_free_alloc(mem, sizeof(FILE *), filetype, &ent))
         error(VMerror, "consfile cannot allocate file record");
     f.mark_.padw = ent;
-    xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+    if (!ret)
+    {
+        error(unregistered, "consfile cannot save FILE* in VM");
+    }
     return f;
 }
 
@@ -317,7 +322,13 @@ FILE *filefile(Xpost_Memory_File *mem,
                Xpost_Object f)
 {
     FILE *fp;
-    xpost_memory_get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+    int ret;
+
+    ret = xpost_memory_get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+    if (!ret)
+    {
+        error(unregistered, "filefile cannot load FILE* from VM");
+    }
     return fp;
 }
 
@@ -355,6 +366,7 @@ void fileclose(Xpost_Memory_File *mem,
                Xpost_Object f)
 {
     FILE *fp;
+    int ret;
 
     fp = filefile(mem, f);
     if (fp) {
@@ -363,7 +375,11 @@ void fileclose(Xpost_Memory_File *mem,
 #endif
         fclose(fp);
         fp = NULL;
-        xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+        ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+        if (!ret)
+        {
+            error(unregistered, "fileclose cannot write NULL over FILE* in VM");
+        }
     }
 }
 
