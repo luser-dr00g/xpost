@@ -54,7 +54,7 @@
  *                           been allocated since the previous collection.
  */
 typedef enum {
-    PERIOD = 2000  /* number of times to grow before collecting */
+    PERIOD = 4000  /* number of times to grow before collecting */
 } Xpost_Garbage_Params;
 
 /**

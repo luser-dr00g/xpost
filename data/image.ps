@@ -171,7 +171,8 @@
     /FillPoly { % val polygon IMAGE  .  -
     begin {poly val}{exch def}forall
 
-        /minx 16#7fffffff def
+        (FillPoly)= val = poly ==
+        /minx 16#7ffffff def
         /miny minx def
         /maxx minx neg def
         /maxy maxx def
@@ -184,7 +185,7 @@
         [
         poly {
             /Q exch def
-            a 0 get length 1 sub        % [ x_max
+            ImgData 0 get length 1 sub        % [ x_max
             miny floor cvi .5 add       % [ x_max miny.5
             1                           % [ x_max miny.5 1
             maxy ceiling cvi .5 sub     % [ x_max miny.5 1 maxy-.5
