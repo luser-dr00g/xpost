@@ -14,9 +14,10 @@
 
 START_TEST(xpost_init)
 {
-    Xpost_Memory_File mem = {0};
+    Xpost_Memory_File mem;
     int ret;
 
+    memset(&mem, 0, sizeof(Xpost_Memory_File));
     ret = xpost_memory_file_init(&mem, NULL, -1);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
@@ -27,10 +28,11 @@ END_TEST
 
 START_TEST(xpost_memory_init)
 {
-    Xpost_Memory_File mem = {0};
+    Xpost_Memory_File mem;
     unsigned int addr;
     int ret;
 
+    memset(&mem, 0, sizeof(Xpost_Memory_File));
     ret = xpost_memory_file_init(&mem, NULL, -1);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
