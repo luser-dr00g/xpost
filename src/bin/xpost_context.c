@@ -291,9 +291,9 @@ void xpost_context_dump(Xpost_Context *ctx)
    (spawn jobserver)
    */
 static
-unsigned fork1(Xpost_Context *ctx)
+unsigned int _fork1(Xpost_Context *ctx)
 {
-    unsigned newcid;
+    unsigned int newcid;
     Xpost_Context *newctx;
 
     (void)ctx;
