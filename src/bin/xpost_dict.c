@@ -379,13 +379,13 @@ static
 Xpost_Object consextended (double d)
 {
     Xpost_Ieee_Double_As_Int r;
-    Xpost_Object_Extended e;
+    Xpost_Object o;
 
     r.number = d;
-    e.tag = extendedtype;
-    e.sign_exp = (r.bits >> 52) & 0x7FF;
-    e.fraction = (r.bits >> 20) & 0xFFFFFFFF;
-    return (Xpost_Object)e;
+    o.extended_.tag = extendedtype;
+    o.extended_.sign_exp = (r.bits >> 52) & 0x7FF;
+    o.extended_.fraction = (r.bits >> 20) & 0xFFFFFFFF;
+    return o;
 }
 
 /* adapter:

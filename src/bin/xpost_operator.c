@@ -110,7 +110,7 @@ void dumpoper(Xpost_Context *ctx,
 {
     oper *optab;
     oper op;
-    Xpost_Object_Mark nm;
+    Xpost_Object o;
     Xpost_Object str;
     char *s;
     signat *sig;
@@ -120,10 +120,10 @@ void dumpoper(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &adr);
     optab = (void *)(ctx->gl->base + adr);
     op = optab[opcode];
-    nm.tag = nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK;
-    nm.pad0 = 0;
-    nm.padw = op.name;
-    str = strname(ctx, (Xpost_Object)nm);
+    o.mark_.tag = nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+    o.mark_.pad0 = 0;
+    o.mark_.padw = op.name;
+    str = strname(ctx, o);
     s = charstr(ctx, str);
     sig = (void *)(ctx->gl->base + op.sigadr);
     printf("<operator %d %d:%*s %p>",
