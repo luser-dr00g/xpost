@@ -40,7 +40,6 @@
 #include "xpost_log.h"
 #include "xpost_memory.h" /* Xpost_Memory_File */
 #include "xpost_object.h" /* Xpost_Object */
-#include "xpost_garbage.h" /* collect */
 #include "xpost_free.h"
 
 /* free list head is in slot zero
