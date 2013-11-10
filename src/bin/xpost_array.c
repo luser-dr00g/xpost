@@ -209,7 +209,14 @@ Xpost_Object arrgetinterval(Xpost_Object a,
 Xpost_Context *ctx;
 Xpost_Memory_File *mem;
 
-int main(void) {
+int main(void)
+{
+    if (!xpost_init())
+    {
+        fprintf(stderr, "Fail to initialize xpost array test\n");
+        return -1;
+    }
+
     itpdata = malloc(sizeof*itpdata);
     memset(itpdata, 0, sizeof*itpdata);
     xpost_interpreter_init(itpdata);
@@ -244,6 +251,8 @@ int main(void) {
 
     printf("the memory table:\n");
     dumpmtab(mem, 0);
+
+    xpost_quit();
 
     return 0;
 }

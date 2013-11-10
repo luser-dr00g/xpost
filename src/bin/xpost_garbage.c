@@ -43,9 +43,7 @@
 #endif
 
 #ifdef __MINGW32__
-# include "osmswin.h" /* mkstemp xpost_getpagesize */
-#else
-# include "osunix.h" /* xpost_getpagesize */
+# include "osmswin.h" /* mkstemp */
 #endif
 
 #include "xpost_log.h"
@@ -492,7 +490,6 @@ int init_test_garbage()
     int ret;
 
     /* create interpreter and context */
-    xpost_memory_pagesize = xpost_getpagesize();
     itpdata = malloc(sizeof*itpdata);
     if (!itpdata) return 0;
     memset(itpdata, 0, sizeof*itpdata);
@@ -699,7 +696,14 @@ void init(void) {
     xpost_interpreter_init(itpdata);
 }
 
-int main(void) {
+int main(void)
+{
+    if (!xpost_init())
+    {
+        fprintf(stderr, "Fail to initialize xpost dict test\n");
+        return -1;
+    }
+
     init();
     printf("\n^test gc.c\n");
     ctx = &itpdata->ctab[0];
@@ -743,6 +747,8 @@ int main(void) {
     printf("gc: look at the mark field . . . . . . . .^\n");
     printf("also, see that the first 4 bytes of strings not on stack\n"
            "have been obliterated to link-up the free list.\n");
+
+    xpost_quit();
 
     return 0;
 }

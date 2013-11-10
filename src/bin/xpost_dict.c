@@ -707,7 +707,14 @@ void init() {
     ctx = &itpdata->ctab[0];
 }
 
-int main(void) {
+int main(void)
+{
+    if (!xpost_init())
+    {
+        fprintf(stderr, "Fail to initialize xpost dict test\n");
+        return -1;
+    }
+
     printf("\n^test di.c\n");
     init();
 
@@ -728,6 +735,9 @@ int main(void) {
     /*xpost_memory_file_dump(ctx->gl); */
     /*dumpmtab(ctx->gl, 0); */
     puts("");
+
+    xpost_quit();
+
     return 0;
 }
 
