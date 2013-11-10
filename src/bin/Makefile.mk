@@ -100,7 +100,7 @@ splint: $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h
 	$(splint_verbose)$(splint_process)
 
 if HAVE_WC
-wc_process = @WC@ -l $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h
+wc_process = @WC@ -l $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h $(top_srcdir)/src/lib/*.c $(top_srcdir)/src/lib/*.h
 else
 wc_process = echo "wc not found. Update PATH or install wc."
 endif
@@ -109,5 +109,5 @@ wc_verbose = $(wc_verbose_@AM_V@)
 wc_verbose_ = $(wc_verbose_@AM_DEFAULT_V@)
 wc_verbose_0 = $(AM_V_at)echo "  WC      " $@;
 
-count: $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h
+count: $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h $(top_srcdir)/src/lib/*.c $(top_srcdir)/src/lib/*.h
 	$(wc_verbose)$(wc_process)

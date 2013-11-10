@@ -31,36 +31,61 @@
 #ifndef XPOST_SAVE_H
 #define XPOST_SAVE_H
 
-/* save/restore
-   Each mfile has a special entity (XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK) which holds the address
-   of the "save stack". This stack holds save objects.
+/**
+ *  @file xpost_save
+ *
+ *  Each mfile has a special entity (XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK)
+ *  which holds the address of the "save stack". This stack holds save objects.
+ *  Save objects are ordinary postscript objects and are available to user programs.
+ *
+ *  The save object contains an address of a(nother) stack,
+ *  this one containing saverec_ structures.
+ *  A saverec_ object contains 2 entity numbers, one the source,
+ *  the other the copy, of the "saved" array or dictionary.
+ *
+ *  stashed and stash are the interfaces used by composite objects
+ *  to check-if-copying-is-necessary
+ *  and copy-the-value-and-add-saverec-to-current-savelevel-stack
 
-   The save object contains an address of a(nother) stack,
-   this one containing saverec_ structures.
-   A saverec_ object contains 2 entity numbers, one the source,
-   the other the copy, of the "saved" array or dictionary.
+ *  Illustration:
+ *
+ *  mem[mtab[XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK].adr] = Master Save stack
+ *  -- save object = { lev=0, stk=... }
+ *  -- save object = { lev=1, stk=... }
+ *     -- saverec
+ *     -- saverec
+ *  -- save object = { lev=2, stk=... }  <-- top of XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, current savelevel stack
+ *     mem[save.save_.stk] = Save Object's stack
+ *     -- saverec
+ *     -- saverec
+ *     -- saverec = { src=foo_ent, cpy=bar_ent }
+ *
+ */
 
-   stashed and stash are the interfaces used by composite objects
-   to check-if-copying-is-necessary
-   and copy-the-value-and-add-saverec-to-current-savelevel-stack
-
-   mem[mtab[XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK].adr] = Master Save stack
-   -- save object = { lev=0, stk=... }
-   -- save object = { lev=1, stk=... }
-      -- saverec
-      -- saverec
-   -- save object = { lev=2, stk=... }  <-- top of XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, current savelevel stack
-      mem[save.save_.stk] = Save Object's stack
-      -- saverec
-      -- saverec
-      -- saverec = { src=foo_ent, cpy=bar_ent }
-
-   */
-
+/*
+ * @brief initialize the save stack for memory file.
+ */
 int xpost_save_init(Xpost_Memory_File *mem);
+
+/*
+ * @brief create a savetype object that represents a snapshot of virtual memory (array and dict) contents,
+         and push a new snapshot object on the stack.
+ */
 Xpost_Object xpost_save_create_snapshot_object(Xpost_Memory_File *mem);
+
+/*
+ * @brief check whether an ent is contained in the current snapshot
+ */
 unsigned xpost_save_ent_is_saved(Xpost_Memory_File *mem, unsigned ent);
+
+/*
+ * @brief add ent to current snapshot
+ */
 void xpost_save_save_ent(Xpost_Memory_File *mem, unsigned tag, unsigned pad, unsigned ent);
+
+/*
+ * @brief rewind the stack 1 level, reverting memory to previous snapshot.
+ */
 void xpost_save_restore_snapshot(Xpost_Memory_File *mem);
 
 #endif
