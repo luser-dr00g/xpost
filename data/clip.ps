@@ -1,0 +1,165 @@
+(loading clip.ps...)=
+
+/initclip {
+    graphicsdict /currgstate get 
+        dup /currpath get   % currpath
+        exch /currmatrix get % currmatrix
+
+    newpath
+    matrix setmatrix
+    DEVICE /dimensions get
+    aload pop
+    0 0 moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+
+    graphicsdict /currgstate get
+        dup dup /currpath get /clipregion exch put
+        dup 3 2 roll /currmatrix exch put
+        exch /currpath exch put
+} def
+
+/clip {
+    doclip
+    graphicsdict /currgstate get
+    dup /currpath get /clipregion exch put
+    %newpath %NO! clip does not disturb the current path.
+} def
+
+
+/p2abc { % x0 y0 x1 y1
+    exch 3 index sub
+    exch 2 index sub % x0 y0 dx dy
+    exch         % x0 y0 A B
+    neg
+    2 copy 6 2 roll  % A B x0 y0 A B
+    3 -1 roll mul    % A B x0 A By0
+    3 1 roll mul     % A B By0 Ax0
+    add neg          % A B C
+} def
+
+% evaluate and hodgman-sutherland
+% from Bill Casselman's Mathematical Illustrations, ch. 5.
+
+/evaluate { %    x y [A B C]
+    aload pop    % x y A B C
+    5 1 roll     % C x y A B
+    3 2 roll mul % C x A By
+    3 1 roll mul % C By Ax
+    add add
+} def
+
+% polygon [A B C]  .  new-polygon
+/hodgman-sutherland { 4 dict begin
+    /f exch def
+    /p exch def
+    /n p length def
+    (n=)print n =
+    n 0 gt {
+
+    /P p n 1 sub get def
+    /d P length 1 sub def
+    /fP P aload pop f evaluate def
+    [
+        p {
+            /Q exch def
+            /fQ Q aload pop f evaluate def
+            (P=)print P ==
+            (Q=)print Q ==
+            (fP=)print fP ==
+            (fQ=)print fQ ==
+            fP 0 le {
+                fQ 0 le {
+                    Q
+                    (Q)=
+                }{
+                    fP 0 lt {
+                        /QP fQ fP sub def
+                        [
+                            fQ P 0 get mul fP Q 0 get mul sub QP div
+                            fQ P 1 get mul fP Q 1 get mul sub QP div
+                        ]
+                        (I)=
+                    } if
+                } ifelse
+            }{
+                fQ 0 le {
+                    fQ 0 lt {
+                        /QP fQ fP sub def
+                        [
+                            fQ P 0 get mul fP Q 0 get mul sub QP div
+                            fQ P 1 get mul fP Q 1 get mul sub QP div
+                        ]
+                        (I)=
+                    } if
+                    Q
+                    (Q)=
+                } if
+            } ifelse
+            /P Q def
+            /fP fQ def
+        } forall
+    ]
+
+    }{ % n==0
+        p
+    } ifelse
+
+end } def
+
+%clip the current path by the clipregion
+% convert the path to an array of polygons (arrays of points)
+% convert clipregion to array of polygons
+% traverse the clipregion
+%    convert line to [A B C] form
+%    feed polygon and line to hodgman-sutherland,
+%       receiving new polygon.
+/doclip { 4 dict begin
+
+    closepath
+    flattenpath
+    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    /PA exch def % polygon array
+
+    clippath
+    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    /CR exch def % clippath array
+
+    (PA: )print PA ==
+    (CR: )print CR ==
+
+    CR { % one clipping polygon
+        dup dup length 1 sub get % polygon final-point
+        /U exch def
+        {
+            /V exch def
+            [ U aload pop V aload pop p2abc ]  % clip-line
+            /CL exch def
+            CL ==
+
+            /PA [ PA { % one subject polygon
+                CL hodgman-sutherland
+            } forall ] def
+
+            /U V def
+        } forall
+    } forall
+    newpath
+    PA ==
+    PA {
+        dup length 0 gt {
+            dup 0 get << /data 3 2 roll /cmd /move >> cpath addtopath
+            1 1 index length 1 sub getinterval {
+                << /data 3 2 roll /cmd /line >> cpath addtopath
+            } forall
+            closepath
+        }{
+            pop
+        } ifelse
+    } forall
+
+end } def
+
+(eof clip.ps)=
