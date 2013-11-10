@@ -39,25 +39,6 @@
 
 
 /**
- * @enum  Xpost_Garbage_Params
- * @brief private constants
- *
- * FIXME: PLRM describes garbage collection control to be based on
- * number of bytes allocated, not the number of allocations.
- * Also this should be a variable accessible through `setvmthreshold`
- * and `setsystemparams` operators.
- * PLRM, appendix C describes this variable, which is expected in the 
- * dictionary argument of `setsystemparams`, and returned by
- * `currentsystemparams`:
- *    VMThreshold   integer   The frequency of automatic garbage collection,
- *                           which is triggered whenever this many bytes have
- *                           been allocated since the previous collection.
- */
-typedef enum {
-    PERIOD = 4000  /* number of times to grow before collecting */
-} Xpost_Garbage_Params;
-
-/**
  * @brief  Perform a garbage collection on mfile.
  *
  * dosweep controls whether a sweep is performed; if not this

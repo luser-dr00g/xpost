@@ -40,9 +40,7 @@
 #include "xpost_log.h"
 #include "xpost_memory.h" /* Xpost_Memory_File */
 #include "xpost_object.h" /* Xpost_Object */
-#include "xpost_context.h"
-#include "xpost_error.h"
-#include "xpost_garbage.h" /* PERIOD */
+#include "xpost_garbage.h" /* collect */
 #include "xpost_free.h"
 
 /* free list head is in slot zero
@@ -76,7 +74,7 @@ int xpost_free_init(Xpost_Memory_File *mem)
 }
 
 /* free this ent! returns reclaimed size */
-unsigned xpost_free_memory_ent(Xpost_Memory_File *mem,
+int xpost_free_memory_ent(Xpost_Memory_File *mem,
         unsigned ent)
 {
     Xpost_Memory_Table *tab;
@@ -100,7 +98,8 @@ unsigned xpost_free_memory_ent(Xpost_Memory_File *mem,
         ret = xpost_memory_get(mem, ent, 0, sizeof(FILE *), &fp);
         if (!ret)
         {
-            error(unregistered, "xpost_free_memory_ent cannot load FILE* from FM");
+            XPOST_LOG_ERR("cannot load FILE* from VM");
+            return -1;
         }
         if (fp
                 && fp != stdin
@@ -118,8 +117,8 @@ unsigned xpost_free_memory_ent(Xpost_Memory_File *mem,
             ret = xpost_memory_put(mem, ent, 0, sizeof(FILE *), &fp);
             if (!ret)
             {
-                error(unregistered,
-                        "xpost_free_memory_ent cannot write NULL over FILE* in VM");
+                XPOST_LOG_ERR("cannot write NULL over FILE* in VM");
+                return -1;
             }
         }
     }

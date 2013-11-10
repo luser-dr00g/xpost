@@ -48,8 +48,10 @@
 # include "osunix.h" /* xpost_getpagesize */
 #endif
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
+
 #include "xpost_stack.h"
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
@@ -332,6 +334,7 @@ unsigned sweep(Xpost_Memory_File *mem)
     unsigned z;
     unsigned i;
     unsigned sz = 0;
+    int ret;
 
     xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list head */
 
@@ -344,7 +347,15 @@ unsigned sweep(Xpost_Memory_File *mem)
     for (i = mem->start; i < tab->nextent; i++) {
         if ( (tab->tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0
                 && tab->tab[i].sz != 0)
-            sz += xpost_free_memory_ent(mem, i);
+        {
+            ret = xpost_free_memory_ent(mem, i);
+            if (ret < 0)
+            {
+                XPOST_LOG_ERR("cannot free ent");
+                return sz;
+            }
+            sz += (unsigned)ret;
+        }
     }
 
     /* scan linked tables */
@@ -355,7 +366,15 @@ unsigned sweep(Xpost_Memory_File *mem)
         for (i = mem->start; i < tab->nextent; i++) {
             if ( (tab->tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0
                     && tab->tab[i].sz != 0)
-                sz += xpost_free_memory_ent(mem, i + ntab*XPOST_MEMORY_TABLE_SIZE);
+            {
+                ret = xpost_free_memory_ent(mem, i + ntab*XPOST_MEMORY_TABLE_SIZE);
+                if (ret < 0)
+                {
+                    XPOST_LOG_ERR("cannot free ent");
+                    return sz;
+                }
+                sz += (unsigned)ret;
+            }
         }
     }
 

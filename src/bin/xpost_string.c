@@ -55,10 +55,12 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
     if (!xpost_free_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype, &ent))
         error(VMerror, "consstr cannot allocate string");
     if (ini)
-        ret = xpost_memory_put(mem, ent, 0, sz, ini);
-    if (!ret)
     {
-        error(unregistered, "consstr cannot store initial value in string");
+        ret = xpost_memory_put(mem, ent, 0, sz, ini);
+        if (!ret)
+        {
+            error(unregistered, "consstr cannot store initial value in string");
+        }
     }
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;
