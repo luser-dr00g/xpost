@@ -37,10 +37,10 @@
  *  @brief adds de-allocation and re-allocation capabilities to xpost_memory
  *
  *  The free list is implemented to permanently occupy ent 0 of the memory table.
- *  xpost_free_init() should be the first function called after initializing 
+ *  xpost_free_init() should be the first function called after initializing
  *  the first memory table. xpost_free_init() asserts that this is so.
- * 
- *  xpost_free_init() installs xpost_free_alloc as an alternate allocator 
+ *
+ *  xpost_free_init() installs xpost_free_alloc as an alternate allocator
  *  for the memory file. After this function, calls to xpost_memory_table_alloc
  *  will first call xpost_free_alloc before falling back to increasing the size
  *  of the memory space.
@@ -54,7 +54,7 @@
  * number of bytes allocated, not the number of allocations.
  * Also this should be a variable accessible through `setvmthreshold`
  * and `setsystemparams` operators.
- * PLRM, appendix C describes this variable, which is expected in the 
+ * PLRM, appendix C describes this variable, which is expected in the
  * dictionary argument of `setsystemparams`, and returned by
  * `currentsystemparams`:
  *    VMThreshold   integer   The frequency of automatic garbage collection,
@@ -80,25 +80,28 @@ void xpost_free_dump(Xpost_Memory_File *mem);
  * @brief  allocate data, re-using garbage if possible
  */
 int xpost_free_alloc(Xpost_Memory_File *mem,
-                     unsigned sz,
-                     unsigned tag,
+                     unsigned int sz,
+                     unsigned int tag,
                      unsigned int *entity);
 
 /**
  * @brief  explicitly add ent to free list
  */
 int xpost_free_memory_ent(Xpost_Memory_File *mem,
-                               unsigned ent);
+                          unsigned int ent);
 
 /**
  * @brief reallocate data, preserving original contents
- 
- * Use the free-list and tables to now provide a realloc for 
+
+ * Use the free-list and tables to now provide a realloc for
  * "raw" vm addresses (mem->base offsets rather than ents).
  * Assumes new size is larger than old size.
-  
+
  * Allocate new entry, copy data, steal its adr, stash old adr, free it.
  */
-unsigned xpost_free_realloc(Xpost_Memory_File *mem, unsigned oldadr, unsigned oldsize, unsigned newsize);
+unsigned int xpost_free_realloc(Xpost_Memory_File *mem,
+                                unsigned int oldadr,
+                                unsigned int oldsize,
+                                unsigned int newsize);
 
 #endif
