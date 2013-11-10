@@ -92,6 +92,7 @@ char *appendtocwd (char *relpath)
 static
 int searchpathforargv0(char *argv0)
 {
+    (void)argv0;
     /*
        not implemented.
        This function may be necessary on some obscure unices.
@@ -99,9 +100,7 @@ int searchpathforargv0(char *argv0)
        ie. argv[0] is a bare name,
        and no /proc/???/exe links are present
     */
-	return checkexepath(".");
-
-	(void)argv0;
+    return checkexepath(".");
 }
 
 static
