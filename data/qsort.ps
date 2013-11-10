@@ -7,6 +7,8 @@
 %      array proc  qsort  -
 % sort array contents in-place using proc or `lt` for comparisons
 
+/qsort where { pop currentfile flushfile } if
+
 7 dict begin
 /qsortdict currentdict def
 

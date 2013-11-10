@@ -1,5 +1,13 @@
 (loading graphics.ps...)=
 
+% implement xpost-specifics
+% to test on ghostscript
+/DATA_DIR where {pop}{
+    /DATA_DIR{}def
+    /strcat{1 1 index length 1 sub getinterval}def
+    /breakhere{}def
+}ifelse
+
 false setglobal
 userdict begin
 
