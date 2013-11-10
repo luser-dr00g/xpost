@@ -26,7 +26,7 @@ START_TEST(xpost_init)
 }
 END_TEST
 
-START_TEST(xpost_memory_init)
+START_TEST(xpost_memory_init_)
 {
     Xpost_Memory_File mem;
     unsigned int addr;
@@ -137,7 +137,7 @@ END_TEST
 void xpost_test_memory(TCase *tc)
 {
     tcase_add_test(tc, xpost_init);
-    tcase_add_test(tc, xpost_memory_init);
+    tcase_add_test(tc, xpost_memory_init_);
     tcase_add_test(tc, xpost_memory_not_init);
     tcase_add_test(tc, xpost_memory_grow);
     tcase_add_test(tc, xpost_memory_tab_init);
