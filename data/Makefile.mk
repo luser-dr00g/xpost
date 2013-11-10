@@ -15,8 +15,7 @@ data/m.ps \
 data/qsort.ps \
 data/s.pic \
 data/s.ps \
-data/test.ps \
-data/xpost3.ps
+data/test.ps
 
 psfilesdir = $(pkgdatadir)
 
@@ -36,5 +35,4 @@ data/m.ps \
 data/qsort.ps \
 data/s.pic \
 data/s.ps \
-data/test.ps \
-data/xpost3.ps
+data/test.ps
