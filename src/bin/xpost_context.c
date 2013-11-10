@@ -55,9 +55,6 @@
 #include "xpost_free.h"  //  initializes free list
 #include "xpost_garbage.h" // installs garbage collector in memory files
 #include "xpost_save.h"  // initializes save/restore stacks
-#include "xpost_name.h"  // create names
-#include "xpost_dict.h"  // create dicts in context
-#include "xpost_operator.h"  // eval functions call operators
 
 /* initialize the context list
    special entity in the mfile */
@@ -259,47 +256,6 @@ int xpost_context_init(Xpost_Context *ctx)
         return 0;
     }
 
-    ret = initnames(ctx); /* NAMES NAMET */
-    if (!ret)
-    {
-        xpost_memory_file_exit(ctx->lo);
-        xpost_memory_file_exit(ctx->gl);
-        return 0;
-    }
-    ctx->vmmode = GLOBAL;
-
-    ret = initoptab(ctx); /* allocate and zero the optab structure */
-    if (!ret)
-    {
-        xpost_memory_file_exit(ctx->lo);
-        xpost_memory_file_exit(ctx->gl);
-        return 0;
-    }
-
-    (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
-    (void)consname(ctx, "getinterval"); /* middle of the start */
-    (void)consname(ctx, "setmiterlimit"); /* middle of the end */
-
-    initop(ctx); /* populate the optab (and systemdict) with operators */
-
-    {
-        Xpost_Object gd; //globaldict
-        gd = consbdc(ctx, 100);
-        bdcput(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
-        xpost_stack_push(ctx->lo, ctx->ds, gd);
-    }
-
-    ctx->vmmode = LOCAL;
-    (void)consname(ctx, "minimal"); /* seed the tree with a word from the middle of the alphabet */
-    (void)consname(ctx, "interest"); /* middle of the start */
-    (void)consname(ctx, "solitaire"); /* middle of the end */
-    {
-        Xpost_Object ud; //userdict
-        ud = consbdc(ctx, 100);
-        bdcput(ctx, ud, consname(ctx, "userdict"), ud);
-        xpost_stack_push(ctx->lo, ctx->ds, ud);
-    }
-
     return 1;
 }
 
@@ -326,7 +282,7 @@ void xpost_context_dump(Xpost_Context *ctx)
     xpost_memory_table_dump(ctx->gl);
     xpost_memory_file_dump(ctx->lo);
     xpost_memory_table_dump(ctx->lo);
-    dumpnames(ctx);
+    /*dumpnames(ctx);*/
 }
 
 /*

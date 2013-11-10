@@ -128,6 +128,54 @@ Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid)
 }
 
 
+static
+int _xpost_interpreter_extra_context_init(Xpost_Context *ctx)
+{
+    int ret;
+    ret = initnames(ctx); /* NAMES NAMET */
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
+    ctx->vmmode = GLOBAL;
+
+    ret = initoptab(ctx); /* allocate and zero the optab structure */
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
+
+    (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
+    (void)consname(ctx, "getinterval"); /* middle of the start */
+    (void)consname(ctx, "setmiterlimit"); /* middle of the end */
+
+    initop(ctx); /* populate the optab (and systemdict) with operators */
+
+    {
+        Xpost_Object gd; //globaldict
+        gd = consbdc(ctx, 100);
+        bdcput(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
+        xpost_stack_push(ctx->lo, ctx->ds, gd);
+    }
+
+    ctx->vmmode = LOCAL;
+    (void)consname(ctx, "minimal"); /* seed the tree with a word from the middle of the alphabet */
+    (void)consname(ctx, "interest"); /* middle of the start */
+    (void)consname(ctx, "solitaire"); /* middle of the end */
+    {
+        Xpost_Object ud; //userdict
+        ud = consbdc(ctx, 100);
+        bdcput(ctx, ud, consname(ctx, "userdict"), ud);
+        xpost_stack_push(ctx->lo, ctx->ds, ud);
+    }
+
+    return 1;
+}
+
 
 /* initialize itpdata */
 int xpost_interpreter_init(Xpost_Interpreter *itpptr)
@@ -135,6 +183,11 @@ int xpost_interpreter_init(Xpost_Interpreter *itpptr)
     int ret;
 
     ret = xpost_context_init(&itpptr->ctab[0]);
+    if (!ret)
+    {
+        return 0;
+    }
+    ret = _xpost_interpreter_extra_context_init(&itpptr->ctab[0]);
     if (!ret)
     {
         return 0;
