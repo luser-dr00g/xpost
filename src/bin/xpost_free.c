@@ -64,6 +64,9 @@ int xpost_free_init(Xpost_Memory_File *mem)
         return 0;
     }
 
+    (void) xpost_memory_register_free_list_alloc_function(mem,
+            xpost_free_alloc);
+
     /*
        unsigned ent;
        xpost_memory_table_alloc(mem, 0, 0, &ent);
@@ -166,13 +169,10 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     unsigned z;
     unsigned e;                     /* working pointer */
     static int period = PERIOD;
-    unsigned int rent;
 
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
 
-/*#if 0 */
-try_again:
     memcpy(&e, mem->base+z, sizeof(unsigned)); /* e = *z */
     while (e) { /* e is not zero */
         unsigned int tsz;
@@ -187,26 +187,21 @@ try_again:
             xpost_memory_table_find_relative(mem, &tab, &ent);
             tab->tab[ent].tag = tag;
             *entity = e;
-            return 1;
+            return 1; /* found, return SUCCESS */
         }
         xpost_memory_table_get_addr(mem, e, &z);
         memcpy(&e, mem->base+z, sizeof(unsigned));
     }
-    if (--period == 0) {
+    /* finished scanning free list */
+
+    if (--period == 0) { /* check garbage-collection control */
         period = PERIOD;
-        collect(mem, 1, 0);
-        goto try_again;
+        return 2; /* not found, request garbage-collection and try-again */
+        //collect(mem, 1, 0);
+        //goto try_again;
     }
-/*#endif */
-    if (xpost_memory_table_alloc(mem, sz, tag, &rent))
-    {
-        *entity = rent;
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+
+    return 0; /* not found, fall-back to _new allocator */
 }
 
 /*

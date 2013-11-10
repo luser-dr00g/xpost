@@ -39,7 +39,6 @@
 #include "xpost_object.h"  /* save/restore examines objects */
 #include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */
 #include "xpost_save.h"  /* double-check prototypes */
-#include "xpost_free.h"  /* allocate copies with xpost_free_alloc  */
 #include "xpost_context.h" /* context for error */
 #include "xpost_error.h" /* error */
 
@@ -126,7 +125,7 @@ static unsigned copy(Xpost_Memory_File *mem,
     unsigned int adr;
 
     xpost_memory_table_find_relative(mem, &tab, &ent);
-    if (!xpost_free_alloc(mem, tab->tab[ent].sz, tab->tab[ent].tag, &new))
+    if (!xpost_memory_table_alloc(mem, tab->tab[ent].sz, tab->tab[ent].tag, &new))
         error(VMerror, "copy cannot allocate entity to backup object");
     ent = tent;
     xpost_memory_table_find_relative(mem, &tab, &ent); //recalc

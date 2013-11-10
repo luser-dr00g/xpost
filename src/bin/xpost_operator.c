@@ -45,7 +45,7 @@
 #include "xpost_interpreter.h"  // works with context struct
 #include "xpost_error.h"  // operator functions may throw errors
 #include "xpost_string.h"  // uses string function to dump operator name
-#include "xpost_free.h"  // allocate using xpost_free_alloc
+#include "xpost_free.h"  // grow signatures using xpost_free_realloc
 #include "xpost_name.h"  // operator objects have associated names
 #include "xpost_dict.h"  // install operators in systemdict, a dict
 #include "xpost_operator.h"  // double-check prototypes

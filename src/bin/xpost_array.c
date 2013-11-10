@@ -51,7 +51,7 @@
 
 
 /**
-  Allocate an entity with xpost_free_alloc,
+  Allocate an entity with xpost_memory_table_alloc,
    find the appropriate mtab,
    set the current save level in the "mark" field,
    wrap it up in an object.
@@ -69,12 +69,10 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
 
     assert(mem->base);
 
-    /* unsigned ent;
-       xpost_memory_table_alloc(mem, sz * sizeof(Xpost_Object), 0, &ent); */
     if (sz == 0) {
         ent = 0;
     } else {
-        if (!xpost_free_alloc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype, &ent ))
+        if (!xpost_memory_table_alloc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype, &ent ))
             error(VMerror, "consarr cannot allocate array");
         tab = (void *)(mem->base);
         rent = ent;
