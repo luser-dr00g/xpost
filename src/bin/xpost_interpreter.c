@@ -640,22 +640,22 @@ void xpost_run(void)
     else
         xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startstdin")));
 
-    (void) save(xpost_ctx->gl);
-    lsav = save(xpost_ctx->lo);
+    (void) xpost_save_create_snapshot_object(xpost_ctx->gl);
+    lsav = xpost_save_create_snapshot_object(xpost_ctx->lo);
 
     /* Run! */
     initializing = 0;
     xpost_ctx->quit = 0;
     mainloop(xpost_ctx);
 
-    restore(xpost_ctx->gl);
+    xpost_save_restore_snapshot(xpost_ctx->gl);
     xpost_memory_table_get_addr(xpost_ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     for ( llev = xpost_stack_count(xpost_ctx->lo, vs);
             llev > lsav.save_.lev;
             llev-- )
     {
-        restore(xpost_ctx->lo);
+        xpost_save_restore_snapshot(xpost_ctx->lo);
     }
 }
 

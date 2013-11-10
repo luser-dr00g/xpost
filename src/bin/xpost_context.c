@@ -145,7 +145,7 @@ int initglobal(Xpost_Context *ctx)
         return 0;
     }
     xpost_memory_register_garbage_collect_function(ctx->gl, collect);
-    ret = initsave(ctx->gl);
+    ret = xpost_save_init(ctx->gl);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->gl);
@@ -206,7 +206,7 @@ int initlocal(Xpost_Context *ctx)
         return 0;
     }
     xpost_memory_register_garbage_collect_function(ctx->lo, collect);
-    ret = initsave(ctx->lo);
+    ret = xpost_save_init(ctx->lo);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->lo);

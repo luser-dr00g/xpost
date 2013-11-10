@@ -57,10 +57,10 @@
 
    */
 
-int initsave(Xpost_Memory_File *mem);
-Xpost_Object save(Xpost_Memory_File *mem);
-unsigned stashed(Xpost_Memory_File *mem, unsigned ent);
-void stash(Xpost_Memory_File *mem, unsigned tag, unsigned pad, unsigned ent);
-void restore(Xpost_Memory_File *mem);
+int xpost_save_init(Xpost_Memory_File *mem);
+Xpost_Object xpost_save_create_snapshot_object(Xpost_Memory_File *mem);
+unsigned xpost_save_ent_is_saved(Xpost_Memory_File *mem, unsigned ent);
+void xpost_save_save_ent(Xpost_Memory_File *mem, unsigned tag, unsigned pad, unsigned ent);
+void xpost_save_restore_snapshot(Xpost_Memory_File *mem);
 
 #endif

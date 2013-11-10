@@ -294,7 +294,7 @@ void DPforall (Xpost_Context *ctx,
 {
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, D);
     assert(mem->base);
-    D.comp_.sz = dicmaxlength(mem, D); // stash size locally
+    D.comp_.sz = dicmaxlength(mem, D); // cache size locally
     if (D.comp_.off <= D.comp_.sz) { // not finished?
         unsigned ad;
         Xpost_Object *tp;
