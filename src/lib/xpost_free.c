@@ -46,17 +46,17 @@
    sz is 0 so gc will ignore it */
 int xpost_free_init(Xpost_Memory_File *mem)
 {
-    unsigned ent;
-    unsigned val = 0;
+    unsigned int ent;
+    unsigned int val = 0;
     int ret;
 
-    ret = xpost_memory_table_alloc(mem, sizeof(unsigned), 0, &ent);
+    ret = xpost_memory_table_alloc(mem, sizeof(unsigned int), 0, &ent);
     if (!ret)
     {
         return 0;
     }
     assert (ent == XPOST_MEMORY_TABLE_SPECIAL_FREE);
-    ret = xpost_memory_put(mem, ent, 0, sizeof(unsigned), &val);
+    ret = xpost_memory_put(mem, ent, 0, sizeof(unsigned int), &val);
     if (!ret)
     {
         XPOST_LOG_ERR("xpost_free_init cannot access list head");
@@ -67,23 +67,23 @@ int xpost_free_init(Xpost_Memory_File *mem)
             xpost_free_alloc);
 
     /*
-       unsigned ent;
+       unsigned int ent;
        xpost_memory_table_alloc(mem, 0, 0, &ent);
        Xpost_Memory_Table *tab = (void *)mem->base;
-       xpost_memory_file_alloc(mem, sizeof(unsigned), &tab->tab[ent].adr);
+       xpost_memory_file_alloc(mem, sizeof(unsigned int), &tab->tab[ent].adr);
    */
     return 1;
 }
 
 /* free this ent! returns reclaimed size */
 int xpost_free_memory_ent(Xpost_Memory_File *mem,
-        unsigned ent)
+                          unsigned int ent)
 {
     Xpost_Memory_Table *tab;
-    unsigned rent = ent;
-    unsigned a;
-    unsigned z;
-    unsigned sz;
+    unsigned int rent = ent;
+    unsigned int a;
+    unsigned int z;
+    unsigned int sz;
     /* return; */
 
     if (ent < mem->start)
@@ -94,7 +94,8 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     sz = tab->tab[rent].sz;
     if (sz == 0) return 0;
 
-    if (tab->tab[rent].tag == filetype) {
+    if (tab->tab[rent].tag == filetype)
+    {
         FILE *fp;
         int ret;
         ret = xpost_memory_get(mem, ent, 0, sizeof(FILE *), &fp);
@@ -103,16 +104,17 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
             XPOST_LOG_ERR("cannot load FILE* from VM");
             return -1;
         }
-        if (fp
-                && fp != stdin
-                && fp != stdout
-                && fp != stderr) {
+        if (fp &&
+            fp != stdin &&
+            fp != stdout &&
+            fp != stderr)
+        {
             tab->tab[rent].tag = 0;
 #ifdef DEBUG_FILE
             printf("gc:xpost_free_memory_ent closing FILE* %p\n", fp);
             fflush(stdout);
             /* if (fp < 0x1000) return 0; */
-        printf("fclose");
+            printf("fclose");
 #endif
             fclose(fp);
             fp = NULL;
@@ -130,10 +132,10 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     /* printf("freeing %d bytes\n", xpost_memory_table_get_size(mem, ent)); */
 
     /* copy the current free-list head to the data area of the ent. */
-    memcpy(mem->base+a, mem->base+z, sizeof(unsigned));
+    memcpy(mem->base+a, mem->base+z, sizeof(unsigned int));
 
     /* copy the ent number into the free-list head */
-    memcpy(mem->base+z, &ent, sizeof(unsigned));
+    memcpy(mem->base+z, &ent, sizeof(unsigned int));
 
     return sz;
 }
@@ -141,48 +143,51 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
 /* print a dump of the free list */
 void xpost_free_dump(Xpost_Memory_File *mem)
 {
-    unsigned e;
-    unsigned z;
+    unsigned int e;
+    unsigned int z;
     xpost_memory_table_get_addr(mem,
-            XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);;
+                                XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);
 
     printf("freelist: ");
-    memcpy(&e, mem->base+z, sizeof(unsigned));
-    while (e) {
+    memcpy(&e, mem->base + z, sizeof(unsigned int));
+    while (e)
+    {
         unsigned int sz;
         xpost_memory_table_get_size(mem, e, &sz);
         printf("%d(%d) ", e, sz);
         xpost_memory_table_get_addr(mem, e, &z);
-        memcpy(&e, mem->base+z, sizeof(unsigned));
+        memcpy(&e, mem->base+z, sizeof(unsigned int));
     }
 }
 
 /* scan the free list for a suitably sized bit of memory,
-   
+
    if the allocator falls back to fresh memory XPOST_GARBAGE_COLLECTION_PERIOD times,
         it triggers a collection. */
 int xpost_free_alloc(Xpost_Memory_File *mem,
-        unsigned sz,
-        unsigned tag,
-        unsigned int *entity)
+                     unsigned int sz,
+                     unsigned int tag,
+                     unsigned int *entity)
 {
-    unsigned z;
-    unsigned e;                     /* working pointer */
+    unsigned int z;
+    unsigned int e;                     /* working pointer */
     static int period = XPOST_GARBAGE_COLLECTION_PERIOD;
 
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
 
-    memcpy(&e, mem->base+z, sizeof(unsigned)); /* e = *z */
-    while (e) { /* e is not zero */
+    memcpy(&e, mem->base+z, sizeof(unsigned int)); /* e = *z */
+    while (e) /* e is not zero */
+    {
         unsigned int tsz;
         xpost_memory_table_get_size(mem,e, &tsz);
-        if (tsz >= sz) {
+        if (tsz >= sz)
+        {
             Xpost_Memory_Table *tab;
-            unsigned ent;
+            unsigned int ent;
             unsigned int ad;
             xpost_memory_table_get_addr(mem,e, &ad);
-            memcpy(mem->base+z, mem->base + ad, sizeof(unsigned));
+            memcpy(mem->base+z, mem->base + ad, sizeof(unsigned int));
             ent = e;
             xpost_memory_table_find_relative(mem, &tab, &ent);
             tab->tab[ent].tag = tag;
@@ -190,35 +195,36 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
             return 1; /* found, return SUCCESS */
         }
         xpost_memory_table_get_addr(mem, e, &z);
-        memcpy(&e, mem->base+z, sizeof(unsigned));
+        memcpy(&e, mem->base+z, sizeof(unsigned int));
     }
     /* finished scanning free list */
 
-    if (--period == 0) { /* check garbage-collection control */
+    if (--period == 0) /* check garbage-collection control */
+    {
         period = XPOST_GARBAGE_COLLECTION_PERIOD;
         return 2; /* not found, request garbage-collection and try-again */
-        //collect(mem, 1, 0);
-        //goto try_again;
+        /* collect(mem, 1, 0); */
+        /* goto try_again; */
     }
 
     return 0; /* not found, fall-back to _new allocator */
 }
 
 /*
-   use the free-list and tables to now provide a realloc for 
+   use the free-list and tables to now provide a realloc for
    "raw" vm addresses (mem->base offsets rather than ents).
-  
+
    Allocate new entry, copy data, steal its adr, stash old adr, free it.
  */
-unsigned xpost_free_realloc(Xpost_Memory_File *mem,
-        unsigned oldadr,
-        unsigned oldsize,
-        unsigned newsize)
+unsigned int xpost_free_realloc(Xpost_Memory_File *mem,
+                                unsigned int oldadr,
+                                unsigned int oldsize,
+                                unsigned int newsize)
 {
     Xpost_Memory_Table *tab = NULL;
-    unsigned newadr;
-    unsigned ent;
-    unsigned rent; /* relative ent */
+    unsigned int newadr;
+    unsigned int ent;
+    unsigned int rent; /* relative ent */
 
 #ifdef DEBUGFREE
     printf("xpost_free_realloc: ");
@@ -254,5 +260,3 @@ unsigned xpost_free_realloc(Xpost_Memory_File *mem,
 
     return newadr;
 }
-
-
