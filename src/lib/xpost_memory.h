@@ -117,7 +117,7 @@ typedef enum
  *
  * Used as the basis for the Postscript Virtual Memory.
  */
-typedef struct
+typedef struct Xpost_Memory_File
 {
     int fd; /**< file descriptor associated with this memory/file,
                   or -1 if not used. */
@@ -130,6 +130,17 @@ typedef struct
 
     unsigned int start; /**< first 'live' entry in the memory_table. */
         /* the domain of the collector is entries >= start */
+
+    int free_list_alloc_is_installed;
+    int (*free_list_alloc)(struct Xpost_Memory_File *mem,
+                           unsigned sz,
+                           unsigned tag,
+                           unsigned int *entity);
+
+    int garbage_collect_is_installed;
+    unsigned int (*garbage_collect)(struct Xpost_Memory_File *mem,
+                                    int dosweep,
+                                    int markall);
 } Xpost_Memory_File;
 
 /**
