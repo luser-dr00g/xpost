@@ -488,7 +488,25 @@ int xpost_memory_table_init (Xpost_Memory_File *mem,
 }
 
 
-int xpost_memory_table_alloc (Xpost_Memory_File *mem,
+int xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
+    int (*free_list_alloc)(struct Xpost_Memory_File *mem, unsigned sz, unsigned tag, unsigned int *entity))
+{
+    mem->free_list_alloc = free_list_alloc;
+    mem->free_list_alloc_is_installed = 1;
+    return 1;
+}
+
+int xpost_memory_register_garbage_collect_function(Xpost_Memory_File *mem,
+    unsigned int (*garbage_collect)(struct Xpost_Memory_File *mem, int dosweep, int markall))
+{
+    mem->garbage_collect = garbage_collect;
+    mem->garbage_collect_is_installed = 1;
+    return 1;
+}
+
+
+static
+int _xpost_memory_table_alloc_new (Xpost_Memory_File *mem,
                               unsigned int sz,
                               unsigned int tag,
                               unsigned int *entity)
@@ -542,6 +560,41 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
 
     *entity = ent + ntab * XPOST_MEMORY_TABLE_SIZE;
     return 1;
+}
+
+int xpost_memory_table_alloc (Xpost_Memory_File *mem,
+                              unsigned int sz,
+                              unsigned int tag,
+                              unsigned int *entity)
+{
+    int ret;
+
+    if (mem->free_list_alloc_is_installed)
+    {
+        ret = mem->free_list_alloc(mem, sz, tag, entity);
+        if (ret == 1)
+        {
+            return 1;
+        }
+        else if (ret == 2)
+        {
+            if (mem->garbage_collect_is_installed)
+            {
+                unsigned sz_reclaimed;
+
+                sz_reclaimed = mem->garbage_collect(mem, 1, 0);
+                if (sz_reclaimed > sz)
+                {
+                    ret = mem->free_list_alloc(mem, sz, tag, entity);
+                    if (ret == 1)
+                    {
+                        return 1;
+                    }
+                }
+            }
+        }
+    }
+    return _xpost_memory_table_alloc_new(mem, sz, tag, entity);
 }
 
 
