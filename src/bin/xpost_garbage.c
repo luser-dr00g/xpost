@@ -49,8 +49,9 @@
 #include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
-
 #include "xpost_stack.h"
+#include "xpost_free.h"
+
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
 #include "xpost_array.h"
@@ -60,7 +61,6 @@
 #include "xpost_name.h"
 #include "xpost_operator.h"
 #include "xpost_garbage.h"
-#include "xpost_free.h"
 
 #ifdef DEBUG_GC
 #include <stdio.h>
