@@ -33,6 +33,20 @@
 #define XPOST_FREE_H
 
 /**
+ *  @file xpost_free
+ *  @brief adds de-allocation and re-allocation capabilities to xpost_memory
+ *
+ *  The free list is implemented to permanently occupy ent 0 of the memory table.
+ *  xpost_free_init() should be the first function called after initializing 
+ *  the first memory table. xpost_free_init() asserts that this is so.
+ * 
+ *  xpost_free_init() installs xpost_free_alloc as an alternate allocator 
+ *  for the memory file. After this function, calls to xpost_memory_table_alloc
+ *  will first call xpost_free_alloc before falling back to increasing the size
+ *  of the memory space.
+ */
+
+/**
  * @enum  Xpost_Garbage_Params
  * @brief private constants
  *
@@ -48,7 +62,7 @@
  *                           been allocated since the previous collection.
  */
 typedef enum {
-    PERIOD = 4000  /* number of times to grow before collecting */
+    XPOST_GARBAGE_COLLECTION_PERIOD = 4000  /* number of times to grow before collecting */
 } Xpost_Garbage_Params;
 
 /**
