@@ -41,6 +41,19 @@
 
 /**
  * @brief Number of object in one segment of the stack.
+ *
+ * This parameter may be tuned for performance.
+ * Most stack operations are performed on the top few entries,
+ * which are at the tail of a linked list of stack segments.
+ *
+ * For performance, this parameter should be set to be slightly
+ * larger than expected maximum size (or the average, if the 
+ * maximum is very large; however, there is currently no provision
+ * for shrinking the size of a stack and returning memory).
+ *
+ * For testing, this parameter should be set very small, 
+ * but it must be large enough to hold all parameters in a
+ * type-checked postscript operator.
  */
 #define XPOST_STACK_SEGMENT_SIZE 20
 
