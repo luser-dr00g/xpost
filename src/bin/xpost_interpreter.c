@@ -338,6 +338,78 @@ void eval(Xpost_Context *ctx)
         evalpush(ctx);
 }
 
+/* called by mainloop() after longjmp from error()
+   pushes postscript-level error procedures
+   and resumes normal execution.
+ */
+static
+void _onerror(Xpost_Context *ctx,
+        unsigned err)
+{
+    Xpost_Object sd;
+    Xpost_Object dollarerror;
+    char *errmsg;
+
+    assert(ctx);
+    assert(ctx->gl);
+    assert(ctx->gl->base);
+    assert(ctx->lo);
+    assert(ctx->lo->base);
+
+    if (itpdata->in_onerror) {
+        fprintf(stderr, "LOOP in error handler\nabort\n");
+        exit(1);
+    }
+
+    itpdata->in_onerror = 1;
+
+#ifdef EMITONERROR
+    fprintf(stderr, "err: %s\n", errorname[err]);
+#endif
+
+    /* reset stack */
+    if (xpost_object_get_type(ctx->currentobject) == operatortype
+            && ctx->currentobject.tag & XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD) {
+        int n = ctx->currentobject.mark_.pad0;
+        int i;
+        for (i=0; i < n; i++) {
+            xpost_stack_push(ctx->lo, ctx->os, xpost_stack_bottomup_fetch(ctx->lo, ctx->hold, i));
+        }
+    }
+
+    /* printf("1\n"); */
+    sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
+    /* printf("2\n"); */
+
+    dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
+    /* printf("3\n"); */
+    /* FIXME: does errormsg need to be volatile ?? If no, below cast is useless */
+    errmsg = (char *)errormsg;
+    /* printf("4\n"); */
+    if (err == VMerror) {
+        bdcput(ctx, dollarerror,
+                consname(ctx, "Extra"),
+                null);
+    } else {
+        unsigned mode = ctx->vmmode;
+        ctx->vmmode = GLOBAL;
+        bdcput(ctx, dollarerror,
+                consname(ctx, "Extra"),
+                consbst(ctx, strlen(errmsg), errmsg));
+        ctx->vmmode = mode;
+    }
+    /* printf("5\n"); */
+
+    xpost_stack_push(ctx->lo, ctx->os, ctx->currentobject);
+    /* printf("6\n"); */
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consname(ctx, errorname[err])));
+    /* printf("7\n"); */
+    xpost_stack_push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
+    /* printf("8\n"); */
+
+    itpdata->in_onerror = 0;
+}
+
 
 /* the return point from all calls to error() that do not exit() */
 jmp_buf jbmainloop;
@@ -349,7 +421,7 @@ void mainloop(Xpost_Context *ctx)
     volatile int err;
 
     if ((err = setjmp(jbmainloop))) {
-        onerror(ctx, err);
+        _onerror(ctx, err);
     }
     jbmainloopset = 1;
 
@@ -358,6 +430,8 @@ void mainloop(Xpost_Context *ctx)
 
     jbmainloopset = 0;
 }
+
+
 
 //#ifdef TESTMODULE_ITP
 

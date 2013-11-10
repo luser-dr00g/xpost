@@ -83,6 +83,5 @@ extern char *errorname[] /*= { ERRORS(AS_STR) }*/;
 extern volatile char *errormsg;
 
 void error(unsigned err, char *msg);
-void onerror(Xpost_Context *ctx, unsigned err);
 
 #endif
