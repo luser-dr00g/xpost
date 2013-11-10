@@ -34,6 +34,5 @@
 
 void echoon (FILE *f);
 void echooff (FILE *f);
-int xpost_getpagesize(void);
 
 #endif

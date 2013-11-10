@@ -3,6 +3,7 @@
 #endif
 
 #include "xpost_log.h"
+#include "xpost_memory.h"
 #include "xpost_main.h"
 
 static int _xpost_init_count = 0;
@@ -14,6 +15,9 @@ xpost_init(void)
         return _xpost_init_count;
 
     xpost_log_init();
+
+    if (!xpost_memory_init())
+        return --_xpost_init_count;
 
     return _xpost_init_count;
 }

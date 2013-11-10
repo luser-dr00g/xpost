@@ -44,9 +44,7 @@
 #endif
 
 #ifdef __MINGW32__
-# include "osmswin.h" /* mkstemp xpost_getpagesize */
-#else
-# include "osunix.h" /* xpost_getpagesize */
+# include "osmswin.h" /* mkstemp */
 #endif
 
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
@@ -447,7 +445,6 @@ int initalldata(void)
 {
     int ret;
 
-    xpost_memory_pagesize = xpost_getpagesize();
     initializing = 1;
     initevaltype();
 

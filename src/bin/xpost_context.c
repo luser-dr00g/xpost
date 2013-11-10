@@ -43,9 +43,7 @@
 #endif
 
 #ifdef __MINGW32__
-# include "osmswin.h" /* mkstemp xpost_getpagesize */
-#else
-# include "osunix.h" /* xpost_getpagesize */
+# include "osmswin.h" /* mkstemp */
 #endif
 
 #include "xpost_object.h"
