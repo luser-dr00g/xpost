@@ -50,6 +50,7 @@
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks
+
 #include "xpost_context.h"
 #include "xpost_interpreter.h" // uses: context itp MAXCONTEXT MAXMFILE
 #include "xpost_garbage.h"  //  test garbage collector
