@@ -21,9 +21,11 @@
     closepath
     flattenpath
     doclip
-    { 2 array astore [ exch } { 2 array astore } {} {]} pathforall
-    currentgray 255 mul cvi
-    exch DEVICE dup /FillPoly get exec
+    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    {
+        currentgray 255 mul cvi
+        exch DEVICE dup /FillPoly get exec
+    } forall
     newpath
 } def
 

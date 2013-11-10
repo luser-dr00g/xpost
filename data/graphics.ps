@@ -12,7 +12,7 @@ userdict begin
     >> def
 
     breakhere
-    DATA_DIR (/device.ps) strcat run
+    DATA_DIR (/device.ps) strcat run %loads and uses (/image.ps)
     DATA_DIR (/gstate.ps) strcat run
     DATA_DIR (/matrix.ps) strcat run
     DATA_DIR (/color.ps) strcat run
@@ -20,11 +20,7 @@ userdict begin
     DATA_DIR (/clip.ps) strcat run
     DATA_DIR (/paint.ps) strcat run
 
-
 end %userdict
-
-
-
 
 
 /TESTGRAPHICS where {pop}{ currentfile flushfile} ifelse

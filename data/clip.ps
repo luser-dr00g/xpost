@@ -25,7 +25,7 @@
     doclip
     graphicsdict /currgstate get
     dup /currpath get /clipregion exch put
-    newpath
+    %newpath %NO! clip does not disturb the current path.
 } def
 
 
