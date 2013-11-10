@@ -419,5 +419,11 @@ end % userdict
     DATA_DIR (/test.ps) strcat run
 } def
 
+% load experimental graphics support
+/loadgraphics {
+    DATA_DIR (/graphics.ps) strcat run
+    initgraphics
+} def
+
 $error/initializing false put % ready to go!
 false setglobal
