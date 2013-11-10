@@ -53,7 +53,6 @@
 
 char *errorname[] = { ERRORS(XPOST_OBJECT_AS_STR) };
 
-static int in_onerror;
 
 volatile char *errormsg = "";
 
@@ -69,7 +68,7 @@ void error(unsigned err,
     unsigned int lnad;
 
     errormsg = msg;
-    if (!initializing && jbmainloopset && !in_onerror) {
+    if (!initializing && jbmainloopset && !itpdata->in_onerror) {
         longjmp(jbmainloop, err);
     }
 
@@ -130,12 +129,12 @@ void onerror(Xpost_Context *ctx,
     assert(ctx->lo);
     assert(ctx->lo->base);
 
-    if (in_onerror) {
+    if (itpdata->in_onerror) {
         fprintf(stderr, "LOOP in error handler\nabort\n");
         exit(1);
     }
 
-    in_onerror = 1;
+    itpdata->in_onerror = 1;
 
 #ifdef EMITONERROR
     fprintf(stderr, "err: %s\n", errorname[err]);
@@ -181,7 +180,7 @@ void onerror(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
     /* printf("8\n"); */
 
-    in_onerror = 0;
+    itpdata->in_onerror = 0;
 }
 
 

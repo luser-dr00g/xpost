@@ -52,6 +52,7 @@ typedef struct {
     unsigned cid;
     Xpost_Memory_File gtab[MAXMFILE];
     Xpost_Memory_File ltab[MAXMFILE];
+    int in_onerror;
 } Xpost_Interpreter;
 
 
