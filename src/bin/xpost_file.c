@@ -68,7 +68,6 @@ void *alloca (size_t);
 
 #include "xpost_memory.h"  /* files store FILE*s in (local) mfile */
 #include "xpost_object.h"  /* files are objects */
-#include "xpost_free.h"  /* files data allocated with xpost_free_alloc */
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  /* interpreter */
 #include "xpost_error.h"  /* file functions may throw errors */
@@ -147,7 +146,7 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
 #endif
     f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
     /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
-    if (!xpost_free_alloc(mem, sizeof(FILE *), filetype, &ent))
+    if (!xpost_memory_table_alloc(mem, sizeof(FILE *), filetype, &ent))
         error(VMerror, "consfile cannot allocate file record");
     f.mark_.padw = ent;
     ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);

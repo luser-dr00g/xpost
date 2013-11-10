@@ -189,7 +189,7 @@ unsigned hash(Xpost_Object k)
     return h;
 }
 
-/* allocate an entity with xpost_free_alloc,
+/* allocate an entity with xpost_memory_table_alloc,
    set the save level in the mark,
    extract the "pointer" from the entity,
    Initialize a dichead in memory,
@@ -214,10 +214,7 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
     d.tag = dicttype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     d.comp_.sz = sz;
     d.comp_.off = 0;
-    /* unsigned int ent = xpost_memory_table_alloc(mem,
-           sizeof(dichead) + DICTABSZ(sz), 0, &ent);
-       d.comp_.ent = ent; */
-    if (!xpost_free_alloc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype, &ent))
+    if (!xpost_memory_table_alloc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype, &ent))
         error(VMerror, "consdic cannot allocate dictionary");
     d.comp_.ent = ent;
 

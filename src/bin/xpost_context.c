@@ -53,6 +53,7 @@
 #include "xpost_interpreter.h"
 #include "xpost_error.h"
 #include "xpost_free.h"  //  initializes free list
+#include "xpost_garbage.h" // installs garbage collector in memory files
 #include "xpost_save.h"  // initializes save/restore stacks
 #include "xpost_name.h"  // create names
 #include "xpost_dict.h"  // create dicts in context
@@ -146,6 +147,7 @@ int initglobal(Xpost_Context *ctx)
         xpost_memory_file_exit(ctx->gl);
         return 0;
     }
+    xpost_memory_register_garbage_collect_function(ctx->gl, collect);
     ret = initsave(ctx->gl);
     if (!ret)
     {
@@ -206,6 +208,7 @@ int initlocal(Xpost_Context *ctx)
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
+    xpost_memory_register_garbage_collect_function(ctx->lo, collect);
     ret = initsave(ctx->lo);
     if (!ret)
     {

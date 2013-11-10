@@ -39,7 +39,6 @@
 
 #include "xpost_memory.h"  // name structures live in mfiles
 #include "xpost_object.h"  // names are objects, with associated hidden string objects
-#include "xpost_free.h"  // strings are allocated using xpost_free_alloc
 #include "xpost_stack.h"  // name strings live on a stack
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  // initialize interpreter to test

@@ -34,7 +34,6 @@
 
 #include "xpost_memory.h"  // strings live in mfile, accessed via mtab
 #include "xpost_object.h"  // strings are objects
-#include "xpost_free.h"  // strings are allocated using xpost_free_alloc
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  // banked strings may live in local or global vm
 #include "xpost_string.h"  // double-check prototypes
@@ -52,7 +51,7 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
     int ret;
 
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
-    if (!xpost_free_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype, &ent))
+    if (!xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype, &ent))
         error(VMerror, "consstr cannot allocate string");
     if (ini)
     {
