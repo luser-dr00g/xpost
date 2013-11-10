@@ -67,3 +67,5 @@ int mkstemp(char *template)
 
     return _open(temp, _O_CREAT |  _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
 }
+
+#endif
