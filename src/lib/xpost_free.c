@@ -158,7 +158,8 @@ void xpost_free_dump(Xpost_Memory_File *mem)
 }
 
 /* scan the free list for a suitably sized bit of memory,
-   if the allocator falls back to fresh memory PERIOD times,
+   
+   if the allocator falls back to fresh memory XPOST_GARBAGE_COLLECTION_PERIOD times,
         it triggers a collection. */
 int xpost_free_alloc(Xpost_Memory_File *mem,
         unsigned sz,
@@ -167,7 +168,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
 {
     unsigned z;
     unsigned e;                     /* working pointer */
-    static int period = PERIOD;
+    static int period = XPOST_GARBAGE_COLLECTION_PERIOD;
 
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
@@ -194,7 +195,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     /* finished scanning free list */
 
     if (--period == 0) { /* check garbage-collection control */
-        period = PERIOD;
+        period = XPOST_GARBAGE_COLLECTION_PERIOD;
         return 2; /* not found, request garbage-collection and try-again */
         //collect(mem, 1, 0);
         //goto try_again;
