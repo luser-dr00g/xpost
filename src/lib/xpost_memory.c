@@ -43,7 +43,7 @@
 #include <fcntl.h> /* open */
 
 #ifdef HAVE_UNISTD_H
-# include <unistd.h> /* ftruncate close */
+# include <unistd.h> /* ftruncate close sysconf getpagesize */
 #endif
 
 #ifdef HAVE_SYS_MMAN_H
@@ -72,16 +72,39 @@
 
 enum { rangecheck, VMerror, unregistered };
 
-/* FIXME: use autotools to check if getpagesize exists ? */
-unsigned int xpost_memory_pagesize /*= getpagesize()*/ = 4096;
+unsigned int xpost_memory_page_size;
 
+int
+xpost_memory_init(void)
+{
+#ifdef _WIN32
+    SYSTEM_INFO si;
+
+    GetSystemInfo(&si);
+
+    xpost_memory_page_size = (int)si.dwPageSize;
+    return 1;
+#elif HAVE_SYSCONF_PAGESIZE
+    xpost_memory_page_size = (int)sysconf(_SC_PAGESIZE);
+    return 1;
+#elif defined HAVE_SYSCONF_PAGE_SIZE
+    xpost_memory_page_size = (int)sysconf(_SC_PAGE_SIZE);
+    return 1;
+#elif defined HAVE_GETPAGESIZE
+    xpost_memory_page_size = getpagesize();
+    return 1;
+#else
+    XPOST_LOG_ERR("Could not find a way to retrieve the page size");
+    return 0;
+#endif
+}
 
 int xpost_memory_file_init (Xpost_Memory_File *mem,
                             const char *fname,
                             int fd)
 {
     struct stat buf;
-    size_t sz = xpost_memory_pagesize;
+    size_t sz = xpost_memory_page_size;
 #ifdef _WIN32
     HANDLE h;
     HANDLE fm;
@@ -109,9 +132,9 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
         if (fstat(fd, &buf) == 0)
         {
             sz = buf.st_size;
-            if (sz < xpost_memory_pagesize)
+            if (sz < xpost_memory_page_size)
             {
-                sz = xpost_memory_pagesize;
+                sz = xpost_memory_page_size;
 #if defined (HAVE_MMAP) || defined (_WIN32)
                 if (fd != -1)
                 {
@@ -154,7 +177,7 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
 #elif defined (HAVE_MMAP)
     mem->base = mmap(NULL,
                      sz,
-                     PROT_READ|PROT_WRITE,
+                     PROT_READ | PROT_WRITE,
                      (fd == -1 ? MAP_PRIVATE   : MAP_SHARED) |
                      (fd == -1 ? MAP_ANONYMOUS : 0),
                      fd, 0);
@@ -257,10 +280,10 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
         return 0;
     }
 
-    if (sz < xpost_memory_pagesize)
-        sz = xpost_memory_pagesize;
+    if (sz < xpost_memory_page_size)
+        sz = xpost_memory_page_size;
     else
-        sz = (sz / xpost_memory_pagesize + 1) * xpost_memory_pagesize;
+        sz = (sz / xpost_memory_page_size + 1) * xpost_memory_page_size;
     sz += mem->max;
 
     XPOST_LOG_INFO("grow memory file%s%s (old: %d  new: %d)",

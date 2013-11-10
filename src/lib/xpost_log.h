@@ -104,11 +104,11 @@ typedef void (*Xpost_Log_Print_Cb)(Xpost_Log_Level level,
                                    va_list args);
 
 /**
- * @brief Initialize the logging method.
+ * @brief Initialize the log module.
  *
- * This function initializes the logging facilities. Currently, it only
- * gets the value of the environment variable XPOST_LOG_LEVEL if it
- * exists.
+ * This function initializes the log module. Currently, it only gets
+ * the value of the environment variable XPOST_LOG_LEVEL if it
+ * exists. It is called by xpost_init().
  */
 void xpost_log_init(void);
 
