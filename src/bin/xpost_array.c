@@ -130,8 +130,8 @@ void arrput(Xpost_Memory_File *mem,
             integer i,
             Xpost_Object o)
 {
-    if (!stashed(mem, a.comp_.ent))
-        stash(mem, arraytype, a.comp_.sz, a.comp_.ent);
+    if (!xpost_save_ent_is_saved(mem, a.comp_.ent))
+        xpost_save_save_ent(mem, arraytype, a.comp_.sz, a.comp_.ent);
     if (i > a.comp_.sz)
         error(rangecheck, "arrput");
     xpost_memory_put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
@@ -223,7 +223,7 @@ int main(void)
     /* xpost_memory_file_init(&mem, "x.mem"); */
     /* (void)xpost_memory_table_init(&mem); */
     /* xpost_free_init(&mem); */
-    /* initsave(&mem); */
+    /* xpost_save_init(&mem); */
 
     enum { SIZE = 10 };
     printf("\n^test ar.c\n");

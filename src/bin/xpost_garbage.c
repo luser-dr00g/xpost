@@ -518,7 +518,7 @@ int init_test_garbage()
         xpost_memory_file_exit(ctx->gl);
         return 0;
     }
-    ret = initsave(ctx->gl);
+    ret = xpost_save_init(ctx->gl);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->gl);
@@ -558,7 +558,7 @@ int init_test_garbage()
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
-    ret = initsave(ctx->lo);
+    ret = xpost_save_init(ctx->lo);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->gl);
@@ -676,7 +676,7 @@ unsigned stac;
 /*     xpost_memory_file_init(&mem, "x.mem"); */
 /*     (void)xpost_memory_table_init(&mem); */
 /*     xpost_free_init(&mem); */
-/*     initsave(&mem); */
+/*     xpost_save_init(&mem); */
 /*     xpost_context_init_ctxlist(&mem); */
 /*     Xpost_Memory_Table *tab = (void *)mem.base; */
 /*     unsigned ent = xpost_memory_table_alloc(&mem, 0, 0); */

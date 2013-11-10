@@ -35,12 +35,11 @@
 #include <assert.h>
 #include <string.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"  /* save/restore works with mtabs */
 #include "xpost_object.h"  /* save/restore examines objects */
 #include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */
 #include "xpost_save.h"  /* double-check prototypes */
-#include "xpost_context.h" /* context for error */
-#include "xpost_error.h" /* error */
 
 /*
 typedef struct {
@@ -59,7 +58,7 @@ typedef struct {
 
 /* create a stack in slot XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK.
    sz is 0 so gc will ignore it. */
-int initsave (Xpost_Memory_File *mem)
+int xpost_save_init (Xpost_Memory_File *mem)
 {
     unsigned t;
     unsigned ent;
@@ -82,7 +81,7 @@ int initsave (Xpost_Memory_File *mem)
 
 /* push a new save object on the save stack
    this object is itself a stack (contains a stackadr) */
-Xpost_Object save (Xpost_Memory_File *mem)
+Xpost_Object xpost_save_create_snapshot_object (Xpost_Memory_File *mem)
 {
     Xpost_Object v;
     unsigned int vs;
@@ -97,7 +96,7 @@ Xpost_Object save (Xpost_Memory_File *mem)
 }
 
 /* check ent's tlev against current save level (save-stack count) */
-unsigned stashed (Xpost_Memory_File *mem,
+unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
                   unsigned ent)
 {
     Xpost_Memory_Table *tab;
@@ -126,7 +125,10 @@ static unsigned copy(Xpost_Memory_File *mem,
 
     xpost_memory_table_find_relative(mem, &tab, &ent);
     if (!xpost_memory_table_alloc(mem, tab->tab[ent].sz, tab->tab[ent].tag, &new))
-        error(VMerror, "copy cannot allocate entity to backup object");
+    {
+        XPOST_LOG_ERR("copy cannot allocate entity to backup object");
+        return 0;
+    }
     ent = tent;
     xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
     xpost_memory_table_get_addr(mem, new, &adr);
@@ -139,7 +141,7 @@ static unsigned copy(Xpost_Memory_File *mem,
 
 /* set tlev for ent to current save level
    push saverec relating ent to saved copy */
-void stash(Xpost_Memory_File *mem,
+void xpost_save_save_ent(Xpost_Memory_File *mem,
            unsigned tag,
            unsigned pad,
            unsigned ent)
@@ -171,7 +173,7 @@ void stash(Xpost_Memory_File *mem,
         exchange adrs between src and cpy
         pop saverec
     pop save stack */
-void restore(Xpost_Memory_File *mem)
+void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
 {
     unsigned v;
     Xpost_Object sav;
@@ -209,7 +211,7 @@ void init (Xpost_Memory_File *mem)
     xpost_memory_file_init(mem, "x.mem");
     (void)xpost_memory_table_init(mem);
     xpost_free_init(mem);
-    initsave(mem);
+    xpost_save_init(mem);
 }
 
 void show (char *msg, Xpost_Memory_File *mem, Xpost_Object a)
@@ -232,11 +234,11 @@ int main (void)
     show("initial", mem, a);
 
     //object v = 
-    (void)save(mem);
+    (void)xpost_save_create_snapshot_object(mem);
     arrput(mem, a, 0, xpost_cons_int(77));
     show("save and alter", mem, a);
 
-    restore(mem);
+    xpost_save_restore_snapshot(mem);
     show("restored", mem, a);
 
     puts("");

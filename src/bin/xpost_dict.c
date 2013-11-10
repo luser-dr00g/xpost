@@ -550,7 +550,7 @@ void dicput(Xpost_Context *ctx,
     dichead *dp;
     unsigned int ad;
 
-    if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
+    if (!xpost_save_ent_is_saved(mem, d.comp_.ent)) xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent);
 
 retry:
     e = diclookup(ctx, mem, d, k);
@@ -629,7 +629,7 @@ void dicundef(Xpost_Context *ctx,
     int lastisset = 0;
     int found = 0;
 
-    if (!stashed(mem, d.comp_.ent)) stash(mem, dicttype, 0, d.comp_.ent);
+    if (!xpost_save_ent_is_saved(mem, d.comp_.ent)) xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent);
 
     xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
     dp = (void *)(mem->base + ad);

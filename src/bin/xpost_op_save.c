@@ -78,7 +78,7 @@ void *alloca (size_t);
 static
 void Zsave (Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os, save(ctx->lo));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_save_create_snapshot_object(ctx->lo));
 }
 
 static
@@ -92,7 +92,7 @@ void Vrestore (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     z = xpost_stack_count(ctx->lo, vs);
     while(z > V.save_.lev) {
-        restore(ctx->lo);
+        xpost_save_restore_snapshot(ctx->lo);
         z--;
     }
 }
