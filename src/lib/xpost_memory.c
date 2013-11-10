@@ -175,12 +175,12 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
     if (!mem->base)
     {
 #elif defined (HAVE_MMAP)
-    mem->base = mmap(NULL,
-                     sz,
-                     PROT_READ | PROT_WRITE,
-                     (fd == -1 ? MAP_PRIVATE   : MAP_SHARED) |
-                     (fd == -1 ? MAP_ANONYMOUS : 0),
-                     fd, 0);
+    mem->base = (unsigned char *)mmap(NULL,
+                                      sz,
+                                      PROT_READ | PROT_WRITE,
+                                      (fd == -1 ? MAP_PRIVATE   : MAP_SHARED) |
+                                      (fd == -1 ? MAP_ANONYMOUS : 0),
+                                      fd, 0);
     if (mem->base == MAP_FAILED)
     { /* . */
 #else
@@ -227,7 +227,7 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
 #ifdef _WIN32
     UnmapViewOfFile(mem->base);
 #elif defined (HAVE_MMAP)
-    munmap(mem->base, mem->max);
+    munmap((void *)mem->base, mem->max);
 #else
     if (mem->fd != -1)
     {
@@ -342,8 +342,8 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
 # else
     if (mem->fd != -1)
     {
-        msync(mem->base, mem->used, MS_SYNC);
-        munmap(mem->base, mem->max);
+        msync((void *)mem->base, mem->used, MS_SYNC);
+        munmap((void *)mem->base, mem->max);
         lseek(mem->fd, 0, SEEK_SET);
         if (ftruncate(mem->fd, sz) == -1)
             XPOST_LOG_ERR("ftruncate(%d, %d) returned -1 (error: %s)",
