@@ -37,12 +37,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __MINGW32__
-# include "osmswin.h" /* xpost_getpagesize */
-#else
-# include "osunix.h" /* xpost_getpagesize */
-#endif
-
 #include "xpost_memory.h"  // name structures live in mfiles
 #include "xpost_object.h"  // names are objects, with associated hidden string objects
 #include "xpost_free.h"  // strings are allocated using xpost_free_alloc
@@ -297,7 +291,6 @@ Xpost_Object strname(Xpost_Context *ctx,
 
 /*
 void init(Xpost_Context *ctx) {
-    xpost_memory_pagesize = xpost_getpagesize();
     ctx->gl = malloc(sizeof(Xpost_Memory_File));
     xpost_memory_file_init(ctx->gl, "x.mem");
     (void)xpost_memory_table_init(ctx->gl); // create mtab at address zero
@@ -321,7 +314,14 @@ void init(void) {
     ctx->vmmode = GLOBAL;
 }
 
-int main(void) {
+int main(void)
+{
+    if (!xpost_init())
+    {
+        fprintf(stderr, "Fail to initialize xpost name test\n");
+        return -1;
+    }
+
     printf("\n^test nm\n");
     //init(&ctx);
     init();
@@ -371,6 +371,9 @@ int main(void) {
     //xpost_memory_file_dump(ctx->gl);
     //dumpmtab(ctx->gl, 0);
     puts("");
+
+    xpost_quit();
+
     return 0;
 }
 
