@@ -57,20 +57,3 @@ void echooff (FILE *f)
     ts.c_lflag &= ~ECHO;
     tcsetattr(fileno(f), TCSANOW, &ts);
 }
-
-#ifdef HAVE_SYSCONF_PAGESIZE
-int xpost_getpagesize(void)
-{
-  return (int)sysconf(_SC_PAGESIZE);
-}
-#elif defined HAVE_SYSCONF_PAGE_SIZE
-int xpost_getpagesize(void)
-{
-  return (int)sysconf(_SC_PAGE_SIZE);
-}
-#elif defined HAVE_GETPAGESIZE
-# define xpost_getpagesize getpagesize
-#else
-# error "No way to retrieve the size of a page found"
-#endif
-

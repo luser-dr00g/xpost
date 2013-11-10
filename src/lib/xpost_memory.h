@@ -157,11 +157,10 @@ typedef struct
  */
 
 /**
- * @var xpost_memory_pagesize
+ * @var xpost_memory_page_size
  * @brief The 'grain' of the memory-file size.
  */
-extern unsigned int xpost_memory_pagesize /*= getpagesize()*/;
-    /*= 4096 on 32bit Linux, 64k on 32bit MinGW */
+extern unsigned int xpost_memory_page_size;
 
 
 /*
@@ -169,6 +168,15 @@ extern unsigned int xpost_memory_pagesize /*= getpagesize()*/;
  * Functions
  *
  */
+
+/**
+ * @brief Initialize the memory module.
+ *
+ * This function initializes the memory module. Currently, it only set
+ * the value of #xpost_memory_page_size. It is called by
+ * xpost_init().
+ */
+int xpost_memory_init(void);
 
 /*
    Xpost_Memory_File functions
