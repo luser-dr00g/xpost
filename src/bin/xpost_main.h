@@ -33,30 +33,56 @@
 #endif
 
 
+
+#  if 1
+/* This section includes only the files needed by main. */
+
+#include <stdio.h> /* fprintf printf */
+#include <stdlib.h> /* EXIT_FAILURE */
+#include <string.h> /* free */
+
+#include "xpost_pathname.h" /* xpost_is_installed exedir */
+#include "xpost_memory.h" /* Xpost_Memory_File */
+#include "xpost_object.h" /* Xpost_Object */
+#include "xpost_context.h" /* Xpost_Context */
+#include "xpost_interpreter.h" /* xpost_create */
+#include "xpost_log.h" /* XPOST_LOG_ERR */
+
+
+#  else
+/* This section demonstrates a "full" header inclusion,
+   illustrating the prescribed order of files. */
+
+/* standard headers */
 #include <assert.h>
 #include <setjmp.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h> /* fprintf printf */
+#include <stdlib.h> /* EXIT_FAILURE */
+#include <string.h> /* free */
 
-
+/* /lib headers */
 #include "xpost_log.h"
-#include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
-#include "xpost_object.h"  // eval functions examine objects
-#include "xpost_stack.h"  // eval functions manipulate stacks
+#include "xpost_memory.h"  
+#include "xpost_object.h" 
+#include "xpost_stack.h" 
+#include "xpost_free.h"
+
+/* /bin headers */
 #include "xpost_context.h"
-#include "xpost_interpreter.h" // uses: context itp MAXCONTEXT MAXMFILE
-#include "xpost_error.h"  // interpreter catches errors
-#include "xpost_string.h"  // eval functions examine strings
-#include "xpost_array.h"  // eval functions examine arrays
-#include "xpost_garbage.h"  // interpreter initializes garbage collector
-#include "xpost_save.h"  // interpreter initializes save/restore stacks
-#include "xpost_name.h"  // eval functions examine names
-#include "xpost_dict.h"  // eval functions examine dicts
-#include "xpost_file.h"  // eval functions examine files
-#include "xpost_operator.h"  // eval functions call operators
-#include "xpost_op_token.h"  // token operator functions
-#include "xpost_op_dict.h"  // dictionary operator functions
+#include "xpost_interpreter.h"
+#include "xpost_error.h"  
+#include "xpost_string.h"
+#include "xpost_array.h"
+#include "xpost_garbage.h"
+#include "xpost_save.h"  
+#include "xpost_name.h" 
+#include "xpost_dict.h"
+#include "xpost_file.h"  
+#include "xpost_operator.h"
+#include "xpost_op_token.h"  
+#include "xpost_op_dict.h"  
 #include "xpost_pathname.h"
 
+
+#  endif 
 
