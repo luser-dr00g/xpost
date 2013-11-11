@@ -138,11 +138,14 @@ DATA_DIR(/qsort.ps)strcat run
         {Dy Dx Cy Cx By Bx Ay Ax}{exch def}forall
         {
             % reject degenerate line
-            Ax Bx eq Ay By eq and Cx Dx eq Cy Dy eq and or {stop} if
+            Ax Bx eq Ay By eq and
+            Cx Dx eq Cy Dy eq and or {stop} if
 
             % reject coinciding endpoints
-            Ax Cx eq Ay Cy eq and Bx Cx eq By Cy eq and or
-            Ax Dx eq Ay Dy eq and or Bx Dx eq By Dy eq and or {stop} if
+            Ax Cx eq Ay Cy eq and
+            Bx Cx eq By Cy eq and or
+            Ax Dx eq Ay Dy eq and or
+            Bx Dx eq By Dy eq and or {stop} if
 
             % translate by -Ax,-Ay
             /Bx Bx Ax sub def /By By Ay sub def
@@ -164,7 +167,9 @@ DATA_DIR(/qsort.ps)strcat run
             Cy 0 lt Dy 0 lt and Cy 0 ge Dy 0 ge and or {stop} if
 
             /ABpos Dx Cx Dx sub Dy mul Dy Cy sub div add def
-            ABpos 0 lt ABpos distAB gt or {stop} if % intersection not on segment
+            ABpos 0 lt
+            ABpos distAB gt or {stop} if % intersection not on segment
+
             Ax ABpos theCos mul add
             Ay ABpos theSin mul add
         } stopped not
@@ -249,7 +254,6 @@ DATA_DIR(/qsort.ps)strcat run
     } def
 
     /.writepgm { % img (filename)
-        (w) file
         2 dict begin
         {/f /a}{exch def}forall
         f (P2\n) writestring
@@ -265,16 +269,20 @@ DATA_DIR(/qsort.ps)strcat run
             } forall
             f (\n) writestring
         } forall
-        f closefile
         end
     } def
 
     /Emit {
     begin
         /OutputFileName where { pop
-            ImgData OutputFileName .writepgm
+            ImgData
+            OutputFileName (w) file
+            .writepgm
+            f closefile
         }{
-            ImgData .printpgm
+            ImgData
+            (%stdout) (w) file
+            .writepgm
         } ifelse
     end }
 >> def
