@@ -4,6 +4,7 @@ data/clip.ps \
 data/err.ps \
 data/graphics.ps \
 data/device.ps \
+data/color.ps \
 data/image.ps \
 data/gstate.ps \
 data/matrix.ps \
@@ -24,6 +25,7 @@ data/clip.ps \
 data/err.ps \
 data/graphics.ps \
 data/device.ps \
+data/color.ps \
 data/image.ps \
 data/gstate.ps \
 data/matrix.ps \
