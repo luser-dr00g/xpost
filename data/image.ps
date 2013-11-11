@@ -42,7 +42,7 @@ DATA_DIR(/qsort.ps)strcat run
     currentdict
     end }
 
-    /.to-int { round cvi }
+    /.to-int { floor cvi }
     /PutPix { % val x y IMAGE  .  -
     begin
         .to-int exch .to-int exch
@@ -136,7 +136,10 @@ DATA_DIR(/qsort.ps)strcat run
     % inspired by the code at http: / / alienryderflex.com/intersect/
     /.intersect { 8 dict begin
         {Dy Dx Cy Cx By Bx Ay Ax}{exch def}forall
-        {
+
+        [ Ax Ay Bx By Cx Cy Dx Dy ]{=only( )=only} forall
+
+        { %stopped
             % reject degenerate line
             Ax Bx eq Ay By eq and
             Cx Dx eq Cy Dy eq and or {stop} if
@@ -173,12 +176,16 @@ DATA_DIR(/qsort.ps)strcat run
             Ax ABpos theCos mul add
             Ay ABpos theSin mul add
         } stopped not
+
+        dup { 3 copy =only( )=only exch =only( )=only =only } if ()=
+
     end } def
 
     /FillPoly { % val polygon IMAGE  .  -
     begin {poly val}{exch def}forall
 
-        (FillPoly)= val = poly ==
+        (FillPoly)= val = poly ==()=
+
         /minx 16#7ffffff def
         /miny minx def
         /maxx minx neg def
@@ -187,19 +194,21 @@ DATA_DIR(/qsort.ps)strcat run
             aload pop .maxmin
         } forall
 
+        /x_max width .5 add def
+
         % intersect polygon edges with scanlines
         /P poly poly length 1 sub get def
         [
         poly {
             /Q exch def
-            ImgData 0 get length 1 sub        % [ x_max
-            miny floor cvi .5 add       % [ x_max miny.5
-            1                           % [ x_max miny.5 1
-            maxy ceiling cvi .5 sub     % [ x_max miny.5 1 maxy-.5
+            x_max miny floor cvi .5 add % [ x_max miny+.5
+            1                           % [ x_max miny+.5 1
+            maxy ceiling cvi .5 sub     % [ x_max miny+.5 1 maxy-.5
             {                           % [ ... x_max y
                 1 index exch            % [ ... x_max x_max y
-                0 1 index               % [ ... x_max x_max y 0 y
-                P aload pop Q aload pop % [ ... x_max  x_max y  0 y  Px Py  Qx Qy
+                -.5 1 index               % [ ... x_max x_max y -.5 y
+                4 2 roll
+                P aload pop Q aload pop % [ ... x_max  x_max y  -.5 y  Px Py  Qx Qy
                 .intersect {
                     2 array astore exch % [ ... [x y] x_max
                 } if
@@ -208,7 +217,7 @@ DATA_DIR(/qsort.ps)strcat run
             /P Q def
         } forall
         ]        % [list-of-x/y-intersections
-        dup ==
+        dup ==()=
 
         % sort list
         dup { % comparitor
@@ -224,7 +233,7 @@ DATA_DIR(/qsort.ps)strcat run
                 lt
             } ifelse
         } qsort   % [sorted-list-of-intersections]
-        %pstack
+        dup ==()=
 
         aload length 2 idiv { % repeat
             exch aload pop
@@ -232,6 +241,7 @@ DATA_DIR(/qsort.ps)strcat run
             pop                        % xa ya xb
             3 2 roll                   % ya xb xa
             exch 1 exch                % ya xa 1 xb
+            dup width ge { pop width 1 sub } if
             { % for                    % ya x
                 val exch               % ya val x
                 2 index                % ya val x ya 
