@@ -644,6 +644,8 @@ void dicundef(Xpost_Context *ctx,
     }
 
     /*find last chained key and value with same hash */
+    /*FIXME: need to repeat this process with this 'last chained key with same hash'
+      until the key we're clearing is the actual last key in the chain, recursively. */
     sz = (dp->sz + 1);
     h = hash(k) % sz;
 
