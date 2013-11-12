@@ -373,6 +373,9 @@ void fileclose(Xpost_Memory_File *mem,
 #ifdef DEBUG_FILE
 		printf("fclose");
 #endif
+        if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
+            return;
+
         fclose(fp);
         fp = NULL;
         ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
