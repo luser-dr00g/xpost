@@ -10,7 +10,8 @@ DATA_DIR (/image.ps) strcat run
 /DEVICE 50 50 newPGMIMAGEdevice def
 DEVICE begin
     /dimensions [ width height ] def
-    /defaultmatrix [ 1 0 0 -1 0 height ] def
+    %/defaultmatrix [ 1 0 0 -1 0 height ] def
+    /defaultmatrix [ 1 0 0 1 0 0 ] def
 end
 
 /showpage {
