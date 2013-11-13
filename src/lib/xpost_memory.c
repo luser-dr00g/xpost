@@ -36,7 +36,7 @@
 #include <ctype.h> /* isprint */
 #include <errno.h>
 #include <stdlib.h> /* free malloc realloc */
-#include <stdio.h> /* fprintf printf putchar puts */
+#include <stdio.h> /* remove puts */
 #include <string.h> /* memset strerror */
 
 #include <sys/stat.h> /* open */
@@ -64,6 +64,7 @@
 
 
 #include "xpost_log.h"
+#include "xpost_error.h"
 #include "xpost_memory.h"
 
 /* stubs */
@@ -438,7 +439,7 @@ int xpost_memory_file_alloc (Xpost_Memory_File *mem,
 
 void xpost_memory_file_dump (const Xpost_Memory_File *mem)
 {
-    unsigned int u,v;
+    int u,v;
 
     if (!mem)
     {
@@ -446,7 +447,7 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
         return;
     }
 
-    printf("{mfile: base = %p, "
+    XPOST_ERROR_DUMP("{mfile: base = %p, "
             "used = 0x%x (%u), "
             "max = 0x%x (%u), "
             "start = %d}\n",
@@ -454,7 +455,10 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
             mem->used, mem->used,
             mem->max, mem->max,
             mem->start);
-    for (u = 0; u < mem->used; u++)
+
+    return;
+
+    for (u = 0; u < (signed)mem->used; u++)
     {
         if (u%16 == 0)
         {
@@ -462,25 +466,31 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
             {
                 for (v = u - 16; v < u; v++)
                 {
-                    (void)putchar(isprint(mem->base[v]) ? mem->base[v] : '.');
+                    XPOST_ERROR_DUMP("%c",
+                        isprint(mem->base[v]) ?
+                        mem->base[v] : '.');
                 }
             }
-            printf("\n%06u %04x: ", u, u);
+            XPOST_ERROR_DUMP("\n%06u %04x: ", u, u);
         }
-        printf("%02x ", mem->base[u]);
+        XPOST_ERROR_DUMP("%02x ", mem->base[u]);
     }
+
     if ((u-1)%16 != 0)
     { /* did not print in the last iteration of the loop */
         for (v = u; u%16 != 0; v++)
         {
-            printf("   ");
+            XPOST_ERROR_DUMP("   ");
         }
         for (v = u - (u % 16); v < u; v++)
         {
-            (void)putchar(isprint(mem->base[v]) ? mem->base[v] : '.');
+            XPOST_ERROR_DUMP("%c",
+                    isprint(mem->base[v]) ?
+                    mem->base[v] : '.');
         }
     }
-    (void)puts("");
+
+    XPOST_ERROR_DUMP("\n");
 }
 
 
@@ -828,12 +838,12 @@ void xpost_memory_table_dump (const Xpost_Memory_File *mem)
 
 next_table:
     tab = (Xpost_Memory_Table *)(mem->base + mtabadr);
-    printf("nexttab: 0x%04x\n", tab->nexttab);
-    printf("nextent: %u\n", tab->nextent);
+    XPOST_ERROR_DUMP("nexttab: 0x%04x\n", tab->nexttab);
+    XPOST_ERROR_DUMP("nextent: %u\n", tab->nextent);
     for (i = 0; i < tab->nextent; i++, e++)
     {
         unsigned int u;
-        printf("ent %d (%d): "
+        XPOST_ERROR_DUMP("ent %d (%d): "
                 "adr %u 0x%04x, "
                 "sz [%u], "
                 "mark %s rfct %d llev %d tlev %d\n",
@@ -853,13 +863,13 @@ next_table:
                     >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);
         for (u = 0; u < tab->tab[i].sz; u++)
         {
-            printf(" %02x%c",
+            XPOST_ERROR_DUMP(" %02x%c",
                     mem->base[ tab->tab[i].adr + u ],
                     isprint(mem->base[ tab->tab[i].adr + u]) ?
                         mem->base[ tab->tab[i].adr + u ] :
                         ' ');
         }
-        (void)puts("");
+        XPOST_ERROR_DUMP("\n");
     }
     if (tab->nextent == XPOST_MEMORY_TABLE_SIZE)
     {

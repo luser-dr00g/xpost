@@ -34,6 +34,8 @@
 
 #include <stdio.h>
 
+#include "xpost_log.h"
+#include "xpost_error.h"
 #include "xpost_object.h"
 
 /**
@@ -220,7 +222,7 @@ Xpost_Object xpost_object_cvlit (Xpost_Object obj)
 static
 void _xpost_object_dump_composite (Xpost_Object obj)
 {
-    printf(" %c "
+    XPOST_ERROR_DUMP(" %c "
             "%" XPOST_FMT_WORD(u) " "
             "%" XPOST_FMT_WORD(u) " "
             "%" XPOST_FMT_WORD(u) " "
@@ -241,7 +243,7 @@ void xpost_object_dump (Xpost_Object obj)
     switch (xpost_object_get_type(obj))
     {
     default: /*@fallthrough@*/
-    case invalidtype: printf("<invalid object "
+    case invalidtype: XPOST_ERROR_DUMP("<invalid object "
                               "%04" XPOST_FMT_WORD(x) " "
                               "%04" XPOST_FMT_WORD(x) " "
                               "%04" XPOST_FMT_WORD(x) " "
@@ -252,32 +254,32 @@ void xpost_object_dump (Xpost_Object obj)
                               obj.comp_.off);
                       break;
 
-    case nulltype: printf("<null>");
+    case nulltype: XPOST_ERROR_DUMP("<null>");
                    break;
-    case marktype: printf("<mark>");
+    case marktype: XPOST_ERROR_DUMP("<mark>");
                    break;
 
-    case booleantype: printf("<boolean %s>",
+    case booleantype: XPOST_ERROR_DUMP("<boolean %s>",
                               obj.int_.val ? "true" : "false");
                       break;
-    case integertype: printf("<integer %" XPOST_FMT_INTEGER(d) ">",
+    case integertype: XPOST_ERROR_DUMP("<integer %" XPOST_FMT_INTEGER(d) ">",
                               obj.int_.val);
                       break;
-    case realtype: printf("<real %" XPOST_FMT_REAL ">",
+    case realtype: XPOST_ERROR_DUMP("<real %" XPOST_FMT_REAL ">",
                            obj.real_.val);
                    break;
 
-    case stringtype: printf("<string");
+    case stringtype: XPOST_ERROR_DUMP("<string");
                      _xpost_object_dump_composite(obj);
                      break;
-    case arraytype: printf("<array");
+    case arraytype: XPOST_ERROR_DUMP("<array");
                     _xpost_object_dump_composite(obj);
                     break;
-    case dicttype: printf("<dict");
+    case dicttype: XPOST_ERROR_DUMP("<dict");
                    _xpost_object_dump_composite(obj);
                    break;
 
-    case nametype: printf("<name %c "
+    case nametype: XPOST_ERROR_DUMP("<name %c "
                            "%" XPOST_FMT_WORD(u) " "
                            "%" XPOST_FMT_WORD(u) " "
                            "%" XPOST_FMT_DWORD(u) ">",
@@ -288,22 +290,23 @@ void xpost_object_dump (Xpost_Object obj)
                            obj.mark_.padw);
                    break;
 
-    case operatortype: printf("<operator "
+    case operatortype: XPOST_ERROR_DUMP("<operator "
                                "%" XPOST_FMT_DWORD(u) ">",
                                obj.mark_.padw);
                        break;
-    case filetype: printf("<file "
+    case filetype: XPOST_ERROR_DUMP("<file "
                            "%" XPOST_FMT_DWORD(u) ">",
                            obj.mark_.padw);
                    break;
 
-    case savetype: printf("<save>");
+    case savetype: XPOST_ERROR_DUMP("<save>");
                    break;
-    case contexttype: printf("<context>");
+    case contexttype: XPOST_ERROR_DUMP("<context>");
                       break;
-    case extendedtype: printf("<extended>");
+    case extendedtype: XPOST_ERROR_DUMP("<extended>");
                        break;
-    case globtype: printf("<glob>");
+    case globtype: XPOST_ERROR_DUMP("<glob>");
                    break;
     }
 }
+

@@ -33,9 +33,10 @@
 #endif
 
 #include <stdlib.h> /* NULL */
-#include <stdio.h> /* printf */
+//#include <stdio.h> /* printf */
 
 #include "xpost_log.h"
+#include "xpost_error.h"
 #include "xpost_object.h"
 #include "xpost_memory.h"
 #include "xpost_stack.h"
@@ -69,7 +70,7 @@ void xpost_stack_dump (Xpost_Memory_File *mem,
     {
         for (i = 0; i < s->top; i++)
         {
-            printf("%d:", a++);
+            XPOST_ERROR_DUMP("%d:", a++);
             xpost_object_dump(s->data[i]);
         }
         if (i != XPOST_STACK_SEGMENT_SIZE)

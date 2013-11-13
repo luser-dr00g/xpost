@@ -34,14 +34,17 @@
 #endif
 
 #include <assert.h>
+#include <errno.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "xpost_memory.h"  /* mfile */
-#include "xpost_object.h"  /* object */
+#include "xpost_log.h"
+#include "xpost_memory.h"  /* Xpost_Memory_File */
+#include "xpost_object.h"  /* Xpost_Object */
 #include "xpost_stack.h"  /* stack */
+#include "../lib/xpost_error.h"
 
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  /* access context struct */
@@ -51,6 +54,7 @@
 #include "xpost_name.h"  /* create names */
 
 /*#define EMITONERROR */
+
 
 char *errorname[] = { ERRORS(XPOST_OBJECT_AS_STR) };
 
@@ -62,7 +66,7 @@ volatile char *errormsg = "";
 /* ultimately, this will do a longjmp back
    to the central loop */
 void error(unsigned err,
-        char *msg)
+           char *msg)
 {
     Xpost_Context *ctx;
     unsigned int gnad;
@@ -75,41 +79,44 @@ void error(unsigned err,
 
     /* following will become "fallback" code
        if jmpbuf is not set */
-    fprintf(stderr, "\nError: %s", errorname[err]);
-    fprintf(stderr, "\nObject: ");
-    xpost_object_dump(itpdata->ctab[0].currentobject);
-    fprintf(stderr, "\nExtra: %s", msg);
-    perror("\nlast system error:");
+    xpost_error_begin_dump();
 
-    printf("\nError: %s", errorname[err]);
-    printf("\nExtra: %s", msg);
+    XPOST_ERROR_DUMP("\nError: %s", errorname[err]);
+    XPOST_ERROR_DUMP("\nObject: ");
+    xpost_object_dump(itpdata->ctab[0].currentobject);
+    XPOST_ERROR_DUMP("\nExtra: %s", msg);
+    XPOST_ERROR_DUMP("\nlast system error:", strerror(errno));
+
+    XPOST_ERROR_DUMP("\nError: %s", errorname[err]);
+    XPOST_ERROR_DUMP("\nExtra: %s", msg);
 
     ctx = &itpdata->ctab[0];
-    printf("\nopstack: ");
+    XPOST_ERROR_DUMP("\nopstack: ");
     xpost_stack_dump(ctx->lo, ctx->os);
-    printf("\nexecstack: ");
+    XPOST_ERROR_DUMP("\nexecstack: ");
     xpost_stack_dump(ctx->lo, ctx->es);
-    printf("\ndictstack: ");
+    XPOST_ERROR_DUMP("\ndictstack: ");
     xpost_stack_dump(ctx->lo, ctx->ds);
-    printf("\nholdstack: ");
+    XPOST_ERROR_DUMP("\nholdstack: ");
     xpost_stack_dump(ctx->lo, ctx->hold);
 
-    printf("\nLocal VM: ");
+    XPOST_ERROR_DUMP("\nLocal VM: ");
     xpost_memory_file_dump(ctx->lo);
     xpost_memory_table_dump(ctx->lo);
-    printf("\nGlobal VM: ");
+    XPOST_ERROR_DUMP("\nGlobal VM: ");
     xpost_memory_file_dump(ctx->gl);
     xpost_memory_table_dump(ctx->gl);
 
-    printf("\nGlobal Name Stack: ");
+    XPOST_ERROR_DUMP("\nGlobal Name Stack: ");
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &gnad);
     xpost_stack_dump(ctx->gl, gnad);
-    printf("\nLocal Name Stack: ");
+    XPOST_ERROR_DUMP("\nLocal Name Stack: ");
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &lnad);
     xpost_stack_dump(ctx->lo, lnad);
 
+    xpost_error_end_dump();
     exit(EXIT_FAILURE);
 }
 
