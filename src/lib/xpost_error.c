@@ -28,60 +28,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef XPOST_BIN_ERR_H
-#define XPOST_BIN_ERR_H
+#include <stdio.h>
+#include <stdlib.h>
 
-/*
-   For a commentary on these macros, see my answer to this SO question
-http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#6636596
+#include "xpost_log.h"
+#include "xpost_error.h"
 
-    error() is the internal error call.
-    If the jump-point is set, it does a longjmp back to mainloop, which then
-    calls onerror()
+static FILE *_xpost_error_dump_file = NULL;
 
-    Having unwound the "C" stack already,
-    onerror() goes on to schedule a (PS) call to err.ps/signalerror and the rest
-    of the process proceeds at the postscript level.
-   */
+int xpost_error_begin_dump(void)
+{
+    char dump_filename[] = "xdumpXXXXXX";
+    int fd;
+    FILE *fp;
 
-#define AS_BARE(a) a ,
-/* #define AS_STR(a) #a , /\* defined in ob.h *\/ */
+    fd = mkstemp(dump_filename);
+    fp = fdopen(fd, "w");
 
-#define ERRORS(_) \
-    _(noerror) \
-    _(dictfull) \
-    _(dictstackoverflow) \
-    _(dictstackunderflow) \
-    _(execstackoverflow) \
-    _(execstackunderflow) /*5*/\
-    _(handleerror) \
-    _(interrupt) \
-    _(invalidaccess) \
-    _(invalidexit) \
-    _(invalidfileaccess) /*10*/\
-    _(invalidfont) \
-    _(invalidrestore) \
-    _(ioerror) \
-    _(limitcheck) \
-    _(nocurrentpoint) /*15*/\
-    _(rangecheck) \
-    _(stackoverflow) \
-    _(stackunderflow) \
-    _(syntaxerror) \
-    _(timeout) /*20*/\
-    _(typecheck) \
-    _(undefined) \
-    _(undefinedfilename) \
-    _(undefinedresult) \
-    _(unmatchedmark) /*25*/\
-    _(unregistered) \
-    _(VMerror)
-enum err { ERRORS(AS_BARE) };
-extern char *errorname[] /*= { ERRORS(AS_STR) }*/;
-/* puts(errorname[(enum err)limitcheck]); */
+    XPOST_LOG_ERR("Error dump requested.\n"
+                  "Writing interpreter state dump to %s",
+                  dump_filename);
 
-extern volatile char *errormsg;
+    _xpost_error_dump_file = fp;
 
-void error(unsigned err, char *msg);
+    xpost_log_print_cb_set(xpost_error_print_cb_file, NULL);
 
-#endif
+    return 1;
+}
+
+int xpost_error_end_dump(void)
+{
+    return 1;
+}
+
+void xpost_error_print_cb_file(Xpost_Log_Level level,
+                               const char *file,
+                               const char *fct,
+                               int line,
+                               const char *fmt,
+                               void *data,
+                               va_list args)
+{
+    FILE *fp = _xpost_error_dump_file;
+
+    //if (fp)
+        vfprintf(fp, fmt, args);
+}
+
+
