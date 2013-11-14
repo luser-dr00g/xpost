@@ -283,7 +283,7 @@ _xpost_log_fprint_cb(FILE *stream,
 int
 xpost_log_init(void)
 {
-    char *dump_filename = "xdumpXXXXXX";
+    char dump_filename[] = "xdumpXXXXXX";
     int fd;
     char *endptr;
     const char *level;
