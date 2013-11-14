@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_PARAM_H
 #define XPOST_OP_PARAM_H
 
-void initopparam(Xpost_Context *ctx, Xpost_Object sd);
+int initopparam(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

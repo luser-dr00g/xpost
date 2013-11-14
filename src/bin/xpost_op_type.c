@@ -80,85 +80,95 @@ void *alloca (size_t);
 #include "xpost_op_type.h"
 
 static
-void Atype(Xpost_Context *ctx,
+int Atype(Xpost_Context *ctx,
            Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, xpost_object_type_names[xpost_object_get_type(o)])));
+    return 0;
 }
 
 static
-void Acvlit(Xpost_Context *ctx,
+int Acvlit(Xpost_Context *ctx,
             Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(o));
+    return 0;
 }
 
 static
-void Acvx(Xpost_Context *ctx,
+int Acvx(Xpost_Context *ctx,
           Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(o));
+    return 0;
 }
 
 static
-void Axcheck(Xpost_Context *ctx,
+int Axcheck(Xpost_Context *ctx,
              Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(xpost_object_is_exe(o)));
+    return 0;
 }
 
 static
-void Aexecuteonly(Xpost_Context *ctx,
+int Aexecuteonly(Xpost_Context *ctx,
                   Xpost_Object o)
 {
     o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     o.tag |= (XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     xpost_stack_push(ctx->lo, ctx->os, o);
+    return 0;
 }
 
 static
-void Anoaccess(Xpost_Context *ctx,
+int Anoaccess(Xpost_Context *ctx,
                Xpost_Object o)
 {
     o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     o.tag |= (XPOST_OBJECT_TAG_ACCESS_NONE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     xpost_stack_push(ctx->lo, ctx->os, o);
+    return 0;
 }
 
 static
-void Areadonly(Xpost_Context *ctx,
+int Areadonly(Xpost_Context *ctx,
                Xpost_Object o)
 {
     o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     o.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     xpost_stack_push(ctx->lo, ctx->os, o);
+    return 0;
 }
 
 static
-void Archeck(Xpost_Context *ctx,
+int Archeck(Xpost_Context *ctx,
              Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
+    return 0;
 }
 
 static
-void Awcheck(Xpost_Context *ctx,
+int Awcheck(Xpost_Context *ctx,
              Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
+    return 0;
 }
 
 static
-void Ncvi(Xpost_Context *ctx,
+int Ncvi(Xpost_Context *ctx,
           Xpost_Object n)
 {
     if (xpost_object_get_type(n) == realtype)
         n = xpost_cons_int(n.real_.val);
     xpost_stack_push(ctx->lo, ctx->os, n);
+    return 0;
 }
 
 static
-void Scvi(Xpost_Context *ctx,
+int Scvi(Xpost_Context *ctx,
           Xpost_Object s)
 {
     double dbl;
@@ -181,29 +191,32 @@ void Scvi(Xpost_Context *ctx,
     */
 
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(num));
+    return 0;
 }
 
 static
-void Scvn(Xpost_Context *ctx,
+int Scvn(Xpost_Context *ctx,
           Xpost_Object s)
 {
     char *t = alloca(s.comp_.sz+1);
     memcpy(t, charstr(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
     xpost_stack_push(ctx->lo, ctx->os, consname(ctx, t));
+    return 0;
 }
 
 static
-void Ncvr(Xpost_Context *ctx,
+int Ncvr(Xpost_Context *ctx,
           Xpost_Object n)
 {
     if (xpost_object_get_type(n) == integertype)
         n = xpost_cons_real(n.int_.val);
     xpost_stack_push(ctx->lo, ctx->os, n);
+    return 0;
 }
 
 static
-void Scvr(Xpost_Context *ctx,
+int Scvr(Xpost_Context *ctx,
           Xpost_Object str)
 {
     double num;
@@ -214,6 +227,7 @@ void Scvr(Xpost_Context *ctx,
     if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
         error(limitcheck, "Scvr");
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(num));
+    return 0;
 }
 
 static
@@ -236,7 +250,7 @@ int conv_rad(int num,
 }
 
 static
-void NRScvrs (Xpost_Context *ctx,
+int NRScvrs (Xpost_Context *ctx,
               Xpost_Object num,
               Xpost_Object rad,
               Xpost_Object str)
@@ -249,6 +263,7 @@ void NRScvrs (Xpost_Context *ctx,
     if (n == -1) error(rangecheck, "NRScvrs");
     if (n < str.comp_.sz) str.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, str);
+    return 0;
 }
 
 static
@@ -313,7 +328,7 @@ int conv_real (real num,
 }
 
 static
-void AScvs (Xpost_Context *ctx,
+int AScvs (Xpost_Context *ctx,
             Xpost_Object any,
             Xpost_Object str)
 {
@@ -397,9 +412,10 @@ void AScvs (Xpost_Context *ctx,
     }
 
     xpost_stack_push(ctx->lo, ctx->os, str);
+    return 0;
 }
 
-void initopt (Xpost_Context *ctx,
+int initopt (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -431,6 +447,7 @@ void initopt (Xpost_Context *ctx,
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    return 0;
 }
 
 

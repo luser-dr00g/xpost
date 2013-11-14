@@ -116,7 +116,7 @@ int mulwillover(long x,
 /* num1 num2  add  sum
    num1 plus num2 */
 static
-void Iadd (Xpost_Context *ctx,
+int Iadd (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -124,50 +124,55 @@ void Iadd (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val + y.int_.val));
     else
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val + y.int_.val));
+    return 0;
 }
 
 static
-void Radd (Xpost_Context *ctx,
+int Radd (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val + y.real_.val));
+    return 0;
 }
 
 /* num1 num2  div  quotient
    num1 divided by num2 */
 static
-void Rdiv (Xpost_Context *ctx,
+int Rdiv (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val / y.real_.val));
+    return 0;
 }
 
 /* num1 num2  idiv  quotient
    integer divide */
 static
-void Iidiv (Xpost_Context *ctx,
+int Iidiv (Xpost_Context *ctx,
             Xpost_Object x,
             Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val / y.int_.val));
+    return 0;
 }
 
 /* num1 num2  mod  remainder
    num1 mod num2 */
 static
-void Imod (Xpost_Context *ctx,
+int Imod (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val % y.int_.val));
+    return 0;
 }
 
 /* num1 num2  mul  product
    num1 times num2 */
 static
-void Imul (Xpost_Context *ctx,
+int Imul (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -175,20 +180,22 @@ void Imul (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val * y.int_.val));
     else
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val * y.int_.val));
+    return 0;
 }
 
 static
-void Rmul (Xpost_Context *ctx,
+int Rmul (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val * y.real_.val));
+    return 0;
 }
 
 /* num1 num2  sub  difference
    num1 minus num2 */
 static
-void Isub (Xpost_Context *ctx,
+int Isub (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -196,84 +203,93 @@ void Isub (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val - y.int_.val));
     else
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val - y.int_.val));
+    return 0;
 }
 
 static
-void Rsub (Xpost_Context *ctx,
+int Rsub (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val - y.real_.val));
+    return 0;
 }
 
 /* num1  abs  num2
    absolute value of num1 */
 static
-void Iabs (Xpost_Context *ctx,
+int Iabs (Xpost_Context *ctx,
            Xpost_Object x)
 {
     if (x.int_.val == INT_MIN)
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(- (real)INT_MIN));
     else
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val>0? x.int_.val: -x.int_.val));
+    return 0;
 }
 
 static
-void Rabs (Xpost_Context *ctx,
+int Rabs (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(fabs(x.real_.val)));
+    return 0;
 }
 
 /* num1  neg  num2
    negative of num1 */
 static
-void Ineg (Xpost_Context *ctx,
+int Ineg (Xpost_Context *ctx,
            Xpost_Object x)
 {
     if (x.int_.val == INT_MIN)
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(- (real)INT_MIN));
     else
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(-x.int_.val));
+    return 0;
 }
 
 static
-void Rneg (Xpost_Context *ctx,
+int Rneg (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(-x.real_.val));
+    return 0;
 }
 
 /* stub for integer  floor, ceiling, round, truncate */
 static
-void Istet (Xpost_Context *ctx,
+int Istet (Xpost_Context *ctx,
             Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, x);
+    return 0;
 }
 
 /* num1  ceiling  num2
    ceiling of num1 */
 static
-void Rceiling (Xpost_Context *ctx,
+int Rceiling (Xpost_Context *ctx,
                Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(ceil(x.real_.val)));
+    return 0;
 }
 
 /* num1  floor  num2
    floor of num1 */
 static
-void Rfloor (Xpost_Context *ctx,
+int Rfloor (Xpost_Context *ctx,
              Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(floor(x.real_.val)));
+    return 0;
 }
 
 /* num1  round  num2
    round num1 to nearest integer */
 static
-void Rround (Xpost_Context *ctx,
+int Rround (Xpost_Context *ctx,
              Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(floor(x.real_.val + 0.5)));
@@ -283,62 +299,68 @@ void Rround (Xpost_Context *ctx,
     else
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(rint(x.real_.val)));
 #endif
+    return 0;
 }
 
 /* num1  truncate  num2
    remove fractional part of num1 */
 static
-void Rtruncate (Xpost_Context *ctx,
+int Rtruncate (Xpost_Context *ctx,
                 Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(trunc(x.real_.val)));
+    return 0;
 }
 
 /* num1  sqrt  num2
    square root of num1 */
 static
-void Rsqrt (Xpost_Context *ctx,
+int Rsqrt (Xpost_Context *ctx,
             Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(sqrt(x.real_.val)));
+    return 0;
 }
 
 /* num den  atan  angle
    arctangent of num/den in degrees */
 static
-void Ratan (Xpost_Context *ctx,
+int Ratan (Xpost_Context *ctx,
             Xpost_Object num,
             Xpost_Object den)
 {
     real ang = atan2(num.real_.val * RAD_PER_DEG, den.real_.val * RAD_PER_DEG) / RAD_PER_DEG;
     if (ang < 0.0) ang += 360.0;
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(ang));
+    return 0;
 }
 
 /* angle  cos  real
    cosine of angle (degrees) */
 static
-void Rcos (Xpost_Context *ctx,
+int Rcos (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os,
             xpost_cons_real(cos(RAD_PER_DEG * x.real_.val)));
+    return 0;
 }
 
 /* angle  sin  real
    sine of angle (degrees) */
 static
-void Rsin (Xpost_Context *ctx,
+int Rsin (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os,
             xpost_cons_real(sin(RAD_PER_DEG * x.real_.val)));
+    return 0;
 }
 
 /* base exponent  exp  real
    raise base to exponent power */
 static
-void Rexp (Xpost_Context *ctx,
+int Rexp (Xpost_Context *ctx,
            Xpost_Object base,
            Xpost_Object expn)
 {
@@ -346,30 +368,33 @@ void Rexp (Xpost_Context *ctx,
         expn.real_.val = trunc(expn.real_.val);
     xpost_stack_push(ctx->lo, ctx->os,
             xpost_cons_real(pow(base.real_.val, expn.real_.val)));
+    return 0;
 }
 
 /* num  ln  real
    natural logarithm of num */
 static
-void Rln (Xpost_Context *ctx,
+int Rln (Xpost_Context *ctx,
           Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(log(x.real_.val)));
+    return 0;
 }
 
 /* num  log  real
    logarithm (base 10) */
 static
-void Rlog (Xpost_Context *ctx,
+int Rlog (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_real(log10(x.real_.val)));
+    return 0;
 }
 
 /* -  rand  int
    generate pseudo-random integer */
 static
-void Zrand (Xpost_Context *ctx)
+int Zrand (Xpost_Context *ctx)
 {
     unsigned x;
     ctx->rand_next = ctx->rand_next * 1103515245 + 12345;
@@ -377,26 +402,29 @@ void Zrand (Xpost_Context *ctx)
     ctx->rand_next = ctx->rand_next * 1103515245 + 12345;
     x |= ctx->rand_next & 0xffff;
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(x & 0x7fffffff));
+    return 0;
 }
 
 /* int  srand  -
    set random number seed */
 static
-void Isrand (Xpost_Context *ctx,
+int Isrand (Xpost_Context *ctx,
              Xpost_Object seed)
 {
     ctx->rand_next = seed.int_.val;
+    return 0;
 }
 
 /* -  rrand  int
    return random number seed */
 static
-void Zrrand (Xpost_Context *ctx)
+int Zrrand (Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(ctx->rand_next));
+    return 0;
 }
 
-void initopm (Xpost_Context *ctx,
+int initopm (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -444,6 +472,7 @@ void initopm (Xpost_Context *ctx,
     /* op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     //dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    return 0;
 }
 
 

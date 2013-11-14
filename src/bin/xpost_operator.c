@@ -61,7 +61,7 @@ Xpost_Object promote(Xpost_Object o)
 
 /* copied from the header file for reference:
 typedef struct signat {
-   void (*fp)();
+   int (*fp)();
    int in;
    unsigned t;
    int out;
@@ -151,7 +151,7 @@ Xpost_Object operfromcode(int opcode)
    */
 Xpost_Object consoper(Xpost_Context *ctx,
                 char *name,
-                /*@null@*/ void (*fp)(),
+                /*@null@*/ int (*fp)(),
                 int out,
                 int in, ...)
 {
@@ -275,7 +275,7 @@ void holdn (Xpost_Context *ctx,
 /* execute an operator function by opcode
    the opcode is the payload of an operator object
  */
-void opexec(Xpost_Context *ctx,
+int opexec(Xpost_Context *ctx,
             unsigned opcode)
 {
     oper *optab;
@@ -332,7 +332,7 @@ void opexec(Xpost_Context *ctx,
         if (pass) goto call;
     }
     error(err, errmsg);
-    return;
+    return err;
 
 call:
     /* If we're executing the context's "currentobject",
@@ -368,6 +368,7 @@ call:
                         hold->data[3], hold->data[4], hold->data[5]); break;
         default: error(unregistered, "opexec");
     }
+    return 0;
 }
 
 #include "xpost_op_stack.h"
@@ -395,15 +396,15 @@ call:
    just as it's about to read the next token.
  */
 static
-void breakhere(Xpost_Context *ctx)
+int breakhere(Xpost_Context *ctx)
 {
     (void)ctx;
-    return;
+    return 0;
 }
 
 /* create systemdict and call
    all initop?* functions, installing all operators */
-void initop(Xpost_Context *ctx)
+int initop(Xpost_Context *ctx)
 {
     Xpost_Object op;
     Xpost_Object n;
@@ -480,6 +481,8 @@ void initop(Xpost_Context *ctx)
     xpost_stack_dump(ctx->lo, ctx->ds);
     dumpdic(ctx->gl, sd); fflush(NULL);
 #endif
+
+    return 1;
 }
 
 

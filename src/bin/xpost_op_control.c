@@ -78,23 +78,25 @@ void *alloca (size_t);
 #include "xpost_op_control.h"
 
 static
-void Aexec (Xpost_Context *ctx,
+int Aexec (Xpost_Context *ctx,
             Xpost_Object O)
 {
     xpost_stack_push(ctx->lo, ctx->es, O);
+    return 0;
 }
 
 static
-void BPif (Xpost_Context *ctx,
+int BPif (Xpost_Context *ctx,
            Xpost_Object B,
            Xpost_Object P)
 {
     if (B.int_.val)
         xpost_stack_push(ctx->lo, ctx->es, P);
+    return 0;
 }
 
 static
-void BPPifelse (Xpost_Context *ctx,
+int BPPifelse (Xpost_Context *ctx,
                 Xpost_Object B,
                 Xpost_Object Then,
                 Xpost_Object Else)
@@ -103,10 +105,11 @@ void BPPifelse (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->es, Then);
     else
         xpost_stack_push(ctx->lo, ctx->es, Else);
+    return 0;
 }
 
 static
-void IIIPfor (Xpost_Context *ctx,
+int IIIPfor (Xpost_Context *ctx,
               Xpost_Object init,
               Xpost_Object incr,
               Xpost_Object lim,
@@ -116,7 +119,7 @@ void IIIPfor (Xpost_Context *ctx,
     integer j = incr.int_.val;
     integer n = lim.int_.val;
     int up = j > 0;
-    if (up? i > n : i < n) return;
+    if (up? i > n : i < n) return 0;
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
     xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor));
@@ -128,10 +131,11 @@ void IIIPfor (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(i + j));
     xpost_stack_push(ctx->lo, ctx->es, P);
     xpost_stack_push(ctx->lo, ctx->es, init);
+    return 0;
 }
 
 static
-void RRRPfor (Xpost_Context *ctx,
+int RRRPfor (Xpost_Context *ctx,
               Xpost_Object init,
               Xpost_Object incr,
               Xpost_Object lim,
@@ -141,7 +145,7 @@ void RRRPfor (Xpost_Context *ctx,
     real j = incr.real_.val;
     real n = lim.real_.val;
     int up = j > 0;
-    if (up? i > n : i < n) return;
+    if (up? i > n : i < n) return 0;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
     xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor));
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
@@ -152,14 +156,15 @@ void RRRPfor (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_real(i + j));
     xpost_stack_push(ctx->lo, ctx->es, P);
     xpost_stack_push(ctx->lo, ctx->es, init);
+    return 0;
 }
 
 static
-void IPrepeat (Xpost_Context *ctx,
+int IPrepeat (Xpost_Context *ctx,
                Xpost_Object n,
                Xpost_Object P)
 {
-    if (n.int_.val <= 0) return;
+    if (n.int_.val <= 0) return 0;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
     xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.repeat));
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
@@ -167,10 +172,11 @@ void IPrepeat (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1));
     xpost_stack_push(ctx->lo, ctx->es, P);
+    return 0;
 }
 
 static
-void Ploop (Xpost_Context *ctx,
+int Ploop (Xpost_Context *ctx,
             Xpost_Object P)
 {
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
@@ -179,10 +185,11 @@ void Ploop (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
     xpost_stack_push(ctx->lo, ctx->es, P);
+    return 0;
 }
 
 static
-void Zexit (Xpost_Context *ctx)
+int Zexit (Xpost_Context *ctx)
 {
     //Xpost_Object opfor = consoper(ctx, "for", NULL,0,0);
     Xpost_Object opfor = operfromcode(ctx->opcode_shortcuts.opfor);
@@ -222,6 +229,7 @@ void Zexit (Xpost_Context *ctx)
     printf("result:");
     xpost_stack_dump(ctx->lo, ctx->es);
 #endif
+    return 0;
 }
 
 /* The stopped context is a boolean 'false' on the exec stack,
@@ -230,7 +238,7 @@ void Zexit (Xpost_Context *ctx)
    search for 'false' and push a 'true'.  */
 
 static
-void Zstop(Xpost_Context *ctx)
+int Zstop(Xpost_Context *ctx)
 {
     Xpost_Object f = xpost_cons_bool(0);
     int c = xpost_stack_count(ctx->lo, ctx->es);
@@ -239,28 +247,31 @@ void Zstop(Xpost_Context *ctx)
         x = xpost_stack_pop(ctx->lo, ctx->es);
         if(objcmp(ctx, f, x) == 0) {
             xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
-            return;
+            return 0;
         }
     }
     error(unregistered, "no stopped context in 'stop'");
+    return unregistered;
 }
 
 static
-void Astopped(Xpost_Context *ctx,
+int Astopped(Xpost_Context *ctx,
               Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->es, xpost_cons_bool(0));
     xpost_stack_push(ctx->lo, ctx->es, o);
+    return 0;
 }
 
 static
-void Zcountexecstack(Xpost_Context *ctx)
+int Zcountexecstack(Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->es)));
+    return 0;
 }
 
 static
-void Aexecstack(Xpost_Context *ctx,
+int Aexecstack(Xpost_Context *ctx,
                 Xpost_Object A)
 {
     int z = xpost_stack_count(ctx->lo, ctx->es);
@@ -268,17 +279,19 @@ void Aexecstack(Xpost_Context *ctx,
     for (i=0; i < z; i++)
         barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
     xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+    return 0;
 }
 
 //TODO start
 
 static
-void Zquit(Xpost_Context *ctx)
+int Zquit(Xpost_Context *ctx)
 {
     ctx->quit = 1;
+    return 0;
 }
 
-void initopc (Xpost_Context *ctx,
+int initopc (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -314,6 +327,7 @@ void initopc (Xpost_Context *ctx,
     bdcput(ctx, sd, consname(ctx, "mark"), mark);
     */
 
+    return 0;
 }
 
 

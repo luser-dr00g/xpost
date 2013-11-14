@@ -77,131 +77,145 @@ void *alloca (size_t);
 /* any1 any2  eq  bool
    test equal */
 static
-void Aeq (Xpost_Context *ctx,
+int Aeq (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) == 0));
+    return 0;
 }
 
 /* any1 any2  ne  bool
    test not equal */
 static
-void Ane (Xpost_Context *ctx,
+int Ane (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) != 0));
+    return 0;
 }
 
 /* any1 any2  ge  bool
    test greater or equal */
 static
-void Age (Xpost_Context *ctx,
+int Age (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) >= 0));
+    return 0;
 }
 
 /* any1 any2  gt  bool
    test greater than */
 static
-void Agt (Xpost_Context *ctx,
+int Agt (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) > 0));
+    return 0;
 }
 
 /* any1 any2  le  bool
    test less or equal */
 static
-void Ale (Xpost_Context *ctx,
+int Ale (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) <= 0));
+    return 0;
 }
 
 /* any1 any2  lt  bool
    test less than */
 static
-void Alt (Xpost_Context *ctx,
+int Alt (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) < 0));
+    return 0;
 }
 
 /* bool1|int1 bool2|int2  and  bool3|int3
    logical|bitwise and */
 static
-void Band (Xpost_Context *ctx,
+int Band (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val & y.int_.val));
+    return 0;
 }
 
 static
-void Iand (Xpost_Context *ctx,
+int Iand (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val & y.int_.val));
+    return 0;
 }
 
 /* bool1|int1  not  bool2|int2
    logical|bitwise not */
 static
-void Bnot (Xpost_Context *ctx,
+int Bnot (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( ! x.int_.val ));
+    return 0;
 }
 
 static
-void Inot (Xpost_Context *ctx,
+int Inot (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int( ~ x.int_.val ));
+    return 0;
 }
 
 /* bool1|int1 bool2|int2  or  bool3|int3
    logical|bitwise inclusive or */
 static
-void Bor (Xpost_Context *ctx,
+int Bor (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val | y.int_.val));
+    return 0;
 }
 
 static
-void Ior (Xpost_Context *ctx,
+int Ior (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val | y.int_.val));
+    return 0;
 }
 
 /* bool1|int1 bool2|int2  xor  bool3|int3
    exclusive or */
 static
-void Bxor (Xpost_Context *ctx,
+int Bxor (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val ^ y.int_.val));
+    return 0;
 }
 
 static
-void Ixor (Xpost_Context *ctx,
+int Ixor (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val ^ y.int_.val));
+    return 0;
 }
 
 // true
@@ -211,7 +225,7 @@ void Ixor (Xpost_Context *ctx,
 /* int1 shift  bitshift  int2
    bitwise shift of int1 (positive is left) */
 static
-void Ibitshift (Xpost_Context *ctx,
+int Ibitshift (Xpost_Context *ctx,
                 Xpost_Object x,
                 Xpost_Object y)
 {
@@ -220,9 +234,10 @@ void Ibitshift (Xpost_Context *ctx,
     else
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(
                     (unsigned long)x.int_.val >> -y.int_.val));
+    return 0;
 }
 
-void initopb(Xpost_Context *ctx,
+int initopb(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;
@@ -253,4 +268,6 @@ void initopb(Xpost_Context *ctx,
     op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL); */
+
+    return 1;
 }
