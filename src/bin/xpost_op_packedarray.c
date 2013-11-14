@@ -78,7 +78,7 @@ void *alloca (size_t);
 #include "xpost_op_packedarray.h"
 
 static
-void packedarray (Xpost_Context *ctx,
+int packedarray (Xpost_Context *ctx,
                   Xpost_Object n)
 {
     int i;
@@ -91,17 +91,19 @@ void packedarray (Xpost_Context *ctx,
     }
     a = xpost_object_set_access(xpost_object_cvlit(a), XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
     xpost_stack_push(ctx->lo, ctx->os, a);
+    return 0;
 }
 
 static
-void setpacking (Xpost_Context *ctx,
+int setpacking (Xpost_Context *ctx,
                  Xpost_Object b)
 {
     Xpost_Object sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
     bdcput(ctx, sd, consname(ctx, "currentpacking"), b);
+    return 0;
 }
 
-void initoppa(Xpost_Context *ctx,
+int initoppa(Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -120,6 +122,7 @@ void initoppa(Xpost_Context *ctx,
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
 
+    return 0;
 }
 
 

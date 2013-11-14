@@ -45,8 +45,14 @@ DATA_DIR(/qsort.ps)strcat run
     /.to-int { floor cvi }
     /PutPix { % val x y IMAGE  .  -
     begin
-        .to-int exch .to-int exch
-        ImgData exch get 3 1 roll exch put
+        {
+            .to-int exch .to-int exch
+            dup height ge { stop } if
+            1 index width ge { stop } if
+            ImgData exch get 3 1 roll exch put
+        } stopped {
+            pop pop pop
+        } if
     end }
 
     /GetPix { % x y IMAGE  .  val

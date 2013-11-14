@@ -53,7 +53,7 @@
 #include "xpost_op_param.h"
 
 static
-void vmreclaim (Xpost_Context *ctx, Xpost_Object I) {
+int vmreclaim (Xpost_Context *ctx, Xpost_Object I) {
     switch (I.int_.val) {
     default: error(rangecheck, "invalid argument");
     case -2: /* disable automatic collection in local and global vm */
@@ -69,10 +69,11 @@ void vmreclaim (Xpost_Context *ctx, Xpost_Object I) {
              collect(ctx->gl, 1, 1);
              break;
     }
+    return 0;
 }
 
 static
-void vmstatus (Xpost_Context *ctx) {
+int vmstatus (Xpost_Context *ctx) {
     int lev, used, max;
     unsigned int vstk;
 
@@ -85,9 +86,10 @@ void vmstatus (Xpost_Context *ctx) {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(lev));
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(used));
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(max));
+    return 0;
 }
 
-void initopparam(Xpost_Context *ctx,
+int initopparam(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;
@@ -106,6 +108,7 @@ void initopparam(Xpost_Context *ctx,
     op = consoper(ctx, "save", Zsave, 1, 0); INSTALL;
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
 
+    return 0;
 }
 
 

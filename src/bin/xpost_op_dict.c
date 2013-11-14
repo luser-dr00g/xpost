@@ -52,15 +52,16 @@
 #include "xpost_op_dict.h"
 
 int DEBUGLOAD = 0;
-void Awhere(Xpost_Context *ctx, Xpost_Object K); /* forward decl */
+int Awhere(Xpost_Context *ctx, Xpost_Object K); /* forward decl */
 
 /* int  dict  dict
    create dictionary with capacity for int elements */
 static
-void Idict(Xpost_Context *ctx,
+int Idict(Xpost_Context *ctx,
            Xpost_Object I)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbdc(ctx, I.int_.val)));
+    return 0;
 }
 
 /* -  <<  mark
@@ -69,7 +70,7 @@ void Idict(Xpost_Context *ctx,
 /* mark k_1 v_1 ... k_N v_N  >>  dict
    construct dictionary from pairs on stack */
 static
-void dictomark(Xpost_Context *ctx)
+int dictomark(Xpost_Context *ctx)
 {
     int i;
     Xpost_Object d, k, v;
@@ -83,53 +84,58 @@ void dictomark(Xpost_Context *ctx)
     }
     (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
     xpost_stack_push(ctx->lo, ctx->os, d);
+    return 0;
 }
 
 /* dict  length  int
    number of key-value pairs in dict */
 static
-void Dlength(Xpost_Context *ctx,
+int Dlength(Xpost_Context *ctx,
              Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(diclength(
                     xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
+    return 0;
 }
 
 /* dict  maxlength  int
    capacity of dict */
 static
-void Dmaxlength(Xpost_Context *ctx,
+int Dmaxlength(Xpost_Context *ctx,
                 Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(dicmaxlength(
                     xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
+    return 0;
 }
 
 /* dict  begin  -
    push dict on dict stack */
 static
-void Dbegin(Xpost_Context *ctx,
+int Dbegin(Xpost_Context *ctx,
             Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->ds, D);
+    return 0;
 }
 
 /* -  end  -
    pop dict stack */
 static
-void Zend(Xpost_Context *ctx)
+int Zend(Xpost_Context *ctx)
 {
     if (xpost_stack_count(ctx->lo, ctx->ds) <= 3)
         error(dictstackunderflow, "end");
     (void)xpost_stack_pop(ctx->lo, ctx->ds);
+    return 0;
 }
 
 /* key value  def  -
    associate key with value in current dict */
 static
-void Adef(Xpost_Context *ctx,
+int Adef(Xpost_Context *ctx,
           Xpost_Object K,
           Xpost_Object V)
 {
@@ -138,11 +144,12 @@ void Adef(Xpost_Context *ctx,
     bdcput(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
     //puts("!def!");
     //dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
+    return 0;
 }
 
 /* key  load  value
    search dict stack for key and return associated value */
-void Aload(Xpost_Context *ctx,
+int Aload(Xpost_Context *ctx,
            Xpost_Object K)
 {
     int i;
@@ -163,7 +170,7 @@ void Aload(Xpost_Context *ctx,
 
         if (dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)) {
             xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, D, K));
-            return;
+            return 0;
         }
     }
 
@@ -180,12 +187,13 @@ void Aload(Xpost_Context *ctx,
     }
 
     error(undefined, "Aload");
+    return undefined;
 }
 
 /* key value  store  -
    replace topmost definition of key */
 static
-void Astore(Xpost_Context *ctx,
+int Astore(Xpost_Context *ctx,
             Xpost_Object K,
             Xpost_Object V)
 {
@@ -197,43 +205,47 @@ void Astore(Xpost_Context *ctx,
         D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
     }
     bdcput(ctx, D, K, V);
+    return 0;
 }
 
 /* dict key  get  any
    get value associated with key in dict */
 static
-void DAget(Xpost_Context *ctx,
+int DAget(Xpost_Context *ctx,
            Xpost_Object D,
            Xpost_Object K)
 {
     xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, D, K));
+    return 0;
 }
 
 /* dict key value  put  -
    associate key with value in dict */
 static
-void DAAput(Xpost_Context *ctx,
+int DAAput(Xpost_Context *ctx,
             Xpost_Object D,
             Xpost_Object K,
             Xpost_Object V)
 {
     bdcput(ctx, D, K, V);
+    return 0;
 }
 
 /* dict key  undef  -
    remove key and its value in dict */
 static
-void DAundef(Xpost_Context *ctx,
+int DAundef(Xpost_Context *ctx,
              Xpost_Object D,
              Xpost_Object K)
 {
     bdcundef(ctx, D, K);
+    return 0;
 }
 
 /* dict key  known  bool
    test whether key is in dict */
 static
-void DAknown(Xpost_Context *ctx,
+int DAknown(Xpost_Context *ctx,
              Xpost_Object D,
              Xpost_Object K)
 {
@@ -244,12 +256,13 @@ void DAknown(Xpost_Context *ctx,
     xpost_object_dump(K);
 #endif
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)));
+    return 0;
 }
 
 
 /* key  where  dict true -or- false
    find dict in which key is defined */
-void Awhere(Xpost_Context *ctx,
+int Awhere(Xpost_Context *ctx,
             Xpost_Object K)
 {
     int i;
@@ -259,16 +272,17 @@ void Awhere(Xpost_Context *ctx,
         if (dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)) {
             xpost_stack_push(ctx->lo, ctx->os, D);
             xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
-            return;
+            return 0;
         }
     }
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+    return 0;
 }
 
 /* dict1 dict2  copy  dict2
    copy contents of dict1 to dict2 */
 static
-void Dcopy(Xpost_Context *ctx,
+int Dcopy(Xpost_Context *ctx,
            Xpost_Object S,
            Xpost_Object D)
 {
@@ -286,10 +300,11 @@ void Dcopy(Xpost_Context *ctx,
         }
     }
     xpost_stack_push(ctx->lo, ctx->os, D);
+    return 0;
 }
 
 static
-void DPforall (Xpost_Context *ctx,
+int DPforall (Xpost_Context *ctx,
                Xpost_Object D,
                Xpost_Object P)
 {
@@ -322,18 +337,20 @@ void DPforall (Xpost_Context *ctx,
                 xpost_stack_push(ctx->lo, ctx->es, D);
 
                 xpost_stack_push(ctx->lo, ctx->es, P);
-                return;
+                return 0;
             }
         }
     }
+    return 0;
 }
 
 /* -  currentdict  dict
    push current dict on operand stack */
 static
-void Zcurrentdict(Xpost_Context *ctx)
+int Zcurrentdict(Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0));
+    return 0;
 }
 
 /* -  errordict  dict   % error handler dictionary : err.ps
@@ -347,15 +364,16 @@ void Zcurrentdict(Xpost_Context *ctx)
 /* -  countdictstack  int
    count elements on dict stack */
 static
-void Zcountdictstack(Xpost_Context *ctx)
+int Zcountdictstack(Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->ds)));
+    return 0;
 }
 
 /* array  dictstack  subarray
    copy dict stack into array */
 static
-void Adictstack(Xpost_Context *ctx,
+int Adictstack(Xpost_Context *ctx,
                 Xpost_Object A)
 {
     int z = xpost_stack_count(ctx->lo, ctx->ds);
@@ -363,18 +381,20 @@ void Adictstack(Xpost_Context *ctx,
     for (i=0; i < z; i++)
         barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, i));
     xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+    return 0;
 }
 
 static
-void cleardictstack(Xpost_Context *ctx)
+int cleardictstack(Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->ds);
     while (z-- > 3) {
         (void)xpost_stack_pop(ctx->lo, ctx->ds);
     }
+    return 0;
 }
 
-void initopdi(Xpost_Context *ctx,
+int initopdi(Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -409,5 +429,6 @@ void initopdi(Xpost_Context *ctx,
     op = consoper(ctx, "countdictstack", Zcountdictstack, 1, 0); INSTALL;
     op = consoper(ctx, "dictstack", Adictstack, 1, 1, arraytype); INSTALL;
     op = consoper(ctx, "cleardictstack", cleardictstack, 0, 0); INSTALL;
+    return 0;
 }
 

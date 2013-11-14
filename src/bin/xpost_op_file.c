@@ -89,7 +89,7 @@ void *alloca (size_t);
 #endif
 
 static
-void Sfile (Xpost_Context *ctx,
+int Sfile (Xpost_Context *ctx,
             Xpost_Object fn,
             Xpost_Object mode)
 {
@@ -104,17 +104,19 @@ void Sfile (Xpost_Context *ctx,
 
     f = fileopen(ctx->lo, cfn, cmode);
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    return 0;
 }
 
 static
-void Fclosefile (Xpost_Context *ctx,
+int Fclosefile (Xpost_Context *ctx,
                  Xpost_Object f)
 {
     fileclose(ctx->lo, f);
+    return 0;
 }
 
 static
-void Fread (Xpost_Context *ctx,
+int Fread (Xpost_Context *ctx,
             Xpost_Object f)
 {
     Xpost_Object b;
@@ -126,21 +128,23 @@ void Fread (Xpost_Context *ctx,
     } else {
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
+    return 0;
 }
 
 static
-void Fwrite (Xpost_Context *ctx,
+int Fwrite (Xpost_Context *ctx,
              Xpost_Object f,
              Xpost_Object i)
 {
     if (!xpost_object_is_writeable(f)) error(invalidaccess, "Fwrite");
     filewrite(ctx->lo, f, i);
+    return 0;
 }
 
 char *hex = "0123456789" "ABCDEF" "abcdef";
 
 static
-void Freadhexstring (Xpost_Context *ctx,
+int Freadhexstring (Xpost_Context *ctx,
                      Xpost_Object F,
                      Xpost_Object S)
 {
@@ -173,10 +177,11 @@ void Freadhexstring (Xpost_Context *ctx,
     S.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, S);
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(!eof));
+    return 0;
 }
 
 static
-void Fwritehexstring (Xpost_Context *ctx,
+int Fwritehexstring (Xpost_Context *ctx,
                       Xpost_Object F,
                       Xpost_Object S)
 {
@@ -192,10 +197,11 @@ void Fwritehexstring (Xpost_Context *ctx,
         if (fputc(hex[s[n] / 16], f)) error(ioerror, "Fwritehexstring");
         if (fputc(hex[s[n] % 16], f)) error(ioerror, "Fwritehexstring");
     }
+    return 0;
 }
 
 static
-void Freadstring (Xpost_Context *ctx,
+int Freadstring (Xpost_Context *ctx,
                   Xpost_Object F,
                   Xpost_Object S)
 {
@@ -215,10 +221,11 @@ void Freadstring (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, S);
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
+    return 0;
 }
 
 static
-void Fwritestring (Xpost_Context *ctx,
+int Fwritestring (Xpost_Context *ctx,
                    Xpost_Object F,
                    Xpost_Object S)
 {
@@ -230,10 +237,11 @@ void Fwritestring (Xpost_Context *ctx,
     s = charstr(ctx, S);
     if (fwrite(s, 1, S.comp_.sz, f) != S.comp_.sz)
         error(ioerror, "Fwritestring");
+    return 0;
 }
 
 static
-void Freadline (Xpost_Context *ctx,
+int Freadline (Xpost_Context *ctx,
                 Xpost_Object F,
                 Xpost_Object S)
 {
@@ -253,31 +261,34 @@ void Freadline (Xpost_Context *ctx,
     S.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, S);
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(c != EOF));
+    return 0;
 }
 
 static
-void Fbytesavailable (Xpost_Context *ctx,
+int Fbytesavailable (Xpost_Context *ctx,
                       Xpost_Object F)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(filebytesavailable(ctx->lo, F)));
+    return 0;
 }
 
 static
-void Zflush (Xpost_Context *ctx)
+int Zflush (Xpost_Context *ctx)
 {
     int ret;
     (void)ctx;
     ret = fflush(NULL);
     if (ret != 0) error(ioerror, "fflush did not return 0");
+    return 0;
 }
 
 static
-void Fflushfile (Xpost_Context *ctx,
+int Fflushfile (Xpost_Context *ctx,
                  Xpost_Object F)
 {
     int ret;
     FILE *f;
-    if (!filestatus(ctx->lo, F)) return;
+    if (!filestatus(ctx->lo, F)) return 0;
     f = filefile(ctx->lo, F);
     if (xpost_object_is_writeable(F)) {
         ret = fflush(f);
@@ -287,31 +298,34 @@ void Fflushfile (Xpost_Context *ctx,
         while ((c = fgetc(f)) != EOF)
             /**/;
     }
+    return 0;
 }
 
 #ifndef HAVE_WIN32
 
 static
-void Fresetfile (Xpost_Context *ctx,
+int Fresetfile (Xpost_Context *ctx,
                  Xpost_Object F)
 {
     FILE *f;
-    if (!filestatus(ctx->lo, F)) return;
+    if (!filestatus(ctx->lo, F)) return 0;
     f = filefile(ctx->lo, F);
     __fpurge(f);
+    return 0;
 }
 
 #endif
 
 static
-void Fstatus (Xpost_Context *ctx,
+int Fstatus (Xpost_Context *ctx,
               Xpost_Object F)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(filestatus(ctx->lo, F)));
+    return 0;
 }
 
 static
-void Zcurrentfile (Xpost_Context *ctx)
+int Zcurrentfile (Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
@@ -320,14 +334,15 @@ void Zcurrentfile (Xpost_Context *ctx)
         o = xpost_stack_topdown_fetch(ctx->lo, ctx->es, i);
         if (xpost_object_get_type(o) == filetype) {
             xpost_stack_push(ctx->lo, ctx->os, o);
-            return;
+            return 0;
         }
     }
     xpost_stack_push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
+    return 0;
 }
 
 static
-void deletefile (Xpost_Context *ctx,
+int deletefile (Xpost_Context *ctx,
                  Xpost_Object S)
 {
     char *s;
@@ -339,10 +354,11 @@ void deletefile (Xpost_Context *ctx,
             case ENOENT: error(undefinedfilename, "deletefile");
             default: error(ioerror, "deletefile");
         }
+    return 0;
 }
 
 static
-void renamefile (Xpost_Context *ctx,
+int renamefile (Xpost_Context *ctx,
                  Xpost_Object Old,
                  Xpost_Object New)
 {
@@ -356,12 +372,13 @@ void renamefile (Xpost_Context *ctx,
             case ENOENT: error(undefinedfilename, "renamefile");
             default: error(ioerror, "renamefile");
         }
+    return 0;
 }
 
 //#ifndef HAVE_WIN32
 
 static
-void contfilenameforall (Xpost_Context *ctx,
+int contfilenameforall (Xpost_Context *ctx,
                          Xpost_Object oglob,
                          Xpost_Object Proc,
                          Xpost_Object Scr)
@@ -393,10 +410,11 @@ void contfilenameforall (Xpost_Context *ctx,
     } else {
         globfree(globbuf);
     }
+    return 0;
 }
 
 static
-void filenameforall (Xpost_Context *ctx,
+int filenameforall (Xpost_Context *ctx,
                      Xpost_Object Tmp,
                      Xpost_Object Proc,
                      Xpost_Object Scr)
@@ -417,12 +435,13 @@ void filenameforall (Xpost_Context *ctx,
     oglob.glob_.ptr = globbuf;
 
     contfilenameforall(ctx, oglob, Proc, xpost_object_cvlit(Scr));
+    return 0;
 }
 
 //#endif
 
 static
-void setfileposition (Xpost_Context *ctx,
+int setfileposition (Xpost_Context *ctx,
             Xpost_Object F,
             Xpost_Object pos)
 {
@@ -431,10 +450,11 @@ void setfileposition (Xpost_Context *ctx,
     {
         error(ioerror, "fseek returned non-zero");
     }
+    return 0;
 }
 
 static
-void fileposition (Xpost_Context *ctx,
+int fileposition (Xpost_Context *ctx,
             Xpost_Object F)
 {
     long pos;
@@ -443,10 +463,11 @@ void fileposition (Xpost_Context *ctx,
         error(ioerror, "ftell returned -1");
     else
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(pos));
+    return 0;
 }
 
 static
-void Sprint (Xpost_Context *ctx,
+int Sprint (Xpost_Context *ctx,
              Xpost_Object S)
 {
     size_t ret;
@@ -455,10 +476,11 @@ void Sprint (Xpost_Context *ctx,
     ret = fwrite(s, 1, S.comp_.sz, stdout);
     if (ret != S.comp_.sz)
         error(ioerror, "Sprint() fwrite returned unexpected value");
+    return 0;
 }
 
 static
-void Becho (Xpost_Context *ctx,
+int Becho (Xpost_Context *ctx,
             Xpost_Object b)
 {
     (void)ctx;
@@ -466,9 +488,10 @@ void Becho (Xpost_Context *ctx,
         echoon(stdin);
     else
         echooff(stdin);
+    return 0;
 }
 
-void initopf (Xpost_Context *ctx,
+int initopf (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -524,6 +547,7 @@ void initopf (Xpost_Context *ctx,
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    return 0;
 }
 
 
