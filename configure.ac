@@ -163,6 +163,11 @@ AC_SUBST([VALGRIND])
 
 AC_HEADER_ASSERT
 AC_HEADER_TIME
+AC_SYS_POSIX_TERMIOS
+
+if test "x${ac_cv_sys_posix_termios}" = "xyes" ; then
+   AC_DEFINE([HAVE_TERMIOS_H], [1], [Define to 1 if termios headers and functions are available])
+fi
 
 if test "x${enable_mmap}" = "xyes" ; then
    AC_CHECK_HEADERS([sys/mman.h], [have_mmap="yes"], [have_mmap="no"])
