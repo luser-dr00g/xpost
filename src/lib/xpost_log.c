@@ -42,6 +42,7 @@
 # include <windows.h>
 #endif
 
+#include "xpost_compat.h" /* mkstemp */
 #include "xpost_log.h"
 
 
@@ -65,6 +66,7 @@ static Xpost_Log_Level _xpost_log_level = XPOST_LOG_LEVEL_ERR;
 
 static Xpost_Log_Print_Cb _xpost_log_print_cb = xpost_log_print_cb_stderr;
 static void *_xpost_log_print_cb_data = NULL;
+static FILE *_xpost_log_dump_file = NULL;
 
 #ifdef _WIN32
 static void
@@ -278,9 +280,11 @@ _xpost_log_fprint_cb(FILE *stream,
  *                                 Global                                     *
  *============================================================================*/
 
-void
+int
 xpost_log_init(void)
 {
+    char *dump_filename = "xdumpXXXXXX";
+    int fd;
     char *endptr;
     const char *level;
     long l;
@@ -294,6 +298,25 @@ xpost_log_init(void)
               (endptr == level)))
             _xpost_log_level = (int)l;
     }
+
+    fd = mkstemp(dump_filename);
+    if (fd == -1)
+        return 0;
+
+    _xpost_log_dump_file = fdopen(fd, "wb");
+    if (!_xpost_log_dump_file)
+        return 0;
+
+    XPOST_LOG_INFO("dump interpreter errors in file %s", dump_filename);
+
+    return 1;
+}
+
+void
+xpost_log_quit(void)
+{
+    if (_xpost_log_dump_file)
+        fclose(_xpost_log_dump_file);
 }
 
 void

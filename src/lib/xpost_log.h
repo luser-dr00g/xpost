@@ -106,11 +106,28 @@ typedef void (*Xpost_Log_Print_Cb)(Xpost_Log_Level level,
 /**
  * @brief Initialize the log module.
  *
+ * @return 1 on success, 0 otherwise.
+ *
  * This function initializes the log module. Currently, it only gets
  * the value of the environment variable XPOST_LOG_LEVEL if it
- * exists. It is called by xpost_init().
+ * exists and create a file stream for dumping errors in the
+ * interpreter. It is called by xpost_init().
+ *
+ * @see xpost_log_quit()
+ * @see xpost_init()
  */
-void xpost_log_init(void);
+int xpost_log_init(void);
+
+/**
+ * @brief Shut down the log module.
+ *
+ * This function shuts down the log module. It is called by
+ * xpost_quit().
+ *
+ * @see xpost_log_init()
+ * @see xpost_quit()
+ */
+void xpost_log_quit(void);
 
 /**
  * @brief Sets logging method to use.

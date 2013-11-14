@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "xpost_compat.h" /* mkstemp */
 #include "xpost_log.h"
 #include "xpost_error.h"
 
