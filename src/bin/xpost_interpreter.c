@@ -43,10 +43,7 @@
 # include <unistd.h> /* isattty */
 #endif
 
-#ifdef __MINGW32__
-# include "osmswin.h" /* mkstemp */
-#endif
-
+#include "xpost_compat.h" /* mkstemp */
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks

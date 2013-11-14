@@ -65,6 +65,7 @@ void *alloca (size_t);
 #include <stdlib.h> /* NULL */
 #include <string.h>
 
+#include "xpost_compat.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -82,11 +83,9 @@ void *alloca (size_t);
 
 #ifdef HAVE_WIN32
 # include "glob.h"
-# include "osmswin.h"
 #else
 # include <glob.h>
 # include <stdio_ext.h> /* __fpurge */
-# include "osunix.h"
 #endif
 
 static

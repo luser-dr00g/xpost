@@ -59,14 +59,8 @@ src/bin/xpost_save.h
 
 if HAVE_WIN32
 src_bin_itp_SOURCES += \
-src/bin/osmswin.c \
-src/bin/osmswin.h \
 src/bin/glob.c \
 src/bin/glob.h
-else
-src_bin_itp_SOURCES += \
-src/bin/osunix.c \
-src/bin/osunix.h
 endif
 
 src_bin_itp_CPPFLAGS = \

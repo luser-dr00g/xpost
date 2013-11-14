@@ -42,10 +42,7 @@
 # include <unistd.h> /* isattty close */
 #endif
 
-#ifdef __MINGW32__
-# include "osmswin.h" /* mkstemp */
-#endif
-
+#include "xpost_compat.h" /* mkstemp */
 #include "xpost_object.h"
 #include "xpost_memory.h"
 #include "xpost_stack.h"

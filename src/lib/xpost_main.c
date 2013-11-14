@@ -14,7 +14,8 @@ xpost_init(void)
     if (++_xpost_init_count != 1)
         return _xpost_init_count;
 
-    xpost_log_init();
+    if (!xpost_log_init())
+        return --_xpost_init_count;
 
     if (!xpost_memory_init())
         return --_xpost_init_count;
@@ -33,6 +34,8 @@ xpost_quit(void)
 
     if (--_xpost_init_count != 0)
         return _xpost_init_count;
+
+    xpost_log_quit();
 
     return _xpost_init_count;
 }
