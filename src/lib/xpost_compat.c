@@ -58,7 +58,20 @@
 
 void echoon(FILE *f)
 {
-#ifdef HAVE_TERMIOS_H
+#ifdef _WIN32
+    if (f == stdin)
+    {
+        HANDLE h;
+        DWORD mode;
+
+        h = GetStdHandle(STD_INPUT_HANDLE);
+        if (GetConsoleMode(h, &mode))
+        {
+            mode |= ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
+            SetConsoleMode(h, mode);
+        }
+    }
+#elif defined (HAVE_TERMIOS_H)
     struct termios ts;
 
     tcgetattr(fileno(f), &ts);
@@ -71,7 +84,20 @@ void echoon(FILE *f)
 
 void echooff(FILE *f)
 {
-#ifdef HAVE_TERMIOS_H
+#ifdef _WIN32
+    if (f == stdin)
+    {
+        HANDLE h;
+        DWORD mode;
+
+        h = GetStdHandle(STD_INPUT_HANDLE);
+        if (GetConsoleMode(h, &mode))
+        {
+            mode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+            SetConsoleMode(h, mode);
+        }
+    }
+#elif defined HAVE_TERMIOS_H
     struct termios ts;
 
     tcgetattr(fileno(f), &ts);
