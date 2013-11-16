@@ -69,6 +69,7 @@ void *alloca (size_t);
 
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
+#include "xpost_error.h"
 #include "xpost_name.h"
 #include "xpost_string.h"
 #include "xpost_array.h"
@@ -87,6 +88,8 @@ int packedarray (Xpost_Context *ctx,
     
     for (i=n.int_.val; i > 0; i--) {
         v = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(v) == invalidtype)
+            return stackunderflow;
         barput(ctx, a, i-1, v);
     }
     a = xpost_object_set_access(xpost_object_cvlit(a), XPOST_OBJECT_TAG_ACCESS_READ_ONLY);

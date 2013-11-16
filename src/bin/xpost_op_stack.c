@@ -105,7 +105,8 @@ int Adup (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, x);
-    xpost_stack_push(ctx->lo, ctx->os, x);
+    if (!xpost_stack_push(ctx->lo, ctx->os, x))
+        return stackoverflow;
     return 0;
 }
 
@@ -119,7 +120,9 @@ int Icopy (Xpost_Context *ctx,
     if (n.int_.val < 0) error(rangecheck, "Icopy");
     if (n.int_.val > xpost_stack_count(ctx->lo, ctx->os)) error(stackunderflow, "Icopy");
     for (i=0; i < n.int_.val; i++)
-        xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val - 1));
+        if (!xpost_stack_push(ctx->lo, ctx->os,
+                xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val - 1)))
+            return stackoverflow;
     return 0;
 }
 
@@ -132,7 +135,9 @@ int Iindex (Xpost_Context *ctx,
     if (n.int_.val < 0) error(rangecheck, "Iindex");
     if (n.int_.val >= xpost_stack_count(ctx->lo, ctx->os)) error(stackunderflow, "Iindex");
     //printf("index %d\n", n.int_.val);
-    xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val));
+    if (!xpost_stack_push(ctx->lo, ctx->os,
+                xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val)))
+        return stackoverflow;
     return 0;
 }
 
@@ -171,6 +176,11 @@ int Zclear (Xpost_Context *ctx)
 {
     Xpost_Stack *s = (void *)(ctx->lo->base + ctx->os);
     s->top = 0;
+    if (s->nextseg) /* trim the stack */
+    {
+        xpost_stack_free(ctx->lo, s->nextseg);
+        s->nextseg = 0;
+    }
     return 0;
 }
 
@@ -179,7 +189,8 @@ int Zclear (Xpost_Context *ctx)
 static
 int Zcount (Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->os)));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->os))))
+        return stackoverflow;
     return 0;
 }
 
@@ -195,6 +206,8 @@ int Zcleartomark (Xpost_Context *ctx)
     Xpost_Object o;
     do {
         o = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(o) == invalidtype)
+            return unmatchedmark;
     } while (o.tag != marktype);
     return 0;
 }
@@ -212,8 +225,7 @@ int Zcounttomark (Xpost_Context *ctx)
             return 0;
         }
     }
-    error(unmatchedmark, "Zcounttomark");
-    return 0;
+    return unmatchedmark;
 }
 
 /*

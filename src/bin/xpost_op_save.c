@@ -70,19 +70,25 @@ void *alloca (size_t);
 #include "xpost_save.h"
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
+#include "xpost_error.h"
 #include "xpost_name.h"
 #include "xpost_string.h"
 #include "xpost_dict.h"
 #include "xpost_operator.h"
 #include "xpost_op_save.h"
 
+/* -  save  save
+   create save object representing vm contents */
 static
 int Zsave (Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_save_create_snapshot_object(ctx->lo));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_save_create_snapshot_object(ctx->lo)))
+        return stackoverflow;
     return 0;
 }
 
+/* save  restore  -
+   rewind vm to saved state */
 static
 int Vrestore (Xpost_Context *ctx,
                Xpost_Object V)
@@ -100,6 +106,8 @@ int Vrestore (Xpost_Context *ctx,
     return 0;
 }
 
+/* bool  setglobal  -
+   set vm allocation mode in current context. true is global. */
 static
 int Bsetglobal (Xpost_Context *ctx,
                  Xpost_Object B)
@@ -108,6 +116,8 @@ int Bsetglobal (Xpost_Context *ctx,
     return 0;
 }
 
+/* -  currentglobal  bool
+   return vm allocation mode for current context */
 static
 int Zcurrentglobal (Xpost_Context *ctx)
 {
@@ -115,6 +125,8 @@ int Zcurrentglobal (Xpost_Context *ctx)
     return 0;
 }
 
+/* any  gcheck  bool
+   check whether value is a legal element of a global compound object */
 static
 int Agcheck (Xpost_Context *ctx,
               Xpost_Object A)
@@ -133,6 +145,8 @@ int Agcheck (Xpost_Context *ctx,
     return 0;
 }
 
+/* -  vmstatus  level used max
+   return size information for (local) vm */
 static
 int Zvmstatus (Xpost_Context *ctx)
 {

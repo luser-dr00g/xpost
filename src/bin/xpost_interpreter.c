@@ -66,8 +66,8 @@ Xpost_Interpreter *itpdata;
 int initializing = 1;
 int ignoreinvalidaccess = 0;
 
-void eval(Xpost_Context *ctx);
-void mainloop(Xpost_Context *ctx);
+int eval(Xpost_Context *ctx);
+int mainloop(Xpost_Context *ctx);
 void init(void);
 void xit(void);
 
@@ -206,63 +206,77 @@ void xpost_interpreter_exit(Xpost_Interpreter *itpptr)
 
 /* function type for interpreter action pointers */
 typedef
-void evalfunc(Xpost_Context *ctx);
+int evalfunc(Xpost_Context *ctx);
 
 /* quit the interpreter */
 static
-void evalquit(Xpost_Context *ctx)
+int evalquit(Xpost_Context *ctx)
 {
     ++ctx->quit;
+    return 0;
 }
 
 /* pop the execution stack */
 static
-void evalpop(Xpost_Context *ctx)
+int evalpop(Xpost_Context *ctx)
 {
-    (void)xpost_stack_pop(ctx->lo, ctx->es);
+    if (!xpost_object_get_type(xpost_stack_pop(ctx->lo, ctx->es)) == invalidtype)
+        return stackunderflow;
+    return 0;
 }
 
 /* pop the execution stack onto the operand stack */
 static
-void evalpush(Xpost_Context *ctx)
+int evalpush(Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os,
-            xpost_stack_pop(ctx->lo, ctx->es) );
+    if (!xpost_stack_push(ctx->lo, ctx->os,
+            xpost_stack_pop(ctx->lo, ctx->es) ))
+        return stackoverflow;
+    return 0;
 }
 
 /* load executable name */
 static
-void evalload(Xpost_Context *ctx)
+int evalload(Xpost_Context *ctx)
 {
+    int ret;
     Xpost_Object s = strname(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
     if (TRACE)
         printf("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
 
-    xpost_stack_push(ctx->lo, ctx->os,
-            xpost_stack_pop(ctx->lo, ctx->es));
+    if (!xpost_stack_push(ctx->lo, ctx->os,
+            xpost_stack_pop(ctx->lo, ctx->es)))
+        return stackoverflow;
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
-    opexec(ctx, ctx->opcode_shortcuts.load);
+    ret = opexec(ctx, ctx->opcode_shortcuts.load);
+    if (ret)
+        return undefined;
     if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0))) {
         xpost_stack_push(ctx->lo, ctx->es,
                 xpost_stack_pop(ctx->lo, ctx->os));
     }
+    return 0;
 }
 
 /* execute operator */
 static
-void evaloperator(Xpost_Context *ctx)
+int evaloperator(Xpost_Context *ctx)
 {
+    int ret;
     Xpost_Object op = xpost_stack_pop(ctx->lo, ctx->es);
 
     if (TRACE)
         dumpoper(ctx, op.mark_.padw);
-    opexec(ctx, op.mark_.padw);
+    ret = opexec(ctx, op.mark_.padw);
+    if (ret)
+        return ret;
+    return 0;
 }
 
 /* extract head (&tail) of array */
 static
-void evalarray(Xpost_Context *ctx)
+int evalarray(Xpost_Context *ctx)
 {
     Xpost_Object a = xpost_stack_pop(ctx->lo, ctx->es);
     Xpost_Object b;
@@ -274,22 +288,30 @@ void evalarray(Xpost_Context *ctx)
     case 1:
         b = barget(ctx, a, 0);
         if (xpost_object_get_type(b) == arraytype)
-            xpost_stack_push(ctx->lo, ctx->os, b);
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->os, b))
+                return stackoverflow;
+        }
         else
-            xpost_stack_push(ctx->lo, ctx->es, b);
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->es, b))
+                return execstackoverflow;
+        }
         /*@fallthrough@*/
     case 0: /* drop */;
     }
+    return 0;
 }
 
 /* extract token from string */
 static
-void evalstring(Xpost_Context *ctx)
+int evalstring(Xpost_Context *ctx)
 {
     Xpost_Object b,t,s;
 
     s = xpost_stack_pop(ctx->lo, ctx->es);
-    xpost_stack_push(ctx->lo, ctx->os, s);
+    if (!xpost_stack_push(ctx->lo, ctx->os, s))
+        return stackoverflow;
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     opexec(ctx, ctx->opcode_shortcuts.token);
@@ -298,13 +320,23 @@ void evalstring(Xpost_Context *ctx)
         t = xpost_stack_pop(ctx->lo, ctx->os);
         s = xpost_stack_pop(ctx->lo, ctx->os);
         xpost_stack_push(ctx->lo, ctx->es, s);
-        xpost_stack_push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
+        if (xpost_object_get_type(t)==arraytype)
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->os , t))
+                return stackoverflow;
+        }
+        else
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->es , t))
+                return execstackoverflow;
+        }
     }
+    return 0;
 }
 
 /* extract token from file */
 static
-void evalfile(Xpost_Context *ctx)
+int evalfile(Xpost_Context *ctx)
 {
     Xpost_Object b,f,t;
 
@@ -317,10 +349,20 @@ void evalfile(Xpost_Context *ctx)
     if (b.int_.val) {
         t = xpost_stack_pop(ctx->lo, ctx->os);
         xpost_stack_push(ctx->lo, ctx->es, f);
-        xpost_stack_push(ctx->lo, xpost_object_get_type(t)==arraytype? ctx->os: ctx->es, t);
+        if (xpost_object_get_type(t)==arraytype)
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->os, t))
+                return stackoverflow;
+        }
+        else
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->es, t))
+                return execstackoverflow;
+        }
     } else {
         fileclose(ctx->lo, f);
     }
+    return 0;
 }
 
 /* interpreter actions for executable types */
@@ -337,7 +379,6 @@ evalfunc *evalglob = evalpush;
 evalfunc *evalmagic = evalquit;
 
 evalfunc *evalcontext = evalpush;
-//evalfunc *evalfile = evalpush;
 evalfunc *evalname = evalload;
 
 /* install the evaltype functions (possibly via pointers) in the jump table */
@@ -354,8 +395,9 @@ void initevaltype(void)
 }
 
 /* one iteration of the central loop */
-void eval(Xpost_Context *ctx)
+int eval(Xpost_Context *ctx)
 {
+    int ret;
     Xpost_Object t = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
 
     ctx->currentobject = t;
@@ -382,12 +424,14 @@ void eval(Xpost_Context *ctx)
     }
 
     if ( xpost_object_is_exe(t) ) /* if executable */
-        evaltype[xpost_object_get_type(t)](ctx);
+        ret = evaltype[xpost_object_get_type(t)](ctx);
     else
-        evalpush(ctx);
+        ret = evalpush(ctx);
+
+    return ret;
 }
 
-/* called by mainloop() after longjmp from error()
+/* called by mainloop() after longjmp from error() or propagated error codes.
    pushes postscript-level error procedures
    and resumes normal execution.
  */
@@ -465,8 +509,9 @@ jmp_buf jbmainloop;
 int jbmainloopset = 0;
 
 /* the big main central interpreter loop. */
-void mainloop(Xpost_Context *ctx)
+int mainloop(Xpost_Context *ctx)
 {
+    int ret;
     volatile int err;
 
     if ((err = setjmp(jbmainloop))) {
@@ -475,9 +520,14 @@ void mainloop(Xpost_Context *ctx)
     jbmainloopset = 1;
 
     while(!ctx->quit)
-        eval(ctx);
+    {
+        ret = eval(ctx);
+        if (ret)
+            _onerror(ctx, ret);
+    }
 
     jbmainloopset = 0;
+    return 0;
 }
 
 
