@@ -179,15 +179,15 @@ int Scvi(Xpost_Context *ctx,
 
     dbl = strtod(t, NULL);
     if ((dbl == HUGE_VAL || dbl -HUGE_VAL) && errno==ERANGE)
-        error(limitcheck, "Scvr");
+        return limitcheck;
     if (dbl >= LONG_MAX || dbl <= LONG_MIN)
-        error(limitcheck, "Scvi");
+        return limitcheck;
     num = dbl;
 
     /*
     num = strtol(t, NULL, 10);
     if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
-        error(limitcheck, "Scvi");
+        return limitcheck;
     */
 
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(num));
@@ -225,7 +225,7 @@ int Scvr(Xpost_Context *ctx,
     s[str.comp_.sz] = '\0';
     num = strtod(s, NULL);
     if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
-        error(limitcheck, "Scvr");
+        return limitcheck;
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(num));
     return 0;
 }
@@ -258,9 +258,11 @@ int NRScvrs (Xpost_Context *ctx,
     int r, n;
     if (xpost_object_get_type(num) == realtype) num = xpost_cons_int(num.real_.val);
     r = rad.int_.val;
-    if (r < 2 || r > 36) error(rangecheck, "NRScvrs");
+    if (r < 2 || r > 36)
+        return rangecheck;
     n = conv_rad(num.int_.val, r, charstr(ctx, str), str.comp_.sz);
-    if (n == -1) error(rangecheck, "NRScvrs");
+    if (n == -1)
+        return rangecheck;
     if (n < str.comp_.sz) str.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, str);
     return 0;
@@ -340,12 +342,14 @@ int AScvs (Xpost_Context *ctx,
 
     switch(xpost_object_get_type(any)) {
     default:
-        if (str.comp_.sz < sizeof(nostringval)-1) error(rangecheck, "AScvs");
+        if (str.comp_.sz < sizeof(nostringval)-1)
+            return rangecheck;
         memcpy(charstr(ctx, str), nostringval, sizeof(nostringval)-1);
         str.comp_.sz = sizeof(nostringval)-1;
         break;
     case marktype:
-        if (str.comp_.sz < sizeof(smark)-1) error(rangecheck, "AScvs");
+        if (str.comp_.sz < sizeof(smark)-1)
+            return rangecheck;
         memcpy(charstr(ctx, str), smark, sizeof(smark)-1);
         str.comp_.sz = sizeof(smark)-1;
         break;
@@ -353,11 +357,13 @@ int AScvs (Xpost_Context *ctx,
     case booleantype:
         {
             if (any.int_.val) {
-                if (str.comp_.sz < sizeof(strue)-1) error(rangecheck, "AScvs booleantype case");
+                if (str.comp_.sz < sizeof(strue)-1)
+                    return rangecheck;
                 memcpy(charstr(ctx, str), strue, sizeof(strue)-1);
                 str.comp_.sz = sizeof(strue)-1;
             } else {
-                if (str.comp_.sz < sizeof(sfalse)-1) error(rangecheck, "AScvs booleantype case");
+                if (str.comp_.sz < sizeof(sfalse)-1)
+                    return rangecheck;
                 memcpy(charstr(ctx, str), sfalse, sizeof(sfalse)-1);
                 str.comp_.sz = sizeof(sfalse)-1;
             }
@@ -375,13 +381,15 @@ int AScvs (Xpost_Context *ctx,
                 --sz;
             }
             n += conv_integ(any.int_.val, s + n, sz);
-            if (n == -1) error(rangecheck, "AScvs integertype case");
+            if (n == -1)
+                return rangecheck;
             if (n < str.comp_.sz) str.comp_.sz = n;
             break;
         }
     case realtype:
         n = conv_real(any.real_.val, charstr(ctx, str), str.comp_.sz);
-        if (n == -1) error(rangecheck, "AScvs realtype case");
+        if (n == -1)
+            return rangecheck;
         if (n < str.comp_.sz) str.comp_.sz = n;
         break;
 
@@ -405,7 +413,8 @@ int AScvs (Xpost_Context *ctx,
         any = strname(ctx, any);
         /*@fallthrough@*/
     case stringtype:
-        if (any.comp_.sz > str.comp_.sz) error(rangecheck, "AScvs stringtype case");
+        if (any.comp_.sz > str.comp_.sz)
+            return rangecheck;
         if (any.comp_.sz < str.comp_.sz) str.comp_.sz = any.comp_.sz;
         memcpy(charstr(ctx, str), charstr(ctx, any), any.comp_.sz);
         break;

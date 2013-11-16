@@ -74,8 +74,11 @@ int dictomark(Xpost_Context *ctx)
 {
     int i;
     Xpost_Object d, k, v;
-    Zcounttomark(ctx);
+    if (Zcounttomark(ctx))
+        return unmatchedmark;
     i = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
+    if ((i % 2) == 1)
+        return rangecheck;
     d = consbdc(ctx, i);
     for ( ; i > 0; i -= 2){
         v = xpost_stack_pop(ctx->lo, ctx->os);
@@ -117,7 +120,8 @@ static
 int Dbegin(Xpost_Context *ctx,
             Xpost_Object D)
 {
-    xpost_stack_push(ctx->lo, ctx->ds, D);
+    if (!xpost_stack_push(ctx->lo, ctx->ds, D))
+        return dictstackoverflow;
     return 0;
 }
 
@@ -127,7 +131,7 @@ static
 int Zend(Xpost_Context *ctx)
 {
     if (xpost_stack_count(ctx->lo, ctx->ds) <= 3)
-        error(dictstackunderflow, "end");
+        return dictstackunderflow;
     (void)xpost_stack_pop(ctx->lo, ctx->ds);
     return 0;
 }
@@ -163,10 +167,10 @@ int Aload(Xpost_Context *ctx,
     for (i = 0; i < z; i++) {
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo,ctx->ds,i);
 
-    if (DEBUGLOAD) {
-        dumpdic(xpost_context_select_memory(ctx, D), D);
-        (void)puts("");
-    }
+        if (DEBUGLOAD) {
+            dumpdic(xpost_context_select_memory(ctx, D), D);
+            (void)puts("");
+        }
 
         if (dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)) {
             xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, D, K));
@@ -186,7 +190,6 @@ int Aload(Xpost_Context *ctx,
         xpost_object_dump(K);
     }
 
-    error(undefined, "Aload");
     return undefined;
 }
 
@@ -303,6 +306,8 @@ int Dcopy(Xpost_Context *ctx,
     return 0;
 }
 
+/* dict proc  forall  -
+   execute proc for each key value pair in dict */
 static
 int DPforall (Xpost_Context *ctx,
                Xpost_Object D,
@@ -325,18 +330,25 @@ int DPforall (Xpost_Context *ctx,
                 if (xpost_object_get_type(k) == extendedtype)
                     k = unextend(k);
                 v = tp[2 * D.comp_.off + 1];
-                xpost_stack_push(ctx->lo, ctx->os, k);
-                xpost_stack_push(ctx->lo, ctx->os, v);
+                if (!xpost_stack_push(ctx->lo, ctx->os, k))
+                    return stackoverflow;
+                if (!xpost_stack_push(ctx->lo, ctx->os, v))
+                    return stackoverflow;
 
                 //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-                xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall));
+                if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall)))
+                    return execstackoverflow;
                 //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-                xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
-                xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
+                if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+                    return execstackoverflow;
+                if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+                    return execstackoverflow;
                 ++D.comp_.off;
-                xpost_stack_push(ctx->lo, ctx->es, D);
+                if (!xpost_stack_push(ctx->lo, ctx->es, D))
+                    return execstackoverflow;
 
-                xpost_stack_push(ctx->lo, ctx->es, P);
+                if (!xpost_stack_push(ctx->lo, ctx->es, P))
+                    return execstackoverflow;
                 return 0;
             }
         }
@@ -349,7 +361,8 @@ int DPforall (Xpost_Context *ctx,
 static
 int Zcurrentdict(Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0)))
+        return stackoverflow;
     return 0;
 }
 
@@ -366,7 +379,8 @@ int Zcurrentdict(Xpost_Context *ctx)
 static
 int Zcountdictstack(Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->ds)));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->ds))))
+        return stackoverflow;
     return 0;
 }
 
@@ -391,6 +405,13 @@ int cleardictstack(Xpost_Context *ctx)
     while (z-- > 3) {
         (void)xpost_stack_pop(ctx->lo, ctx->ds);
     }
+    /*
+    Xpost_Stack *ds;
+    unsigned int dsaddr;
+    xpost_memory_table_get_addr(ctx->lo, ctx->ds, &dsaddr);
+    ds = (Xpost_Stack *)(ctx->lo->base + dsaddr);
+    ds->top = 3;
+    */
     return 0;
 }
 

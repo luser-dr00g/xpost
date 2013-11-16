@@ -6,6 +6,7 @@
 
 #include <check.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -41,6 +42,7 @@ START_TEST(xpost_stack_push_pop)
     Xpost_Object obj;
     int ret;
 
+    xpost_log_init();
     memset(&mem, 0, sizeof(Xpost_Memory_File));
     ret = xpost_memory_file_init(&mem, NULL, -1);
     ck_assert_int_eq (ret, 1);
@@ -52,12 +54,14 @@ START_TEST(xpost_stack_push_pop)
     for (i = 0; i < 5 + segsize; i++)
     {
         ret = xpost_stack_push(&mem, stack, xpost_cons_int(i));
+        XPOST_LOG_INFO("test push integer %d", i);
         ck_assert_int_eq (ret, 1);
     }
 
     for (i--; i >= 0; i--)
     {
         obj = xpost_stack_pop(&mem, stack);
+        XPOST_LOG_INFO("test pop integer %d", i);
         ck_assert_int_eq (xpost_object_get_type(obj), integertype);
         ck_assert_int_eq (obj.int_.val, i);
     }

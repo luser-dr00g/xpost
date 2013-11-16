@@ -81,7 +81,8 @@ static
 int Aexec (Xpost_Context *ctx,
             Xpost_Object O)
 {
-    xpost_stack_push(ctx->lo, ctx->es, O);
+    if (!xpost_stack_push(ctx->lo, ctx->es, O))
+        return execstackoverflow;
     return 0;
 }
 
@@ -91,7 +92,8 @@ int BPif (Xpost_Context *ctx,
            Xpost_Object P)
 {
     if (B.int_.val)
-        xpost_stack_push(ctx->lo, ctx->es, P);
+        if (!xpost_stack_push(ctx->lo, ctx->es, P))
+            return execstackoverflow;
     return 0;
 }
 
@@ -102,9 +104,19 @@ int BPPifelse (Xpost_Context *ctx,
                 Xpost_Object Else)
 {
     if (B.int_.val)
-        xpost_stack_push(ctx->lo, ctx->es, Then);
+    {
+        if (!xpost_stack_push(ctx->lo, ctx->es, Then))
+        {
+            return execstackoverflow;
+        }
+    }
     else
-        xpost_stack_push(ctx->lo, ctx->es, Else);
+    {
+        if (!xpost_stack_push(ctx->lo, ctx->es, Else))
+        {
+            return execstackoverflow;
+        }
+    }
     return 0;
 }
 
@@ -122,15 +134,23 @@ int IIIPfor (Xpost_Context *ctx,
     if (up? i > n : i < n) return 0;
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor));
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor)))
+            return execstackoverflow;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    xpost_stack_push(ctx->lo, ctx->es, lim);
-    xpost_stack_push(ctx->lo, ctx->es, incr);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(i + j));
-    xpost_stack_push(ctx->lo, ctx->es, P);
-    xpost_stack_push(ctx->lo, ctx->es, init);
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, lim))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, incr))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(i + j)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->os, init))
+        return stackoverflow;
     return 0;
 }
 
@@ -147,15 +167,23 @@ int RRRPfor (Xpost_Context *ctx,
     int up = j > 0;
     if (up? i > n : i < n) return 0;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor));
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor)))
+        return execstackoverflow;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    xpost_stack_push(ctx->lo, ctx->es, lim);
-    xpost_stack_push(ctx->lo, ctx->es, incr);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_real(i + j));
-    xpost_stack_push(ctx->lo, ctx->es, P);
-    xpost_stack_push(ctx->lo, ctx->es, init);
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, lim))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, incr))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_real(i + j)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->os, init))
+        return stackoverflow;
     return 0;
 }
 
@@ -166,12 +194,17 @@ int IPrepeat (Xpost_Context *ctx,
 {
     if (n.int_.val <= 0) return 0;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.repeat));
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.repeat)))
+        return execstackoverflow;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1));
-    xpost_stack_push(ctx->lo, ctx->es, P);
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+        return execstackoverflow;
     return 0;
 }
 
@@ -180,11 +213,15 @@ int Ploop (Xpost_Context *ctx,
             Xpost_Object P)
 {
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.loop));
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.loop)))
+        return execstackoverflow;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    xpost_stack_push(ctx->lo, ctx->es, P);
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+        return execstackoverflow;
     return 0;
 }
 
@@ -215,6 +252,8 @@ int Zexit (Xpost_Context *ctx)
 
     while (1) {
         x = xpost_stack_pop(ctx->lo, ctx->es);
+        if (xpost_object_get_type(x) == invalidtype)
+            return execstackunderflow;
         //xpost_object_dump(x);
         if ( (objcmp(ctx, x, opfor)    == 0)
           || (objcmp(ctx, x, oprepeat) == 0)
@@ -245,8 +284,11 @@ int Zstop(Xpost_Context *ctx)
     Xpost_Object x;
     while (c--) {
         x = xpost_stack_pop(ctx->lo, ctx->es);
+        if (xpost_object_get_type(x) == invalidtype)
+            return unregistered;
         if(objcmp(ctx, f, x) == 0) {
-            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
+            if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1)))
+                return stackoverflow;
             return 0;
         }
     }
@@ -258,15 +300,18 @@ static
 int Astopped(Xpost_Context *ctx,
               Xpost_Object o)
 {
-    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_bool(0));
-    xpost_stack_push(ctx->lo, ctx->es, o);
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_bool(0)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, o))
+        return execstackoverflow;
     return 0;
 }
 
 static
 int Zcountexecstack(Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->es)));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->es))))
+        return stackoverflow;
     return 0;
 }
 
@@ -278,7 +323,8 @@ int Aexecstack(Xpost_Context *ctx,
     int i;
     for (i=0; i < z; i++)
         barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, 0, z));
+    if (!xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, 0, z)))
+        return stackoverflow;
     return 0;
 }
 

@@ -123,6 +123,8 @@ Xpost_Object bind (Xpost_Context *ctx,
     return xpost_object_set_access(p, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
 }
 
+/* proc  bind  proc
+   replace names with operators in proc and make read-only */
 static
 int Pbind (Xpost_Context *ctx,
             Xpost_Object P)
@@ -142,10 +144,13 @@ int realtime (Xpost_Context *ctx)
 #else
         sec = time(NULL) * 1000;
 #endif
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(sec));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(sec)))
+        return stackoverflow;
     return 0;
 }
 
+/* string  getenv  string
+   return value for environment variable */
 static
 int Sgetenv (Xpost_Context *ctx,
               Xpost_Object S)
@@ -165,6 +170,8 @@ int Sgetenv (Xpost_Context *ctx,
     return 0;
 }
 
+/* string string  putenv
+   set value for environment variable */
 static
 int SSputenv (Xpost_Context *ctx,
               Xpost_Object N,
@@ -236,6 +243,9 @@ int Odumpnames (Xpost_Context *ctx)
     return 0;
 }
 
+/*
+FIXME: interaction with file dump mechanism ?
+*/
 static
 int dumpvm (Xpost_Context *ctx)
 {

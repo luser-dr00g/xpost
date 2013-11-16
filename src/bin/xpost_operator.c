@@ -288,6 +288,7 @@ int opexec(Xpost_Context *ctx,
     Xpost_Stack *hold;
     int ct;
     unsigned int optadr;
+    int ret;
 
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
@@ -331,7 +332,7 @@ int opexec(Xpost_Context *ctx,
         }
         if (pass) goto call;
     }
-    error(err, errmsg);
+    //error(err, errmsg);
     return err;
 
 call:
@@ -356,18 +357,20 @@ call:
     hold = (void *)(ctx->lo->base + ctx->hold);
 
     switch(sp[i].in) {
-        case 0: sp[i].fp(ctx); break;
-        case 1: sp[i].fp(ctx, hold->data[0]); break;
-        case 2: sp[i].fp(ctx, hold->data[0], hold->data[1]); break;
-        case 3: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2]); break;
-        case 4: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+        case 0: ret = sp[i].fp(ctx); break;
+        case 1: ret = sp[i].fp(ctx, hold->data[0]); break;
+        case 2: ret = sp[i].fp(ctx, hold->data[0], hold->data[1]); break;
+        case 3: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2]); break;
+        case 4: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3]); break;
-        case 5: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+        case 5: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3], hold->data[4]); break;
-        case 6: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+        case 6: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3], hold->data[4], hold->data[5]); break;
-        default: error(unregistered, "opexec");
+        default: ret = unregistered;
     }
+    if (ret)
+        return ret;
     return 0;
 }
 

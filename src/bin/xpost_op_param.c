@@ -55,7 +55,7 @@
 static
 int vmreclaim (Xpost_Context *ctx, Xpost_Object I) {
     switch (I.int_.val) {
-    default: error(rangecheck, "invalid argument");
+    default: return rangecheck;
     case -2: /* disable automatic collection in local and global vm */
              break;
     case -1: /* disable automatic collection in local vm */
@@ -83,9 +83,12 @@ int vmstatus (Xpost_Context *ctx) {
     used = ctx->gl->used + ctx->lo->used;
     max = ctx->gl->max + ctx->lo->max;
 
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(lev));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(used));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(max));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(lev)))
+        return stackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(used)))
+        return stackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(max)))
+        return stackoverflow;
     return 0;
 }
 

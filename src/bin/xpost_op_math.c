@@ -74,6 +74,7 @@ void *alloca (size_t);
 
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
+#include "xpost_error.h"
 #include "xpost_name.h"
 #include "xpost_dict.h"
 #include "xpost_operator.h"
@@ -401,7 +402,8 @@ int Zrand (Xpost_Context *ctx)
     x = ctx->rand_next << 16;
     ctx->rand_next = ctx->rand_next * 1103515245 + 12345;
     x |= ctx->rand_next & 0xffff;
-    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(x & 0x7fffffff));
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(x & 0x7fffffff)))
+        return stackoverflow;
     return 0;
 }
 
@@ -420,7 +422,8 @@ int Isrand (Xpost_Context *ctx,
 static
 int Zrrand (Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(ctx->rand_next));
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(ctx->rand_next)))
+        return stackoverflow;
     return 0;
 }
 
