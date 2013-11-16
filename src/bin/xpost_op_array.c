@@ -153,7 +153,10 @@ int Agetinterval (Xpost_Context *ctx,
                    Xpost_Object I,
                    Xpost_Object L)
 {
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, I.int_.val, L.int_.val));
+    Xpost_Object subarr = arrgetinterval(A, I.int_.val, L.int_.val);
+    if (xpost_object_get_type(subarr) == invalidtype)
+        return rangecheck;
+    xpost_stack_push(ctx->lo, ctx->os, subarr);
     return 0;
 }
 
@@ -165,9 +168,13 @@ int Aputinterval (Xpost_Context *ctx,
                    Xpost_Object I,
                    Xpost_Object S)
 {
+    Xpost_Object subarr;
     if (I.int_.val + S.comp_.sz > D.comp_.sz)
         return rangecheck;
-    a_copy(ctx, S, arrgetinterval(D, I.int_.val, S.comp_.sz));
+    subarr = arrgetinterval(D, I.int_.val, S.comp_.sz);
+    if (xpost_object_get_type(subarr) == invalidtype)
+        return rangecheck;
+    a_copy(ctx, S, subarr);
     return 0;
 }
 
@@ -214,10 +221,14 @@ int Acopy (Xpost_Context *ctx,
             Xpost_Object S,
             Xpost_Object D)
 {
+    Xpost_Object subarr;
     if (D.comp_.sz < S.comp_.sz)
         return rangecheck;
     a_copy(ctx, S, D);
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
+    subarr = arrgetinterval(D, 0, S.comp_.sz);
+    if (xpost_object_get_type(subarr) == invalidtype)
+        return rangecheck;
+    xpost_stack_push(ctx->lo, ctx->os, subarr);
     return 0;
 }
 

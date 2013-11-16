@@ -65,6 +65,7 @@ void *alloca (size_t);
 #include <stdlib.h> /* malloc */
 #include <stdio.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"  /* dicts live in mfile, accessed via mtab */
 #include "xpost_object.h"  /* dict is an object, containing objects */
 #include "xpost_stack.h"  /* may need to count the save stack */
@@ -129,8 +130,8 @@ int objcmp(Xpost_Context *ctx,
 cont:
     switch (xpost_object_get_type(L)) {
         default:
-            fprintf(stderr, "unhandled type (%s) in objcmp", xpost_object_type_names[xpost_object_get_type(L)]);
-            error(unregistered, "");
+            XPOST_LOG_ERR("unhandled type (%s) in objcmp",
+                    xpost_object_type_names[xpost_object_get_type(L)]);
             return -1;
 
         case marktype: return 0;

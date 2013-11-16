@@ -44,6 +44,7 @@
 #endif
 
 #include "xpost_compat.h" /* mkstemp */
+#include "xpost_log.h"
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks
@@ -81,8 +82,8 @@ Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
             return &itpdata->gtab[i];
         }
     }
-    error(unregistered, "cannot allocate Xpost_Memory_File, gtab exhausted");
-    exit(EXIT_FAILURE);
+    XPOST_LOG_ERR("cannot allocate Xpost_Memory_File, gtab exhausted");
+    return NULL; /* was error(unregistered) */
 }
 
 /* find the next unused mfile in the local memory table */
@@ -94,8 +95,8 @@ Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
             return &itpdata->ltab[i];
         }
     }
-    error(unregistered, "cannot allocate Xpost_Memory_File, ltab exhausted");
-    exit(EXIT_FAILURE);
+    XPOST_LOG_ERR("cannot allocate Xpost_Memory_File, ltab exhausted");
+    return NULL; /* was error(unregistered) */
 }
 
 

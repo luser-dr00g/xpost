@@ -190,7 +190,8 @@ Xpost_Object grok (Xpost_Context *ctx,
              int (*next)(Xpost_Context *ctx, Xpost_Object *src),
              void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src))
 {
-    if (ns == NBUF) error(limitcheck, "grok buf maxxed");
+    if (ns == NBUF)
+        error(limitcheck, "grok buf maxxed");
     s[ns] = '\0';  //fsm_check & consname  terminate on \0
 
     if (fsm_check(s, ns, fsm_dec, accept_dec)) {
