@@ -42,7 +42,6 @@ START_TEST(xpost_stack_push_pop)
     Xpost_Object obj;
     int ret;
 
-    xpost_log_init();
     memset(&mem, 0, sizeof(Xpost_Memory_File));
     ret = xpost_memory_file_init(&mem, NULL, -1);
     ck_assert_int_eq (ret, 1);
