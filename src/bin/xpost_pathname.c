@@ -41,7 +41,13 @@
 # include <libgen.h>
 #endif
 
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "xpost_main.h"
+#include "xpost_pathname.h"
 
 int is_installed = 0;
 char *exedir;

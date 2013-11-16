@@ -117,8 +117,10 @@ int Icopy (Xpost_Context *ctx,
             Xpost_Object n)
 {
     int i;
-    if (n.int_.val < 0) error(rangecheck, "Icopy");
-    if (n.int_.val > xpost_stack_count(ctx->lo, ctx->os)) error(stackunderflow, "Icopy");
+    if (n.int_.val < 0)
+        return rangecheck;
+    if (n.int_.val > xpost_stack_count(ctx->lo, ctx->os))
+        return stackunderflow;
     for (i=0; i < n.int_.val; i++)
         if (!xpost_stack_push(ctx->lo, ctx->os,
                 xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val - 1)))
@@ -132,8 +134,10 @@ static
 int Iindex (Xpost_Context *ctx,
              Xpost_Object n)
 {
-    if (n.int_.val < 0) error(rangecheck, "Iindex");
-    if (n.int_.val >= xpost_stack_count(ctx->lo, ctx->os)) error(stackunderflow, "Iindex");
+    if (n.int_.val < 0)
+        return rangecheck;
+    if (n.int_.val >= xpost_stack_count(ctx->lo, ctx->os))
+        return stackunderflow;
     //printf("index %d\n", n.int_.val);
     if (!xpost_stack_push(ctx->lo, ctx->os,
                 xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val)))
@@ -152,7 +156,8 @@ int IIroll (Xpost_Context *ctx,
     int i;
     int n = N.int_.val;
     int j = J.int_.val;
-    if (n < 0) error(rangecheck, "IIroll");
+    if (n < 0)
+        return rangecheck;
     if (n == 0) return 0;
     if (j < 0) j = n - ( (- j) % n);
     j %= n;

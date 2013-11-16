@@ -36,7 +36,6 @@ src/bin/xpost_file.h \
 src/bin/xpost_garbage.h \
 src/bin/xpost_context.h \
 src/bin/xpost_interpreter.h \
-src/bin/xpost_main.h \
 src/bin/xpost_name.h \
 src/bin/xpost_op_array.h \
 src/bin/xpost_op_boolean.h \

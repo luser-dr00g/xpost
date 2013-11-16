@@ -64,6 +64,7 @@ void *alloca (size_t);
 #include <stdio.h> /* printf */
 #include <stdlib.h> /* NULL */
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -292,7 +293,7 @@ int Zstop(Xpost_Context *ctx)
             return 0;
         }
     }
-    error(unregistered, "no stopped context in 'stop'");
+    XPOST_LOG_ERR("no stopped context in 'stop'");
     return unregistered;
 }
 
@@ -319,11 +320,15 @@ static
 int Aexecstack(Xpost_Context *ctx,
                 Xpost_Object A)
 {
+    Xpost_Object subarr;
     int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
     for (i=0; i < z; i++)
         barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
-    if (!xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, 0, z)))
+    subarr = arrgetinterval(A, 0, z);
+    if (xpost_object_get_type(subarr) == invalidtype)
+        return rangecheck;
+    if (!xpost_stack_push(ctx->lo, ctx->os, subarr))
         return stackoverflow;
     return 0;
 }

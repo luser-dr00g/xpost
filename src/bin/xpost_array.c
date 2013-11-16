@@ -194,7 +194,7 @@ Xpost_Object arrgetinterval(Xpost_Object a,
                       integer sz)
 {
     if (sz - off > a.comp_.sz)
-        error(rangecheck, "getinterval can only shrink!");
+        return invalid; /* should be interpreted as a rangecheck error */
     a.comp_.off += off;
     a.comp_.sz = sz;
     return a;

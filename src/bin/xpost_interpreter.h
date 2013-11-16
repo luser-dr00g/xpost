@@ -63,7 +63,9 @@ extern int ignoreinvalidaccess;
 extern jmp_buf jbmainloop;
 extern int jbmainloopset;
 
+/*@NULL@*/
 Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void);
+/*@NULL@*/
 Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void);
 unsigned xpost_interpreter_cid_init(void);
 Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid);

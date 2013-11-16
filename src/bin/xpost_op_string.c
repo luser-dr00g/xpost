@@ -80,10 +80,14 @@ int Scopy(Xpost_Context *ctx,
            Xpost_Object S,
            Xpost_Object D)
 {
+    Xpost_Object subs;
     if (D.comp_.sz < S.comp_.sz)
         return rangecheck;
     s_copy(ctx, S, D);
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
+    subs = arrgetinterval(D, 0, S.comp_.sz);
+    if (xpost_object_get_type(subs) == invalidtype)
+        return rangecheck;
+    xpost_stack_push(ctx->lo, ctx->os, subs);
     return 0;
 }
 
@@ -112,7 +116,10 @@ int Sgetinterval(Xpost_Context *ctx,
                   Xpost_Object I,
                   Xpost_Object L)
 {
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(S, I.int_.val, L.int_.val));
+    Xpost_Object subs = arrgetinterval(S, I.int_.val, L.int_.val);
+    if (xpost_object_get_type(subs) == invalidtype)
+        return rangecheck;
+    xpost_stack_push(ctx->lo, ctx->os, subs);
     return 0;
 }
 
@@ -122,7 +129,10 @@ int Sputinterval(Xpost_Context *ctx,
                   Xpost_Object I,
                   Xpost_Object S)
 {
-    s_copy(ctx, S, arrgetinterval(D, I.int_.val, S.comp_.sz));
+    Xpost_Object subs = arrgetinterval(D, I.int_.val, S.comp_.sz);
+    if (xpost_object_get_type(subs) == invalidtype)
+        return rangecheck;
+    s_copy(ctx, S, subs);
     return 0;
 }
 

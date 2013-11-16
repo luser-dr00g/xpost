@@ -166,7 +166,7 @@ int Sgetenv (Xpost_Context *ctx,
     if (r)
         xpost_stack_push(ctx->lo, ctx->os, consbst(ctx, strlen(r), r));
     else
-        error(undefined, "getenv returned NULL");
+        return undefined;
     return 0;
 }
 
