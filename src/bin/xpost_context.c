@@ -271,6 +271,7 @@ int xpost_context_init(Xpost_Context *ctx)
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
+    ctx->event_handler = null;
 
     return 1;
 }
