@@ -47,6 +47,7 @@
 #include "xpost_object.h"  /* save/restore examines objects */
 #include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */
 
+#include "xpost_error.h"
 #include "xpost_context.h"
 #include "xpost_dict.h"
 #include "xpost_string.h"
@@ -148,8 +149,7 @@ int _create_cont (Xpost_Context *ctx,
     if(!RegisterClassEx(&wc))
     {
         XPOST_LOG_ERR("RegisterClass() failed");
-        FreeLibrary(private.instance);
-        return -1; /* FIXME: what should I return ? */
+        goto free_library;
     }
 
     rect.left = 0;
@@ -159,9 +159,7 @@ int _create_cont (Xpost_Context *ctx,
     if (!AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW | WS_SIZEBOX, FALSE, 0))
     {
         XPOST_LOG_ERR("AdjustWindowRect() failed");
-        FreeLibrary(private.instance);
-        UnregisterClass("XPOST_DEV_WIN32", private.instance);
-        return -1; /* FIXME: what should I return ? */
+        goto unregister_class;
     }
 
     private.window = CreateWindow("XPOST_DEV_WIN32", "",
@@ -174,10 +172,8 @@ int _create_cont (Xpost_Context *ctx,
 
     if (!private.window)
     {
-        XPOST_LOG_ERR("CreateWindowEx() failed %ld", GetLastError());
-        FreeLibrary(private.instance);
-        UnregisterClass("XPOST_DEV_WIN32", private.instance);
-        return -1; /* FIXME: what should I return ? */
+        XPOST_LOG_ERR("CreateWindowEx() failed");
+        goto unregister_class;
     }
 
     private.width = width;
@@ -187,31 +183,21 @@ int _create_cont (Xpost_Context *ctx,
     if (!UpdateWindow(private.window))
     {
         XPOST_LOG_ERR("UpdateWindow() failed");
-        DestroyWindow(private.window);
-        FreeLibrary(private.instance);
-        UnregisterClass("XPOST_DEV_WIN32", private.instance);
-        return -1; /* FIXME: what should I return ? */
+        goto destroy_window;
     }
 
     private.ctx = GetDC(private.window);
     if (!private.ctx)
     {
         XPOST_LOG_ERR("GetDC() failed");
-        DestroyWindow(private.window);
-        FreeLibrary(private.instance);
-        UnregisterClass("XPOST_DEV_WIN32", private.instance);
-        return -1; /* FIXME: what should I return ? */
+        goto destroy_window;
     }
 
     private.bitmap_info = (BITMAPINFO_XPOST *)malloc(sizeof(BITMAPINFO_XPOST));
     if (!private.ctx)
     {
-        XPOST_LOG_ERR("GetDC() failed");
-        ReleaseDC(private.window, private.ctx);
-        DestroyWindow(private.window);
-        FreeLibrary(private.instance);
-        UnregisterClass("XPOST_DEV_WIN32", private.instance);
-        return -1; /* FIXME: what should I return ? */
+        XPOST_LOG_ERR("allocating bitmap info data failed");
+        goto release_dc;
     }
 
     private.bitmap_info->bih.biSize = sizeof(BITMAPINFOHEADER);
@@ -237,13 +223,8 @@ int _create_cont (Xpost_Context *ctx,
                                       0);
     if (!private.bitmap)
     {
-        XPOST_LOG_ERR("GetDC() failed");
-        free(private.bitmap_info);
-        ReleaseDC(private.window, private.ctx);
-        DestroyWindow(private.window);
-        FreeLibrary(private.instance);
-        UnregisterClass("XPOST_DEV_WIN32", private.instance);
-        return -1; /* FIXME: what should I return ? */
+        XPOST_LOG_ERR("CreateDIBSection() failed");
+        goto free_bitmap_info;
     }
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
@@ -251,6 +232,18 @@ int _create_cont (Xpost_Context *ctx,
 
     xpost_stack_push(ctx->lo, ctx->os, devdic);
     return 0;
+
+  free_bitmap_info:
+    free(private.bitmap_info);
+  release_dc:
+    ReleaseDC(private.window, private.ctx);
+  destroy_window:
+    DestroyWindow(private.window);
+  unregister_class:
+    UnregisterClass("XPOST_DEV_WIN32", private.instance);
+  free_library:
+    FreeLibrary(private.instance);
+    return unregistered;
 }
 
 static
