@@ -127,6 +127,14 @@ AC_SUBST([WC])
 
 ### Checks for libraries
 
+# libxcb
+PKG_CHECK_MODULES([XCB],
+   [xcb],
+   [have_xcb="yes"],
+   [have_xcb="no"])
+
+AM_CONDITIONAL([HAVE_XCB], [test "x${have_xcb}" = "xyes"])
+
 # check
 have_tests="no"
 if test "x${enable_tests}" = "xyes" ; then
@@ -185,7 +193,9 @@ AC_CHECK_HEADERS([libgen.h unistd.h])
 
 AM_PROG_CC_C_O
 
-xpost_lib_flags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections"
+xpost_lib_cflags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers"
+
+xpost_lib_ldflags="-fdata-sections -ffunction-sections"
 
 if test "x${have_tests}" = "xyes" ; then
    xpost_lib_flags="${xpost_lib_flags} -g3 -ggdb3 -O2"
@@ -196,9 +206,12 @@ fi
 
 AC_SUBST([XPOST_TEST_CPPFLAGS])
 
-XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [${xpost_lib_flags}])
+XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [${xpost_lib_cflags}])
+XPOST_CHECK_LINKER_FLAGS([XPOST_LIB], [${xpost_lib_ldflags}])
 
-XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers -fdata-sections -ffunction-sections])
+XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers])
+
+XPOST_CHECK_LINKER_FLAGS([XPOST_BIN], [-fdata-sections -ffunction-sections])
 
 
 ### Checks for linker characteristics
@@ -312,6 +325,9 @@ echo "  mmap support.........: ${have_mmap} (mremap: ${have_mremap})"
 else
 echo "  mmap support.........: no"
 fi
+echo "  Devices:"
+echo "    PGM image..........: always"
+echo "    XCB................: ${have_xcb}"
 echo "  Documentation........: ${enable_doc} (make doc)"
 if test "x${SPLINT}" = "xnone" ; then
 echo "  splint...............: no"

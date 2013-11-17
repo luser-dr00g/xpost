@@ -113,7 +113,7 @@ int _create_cont (Xpost_Context *ctx,
 
     private.window = xcb_generate_id(private.c);
     {
-        unsigned int values[] = { private.screen->white_pixel };
+        unsigned int values = private.screen->white_pixel;
         xcb_create_window(private.c, XCB_COPY_FROM_PARENT,
                 private.window, private.screen->root,
                 0, 0,
@@ -122,20 +122,20 @@ int _create_cont (Xpost_Context *ctx,
                 XCB_WINDOW_CLASS_INPUT_OUTPUT,
                 private.screen->root_visual,
                 XCB_CW_BACK_PIXEL,
-                values);
+                &values);
     }
     xcb_map_window(private.c, private.window);
     xcb_flush(private.c);
 
     private.gc = xcb_generate_id(private.c);
     {
-        unsigned int value[] = {
+        unsigned int values[2] = {
             private.screen->black_pixel,
             private.screen->white_pixel
         } ;
         xcb_create_gc(private.c, private.gc, private.window,
                 XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
-                value);
+                values);
     }
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),

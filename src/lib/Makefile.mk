@@ -30,6 +30,7 @@ src_lib_libxpost_la_CPPFLAGS = \
 src_lib_libxpost_la_CFLAGS = \
 @XPOST_LIB_CFLAGS@
 
-src_lib_libxpost_la_LIBADD =
+src_lib_libxpost_la_LIBADD = \
+@XPOST_LIB_LDFLAGS@
 
 src_lib_libxpost_la_LDFLAGS = -no-undefined -version-info @version_info@
