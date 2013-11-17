@@ -59,7 +59,9 @@ src/bin/xpost_save.h
 if HAVE_WIN32
 src_bin_itp_SOURCES += \
 src/bin/glob.c \
-src/bin/glob.h
+src/bin/glob.h \
+src/bin/xpost_dev_win32.c \
+src/bin/xpost_dev_win32.h
 endif
 
 if HAVE_XCB
@@ -82,6 +84,11 @@ src/lib/libxpost.la \
 @XCB_LIBS@ \
 @XPOST_BIN_LDFLAGS@ \
 -lm
+
+if HAVE_WIN32
+src_bin_itp_LDADD += \
+-lgdi32
+endif
 
 if HAVE_SPLINT
 splint_process = splint \

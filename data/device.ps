@@ -9,8 +9,11 @@ DATA_DIR (/image.ps) strcat run
 
 %/DEVICE 50 50 newPGMIMAGEdevice def
 
-loadxcbdevice
-/DEVICE 400 300 newxcbdevice def
+%loadxcbdevice
+%/DEVICE 400 300 newxcbdevice def
+
+loadwin32device
+/DEVICE 400 300 newwin32device def
 
 DEVICE begin
     /dimensions [ width height ] def

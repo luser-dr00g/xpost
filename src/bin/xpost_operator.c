@@ -388,7 +388,12 @@ call:
 #include "xpost_op_misc.h"
 #include "xpost_op_packedarray.h"
 #include "xpost_op_param.h"
-#include "xpost_dev_xcb.h"
+#ifdef HAVE_WIN32
+# include "xpost_dev_win32.h"
+#endif
+#ifdef HAVE_XCB
+# include "xpost_dev_xcb.h"
+#endif
 
 /* no-op operator useful as a break target.
    put 'breakhere' in the postscript program,
@@ -477,6 +482,9 @@ int initop(Xpost_Context *ctx)
 
     initoppa(ctx, sd);
     initopparam(ctx, sd);
+#ifdef _WIN32
+    initwin32ops(ctx, sd);
+#endif
 #ifdef HAVE_XCB
     initxcbops(ctx, sd);
 #endif
