@@ -56,6 +56,7 @@ typedef struct {
     xcb_screen_t *screen;
     xcb_window_t window;
     xcb_gcontext_t gc;
+    xcb_colormap_t colormap;
 } PrivateData;
 
 
@@ -110,6 +111,7 @@ int _create_cont (Xpost_Context *ctx,
         xcb_screen_next(&iter);
 
     private.screen = iter.data;
+    XPOST_LOG_INFO("screen->root_depth: %d", private.screen->root_depth);
 
     private.window = xcb_generate_id(private.c);
     {
@@ -137,6 +139,8 @@ int _create_cont (Xpost_Context *ctx,
                 XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
                 values);
     }
+
+    private.colormap = private.screen->default_colormap;
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
