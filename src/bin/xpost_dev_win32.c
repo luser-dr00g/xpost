@@ -68,7 +68,7 @@ typedef struct
     HDC ctx;
     BITMAPINFO_XPOST *bitmap_info;
     HBITMAP bitmap;
-    unsigned char *buf;
+    unsigned int *buf;
 } PrivateData;
 
 
@@ -277,9 +277,7 @@ int _putpix (Xpost_Context *ctx,
     w = rect.right - rect.left;
     h = rect.bottom - rect.top;
 
-    private.buf[y.int_.val * w * 4 + x.int_.val * 4 + 0] = 0;
-    private.buf[y.int_.val * w * 4 + x.int_.val * 4 + 1] = 255;
-    private.buf[y.int_.val * w * 4 + x.int_.val * 4 + 2] = 0;
+    private.buf[y.int_.val * w + x.int_.val] = 0 << 24 | 255 << 8 | 0;
 
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
