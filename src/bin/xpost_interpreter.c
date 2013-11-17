@@ -589,6 +589,25 @@ static void setdatadir(Xpost_Context *ctx, Xpost_Object sd)
     bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
             xpost_object_cvlit(consbst(ctx,
                     strlen(exedir), exedir)));
+
+    /* select default output device */
+#if defined HAVE_WIN32
+    bdcput(ctx, sd,
+        consname(ctx, "newdefaultdevice"),
+        xpost_object_cvx(consbst(ctx,
+        CNT_STR("loadwin32device /DEVICE 400 300 newwin32device def"))));
+#elif defined HAVE_XCB
+    bdcput(ctx, sd,
+        consname(ctx, "newdefaultdevice"),
+        xpost_object_cvx(consbst(ctx,
+        CNT_STR("loadxcbdevice /DEVICE 400 300 newxcbdevice def"))));
+#else
+    bdcput(ctx, sd,
+        consname(ctx, "newdefaultdevice"),
+        xpost_object_cvx(consbst(ctx,
+        CNT_STR("/DEVICE 50 50 newPGMIMAGEdevice def"))));
+#endif
+
     ctx->vmmode = LOCAL;
 }
 
