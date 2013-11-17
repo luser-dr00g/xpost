@@ -58,7 +58,7 @@
 typedef struct _BITMAPINFO_XPOST
 {
    BITMAPINFOHEADER bih;
-   DWORD            masks[3];
+   DWORD masks[3];
 } BITMAPINFO_XPOST;
 
 typedef struct
@@ -69,6 +69,8 @@ typedef struct
     BITMAPINFO_XPOST *bitmap_info;
     HBITMAP bitmap;
     unsigned int *buf;
+    int width;
+    int height;
 } PrivateData;
 
 
@@ -178,6 +180,9 @@ int _create_cont (Xpost_Context *ctx,
         return -1; /* FIXME: what should I return ? */
     }
 
+    private.width = width;
+    private.height = height;
+
     ShowWindow(private.window, SW_SHOWNORMAL);
     if (!UpdateWindow(private.window))
     {
@@ -242,7 +247,7 @@ int _create_cont (Xpost_Context *ctx,
     }
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+                     privatestr.comp_.ent, 0, sizeof(private), &private);
 
     xpost_stack_push(ctx->lo, ctx->os, devdic);
     return 0;
@@ -258,9 +263,6 @@ int _putpix (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
     HDC dc;
-    RECT rect;
-    int w;
-    int h;
 
     if (xpost_object_get_type(val) == realtype)
         val = xpost_cons_int(val.real_.val);
@@ -271,17 +273,13 @@ int _putpix (Xpost_Context *ctx,
 
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+                     privatestr.comp_.ent, 0, sizeof private, &private);
 
-    GetClientRect(private.window, &rect);
-    w = rect.right - rect.left;
-    h = rect.bottom - rect.top;
-
-    private.buf[y.int_.val * w + x.int_.val] = 0 << 24 | 255 << 8 | 0;
+    private.buf[y.int_.val * private.width + x.int_.val] = 0 << 24 | 255 << 8 | 0;
 
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
-    BitBlt(private.ctx, 0, 0, w, h,
+    BitBlt(private.ctx, 0, 0, private.width, private.height,
            dc, 0, 0, SRCCOPY);
     DeleteDC(dc);
 
@@ -299,11 +297,9 @@ int _getpix (Xpost_Context *ctx,
 
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+                     privatestr.comp_.ent, 0, sizeof private, &private);
 
-    /* ?? I don't know ...
-       make a 1-pixel image and use copy_area?  ... */
-    return 0;
+    return private.buf[y.int_.val * private.width + x.int_.val];
 }
 
 static
@@ -315,7 +311,7 @@ int _emit (Xpost_Context *ctx,
 
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+                     privatestr.comp_.ent, 0, sizeof private, &private);
 
     UpdateWindow(private.window);
 
@@ -331,10 +327,11 @@ int _destroy (Xpost_Context *ctx,
 
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
-            sizeof private, &private);
+                     sizeof(private), &private);
 
     free(private.bitmap_info);
     ReleaseDC(private.window, private.ctx);
+    DestroyWindow(private.window);
 
     if (!UnregisterClass("XPOST_DEV_WIN32", private.instance))
         XPOST_LOG_INFO("UnregisterClass() failed");
@@ -390,7 +387,7 @@ int loadwin32device (Xpost_Context *ctx)
 /* replace procedures with operators */
 static
 int loadwin32devicecont (Xpost_Context *ctx,
-                       Xpost_Object classdic)
+                         Xpost_Object classdic)
 {
     Xpost_Object userdict;
     Xpost_Object op;
@@ -430,7 +427,8 @@ int initwin32ops (Xpost_Context *ctx,
     Xpost_Object n,op;
 
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
+                                &optadr);
     optab = (oper *)(ctx->gl->base + optadr);
     op = consoper(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
     op = consoper(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
