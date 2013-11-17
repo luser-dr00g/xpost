@@ -39,6 +39,8 @@ typedef struct
     unsigned state;  /**< process state: running, blocked, iowait */
     unsigned quit;  /**< if 1 cause mainloop() to return, if 0 keep looping */
 
+    Xpost_Object event_handler;
+
 } Xpost_Context;
 
 int xpost_context_init_ctxlist(Xpost_Memory_File *mem);

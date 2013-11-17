@@ -10,9 +10,12 @@
     %    1 setgray
     %    clippath fill
     %grestore
-    255 0 0 DEVICE /dimensions get aload pop
-    exch 1 sub exch 1 sub
-    DEVICE dup /FillRect get exec
+    gsave
+        1 setgray
+        255 0 0 DEVICE /dimensions get aload pop
+        exch 1 sub exch 1 sub
+        DEVICE dup /FillRect get exec
+    grestore
 } def
 
 % -  fill  -
