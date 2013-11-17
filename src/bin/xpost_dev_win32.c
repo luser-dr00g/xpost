@@ -55,11 +55,20 @@
 #include "xpost_op_dict.h"
 #include "xpost_dev_win32.h"
 
-typedef struct {
+typedef struct
+{
     HINSTANCE instance;
     HWND window;
     HDC ctx;
 } PrivateData;
+
+typedef struct
+{
+    Xpost_Context *ctx;
+    Xpost_Object devdic;
+    int x;
+    int y;
+} WindowData;
 
 
 static
@@ -71,7 +80,40 @@ _xpost_dev_win32_procedure(HWND   window,
                            WPARAM window_param,
                            LPARAM data_param)
 {
-    return DefWindowProc(window, message, window_param, data_param);
+    PAINTSTRUCT ps;
+    HDC dc;
+    Xpost_Object privatestr;
+    PrivateData private;
+    WindowData *wd = NULL;
+
+    switch (message)
+    {
+        case WM_PAINT:
+            printf("put pixel\n");
+            dc = BeginPaint(window, &ps);
+            SetPixel(dc, wd->x, wd->y, RGB(0, 255, 0));
+            EndPaint(window, &ps);
+            return 0;
+        case WM_CREATE:
+            wd = (WindowData *)GetWindowLongPtr(window, GWLP_USERDATA);
+            if (!wd)
+            {
+                XPOST_LOG_ERR("wd is NULL");
+                return DefWindowProc(window, message, window_param, data_param);
+            }
+            privatestr = bdcget(wd->ctx, wd->devdic, consname(wd->ctx, "Private"));
+            xpost_memory_get(xpost_context_select_memory(wd->ctx, privatestr),
+                             privatestr.comp_.ent, 0, sizeof private, &private);
+            return 0;
+        case WM_DESTROY:
+            PostQuitMessage(WM_QUIT);
+            return 0;
+        case WM_CLOSE:
+            DestroyWindow(window);
+            return 0;
+        default:
+            return DefWindowProc(window, message, window_param, data_param);
+    }
 }
 
 /* create an instance of the device
@@ -103,6 +145,7 @@ int _create_cont (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
+    WindowData *wd;
     integer width = w.int_.val;
     integer height = h.int_.val;
     WNDCLASSEX wc;
@@ -184,6 +227,28 @@ int _create_cont (Xpost_Context *ctx,
         return -1; /* FIXME: what should I return ? */
     }
 
+    wd = (WindowData *)malloc(sizeof(WindowData));
+    if (!wd)
+    {
+        XPOST_LOG_ERR("GetDC() failed");
+        DestroyWindow(private.window);
+        FreeLibrary(private.instance);
+        UnregisterClass("XPOST_DEV_WIN32", private.instance);
+        return -1; /* FIXME: what should I return ? */
+    }
+
+    SetLastError(0);
+    if (!SetWindowLongPtr(private.window, GWLP_USERDATA, (LONG_PTR)wd) &&
+        (GetLastError() != 0))
+    {
+        XPOST_LOG_ERR("SetWindowLongPtr() failed");
+        free(wd);
+        DestroyWindow(private.window);
+        FreeLibrary(private.instance);
+        UnregisterClass("XPOST_DEV_WIN32", private.instance);
+        return -1; /* FIXME: what should I return ? */
+    }
+
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -200,7 +265,7 @@ int _putpix (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    HDC dc;
+    WindowData *wd;
 
     if (xpost_object_get_type(val) == realtype)
         val = xpost_cons_int(val.real_.val);
@@ -213,9 +278,18 @@ int _putpix (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
-    dc = CreateCompatibleDC(private.ctx);
-    SetPixel(dc, x.int_.val, y.int_.val, RGB(0, 125, 0));
-    ReleaseDC(private.window, dc);
+    wd = (WindowData *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    if (!wd)
+    {
+        XPOST_LOG_ERR("wd is NULL");
+    }
+    else
+    {
+        wd->x = x.int_.val;
+        wd->y = y.int_.val;
+
+        UpdateWindow(private.window);
+    }
 
     return 0;
 }
