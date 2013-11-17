@@ -130,8 +130,15 @@ AC_SUBST([WC])
 # libxcb
 PKG_CHECK_MODULES([XCB],
    [xcb],
-   [have_xcb="yes"],
+   [
+    have_xcb="yes"
+    AC_DEFINE([HAVE_XCB], [1], [Define to 1 if XCB is detected])
+   ],
    [have_xcb="no"])
+
+if test "x${enable_large_object}" = "xyes" ; then
+   AC_DEFINE([WANT_LARGE_OBJECT], [1], [Define to 1 if large object are wanted])
+fi
 
 AM_CONDITIONAL([HAVE_XCB], [test "x${have_xcb}" = "xyes"])
 
