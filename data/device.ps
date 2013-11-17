@@ -20,6 +20,13 @@ end
 
 /showpage {
     DEVICE dup /Emit get exec
+
+    DEVICE /Flush known {
+        DEVICE dup /Flush get exec
+    } if
+    (----showpage----) =print flush
+    [ {(%lineedit)(r)file}stopped cleartomark
+
     DEVICE /pagenumber
     2 copy known {
         2 copy get 1 add put
@@ -27,6 +34,10 @@ end
         1 put
     } ifelse
     erasepage
+
+    DEVICE /Flush known {
+        DEVICE dup /Flush get exec
+    } if
 } def
 
 (eof device.ps)=
