@@ -477,7 +477,8 @@ int xpost_memory_table_set_tag (
  *
  * This function performs a generic "get" operation from a composite object,
  * or other VM entity such as a file.
- * It is used to retrieve bytes from strings, and objects from arrays.
+ * It is used to retrieve bytes from strings, objects from arrays,
+ * FILE*s from files.
  */
 int xpost_memory_get (
         Xpost_Memory_File *mem,

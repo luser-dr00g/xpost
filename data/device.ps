@@ -7,7 +7,11 @@ DATA_DIR (/image.ps) strcat run
 %    /defaultmatrix [ 1 0 0 1 0 0 ]
 %>> def
 
-/DEVICE 50 50 newPGMIMAGEdevice def
+%/DEVICE 50 50 newPGMIMAGEdevice def
+
+loadxcbdevice
+/DEVICE 400 300 newxcbdevice def
+
 DEVICE begin
     /dimensions [ width height ] def
     %/defaultmatrix [ 1 0 0 -1 0 height ] def
