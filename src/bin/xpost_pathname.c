@@ -142,7 +142,7 @@ int xpost_is_installed (const char *argv0)
 
     (void)len; // len and buf are used in some, but not all, compilation paths
     (void)buf;
-    rintf("argv0: %s\n", argv0);
+    printf("argv0: %s\n", argv0);
 
     /* hack for cygwin and mingw.
        there's this unfortunate ".libs" in there.
