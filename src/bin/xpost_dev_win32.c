@@ -67,6 +67,8 @@ typedef struct
     HWND window;
     HDC ctx;
     BITMAPINFO_XPOST *bitmap_info;
+    HBITMAP bitmap;
+    unsigned char *buf;
 } PrivateData;
 
 
@@ -98,9 +100,9 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
     xpost_stack_push(ctx->lo, ctx->es,
-            operfromcode(_create_cont_opcode));
+                     operfromcode(_create_cont_opcode));
     xpost_stack_push(ctx->lo, ctx->es,
-            bdcget(ctx, classdic, consname(ctx, ".copydict")));
+                     bdcget(ctx, classdic, consname(ctx, ".copydict")));
 
     return 0;
 }
@@ -197,6 +199,15 @@ int _create_cont (Xpost_Context *ctx,
     }
 
     private.bitmap_info = (BITMAPINFO_XPOST *)malloc(sizeof(BITMAPINFO_XPOST));
+    if (!private.ctx)
+    {
+        XPOST_LOG_ERR("GetDC() failed");
+        ReleaseDC(private.window, private.ctx);
+        DestroyWindow(private.window);
+        FreeLibrary(private.instance);
+        UnregisterClass("XPOST_DEV_WIN32", private.instance);
+        return -1; /* FIXME: what should I return ? */
+    }
 
     private.bitmap_info->bih.biSize = sizeof(BITMAPINFOHEADER);
     private.bitmap_info->bih.biWidth = width;
@@ -212,6 +223,23 @@ int _create_cont (Xpost_Context *ctx,
     private.bitmap_info->masks[0] = 0x00ff0000;
     private.bitmap_info->masks[1] = 0x0000ff00;
     private.bitmap_info->masks[2] = 0x000000ff;
+
+    private.bitmap = CreateDIBSection(private.ctx,
+                                      (const BITMAPINFO *)private.bitmap_info,
+                                      DIB_RGB_COLORS,
+                                      (void **)(&private.buf),
+                                      NULL,
+                                      0);
+    if (!private.bitmap)
+    {
+        XPOST_LOG_ERR("GetDC() failed");
+        free(private.bitmap_info);
+        ReleaseDC(private.window, private.ctx);
+        DestroyWindow(private.window);
+        FreeLibrary(private.instance);
+        UnregisterClass("XPOST_DEV_WIN32", private.instance);
+        return -1; /* FIXME: what should I return ? */
+    }
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
@@ -230,7 +258,9 @@ int _putpix (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
     HDC dc;
-    /* WindowData *wd; */
+    RECT rect;
+    int w;
+    int h;
 
     if (xpost_object_get_type(val) == realtype)
         val = xpost_cons_int(val.real_.val);
@@ -243,36 +273,19 @@ int _putpix (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
-    {
-        HBITMAP bitmap;
-        RECT rect;
-        int w;
-        int h;
-        unsigned char *buf;
+    GetClientRect(private.window, &rect);
+    w = rect.right - rect.left;
+    h = rect.bottom - rect.top;
 
-        GetClientRect(private.window, &rect);
-        w = rect.right - rect.left;
-        h = rect.bottom - rect.top;
+    private.buf[y.int_.val * w * 4 + x.int_.val * 4 + 0] = 0;
+    private.buf[y.int_.val * w * 4 + x.int_.val * 4 + 1] = 255;
+    private.buf[y.int_.val * w * 4 + x.int_.val * 4 + 2] = 0;
 
-        bitmap = CreateDIBSection(private.ctx,
-                                  (const BITMAPINFO *)private.bitmap_info,
-                                  DIB_RGB_COLORS,
-                                  (void **)(&buf),
-                                  NULL,
-                                  0);
-        if (bitmap)
-        {
-            buf[y.int_.val * w * 4 + x.int_.val * 4 + 0] = 0;
-            buf[y.int_.val * w * 4 + x.int_.val * 4 + 1] = 255;
-            buf[y.int_.val * w * 4 + x.int_.val * 4 + 2] = 0;
-
-            dc = CreateCompatibleDC(private.ctx);
-            SelectObject(dc, bitmap);
-            BitBlt(private.ctx, 0, 0, w, h,
-                   dc, 0, 0, SRCCOPY);
-            DeleteDC(dc);
-        }
-    }
+    dc = CreateCompatibleDC(private.ctx);
+    SelectObject(dc, private.bitmap);
+    BitBlt(private.ctx, 0, 0, w, h,
+           dc, 0, 0, SRCCOPY);
+    DeleteDC(dc);
 
     return 0;
 }
@@ -322,6 +335,7 @@ int _destroy (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
             sizeof private, &private);
 
+    free(private.bitmap_info);
     ReleaseDC(private.window, private.ctx);
 
     if (!UnregisterClass("XPOST_DEV_WIN32", private.instance))
