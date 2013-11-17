@@ -388,6 +388,7 @@ call:
 #include "xpost_op_misc.h"
 #include "xpost_op_packedarray.h"
 #include "xpost_op_param.h"
+#include "xpost_dev_xcb.h"
 
 /* no-op operator useful as a break target.
    put 'breakhere' in the postscript program,
@@ -476,6 +477,7 @@ int initop(Xpost_Context *ctx)
 
     initoppa(ctx, sd);
     initopparam(ctx, sd);
+    initxcbops(ctx, sd);
 
     //xpost_stack_push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 

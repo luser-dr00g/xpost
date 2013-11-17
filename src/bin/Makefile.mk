@@ -28,6 +28,7 @@ src/bin/xpost_op_token.c \
 src/bin/xpost_op_save.c \
 src/bin/xpost_op_misc.c \
 src/bin/xpost_op_param.c \
+src/bin/xpost_dev_xcb.c \
 src/bin/xpost_pathname.c \
 src/bin/xpost_array.h \
 src/bin/xpost_dict.h \
@@ -52,6 +53,7 @@ src/bin/xpost_op_token.h \
 src/bin/xpost_op_save.h \
 src/bin/xpost_op_misc.h \
 src/bin/xpost_op_param.h \
+src/bin/xpost_dev_xcb.h \
 src/bin/xpost_pathname.h \
 src/bin/xpost_string.h \
 src/bin/xpost_save.h
