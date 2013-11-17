@@ -477,7 +477,9 @@ int initop(Xpost_Context *ctx)
 
     initoppa(ctx, sd);
     initopparam(ctx, sd);
+#ifdef HAVE_XCB
     initxcbops(ctx, sd);
+#endif
 
     //xpost_stack_push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
