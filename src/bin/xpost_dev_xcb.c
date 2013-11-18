@@ -38,25 +38,25 @@
 #include <xcb/xcb.h>
 
 #include "xpost_log.h"
-#include "xpost_memory.h"  /* save/restore works with mtabs */
-#include "xpost_object.h"  /* save/restore examines objects */
-#include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */
+#include "xpost_memory.h" /* access memory */
+#include "xpost_object.h" /* work with objects */
+#include "xpost_stack.h"  /* push results on stack */
 
-#include "xpost_context.h"
-#include "xpost_dict.h"
-#include "xpost_string.h"
-#include "xpost_name.h"
-#include "xpost_operator.h"
-#include "xpost_op_dict.h"
-#include "xpost_dev_xcb.h"
+#include "xpost_context.h" /* state */
+#include "xpost_dict.h" /* get/put values in dicts */
+#include "xpost_string.h" /* get/put values in strings */
+#include "xpost_name.h" /* create names */
+#include "xpost_operator.h" /* create operators */
+#include "xpost_op_dict.h" /* call Aload operator for convenience */
+#include "xpost_dev_xcb.h" /* check prototypes */
 
 typedef struct {
     xcb_connection_t *c;
-    int screenNum;
-    xcb_screen_t *screen;
-    xcb_window_t window;
+    int scrno;
+    xcb_screen_t *scr;
+    xcb_drawable_t win;
     xcb_gcontext_t gc;
-    xcb_colormap_t colormap;
+    xcb_colormap_t cmap;
 } PrivateData;
 
 
@@ -109,30 +109,30 @@ int _create_cont (Xpost_Context *ctx,
 
     /* create xcb connection
        and create and map window */
-    private.c = xcb_connect(NULL, &private.screenNum);
+    private.c = xcb_connect(NULL, &private.scrno);
     setup = xcb_get_setup(private.c);
     iter = xcb_setup_roots_iterator(setup);
 
-    for (i=0; i < private.screenNum; ++i)
+    for (i=0; i < private.scrno; ++i)
         xcb_screen_next(&iter);
 
-    private.screen = iter.data;
-    XPOST_LOG_INFO("screen->root_depth: %d", private.screen->root_depth);
+    private.scr = iter.data;
+    XPOST_LOG_INFO("screen->root_depth: %d", private.scr->root_depth);
 
-    private.window = xcb_generate_id(private.c);
+    private.win = xcb_generate_id(private.c);
     {
-        unsigned int values = private.screen->white_pixel;
+        unsigned int values = private.scr->white_pixel;
         xcb_create_window(private.c, XCB_COPY_FROM_PARENT,
-                private.window, private.screen->root,
+                private.win, private.scr->root,
                 0, 0,
                 width, height,
                 5,
                 XCB_WINDOW_CLASS_INPUT_OUTPUT,
-                private.screen->root_visual,
+                private.scr->root_visual,
                 XCB_CW_BACK_PIXEL,
                 &values);
     }
-    xcb_map_window(private.c, private.window);
+    xcb_map_window(private.c, private.win);
     xcb_flush(private.c);
 
     /* create graphics context
@@ -140,15 +140,15 @@ int _create_cont (Xpost_Context *ctx,
     private.gc = xcb_generate_id(private.c);
     {
         unsigned int values[2] = {
-            private.screen->black_pixel,
-            private.screen->white_pixel
+            private.scr->black_pixel,
+            private.scr->white_pixel
         } ;
-        xcb_create_gc(private.c, private.gc, private.window,
+        xcb_create_gc(private.c, private.gc, private.win,
                 XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
                 values);
     }
 
-    private.colormap = private.screen->default_colormap;
+    private.cmap = private.scr->default_colormap;
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
@@ -189,7 +189,7 @@ int _putpix (Xpost_Context *ctx,
 
         xcb_poly_point(private.c,
                 XCB_COORD_MODE_ORIGIN,
-                private.window,
+                private.win,
                 private.gc,
                 1, 
                 &p);
