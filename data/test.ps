@@ -20,9 +20,8 @@
 flush
 %(*){=}128 string filenameforall
 %(../../data)
-DATA_DIR (/graphics.ps) strcat
-run
-initgraphics
+%DATA_DIR (/graphics.ps) strcat run initgraphics
+loadgraphics
 
 pstack()=
 clear
@@ -810,6 +809,8 @@ false true xor true eq check
 false false xor false eq check
 7 3 xor 4 eq check
 12 3 xor 15 eq check
+
+DATA_DIR(/testdraw.ps)strcat run
 
 failcount 0 eq {
     (SUCCESS)=
