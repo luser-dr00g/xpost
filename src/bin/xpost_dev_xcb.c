@@ -36,6 +36,8 @@
 #include <string.h>
 
 #include <xcb/xcb.h>
+#include <xcb/xcb_image.h>
+#include <xcb/xcb_aux.h>
 
 #include "xpost_log.h"
 #include "xpost_memory.h" /* access memory */
@@ -43,6 +45,7 @@
 #include "xpost_stack.h"  /* push results on stack */
 
 #include "xpost_context.h" /* state */
+#include "xpost_error.h"
 #include "xpost_dict.h" /* get/put values in dicts */
 #include "xpost_string.h" /* get/put values in strings */
 #include "xpost_name.h" /* create names */
@@ -50,11 +53,16 @@
 #include "xpost_op_dict.h" /* call Aload operator for convenience */
 #include "xpost_dev_xcb.h" /* check prototypes */
 
+#define XCB_ALL_PLANES ~0
+
 typedef struct {
     xcb_connection_t *c;
     int scrno;
     xcb_screen_t *scr;
     xcb_drawable_t win;
+    unsigned char  depth;
+    unsigned char format;
+    xcb_image_t *img;
     xcb_gcontext_t gc;
     xcb_colormap_t cmap;
 } PrivateData;
@@ -135,6 +143,15 @@ int _create_cont (Xpost_Context *ctx,
     xcb_map_window(private.c, private.win);
     xcb_flush(private.c);
 
+    //private.img = xcb_generate_id(private.c);
+    //private.depth = xcb_aux_get_depth(private.c, private.scr);
+    //xcb_create_pixmap(private.c, private.depth,
+            //private.img, private.win, width, height);
+    private.format = XCB_IMAGE_FORMAT_Z_PIXMAP;
+    private.img = xcb_image_get(private.c, private.win, 
+            0, 0, width, height,
+            XCB_ALL_PLANES, private.format);
+
     /* create graphics context
        and initialize drawing parameters */
     private.gc = xcb_generate_id(private.c);
@@ -183,17 +200,37 @@ int _putpix (Xpost_Context *ctx,
             privatestr.comp_.ent, 0, sizeof private, &private);
 
     {
+        xcb_alloc_color_reply_t *rep;
+        rep = xcb_alloc_color_reply(private.c,
+                xcb_alloc_color(private.c, private.cmap,
+                    1-val.int_.val, 1-val.int_.val, 1-val.int_.val),
+                0);
+        if (!rep)
+            return unregistered;
+
+        xcb_image_put_pixel(private.img,
+                x.int_.val, y.int_.val,
+                rep->pixel);
+    }
+
+    /* save private data struct in string */
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+#if 0
+    {
         xcb_point_t p;
         p.x = x.int_.val;
         p.y = y.int_.val;
 
         xcb_poly_point(private.c,
                 XCB_COORD_MODE_ORIGIN,
-                private.win,
+                private.img,
                 private.gc,
                 1, 
                 &p);
     }
+#endif
 
     return 0;
 }
@@ -229,6 +266,7 @@ int _flush (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
+    xcb_image_put(private.c, private.win, private.gc, private.img, 0, 0, 0);
     xcb_flush(private.c);
 
     return 0;
