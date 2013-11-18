@@ -103,6 +103,9 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
+
+     /* call device class's ps-level .copydict procedure,
+           then call _create_cont, by continuation. */
     xpost_stack_push(ctx->lo, ctx->es,
                      operfromcode(_create_cont_opcode));
     xpost_stack_push(ctx->lo, ctx->es,
@@ -126,11 +129,13 @@ int _create_cont (Xpost_Context *ctx,
     WNDCLASSEX wc;
     RECT rect;
 
+    /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
     bdcput(ctx, devdic, consname(ctx, "Private"), privatestr);
     bdcput(ctx, devdic, consname(ctx, "width"), w);
     bdcput(ctx, devdic, consname(ctx, "height"), h);
 
+    /* create and map window */
     private.instance = GetModuleHandle(NULL);
 
     memset (&wc, 0, sizeof (WNDCLASSEX));
@@ -228,9 +233,11 @@ int _create_cont (Xpost_Context *ctx,
         goto free_bitmap_info;
     }
 
+    /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof(private), &private);
 
+    /* return device instance dictionary to ps */
     xpost_stack_push(ctx->lo, ctx->os, devdic);
     return 0;
 
@@ -258,15 +265,19 @@ int _putpix (Xpost_Context *ctx,
     PrivateData private;
     HDC dc;
 
+    /* fold numbers to integertype */
     if (xpost_object_get_type(val) == realtype)
         val = xpost_cons_int(val.real_.val);
-    if (val.int_.val < 0) val.int_.val = 0;
-    if (val.int_.val > 255) val.int_.val = 255;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
         y = xpost_cons_int(y.real_.val);
 
+    /* constrain color value to range */
+    if (val.int_.val < 0) val.int_.val = 0;
+    if (val.int_.val > 255) val.int_.val = 255;
+
+    /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof private, &private);
@@ -291,6 +302,7 @@ int _getpix (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
+    /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof private, &private);
@@ -305,6 +317,7 @@ int _emit (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
+    /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof private, &private);
@@ -321,6 +334,7 @@ int _destroy (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
+    /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
                      sizeof(private), &private);
@@ -338,7 +352,9 @@ int _destroy (Xpost_Context *ctx,
     return 0;
 }
 
-
+/* operator function to instantiate a new window device.
+   installed in userdict by calling 'initXXXdevice'.
+*/
 static
 int newwin32device (Xpost_Context *ctx,
                     Xpost_Object width,
@@ -361,9 +377,11 @@ int newwin32device (Xpost_Context *ctx,
 static
 unsigned int _loadwin32devicecont_opcode;
 
-/* load PGMIMAGE
-   load and call .copydict
-   leaves copy on stack */
+/* Specializes or sub-classes the PGMIMAGE device class.
+   load PGMIMAGE
+   load and call ps procedure .copydict which leaves copy on stack
+   call loadXXXdevicecont by continuation.
+*/
 static
 int loadwin32device (Xpost_Context *ctx)
 {
@@ -380,7 +398,10 @@ int loadwin32device (Xpost_Context *ctx)
     return 0;
 }
 
-/* replace procedures with operators */
+/* replace procedures in the class with newly created special operators.
+   defines the device class XXXDEVICE in userdict.
+   defines a new operator in userdict: newXXXdevice
+*/
 static
 int loadwin32devicecont (Xpost_Context *ctx,
                          Xpost_Object classdic)
@@ -415,6 +436,10 @@ int loadwin32devicecont (Xpost_Context *ctx,
     return 0;
 }
 
+/*
+   install the loadXXXdevice which may be called during graphics initialization
+   to produce the operator newXXXdevice which instantiates the device dictionary.
+*/
 int initwin32ops (Xpost_Context *ctx,
                   Xpost_Object sd)
 {
