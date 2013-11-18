@@ -335,6 +335,7 @@ fi
 echo "  Devices:"
 echo "    PGM image..........: always"
 echo "    XCB................: ${have_xcb}"
+echo "    Win32..............: ${have_win32}"
 echo "  Documentation........: ${enable_doc} (make doc)"
 if test "x${SPLINT}" = "xnone" ; then
 echo "  splint...............: no"
