@@ -129,7 +129,7 @@ AC_SUBST([WC])
 
 # libxcb
 PKG_CHECK_MODULES([XCB],
-   [xcb],
+   [xcb-image xcb],
    [
     have_xcb="yes"
     AC_DEFINE([HAVE_XCB], [1], [Define to 1 if XCB is detected])
