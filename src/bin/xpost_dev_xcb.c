@@ -33,6 +33,7 @@
 #endif
 
 #include <assert.h>
+#include <stdlib.h> /* abs */
 #include <string.h>
 
 #include <xcb/xcb.h>
@@ -255,6 +256,66 @@ int _getpix (Xpost_Context *ctx,
 }
 
 static
+int _fillrect (Xpost_Context *ctx,
+               Xpost_Object val,
+               Xpost_Object x,
+               Xpost_Object y,
+               Xpost_Object width,
+               Xpost_Object height,
+               Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    int i,j;
+
+    /* fold numbers to integertype */
+    if (xpost_object_get_type(val) == realtype)
+        val = xpost_cons_int(val.real_.val);
+    if (xpost_object_get_type(x) == realtype)
+        x = xpost_cons_int(x.real_.val);
+    if (xpost_object_get_type(y) == realtype)
+        y = xpost_cons_int(y.real_.val);
+    if (xpost_object_get_type(width) == realtype)
+        width = xpost_cons_int(width.real_.val);
+    if (xpost_object_get_type(height) == realtype)
+        height = xpost_cons_int(height.real_.val);
+
+    /* adjust ranges */
+    if (width.int_.val < 0)
+    {
+        width.int_.val = abs(width.int_.val);
+        x.int_.val -= width.int_.val;
+    }
+    if (height.int_.val < 0)
+    {
+        height.int_.val = abs(height.int_.val);
+        y.int_.val -= height.int_.val;
+    }
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+    {
+        xcb_alloc_color_reply_t *rep;
+        rep = xcb_alloc_color_reply(private.c,
+                xcb_alloc_color(private.c, private.cmap,
+                    1-val.int_.val, 1-val.int_.val, 1-val.int_.val),
+                0);
+        if (!rep)
+            return unregistered;
+
+        for (i=0; i < height.int_.val; i++)
+            for (j=0; j < width.int_.val; j++)
+                xcb_image_put_pixel(private.img,
+                        x.int_.val + j, y.int_.val + i,
+                        rep->pixel);
+    }
+    return 0;
+}
+
+static
 int _flush (Xpost_Context *ctx,
            Xpost_Object devdic)
 {
@@ -364,6 +425,10 @@ int loadxcbdevicecont (Xpost_Context *ctx,
 
     op = consoper(ctx, "xcbGetPix", _getpix, 1, 3, numbertype, numbertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
+
+    op = consoper(ctx, "xcbFillRect", _fillrect, 0, 6,
+            numbertype, numbertype, numbertype, numbertype, numbertype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
 
     op = consoper(ctx, "xcbEmit", _emit, 0, 1, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Emit"), op);
