@@ -67,11 +67,11 @@ void echoon(FILE *f)
         h = GetStdHandle(STD_INPUT_HANDLE);
         if (GetConsoleMode(h, &mode))
         {
-            mode |= ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT;
+            mode |= ENABLE_ECHO_INPUT;
             SetConsoleMode(h, mode);
         }
     }
-#elif defined (HAVE_TERMIOS_H)
+#elif defined HAVE_TERMIOS_H
     struct termios ts;
 
     tcgetattr(fileno(f), &ts);
@@ -93,7 +93,7 @@ void echooff(FILE *f)
         h = GetStdHandle(STD_INPUT_HANDLE);
         if (GetConsoleMode(h, &mode))
         {
-            mode &= ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT);
+            mode &= ~ENABLE_ECHO_INPUT;
             SetConsoleMode(h, mode);
         }
     }
@@ -118,7 +118,7 @@ int mkstemp(char *template)
     if (!temp)
         return -1;
 
-    return _open(temp, _O_CREAT |  _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
+    return _open(temp, _O_CREAT | _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
 }
 
 #endif

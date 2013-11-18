@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Vincent Torri
  * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
@@ -29,14 +30,89 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include <stdio.h> /* fprintf printf */
+#include <stdlib.h> /* EXIT_FAILURE */
+#include <string.h> /* free */
+
+#include "xpost_pathname.h" /* xpost_is_installed exedir */
+#include "xpost_memory.h" /* Xpost_Memory_File */
+#include "xpost_object.h" /* Xpost_Object */
+#include "xpost_context.h" /* Xpost_Context */
+#include "xpost_interpreter.h" /* xpost_create */
+#include "xpost_log.h" /* XPOST_LOG_ERR */
 
 #include "xpost_main.h"
-#include "../lib/xpost_main.h"
 
+
+#define XPOST_MAIN_IF_OPT(so, lo, opt)  \
+if ((!strcmp(argv[i], so)) || \
+   (!strncmp(argv[i], lo, sizeof(lo) - 1))) \
+{ \
+    if (*(argv[i] + 2) == '\0') \
+    { \
+        if ((i + 1) < argc) \
+        { \
+            i++; \
+            opt = argv[i]; \
+        } \
+        else \
+        { \
+            XPOST_LOG_ERR("missing option value"); \
+            _xpost_main_usage(filename); \
+            goto quit_xpost; \
+        } \
+    } \
+    else \
+    { \
+        if (!*(argv[i] + sizeof(lo) - 1)) \
+        { \
+            XPOST_LOG_ERR("missing option value"); \
+            _xpost_main_usage(filename); \
+            goto quit_xpost; \
+        } \
+        else \
+        { \
+            opt = argv[i] + sizeof(lo) - 1; \
+        } \
+    } \
+}
+
+static void
+_xpost_main_license(void)
+{
+    printf("BSD 3-clause\n");
+}
+
+static void
+_xpost_main_version(const char *filename)
+{
+    printf("%s " PACKAGE_VERSION "\n", filename);
+}
+
+static void
+_xpost_main_usage(const char *filename)
+{
+    printf("Usage: %s [options] [file.ps]\n\n", filename);
+    printf("Postscript level 2 interpreter\n\n");
+    printf("Options:\n");
+    printf("  -o, --output=[FILE]    output file\n");
+    printf("  -d, --device=[STRING]  string device\n");
+    printf("  -L, --license          show program license\n");
+    printf("  -V, --version          show program version\n");
+    printf("  -h, --help             show this message\n");
+}
 
 int main(int argc, char *argv[])
 {
-    (void)argc;
+    const char *output_file = NULL;
+    const char *device = NULL;
+    const char *ps_file = NULL;
+    const char *filename = argv[0];
+    int i;
 
     if (!xpost_init())
     {
@@ -44,14 +120,59 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    printf("xpost_main\n");
+    if (argc == 1)
+    {
+        /* XPOST_LOG_INFO("FIXME"); */
+    }
+    else
+    {
+        /* XPOST_LOG_INFO("FIXME"); */
+    }
 
-    xpost_is_installed(argv[0]); /* mallocs char* exedir */
+    i = 0;
+    while (++i < argc)
+    {
+        if (*argv[i] == '-')
+        {
+            if ((!strcmp(argv[i], "-h")) ||
+                (!strcmp(argv[i], "--help")))
+            {
+                _xpost_main_usage(filename);
+                return EXIT_SUCCESS;
+            }
+            else if ((!strcmp(argv[i], "-V")) ||
+                     (!strcmp(argv[i], "--version")))
+            {
+                _xpost_main_version(filename);
+                return EXIT_SUCCESS;
+            }
+            else if ((!strcmp(argv[i], "-L")) ||
+                     (!strcmp(argv[i], "--license")))
+            {
+                _xpost_main_license();
+                return EXIT_SUCCESS;
+            }
+            else XPOST_MAIN_IF_OPT("-o", "--output=", output_file)
+            else XPOST_MAIN_IF_OPT("-d", "--device=", device)
+            else
+            {
+                printf("unknown option\n");
+                _xpost_main_usage(filename);
+                return -1;
+            }
+        }
+        else
+        {
+            ps_file = argv[i];
+        }
+    }
+
+    xpost_is_installed(filename); /* mallocs char* exedir */
 
     if (!xpost_create())
     {
         XPOST_LOG_ERR("Failed to initialize.");
-        return EXIT_FAILURE;
+        goto quit_xpost;
     }
 
     xpost_run();
@@ -60,5 +181,10 @@ int main(int argc, char *argv[])
 
     xpost_quit();
 
-    return 0;
+    return EXIT_SUCCESS;
+
+  quit_xpost:
+    xpost_quit();
+
+    return EXIT_FAILURE;
 }

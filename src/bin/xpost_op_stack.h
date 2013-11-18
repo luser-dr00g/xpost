@@ -33,8 +33,8 @@
 
 /* stack operators */
 
-void Zcounttomark (Xpost_Context *ctx);
+int Zcounttomark (Xpost_Context *ctx);
 
-void initops(Xpost_Context *ctx, Xpost_Object sd);
+int initops(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

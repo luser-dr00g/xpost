@@ -10,9 +10,16 @@
     %    1 setgray
     %    clippath fill
     %grestore
-    255 0 0 DEVICE /dimensions get aload pop
-    exch 1 sub exch 1 sub
-    DEVICE dup /FillRect get exec
+    gsave
+        1 setgray
+        255 0 0 DEVICE /dimensions get aload pop
+        exch 1 sub exch 1 sub
+        DEVICE dup /FillRect get exec
+
+        DEVICE /Flush known {
+            DEVICE dup /Flush get exec
+        } if
+    grestore
 } def
 
 % -  fill  -
@@ -26,6 +33,11 @@
         currentgray 255 mul cvi
         exch DEVICE dup /FillPoly get exec
     } forall
+
+    DEVICE /Flush known {
+        DEVICE dup /Flush get exec
+    } if
+
     newpath
 } def
 
@@ -65,6 +77,11 @@
     }{
         strokepath fill
     } ifelse
+
+    DEVICE /Flush known {
+        DEVICE dup /Flush get exec
+    } if
+
     newpath
 } def
 

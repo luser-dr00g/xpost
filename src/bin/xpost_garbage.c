@@ -496,6 +496,10 @@ int init_test_garbage()
 
     /* create global memory file */
     ctx->gl = xpost_interpreter_alloc_global_memory();
+    if (ctx->gl == NULL)
+    {
+        return 0;
+    }
     fd = mkstemp(fname);
     ret = xpost_memory_file_init(ctx->gl, fname, fd);
     if (!ret)
@@ -532,6 +536,11 @@ int init_test_garbage()
 
     /* create local memory file */
     ctx->lo = xpost_interpreter_alloc_local_memory();
+    if (ctx->lo == NULL)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
     strcpy(fname, "xmemXXXXXX");
     fd = mkstemp(fname);
     ret = xpost_memory_file_init(ctx->lo, fname, fd);

@@ -58,7 +58,7 @@
    */
 
 typedef struct signat {
-    void (*fp)();
+    int (*fp)();
     int in;
     unsigned t;
     int out;
@@ -80,9 +80,9 @@ int initoptab(Xpost_Context *ctx);
 void dumpoper(Xpost_Context *ctx, int opcode);
 Xpost_Object operfromcode(int opcode);
 
-Xpost_Object consoper(Xpost_Context *ctx, char *name, /*@null@*/ void (*fp)(), int out, int in, ...);
+Xpost_Object consoper(Xpost_Context *ctx, char *name, /*@null@*/ int (*fp)(), int out, int in, ...);
 
-void opexec(Xpost_Context *ctx, unsigned opcode);
+int opexec(Xpost_Context *ctx, unsigned opcode);
 
 #define INSTALL \
     xpost_memory_table_get_addr(ctx->gl, \
@@ -94,6 +94,6 @@ void opexec(Xpost_Context *ctx, unsigned opcode);
     bdcput(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + optadr); // recalc
 
-void initop(Xpost_Context *ctx);
+int initop(Xpost_Context *ctx);
 
 #endif

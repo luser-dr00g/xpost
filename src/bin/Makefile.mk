@@ -36,7 +36,6 @@ src/bin/xpost_file.h \
 src/bin/xpost_garbage.h \
 src/bin/xpost_context.h \
 src/bin/xpost_interpreter.h \
-src/bin/xpost_main.h \
 src/bin/xpost_name.h \
 src/bin/xpost_op_array.h \
 src/bin/xpost_op_boolean.h \
@@ -60,20 +59,36 @@ src/bin/xpost_save.h
 if HAVE_WIN32
 src_bin_itp_SOURCES += \
 src/bin/glob.c \
-src/bin/glob.h
+src/bin/glob.h \
+src/bin/xpost_dev_win32.c \
+src/bin/xpost_dev_win32.h
+endif
+
+if HAVE_XCB
+src_bin_itp_SOURCES += \
+src/bin/xpost_dev_xcb.c \
+src/bin/xpost_dev_xcb.h
 endif
 
 src_bin_itp_CPPFLAGS = \
+-I$(top_srcdir)/src/lib \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 -DPACKAGE_INSTALL_DIR=\"$(prefix)/\" \
 -DTESTMODULE_ITP \
--I$(top_srcdir)/src/lib
+@XCB_CFLAGS@
 
 src_bin_itp_CFLAGS = @XPOST_BIN_CFLAGS@
 
 src_bin_itp_LDADD = \
 src/lib/libxpost.la \
+@XCB_LIBS@ \
+@XPOST_BIN_LDFLAGS@ \
 -lm
+
+if HAVE_WIN32
+src_bin_itp_LDADD += \
+-lgdi32
+endif
 
 if HAVE_SPLINT
 splint_process = splint \

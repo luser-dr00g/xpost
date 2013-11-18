@@ -70,20 +70,27 @@ void *alloca (size_t);
 #include "xpost_save.h"
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
+#include "xpost_error.h"
 #include "xpost_name.h"
 #include "xpost_string.h"
 #include "xpost_dict.h"
 #include "xpost_operator.h"
 #include "xpost_op_save.h"
 
+/* -  save  save
+   create save object representing vm contents */
 static
-void Zsave (Xpost_Context *ctx)
+int Zsave (Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_save_create_snapshot_object(ctx->lo));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_save_create_snapshot_object(ctx->lo)))
+        return stackoverflow;
+    return 0;
 }
 
+/* save  restore  -
+   rewind vm to saved state */
 static
-void Vrestore (Xpost_Context *ctx,
+int Vrestore (Xpost_Context *ctx,
                Xpost_Object V)
 {
     int z;
@@ -96,23 +103,32 @@ void Vrestore (Xpost_Context *ctx,
         xpost_save_restore_snapshot(ctx->lo);
         z--;
     }
+    return 0;
 }
 
+/* bool  setglobal  -
+   set vm allocation mode in current context. true is global. */
 static
-void Bsetglobal (Xpost_Context *ctx,
+int Bsetglobal (Xpost_Context *ctx,
                  Xpost_Object B)
 {
     ctx->vmmode = B.int_.val? GLOBAL: LOCAL;
+    return 0;
 }
 
+/* -  currentglobal  bool
+   return vm allocation mode for current context */
 static
-void Zcurrentglobal (Xpost_Context *ctx)
+int Zcurrentglobal (Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(ctx->vmmode==GLOBAL));
+    return 0;
 }
 
+/* any  gcheck  bool
+   check whether value is a legal element of a global compound object */
 static
-void Agcheck (Xpost_Context *ctx,
+int Agcheck (Xpost_Context *ctx,
               Xpost_Object A)
 {
     Xpost_Object r;
@@ -126,10 +142,13 @@ void Agcheck (Xpost_Context *ctx,
             r = xpost_cons_bool((A.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)!=0);
     }
     xpost_stack_push(ctx->lo, ctx->os, r);
+    return 0;
 }
 
+/* -  vmstatus  level used max
+   return size information for (local) vm */
 static
-void Zvmstatus (Xpost_Context *ctx)
+int Zvmstatus (Xpost_Context *ctx)
 {
     unsigned int vs;
 
@@ -138,9 +157,10 @@ void Zvmstatus (Xpost_Context *ctx)
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, vs)));
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->used));
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->max));
+    return 0;
 }
 
-void initopv(Xpost_Context *ctx,
+int initopv(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;
@@ -162,6 +182,7 @@ void initopv(Xpost_Context *ctx,
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
 
+    return 0;
 }
 
 

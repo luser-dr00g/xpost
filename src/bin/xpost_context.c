@@ -65,7 +65,7 @@ int xpost_context_init_ctxlist(Xpost_Memory_File *mem)
     ret = xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned), 0, &ent);
     if (!ret)
     {
-        return 0;
+        return 0; /* was error(unregistered) */
     }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
     tab = (void *)mem->base;
@@ -76,7 +76,7 @@ int xpost_context_init_ctxlist(Xpost_Memory_File *mem)
 }
 
 /* add a context ID to the context list in mfile */
-void xpost_context_append_ctxlist(Xpost_Memory_File *mem,
+int xpost_context_append_ctxlist(Xpost_Memory_File *mem,
                   unsigned cid)
 {
     int i;
@@ -89,10 +89,10 @@ void xpost_context_append_ctxlist(Xpost_Memory_File *mem,
     for (i=0; i < MAXCONTEXT; i++) {
         if (ctxlist[i] == 0) {
             ctxlist[i] = cid;
-            return;
+            return 1;
         }
     }
-    error(unregistered, "ctxlist full");
+    return 0;
 }
 
 
@@ -121,6 +121,10 @@ int initglobal(Xpost_Context *ctx)
     //ctx->gl = malloc(sizeof(Xpost_Memory_File));
     //ctx->gl = &itpdata->gtab[0];
     ctx->gl = xpost_interpreter_alloc_global_memory();
+    if (ctx->gl == NULL)
+    {
+        return 0;
+    }
 
     fd = mkstemp(g_filenam);
 
@@ -155,7 +159,12 @@ int initglobal(Xpost_Context *ctx)
         xpost_memory_file_exit(ctx->gl);
         return 0;
     }
-    xpost_context_append_ctxlist(ctx->gl, ctx->id);
+    ret = xpost_context_append_ctxlist(ctx->gl, ctx->id);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
 
             /* so OPTAB is not collected and not scanned. */
     ctx->gl->start = XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE + 1;
@@ -181,6 +190,10 @@ int initlocal(Xpost_Context *ctx)
     //ctx->lo = malloc(sizeof(Xpost_Memory_File));
     //ctx->lo = &itpdata->ltab[0];
     ctx->lo = xpost_interpreter_alloc_local_memory();
+    if (ctx->lo == NULL)
+    {
+        return 0;
+    }
 
     fd = mkstemp(l_filenam);
 
@@ -216,7 +229,12 @@ int initlocal(Xpost_Context *ctx)
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
-    xpost_context_append_ctxlist(ctx->lo, ctx->id);
+    ret = xpost_context_append_ctxlist(ctx->lo, ctx->id);
+    if (!ret)
+    {
+        xpost_memory_file_exit(ctx->lo);
+        return 0;
+    }
     //ctx->lo->roots[0] = XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK;
 
     ctx->os = makestack(ctx->lo);
@@ -253,6 +271,7 @@ int xpost_context_init(Xpost_Context *ctx)
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
+    ctx->event_handler = null;
 
     return 1;
 }

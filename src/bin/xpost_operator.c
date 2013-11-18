@@ -61,7 +61,7 @@ Xpost_Object promote(Xpost_Object o)
 
 /* copied from the header file for reference:
 typedef struct signat {
-   void (*fp)();
+   int (*fp)();
    int in;
    unsigned t;
    int out;
@@ -151,7 +151,7 @@ Xpost_Object operfromcode(int opcode)
    */
 Xpost_Object consoper(Xpost_Context *ctx,
                 char *name,
-                /*@null@*/ void (*fp)(),
+                /*@null@*/ int (*fp)(),
                 int out,
                 int in, ...)
 {
@@ -275,7 +275,7 @@ void holdn (Xpost_Context *ctx,
 /* execute an operator function by opcode
    the opcode is the payload of an operator object
  */
-void opexec(Xpost_Context *ctx,
+int opexec(Xpost_Context *ctx,
             unsigned opcode)
 {
     oper *optab;
@@ -288,6 +288,7 @@ void opexec(Xpost_Context *ctx,
     Xpost_Stack *hold;
     int ct;
     unsigned int optadr;
+    int ret;
 
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
@@ -331,8 +332,8 @@ void opexec(Xpost_Context *ctx,
         }
         if (pass) goto call;
     }
-    error(err, errmsg);
-    return;
+    //error(err, errmsg);
+    return err;
 
 call:
     /* If we're executing the context's "currentobject",
@@ -356,18 +357,21 @@ call:
     hold = (void *)(ctx->lo->base + ctx->hold);
 
     switch(sp[i].in) {
-        case 0: sp[i].fp(ctx); break;
-        case 1: sp[i].fp(ctx, hold->data[0]); break;
-        case 2: sp[i].fp(ctx, hold->data[0], hold->data[1]); break;
-        case 3: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2]); break;
-        case 4: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+        case 0: ret = sp[i].fp(ctx); break;
+        case 1: ret = sp[i].fp(ctx, hold->data[0]); break;
+        case 2: ret = sp[i].fp(ctx, hold->data[0], hold->data[1]); break;
+        case 3: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2]); break;
+        case 4: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3]); break;
-        case 5: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+        case 5: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3], hold->data[4]); break;
-        case 6: sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+        case 6: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3], hold->data[4], hold->data[5]); break;
-        default: error(unregistered, "opexec");
+        default: ret = unregistered;
     }
+    if (ret)
+        return ret;
+    return 0;
 }
 
 #include "xpost_op_stack.h"
@@ -384,6 +388,12 @@ call:
 #include "xpost_op_misc.h"
 #include "xpost_op_packedarray.h"
 #include "xpost_op_param.h"
+#ifdef HAVE_WIN32
+# include "xpost_dev_win32.h"
+#endif
+#ifdef HAVE_XCB
+# include "xpost_dev_xcb.h"
+#endif
 
 /* no-op operator useful as a break target.
    put 'breakhere' in the postscript program,
@@ -395,15 +405,15 @@ call:
    just as it's about to read the next token.
  */
 static
-void breakhere(Xpost_Context *ctx)
+int breakhere(Xpost_Context *ctx)
 {
     (void)ctx;
-    return;
+    return 0;
 }
 
 /* create systemdict and call
    all initop?* functions, installing all operators */
-void initop(Xpost_Context *ctx)
+int initop(Xpost_Context *ctx)
 {
     Xpost_Object op;
     Xpost_Object n;
@@ -472,6 +482,12 @@ void initop(Xpost_Context *ctx)
 
     initoppa(ctx, sd);
     initopparam(ctx, sd);
+#ifdef _WIN32
+    initwin32ops(ctx, sd);
+#endif
+#ifdef HAVE_XCB
+    initxcbops(ctx, sd);
+#endif
 
     //xpost_stack_push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
@@ -480,6 +496,8 @@ void initop(Xpost_Context *ctx)
     xpost_stack_dump(ctx->lo, ctx->ds);
     dumpdic(ctx->gl, sd); fflush(NULL);
 #endif
+
+    return 1;
 }
 
 
