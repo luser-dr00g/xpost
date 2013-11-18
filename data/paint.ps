@@ -1,0 +1,82 @@
+(loading paint.ps)=
+
+% Painting Operators
+
+% -  erasepage  -
+% paint current page white
+/erasepage {
+    %gsave
+    %    initclip
+    %    1 setgray
+    %    clippath fill
+    %grestore
+    gsave
+        1 setgray
+        255 0 0 DEVICE /dimensions get aload pop
+        exch 1 sub exch 1 sub
+        DEVICE dup /FillRect get exec
+
+        flushpage
+    grestore
+} def
+
+% -  fill  -
+% fill current path with current color
+/fill {
+    closepath
+    flattenpath
+    doclip
+    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    {
+        currentgray 255 mul cvi
+        exch DEVICE dup /FillPoly get exec
+    } forall
+
+    flushpage
+
+    newpath
+} def
+
+% -  eofill  -
+% fill using even-odd rule
+/eofill {
+} def
+
+% -  stroke  -
+% draw line along current path
+/stroke {
+    currentlinewidth 0 eq {
+        flattenpath
+        mark
+        {          % x0 y0 
+            2 copy % x0 y0 x0 y0
+            pstack(M)=
+        }
+        {          % ... xN-1 yN-1 xN yN
+            4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
+            currentgray 255 mul cvi
+            5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
+            pstack(L)=
+            DEVICE dup /DrawLine get exec  % ... xN-1 yN-1 xN yN
+            4 2 roll pop pop % ... xN yN
+        }
+        {}
+        {            % x0 y0 xN yN
+            4 2 roll % xN yN x0 y0
+            currentgray 255 mul cvi
+            5 1 roll % gray xN yN x0 y0
+            pstack(C)=
+            DEVICE dup /DrawLine get exec  % -
+        }
+        pathforall
+        cleartomark
+    }{
+        strokepath fill
+    } ifelse
+
+    flushpage
+
+    newpath
+} def
+
+(eof paint.ps)=

@@ -1,0 +1,143 @@
+(loading graphics.ps...)=
+
+% implement xpost-specifics
+% to test on ghostscript
+/DATA_DIR where {pop}{
+    /DATA_DIR{}def
+    /strcat{1 1 index length 1 sub getinterval}def
+    /breakhere{}def
+}ifelse
+
+false setglobal
+userdict begin
+
+    %/CONSTRAINFLATNESS null def
+
+    /graphicsdict <<
+        /currgstate 12 dict
+        /gstackarray 100 array
+        /gptr -1
+    >> def
+
+    %breakhere
+    DATA_DIR (/device.ps) strcat run %loads and uses (/image.ps)
+    DATA_DIR (/gstate.ps) strcat run
+    DATA_DIR (/matrix.ps) strcat run
+    DATA_DIR (/color.ps) strcat run
+    DATA_DIR (/path.ps) strcat run
+    DATA_DIR (/clip.ps) strcat run
+    DATA_DIR (/paint.ps) strcat run
+
+end %userdict
+
+
+/TESTGRAPHICS where {pop}{ currentfile flushfile} ifelse
+(TESTGRAPHICS graphics)=
+
+initgraphics
+
+currentfile flushfile
+5 5 moveto currentpoint pstack clear
+90 matrix rotate
+pstack
+currentfile flushfile
+clear
+10 10 matrix scale pstack clear
+300 400 matrix translate pstack clear
+matrix matrix matrix concatmatrix pstack clear
+
+2 0 translate
+1 1 moveto
+.25 .25 scale
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+90 rotate currentpoint pstack clear
+
+/args{-1 1{-1 roll =}for}def
+
+20 20 scale
+10 10 lineto
+20 20 rlineto
+0 0 1 1 2 0 rcurveto
+closepath
+
+newpath
+0 0 moveto
+20 20 40 20 60 0 curveto
+closepath
+
+newpath
+0 0 moveto
+50 50 lineto
+100 0 lineto
+closepath
+
+()=
+{ (moveto) 3 args }
+{ (lineto) 3 args }
+{ (curveto) 7 args }
+{ (closepath) 1 args }
+4 copy 
+(pathforall)=
+pathforall
+
+gsave
+    (newpath)=
+    newpath
+    (pathforall)=
+    4 copy pathforall
+grestore
+
+(pathforall)=
+4 copy pathforall
+
+(flattenpath)=
+flattenpath
+(pathforall)=
+4 copy pathforall
+
+(reversepath)=
+reversepath
+(pathforall)=
+4 copy pathforall
+
+(strokepath)=
+strokepath
+(pathforall)=
+pathforall
+
+clear pathbbox pstack clear
+
+
+initclip
+
+newpath
+0 0 moveto
+10 0 lineto
+10 10 lineto
+0 10 lineto
+closepath
+(clip)=
+clip
+
+(newpath)=
+newpath
+5 -1 moveto
+11 5 lineto
+5 11 lineto
+-1 5 lineto
+closepath
+
+(doclip)=
+doclip
+(pathforall)=
+{ (moveto) 3 args }
+{ (lineto) 3 args }
+{ (curveto) 7 args }
+{ (closepath) 1 args }
+pathforall
+
+clear
+
+(eof graphics.ps)=

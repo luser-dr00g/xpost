@@ -1,0 +1,489 @@
+/*
+ * Xpost - a Level-2 Postscript interpreter
+ * Copyright (C) 2013, Michael Joshua Ryan
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright notice,
+ *   this list of conditions and the following disclaimer.
+ * - Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ * - Neither the name of the Xpost software product nor the names of its
+ *   contributors may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include <assert.h>
+#include <stdlib.h> /* abs */
+#include <string.h>
+
+#include <xcb/xcb.h>
+#include <xcb/xcb_image.h>
+#include <xcb/xcb_aux.h>
+
+#include "xpost_log.h"
+#include "xpost_memory.h" /* access memory */
+#include "xpost_object.h" /* work with objects */
+#include "xpost_stack.h"  /* push results on stack */
+
+#include "xpost_context.h" /* state */
+#include "xpost_error.h"
+#include "xpost_dict.h" /* get/put values in dicts */
+#include "xpost_string.h" /* get/put values in strings */
+#include "xpost_name.h" /* create names */
+#include "xpost_operator.h" /* create operators */
+#include "xpost_op_dict.h" /* call Aload operator for convenience */
+#include "xpost_dev_xcb.h" /* check prototypes */
+
+#define XCB_ALL_PLANES ~0
+
+typedef struct {
+    xcb_connection_t *c;
+    int scrno;
+    xcb_screen_t *scr;
+    xcb_drawable_t win;
+    unsigned char  depth;
+    unsigned char format;
+    xcb_image_t *img;
+    xcb_gcontext_t gc;
+    xcb_colormap_t cmap;
+} PrivateData;
+
+
+static
+unsigned int _create_cont_opcode;
+
+/* create an instance of the device
+   using the class .copydict procedure */
+static
+int _create (Xpost_Context *ctx,
+             Xpost_Object width,
+             Xpost_Object height,
+             Xpost_Object classdic)
+{
+    xpost_stack_push(ctx->lo, ctx->os, width);
+    xpost_stack_push(ctx->lo, ctx->os, height);
+    xpost_stack_push(ctx->lo, ctx->os, classdic);
+
+    /* call device class's ps-level .copydict procedure,
+       then call _create_cont, by continuation. */
+    xpost_stack_push(ctx->lo, ctx->es,
+            operfromcode(_create_cont_opcode));
+    xpost_stack_push(ctx->lo, ctx->es,
+            bdcget(ctx, classdic, consname(ctx, ".copydict")));
+
+    return 0;
+}
+
+/* initialize the C-level data
+   and define in the device instance */
+static
+int _create_cont (Xpost_Context *ctx,
+                  Xpost_Object w,
+                  Xpost_Object h,
+                  Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    integer width = w.int_.val;
+    integer height = h.int_.val;
+    int i;
+    const xcb_setup_t *setup;
+    xcb_screen_iterator_t iter;
+
+    /* create a string to contain device data structure */
+    privatestr = consbst(ctx, sizeof(PrivateData), NULL);
+    bdcput(ctx, devdic, consname(ctx, "Private"), privatestr);
+    bdcput(ctx, devdic, consname(ctx, "width"), w);
+    bdcput(ctx, devdic, consname(ctx, "height"), h);
+
+    /* create xcb connection
+       and create and map window */
+    private.c = xcb_connect(NULL, &private.scrno);
+    setup = xcb_get_setup(private.c);
+    iter = xcb_setup_roots_iterator(setup);
+
+    for (i=0; i < private.scrno; ++i)
+        xcb_screen_next(&iter);
+
+    private.scr = iter.data;
+    XPOST_LOG_INFO("screen->root_depth: %d", private.scr->root_depth);
+
+    private.win = xcb_generate_id(private.c);
+    {
+        unsigned int values = private.scr->black_pixel;
+        xcb_create_window(private.c, XCB_COPY_FROM_PARENT,
+                private.win, private.scr->root,
+                0, 0,
+                width, height,
+                5,
+                XCB_WINDOW_CLASS_INPUT_OUTPUT,
+                private.scr->root_visual,
+                XCB_CW_BACK_PIXEL,
+                &values);
+    }
+    xcb_map_window(private.c, private.win);
+    xcb_flush(private.c);
+
+    //private.img = xcb_generate_id(private.c);
+    //private.depth = xcb_aux_get_depth(private.c, private.scr);
+    //xcb_create_pixmap(private.c, private.depth,
+            //private.img, private.win, width, height);
+    private.format = XCB_IMAGE_FORMAT_Z_PIXMAP;
+    private.img = xcb_image_get(private.c, private.win, 
+            0, 0, width, height,
+            XCB_ALL_PLANES, private.format);
+
+    /* create graphics context
+       and initialize drawing parameters */
+    private.gc = xcb_generate_id(private.c);
+    {
+        unsigned int values[2] = {
+            private.scr->white_pixel,
+            private.scr->black_pixel
+        } ;
+        xcb_create_gc(private.c, private.gc, private.win,
+                XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
+                values);
+    }
+
+    private.cmap = private.scr->default_colormap;
+
+    /* save private data struct in string */
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+    /* return device instance dictionary to ps */
+    xpost_stack_push(ctx->lo, ctx->os, devdic);
+    return 0;
+}
+
+static
+int _putpix (Xpost_Context *ctx,
+             Xpost_Object val,
+             Xpost_Object x,
+             Xpost_Object y,
+             Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    int h, w;
+
+    /* fold numbers to integertype */
+    if (xpost_object_get_type(val) == realtype)
+        val = xpost_cons_int(val.real_.val);
+    if (xpost_object_get_type(x) == realtype)
+        x = xpost_cons_int(x.real_.val);
+    if (xpost_object_get_type(y) == realtype)
+        y = xpost_cons_int(y.real_.val);
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+    w = bdcget(ctx, devdic, consname(ctx,"width")).int_.val;
+    h = bdcget(ctx, devdic, consname(ctx,"height")).int_.val;
+    if (x.int_.val >= w || y.int_.val >= h)
+        return 0;
+
+    {
+        xcb_alloc_color_reply_t *rep;
+        rep = xcb_alloc_color_reply(private.c,
+                xcb_alloc_color(private.c, private.cmap,
+                    1-val.int_.val, 1-val.int_.val, 1-val.int_.val),
+                0);
+        if (!rep)
+            return unregistered;
+
+        xcb_image_put_pixel(private.img,
+                x.int_.val, y.int_.val,
+                rep->pixel);
+    }
+
+    /* save private data struct in string */
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+#if 0
+    {
+        xcb_point_t p;
+        p.x = x.int_.val;
+        p.y = y.int_.val;
+
+        xcb_poly_point(private.c,
+                XCB_COORD_MODE_ORIGIN,
+                private.img,
+                private.gc,
+                1, 
+                &p);
+    }
+#endif
+
+    return 0;
+}
+
+static
+int _getpix (Xpost_Context *ctx,
+             Xpost_Object x,
+             Xpost_Object y,
+             Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+    /* ?? I don't know ...
+       make a 1-pixel image and use copy_area?  ... */
+    return 0;
+}
+
+static
+int _fillrect (Xpost_Context *ctx,
+               Xpost_Object val,
+               Xpost_Object x,
+               Xpost_Object y,
+               Xpost_Object width,
+               Xpost_Object height,
+               Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    int w,h;
+    int i,j;
+
+    /* fold numbers to integertype */
+    if (xpost_object_get_type(val) == realtype)
+        val = xpost_cons_int(val.real_.val);
+    if (xpost_object_get_type(x) == realtype)
+        x = xpost_cons_int(x.real_.val);
+    if (xpost_object_get_type(y) == realtype)
+        y = xpost_cons_int(y.real_.val);
+    if (xpost_object_get_type(width) == realtype)
+        width = xpost_cons_int(width.real_.val);
+    if (xpost_object_get_type(height) == realtype)
+        height = xpost_cons_int(height.real_.val);
+
+    /* adjust ranges */
+    if (width.int_.val < 0)
+    {
+        width.int_.val = abs(width.int_.val);
+        x.int_.val -= width.int_.val;
+    }
+    if (height.int_.val < 0)
+    {
+        height.int_.val = abs(height.int_.val);
+        y.int_.val -= height.int_.val;
+    }
+    if (x.int_.val < 0) x.int_.val = 0;
+    if (y.int_.val < 0) y.int_.val = 0;
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+    w = bdcget(ctx, devdic, consname(ctx,"width")).int_.val;
+    h = bdcget(ctx, devdic, consname(ctx,"height")).int_.val;
+
+    if (x.int_.val >= w || y.int_.val >= h)
+        return 0;
+    if (x.int_.val + width.int_.val > w)
+        width.int_.val = w - x.int_.val;
+    if (y.int_.val + height.int_.val > h)
+        height.int_.val = h - y.int_.val;
+
+    {
+        xcb_alloc_color_reply_t *rep;
+        rep = xcb_alloc_color_reply(private.c,
+                xcb_alloc_color(private.c, private.cmap,
+                    1-val.int_.val, 1-val.int_.val, 1-val.int_.val),
+                0);
+        if (!rep)
+            return unregistered;
+
+        for (i=0; i < height.int_.val; i++)
+            for (j=0; j < width.int_.val; j++)
+                xcb_image_put_pixel(private.img,
+                        x.int_.val + j, y.int_.val + i,
+                        rep->pixel);
+    }
+    return 0;
+}
+
+static
+int _flush (Xpost_Context *ctx,
+           Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+    xcb_image_put(private.c, private.win, private.gc, private.img, 0, 0, 0);
+    xcb_flush(private.c);
+
+    return 0;
+}
+
+/* Emit here is the same as Flush
+   But Flush is called (if available) by all raster operators
+   for smoother previewing.
+ */
+static
+int (*_emit) (Xpost_Context *ctx,
+           Xpost_Object devdic) = _flush;
+
+static
+int _destroy (Xpost_Context *ctx,
+              Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
+            sizeof private, &private);
+
+    xcb_disconnect(private.c);
+
+    return 0;
+}
+
+
+/* operator function to instantiate a new window device.
+   installed in userdict by calling 'loadXXXdevice'.
+ */
+static
+int newxcbdevice (Xpost_Context *ctx,
+                  Xpost_Object width,
+                  Xpost_Object height)
+{
+    Xpost_Object classdic;
+    int ret;
+
+    xpost_stack_push(ctx->lo, ctx->os, width);
+    xpost_stack_push(ctx->lo, ctx->os, height);
+    ret = Aload(ctx, consname(ctx, "xcbDEVICE"));
+    if (ret)
+        return ret;
+    classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, "Create")));
+
+    return 0;
+}
+
+static
+unsigned int _loadxcbdevicecont_opcode;
+
+/* Specializes or sub-classes the PGMIMAGE device class.
+   load PGMIMAGE
+   load and call ps procedure .copydict which leaves copy on stack
+   call loadxcbdevicecont by continuation.
+ */
+static
+int loadxcbdevice (Xpost_Context *ctx)
+{
+    Xpost_Object classdic;
+    int ret;
+
+    ret = Aload(ctx, consname(ctx, "PGMIMAGE"));
+    if (ret)
+        return ret;
+    classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadxcbdevicecont_opcode));
+    xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict")));
+
+    return 0;
+}
+
+/* replace procedures in the class with newly created special operators.
+   defines the device class xcbDEVICE in userdict.
+   defines a new operator in userdict: newxcbdevice
+ */
+static
+int loadxcbdevicecont (Xpost_Context *ctx,
+                       Xpost_Object classdic)
+{
+    Xpost_Object userdict;
+    Xpost_Object op;
+
+    op = consoper(ctx, "xcbCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
+    _create_cont_opcode = op.mark_.padw;
+    op = consoper(ctx, "xcbCreate", _create, 1, 3, integertype, integertype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "Create"), op);
+    
+    op = consoper(ctx, "xcbPutPix", _putpix, 0, 4, numbertype, numbertype, numbertype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "PutPix"), op);
+
+    op = consoper(ctx, "xcbGetPix", _getpix, 1, 3, numbertype, numbertype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
+
+    op = consoper(ctx, "xcbFillRect", _fillrect, 0, 6,
+            numbertype, numbertype, numbertype, numbertype, numbertype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
+
+    op = consoper(ctx, "xcbEmit", _emit, 0, 1, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "Emit"), op);
+
+    op = consoper(ctx, "xcbFlush", _flush, 0, 1, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "Flush"), op);
+
+    op = consoper(ctx, "xcbDestroy", _destroy, 0, 1, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "Destroy"), op);
+
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+
+    bdcput(ctx, userdict, consname(ctx, "xcbDEVICE"), classdic);
+
+    op = consoper(ctx, "newxcbdevice", newxcbdevice, 1, 2, integertype, integertype);
+    bdcput(ctx, userdict, consname(ctx, "newxcbdevice"), op);
+
+    return 0;
+}
+
+/*
+   install the loadXXXdevice which may be called during graphics initialization
+   to produce the operator newXXXdevice which instantiates the device dictionary.
+*/
+int initxcbops (Xpost_Context *ctx,
+                Xpost_Object sd)
+{
+    unsigned int optadr;
+    oper *optab;
+    Xpost_Object n,op;
+
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    optab = (oper *)(ctx->gl->base + optadr);
+    op = consoper(ctx, "loadxcbdevice", loadxcbdevice, 1, 0); INSTALL;
+    op = consoper(ctx, "loadxcbdevicecont", loadxcbdevicecont, 1, 1, dicttype);
+    _loadxcbdevicecont_opcode = op.mark_.padw;
+
+    return 0;
+}
+

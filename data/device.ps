@@ -1,0 +1,49 @@
+(loading device.ps...)=
+
+DATA_DIR (/image.ps) strcat run
+
+%/DEVICE <<
+%    /dimensions [ 100 100 ]
+%    /defaultmatrix [ 1 0 0 1 0 0 ]
+%>> def
+
+%/DEVICE 50 50 newPGMIMAGEdevice def
+
+%loadxcbdevice
+%/DEVICE 400 300 newxcbdevice def
+
+%loadwin32device
+%/DEVICE 400 300 newwin32device def
+
+newdefaultdevice
+
+DEVICE begin
+    /dimensions [ width height ] def
+    %/defaultmatrix [ 1 0 0 -1 0 height ] def
+    /defaultmatrix [ 1 0 0 1 0 0 ] def
+end
+
+/flushpage {
+    DEVICE /Flush known {
+        DEVICE dup /Flush get exec
+    } if
+} def
+
+/showpage {
+    DEVICE dup /Emit get exec
+    flushpage
+
+    (----showpage----) =print flush
+    [ {(%lineedit)(r)file}stopped cleartomark
+
+    DEVICE /pagenumber
+    2 copy known {
+        2 copy get 1 add put
+    }{
+        1 put
+    } ifelse
+    erasepage
+    flushpage
+} def
+
+(eof device.ps)=
