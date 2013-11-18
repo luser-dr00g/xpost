@@ -32,7 +32,14 @@
 #define XPOST_DEV_X_H
 
 /**
- * @brief install operator loadX11device
+ * @brief install operator loadxcbdevice in systemdict
+ *
+ * When run, creates a new operator
+ *
+ *       width height  newxcbdevice  device
+ *
+ * which, when run, creates an X window and returns the device
+ * instance dictionary.
  */
 int initxcbops (Xpost_Context *ctx,
                 Xpost_Object sd);

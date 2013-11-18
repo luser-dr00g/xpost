@@ -74,6 +74,9 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
+
+    /* call device class's ps-level .copydict procedure,
+       then call _create_cont, by continuation. */
     xpost_stack_push(ctx->lo, ctx->es,
             operfromcode(_create_cont_opcode));
     xpost_stack_push(ctx->lo, ctx->es,
@@ -98,11 +101,14 @@ int _create_cont (Xpost_Context *ctx,
     const xcb_setup_t *setup;
     xcb_screen_iterator_t iter;
 
+    /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
     bdcput(ctx, devdic, consname(ctx, "Private"), privatestr);
     bdcput(ctx, devdic, consname(ctx, "width"), w);
     bdcput(ctx, devdic, consname(ctx, "height"), h);
 
+    /* create xcb connection
+       and create and map window */
     private.c = xcb_connect(NULL, &private.screenNum);
     setup = xcb_get_setup(private.c);
     iter = xcb_setup_roots_iterator(setup);
@@ -129,6 +135,8 @@ int _create_cont (Xpost_Context *ctx,
     xcb_map_window(private.c, private.window);
     xcb_flush(private.c);
 
+    /* create graphics context
+       and initialize drawing parameters */
     private.gc = xcb_generate_id(private.c);
     {
         unsigned int values[2] = {
@@ -142,9 +150,11 @@ int _create_cont (Xpost_Context *ctx,
 
     private.colormap = private.screen->default_colormap;
 
+    /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
+    /* return device instance dictionary to ps */
     xpost_stack_push(ctx->lo, ctx->os, devdic);
     return 0;
 }
@@ -159,6 +169,7 @@ int _putpix (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
+    /* fold numbers to integertype */
     if (xpost_object_get_type(val) == realtype)
         val = xpost_cons_int(val.real_.val);
     if (xpost_object_get_type(x) == realtype)
@@ -166,6 +177,7 @@ int _putpix (Xpost_Context *ctx,
     if (xpost_object_get_type(y) == realtype)
         y = xpost_cons_int(y.real_.val);
 
+    /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
@@ -195,6 +207,7 @@ int _getpix (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
+    /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
@@ -211,6 +224,7 @@ int _flush (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
+    /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
@@ -220,6 +234,10 @@ int _flush (Xpost_Context *ctx,
     return 0;
 }
 
+/* Emit here is the same as Flush
+   But Flush is called (if available) by all raster operators
+   for smoother previewing.
+ */
 static
 int (*_emit) (Xpost_Context *ctx,
            Xpost_Object devdic) = _flush;
@@ -263,9 +281,11 @@ int newxcbdevice (Xpost_Context *ctx,
 static
 unsigned int _loadxcbdevicecont_opcode;
 
-/* load PGMIMAGE
-   load and call .copydict
-   leaves copy on stack */
+/* Specializes or sub-classes the PGMIMAGE device class.
+   load PGMIMAGE
+   load and call ps procedure .copydict which leaves copy on stack
+   call loadxcbdevicecont by continuation.
+ */
 static
 int loadxcbdevice (Xpost_Context *ctx)
 {
@@ -282,7 +302,10 @@ int loadxcbdevice (Xpost_Context *ctx)
     return 0;
 }
 
-/* replace procedures with operators */
+/* replace procedures in the class with newly created special operators.
+   defines the device class xcbDEVICE in userdict.
+   defines a new operator in userdict: newxcbdevice
+ */
 static
 int loadxcbdevicecont (Xpost_Context *ctx,
                        Xpost_Object classdic)
