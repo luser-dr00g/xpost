@@ -29,6 +29,11 @@
         currentgray 255 mul cvi
         exch DEVICE dup /FillPoly get exec
     } forall
+
+    DEVICE /Flush known {
+        DEVICE dup /Flush get exec
+    } if
+
     newpath
 } def
 
@@ -68,6 +73,11 @@
     }{
         strokepath fill
     } ifelse
+
+    DEVICE /Flush known {
+        DEVICE dup /Flush get exec
+    } if
+
     newpath
 } def
 
