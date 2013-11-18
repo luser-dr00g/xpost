@@ -129,7 +129,7 @@ int _create_cont (Xpost_Context *ctx,
 
     private.win = xcb_generate_id(private.c);
     {
-        unsigned int values = private.scr->white_pixel;
+        unsigned int values = private.scr->black_pixel;
         xcb_create_window(private.c, XCB_COPY_FROM_PARENT,
                 private.win, private.scr->root,
                 0, 0,
@@ -157,8 +157,8 @@ int _create_cont (Xpost_Context *ctx,
     private.gc = xcb_generate_id(private.c);
     {
         unsigned int values[2] = {
-            private.scr->black_pixel,
-            private.scr->white_pixel
+            private.scr->white_pixel,
+            private.scr->black_pixel
         } ;
         xcb_create_gc(private.c, private.gc, private.win,
                 XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
