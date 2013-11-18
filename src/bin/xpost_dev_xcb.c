@@ -205,7 +205,7 @@ int _getpix (Xpost_Context *ctx,
 }
 
 static
-int _emit (Xpost_Context *ctx,
+int _flush (Xpost_Context *ctx,
            Xpost_Object devdic)
 {
     Xpost_Object privatestr;
@@ -219,6 +219,10 @@ int _emit (Xpost_Context *ctx,
 
     return 0;
 }
+
+static
+int (*_emit) (Xpost_Context *ctx,
+           Xpost_Object devdic) = _flush;
 
 static
 int _destroy (Xpost_Context *ctx,
@@ -299,6 +303,9 @@ int loadxcbdevicecont (Xpost_Context *ctx,
 
     op = consoper(ctx, "xcbEmit", _emit, 0, 1, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Emit"), op);
+
+    op = consoper(ctx, "xcbFlush", _flush, 0, 1, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "Flush"), op);
 
     op = consoper(ctx, "xcbDestroy", _destroy, 0, 1, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Destroy"), op);

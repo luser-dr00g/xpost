@@ -444,6 +444,8 @@ void _onerror(Xpost_Context *ctx,
     Xpost_Object dollarerror;
     char *errmsg;
 
+    if (err > unknownerror) err = unknownerror;
+
     assert(ctx);
     assert(ctx->gl);
     assert(ctx->gl->base);
