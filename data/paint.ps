@@ -15,6 +15,10 @@
         255 0 0 DEVICE /dimensions get aload pop
         exch 1 sub exch 1 sub
         DEVICE dup /FillRect get exec
+
+        DEVICE /Flush known {
+            DEVICE dup /Flush get exec
+        } if
     grestore
 } def
 
