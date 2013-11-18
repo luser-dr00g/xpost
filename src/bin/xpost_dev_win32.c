@@ -353,7 +353,7 @@ int _destroy (Xpost_Context *ctx,
 }
 
 /* operator function to instantiate a new window device.
-   installed in userdict by calling 'initXXXdevice'.
+   installed in userdict by calling 'loadXXXdevice'.
 */
 static
 int newwin32device (Xpost_Context *ctx,
