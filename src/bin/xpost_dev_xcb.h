@@ -28,61 +28,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
+#ifndef XPOST_DEV_X_H
+#define XPOST_DEV_X_H
+
+/**
+ * @brief install operator loadxcbdevice in systemdict
+ *
+ * When run, creates a new operator
+ *
+ *       width height  newxcbdevice  device
+ *
+ * which, when run, creates an X window and returns the device
+ * instance dictionary.
+ */
+int initxcbops (Xpost_Context *ctx,
+                Xpost_Object sd);
+
 #endif
-
-
-
-#  if 1
-/* This section includes only the files needed by main. */
-
-#include <stdio.h> /* fprintf printf */
-#include <stdlib.h> /* EXIT_FAILURE */
-#include <string.h> /* free */
-
-#include "xpost_pathname.h" /* xpost_is_installed exedir */
-#include "xpost_memory.h" /* Xpost_Memory_File */
-#include "xpost_object.h" /* Xpost_Object */
-#include "xpost_context.h" /* Xpost_Context */
-#include "xpost_interpreter.h" /* xpost_create */
-#include "xpost_log.h" /* XPOST_LOG_ERR */
-
-
-#  else
-/* This section demonstrates a "full" header inclusion,
-   illustrating the prescribed order of files. */
-
-/* standard headers */
-#include <assert.h>
-#include <setjmp.h>
-#include <stdio.h> /* fprintf printf */
-#include <stdlib.h> /* EXIT_FAILURE */
-#include <string.h> /* free */
-
-/* /lib headers */
-#include "xpost_log.h"
-#include "xpost_memory.h"  
-#include "xpost_object.h" 
-#include "xpost_stack.h" 
-#include "xpost_free.h"
-
-/* /bin headers */
-#include "xpost_context.h"
-#include "xpost_interpreter.h"
-#include "xpost_error.h"  
-#include "xpost_string.h"
-#include "xpost_array.h"
-#include "xpost_garbage.h"
-#include "xpost_save.h"  
-#include "xpost_name.h" 
-#include "xpost_dict.h"
-#include "xpost_file.h"  
-#include "xpost_operator.h"
-#include "xpost_op_token.h"  
-#include "xpost_op_dict.h"  
-#include "xpost_pathname.h"
-
-
-#  endif 
-

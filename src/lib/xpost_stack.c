@@ -216,10 +216,21 @@ Xpost_Object xpost_stack_pop (Xpost_Memory_File *mem,
     }
     if (s->top == 0)
     {
-        if (p != NULL)
-            s = p; /* back up if top is empty */
-        else
+        if (p != NULL) /* back up if top is empty */
+        {
+#if 0
+            unsigned int poff = (unsigned char *)p - mem->base;
+            xpost_stack_free(mem, p->nextseg); /* don't need this segment right now */
+            p = (Xpost_Stack *)(mem->base + poff); /* recalc */
+            s = p;
+            p->nextseg = 0;
+#endif 
+            s = p;
+        }
+        else /* can't back up if stack is empty */
+        {
             return invalid;
+        }
     }
 
     return s->data[--s->top]; /* pop value */

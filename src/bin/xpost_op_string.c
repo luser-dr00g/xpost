@@ -49,72 +49,91 @@
 #include "xpost_op_string.h"
 
 static
-void Istring(Xpost_Context *ctx,
+int Istring(Xpost_Context *ctx,
              Xpost_Object I)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbst(ctx, I.int_.val, NULL)));
+    return 0;
 }
 
 static
-void Slength(Xpost_Context *ctx,
+int Slength(Xpost_Context *ctx,
              Xpost_Object S)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(S.comp_.sz));
+    return 0;
 }
 
 static
-void s_copy(Xpost_Context *ctx,
+int s_copy(Xpost_Context *ctx,
             Xpost_Object S,
             Xpost_Object D)
 {
     unsigned i;
     for (i = 0; i < S.comp_.sz; i++)
         bstput(ctx, D, i, bstget(ctx, S, i));
+    return 0;
 }
 
 static
-void Scopy(Xpost_Context *ctx,
+int Scopy(Xpost_Context *ctx,
            Xpost_Object S,
            Xpost_Object D)
 {
-    if (D.comp_.sz < S.comp_.sz) error(rangecheck, "Scopy");
+    Xpost_Object subs;
+    if (D.comp_.sz < S.comp_.sz)
+        return rangecheck;
     s_copy(ctx, S, D);
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
+    subs = arrgetinterval(D, 0, S.comp_.sz);
+    if (xpost_object_get_type(subs) == invalidtype)
+        return rangecheck;
+    xpost_stack_push(ctx->lo, ctx->os, subs);
+    return 0;
 }
 
 static
-void Sget(Xpost_Context *ctx,
+int Sget(Xpost_Context *ctx,
           Xpost_Object S,
           Xpost_Object I)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(bstget(ctx, S, I.int_.val)));
+    return 0;
 }
 
 static
-void Sput(Xpost_Context *ctx,
+int Sput(Xpost_Context *ctx,
           Xpost_Object S,
           Xpost_Object I,
           Xpost_Object C)
 {
     bstput(ctx, S, I.int_.val, C.int_.val);
+    return 0;
 }
 
 static
-void Sgetinterval(Xpost_Context *ctx,
+int Sgetinterval(Xpost_Context *ctx,
                   Xpost_Object S,
                   Xpost_Object I,
                   Xpost_Object L)
 {
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(S, I.int_.val, L.int_.val));
+    Xpost_Object subs = arrgetinterval(S, I.int_.val, L.int_.val);
+    if (xpost_object_get_type(subs) == invalidtype)
+        return rangecheck;
+    xpost_stack_push(ctx->lo, ctx->os, subs);
+    return 0;
 }
 
 static
-void Sputinterval(Xpost_Context *ctx,
+int Sputinterval(Xpost_Context *ctx,
                   Xpost_Object D,
                   Xpost_Object I,
                   Xpost_Object S)
 {
-    s_copy(ctx, S, arrgetinterval(D, I.int_.val, S.comp_.sz));
+    Xpost_Object subs = arrgetinterval(D, I.int_.val, S.comp_.sz);
+    if (xpost_object_get_type(subs) == invalidtype)
+        return rangecheck;
+    s_copy(ctx, S, subs);
+    return 0;
 }
 
 static
@@ -130,12 +149,13 @@ int ancsearch(char *str,
 }
 
 static
-void Sanchorsearch(Xpost_Context *ctx,
+int Sanchorsearch(Xpost_Context *ctx,
                    Xpost_Object str,
                    Xpost_Object seek)
 {
     char *s, *k;
-    if (seek.comp_.sz > str.comp_.sz) error(rangecheck, "Sanchorsearch");
+    if (seek.comp_.sz > str.comp_.sz)
+        return rangecheck;
     s = charstr(ctx, str);
     k = charstr(ctx, seek);
     if (ancsearch(s, k, seek.comp_.sz)) {
@@ -149,16 +169,18 @@ void Sanchorsearch(Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, str);
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
+    return 0;
 }
 
 static
-void Ssearch(Xpost_Context *ctx,
+int Ssearch(Xpost_Context *ctx,
              Xpost_Object str,
              Xpost_Object seek)
 {
     int i;
     char *s, *k;
-    if (seek.comp_.sz > str.comp_.sz) error(rangecheck, "Ssearch");
+    if (seek.comp_.sz > str.comp_.sz)
+        return rangecheck;
     s = charstr(ctx, str);
     k = charstr(ctx, seek);
     for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++) {
@@ -171,37 +193,46 @@ void Ssearch(Xpost_Context *ctx,
             xpost_stack_push(ctx->lo, ctx->os,
                     arrgetinterval(str, 0, i)); /* pre */
             xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
-            return;
+            return 0;
         }
     }
     xpost_stack_push(ctx->lo, ctx->os, str);
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+    return 0;
 }
 
 static
-void Sforall(Xpost_Context *ctx,
+int Sforall(Xpost_Context *ctx,
              Xpost_Object S,
              Xpost_Object P)
 {
-    if (S.comp_.sz == 0) return;
+    if (S.comp_.sz == 0) return 0;
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall));
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall)))
+        return execstackoverflow;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(S, 1, S.comp_.sz-1)));
-    if (xpost_object_is_exe(S)) {
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(S, 1, S.comp_.sz-1))))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+        return execstackoverflow;
+    if (!xpost_object_is_exe(S)) {
         //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
+        if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+            return execstackoverflow;
     }
-    xpost_stack_push(ctx->lo, ctx->es, P);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(bstget(ctx, S, 0)));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(bstget(ctx, S, 0))))
+        return stackoverflow;
+    return 0;
 }
 
 // token : see optok.c
 
-void initopst(Xpost_Context *ctx,
+int initopst(Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -233,5 +264,6 @@ void initopst(Xpost_Context *ctx,
     op = consoper(ctx, "forall", Sforall, 0, 2,
             stringtype, proctype); INSTALL;
     //bdcput(ctx, sd, consname(ctx, "mark"), mark);
+    return 0;
 }
 

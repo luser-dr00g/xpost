@@ -123,15 +123,18 @@ Xpost_Object bind (Xpost_Context *ctx,
     return xpost_object_set_access(p, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
 }
 
+/* proc  bind  proc
+   replace names with operators in proc and make read-only */
 static
-void Pbind (Xpost_Context *ctx,
+int Pbind (Xpost_Context *ctx,
             Xpost_Object P)
 {
     xpost_stack_push(ctx->lo, ctx->os, bind(ctx, P));
+    return 0;
 }
 
 static
-void realtime (Xpost_Context *ctx)
+int realtime (Xpost_Context *ctx)
 {
     double sec;
 #ifdef HAVE_GETTIMEOFDAY
@@ -141,11 +144,15 @@ void realtime (Xpost_Context *ctx)
 #else
         sec = time(NULL) * 1000;
 #endif
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(sec));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(sec)))
+        return stackoverflow;
+    return 0;
 }
 
+/* string  getenv  string
+   return value for environment variable */
 static
-void Sgetenv (Xpost_Context *ctx,
+int Sgetenv (Xpost_Context *ctx,
               Xpost_Object S)
 {
     char *s;
@@ -159,11 +166,14 @@ void Sgetenv (Xpost_Context *ctx,
     if (r)
         xpost_stack_push(ctx->lo, ctx->os, consbst(ctx, strlen(r), r));
     else
-        error(undefined, "getenv returned NULL");
+        return undefined;
+    return 0;
 }
 
+/* string string  putenv
+   set value for environment variable */
 static
-void SSputenv (Xpost_Context *ctx,
+int SSputenv (Xpost_Context *ctx,
               Xpost_Object N,
               Xpost_Object S)
 {
@@ -183,36 +193,41 @@ void SSputenv (Xpost_Context *ctx,
         r[N.comp_.sz + 1 + S.comp_.sz] = '\0';
     }
     putenv(r);
+    return 0;
 }
 
 static
-void traceon (Xpost_Context *ctx)
+int traceon (Xpost_Context *ctx)
 {
     (void)ctx;
     TRACE = 1;
+    return 0;
 }
 static
-void traceoff (Xpost_Context *ctx)
+int traceoff (Xpost_Context *ctx)
 {
     (void)ctx;
     TRACE = 0;
+    return 0;
 }
 
 static
-void debugloadon (Xpost_Context *ctx)
+int debugloadon (Xpost_Context *ctx)
 {
     (void)ctx;
     DEBUGLOAD = 1;
+    return 0;
 }
 static
-void debugloadoff (Xpost_Context *ctx)
+int debugloadoff (Xpost_Context *ctx)
 {
     (void)ctx;
     DEBUGLOAD = 0;
+    return 0;
 }
 
 static
-void Odumpnames (Xpost_Context *ctx)
+int Odumpnames (Xpost_Context *ctx)
 {
     unsigned int names;
     printf("\nGlobal Name stack: ");
@@ -225,18 +240,23 @@ void Odumpnames (Xpost_Context *ctx)
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
     xpost_stack_dump(ctx->lo, names);
     (void)puts("");
+    return 0;
 }
 
+/*
+FIXME: interaction with file dump mechanism ?
+*/
 static
-void dumpvm (Xpost_Context *ctx)
+int dumpvm (Xpost_Context *ctx)
 {
     xpost_memory_file_dump(ctx->lo);
     xpost_memory_table_dump(ctx->lo);
     xpost_memory_file_dump(ctx->gl);
     xpost_memory_table_dump(ctx->gl);
+    return 0;
 }
 
-void initopx(Xpost_Context *ctx,
+int initopx(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;
@@ -274,6 +294,7 @@ void initopx(Xpost_Context *ctx,
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
 
+    return 0;
 }
 
 

@@ -190,7 +190,8 @@ Xpost_Object grok (Xpost_Context *ctx,
              int (*next)(Xpost_Context *ctx, Xpost_Object *src),
              void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src))
 {
-    if (ns == NBUF) error(limitcheck, "grok buf maxxed");
+    if (ns == NBUF)
+        error(limitcheck, "grok buf maxxed");
     s[ns] = '\0';  //fsm_check & consname  terminate on \0
 
     if (fsm_check(s, ns, fsm_dec, accept_dec)) {
@@ -417,7 +418,7 @@ void Fback(Xpost_Context *ctx,
     (void)ungetc(c, filefile(ctx->lo, *F));
 }
 static
-void Ftoken (Xpost_Context *ctx,
+int Ftoken (Xpost_Context *ctx,
              Xpost_Object F)
 {
     Xpost_Object t;
@@ -429,6 +430,7 @@ void Ftoken (Xpost_Context *ctx,
     } else {
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
+    return 0;
 }
 
 static
@@ -452,7 +454,7 @@ void Sback(Xpost_Context *ctx,
     charstr(ctx, *S)[0] = c;
 }
 static
-void Stoken (Xpost_Context *ctx,
+int Stoken (Xpost_Context *ctx,
              Xpost_Object S)
 {
     Xpost_Object t;
@@ -464,9 +466,10 @@ void Stoken (Xpost_Context *ctx,
     } else {
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
     }
+    return 0;
 }
 
-void initoptok(Xpost_Context *ctx,
+int initoptok(Xpost_Context *ctx,
                Xpost_Object sd)
 {
     oper *optab;
@@ -481,5 +484,6 @@ void initoptok(Xpost_Context *ctx,
     op = consoper(ctx, "token", Ftoken, 2, 1, filetype); INSTALL;
     op = consoper(ctx, "token", Stoken, 3, 1, stringtype); INSTALL;
     ctx->opcode_shortcuts.token = op.mark_.padw;
+    return 0;
 }
 

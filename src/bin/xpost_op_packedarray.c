@@ -69,6 +69,7 @@ void *alloca (size_t);
 
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
+#include "xpost_error.h"
 #include "xpost_name.h"
 #include "xpost_string.h"
 #include "xpost_array.h"
@@ -78,7 +79,7 @@ void *alloca (size_t);
 #include "xpost_op_packedarray.h"
 
 static
-void packedarray (Xpost_Context *ctx,
+int packedarray (Xpost_Context *ctx,
                   Xpost_Object n)
 {
     int i;
@@ -87,21 +88,25 @@ void packedarray (Xpost_Context *ctx,
     
     for (i=n.int_.val; i > 0; i--) {
         v = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(v) == invalidtype)
+            return stackunderflow;
         barput(ctx, a, i-1, v);
     }
     a = xpost_object_set_access(xpost_object_cvlit(a), XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
     xpost_stack_push(ctx->lo, ctx->os, a);
+    return 0;
 }
 
 static
-void setpacking (Xpost_Context *ctx,
+int setpacking (Xpost_Context *ctx,
                  Xpost_Object b)
 {
     Xpost_Object sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
     bdcput(ctx, sd, consname(ctx, "currentpacking"), b);
+    return 0;
 }
 
-void initoppa(Xpost_Context *ctx,
+int initoppa(Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -120,6 +125,7 @@ void initoppa(Xpost_Context *ctx,
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
 
+    return 0;
 }
 
 

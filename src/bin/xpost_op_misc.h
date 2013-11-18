@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_MISC_H
 #define XPOST_OP_MISC_H
 
-void initopx(Xpost_Context *ctx, Xpost_Object sd);
+int initopx(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

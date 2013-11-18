@@ -54,22 +54,34 @@
 
 /* helper function */
 static
-void a_copy (Xpost_Context *ctx,
-             Xpost_Object S,
-             Xpost_Object D)
+int a_copy (Xpost_Context *ctx,
+            Xpost_Object S,
+            Xpost_Object D)
 {
     unsigned i;
+    Xpost_Object t;
+
     for (i = 0; i < S.comp_.sz; i++)
-        barput(ctx, D, i, barget(ctx, S, i));
+    {
+        t = barget(ctx, S, i);
+        barput(ctx, D, i, t);
+    }
+
+    return 0;
 }
 
 /* int  array  array
    create array of length int */
 static
-void Iarray (Xpost_Context *ctx,
-             Xpost_Object I)
+int Iarray (Xpost_Context *ctx,
+            Xpost_Object I)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbar(ctx, I.int_.val)));
+    Xpost_Object t;
+
+    t = consbar(ctx, I.int_.val);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(t));
+
+    return 0;
 }
 
 /* -  [  mark
@@ -78,11 +90,13 @@ void Iarray (Xpost_Context *ctx,
 
 /* mark obj0..objN-1  ]  array
    end array construction */
-void arrtomark (Xpost_Context *ctx)
+int arrtomark (Xpost_Context *ctx)
 {
     int i;
     Xpost_Object a, v;
-    Zcounttomark(ctx);
+
+    if (Zcounttomark(ctx))
+        return unmatchedmark;
     i = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
     a = consbar(ctx, i);
     for ( ; i > 0; i--){
@@ -91,127 +105,167 @@ void arrtomark (Xpost_Context *ctx)
     }
     (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(a));
+
+    return 0;
 }
 
 /* array  length  int
    number of elements in array */
 static
-void Alength (Xpost_Context *ctx,
+int Alength (Xpost_Context *ctx,
               Xpost_Object A)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(A.comp_.sz));
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(A.comp_.sz)))
+        return stackoverflow;
+
+    return 0;
 }
 
 /* array index  get  any
    get array element indexed by index */
 static
-void Aget (Xpost_Context *ctx,
+int Aget (Xpost_Context *ctx,
            Xpost_Object A,
            Xpost_Object I)
 {
-    xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, I.int_.val));
+    if (!xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, I.int_.val)))
+        return stackoverflow;
+    return 0;
 }
 
 /* array index any  put  -
    put any into array at index */
 static
-void Aput(Xpost_Context *ctx,
+int Aput(Xpost_Context *ctx,
           Xpost_Object A,
           Xpost_Object I,
           Xpost_Object O)
 {
     barput(ctx, A, I.int_.val, O);
+    return 0;
 }
 
 /* array index count  getinterval  subarray
    subarray of array starting at index for count elements */
 static
-void Agetinterval (Xpost_Context *ctx,
+int Agetinterval (Xpost_Context *ctx,
                    Xpost_Object A,
                    Xpost_Object I,
                    Xpost_Object L)
 {
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(A, I.int_.val, L.int_.val));
+    Xpost_Object subarr = arrgetinterval(A, I.int_.val, L.int_.val);
+    if (xpost_object_get_type(subarr) == invalidtype)
+        return rangecheck;
+    xpost_stack_push(ctx->lo, ctx->os, subarr);
+    return 0;
 }
 
 /* array1 index array2  putinterval  -
    replace subarray of array1 starting at index by array2 */
 static
-void Aputinterval (Xpost_Context *ctx,
+int Aputinterval (Xpost_Context *ctx,
                    Xpost_Object D,
                    Xpost_Object I,
                    Xpost_Object S)
 {
+    Xpost_Object subarr;
     if (I.int_.val + S.comp_.sz > D.comp_.sz)
-        error(rangecheck, "putinterval");
-    a_copy(ctx, S, arrgetinterval(D, I.int_.val, S.comp_.sz));
+        return rangecheck;
+    subarr = arrgetinterval(D, I.int_.val, S.comp_.sz);
+    if (xpost_object_get_type(subarr) == invalidtype)
+        return rangecheck;
+    a_copy(ctx, S, subarr);
+    return 0;
 }
 
 /* array  aload  a0..aN-1 array
    push all elements of array on stack */
 static
-void Aaload (Xpost_Context *ctx,
+int Aaload (Xpost_Context *ctx,
              Xpost_Object A)
 {
     int i;
 
     for (i = 0; i < A.comp_.sz; i++)
-        xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, i));
-    xpost_stack_push(ctx->lo, ctx->os, A);
+        if (!xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, i)))
+            return stackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->os, A))
+        return stackoverflow;
+    return 0;
 }
 
 /* any0..anyN-1 array  astore  array
    pop elements from stack into array */
 static
-void Aastore (Xpost_Context *ctx,
+int Aastore (Xpost_Context *ctx,
               Xpost_Object A)
 {
+    Xpost_Object t;
     int i;
 
     for (i = A.comp_.sz - 1; i >= 0; i--)
-        barput(ctx, A, i, xpost_stack_pop(ctx->lo, ctx->os));
+    {
+        t = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(t) == invalidtype)
+            return stackunderflow;
+        barput(ctx, A, i, t);
+    }
     xpost_stack_push(ctx->lo, ctx->os, A);
+    return 0;
 }
 
 /* array1 array2  copy  subarray2
    copy elements of array1 to initial subarray of array2 */
 static
-void Acopy (Xpost_Context *ctx,
+int Acopy (Xpost_Context *ctx,
             Xpost_Object S,
             Xpost_Object D)
 {
+    Xpost_Object subarr;
     if (D.comp_.sz < S.comp_.sz)
-        error(rangecheck, "Acopy");
+        return rangecheck;
     a_copy(ctx, S, D);
-    xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(D, 0, S.comp_.sz));
+    subarr = arrgetinterval(D, 0, S.comp_.sz);
+    if (xpost_object_get_type(subarr) == invalidtype)
+        return rangecheck;
+    xpost_stack_push(ctx->lo, ctx->os, subarr);
+    return 0;
 }
 
 /* array proc  forall  -
    execute proc for each element of array */
 static
-void Aforall(Xpost_Context *ctx,
+int Aforall(Xpost_Context *ctx,
              Xpost_Object A,
              Xpost_Object P)
 {
     if (A.comp_.sz == 0)
-        return;
+        return 0;
 
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall));
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall)))
+        return execstackoverflow;
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(A, 1, A.comp_.sz - 1)));
-    xpost_stack_push(ctx->lo, ctx->es, P);
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(A, 1, A.comp_.sz - 1))))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+        return execstackoverflow;
     if (xpost_object_is_exe(A)) {
         //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
+        if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+            return execstackoverflow;
     }
-    xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, 0));
+    if (!xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, 0)))
+        return stackoverflow;
+    return 0;
 }
 
-void initopar (Xpost_Context *ctx,
+int initopar (Xpost_Context *ctx,
                Xpost_Object sd)
 {
     oper *optab;
@@ -245,5 +299,7 @@ void initopar (Xpost_Context *ctx,
             arraytype, arraytype); INSTALL;
     op = consoper(ctx, "forall", Aforall, 0, 2,
             arraytype, proctype); INSTALL;
+
+    return 1;
 }
 

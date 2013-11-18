@@ -75,7 +75,8 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
     _(undefinedresult) \
     _(unmatchedmark) /*25*/\
     _(unregistered) \
-    _(VMerror)
+    _(VMerror) \
+    _(unknownerror)
 enum err { ERRORS(AS_BARE) };
 extern char *errorname[] /*= { ERRORS(AS_STR) }*/;
 /* puts(errorname[(enum err)limitcheck]); */

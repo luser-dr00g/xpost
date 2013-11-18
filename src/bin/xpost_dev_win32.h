@@ -1,7 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
- * Copyright (C) 2013, Thorsten Behrens
+ * Copyright (C) 2013, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,56 +29,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef XPOST_ITP_H
-#define XPOST_ITP_H
+#ifndef XPOST_DEV_WIN32_H
+#define XPOST_DEV_WIN32_H
 
 /**
- * @brief the interpreter
-
- * The interpreter module manages the itpdata structure, allocating
- * contexts from a table, and allocating memory files to the contexts
- * also from tables. The itpdata structure thus encapsulates the entire
- * dynamic state of the interpreter as a whole.
- *
- * The interpreter module also contains functions for eval actions,
- * the core interpreter loop,
-   */
-
-#define MAXCONTEXT 10
-#define MAXMFILE 10
-
-typedef struct {
-    Xpost_Context ctab[MAXCONTEXT];
-    unsigned cid;
-    Xpost_Memory_File gtab[MAXMFILE];
-    Xpost_Memory_File ltab[MAXMFILE];
-    int in_onerror;
-} Xpost_Interpreter;
-
-
-#include <setjmp.h>
-extern Xpost_Interpreter *itpdata;
-extern int initializing;
-extern int ignoreinvalidaccess;
-extern jmp_buf jbmainloop;
-extern int jbmainloopset;
-
-/*@NULL@*/
-Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void);
-/*@NULL@*/
-Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void);
-unsigned xpost_interpreter_cid_init(void);
-Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid);
-
-extern int TRACE;
-
-int xpost_interpreter_init(Xpost_Interpreter *itp);
-void xpost_interpreter_exit(Xpost_Interpreter *itp);
-
-/* 3 simple top-level functions */
-
-int xpost_create(void);
-void xpost_run(void);
-void xpost_destroy(void);
+ * @brief install operator loadWin32device
+ */
+int initwin32ops (Xpost_Context *ctx,
+                  Xpost_Object sd);
 
 #endif
