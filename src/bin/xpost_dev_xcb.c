@@ -260,7 +260,7 @@ int _destroy (Xpost_Context *ctx,
 
 
 /* operator function to instantiate a new window device.
-   installed in userdict by calling 'initXXXdevice'.
+   installed in userdict by calling 'loadXXXdevice'.
  */
 static
 int newxcbdevice (Xpost_Context *ctx,
@@ -346,6 +346,10 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     return 0;
 }
 
+/*
+   install the loadXXXdevice which may be called during graphics initialization
+   to produce the operator newXXXdevice which instantiates the device dictionary.
+*/
 int initxcbops (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
