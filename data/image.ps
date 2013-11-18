@@ -126,11 +126,12 @@ DATA_DIR(/qsort.ps)strcat run
 
     /FillRect { % val x y w h IMAGE  .  -
     begin {h w y x val}{exch def}forall
-        val 0 1 w { x add  % val x
-            0 1 h { y add  % val x y
-                3 copy currentdict  % val x y val x y
-                PutPix  % val x y
-                pop  % val x
+        val 0 1 h { y add  % val y
+            0 1 w { x add  % val y x
+                3 copy exch % val y x val x y
+                currentdict  % val y x val x y IMAGE
+                PutPix  % val y x
+                pop  % val y
             } for
             pop % val
         } for
