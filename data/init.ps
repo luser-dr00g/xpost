@@ -421,7 +421,10 @@ end % userdict
 
 % load experimental graphics support
 /loadgraphics {
-    DATA_DIR (/graphics.ps) strcat run
+    /GRAPHICS_LOADED where { pop }{
+        DATA_DIR (/graphics.ps) strcat run
+        userdict /GRAPHICS_LOADED true put
+    } ifelse
     initgraphics
 } def
 

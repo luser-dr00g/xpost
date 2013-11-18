@@ -1,0 +1,20 @@
+loadgraphics
+
+/randbox {
+    rand 100 mod
+    rand 100 mod
+    rand 300 mod
+    rand 400 mod
+    moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+} def
+
+10 { randbox fill newpath } repeat
+showpage
+
+10 { randbox stroke newpath } repeat
+showpage
+
