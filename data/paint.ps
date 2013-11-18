@@ -16,9 +16,7 @@
         exch 1 sub exch 1 sub
         DEVICE dup /FillRect get exec
 
-        DEVICE /Flush known {
-            DEVICE dup /Flush get exec
-        } if
+        flushpage
     grestore
 } def
 
@@ -34,9 +32,7 @@
         exch DEVICE dup /FillPoly get exec
     } forall
 
-    DEVICE /Flush known {
-        DEVICE dup /Flush get exec
-    } if
+    flushpage
 
     newpath
 } def
@@ -78,9 +74,7 @@
         strokepath fill
     } ifelse
 
-    DEVICE /Flush known {
-        DEVICE dup /Flush get exec
-    } if
+    flushpage
 
     newpath
 } def

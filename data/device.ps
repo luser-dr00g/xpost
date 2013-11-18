@@ -23,12 +23,16 @@ DEVICE begin
     /defaultmatrix [ 1 0 0 1 0 0 ] def
 end
 
-/showpage {
-    DEVICE dup /Emit get exec
-
+/flushpage {
     DEVICE /Flush known {
         DEVICE dup /Flush get exec
     } if
+} def
+
+/showpage {
+    DEVICE dup /Emit get exec
+    flushpage
+
     (----showpage----) =print flush
     [ {(%lineedit)(r)file}stopped cleartomark
 
@@ -39,10 +43,7 @@ end
         1 put
     } ifelse
     erasepage
-
-    DEVICE /Flush known {
-        DEVICE dup /Flush get exec
-    } if
+    flushpage
 } def
 
 (eof device.ps)=

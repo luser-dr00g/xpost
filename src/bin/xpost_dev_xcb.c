@@ -186,6 +186,7 @@ int _putpix (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
+    int h, w;
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(val) == realtype)
@@ -199,6 +200,10 @@ int _putpix (Xpost_Context *ctx,
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
+    w = bdcget(ctx, devdic, consname(ctx,"width")).int_.val;
+    h = bdcget(ctx, devdic, consname(ctx,"height")).int_.val;
+    if (x.int_.val >= w || y.int_.val >= h)
+        return 0;
 
     {
         xcb_alloc_color_reply_t *rep;
@@ -266,6 +271,7 @@ int _fillrect (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
+    int w,h;
     int i,j;
 
     /* fold numbers to integertype */
@@ -291,11 +297,22 @@ int _fillrect (Xpost_Context *ctx,
         height.int_.val = abs(height.int_.val);
         y.int_.val -= height.int_.val;
     }
+    if (x.int_.val < 0) x.int_.val = 0;
+    if (y.int_.val < 0) y.int_.val = 0;
 
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
+    w = bdcget(ctx, devdic, consname(ctx,"width")).int_.val;
+    h = bdcget(ctx, devdic, consname(ctx,"height")).int_.val;
+
+    if (x.int_.val >= w || y.int_.val >= h)
+        return 0;
+    if (x.int_.val + width.int_.val > w)
+        width.int_.val = w - x.int_.val;
+    if (y.int_.val + height.int_.val > h)
+        height.int_.val = h - y.int_.val;
 
     {
         xcb_alloc_color_reply_t *rep;
