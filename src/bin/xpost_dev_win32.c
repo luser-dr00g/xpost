@@ -34,6 +34,7 @@
 #endif
 
 #include <assert.h>
+#include <stdlib.h> /* malloc free */
 #include <string.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -259,6 +260,8 @@ int _putpix (Xpost_Context *ctx,
 
     if (xpost_object_get_type(val) == realtype)
         val = xpost_cons_int(val.real_.val);
+    if (val.int_.val < 0) val.int_.val = 0;
+    if (val.int_.val > 255) val.int_.val = 255;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -268,7 +271,7 @@ int _putpix (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof private, &private);
 
-    private.buf[y.int_.val * private.width + x.int_.val] = 0 << 24 | 255 << 8 | 0;
+    private.buf[y.int_.val * private.width + x.int_.val] = val.int_.val << 24 | val.int_.val << 8 | val.int_.val;
 
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
