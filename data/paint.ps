@@ -30,9 +30,8 @@
     {
         currentgray 255 mul cvi
         exch DEVICE dup /FillPoly get exec
+        flushpage
     } forall
-
-    flushpage
 
     newpath
 } def
