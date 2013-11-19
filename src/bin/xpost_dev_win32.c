@@ -307,7 +307,9 @@ int _getpix (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof private, &private);
 
-    return private.buf[y.int_.val * private.width + x.int_.val];
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_int(private.buf[y.int_.val * private.width + x.int_.val]));
+    return 0;
 }
 
 static

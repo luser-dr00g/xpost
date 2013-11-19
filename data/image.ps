@@ -75,6 +75,14 @@ DATA_DIR(/qsort.ps)strcat run
 
     /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
     begin {y2 x2 y1 x1 val}{exch def}forall
+        x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect pop {y1 x1}{exch def}forall }if
+        x2 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect pop {y2 x2}{exch def}forall }if
+        y1 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect pop {y1 x1}{exch def}forall }if
+        y2 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect pop {y2 x2}{exch def}forall }if
+        x1 width ge { x1 y1 x2 y2 width 0 width height .intersect pop {y1 x1}{exch def}forall }if
+        x2 width ge { x1 y1 x2 y2 width 0 width height .intersect pop {y2 x2}{exch def}forall }if
+        y1 width ge { x1 y1 x2 y2 0 height width height .intersect pop {y1 x1}{exch def}forall }if
+        y2 width ge { x1 y1 x2 y2 0 height width height .intersect pop {y2 x2}{exch def}forall }if
         /x x1 def
         /y y1 def
         x2 x1 sub  dup abs /dx exch def
@@ -212,7 +220,7 @@ DATA_DIR(/qsort.ps)strcat run
 
         /x_max width .5 add def
 
-        % intersect polygon edges with scanlines
+        (intersect polygon edges with scanlines)=
         /P poly poly length 1 sub get def
         [
         poly {
@@ -235,7 +243,7 @@ DATA_DIR(/qsort.ps)strcat run
         ]        % [list-of-x/y-intersections
         dup ==()=
 
-        % sort list
+        (sort scanline intersection list)=
         dup { % comparitor  % [x1 y1] [x2 y2] . bool
             1 index 1 get
             1 index 1 get
@@ -251,19 +259,24 @@ DATA_DIR(/qsort.ps)strcat run
         } qsort   % [sorted-list-of-intersections]
         dup ==()=
 
+        %(%lineedit)(r)file pop %pause
+
+        (set pixels on each scanline)=
         aload length 2 idiv { % repeat
             exch aload pop
             3 2 roll aload pop
-            pop                        % xa ya xb
-            3 2 roll                   % ya xb xa
-            exch 1 exch                % ya xa 1 xb
-            dup width ge { pop width 1 sub } if
-            { % for                    % ya x
-                val exch               % ya val x
-                2 index                % ya val x ya 
-                currentdict PutPix
-            } for
-            pop
+            val 5 1 roll
+            currentdict DrawLine
+%            pop                        % xa ya xb
+%            3 2 roll                   % ya xb xa
+%            exch 1 exch                % ya xa 1 xb
+%            dup width ge { pop width 1 sub } if
+%            { % for                    % ya x
+%                val exch               % ya val x
+%                2 index                % ya val x ya 
+%                currentdict PutPix
+%            } for
+%            pop
         } repeat
 
     end } %FillPoly
@@ -324,138 +337,9 @@ DATA_DIR(/qsort.ps)strcat run
 } if
 
 
-
 %currentfile flushfile
 
-
 { % pop % Rough draft ...
-
-/img8 { % w h  img8  [img]
-    dup array 3 1 roll % a w h
-    0 1 3 2 roll 1 sub { % a w i
-        3 copy exch string put pop
-    } for
-    pop
-} def
-
-/toint {
-    round
-    cvi
-} def
-
-/getpix8 { % img x y  getpix8  b
-    exch toint
-    exch toint        % img xi yi
-    3 2 roll exch         % x img y
-    get exch get
-} def
-
-/putpix8 { % img x y b  putpix8  -
-    3 1 roll              % img b x y
-    exch toint
-    exch toint        % img b xi yi
-    3 2 roll              % img xi yi b
-    exch 4 3 roll exch    % x b img y
-    get 3 1 roll put
-} def
-
-/Sign {
-    dup 0 le {
-        0 lt {
-            -1
-        }{
-            0
-        } ifelse
-    }{
-        pop 1
-    } ifelse
-} def
-
-/drawline8 { % img x1 y1 x2 y2 b  drawline8  -
-    6 dict begin
-    {b y2 x2 y1 x1 a}{exch def}forall
-    /x x1 def
-    /y y1 def
-    x2 x1 sub  dup abs /dx exch def
-        Sign /s1 exch def
-    y2 y1 sub  dup abs /dy exch def
-        Sign /s2 exch def
-    /interchange dy dx gt def
-    interchange { /dx dy /dy dx def def } if
-    /e 2 dy mul dx sub def
-    1 1 dx { pop
-        a x y b putpix8
-        {
-            e 0 ge not {exit} if
-            interchange {
-                /x x s1 add def
-            }{
-                /y y s2 add def
-            } ifelse
-            /e e 2 dx mul sub def
-        } loop
-        interchange {
-            /y y s2 add def
-        }{
-            /x x s1 add def
-        } ifelse
-        /e e 2 dy mul add def
-    } for
-    end
-} def
-
-% |-----
-% |    |
-% |    |
-% |-----
-/drawrect8 { % a x y w h b
-    6 dict begin
-    {b h w y x a}{exch def}forall
-    x
-    0 1 h { y add
-        a exch % x a y+h
-        2 index % x a y+h x
-        exch b putpix8
-    } for
-    w add
-    1 1 h 1 sub { y add
-        a exch % x a y+h
-        2 index % x a y+h x
-        exch b putpix8
-    } for
-    pop
-    y
-    1 1 w { x add
-        a exch % y a x+w
-        2 index % y a x+w y
-        b putpix8
-    } for
-    h add
-    1 1 w { x add
-        a exch % y a x+w
-        2 index % y a x+w y
-        b putpix8
-    } for
-    pop
-} def
-
-/fillrect8 { % a x y w h b
-    6 dict begin
-    {b h w y x a}{exch def}forall
-    0 1 h { y add
-        0 1 w { x add
-            a exch % y+h a x+w
-            2 index % y+h a x+w y+h
-            b putpix8
-        } for
-        pop
-    } for
-    end
-} def
-
-/erase8 {
-    0 0 2 index length 3 index 0 get length 1 sub exch 1 sub 0 fillrect8
-} def
 
 % (filename)  loadimg8  img true
 %                       false
@@ -489,17 +373,6 @@ DATA_DIR(/qsort.ps)strcat run
     end
 } def
 
-/printimg8 { % PGM format
-    (P2\n)=only
-    dup 0 get length =only %w
-    ( )=only
-    dup length =only %h
-    (\n)=only
-    (255\n)=only %max
-    {{=only( )=only}forall(\n)=only}forall %data
-    (\n)=only
-} def
-
 /saveimg8 { % img (filename)
     (w) file
     2 dict begin
@@ -521,48 +394,6 @@ DATA_DIR(/qsort.ps)strcat run
     end
 } def
 
-
-% x1 y1 x2 y2 x3 y3 x4 y4  .  x5 y5 true
-%                             false
-% inspired by the code at http: / / alienryderflex.com/intersect/
-/intersect { 8 dict begin
-    {Dy Dx Cy Cx By Bx Ay Ax}{exch def}forall
-    {
-        % reject degenerate line
-        Ax Bx eq Ay By eq and Cx Dx eq Cy Dy eq and or {stop} if
-
-        % reject coinciding endpoints
-        Ax Cx eq Ay Cy eq and Bx Cx eq By Cy eq and or
-        Ax Dx eq Ay Dy eq and or Bx Dx eq By Dy eq and or {stop} if
-
-        % translate by -Ax,-Ay
-        /Bx Bx Ax sub def /By By Ay sub def
-        /Cx Cx Ax sub def /Cy Cy Ay sub def
-        /Dx Dx Ax sub def /Dy Dy Ay sub def
-
-        % length of AB
-        /distAB Bx Bx mul By By mul add sqrt def
-
-        % rotate AB to x-axis
-        /theCos Bx distAB div def
-        /theSin By distAB div def
-        /newX Cx theCos mul Cy theSin mul add def
-        /Cy   Cy theCos mul Cx theSin mul sub def /Cx newX def
-        /newX Dx theCos mul Dy theSin mul add def
-        /Dy   Dy theCos mul Dx theSin mul sub def /Dx newX def
-
-        % no intersection
-        Cy 0 lt Dy 0 lt and Cy 0 ge Dy 0 ge and or {stop} if
-
-        /ABpos Dx Cx Dx sub Dy mul Dy Cy sub div add def
-        ABpos 0 lt ABpos distAB gt or {stop} if % intersection not on segment
-        Ax ABpos theCos mul add
-        Ay ABpos theSin mul add
-    } stopped not
-end } def
-
-%0 0 10 10 0 10 10 0 intersect pstack clear
-%0 0 10 0  5 0 5 5 intersect pstack
 
 /inside { 3 dict begin
     {p y x}{exch def}forall
@@ -681,51 +512,5 @@ end } def
 
 } pop
 
-{
-
-    {
-    /p 20 20 img8 def
-    p 1 1 5 putpix8
-    p 2 2 6 putpix8
-    p 3 3 7 putpix8
-    p 2 2 9 15 9 drawline8
-    p 3 3 14 14 4 drawrect8
-    p (mysavedimg.pgm) saveimg8
-    } pop%exec
-
-    %/p (mysavedimg.pgm) loadimg8 { def p printimg8 } if
-
-
-    {
-    /p 8 8 img8 def
-    <<
-        /A [ {0 6 2 0} {3 0 7 7} {1 4 6 4} ]
-        /B [ {0 0 0 7} {1 0 6 0} {6 1 6 3} {1 3 6 3} {6 4 6 6} {1 6 6 6} ]
-        /C [ {6 0 1 0} {1 1 0 2} {0 2 0 5} {1 5 2 7} {3 6 7 6} ]
-        /D [ {0 0 0 7} {0 6 5 6} {5 5 6 4} {6 4 6 1} {5 1 4 0} {4 0 0 0} ]
-    >>
-    {
-        exch (#)print =
-            pstack
-        { p exch {}forall 1 drawline8 } forall p printimg8 
-        p erase8
-    } forall
-    } pop%exec
-
-    {
-    /im 14 14 img8 def
-    im [ [4 1] [7 13] [11 2] ] 1 fillpolygon8simple
-    im [ [5 2] [6 10] [9 4] ] 2 fillpolygon8simple
-    im printimg8
-    } pop%exec
-
-    {
-    /im 15 15 img8 def
-    im [ [4 1] [7 13] [11 2] ] 1 fillpolygon8
-    %im [ [5 2] [6 10] [9 4] ] 2 fillpolygon8
-    im printimg8
-    } exec
-
-} pop
 
 (eof image.ps)=
