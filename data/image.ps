@@ -203,7 +203,7 @@ DATA_DIR(/qsort.ps)strcat run
 
         dup { 3 copy =only( )=only exch =only( )=only =only } if ()=
 
-    end } def
+    end }
 
     /FillPoly { % val polygon IMAGE  .  -
     begin {poly val}{exch def}forall
@@ -290,7 +290,7 @@ DATA_DIR(/qsort.ps)strcat run
         (255\n)=only %max
         {{=only( )=only}forall(\n)=only}forall %data
         (\n)=only
-    } def
+    }
 
     /.writepgm { % img (filename)
         2 dict begin
@@ -309,7 +309,7 @@ DATA_DIR(/qsort.ps)strcat run
             f (\n) writestring
         } forall
         end
-    } def
+    }
 
     /Emit {
     begin
