@@ -75,6 +75,14 @@ unsigned int _event_handler_opcode;
 static
 int _event_handler (Xpost_Context *ctx)
 {
+    Xpost_Object devdic;
+    int ret;
+
+    ret = Aload(ctx, consname(ctx, "DEVICE"));
+    if (ret)
+        return ret;
+    devdic = xpost_stack_pop(ctx->lo, ctx->os);
+
     return 0;
 }
 
@@ -384,6 +392,8 @@ int _destroy (Xpost_Context *ctx,
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
             sizeof private, &private);
+
+    xpost_context_install_event_handler(ctx, null);
 
     xcb_disconnect(private.c);
 
