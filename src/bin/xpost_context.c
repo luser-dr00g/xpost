@@ -302,6 +302,13 @@ void xpost_context_dump(Xpost_Context *ctx)
     /*dumpnames(ctx);*/
 }
 
+int xpost_context_install_event_handler(Xpost_Context *ctx,
+                                        Xpost_Object operator)
+{
+    ctx->event_handler = operator;
+    return 1;
+}
+
 /*
    fork new process with private global and private local vm
    (spawn jobserver)

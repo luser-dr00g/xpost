@@ -70,6 +70,16 @@ typedef struct {
 
 
 static
+unsigned int _event_handler_opcode;
+
+static
+int _event_handler (Xpost_Context *ctx)
+{
+    return 0;
+}
+
+
+static
 unsigned int _create_cont_opcode;
 
 /* create an instance of the device
@@ -170,6 +180,9 @@ int _create_cont (Xpost_Context *ctx,
     private.cmap = xcb_generate_id(private.c);
     xcb_create_colormap(private.c, XCB_COLORMAP_ALLOC_NONE, private.cmap,
             private.win, private.scr->root_visual);
+
+    xpost_context_install_event_handler(ctx, operfromcode(_event_handler_opcode));
+
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
@@ -378,6 +391,7 @@ int _destroy (Xpost_Context *ctx,
 }
 
 
+
 /* operator function to instantiate a new window device.
    installed in userdict by calling 'loadXXXdevice'.
  */
@@ -465,6 +479,9 @@ int loadxcbdevicecont (Xpost_Context *ctx,
 
     op = consoper(ctx, "newxcbdevice", newxcbdevice, 1, 2, integertype, integertype);
     bdcput(ctx, userdict, consname(ctx, "newxcbdevice"), op);
+
+    op = consoper(ctx, "xcbEventHandler", _event_handler, 0, 0);
+    _event_handler_opcode = op.mark_.padw;
 
     return 0;
 }
