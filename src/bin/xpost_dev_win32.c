@@ -77,6 +77,24 @@ typedef struct
 
 
 static
+unsigned int _event_handler_opcode;
+
+static
+int _event_handler (Xpost_Context *ctx)
+{
+    Xpost_Object devdic;
+    int ret;
+
+    ret = Aload(ctx, consname(ctx, "DEVICE"));
+    if (ret)
+        return ret;
+    devdic = xpost_stack_pop(ctx->lo, ctx->os);
+
+    return 0;
+}
+
+
+static
 unsigned int _create_cont_opcode;
 
 static LRESULT CALLBACK
@@ -233,6 +251,8 @@ int _create_cont (Xpost_Context *ctx,
         goto free_bitmap_info;
     }
 
+    xpost_context_install_event_handler(ctx, operfromcode(_event_handler_opcode));
+
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof(private), &private);
@@ -346,6 +366,8 @@ int _destroy (Xpost_Context *ctx,
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
                      sizeof(private), &private);
+
+    xpost_context_install_event_handler(ctx, null);
 
     free(private.bitmap_info);
     ReleaseDC(private.window, private.ctx);
