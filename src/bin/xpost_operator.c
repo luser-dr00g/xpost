@@ -317,7 +317,8 @@ int opexec(Xpost_Context *ctx,
                         || xpost_object_get_type(el) == realtype) ) continue;
             if (t[j] == floattype) {
                 if (xpost_object_get_type(el) == integertype) {
-                    xpost_stack_topdown_replace(ctx->lo, ctx->os, j, el = promote(el));
+                    if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, j, el = promote(el)))
+                        return unregistered;
                     continue;
                 }
                 if (xpost_object_get_type(el) == realtype) continue;

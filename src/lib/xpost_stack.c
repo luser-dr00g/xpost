@@ -181,10 +181,11 @@ Xpost_Object xpost_stack_bottomup_fetch (Xpost_Memory_File *mem,
 
 int xpost_stack_bottomup_replace (Xpost_Memory_File *mem,
         unsigned int stackadr,
-        int i,
+        int idx,
         Xpost_Object obj)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
+    int i = idx;
 
     /* find desired segment */
     while (i >= XPOST_STACK_SEGMENT_SIZE)
@@ -192,8 +193,9 @@ int xpost_stack_bottomup_replace (Xpost_Memory_File *mem,
         i -= XPOST_STACK_SEGMENT_SIZE;
         if (s->nextseg == 0)
         {
-            XPOST_LOG_ERR("%d can't find stack segment for index",
-                    unregistered);
+            XPOST_LOG_ERR("%d can't find stack segment for index %d in stack of size %u",
+                    unregistered, idx,
+                    xpost_stack_count(mem, stackadr));
             return 0;
         }
         s = (Xpost_Stack *)(mem->base + s->nextseg);

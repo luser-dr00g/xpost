@@ -75,14 +75,14 @@ DATA_DIR(/qsort.ps)strcat run
 
     /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
     begin {y2 x2 y1 x1 val}{exch def}forall
-        x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect pop {y1 x1}{exch def}forall }if
-        x2 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect pop {y2 x2}{exch def}forall }if
-        y1 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect pop {y1 x1}{exch def}forall }if
-        y2 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect pop {y2 x2}{exch def}forall }if
-        x1 width ge { x1 y1 x2 y2 width 0 width height .intersect pop {y1 x1}{exch def}forall }if
-        x2 width ge { x1 y1 x2 y2 width 0 width height .intersect pop {y2 x2}{exch def}forall }if
-        y1 width ge { x1 y1 x2 y2 0 height width height .intersect pop {y1 x1}{exch def}forall }if
-        y2 width ge { x1 y1 x2 y2 0 height width height .intersect pop {y2 x2}{exch def}forall }if
+        x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect { {y1 x1}{exch def}forall } if } if
+        x2 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect { {y2 x2}{exch def}forall } if } if
+        y1 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect { {y1 x1}{exch def}forall } if } if
+        y2 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect { {y2 x2}{exch def}forall } if } if
+        x1 width ge { x1 y1 x2 y2 width 0 width height .intersect { {y1 x1}{exch def}forall } if } if
+        x2 width ge { x1 y1 x2 y2 width 0 width height .intersect { {y2 x2}{exch def}forall } if } if
+        y1 width ge { x1 y1 x2 y2 0 height width height .intersect { {y1 x1}{exch def}forall } if } if
+        y2 width ge { x1 y1 x2 y2 0 height width height .intersect { {y2 x2}{exch def}forall } if } if
         /x x1 def
         /y y1 def
         x2 x1 sub  dup abs /dx exch def
