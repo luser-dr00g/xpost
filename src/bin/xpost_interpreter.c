@@ -686,7 +686,11 @@ int xpost_create(void)
 
     /* make systemdict readonly */
     bdcput(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
-    xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    if (!xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY)))
+    {
+        XPOST_LOG_ERR("cannot replace systemdict in dict stack");
+        return 0;
+    }
 
     return 1;
 }
@@ -734,7 +738,7 @@ void xpost_destroy(void)
     //dumpoper(ctx, 1); // is this pointer value constant?
     printf("bye!\n");
     fflush(NULL);
-    collect(itpdata->ctab->gl, 1, 1);
+    //collect(itpdata->ctab->gl, 1, 1);
     xpost_interpreter_exit(itpdata);
     free(itpdata);
 }

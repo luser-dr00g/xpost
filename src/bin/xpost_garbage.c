@@ -103,11 +103,13 @@ void markent(Xpost_Memory_File *mem,
 /* is it marked? */
 static
 int marked(Xpost_Memory_File *mem,
-        unsigned ent)
+        unsigned ent, int *retval)
 {
     Xpost_Memory_Table *tab = (void *)(mem->base);
-    xpost_memory_table_find_relative(mem,&tab,&ent);
-    return (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) >> XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET;
+    if (!xpost_memory_table_find_relative(mem,&tab,&ent))
+        return 0;
+    *retval = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) >> XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET;
+    return 1;
 }
 
 /* recursively mark an object */
@@ -154,6 +156,7 @@ void markobject(Xpost_Context *ctx,
         int markall)
 {
     unsigned int ad;
+    int ret;
 
     switch(xpost_object_get_type(o)) {
     default: break;
@@ -168,7 +171,10 @@ void markobject(Xpost_Context *ctx,
             else
                 break;
         }
-        if (!marked(mem, o.comp_.ent)) {
+        if (!mem) return;
+        if (!marked(mem, o.comp_.ent, &ret))
+            break;
+        if (!ret) {
             markent(mem, o.comp_.ent);
             xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
             markarray(ctx, mem, ad, o.comp_.sz, markall);
@@ -185,7 +191,9 @@ void markobject(Xpost_Context *ctx,
             else
                 break;
         }
-        if (!marked(mem, o.comp_.ent)) {
+        if (!marked(mem, o.comp_.ent, &ret))
+            break;
+        if (!ret) {
             markent(mem, o.comp_.ent);
             xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
             markdict(ctx, mem, ad, markall);
@@ -217,7 +225,7 @@ void markobject(Xpost_Context *ctx,
 
 /* mark all allocations referred to by objects in stack */
 static
-void markstack(Xpost_Context *ctx,
+int markstack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned stackadr,
         int markall)
@@ -234,6 +242,8 @@ next:
         markobject(ctx, mem, s->data[i], markall);
     }
     if (i==XPOST_STACK_SEGMENT_SIZE) { /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
+        if (s->nextseg == 0)
+            return 0;
         s = (Xpost_Stack *)(mem->base + s->nextseg);
         goto next;
     }
@@ -242,6 +252,7 @@ next:
     /*     xpost_stack_free(mem, s->nextseg); */
     /*     s->nextseg = 0; */
     /* } */
+    return 1;
 }
 
 /* mark all allocations referred to by objects in save object's stack of saverec_'s */

@@ -153,6 +153,7 @@ int IIroll (Xpost_Context *ctx,
              Xpost_Object J)
 {
     Xpost_Object *t;
+    Xpost_Object r;
     int i;
     int n = N.int_.val;
     int j = J.int_.val;
@@ -165,12 +166,25 @@ int IIroll (Xpost_Context *ctx,
     
     t = alloca((n-j) * sizeof(Xpost_Object));
     for (i = 0; i < n-j; i++)
-        t[i] = xpost_stack_topdown_fetch(ctx->lo, ctx->os, n - 1 - i);
+    {
+        r = xpost_stack_topdown_fetch(ctx->lo, ctx->os, n - 1 - i);
+        if (xpost_object_get_type(r) == invalidtype)
+            return unregistered;
+        t[i] = r;
+    }
     for (i = 0; i < j; i++)
-        xpost_stack_topdown_replace(ctx->lo, ctx->os, n - 1 - i,
-                xpost_stack_topdown_fetch(ctx->lo, ctx->os, j - 1 - i));
+    {
+        r = xpost_stack_topdown_fetch(ctx->lo, ctx->os, j - 1 - i);
+        if (xpost_object_get_type(r) == invalidtype)
+            return unregistered;
+        if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, n - 1 - i, r))
+            return unregistered;
+    }
     for (i = 0; i < n-j; i++)
-        xpost_stack_topdown_replace(ctx->lo, ctx->os, n - j - 1 - i, t[i]);
+    {
+        if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, n - j - 1 - i, t[i]))
+            return unregistered;
+    }
     return 0;
 }
 
