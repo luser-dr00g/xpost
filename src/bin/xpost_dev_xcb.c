@@ -166,7 +166,10 @@ int _create_cont (Xpost_Context *ctx,
                 values);
     }
 
-    private.cmap = private.scr->default_colormap;
+    //private.cmap = private.scr->default_colormap;
+    private.cmap = xcb_generate_id(private.c);
+    xcb_create_colormap(private.c, XCB_COLORMAP_ALLOC_NONE, private.cmap,
+            private.win, private.scr->root_visual);
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
@@ -202,7 +205,7 @@ int _putpix (Xpost_Context *ctx,
             privatestr.comp_.ent, 0, sizeof private, &private);
     w = bdcget(ctx, devdic, consname(ctx,"width")).int_.val;
     h = bdcget(ctx, devdic, consname(ctx,"height")).int_.val;
-    if (x.int_.val >= w || y.int_.val >= h)
+    if (x.int_.val < 0 || x.int_.val >= w || y.int_.val < 0 || y.int_.val >= h)
         return 0;
 
     {

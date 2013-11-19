@@ -282,6 +282,12 @@ int _putpix (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof private, &private);
 
+    /* check bounds */
+    if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic, consname(ctx, "width")).int_.val)
+        return 0;
+    if (y.int_.val < 0 || y.int_.val >= bdcget(ctx, devdic, consname(ctx, "height")).int_.val)
+        return 0;
+
     private.buf[y.int_.val * private.width + x.int_.val] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
 
     dc = CreateCompatibleDC(private.ctx);
