@@ -424,6 +424,10 @@ int eval(Xpost_Context *ctx)
         printf("\n");
     }
 
+    if (xpost_object_get_type(ctx->event_handler) != nulltype) {
+        opexec(ctx, ctx->event_handler.mark_.padw);
+    }
+
     if ( xpost_object_is_exe(t) ) /* if executable */
         ret = evaltype[xpost_object_get_type(t)](ctx);
     else

@@ -68,4 +68,10 @@ Xpost_Memory_File *xpost_context_select_memory(Xpost_Context *ctx, Xpost_Object 
  */
 void xpost_context_dump(Xpost_Context *ctx);
 
+/**
+ * @brief install a function to be called by eval()
+ */
+int xpost_context_install_event_handler(Xpost_Context *ctx,
+                                        Xpost_Object operator);
+
 #endif
