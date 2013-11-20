@@ -1,0 +1,103 @@
+%!
+%qsort.ps % quicksort for comparable base types
+%
+% exports 1 procedure:
+%
+%           array  qsort  -
+%      array proc  qsort  -
+% sort array contents in-place using proc or `lt` for comparisons
+
+/qsort where { pop currentfile flushfile } if
+
+7 dict begin
+/qsortdict currentdict def
+
+%/args { dup 1 add copy -1 1 { -1 roll ==only( )=only } for pop ()= } def
+
+/swap { % a i j
+    2 index exch  % a i a j
+    4 copy get    % a i a j a i a_j
+    3 1 roll get  % a i a j a_j a_i
+    exch 4 1 roll % a i a_j a j a_i
+    put put
+} bind def
+
+% array left right pivotIndex
+/partition { %4 args
+    %4 dict begin
+        %{pivotIndex right left arr}{exch def}forall
+        %/pivotValue arr pivotIndex get def
+        %arr pivotIndex right swap
+        %/storeIndex left def
+        %left 1 right 1 sub { % i
+            %arr 1 index get pivotValue lt { % i
+                %arr 1 index storeIndex swap
+                %/storeIndex storeIndex 1 add def
+            %} if pop
+        %arr storeIndex right swap
+        %storeIndex
+    %end
+    3 index 1 index get % a l r pI p
+    4 index 3 index 3 index % a l r pI p  a r pI
+    //swap exec % a l r pI p
+    3 index % a l r pI p sI
+    dup 1 5 index 1 sub { % a l r pI p sI  i
+        6 index 1 index get 3 index cmp { % a l r pI p sI  i
+            6 index exch 2 index % a l r pI p sI  a i sI
+            //swap exec % a l r pI p sI
+            1 add % a l r pI p sI+1
+        }{ pop } ifelse
+    } for % a l r pI p sI
+    5 index 1 index 5 index % a l r pI p sI  a sI r
+    //swap exec % a l r pI p sI
+    6 1 roll pop pop pop pop pop
+} bind def
+
+% array left right
+/quicksort { %3 args
+    2 copy ge { pop pop pop }{
+        3 copy
+            2 copy exch sub 2 idiv % a l r arr left right pivotIndex
+            2 index add % pivotIndex = l + _(r-l)/2_
+            //partition exec  % a l r newpivotIndex
+        4 copy 1 add 3 2 roll pop exch % a l r p a p+1 r
+        7 3 roll % a p+1 r a l r p
+        exch pop 1 sub % a p+1 r  a l p-1
+        quicksort
+        quicksort
+    } ifelse
+} bind def
+
+/qsort {
+    //qsortdict begin
+    dup xcheck not{ {lt} }if
+    /cmp exch def
+    0 1 index length 1 sub quicksort
+    end
+} bind
+end % qsortdict
+def
+
+currentfile flushfile %comment-out this line to test
+
+[ 8 3 9 2 4 83 0 29 1 8 22 55 12 99 201 333 999]
+dup qsort pstack
+dup { gt } qsort pstack pop
+(the quick fox jumped over the lazy dog) dup qsort pstack
+clear
+
+<<
+0 5
+1 12
+2 67
+3 900
+4 59
+5 32
+>> dup qsort 
+dup [ exch { pop } forall ] dup qsort
+pstack
+{
+    2 copy get
+    exch =only( )=only =only(\n)print
+} forall
+
