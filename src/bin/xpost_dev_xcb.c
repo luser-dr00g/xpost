@@ -58,12 +58,9 @@
 
 typedef struct {
     xcb_connection_t *c;
-    int scrno;
     xcb_screen_t *scr;
     xcb_drawable_t win;
     int width, height;
-    unsigned char  depth;
-    unsigned char format;
     xcb_pixmap_t img;
     xcb_gcontext_t gc;
     xcb_colormap_t cmap;
@@ -123,11 +120,13 @@ int _create_cont (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
+    xcb_screen_iterator_t iter;
+    xcb_get_geometry_reply_t *geom;
     integer width = w.int_.val;
     integer height = h.int_.val;
+    int scrno;
     int i;
-    const xcb_setup_t *setup;
-    xcb_screen_iterator_t iter;
+    unsigned char  depth;
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
@@ -140,23 +139,35 @@ int _create_cont (Xpost_Context *ctx,
 
     /* create xcb connection
        and create and map window */
-    private.c = xcb_connect(NULL, &private.scrno);
-    setup = xcb_get_setup(private.c);
-    iter = xcb_setup_roots_iterator(setup);
+    private.c = xcb_connect(NULL, &scrno);
+    if (xcb_connection_has_error(private.c))
+    {
+        XPOST_LOG_ERR("Fail to connect to the X server");
+        return unregistered;
+    }
 
-    for (i=0; i < private.scrno; ++i)
-        xcb_screen_next(&iter);
+    iter = xcb_setup_roots_iterator(xcb_get_setup(private.c));
+    for (; iter.rem; --scrno, xcb_screen_next(&iter))
+    if (scrno == 0)
+      {
+	private.scr = iter.data;
+	break;
+      }
 
-    private.scr = iter.data;
-    XPOST_LOG_INFO("screen->root_depth: %d", private.scr->root_depth);
-    private.depth = private.scr->root_depth;
+    geom = xcb_get_geometry_reply (private.c, xcb_get_geometry(private.c, private.scr->root), 0);
+    if (!geom)
+    {
+        XPOST_LOG_ERR("Fail to the geometry of the root window");
+        xcb_disconnect(private.c);
+        return unregistered;
+    }
+
+    depth = geom->depth;
+    free(geom);
 
     private.win = xcb_generate_id(private.c);
     {
-        unsigned int value =
-            //private.scr->black_pixel
-            private.scr->white_pixel
-            ;
+        unsigned int value = private.scr->white_pixel;
         xcb_create_window(private.c, XCB_COPY_FROM_PARENT,
                 private.win, private.scr->root,
                 0, 0,
@@ -170,10 +181,9 @@ int _create_cont (Xpost_Context *ctx,
     xcb_map_window(private.c, private.win);
     xcb_flush(private.c);
 
-    private.format = XCB_IMAGE_FORMAT_Z_PIXMAP;
     private.img = xcb_generate_id(private.c);
     xcb_create_pixmap(private.c,
-            private.depth, private.img,
+            depth, private.img,
             private.win, private.width, private.height);
 
     /* create graphics context
