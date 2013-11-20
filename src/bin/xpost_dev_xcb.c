@@ -61,9 +61,10 @@ typedef struct {
     int scrno;
     xcb_screen_t *scr;
     xcb_drawable_t win;
+    int width, height;
     unsigned char  depth;
     unsigned char format;
-    xcb_image_t *img;
+    xcb_pixmap_t img;
     xcb_gcontext_t gc;
     xcb_colormap_t cmap;
 } PrivateData;
@@ -134,6 +135,9 @@ int _create_cont (Xpost_Context *ctx,
     bdcput(ctx, devdic, consname(ctx, "width"), w);
     bdcput(ctx, devdic, consname(ctx, "height"), h);
 
+    private.width = width;
+    private.height = height;
+
     /* create xcb connection
        and create and map window */
     private.c = xcb_connect(NULL, &private.scrno);
@@ -145,10 +149,14 @@ int _create_cont (Xpost_Context *ctx,
 
     private.scr = iter.data;
     XPOST_LOG_INFO("screen->root_depth: %d", private.scr->root_depth);
+    private.depth = private.scr->root_depth;
 
     private.win = xcb_generate_id(private.c);
     {
-        unsigned int values = private.scr->black_pixel;
+        unsigned int value =
+            //private.scr->black_pixel
+            private.scr->white_pixel
+            ;
         xcb_create_window(private.c, XCB_COPY_FROM_PARENT,
                 private.win, private.scr->root,
                 0, 0,
@@ -157,37 +165,35 @@ int _create_cont (Xpost_Context *ctx,
                 XCB_WINDOW_CLASS_INPUT_OUTPUT,
                 private.scr->root_visual,
                 XCB_CW_BACK_PIXEL,
-                &values);
+                &value);
     }
     xcb_map_window(private.c, private.win);
     xcb_flush(private.c);
 
-    //private.img = xcb_generate_id(private.c);
-    //private.depth = xcb_aux_get_depth(private.c, private.scr);
-    //xcb_create_pixmap(private.c, private.depth,
-            //private.img, private.win, width, height);
     private.format = XCB_IMAGE_FORMAT_Z_PIXMAP;
-    private.img = xcb_image_get(private.c, private.win, 
-            0, 0, width, height,
-            XCB_ALL_PLANES, private.format);
+    private.img = xcb_generate_id(private.c);
+    xcb_create_pixmap(private.c,
+            private.depth, private.img,
+            private.win, private.width, private.height);
 
     /* create graphics context
        and initialize drawing parameters */
     private.gc = xcb_generate_id(private.c);
     {
         unsigned int values[2] = {
-            private.scr->white_pixel,
-            private.scr->black_pixel
+            private.scr->black_pixel,
+            private.scr->white_pixel
         } ;
         xcb_create_gc(private.c, private.gc, private.win,
                 XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
                 values);
     }
 
-    //private.cmap = private.scr->default_colormap;
-    private.cmap = xcb_generate_id(private.c);
-    xcb_create_colormap(private.c, XCB_COLORMAP_ALLOC_NONE, private.cmap,
-            private.win, private.scr->root_visual);
+    private.cmap = private.scr->default_colormap;
+    /* create colormap */
+    //private.cmap = xcb_generate_id(private.c);
+    //xcb_create_colormap(private.c, XCB_COLORMAP_ALLOC_NONE, private.cmap,
+    //        private.win, private.scr->root_visual);
 
     xpost_context_install_event_handler(ctx, operfromcode(_event_handler_opcode));
 
@@ -231,36 +237,32 @@ int _putpix (Xpost_Context *ctx,
 
     {
         xcb_alloc_color_reply_t *rep;
+
+        xcb_point_t p;
+        p.x = x.int_.val;
+        p.y = y.int_.val;
+
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
-                    1-val.int_.val, 1-val.int_.val, 1-val.int_.val),
+                    val.int_.val * 257,
+                    val.int_.val * 257,
+                    val.int_.val * 257),
                 0);
         if (!rep)
             return unregistered;
 
-        xcb_image_put_pixel(private.img,
-                x.int_.val, y.int_.val,
-                rep->pixel);
+        {
+            unsigned int value[] = { rep->pixel };
+            xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, value);
+        }
+
+        xcb_poly_point(private.c, XCB_COORD_MODE_ORIGIN,
+                private.img, private.gc, 1, &p);
     }
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
-
-#if 0
-    {
-        xcb_point_t p;
-        p.x = x.int_.val;
-        p.y = y.int_.val;
-
-        xcb_poly_point(private.c,
-                XCB_COORD_MODE_ORIGIN,
-                private.img,
-                private.gc,
-                1, 
-                &p);
-    }
-#endif
 
     return 0;
 }
@@ -347,11 +349,21 @@ int _fillrect (Xpost_Context *ctx,
         if (!rep)
             return unregistered;
 
-        for (i=0; i < height.int_.val; i++)
-            for (j=0; j < width.int_.val; j++)
-                xcb_image_put_pixel(private.img,
-                        x.int_.val + j, y.int_.val + i,
-                        rep->pixel);
+        {
+            unsigned int value[] = { rep->pixel };
+            xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, value);
+        }
+
+        for (i=0; i < height.int_.val; i++) {
+            for (j=0; j < width.int_.val; j++) {
+                xcb_point_t p;
+                p.x = x.int_.val + j;
+                p.y = y.int_.val + i;
+
+                xcb_poly_point(private.c, XCB_COORD_MODE_ORIGIN,
+                        private.img, private.gc, 1, &p);
+            }
+        }
     }
     return 0;
 }
@@ -368,7 +380,8 @@ int _flush (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
-    xcb_image_put(private.c, private.win, private.gc, private.img, 0, 0, 0);
+    xcb_copy_area(private.c, private.img, private.win, private.gc,
+            0, 0, 0, 0, private.width, private.height);
     xcb_flush(private.c);
 
     return 0;
