@@ -364,8 +364,10 @@ int _fillrect (Xpost_Context *ctx,
             xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, value);
         }
 
-        for (i=0; i < height.int_.val; i++) {
-            for (j=0; j < width.int_.val; j++) {
+        for (i=0; i < height.int_.val; i++)
+        {
+            for (j=0; j < width.int_.val; j++)
+            {
                 xcb_point_t p;
                 p.x = x.int_.val + j;
                 p.y = y.int_.val + i;
