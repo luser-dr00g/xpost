@@ -104,10 +104,10 @@ int _create (Xpost_Context *ctx,
 
     /* call device class's ps-level .copydict procedure,
        then call _create_cont, by continuation. */
-    xpost_stack_push(ctx->lo, ctx->es,
-            operfromcode(_create_cont_opcode));
-    xpost_stack_push(ctx->lo, ctx->es,
-            bdcget(ctx, classdic, consname(ctx, ".copydict")));
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_create_cont_opcode)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict"))))
+        return execstackoverflow;
 
     return 0;
 }
@@ -419,7 +419,8 @@ int newxcbdevice (Xpost_Context *ctx,
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
-    xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, "Create")));
+    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, "Create"))))
+        return execstackoverflow;
 
     return 0;
 }
@@ -442,8 +443,10 @@ int loadxcbdevice (Xpost_Context *ctx)
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
-    xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadxcbdevicecont_opcode));
-    xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict")));
+    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadxcbdevicecont_opcode)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict"))))
+        return execstackoverflow;
 
     return 0;
 }
