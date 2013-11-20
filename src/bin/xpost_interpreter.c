@@ -252,10 +252,10 @@ int evalload(Xpost_Context *ctx)
     //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
     ret = opexec(ctx, ctx->opcode_shortcuts.load);
     if (ret)
-        return undefined;
+        return ret;
     if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0))) {
-        xpost_stack_push(ctx->lo, ctx->es,
-                xpost_stack_pop(ctx->lo, ctx->os));
+        if (!xpost_stack_push(ctx->lo, ctx->es, xpost_stack_pop(ctx->lo, ctx->os)))
+			return ret;
     }
     return 0;
 }
@@ -309,18 +309,22 @@ static
 int evalstring(Xpost_Context *ctx)
 {
     Xpost_Object b,t,s;
+	int ret;
 
     s = xpost_stack_pop(ctx->lo, ctx->es);
     if (!xpost_stack_push(ctx->lo, ctx->os, s))
         return stackoverflow;
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
-    opexec(ctx, ctx->opcode_shortcuts.token);
+    ret = opexec(ctx, ctx->opcode_shortcuts.token);
+	if (ret)
+		return ret;
     b = xpost_stack_pop(ctx->lo, ctx->os);
     if (b.int_.val) {
         t = xpost_stack_pop(ctx->lo, ctx->os);
         s = xpost_stack_pop(ctx->lo, ctx->os);
-        xpost_stack_push(ctx->lo, ctx->es, s);
+        if (!xpost_stack_push(ctx->lo, ctx->es, s))
+			return execstackoverflow;
         if (xpost_object_get_type(t)==arraytype)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os , t))
@@ -340,16 +344,21 @@ static
 int evalfile(Xpost_Context *ctx)
 {
     Xpost_Object b,f,t;
+	int ret;
 
     f = xpost_stack_pop(ctx->lo, ctx->es);
-    xpost_stack_push(ctx->lo, ctx->os, f);
+    if (!xpost_stack_push(ctx->lo, ctx->os, f))
+		return stackoverflow;
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
-    opexec(ctx, ctx->opcode_shortcuts.token);
+    ret = opexec(ctx, ctx->opcode_shortcuts.token);
+	if (ret)
+		return ret;
     b = xpost_stack_pop(ctx->lo, ctx->os);
     if (b.int_.val) {
         t = xpost_stack_pop(ctx->lo, ctx->os);
-        xpost_stack_push(ctx->lo, ctx->es, f);
+        if (!xpost_stack_push(ctx->lo, ctx->es, f))
+			return execstackoverflow;
         if (xpost_object_get_type(t)==arraytype)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os, t))
@@ -424,9 +433,11 @@ int eval(Xpost_Context *ctx)
         printf("\n");
     }
 
-    if (xpost_object_get_type(ctx->event_handler) != nulltype) {
-        opexec(ctx, ctx->event_handler.mark_.padw);
-    }
+    //if (xpost_object_get_type(ctx->event_handler) == operatortype) {
+    //    ret = opexec(ctx, ctx->event_handler.mark_.padw);
+	//	if (ret)
+	//		return ret;
+    //}
 
     if ( xpost_object_is_exe(t) ) /* if executable */
         ret = evaltype[xpost_object_get_type(t)](ctx);
@@ -601,7 +612,7 @@ static void setdatadir(Xpost_Context *ctx, Xpost_Object sd)
     bdcput(ctx, sd,
         consname(ctx, "newdefaultdevice"),
         xpost_object_cvx(consbst(ctx,
-        CNT_STR("loadwin32device /DEVICE 400 300 newwin32device def"))));
+        CNT_STR("loadwin32device /DEVICE 400 300 breakhere newwin32device def"))));
 #elif defined HAVE_XCB
     bdcput(ctx, sd,
         consname(ctx, "newdefaultdevice"),

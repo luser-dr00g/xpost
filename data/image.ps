@@ -75,14 +75,22 @@ DATA_DIR(/qsort.ps)strcat run
 
     /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
     begin {y2 x2 y1 x1 val}{exch def}forall
-        x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect { {y1 x1}{exch def}forall } if } if
-        x2 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect { {y2 x2}{exch def}forall } if } if
-        y1 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect { {y1 x1}{exch def}forall } if } if
-        y2 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect { {y2 x2}{exch def}forall } if } if
-        x1 width ge { x1 y1 x2 y2 width 0 width height .intersect { {y1 x1}{exch def}forall } if } if
-        x2 width ge { x1 y1 x2 y2 width 0 width height .intersect { {y2 x2}{exch def}forall } if } if
-        y1 width ge { x1 y1 x2 y2 0 height width height .intersect { {y1 x1}{exch def}forall } if } if
-        y2 width ge { x1 y1 x2 y2 0 height width height .intersect { {y2 x2}{exch def}forall } if } if
+        x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect
+			{ {y1 x1}{exch def}forall } if } if
+        x2 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect
+			{ {y2 x2}{exch def}forall } if } if
+        y1 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect
+			{ {y1 x1}{exch def}forall } if } if
+        y2 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect
+			{ {y2 x2}{exch def}forall } if } if
+        x1 width ge { x1 y1 x2 y2 width 0 width height .intersect
+			{ {y1 x1}{exch def}forall } if } if
+        x2 width ge { x1 y1 x2 y2 width 0 width height .intersect
+			{ {y2 x2}{exch def}forall } if } if
+        y1 width ge { x1 y1 x2 y2 0 height width height .intersect
+			{ {y1 x1}{exch def}forall } if } if
+        y2 width ge { x1 y1 x2 y2 0 height width height .intersect
+			{ {y2 x2}{exch def}forall } if } if
         /x x1 def
         /y y1 def
         x2 x1 sub  dup abs /dx exch def
@@ -134,16 +142,31 @@ DATA_DIR(/qsort.ps)strcat run
 
     /FillRect { % val x y w h IMAGE  .  -
     begin {h w y x val}{exch def}forall
-        val 0 1 h { y add  % val y
-            0 1 w { x add  % val y x
-                3 copy exch % val y x val x y
-                currentdict  % val y x val x y IMAGE
-                PutPix  % val y x
-                pop  % val y
-            } for
-            pop % val
-        } for
-        pop % -
+        %val 0 1 h { y add  % val y
+        %    0 1 w { x add  % val y x
+        %        3 copy exch % val y x val x y
+        %        currentdict  % val y x val x y IMAGE
+        %        PutPix  % val y x
+        %        pop  % val y
+        %    } for
+        %    pop % val
+        %} for
+        %pop % -
+		w 0 lt { /w w abs def /x x w sub def } if
+		h 0 lt { /h h abs def /y y h sub def } if
+
+		/h h y add def
+		/w w x add def
+		val
+		y 1 h { % val y
+			x 1 w { % val y x
+				3 copy exch % val y x val x y
+				currentdict PutPix % val y x
+				pop
+			} for
+			pop
+		} for
+		pop
     end }
 
 
