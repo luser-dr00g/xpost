@@ -149,10 +149,10 @@ int _create_cont (Xpost_Context *ctx,
     iter = xcb_setup_roots_iterator(xcb_get_setup(private.c));
     for (; iter.rem; --scrno, xcb_screen_next(&iter))
     if (scrno == 0)
-      {
-	private.scr = iter.data;
-	break;
-      }
+    {
+        private.scr = iter.data;
+        break;
+    }
 
     geom = xcb_get_geometry_reply (private.c, xcb_get_geometry(private.c, private.scr->root), 0);
     if (!geom)
@@ -489,7 +489,7 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     _create_cont_opcode = op.mark_.padw;
     op = consoper(ctx, "xcbCreate", _create, 1, 3, integertype, integertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Create"), op);
-    
+
     op = consoper(ctx, "xcbPutPix", _putpix, 0, 4, numbertype, numbertype, numbertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "PutPix"), op);
 
@@ -542,4 +542,3 @@ int initxcbops (Xpost_Context *ctx,
 
     return 0;
 }
-
