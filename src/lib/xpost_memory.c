@@ -458,7 +458,7 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
 
     return;
 
-    for (u = 0; u < (signed)mem->used; u++)
+    for (u = 0; u < (int)mem->used; u++)
     {
         if (u%16 == 0)
         {
