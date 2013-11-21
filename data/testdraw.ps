@@ -1,0 +1,59 @@
+loadgraphics
+
+/randpoint {
+    rand 400 mod
+    rand 300 mod
+} def
+
+/randline {
+    rand 101 mod 100 div setgray
+    randpoint moveto
+    randpoint lineto
+} def
+
+/randbox {
+    rand 101 mod 100 div setgray
+    rand 200 mod
+    rand 150 mod
+    randpoint moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+} def
+
+/randcurve {
+    randpoint
+    moveto
+    randpoint
+    randpoint
+    randpoint
+    curveto
+} def
+
+%realtime srand
+
+
+0 setlinewidth
+10 { randbox stroke newpath } repeat
+showpage
+
+
+0 setlinewidth
+10 { randline stroke } repeat
+showpage
+
+2 setlinewidth
+10 { randline stroke } repeat
+showpage
+
+0 setlinewidth
+10 { randcurve stroke } repeat
+showpage
+
+10 { randbox fill newpath } repeat
+showpage
+
+6 setlinewidth
+10 { randcurve stroke } repeat
+showpage
