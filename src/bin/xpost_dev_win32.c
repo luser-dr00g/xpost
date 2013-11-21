@@ -388,6 +388,51 @@ int _drawline (Xpost_Context *ctx,
     _x2 = x2.int_.val;
     _y1 = y1.int_.val;
     _y2 = y2.int_.val;
+
+    if (_x1 == _x2)
+    {
+        if (_y1 > _y2)
+        {
+            int tmp;
+
+            tmp = _y1;
+            _y1 = _y2;
+            _y2 = tmp;
+        }
+        for (y = _y1; x < _y2; y++)
+            private.buf[y * private.width + _x1] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+
+        dc = CreateCompatibleDC(private.ctx);
+        SelectObject(dc, private.bitmap);
+        BitBlt(private.ctx, _x1, _y1, 1, _y2 - _y1 + 1,
+               dc, _x1, _y1, SRCCOPY);
+        DeleteDC(dc);
+
+        return 0;
+    }
+
+    if (_y1 == _y2)
+    {
+        if (_x1 > _x2)
+        {
+            int tmp;
+
+            tmp = _x1;
+            _x1 = _x2;
+            _x2 = tmp;
+        }
+        for (x = _x1; x < _x2; x++)
+            private.buf[x * private.height + _y1] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+
+        dc = CreateCompatibleDC(private.ctx);
+        SelectObject(dc, private.bitmap);
+        BitBlt(private.ctx, _x1, _y1, _x2 - _x1 + 1, 1,
+               dc, _x1, _y1, SRCCOPY);
+        DeleteDC(dc);
+
+        return 0;
+    }
+
     steep = abs(_y2 - _y1) > abs(_x2 - _x1);
     if (steep)
     {
