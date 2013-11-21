@@ -399,7 +399,7 @@ int _drawline (Xpost_Context *ctx,
             _y1 = _y2;
             _y2 = tmp;
         }
-        for (y = _y1; x < _y2; y++)
+        for (y = _y1; y < _y2; y++)
             private.buf[y * private.width + _x1] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
 
         dc = CreateCompatibleDC(private.ctx);
