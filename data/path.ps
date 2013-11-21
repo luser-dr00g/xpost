@@ -127,6 +127,31 @@
     curveto
 } def
 
+% x y r angle1 angle2  arc  -
+% append a circular arc to the current path
+/arc { 10 dict begin
+    {angle2 angle1 r y x}{exch def}forall
+    /fx { cos r mul x add } def
+    /fy { sin r mul y add } def
+    /N 90 def
+    /h angle2 angle1 sub N div def
+    /t angle1 def
+    /_x t fx def
+    /_y t fy def
+    _x _y
+    cpath dup length 0 eq {
+        moveto
+    }{
+        lineto
+    } ifelse
+    N {
+        /t t h add def
+        /_x t fx def
+        /_y t fy def
+        _x _y lineto
+    } repeat
+end } def
+
 % -  closepath  -
 % connect subpath back to its starting point
 /closepath {
