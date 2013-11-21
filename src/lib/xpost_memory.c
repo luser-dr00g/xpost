@@ -635,6 +635,7 @@ int xpost_memory_table_find_relative (Xpost_Memory_File *mem,
                                       Xpost_Memory_Table **atab,
                                       unsigned int *aent)
 {
+    unsigned int ent = *aent;
     if (!mem)
     {
         XPOST_LOG_ERR("%d mem pointer is NULL", VMerror);
@@ -653,7 +654,7 @@ int xpost_memory_table_find_relative (Xpost_Memory_File *mem,
         *aent -= XPOST_MEMORY_TABLE_SIZE;
         if ((*atab)->nexttab == 0)
         {
-            XPOST_LOG_ERR("%d cannot find table segment for ent", VMerror);
+            XPOST_LOG_ERR("%d cannot find table segment for ent %u", VMerror, ent);
             return 0;
         }
         *atab = (Xpost_Memory_Table *)(mem->base + (*atab)->nexttab);
@@ -669,7 +670,7 @@ int xpost_memory_table_get_addr (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
     *addr = tab->tab[ent].adr;
@@ -684,7 +685,7 @@ int xpost_memory_table_set_addr (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
     tab->tab[ent].adr = addr;
@@ -699,7 +700,7 @@ int xpost_memory_table_get_size (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
     *sz = tab->tab[ent].sz;
@@ -714,7 +715,7 @@ int xpost_memory_table_set_size (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
     tab->tab[ent].sz = size;
@@ -729,7 +730,7 @@ int xpost_memory_table_get_mark (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
     *mark = tab->tab[ent].mark;
@@ -744,7 +745,7 @@ int xpost_memory_table_set_mark (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
     tab->tab[ent].mark = mark;
@@ -759,7 +760,7 @@ int xpost_memory_table_get_tag (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
     *tag = tab->tab[ent].tag;
@@ -774,7 +775,7 @@ int xpost_memory_table_set_tag (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
     tab->tab[ent].tag = tag;
@@ -791,13 +792,14 @@ int xpost_memory_get (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
 
     if (offset * sz > tab->tab[ent].sz)
     {
-        XPOST_LOG_ERR("%d out of bounds memory", rangecheck);
+        XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
+                offset, sz, tab->tab[ent].sz);
         return 0;
     }
 
@@ -814,13 +816,14 @@ int xpost_memory_put (Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
     {
-        XPOST_LOG_ERR("%d entity not found", VMerror);
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
 
     if (offset * sz > tab->tab[ent].sz)
     {
-        XPOST_LOG_ERR("%d out of bounds memory", rangecheck);
+        XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
+                offset, sz, tab->tab[ent].sz);
         return 0;
     }
 
