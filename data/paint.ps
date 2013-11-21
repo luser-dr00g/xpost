@@ -46,6 +46,7 @@
 /stroke {
     currentlinewidth 0 eq {
         flattenpath
+        doclip
         mark
         {          % x0 y0 
             2 copy % x0 y0 x0 y0
@@ -70,6 +71,7 @@
         pathforall
         cleartomark
     }{
+        doclip
         strokepath fill
     } ifelse
 
