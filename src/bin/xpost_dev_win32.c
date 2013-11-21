@@ -57,6 +57,11 @@
 #include "xpost_op_dict.h"
 #include "xpost_dev_win32.h"
 
+#ifdef abs
+# undef abs
+#endif
+#define abs(a) ((a) < 0) ? -(a) : (a)
+
 typedef struct _BITMAPINFO_XPOST
 {
    BITMAPINFOHEADER bih;
@@ -339,6 +344,104 @@ int _getpix (Xpost_Context *ctx,
 }
 
 static
+int _drawline (Xpost_Context *ctx,
+               Xpost_Object val,
+               Xpost_Object x1,
+               Xpost_Object y1,
+               Xpost_Object x2,
+               Xpost_Object y2,
+               Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    HDC dc;
+    int _x1;
+    int _x2;
+    int _y1;
+    int _y2;
+    int steep;
+    int deltax;
+    int deltay;
+    int error;
+    int ystep;
+    int x;
+    int y;
+
+    /* fold numbers to integertype */
+    if (xpost_object_get_type(val) == realtype)
+        val = xpost_cons_int(val.real_.val);
+    if (xpost_object_get_type(x1) == realtype)
+        x1 = xpost_cons_int(x1.real_.val);
+    if (xpost_object_get_type(y1) == realtype)
+        y1 = xpost_cons_int(y1.real_.val);
+    if (xpost_object_get_type(x2) == realtype)
+        x2 = xpost_cons_int(x2.real_.val);
+    if (xpost_object_get_type(y2) == realtype)
+        y2 = xpost_cons_int(y2.real_.val);
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+    _x1 = x1.int_.val;
+    _x2 = x2.int_.val;
+    _y1 = y1.int_.val;
+    _y2 = y2.int_.val;
+    steep = abs(_y2 - _y1) > abs(_x2 - _x1);
+    if (steep)
+    {
+        int tmp;
+
+        tmp = _x1;
+        _x1 = _y1;
+        _y1 = tmp;
+        tmp = _x2;
+        _x2 = _y2;
+        _y2 = tmp;
+    }
+    if (_x1 > _x2)
+    {
+        int tmp;
+
+        tmp = _x1;
+        _x1 = _x2;
+        _x2 = tmp;
+        tmp = _y1;
+        _y1 = _y2;
+        _y2 = tmp;
+    }
+
+    deltax = _x2 - _x1;
+    deltay = abs(_y2 - _y1);
+    error = deltax / 2;
+    y = _y1;
+    ystep = (_y1 < _y2) ? 1 : -1;
+
+    for (x = _x1; x < _x2; x++)
+    {
+        if (steep)
+            private.buf[x * private.width + y] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+        else
+            private.buf[y * private.width + x] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+        error -= deltay;
+        if (error < 0)
+        {
+            y += ystep;
+            error += deltax;
+        }
+    }
+
+    dc = CreateCompatibleDC(private.ctx);
+    SelectObject(dc, private.bitmap);
+    BitBlt(private.ctx, 0, 0, private.width, private.height,
+           dc, 0, 0, SRCCOPY);
+    DeleteDC(dc);
+
+    return 0;
+}
+
+static
 int _emit (Xpost_Context *ctx,
            Xpost_Object devdic)
 {
@@ -452,6 +555,10 @@ int loadwin32devicecont (Xpost_Context *ctx,
 
     op = consoper(ctx, "win32GetPix", _getpix, 1, 3, numbertype, numbertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
+
+    op = consoper(ctx, "win32DrawLine", _drawline, 0, 6, numbertype, numbertype, numbertype,
+       numbertype, numbertype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
 
     op = consoper(ctx, "win32Emit", _emit, 0, 1, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Emit"), op);
