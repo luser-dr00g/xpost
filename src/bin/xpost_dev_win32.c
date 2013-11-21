@@ -508,8 +508,8 @@ int _fillrect (Xpost_Context *ctx,
 
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
-    BitBlt(private.ctx, 0, 0, private.width, private.height,
-           dc, 0, 0, SRCCOPY);
+    BitBlt(private.ctx, x.int_.val, y.int_.val, width.int_.val, height.int_.val,
+           dc, x.int_.val, y.int_.val, SRCCOPY);
     DeleteDC(dc);
 
     return 0;
