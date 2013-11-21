@@ -109,6 +109,8 @@
 
 end } def
 
+%FIXME: clipping should not call closepath
+
 %clip the current path by the clipregion
 % convert the path to an array of polygons (arrays of points)
 % convert clipregion to array of polygons
@@ -120,6 +122,9 @@ end } def
 
     closepath
     flattenpath
+    %cpath dup length 1 sub get 
+    %dup length 1 sub get
+    %/cmd /close eq
     [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
     /PA exch def % polygon array
 

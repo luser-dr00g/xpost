@@ -39,11 +39,16 @@ loadgraphics
 
 %realtime srand
 
+% boxes
 
 0 setlinewidth
 10 { randbox randgray stroke newpath } repeat
 showpage
 
+10 { randbox fill newpath } repeat
+showpage
+
+% lines
 
 0 setlinewidth
 10 { randline randgray stroke } repeat
@@ -54,6 +59,8 @@ showpage
 
 10 { randbox randgray fill newpath } repeat
 showpage
+
+% curves
 
 0 setlinewidth
 10 { randcurve randgray stroke } repeat
