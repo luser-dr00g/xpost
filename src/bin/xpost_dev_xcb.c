@@ -297,6 +297,65 @@ int _getpix (Xpost_Context *ctx,
 }
 
 static
+int _drawline (Xpost_Context *ctx,
+               Xpost_Object val,
+               Xpost_Object x1,
+               Xpost_Object y1,
+               Xpost_Object x2,
+               Xpost_Object y2,
+               Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+
+    /* fold numbers to integertype */
+    if (xpost_object_get_type(val) == realtype)
+        val = xpost_cons_int(val.real_.val);
+    if (xpost_object_get_type(x1) == realtype)
+        x1 = xpost_cons_int(x1.real_.val);
+    if (xpost_object_get_type(y1) == realtype)
+        y1 = xpost_cons_int(y1.real_.val);
+    if (xpost_object_get_type(x2) == realtype)
+        x2 = xpost_cons_int(x2.real_.val);
+    if (xpost_object_get_type(y2) == realtype)
+        y2 = xpost_cons_int(y2.real_.val);
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+    {
+        xcb_alloc_color_reply_t *rep;
+
+        rep = xcb_alloc_color_reply(private.c,
+                xcb_alloc_color(private.c, private.cmap,
+                    val.int_.val * 257,
+                    val.int_.val * 257,
+                    val.int_.val * 257),
+                0);
+        if (!rep)
+            return unregistered;
+
+        {
+            unsigned int value[] = { rep->pixel };
+            xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, value);
+        }
+    }
+
+    {
+        xcb_point_t points[] = {
+            { x1.int_.val, y1.int_.val },
+            { x2.int_.val, y2.int_.val }
+        };
+        xcb_poly_line(private.c, XCB_COORD_MODE_ORIGIN,
+                private.img, private.gc, 2, points);
+    }
+
+    return 0;
+}
+
+static
 int _fillrect (Xpost_Context *ctx,
                Xpost_Object val,
                Xpost_Object x,
@@ -352,9 +411,12 @@ int _fillrect (Xpost_Context *ctx,
 
     {
         xcb_alloc_color_reply_t *rep;
+
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
-                    1-val.int_.val, 1-val.int_.val, 1-val.int_.val),
+                    val.int_.val * 257,
+                    val.int_.val * 257,
+                    val.int_.val * 257),
                 0);
         if (!rep)
             return unregistered;
@@ -497,6 +559,10 @@ int loadxcbdevicecont (Xpost_Context *ctx,
 
     op = consoper(ctx, "xcbGetPix", _getpix, 1, 3, numbertype, numbertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
+
+    op = consoper(ctx, "xcbDrawLine", _drawline, 0, 6, numbertype, numbertype, numbertype,
+       numbertype, numbertype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
 
     op = consoper(ctx, "xcbFillRect", _fillrect, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, dicttype);
