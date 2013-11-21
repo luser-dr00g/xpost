@@ -1,18 +1,24 @@
 loadgraphics
 
+/randgray {
+	rand 256 mod 255 div setgray
+} def
+
+/randwidth {
+	rand 10 mod setlinewidth
+} def
+
 /randpoint {
     rand 400 mod
     rand 300 mod
 } def
 
 /randline {
-    rand 101 mod 100 div setgray
     randpoint moveto
     randpoint lineto
 } def
 
 /randbox {
-    rand 101 mod 100 div setgray
     rand 200 mod
     rand 150 mod
     randpoint moveto
@@ -35,25 +41,24 @@ loadgraphics
 
 
 0 setlinewidth
-10 { randbox stroke newpath } repeat
+10 { randbox randgray stroke newpath } repeat
 showpage
 
 
 0 setlinewidth
-10 { randline stroke } repeat
+10 { randline randgray stroke } repeat
 showpage
 
-2 setlinewidth
-10 { randline stroke } repeat
+10 { randline randwidth randgray stroke } repeat
+showpage
+
+10 { randbox randgray fill newpath } repeat
 showpage
 
 0 setlinewidth
-10 { randcurve stroke } repeat
-showpage
-
-10 { randbox fill newpath } repeat
+10 { randcurve randgray stroke } repeat
 showpage
 
 6 setlinewidth
-10 { randcurve stroke } repeat
+10 { randcurve randwidth randgray stroke } repeat
 showpage
