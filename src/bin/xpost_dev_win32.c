@@ -317,8 +317,8 @@ int _putpix (Xpost_Context *ctx,
 
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
-    BitBlt(private.ctx, 0, 0, private.width, private.height,
-           dc, 0, 0, SRCCOPY);
+    BitBlt(private.ctx, x.int_.val, y.int_.val, 1, 1,
+           dc, x.int_.val, y.int_.val, SRCCOPY);
     DeleteDC(dc);
 
     return 0;
