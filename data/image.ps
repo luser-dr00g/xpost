@@ -158,22 +158,28 @@ DATA_DIR(/qsort.ps)strcat run
 		/h h y add def
 		/w w x add def
 
-		val
-		y 1 h { % val y
-			x 1 w { % val y x
-				3 copy exch % val y x val x y
-				currentdict PutPix % val y x
-				pop
-			} for
-			pop
-		} for
-		pop
+        /USEDRAWLINE where { pop
 
-        %y 1 h {
-        %    val exch 
-        %    x exch w 1 index
-        %    currentdict DrawLine
-        %} for
+            y 1 h {
+                val exch 
+                x exch w 1 index
+                currentdict DrawLine
+            } for
+
+        }{
+
+            val
+            y 1 h { % val y
+                x 1 w { % val y x
+                    3 copy exch % val y x val x y
+                    currentdict PutPix % val y x
+                    pop
+                } for
+                pop
+            } for
+            pop
+
+        } ifelse
 
     end }
 
@@ -296,18 +302,27 @@ DATA_DIR(/qsort.ps)strcat run
         aload length 2 idiv { % repeat
             exch aload pop
             3 2 roll aload pop
-%            val 5 1 roll
-%            currentdict DrawLine
-            pop                        % xa ya xb
-            3 2 roll                   % ya xb xa
-            exch 1 exch                % ya xa 1 xb
-            dup width ge { pop width 1 sub } if
-            { % for                    % ya x
-                val exch               % ya val x
-                2 index                % ya val x ya 
-                currentdict PutPix
-            } for
-            pop
+
+            /USEDRAWLINE where { pop
+
+                val 5 1 roll
+                currentdict DrawLine
+
+            }{
+
+                pop                        % xa ya xb
+                3 2 roll                   % ya xb xa
+                exch 1 exch                % ya xa 1 xb
+                dup width ge { pop width 1 sub } if
+                { % for                    % ya x
+                    val exch               % ya val x
+                    2 index                % ya val x ya 
+                    currentdict PutPix
+                } for
+                pop
+
+            } ifelse
+
         } repeat
 
     end } %FillPoly
