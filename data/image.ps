@@ -296,18 +296,18 @@ DATA_DIR(/qsort.ps)strcat run
         aload length 2 idiv { % repeat
             exch aload pop
             3 2 roll aload pop
-            val 5 1 roll
-            currentdict DrawLine
-%            pop                        % xa ya xb
-%            3 2 roll                   % ya xb xa
-%            exch 1 exch                % ya xa 1 xb
-%            dup width ge { pop width 1 sub } if
-%            { % for                    % ya x
-%                val exch               % ya val x
-%                2 index                % ya val x ya 
-%                currentdict PutPix
-%            } for
-%            pop
+%            val 5 1 roll
+%            currentdict DrawLine
+            pop                        % xa ya xb
+            3 2 roll                   % ya xb xa
+            exch 1 exch                % ya xa 1 xb
+            dup width ge { pop width 1 sub } if
+            { % for                    % ya x
+                val exch               % ya val x
+                2 index                % ya val x ya 
+                currentdict PutPix
+            } for
+            pop
         } repeat
 
     end } %FillPoly
