@@ -157,16 +157,24 @@ DATA_DIR(/qsort.ps)strcat run
 
 		/h h y add def
 		/w w x add def
-		val
-		y 1 h { % val y
-			x 1 w { % val y x
-				3 copy exch % val y x val x y
-				currentdict PutPix % val y x
-				pop
-			} for
-			pop
-		} for
-		pop
+
+		%val
+		%y 1 h { % val y
+		%	x 1 w { % val y x
+		%		3 copy exch % val y x val x y
+		%		currentdict PutPix % val y x
+		%		pop
+		%	} for
+		%	pop
+		%} for
+		%pop
+
+        y 1 h {
+            val exch 
+            x exch w 1 index
+            currentdict DrawLine
+        } for
+
     end }
 
 
