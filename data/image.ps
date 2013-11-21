@@ -91,15 +91,15 @@ DATA_DIR(/qsort.ps)strcat run
 			{ {y1 x1}{exch def}forall } if } if
         y2 width ge { x1 y1 x2 y2 0 height width height .intersect
 			{ {y2 x2}{exch def}forall } if } if
-        /x x1 cvi def
-        /y y1 cvi def
-        x2 x1 sub  cvi dup abs /dx exch def
+        /x x1 def
+        /y y1 def
+        x2 x1 sub  dup abs /dx exch def
             .sign /s1 exch def
-        y2 y1 sub  cvi dup abs /dy exch def
+        y2 y1 sub  dup abs /dy exch def
             .sign /s2 exch def
         /interchange dy dx gt def
         interchange { /dx dy /dy dx def def } if
-        /e 2 dy mul dx sub cvi def
+        /e 2 dy mul dx sub def
         1 1 dx { pop
             val x y currentdict PutPix
             {
@@ -158,22 +158,22 @@ DATA_DIR(/qsort.ps)strcat run
 		/h h y add def
 		/w w x add def
 
-		%val
-		%y 1 h { % val y
-		%	x 1 w { % val y x
-		%		3 copy exch % val y x val x y
-		%		currentdict PutPix % val y x
-		%		pop
-		%	} for
-		%	pop
-		%} for
-		%pop
+		val
+		y 1 h { % val y
+			x 1 w { % val y x
+				3 copy exch % val y x val x y
+				currentdict PutPix % val y x
+				pop
+			} for
+			pop
+		} for
+		pop
 
-        y 1 h {
-            val exch 
-            x exch w 1 index
-            currentdict DrawLine
-        } for
+        %y 1 h {
+        %    val exch 
+        %    x exch w 1 index
+        %    currentdict DrawLine
+        %} for
 
     end }
 
