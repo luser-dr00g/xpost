@@ -421,7 +421,7 @@ int _drawline (Xpost_Context *ctx,
     for (x = _x1; x < _x2; x++)
     {
         if (steep)
-            private.buf[x * private.width + y] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+            private.buf[x * private.height + y] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
         else
             private.buf[y * private.width + x] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
         error -= deltay;
