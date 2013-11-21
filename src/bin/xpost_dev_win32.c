@@ -442,6 +442,80 @@ int _drawline (Xpost_Context *ctx,
 }
 
 static
+int _fillrect (Xpost_Context *ctx,
+               Xpost_Object val,
+               Xpost_Object x,
+               Xpost_Object y,
+               Xpost_Object width,
+               Xpost_Object height,
+               Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    HDC dc;
+    int w;
+    int h;
+    int i;
+    int j;
+
+    /* fold numbers to integertype */
+    if (xpost_object_get_type(val) == realtype)
+        val = xpost_cons_int(val.real_.val);
+    if (xpost_object_get_type(x) == realtype)
+        x = xpost_cons_int(x.real_.val);
+    if (xpost_object_get_type(y) == realtype)
+        y = xpost_cons_int(y.real_.val);
+    if (xpost_object_get_type(width) == realtype)
+        width = xpost_cons_int(width.real_.val);
+    if (xpost_object_get_type(height) == realtype)
+        height = xpost_cons_int(height.real_.val);
+
+    /* adjust ranges */
+    if (width.int_.val < 0)
+    {
+        width.int_.val = abs(width.int_.val);
+        x.int_.val -= width.int_.val;
+    }
+    if (height.int_.val < 0)
+    {
+        height.int_.val = abs(height.int_.val);
+        y.int_.val -= height.int_.val;
+    }
+    if (x.int_.val < 0) x.int_.val = 0;
+    if (y.int_.val < 0) y.int_.val = 0;
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+    w = bdcget(ctx, devdic, consname(ctx,"width")).int_.val;
+    h = bdcget(ctx, devdic, consname(ctx,"height")).int_.val;
+
+    if (x.int_.val >= w || y.int_.val >= h)
+        return 0;
+    if (x.int_.val + width.int_.val > w)
+        width.int_.val = w - x.int_.val;
+    if (y.int_.val + height.int_.val > h)
+        height.int_.val = h - y.int_.val;
+
+    for (i = 0; i < height.int_.val; i++)
+    {
+        for (j = 0; j < width.int_.val; j++)
+        {
+            private.buf[(y.int_.val + i) * private.width + x.int_.val + j] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+        }
+    }
+
+    dc = CreateCompatibleDC(private.ctx);
+    SelectObject(dc, private.bitmap);
+    BitBlt(private.ctx, 0, 0, private.width, private.height,
+           dc, 0, 0, SRCCOPY);
+    DeleteDC(dc);
+
+    return 0;
+}
+
+static
 int _emit (Xpost_Context *ctx,
            Xpost_Object devdic)
 {
@@ -559,6 +633,10 @@ int loadwin32devicecont (Xpost_Context *ctx,
     op = consoper(ctx, "win32DrawLine", _drawline, 0, 6, numbertype, numbertype, numbertype,
        numbertype, numbertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
+
+    op = consoper(ctx, "win32FillRect", _fillrect, 0, 6,
+            numbertype, numbertype, numbertype, numbertype, numbertype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
 
     op = consoper(ctx, "win32Emit", _emit, 0, 1, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Emit"), op);
