@@ -1,0 +1,83 @@
+loadgraphics
+
+/randgray {
+	rand 256 mod 255 div setgray
+} def
+
+/randwidth {
+	rand 10 mod setlinewidth
+} def
+
+/randpoint {
+    rand 500 mod
+    rand 400 mod
+} def
+
+/randline {
+    randpoint moveto
+    randpoint lineto
+} def
+
+/randbox {
+    rand 300 mod
+    rand 200 mod
+    randpoint moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+} def
+
+/randcurve {
+    randpoint
+    moveto
+    randpoint
+    randpoint
+    randpoint
+    curveto
+} def
+
+realtime
+dup (initial rng seed: )=only =
+dup /initialsrand exch def
+srand
+
+% curves
+
+0 setlinewidth
+10 { randcurve randgray stroke } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+
+6 setlinewidth
+10 { randcurve randwidth randgray stroke } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+
+% boxes
+
+0 setlinewidth
+10 { randbox randgray stroke newpath } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+
+10 { randbox randgray fill newpath } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+
+% lines
+
+0 setlinewidth
+10 { randline randgray stroke } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+
+10 { randline randwidth randgray stroke } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+
+10 { randbox randgray fill newpath } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+
+(initial rng seed: )=only initialsrand =
