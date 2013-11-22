@@ -433,11 +433,20 @@ int eval(Xpost_Context *ctx)
         printf("\n");
     }
 
-    //if (xpost_object_get_type(ctx->event_handler) == operatortype) {
-    //    ret = opexec(ctx, ctx->event_handler.mark_.padw);
-	//	if (ret)
-	//		return ret;
-    //}
+    /*
+       call window device's event_handler function
+       which should check for Events or Messages from the 
+       underlying Window System, process one or more of them,
+       and then return 0.
+       it should leave all stacks undisturbed.
+     */
+    if (xpost_object_get_type(ctx->event_handler) == operatortype) {
+        ret = opexec(ctx, ctx->event_handler.mark_.padw);
+		if (ret)
+            XPOST_LOG_ERR("event_handler returned %d (%s)",
+                    ret, errorname[ret]);
+			//return ret;
+    }
 
     if ( xpost_object_is_exe(t) ) /* if executable */
         ret = evaltype[xpost_object_get_type(t)](ctx);
