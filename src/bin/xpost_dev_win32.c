@@ -128,7 +128,7 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, classdic);
 
      /* call device class's ps-level .copydict procedure,
-           then call _create_cont, by continuation. */
+        then call _create_cont, by continuation. */
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_create_cont_opcode)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict"))))
@@ -298,10 +298,6 @@ int _putpix (Xpost_Context *ctx,
     if (xpost_object_get_type(y) == realtype)
         y = xpost_cons_int(y.real_.val);
 
-    /* constrain color value to range */
-    if (val.int_.val < 0) val.int_.val = 0;
-    if (val.int_.val > 255) val.int_.val = 255;
-
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
@@ -320,6 +316,10 @@ int _putpix (Xpost_Context *ctx,
     BitBlt(private.ctx, x.int_.val, y.int_.val, 1, 1,
            dc, x.int_.val, y.int_.val, SRCCOPY);
     DeleteDC(dc);
+
+    /* save private data struct in string */
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
 
     return 0;
 }
@@ -477,10 +477,19 @@ int _drawline (Xpost_Context *ctx,
         }
     }
 
+    if (_y1 > _y2)
+    {
+        int tmp;
+
+        tmp = _y1;
+        _y1 = _y2;
+        _y2 = tmp;
+    }
+
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
-    BitBlt(private.ctx, 0, 0, private.width, private.height,
-           dc, 0, 0, SRCCOPY);
+    BitBlt(private.ctx, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1,
+           dc, _x1, _y1, SRCCOPY);
     DeleteDC(dc);
 
     return 0;
