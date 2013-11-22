@@ -55,15 +55,16 @@
 /hodgman-sutherland { 4 dict begin
     /f exch def
     /p exch def
-    /n p length def
+    /n p length 1 sub def
     (n=)print n =
     n 0 gt {
 
-    /P p n 1 sub get def
-    /d P length 1 sub def
+    %/P p n 1 sub get def
+    %/d P length 1 sub def
+    /P p 0 get def
     /fP P aload pop f evaluate def
     [
-        p {
+        p 1 1 index length 1 sub getinterval {
             /Q exch def
             /fQ Q aload pop f evaluate def
             (P=)print P ==
@@ -71,6 +72,10 @@
             (fP=)print fP ==
             (fQ=)print fQ ==
             fP 0 le {
+                counttomark 0 eq {
+                    P
+                    (P)=
+                } if
                 fQ 0 le {
                     Q
                     (Q)=
@@ -102,6 +107,7 @@
             /fP fQ def
         } forall
     ]
+    dup ==
 
     }{ % n==0
         p
@@ -109,7 +115,6 @@
 
 end } def
 
-%FIXME: clipping should not call closepath
 
 %clip the current path by the clipregion
 % convert the path to an array of polygons (arrays of points)
@@ -120,17 +125,40 @@ end } def
 %       receiving new polygon.
 /doclip { 4 dict begin
 
-    closepath
-    flattenpath
-    %cpath dup length 1 sub get 
-    %dup length 1 sub get
-    %/cmd /close eq
-    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
-    /PA exch def % polygon array
+    %/isclosed 
+    %    cpath dup length 1 sub get 
+    %    dup length 1 sub get /cmd /close eq 
+    %def
+    %closepath
+    (doclip)=
 
-    clippath
-    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
-    /CR exch def % clippath array
+    flattenpath
+    /PA [                           % PAth    polygon array
+        [  % mark
+        {
+            2 array astore  % ... mark ... [x0 y0]
+            counttomark 1 ne {
+                counttomark 1 add 1 roll % ... [x0 y0] mark ...
+                ] exch  % ... [ ... ] [x0 y0]
+                [ exch  % ... [ ... ] [ [x0 y0]
+            } if  % ... mark [x0 y0]
+            pstack()=
+        }
+        { 2 array astore }  % ... mark [x0 y0] ... [xN yN]
+        {}
+        { counttomark 1 sub index } % ... mark [x0 y0] ... [x0 y0]
+        pathforall
+        ]  % /PA mark [...] [...] [...] 
+    ] def
+
+    /CR                         % Clip Region   clippath array
+    clippath [
+        { 2 array astore [ exch }
+        { 2 array astore }
+        {}
+        {]}
+        pathforall
+    ] def
 
     (PA: )print PA ==
     (CR: )print CR ==
@@ -159,7 +187,15 @@ end } def
             1 1 index length 1 sub getinterval {
                 << /data 3 2 roll /cmd /line >> cpath addtopath
             } forall
-            closepath
+
+            cpath dup length 1 sub get
+            dup 0 get /data get
+            exch dup length 1 sub get /data get
+            aload pop 3 2 roll aload pop % x0 y0 xN yN
+            exch 4 1 roll % xN x0 y0 yN
+            eq 3 1 roll eq and {
+                closepath
+            } if
         }{
             pop
         } ifelse

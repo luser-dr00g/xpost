@@ -132,24 +132,31 @@
 /arc { 10 dict begin
     {angle2 angle1 r y x}{exch def}forall
     /fx { cos r mul x add } def
+    /fx' { sin r mul x add } def
     /fy { sin r mul y add } def
-    /N 90 def
+    /fy' { cos r mul y add } def
+    /N 5 def
     /h angle2 angle1 sub N div def
     /t angle1 def
     /_x t fx def
     /_y t fy def
     _x _y
-    cpath dup length 0 eq {
-        moveto
-    }{
-        lineto
-    } ifelse
-    N {
-        /t t h add def
-        /_x t fx def
-        /_y t fy def
-        _x _y lineto
-    } repeat
+    pstack()=
+    cpath length 0 eq
+    { moveto }{ lineto } ifelse  % start pt
+    %B(t)= P1*(1-t)^3 + P2*3t(1-t)^2 + P3*t^2(1-t) + P4*t^3
+    %N {
+    %    t h 3 div add dup
+    %    fx' exch fy'  % ctrl pt 1
+    %    /t t h add def
+    %    /_x t fx def
+    %    /_y t fy def
+    %    t h 3 div sub dup
+    %    fx' exch fy'  % ctrl pt 2
+    %    _x _y         % end pt
+    %    pstack()=
+    %    curveto
+    %} repeat
 end } def
 
 % -  closepath  -
