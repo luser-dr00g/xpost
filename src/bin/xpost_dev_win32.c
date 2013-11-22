@@ -344,6 +344,14 @@ int _getpix (Xpost_Context *ctx,
 }
 
 static
+int _sign (int x)
+{
+	if (x < 0) return -1;
+	else if (x == 0) return 0;
+	else return 1;
+}
+
+static
 int _drawline (Xpost_Context *ctx,
                Xpost_Object val,
                Xpost_Object x1,
@@ -359,13 +367,15 @@ int _drawline (Xpost_Context *ctx,
     int _x2;
     int _y1;
     int _y2;
-    int steep;
     int deltax;
     int deltay;
-    int error;
-    int ystep;
     int x;
     int y;
+	int s1;
+	int s2;
+	int interchange;
+	int err;
+	int i;
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(val) == realtype)
@@ -388,6 +398,9 @@ int _drawline (Xpost_Context *ctx,
     _x2 = x2.int_.val;
     _y1 = y1.int_.val;
     _y2 = y2.int_.val;
+
+	XPOST_LOG_INFO("_drawline(%d, %d, %d, %d)",
+			_x1, _y1, _x2, _y2);
 
     if (_x1 == _x2)
     {
@@ -433,18 +446,42 @@ int _drawline (Xpost_Context *ctx,
         return 0;
     }
 
-    steep = abs(_y2 - _y1) > abs(_x2 - _x1);
-    if (steep)
-    {
-        int tmp;
 
-        tmp = _x1;
-        _x1 = _y1;
-        _y1 = tmp;
-        tmp = _x2;
-        _x2 = _y2;
-        _y2 = tmp;
-    }
+
+	x = _x1;
+	y = _y1;
+	deltax = abs(_x2 - _x1);
+	s1 = _sign(_x2 - _x1);
+	deltay = abs(_y2 - _y1);
+	s2 = _sign(_y2 - _y1);
+	interchange = (deltay > deltax);
+	if (interchange)
+	{
+		int tmp;
+
+		tmp = deltax;
+		deltax = deltay;
+		deltay = tmp;
+	}
+	err = 2 * deltay - deltax;
+	for (i = 1; i <= deltax; ++i)
+	{
+		private.buf[y * private.width + x] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+		while (err >= 0)
+		{
+			if (interchange)
+				x += s1;
+			else
+				y += s2;
+			err -= 2 * deltax;
+		}
+		if (interchange)
+			y += s2;
+		else
+			x += s1;
+		err += 2 * deltay;
+	}
+
     if (_x1 > _x2)
     {
         int tmp;
@@ -452,29 +489,6 @@ int _drawline (Xpost_Context *ctx,
         tmp = _x1;
         _x1 = _x2;
         _x2 = tmp;
-        tmp = _y1;
-        _y1 = _y2;
-        _y2 = tmp;
-    }
-
-    deltax = _x2 - _x1;
-    deltay = abs(_y2 - _y1);
-    error = deltax / 2;
-    y = _y1;
-    ystep = (_y1 < _y2) ? 1 : -1;
-
-    for (x = _x1; x < _x2; x++)
-    {
-        if (steep)
-            private.buf[x * private.width + y] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
-        else
-            private.buf[y * private.width + x] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
-        error -= deltay;
-        if (error < 0)
-        {
-            y += ystep;
-            error += deltax;
-        }
     }
 
     if (_y1 > _y2)
@@ -485,6 +499,7 @@ int _drawline (Xpost_Context *ctx,
         _y1 = _y2;
         _y2 = tmp;
     }
+
 
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
