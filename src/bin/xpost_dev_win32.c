@@ -696,6 +696,9 @@ int loadwin32devicecont (Xpost_Context *ctx,
     op = consoper(ctx, "newwin32device", newwin32device, 1, 2, integertype, integertype);
     bdcput(ctx, userdict, consname(ctx, "newwin32device"), op);
 
+    op = consoper(ctx, "win32EventHandler", _event_handler, 0, 0);
+    _event_handler_opcode = op.mark_.padw;
+
     return 0;
 }
 
