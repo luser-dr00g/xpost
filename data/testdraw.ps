@@ -9,8 +9,8 @@ loadgraphics
 } def
 
 /randpoint {
+    rand 500 mod
     rand 400 mod
-    rand 300 mod
 } def
 
 /randline {
@@ -19,8 +19,8 @@ loadgraphics
 } def
 
 /randbox {
+    rand 300 mod
     rand 200 mod
-    rand 150 mod
     randpoint moveto
     1 index 0 rlineto
     0 exch rlineto
@@ -37,35 +37,47 @@ loadgraphics
     curveto
 } def
 
-realtime srand
+realtime
+dup (initial rng seed: )=only =
+dup /initialsrand exch def
+srand
 
 % curves
 
 0 setlinewidth
 10 { randcurve randgray stroke } repeat
+(initial rng seed: )=only initialsrand =
 showpage
 
 6 setlinewidth
 10 { randcurve randwidth randgray stroke } repeat
+(initial rng seed: )=only initialsrand =
 showpage
 
 % boxes
 
 0 setlinewidth
 10 { randbox randgray stroke newpath } repeat
+(initial rng seed: )=only initialsrand =
 showpage
 
 10 { randbox randgray fill newpath } repeat
+(initial rng seed: )=only initialsrand =
 showpage
 
 % lines
 
 0 setlinewidth
 10 { randline randgray stroke } repeat
+(initial rng seed: )=only initialsrand =
 showpage
 
 10 { randline randwidth randgray stroke } repeat
+(initial rng seed: )=only initialsrand =
 showpage
 
 10 { randbox randgray fill newpath } repeat
+(initial rng seed: )=only initialsrand =
 showpage
+
+(initial rng seed: )=only initialsrand =
