@@ -507,16 +507,9 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
 
     } else { /* local */
         printf("**************************************************\n");
-        printf("                                                  \n");
         printf("   CCC    O    L    L    EEEE   CCC TTTTT  !!     \n");
-        printf("  C      O O   L    L    E     C      T    !!     \n");
-        printf(" C      O   O  L    L    E    C       T    !!     \n");
-        printf(" C     O     O L    L    EEE  C       T    !!     \n");
-        printf(" C     O     O L    L    E    C       T    !!     \n");
-        printf(" C      O   O  L    L    E    C       T    !!     \n");
-        printf("  C      O O   L    L    E     C      T           \n");
+        printf("  C      O O   L    L    EE    C      T    !!     \n");
         printf("   CCC    O    LLLL LLLL EEEE   CCC   T    !!     \n");
-        printf("                                                  \n");
         printf("**************************************************\n");
         unmark(mem);
 
