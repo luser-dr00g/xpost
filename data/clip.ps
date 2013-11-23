@@ -56,7 +56,7 @@
     /f exch def
     /p exch def
     /n p length 1 sub def
-    (n=)print n =
+    %(n=)print n =
     n 0 gt {
 
     %/P p n 1 sub get def
@@ -74,11 +74,11 @@
             fP 0 le {
                 counttomark 0 eq {
                     P
-                    (P)=
+                    %(P)=
                 } if
                 fQ 0 le {
                     Q
-                    (Q)=
+                    %(Q)=
                 }{
                     fP 0 lt {
                         /QP fQ fP sub def
@@ -86,7 +86,7 @@
                             fQ P 0 get mul fP Q 0 get mul sub QP div
                             fQ P 1 get mul fP Q 1 get mul sub QP div
                         ]
-                        (I)=
+                        %(I)=
                     } if
                 } ifelse
             }{
@@ -97,10 +97,10 @@
                             fQ P 0 get mul fP Q 0 get mul sub QP div
                             fQ P 1 get mul fP Q 1 get mul sub QP div
                         ]
-                        (I)=
+                        %(I)=
                     } if
                     Q
-                    (Q)=
+                    %(Q)=
                 } if
             } ifelse
             /P Q def
@@ -130,7 +130,7 @@ end } def
     %    dup length 1 sub get /cmd /close eq 
     %def
     %closepath
-    (doclip)=
+    %(doclip)=
 
     flattenpath
     /PA [                           % PAth    polygon array
@@ -160,8 +160,8 @@ end } def
         pathforall
     ] def
 
-    (PA: )print PA ==
-    (CR: )print CR ==
+    %(PA: )print PA ==
+    %(CR: )print CR ==
 
     CR { % one clipping polygon
         dup dup length 1 sub get % polygon final-point
@@ -170,7 +170,7 @@ end } def
             /V exch def
             [ U aload pop V aload pop p2abc ]  % clip-line
             /CL exch def
-            CL ==
+            %CL ==
 
             /PA [ PA { % one subject polygon
                 CL hodgman-sutherland
@@ -180,7 +180,7 @@ end } def
         } forall
     } forall
     newpath
-    PA ==
+    %PA ==
     PA {
         dup length 0 gt {
             dup 0 get << /data 3 2 roll /cmd /move >> cpath addtopath
