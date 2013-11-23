@@ -63,8 +63,7 @@ int xpost_free_init(Xpost_Memory_File *mem)
         return 0;
     }
 
-    (void) xpost_memory_register_free_list_alloc_function(mem,
-            xpost_free_alloc);
+    (void) xpost_memory_register_free_list_alloc_function(mem, xpost_free_alloc);
 
     /*
        unsigned int ent;

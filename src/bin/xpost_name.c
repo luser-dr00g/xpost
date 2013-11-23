@@ -37,6 +37,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"  // name structures live in mfiles
 #include "xpost_object.h"  // names are objects, with associated hidden string objects
 #include "xpost_stack.h"  // name strings live on a stack
@@ -94,13 +95,17 @@ int initnames(Xpost_Context *ctx)
     {
         return 0;
     }
-    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK);
+    //assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK);
+    if (ent != XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK)
+        XPOST_LOG_ERR("Warning: name stack is not in special position");
     ret = xpost_memory_table_alloc(ctx->gl, 0, 0, &ent); //gl:NAMET
     if (!ret)
     {
         return 0;
     }
-    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE);
+    //assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE);
+    if (ent != XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE)
+        XPOST_LOG_ERR("Warning: name tree is not in special position");
 
     xpost_stack_init(ctx->gl, &t);
     tab = (void *)ctx->gl->base; //recalc pointer
@@ -117,13 +122,17 @@ int initnames(Xpost_Context *ctx)
     {
         return 0;
     }
-    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK);
+    //assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK);
+    if (ent != XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK)
+        XPOST_LOG_ERR("Warning: name stack is not in special position");
     ret = xpost_memory_table_alloc(ctx->lo, 0, 0, &ent); //lo:NAMET
     if (!ret)
     {
         return 0;
     }
-    assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE);
+    //assert(ent == XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE);
+    if (ent != XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE)
+        XPOST_LOG_ERR("Warning: name tree is not in special position");
 
     xpost_stack_init(ctx->lo, &t);
     tab = (void *)ctx->lo->base; //recalc pointer
@@ -132,7 +141,9 @@ int initnames(Xpost_Context *ctx)
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &nstk);
     xpost_stack_push(ctx->lo, nstk, consbst(ctx, CNT_STR("_not_a_name_")));
-    assert (xpost_stack_topdown_fetch(ctx->lo, nstk, 0).comp_.ent == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
+    //assert (xpost_stack_topdown_fetch(ctx->lo, nstk, 0).comp_.ent == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
+    if (xpost_stack_topdown_fetch(ctx->lo, nstk, 0).comp_.ent != XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME)
+        XPOST_LOG_ERR("Warning: bogus name not in special position");
 
     ctx->vmmode = mode;
 

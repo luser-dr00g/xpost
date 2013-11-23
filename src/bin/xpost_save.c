@@ -86,10 +86,16 @@ Xpost_Object xpost_save_create_snapshot_object (Xpost_Memory_File *mem)
 {
     Xpost_Object v;
     unsigned int vs;
+    int ret;
 
     v.tag = savetype;
-    xpost_memory_table_get_addr(mem,
+    ret = xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load save stack");
+        return null;
+    }
     v.save_.lev = xpost_stack_count(mem, vs);
     xpost_stack_init(mem, &v.save_.stk);
     xpost_stack_push(mem, vs, v);
@@ -104,11 +110,22 @@ unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
     unsigned cnt;
     unsigned tlev;
     unsigned int vs;
+    int ret;
 
-    xpost_memory_table_get_addr(mem,
+    ret = xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load save stack");
+        return 0;
+    }
     cnt = xpost_stack_count(mem, vs);
-    xpost_memory_table_find_relative(mem, &tab, &ent);
+    ret = xpost_memory_table_find_relative(mem, &tab, &ent);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        return 0;
+    }
     tlev = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK)
         >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET;
 
@@ -123,16 +140,31 @@ static unsigned copy(Xpost_Memory_File *mem,
     unsigned new;
     unsigned tent = ent;
     unsigned int adr;
+    int ret;
 
-    xpost_memory_table_find_relative(mem, &tab, &ent);
+    ret = xpost_memory_table_find_relative(mem, &tab, &ent);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        return 0;
+    }
     if (!xpost_memory_table_alloc(mem, tab->tab[ent].sz, tab->tab[ent].tag, &new))
     {
         XPOST_LOG_ERR("copy cannot allocate entity to backup object");
         return 0;
     }
     ent = tent;
-    xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
-    xpost_memory_table_get_addr(mem, new, &adr);
+    ret = xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        return 0;
+    }
+    ret = xpost_memory_table_get_addr(mem, new, &adr);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+    }
     memcpy(mem->base + adr,
             mem->base + tab->tab[ent].adr,
             tab->tab[ent].sz);
@@ -153,12 +185,23 @@ void xpost_save_save_ent(Xpost_Memory_File *mem,
     unsigned rent = ent;
     Xpost_Object sav;
     unsigned int adr;
+    int ret;
 
-    xpost_memory_table_get_addr(mem,
+    ret = xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &adr);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load save stack");
+        return;
+    }
     sav = xpost_stack_topdown_fetch(mem, adr, 0);
 
-    xpost_memory_table_find_relative(mem, &tab, &rent);
+    ret = xpost_memory_table_find_relative(mem, &tab, &rent);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        return;
+    }
     tlev = sav.save_.lev;
     tab->tab[rent].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK; // clear TLEV field
     tab->tab[rent].mark |= (tlev << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);  // set TLEV field
@@ -176,13 +219,19 @@ void xpost_save_save_ent(Xpost_Memory_File *mem,
     pop save stack */
 void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
 {
-    unsigned v;
+    unsigned int v;
     Xpost_Object sav;
     Xpost_Memory_Table *stab, *ctab;
-    unsigned cnt;
-    unsigned sent, cent;
+    unsigned int cnt;
+    unsigned int sent, cent;
+    int ret;
 
-    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &v); // save-stack address
+    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &v); // save-stack address
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load save stack");
+        return;
+    }
     sav = xpost_stack_pop(mem, v); // save-object (stack of saverec_'s)
     cnt = xpost_stack_count(mem, sav.save_.stk);
     while (cnt--) {
@@ -191,8 +240,18 @@ void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
         rec = xpost_stack_pop(mem, sav.save_.stk);
         sent = rec.saverec_.src;
         cent = rec.saverec_.cpy;
-        xpost_memory_table_find_relative(mem, &stab, &sent);
-        xpost_memory_table_find_relative(mem, &ctab, &cent);
+        ret = xpost_memory_table_find_relative(mem, &stab, &sent);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot find table for ent %u", sent);
+            return;
+        }
+        ret = xpost_memory_table_find_relative(mem, &ctab, &cent);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot find table for ent %u", cent);
+            return;
+        }
         hold = stab->tab[sent].adr;                 // tmp = src
         stab->tab[sent].adr = ctab->tab[cent].adr;  // src = cpy
         ctab->tab[cent].adr = hold;                 // cpy = tmp

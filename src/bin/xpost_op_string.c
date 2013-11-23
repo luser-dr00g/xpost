@@ -54,7 +54,6 @@ int Istring(Xpost_Context *ctx,
 {
     Xpost_Object str;
     str = consbst(ctx, I.int_.val, NULL);
-    xpost_stack_push(ctx->lo, ctx->hold, str);
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(str));
     return 0;
 }

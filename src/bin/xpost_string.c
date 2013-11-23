@@ -34,6 +34,7 @@
 
 #include "xpost_memory.h"  // strings live in mfile, accessed via mtab
 #include "xpost_object.h"  // strings are objects
+#include "xpost_stack.h"
 
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  // banked strings may live in local or global vm
@@ -79,6 +80,7 @@ Xpost_Object consbst(Xpost_Context *ctx,
 {
     Xpost_Object s;
     s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
+    xpost_stack_push(ctx->lo, ctx->hold, s);
     if (ctx->vmmode==GLOBAL)
         s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     return s;
