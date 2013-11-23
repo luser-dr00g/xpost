@@ -169,21 +169,21 @@ int IIroll (Xpost_Context *ctx,
     {
         r = xpost_stack_topdown_fetch(ctx->lo, ctx->os, n - 1 - i);
         if (xpost_object_get_type(r) == invalidtype)
-            return unregistered;
+            return stackunderflow;
         t[i] = r;
     }
     for (i = 0; i < j; i++)
     {
         r = xpost_stack_topdown_fetch(ctx->lo, ctx->os, j - 1 - i);
         if (xpost_object_get_type(r) == invalidtype)
-            return unregistered;
+            return stackunderflow;
         if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, n - 1 - i, r))
-            return unregistered;
+            return stackunderflow;
     }
     for (i = 0; i < n-j; i++)
     {
         if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, n - j - 1 - i, t[i]))
-            return unregistered;
+            return stackunderflow;
     }
     return 0;
 }
@@ -195,11 +195,13 @@ int Zclear (Xpost_Context *ctx)
 {
     Xpost_Stack *s = (void *)(ctx->lo->base + ctx->os);
     s->top = 0;
+#if 0
     if (s->nextseg) /* trim the stack */
     {
         xpost_stack_free(ctx->lo, s->nextseg);
         s->nextseg = 0;
     }
+#endif
     return 0;
 }
 

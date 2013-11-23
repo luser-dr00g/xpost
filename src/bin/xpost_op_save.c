@@ -63,6 +63,7 @@ void *alloca (size_t);
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -95,9 +96,15 @@ int Vrestore (Xpost_Context *ctx,
 {
     int z;
     unsigned int vs;
+    int ret;
 
-    xpost_memory_table_get_addr(ctx->lo,
+    ret = xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot retrieve address for save stack");
+        return VMerror;
+    }
     z = xpost_stack_count(ctx->lo, vs);
     while(z > V.save_.lev) {
         xpost_save_restore_snapshot(ctx->lo);
@@ -145,6 +152,7 @@ int Agcheck (Xpost_Context *ctx,
     return 0;
 }
 
+#if 0
 /* -  vmstatus  level used max
    return size information for (local) vm */
 static
@@ -159,6 +167,7 @@ int Zvmstatus (Xpost_Context *ctx)
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->max));
     return 0;
 }
+#endif
 
 int initopv(Xpost_Context *ctx,
              Xpost_Object sd)
@@ -177,7 +186,9 @@ int initopv(Xpost_Context *ctx,
     op = consoper(ctx, "setglobal", Bsetglobal, 0, 1, booleantype); INSTALL;
     op = consoper(ctx, "currentglobal", Zcurrentglobal, 1, 0); INSTALL;
     op = consoper(ctx, "gcheck", Agcheck, 1, 1, anytype); INSTALL;
+#if 0
     op = consoper(ctx, "vmstatus", Zvmstatus, 3, 0); INSTALL;
+#endif
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */

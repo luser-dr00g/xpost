@@ -99,6 +99,7 @@ int arrtomark (Xpost_Context *ctx)
         return unmatchedmark;
     i = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
     a = consbar(ctx, i);
+    xpost_stack_push(ctx->lo, ctx->hold, a);
     for ( ; i > 0; i--){
         v = xpost_stack_pop(ctx->lo, ctx->os);
         barput(ctx, a, i-1, v);
