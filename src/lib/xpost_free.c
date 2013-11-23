@@ -75,7 +75,8 @@ int xpost_free_init(Xpost_Memory_File *mem)
     return 1;
 }
 
-/* free this ent! returns reclaimed size */
+/* free this ent! returns reclaimed size or -1 on error
+ */
 int xpost_free_memory_ent(Xpost_Memory_File *mem,
                           unsigned int ent)
 {
@@ -84,12 +85,18 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     unsigned int a;
     unsigned int z;
     unsigned int sz;
+    int ret;
     /* return; */
 
     if (ent < mem->start)
         return 0;
 
-    xpost_memory_table_find_relative(mem, &tab, &rent);
+    ret = xpost_memory_table_find_relative(mem, &tab, &rent);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot free ent %u", ent);
+        return -1;
+    }
     a = tab->tab[rent].adr;
     sz = tab->tab[rent].sz;
     if (sz == 0) return 0;
@@ -97,7 +104,6 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     if (tab->tab[rent].tag == filetype)
     {
         FILE *fp;
-        int ret;
         ret = xpost_memory_get(mem, ent, 0, sizeof(FILE *), &fp);
         if (!ret)
         {
@@ -128,7 +134,12 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     }
     tab->tab[rent].tag = 0;
 
-    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);
+    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("unable to load free list head");
+        return -1;
+    }
     /* printf("freeing %d bytes\n", xpost_memory_table_get_size(mem, ent)); */
 
     /* copy the current free-list head to the data area of the ent. */
@@ -145,17 +156,30 @@ void xpost_free_dump(Xpost_Memory_File *mem)
 {
     unsigned int e;
     unsigned int z;
-    xpost_memory_table_get_addr(mem,
-                                XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);
+    int ret;
+
+    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z);
+    if (!ret)
+    {
+        return;
+    }
 
     printf("freelist: ");
     memcpy(&e, mem->base + z, sizeof(unsigned int));
     while (e)
     {
         unsigned int sz;
-        xpost_memory_table_get_size(mem, e, &sz);
+        ret = xpost_memory_table_get_size(mem, e, &sz);
+        if (!ret)
+        {
+            return;
+        }
         printf("%d(%d) ", e, sz);
-        xpost_memory_table_get_addr(mem, e, &z);
+        ret = xpost_memory_table_get_addr(mem, e, &z);
+        if (!ret)
+        {
+            return;
+        }
         memcpy(&e, mem->base+z, sizeof(unsigned int));
     }
 }
@@ -163,7 +187,9 @@ void xpost_free_dump(Xpost_Memory_File *mem)
 /* scan the free list for a suitably sized bit of memory,
 
    if the allocator falls back to fresh memory XPOST_GARBAGE_COLLECTION_PERIOD times,
-        it triggers a collection. */
+        it triggers a collection.
+    Returns 1 on success, 0 on failure, 2 to request garbage collection and re-call.
+ */
 int xpost_free_alloc(Xpost_Memory_File *mem,
                      unsigned int sz,
                      unsigned int tag,
@@ -172,29 +198,54 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     unsigned int z;
     unsigned int e;                     /* working pointer */
     static int period = XPOST_GARBAGE_COLLECTION_PERIOD;
+    int ret;
 
-    xpost_memory_table_get_addr(mem,
-            XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
+    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
+    if (!ret)
+    {
+        XPOST_LOG_ERR("unable to load free list head");
+        return 0;
+    }
 
     memcpy(&e, mem->base+z, sizeof(unsigned int)); /* e = *z */
     while (e) /* e is not zero */
     {
         unsigned int tsz;
-        xpost_memory_table_get_size(mem,e, &tsz);
+        ret = xpost_memory_table_get_size(mem,e, &tsz);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot retrieve size of ent %u", e);
+            return 0;
+        }
         if (tsz >= sz)
         {
             Xpost_Memory_Table *tab;
             unsigned int ent;
             unsigned int ad;
-            xpost_memory_table_get_addr(mem,e, &ad);
+            ret = xpost_memory_table_get_addr(mem,e, &ad);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address of ent %u", e);
+                return 0;
+            }
             memcpy(mem->base+z, mem->base + ad, sizeof(unsigned int));
             ent = e;
-            xpost_memory_table_find_relative(mem, &tab, &ent);
+            ret = xpost_memory_table_find_relative(mem, &tab, &ent);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot find table for ent %u", e);
+                return 0;
+            }
             tab->tab[ent].tag = tag;
             *entity = e;
             return 1; /* found, return SUCCESS */
         }
-        xpost_memory_table_get_addr(mem, e, &z);
+        ret = xpost_memory_table_get_addr(mem, e, &z);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot retrieve address for ent %u", e);
+            return 0;
+        }
         memcpy(&e, mem->base+z, sizeof(unsigned int));
     }
     /* finished scanning free list */
@@ -225,6 +276,7 @@ unsigned int xpost_free_realloc(Xpost_Memory_File *mem,
     unsigned int newadr;
     unsigned int ent;
     unsigned int rent; /* relative ent */
+    int ret;
 
 #ifdef DEBUGFREE
     printf("xpost_free_realloc: ");
@@ -233,9 +285,19 @@ unsigned int xpost_free_realloc(Xpost_Memory_File *mem,
 #endif
 
     /* allocate new entry */
-    xpost_memory_table_alloc(mem, newsize, 0, &ent);
+    ret = xpost_memory_table_alloc(mem, newsize, 0, &ent);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot allocate new memory");
+        return 0;
+    }
     rent = ent;
     xpost_memory_table_find_relative(mem, &tab, &rent);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        return 0;
+    }
 
     /* steal its adr */
     newadr = tab->tab[rent].adr;
