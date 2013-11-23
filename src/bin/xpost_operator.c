@@ -266,7 +266,10 @@ Xpost_Object consoper(Xpost_Context *ctx,
     return o;
 }
 
-/* copy top n elements to holding stack & pop them */
+/*
+   clear hold
+   and pop n objects from opstack to hold stack.
+ */
 static
 void holdn (Xpost_Context *ctx,
             Xpost_Memory_File *mem,
@@ -305,7 +308,6 @@ int opexec(Xpost_Context *ctx,
     int i,j;
     int pass;
     int err = unregistered;
-    char *errmsg = "unspecified error";
     Xpost_Stack *hold;
     int ct;
     unsigned int optadr;
@@ -329,7 +331,6 @@ int opexec(Xpost_Context *ctx,
         if (ct < sp[i].in) {
             pass = 0;
             err = stackunderflow;
-            errmsg = "opexec";
             continue;
         }
         pass = 1;
@@ -354,12 +355,10 @@ int opexec(Xpost_Context *ctx,
                     && xpost_object_is_exe(el)) continue;
             pass = 0;
             err = typecheck;
-            errmsg = "opexec";
             break;
         }
         if (pass) goto call;
     }
-    //error(err, errmsg);
     return err;
 
 call:

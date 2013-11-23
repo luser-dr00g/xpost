@@ -118,6 +118,7 @@ Xpost_Object consbar(Xpost_Context *ctx,
 {
     Xpost_Object a = consarr(ctx->vmmode==GLOBAL?
             ctx->gl: ctx->lo, sz);
+    xpost_stack_push(ctx->lo, ctx->hold, a);
     if (ctx->vmmode==GLOBAL)
         a.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     return a;

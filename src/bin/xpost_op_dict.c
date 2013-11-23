@@ -63,7 +63,6 @@ int Idict(Xpost_Context *ctx,
 {
     Xpost_Object dic;
     dic = consbdc(ctx, I.int_.val);
-    xpost_stack_push(ctx->lo, ctx->hold, dic);
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(dic));
     return 0;
 }
@@ -84,7 +83,6 @@ int dictomark(Xpost_Context *ctx)
     if ((i % 2) == 1)
         return rangecheck;
     d = consbdc(ctx, i);
-    xpost_stack_push(ctx->lo, ctx->hold, d);
     for ( ; i > 0; i -= 2){
         v = xpost_stack_pop(ctx->lo, ctx->os);
         k = xpost_stack_pop(ctx->lo, ctx->os);
