@@ -198,7 +198,7 @@ DATA_DIR(/qsort.ps)strcat run
     /.intersect { 8 dict begin
         {Dy Dx Cy Cx By Bx Ay Ax}{exch def}forall
 
-        [ Ax Ay Bx By Cx Cy Dx Dy ]{=only( )=only} forall
+        %[ Ax Ay Bx By Cx Cy Dx Dy ]{=only( )=only} forall
 
         { %stopped
             % reject degenerate line
@@ -238,7 +238,7 @@ DATA_DIR(/qsort.ps)strcat run
             Ay ABpos theSin mul add
         } stopped not
 
-        dup { 3 copy =only( )=only exch =only( )=only =only } if ()=
+        %dup { 3 copy =only( )=only exch =only( )=only =only } if ()=
 
     end }
 
@@ -278,7 +278,7 @@ DATA_DIR(/qsort.ps)strcat run
             /P Q def
         } forall
         ]        % [list-of-x/y-intersections
-        dup ==()=
+        %dup ==()=
 
         (sort scanline intersection list)=
         dup { % comparitor  % [x1 y1] [x2 y2] . bool
@@ -294,7 +294,7 @@ DATA_DIR(/qsort.ps)strcat run
                 lt             % (y1 < y2)
             } ifelse
         } qsort   % [sorted-list-of-intersections]
-        dup ==()=
+        %dup ==()=
 
         %(%lineedit)(r)file pop %pause
 

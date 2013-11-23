@@ -400,7 +400,7 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
 
 int xpost_memory_file_alloc (Xpost_Memory_File *mem,
                              unsigned int sz,
-                             unsigned int *addr)
+                             unsigned int *retaddr)
 {
     unsigned int adr;
 
@@ -433,7 +433,7 @@ int xpost_memory_file_alloc (Xpost_Memory_File *mem,
         memset(mem->base + adr, 0, sz);
     }
 
-    *addr = adr;
+    *retaddr = adr;
     return 1;
 }
 
@@ -496,7 +496,7 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
 
 
 int xpost_memory_table_init (Xpost_Memory_File *mem,
-                             unsigned int *addr)
+                             unsigned int *retaddr)
 {
     Xpost_Memory_Table *tab;
     unsigned int adr;
@@ -517,7 +517,7 @@ int xpost_memory_table_init (Xpost_Memory_File *mem,
     tab->nexttab = 0;
     tab->nextent = 0;
 
-    *addr = adr;
+    *retaddr = adr;
     return 1;
 }
 
@@ -567,7 +567,7 @@ int _xpost_memory_table_alloc_new (Xpost_Memory_File *mem,
 
     ent = tab->nextent;
     ++tab->nextent;
-    if (ent > (1 << ((sizeof WORD)*8)) - 1)
+    if (ent > (1 << (sizeof(word)*8)) - 1)
     {
         XPOST_LOG_ERR("Warning: ent numbers exceed object capacity!");
     }
@@ -670,7 +670,7 @@ int xpost_memory_table_find_relative (Xpost_Memory_File *mem,
 
 int xpost_memory_table_get_addr (Xpost_Memory_File *mem,
                                  unsigned int ent,
-                                 unsigned int *addr)
+                                 unsigned int *retaddr)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -678,14 +678,14 @@ int xpost_memory_table_get_addr (Xpost_Memory_File *mem,
         XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
-    *addr = tab->tab[ent].adr;
+    *retaddr = tab->tab[ent].adr;
     return 1;
 }
 
 
 int xpost_memory_table_set_addr (Xpost_Memory_File *mem,
                                  unsigned int ent,
-                                 unsigned int addr)
+                                 unsigned int setaddr)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -693,7 +693,7 @@ int xpost_memory_table_set_addr (Xpost_Memory_File *mem,
         XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
-    tab->tab[ent].adr = addr;
+    tab->tab[ent].adr = setaddr;
     return 1;
 }
 
@@ -730,7 +730,7 @@ int xpost_memory_table_set_size (Xpost_Memory_File *mem,
 
 int xpost_memory_table_get_mark (Xpost_Memory_File *mem,
                                  unsigned int ent,
-                                 unsigned int *mark)
+                                 unsigned int *retmark)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -738,14 +738,14 @@ int xpost_memory_table_get_mark (Xpost_Memory_File *mem,
         XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
-    *mark = tab->tab[ent].mark;
+    *retmark = tab->tab[ent].mark;
     return 1;
 }
 
 
 int xpost_memory_table_set_mark (Xpost_Memory_File *mem,
                                  unsigned int ent,
-                                 unsigned int mark)
+                                 unsigned int setmark)
 {
     Xpost_Memory_Table *tab;
     if (!xpost_memory_table_find_relative(mem, &tab, &ent))
@@ -753,7 +753,7 @@ int xpost_memory_table_set_mark (Xpost_Memory_File *mem,
         XPOST_LOG_ERR("%d entity not found %u", VMerror, ent);
         return 0;
     }
-    tab->tab[ent].mark = mark;
+    tab->tab[ent].mark = setmark;
     return 1;
 }
 
