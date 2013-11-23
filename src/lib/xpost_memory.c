@@ -66,6 +66,7 @@
 #include "xpost_log.h"
 #include "xpost_error.h"
 #include "xpost_memory.h"
+#include "xpost_object.h"
 
 /* stubs */
 
@@ -566,6 +567,10 @@ int _xpost_memory_table_alloc_new (Xpost_Memory_File *mem,
 
     ent = tab->nextent;
     ++tab->nextent;
+    if (ent > (1 << ((sizeof WORD)*8)) - 1)
+    {
+        XPOST_LOG_ERR("Warning: ent numbers exceed object capacity!");
+    }
 
     if (!xpost_memory_file_alloc(mem, sz, &adr))
     {

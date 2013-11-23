@@ -26,11 +26,31 @@
     closepath
     flattenpath
     doclip
-    [ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    %[ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    [
+        [ % mark
+        {
+            2 array astore % ... mark ... [x0 y0]
+            counttomark 1 ne {
+                counttomark 1 add 1 roll % ... [x0 y0] mark ...
+                ] exch % ... [ ... ] [x0 y0]
+                [ exch % ... [ ... ] [ [x0 y0]
+            } if % ... +++ mark [x0 y0]
+        }
+        { 2 array astore } % ... mark [x0 y0] ... [xN yN]
+        {}
+        { counttomark 1 sub index } % ... mark [x0 y0] ... [x0 y0]
+        pathforall
+        ]
+    ]
     {
-        currentgray 255 mul cvi
-        exch DEVICE dup /FillPoly get exec
-        flushpage
+        dup length 2 gt {
+            currentgray 255 mul cvi
+            exch DEVICE dup /FillPoly get exec
+            flushpage
+        }{
+            pop
+        } ifelse
     } forall
 
     newpath

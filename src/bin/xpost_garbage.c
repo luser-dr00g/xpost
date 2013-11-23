@@ -477,6 +477,8 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
     }
 
     if (isglobal) {
+        return 0; /* do not perform global collections at this time */
+
         unmark(mem);
 
         ret = xpost_memory_table_get_addr(mem,
@@ -503,7 +505,19 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
             collect(ctx->lo, 0, markall);
         }
 
-    } else {
+    } else { /* local */
+        printf("**************************************************\n");
+        printf("                                                  \n");
+        printf("   CCC    O    L    L    EEEE   CCC TTTTT  !!     \n");
+        printf("  C      O O   L    L    E     C      T    !!     \n");
+        printf(" C      O   O  L    L    E    C       T    !!     \n");
+        printf(" C     O     O L    L    EEE  C       T    !!     \n");
+        printf(" C     O     O L    L    E    C       T    !!     \n");
+        printf(" C      O   O  L    L    E    C       T    !!     \n");
+        printf("  C      O O   L    L    E     C      T           \n");
+        printf("   CCC    O    LLLL LLLL EEEE   CCC   T    !!     \n");
+        printf("                                                  \n");
+        printf("**************************************************\n");
         unmark(mem);
 
         ret = xpost_memory_table_get_addr(mem,
