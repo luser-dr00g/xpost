@@ -70,13 +70,13 @@
         mark
         {          % x0 y0 
             2 copy % x0 y0 x0 y0
-            pstack(M)=
+            %pstack(M)=
         }
         {          % ... xN-1 yN-1 xN yN
             4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
             currentgray 255 mul cvi
             5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
-            pstack(L)=
+            %pstack(L)=
             DEVICE dup /DrawLine get exec  % ... xN-1 yN-1 xN yN
             4 2 roll pop pop % ... xN yN
         }
@@ -85,7 +85,7 @@
             4 2 roll % xN yN x0 y0
             currentgray 255 mul cvi
             5 1 roll % gray xN yN x0 y0
-            pstack(C)=
+            %pstack(C)=
             DEVICE dup /DrawLine get exec  % -
         }
         pathforall
