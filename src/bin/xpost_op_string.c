@@ -52,7 +52,10 @@ static
 int Istring(Xpost_Context *ctx,
              Xpost_Object I)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbst(ctx, I.int_.val, NULL)));
+    Xpost_Object str;
+    str = consbst(ctx, I.int_.val, NULL);
+    xpost_stack_push(ctx->lo, ctx->hold, str);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(str));
     return 0;
 }
 

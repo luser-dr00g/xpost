@@ -37,6 +37,7 @@
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -77,8 +78,12 @@ int vmstatus (Xpost_Context *ctx) {
     int lev, used, max;
     unsigned int vstk;
 
-    xpost_memory_table_get_addr(ctx->lo,
-            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk);
+    if (!xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk))
+    {
+        XPOST_LOG_ERR("cannot load save stack");
+        return VMerror;
+    }
     lev = xpost_stack_count(ctx->lo, vstk);
     used = ctx->gl->used + ctx->lo->used;
     max = ctx->gl->max + ctx->lo->max;

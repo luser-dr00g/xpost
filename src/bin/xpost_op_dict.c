@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <stdio.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -60,7 +61,10 @@ static
 int Idict(Xpost_Context *ctx,
            Xpost_Object I)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consbdc(ctx, I.int_.val)));
+    Xpost_Object dic;
+    dic = consbdc(ctx, I.int_.val);
+    xpost_stack_push(ctx->lo, ctx->hold, dic);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(dic));
     return 0;
 }
 
@@ -80,6 +84,7 @@ int dictomark(Xpost_Context *ctx)
     if ((i % 2) == 1)
         return rangecheck;
     d = consbdc(ctx, i);
+    xpost_stack_push(ctx->lo, ctx->hold, d);
     for ( ; i > 0; i -= 2){
         v = xpost_stack_pop(ctx->lo, ctx->os);
         k = xpost_stack_pop(ctx->lo, ctx->os);
@@ -241,6 +246,7 @@ int DAundef(Xpost_Context *ctx,
              Xpost_Object D,
              Xpost_Object K)
 {
+    XPOST_LOG_WARN("FIXME: undef doesn't adequately fix the chain");
     bdcundef(ctx, D, K);
     return 0;
 }
@@ -293,9 +299,17 @@ int Dcopy(Xpost_Context *ctx,
     Xpost_Memory_File *mem;
     unsigned ad;
     Xpost_Object *tp;
+    int ret;
+
     mem = xpost_context_select_memory(ctx, S);
     sz = dicmaxlength(mem, S);
-    xpost_memory_table_get_addr(mem, S.comp_.ent, &ad);
+    ret = xpost_memory_table_get_addr(mem, S.comp_.ent, &ad);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot retrieve address for dict ent %u",
+                S.comp_.ent);
+        return VMerror;
+    }
     tp = (void *)(mem->base + ad + sizeof(dichead));
     for (i=0; i < sz+1; i++) {
         if (xpost_object_get_type(tp[2 * i]) != nulltype) {
@@ -319,7 +333,15 @@ int DPforall (Xpost_Context *ctx,
     if (D.comp_.off <= D.comp_.sz) { // not finished?
         unsigned ad;
         Xpost_Object *tp;
-        xpost_memory_table_get_addr(mem, D.comp_.ent, &ad);
+        int ret;
+
+        ret = xpost_memory_table_get_addr(mem, D.comp_.ent, &ad);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot retrieve address for dict ent %u",
+                    D.comp_.ent);
+            return VMerror;
+        }
         tp = (void *)(mem->base + ad + sizeof(dichead)); 
 
         for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) { // find next pair
@@ -412,7 +434,13 @@ int cleardictstack(Xpost_Context *ctx)
     /*
     Xpost_Stack *ds;
     unsigned int dsaddr;
-    xpost_memory_table_get_addr(ctx->lo, ctx->ds, &dsaddr);
+    int ret;
+
+    ret = xpost_memory_table_get_addr(ctx->lo, ctx->ds, &dsaddr);
+    if (!ret) {
+        XPOST_LOG_ERR("cannot retrieve address for dict stack");
+        return VMerror;
+    }
     ds = (Xpost_Stack *)(ctx->lo->base + dsaddr);
     ds->top = 3;
     */

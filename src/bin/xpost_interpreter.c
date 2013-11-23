@@ -478,7 +478,7 @@ void _onerror(Xpost_Context *ctx,
 
     if (itpdata->in_onerror) {
         fprintf(stderr, "LOOP in error handler\nabort\n");
-        exit(1);
+        exit(undefinedresult);
     }
 
     itpdata->in_onerror = 1;

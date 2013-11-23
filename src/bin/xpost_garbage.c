@@ -96,7 +96,11 @@ void markent(Xpost_Memory_File *mem,
 
     tab = (void *)(mem->base);
 
-    xpost_memory_table_find_relative(mem,&tab,&ent);
+    if (!xpost_memory_table_find_relative(mem,&tab,&ent))
+    {
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        return;
+    }
     tab->tab[ent].mark |= XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
 }
 
@@ -107,7 +111,10 @@ int marked(Xpost_Memory_File *mem,
 {
     Xpost_Memory_Table *tab = (void *)(mem->base);
     if (!xpost_memory_table_find_relative(mem,&tab,&ent))
+    {
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
         return 0;
+    }
     *retval = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) >> XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET;
     return 1;
 }
@@ -148,7 +155,11 @@ void markarray(Xpost_Context *ctx,
     }
 }
 
-/* traverse the contents of composite objects */
+/* traverse the contents of composite objects
+   if markall is true, this is a collection of global vm,
+   so we must mark objects and recurse
+   even if it means switching memory files
+ */
 static
 void markobject(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
@@ -176,7 +187,12 @@ void markobject(Xpost_Context *ctx,
             break;
         if (!ret) {
             markent(mem, o.comp_.ent);
-            xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
+            ret = xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address for array ent %u", o.comp_.ent);
+                return;
+            }
             markarray(ctx, mem, ad, o.comp_.sz, markall);
         }
         break;
@@ -195,7 +211,12 @@ void markobject(Xpost_Context *ctx,
             break;
         if (!ret) {
             markent(mem, o.comp_.ent);
-            xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
+            ret = xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address for dict ent %u", o.comp_.ent);
+                return;
+            }
             markdict(ctx, mem, ad, markall);
         }
         break;
@@ -264,6 +285,7 @@ void marksavestack(Xpost_Context *ctx,
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned i;
     unsigned int ad;
+    int ret;
     (void)ctx;
 
 #ifdef DEBUG_GC
@@ -277,16 +299,40 @@ next:
         markent(mem, s->data[i].saverec_.src);
         markent(mem, s->data[i].saverec_.cpy);
         if (s->data[i].saverec_.tag == dicttype) {
-            xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
+            ret = xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address for ent %u",
+                        s->data[i].saverec_.src);
+                return;
+            }
             markdict(ctx, mem, ad, 0);
-            xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
+            ret = xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address for ent %u",
+                        s->data[i].saverec_.cpy);
+                return;
+            }
             markdict(ctx, mem, ad, 0);
         }
         if (s->data[i].saverec_.tag == arraytype) {
             unsigned sz = s->data[i].saverec_.pad;
-            xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
+            ret = xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address for array ent %u",
+                        s->data[i].saverec_.src);
+                return;
+            }
             markarray(ctx, mem, ad, sz, 0);
-            xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
+            ret = xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address for array ent %u",
+                        s->data[i].saverec_.cpy);
+                return;
+            }
             markarray(ctx, mem, ad, sz, 0);
         }
     }
@@ -342,7 +388,12 @@ unsigned sweep(Xpost_Memory_File *mem)
     unsigned sz = 0;
     int ret;
 
-    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list head */
+    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list head */
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load free list head");
+        return 0;
+    }
 
     memcpy(mem->base+z, &zero, sizeof(unsigned)); /* discard list */
     /* *(unsigned *)(mem->base+z) = 0; */
@@ -400,6 +451,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
     int isglobal;
     unsigned sz = 0;
     unsigned int ad;
+    int ret;
 
     if (initializing)
         return 0;
@@ -408,8 +460,13 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
 
     /* determine global/glocal */
     isglobal = 0;
-    xpost_memory_table_get_addr(mem,
+    ret = xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST, &ad);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load context list");
+        return 0;
+    }
     cid = (void *)(mem->base + ad);
     for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
         ctx = xpost_interpreter_cid_get_context(cid[i]);
@@ -422,11 +479,23 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
     if (isglobal) {
         unmark(mem);
 
-        xpost_memory_table_get_addr(mem,
+        ret = xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &ad);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot load save stack for %s memory",
+                    mem == ctx->gl? "global" : "local");
+            return 0;
+        }
         marksave(ctx, mem, ad);
-        xpost_memory_table_get_addr(mem,
+        ret = xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &ad);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot load name stack for %s memory",
+                    mem == ctx->gl? "global" : "local");
+            return 0;
+        }
         markstack(ctx, mem, ad, markall);
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
@@ -437,11 +506,23 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
     } else {
         unmark(mem);
 
-        xpost_memory_table_get_addr(mem,
+        ret = xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &ad);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot load save stack for %s memory",
+                    mem == ctx->gl? "global" : "local");
+            return 0;
+        }
         marksave(ctx, mem, ad);
-        xpost_memory_table_get_addr(mem, 
+        ret = xpost_memory_table_get_addr(mem, 
                 XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &ad);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot load name stack for %s memory",
+                    mem == ctx->gl? "global" : "local");
+            return 0;
+        }
         markstack(ctx, mem, ad, markall);
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {

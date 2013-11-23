@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 
+#include "xpost_log.h"
 #include "xpost_memory.h"  // accesses mfile
 #include "xpost_object.h"  // operators are objects
 #include "xpost_stack.h"  // uses a stack for argument passing
@@ -138,6 +139,11 @@ Xpost_Object operfromcode(int opcode)
     op.mark_.tag = operatortype;
     op.mark_.pad0 = 0;
     op.mark_.padw = opcode;
+    if (opcode >= noop)
+    {
+        XPOST_LOG_ERR("opcode does not index a valid operator");
+        return null;
+    }
     return op;
 }
 
@@ -166,16 +172,23 @@ Xpost_Object consoper(Xpost_Context *ctx,
     oper *optab;
     oper op;
     unsigned int optadr;
+    int ret;
 
     //fprintf(stderr, "name: %s\n", name);
     assert(ctx->gl->base);
 
-    xpost_memory_table_get_addr(ctx->gl,
+    ret = xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load optab!");
+        return null;
+    }
     optab = (void *)(ctx->gl->base + optadr);
 
     if (!(in < XPOST_STACK_SEGMENT_SIZE)) {
         printf("!(in < XPOST_STACK_SEGMENT_SIZE) in consoper(%s, %d. %d)\n", name, out, in);
+        fprintf(stderr, "!(in < XPOST_STACK_SEGMENT_SIZE) in consoper(%s, %d. %d)\n", name, out, in);
         exit(EXIT_FAILURE);
     }
     //assert(in < XPOST_STACK_SEGMENT_SIZE); // or else opexec can't call it using HOLD
@@ -196,7 +209,11 @@ Xpost_Object consoper(Xpost_Context *ctx,
             unsigned adr;
             if (noop == MAXOPS-1) error(unregistered, "optab too small!\n");
             if (!xpost_memory_file_alloc(ctx->gl, sizeof(signat), &adr))
-                error(VMerror, "consoper cannot allocate signature block");
+            {
+                //error(VMerror, "consoper cannot allocate signature block");
+                XPOST_LOG_ERR("cannot allocate signature block");
+                return null;
+            }
             optab = (void *)(ctx->gl->base + optadr); // recalc
             op.name = nm.mark_.padw;
             op.n = 1;
@@ -219,7 +236,11 @@ Xpost_Object consoper(Xpost_Context *ctx,
         {
             unsigned int ad;
             if (!xpost_memory_file_alloc(ctx->gl, in, &ad))
-                error(VMerror, "consoper cannot allocate type block");
+            {
+                //error(VMerror, "consoper cannot allocate type block");
+                XPOST_LOG_ERR("cannot allocate type block");
+                return null;
+            }
             sp[si].t = ad;
         }
         optab = (void *)(ctx->gl->base + optadr); // recalc
@@ -290,8 +311,13 @@ int opexec(Xpost_Context *ctx,
     unsigned int optadr;
     int ret;
 
-    xpost_memory_table_get_addr(ctx->gl,
+    ret = xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load optab!");
+        return VMerror;
+    }
     optab = (void *)(ctx->gl->base + optadr);
     op = optab[opcode];
     sp = (void *)(ctx->gl->base + op.sigadr);

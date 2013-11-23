@@ -66,6 +66,7 @@ void *alloca (size_t);
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -339,6 +340,7 @@ int AScvs (Xpost_Context *ctx,
     char sfalse[] = "false";
     char smark[] = "-mark-";
     int n;
+    int ret;
 
     switch(xpost_object_get_type(any)) {
     default:
@@ -399,8 +401,13 @@ int AScvs (Xpost_Context *ctx,
             oper *optab;
             oper op;
             Xpost_Object_Mark nm;
-            xpost_memory_table_get_addr(ctx->gl,
+            ret = xpost_memory_table_get_addr(ctx->gl,
                     XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot load optab!");
+                return VMerror;
+            }
             optab = (void *)(ctx->gl->base + optadr);
             op = optab[any.mark_.padw];
             nm.tag = nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK;
