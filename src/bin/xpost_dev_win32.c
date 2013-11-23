@@ -126,6 +126,8 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
+    bdcput(ctx, classdic, consname(ctx, "width"), w);
+    bdcput(ctx, classdic, consname(ctx, "height"), h);
 
      /* call device class's ps-level .copydict procedure,
         then call _create_cont, by continuation. */
@@ -155,8 +157,6 @@ int _create_cont (Xpost_Context *ctx,
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
     bdcput(ctx, devdic, consname(ctx, "Private"), privatestr);
-    bdcput(ctx, devdic, consname(ctx, "width"), w);
-    bdcput(ctx, devdic, consname(ctx, "height"), h);
 
     /* create and map window */
     private.instance = GetModuleHandle(NULL);

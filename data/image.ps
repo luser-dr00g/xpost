@@ -35,13 +35,20 @@ DATA_DIR(/qsort.ps)strcat run
 
 /PGMIMAGE <<
     /nativecolorspace /DeviceGray
+    /dimensions [0 0]
 
     /.copydict {
         dup length dict copy
+        dup /width known {
+            dup begin
+                /dimensions [width height] def
+            end
+        } if
     }
     /Create { % width height IMAGE  .  IMAGE'
-    dup /.copydict get exec
     begin {/height /width}{exch def}forall
+    currentdict end
+    dup /.copydict get exec
         /ImgData height array def
         0 1 height 1 sub {
             ImgData exch width string put
@@ -60,7 +67,9 @@ DATA_DIR(/qsort.ps)strcat run
             .to-int exch .to-int exch
             dup height ge { stop } if
             1 index width ge { stop } if
-            ImgData exch get 3 1 roll exch put
+            ImgData exch get 3 1 roll exch
+            255 mul cvi
+            put
         } stopped {
             pop pop pop
         } if
