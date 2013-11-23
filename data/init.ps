@@ -80,6 +80,7 @@ run
 /stack { count dup 1 add copy //= repeat pop } def
 
 
+userdict begin
 % ==
 24 dict begin
 /==dict currentdict def
@@ -152,9 +153,9 @@ run
         typeprint
         NL print
     end
-} end def % remove ==dict, installing == in systemdict
-
+} end def % remove ==dict, installing == in userdict
 /pstack { count dup 1 add copy //== repeat pop } def
+end % back to systemdict
 
 
 /execdict 6 dict def
