@@ -34,6 +34,8 @@ DATA_DIR(/qsort.ps)strcat run
 %
 
 /PGMIMAGE <<
+    /nativecolorspace /DeviceGray
+
     /.copydict {
         dup length dict copy
     }
@@ -245,7 +247,7 @@ DATA_DIR(/qsort.ps)strcat run
     /FillPoly { % val polygon IMAGE  .  -
     begin {poly val}{exch def}forall
 
-        (FillPoly)= val = poly ==()=
+        %(FillPoly)= val = poly ==()=
 
         /minx 16#7ffffff def
         /miny minx def

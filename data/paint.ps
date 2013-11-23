@@ -12,10 +12,11 @@
     %grestore
     gsave
         1 setgray
-        255 0 0 DEVICE /dimensions get aload pop
+        DEVICE /nativecolorspace get setcolorspace currentcolor
+        0 0 DEVICE /dimensions get aload pop
         %exch 1 sub exch 1 sub
         DEVICE dup /FillRect get exec
-
+    
         flushpage
     grestore
 } def
@@ -45,7 +46,8 @@
     ]
     {
         dup length 2 gt {
-            currentgray 255 mul cvi
+            DEVICE /nativecolorspace get setcolorspace currentcolor
+                %FIXME 'exch' won't work with multiple color vals
             exch DEVICE dup /FillPoly get exec
             flushpage
         }{
@@ -74,7 +76,8 @@
         }
         {          % ... xN-1 yN-1 xN yN
             4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
-            currentgray 255 mul cvi
+            DEVICE /nativecolorspace get setcolorspace currentcolor
+            %FIXME: 5 1 roll won't work with multiple color vals
             5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
             %pstack(L)=
             DEVICE dup /DrawLine get exec  % ... xN-1 yN-1 xN yN
@@ -83,7 +86,7 @@
         {}
         {            % x0 y0 xN yN
             4 2 roll % xN yN x0 y0
-            currentgray 255 mul cvi
+            DEVICE /nativecolorspace get setcolorspace currentcolor
             5 1 roll % gray xN yN x0 y0
             %pstack(C)=
             DEVICE dup /DrawLine get exec  % -

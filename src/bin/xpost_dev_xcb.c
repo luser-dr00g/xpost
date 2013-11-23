@@ -229,7 +229,9 @@ int _putpix (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val);
+        val = xpost_cons_int(val.real_.val * 255.0);
+    else
+        val.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -311,7 +313,9 @@ int _drawline (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val);
+        val = xpost_cons_int(val.real_.val * 255.0);
+    else
+        val.int_.val *= 255;
     if (xpost_object_get_type(x1) == realtype)
         x1 = xpost_cons_int(x1.real_.val);
     if (xpost_object_get_type(y1) == realtype)
@@ -372,7 +376,9 @@ int _fillrect (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val);
+        val = xpost_cons_int(val.real_.val * 255.0);
+    else
+        val.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)

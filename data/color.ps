@@ -1,5 +1,31 @@
 (loading color.ps...)=
 
+/setcolorspace {
+    graphicsdict /currgstate get exch /colorspace exch put
+} def
+
+/currentcolorspace {
+    graphicsdict /currgstate get /colorspace get
+} def
+
+/setcolordict <<
+    /DeviceGray /setgray cvx
+    /DeviceRGB /setrgbcolor cvx
+    /DeviceCMYK /setcmykcolor cvx
+>> def
+/setcolor {
+    //setcolordict currentcolorspace get exec
+} def
+
+/currentcolordict <<
+    /DeviceGray /currentgray cvx
+    /DeviceRGB /currentrgbcolor cvx
+    /DeviceCMYK /currentcmykcolor cvx
+>> def
+/currentcolor {
+    //currentcolordict currentcolorspace get exec
+} def
+
 /.min { % x y  . x (if x < y)
         %        y (otherwise)
     2 copy lt not {exch} if pop
