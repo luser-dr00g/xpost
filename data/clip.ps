@@ -67,10 +67,10 @@
         p 1 1 index length 1 sub getinterval {
             /Q exch def
             /fQ Q aload pop f evaluate def
-            (P=)print P ==
-            (Q=)print Q ==
-            (fP=)print fP ==
-            (fQ=)print fQ ==
+            %(P=)print P ==
+            %(Q=)print Q ==
+            %(fP=)print fP ==
+            %(fQ=)print fQ ==
             fP 0 le {
                 counttomark 0 eq {
                     P
@@ -107,7 +107,7 @@
             /fP fQ def
         } forall
     ]
-    dup ==
+    %dup ==
 
     }{ % n==0
         p
@@ -142,7 +142,7 @@ end } def
                 ] exch  % ... [ ... ] [x0 y0]
                 [ exch  % ... [ ... ] [ [x0 y0]
             } if  % ... mark [x0 y0]
-            pstack()=
+            %pstack()=
         }
         { 2 array astore }  % ... mark [x0 y0] ... [xN yN]
         {}
