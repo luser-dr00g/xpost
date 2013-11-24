@@ -1,0 +1,156 @@
+(loading color.ps...)=
+
+
+/setcolorspace {
+    graphicsdict /currgstate get exch /colorspace exch put
+} def
+
+/currentcolorspace {
+    graphicsdict /currgstate get /colorspace get
+} def
+
+/setcolordict <<
+    /DeviceGray /setgray cvx
+    /DeviceRGB /setrgbcolor cvx
+    /DeviceCMYK /setcmykcolor cvx
+>> def
+/setcolor {
+    //setcolordict currentcolorspace get exec
+} def
+
+/currentcolordict <<
+    /DeviceGray /currentgray cvx
+    /DeviceRGB /currentrgbcolor cvx
+    /DeviceCMYK /currentcmykcolor cvx
+>> def
+/currentcolor {
+    //currentcolordict currentcolorspace get exec
+} def
+
+/.min { % x y  . x (if x < y)
+        %        y (otherwise)
+    2 copy gt{exch}if pop
+} def
+
+/ColorConversion << % <</dest <</source {source-to-dest conversion}>> >>
+    /DeviceGray <<
+        /DeviceGray {
+            graphicsdict /currgstate get /colorcomp1 get
+        }
+        /DeviceRGB {
+            graphicsdict /currgstate get /colorcomp1 get
+            .3 mul
+            graphicsdict /currgstate get /colorcomp2 get
+            .59 mul add
+            graphicsdict /currgstate get /colorcomp3 get
+            .11 mul add
+        }
+        /DeviceCMYK {
+            1
+            graphicsdict /currgstate get /colorcomp1 get
+            .3 mul
+            graphicsdict /currgstate get /colorcomp2 get
+            .59 mul add
+            graphicsdict /currgstate get /colorcomp3 get
+            .11 mul add
+            graphicsdict /currgstate get /colorcomp4 get
+            add
+            1 .min sub
+        }
+    >>
+    /DeviceRGB <<
+        /DeviceGray {
+            graphicsdict /currgstate get /colorcomp1 get
+            graphicsdict /currgstate get /colorcomp1 get
+            graphicsdict /currgstate get /colorcomp1 get
+        }
+        /DeviceRGB {
+            graphicsdict /currgstate get /colorcomp1 get
+            graphicsdict /currgstate get /colorcomp2 get
+            graphicsdict /currgstate get /colorcomp3 get
+        }
+        /DeviceCMYK {
+            graphicsdict /currgstate get /colorcomp4 get % k
+            1 graphicsdict /currgstate get /colorcomp1 get % k 1 c
+            2 index add 1 .min sub % k 1-min(1,c+k)
+            1 graphicsdict /currgstate get /colorcomp2 get % k R 1 m
+            3 index add 1 .min sub % k R 1-min(1,m+k)
+            1 graphicsdict /currgstate get /colorcomp2 get % k R G 1 y
+            5 4 roll add 1 .min sub % R G 1-min(1,y+k)
+        }
+    >>
+    /DeviceCMYK <<
+        /DeviceGray {
+            O
+            0
+            0
+            1 graphicsdict /currgstate get /colorcomp1 get sub
+        }
+        /DeviceRGB {
+            1 graphicsdict /currgstate get /colorcomp1 get sub % c
+            1 graphicsdict /currgstate get /colorcomp2 get sub % c m
+            1 graphicsdict /currgstate get /colorcomp3 get sub % c m y
+            3 copy .min .min % c m y k
+            %FIXME invoke undercolorremoval and blackgeneration
+        }
+        /DeviceCMYK {
+            graphicsdict /currgstate get /colorcomp1 get
+            graphicsdict /currgstate get /colorcomp2 get
+            graphicsdict /currgstate get /colorcomp3 get
+            graphicsdict /currgstate get /colorcomp4 get
+        }
+    >>
+>> def
+
+/setgray {
+    graphicsdict /currgstate get /colorspace /DeviceGray put
+    graphicsdict /currgstate get exch /colorcomp1 exch put
+} def
+
+/currentgray {
+    ColorConversion /DeviceGray get
+        graphicsdict /currgstate get /colorspace get
+        get exec
+} def
+
+/setrgbcolor {
+    graphicsdict /currgstate get /colorspace /DeviceRGB put
+    graphicsdict /currgstate get exch /colorcomp3 exch put
+    graphicsdict /currgstate get exch /colorcomp2 exch put
+    graphicsdict /currgstate get exch /colorcomp1 exch put
+} def
+
+/currentrgbcolor {
+    ColorConversion /DeviceRGB get
+        graphicsdict /currgstate get /colorspace get
+        get exec
+} def
+
+/sethsbcolor {
+    graphicsdict /currgstate get /colorspace /DeviceRGB put
+    graphicsdict /currgstate get exch /colorcomp3 exch put
+    graphicsdict /currgstate get exch /colorcomp2 exch put
+    graphicsdict /currgstate get exch /colorcomp1 exch put
+} def
+
+/currenthsbcolor {
+    ColorConversion /DeviceRGB get
+        graphicsdict /currgstate get /colorspace get
+        get exec
+} def
+
+/setcmykcolor {
+    graphicsdict /currgstate get /colorspace /DeviceCMYK put
+    graphicsdict /currgstate get exch /colorcomp4 exch put
+    graphicsdict /currgstate get exch /colorcomp3 exch put
+    graphicsdict /currgstate get exch /colorcomp2 exch put
+    graphicsdict /currgstate get exch /colorcomp1 exch put
+} def
+
+/currentcmykcolor {
+    ColorConversion /DeviceCMYK get
+        graphicsdict /currgstate get /colorspace get
+        get exec
+} def
+
+(eof color)=
