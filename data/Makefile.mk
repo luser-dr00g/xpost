@@ -6,6 +6,8 @@ data/graphics.ps \
 data/device.ps \
 data/color.ps \
 data/image.ps \
+data/pgmimage.ps \
+data/ppmimage.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
@@ -28,6 +30,8 @@ data/graphics.ps \
 data/device.ps \
 data/color.ps \
 data/image.ps \
+data/pgmimage.ps \
+data/ppmimage.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
