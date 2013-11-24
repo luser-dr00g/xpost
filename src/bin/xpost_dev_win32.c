@@ -281,7 +281,9 @@ int _create_cont (Xpost_Context *ctx,
 
 static
 int _putpix (Xpost_Context *ctx,
-             Xpost_Object val,
+             Xpost_Object redval,
+             Xpost_Object greenval,
+             Xpost_Object blueval,
              Xpost_Object x,
              Xpost_Object y,
              Xpost_Object devdic)
@@ -291,10 +293,18 @@ int _putpix (Xpost_Context *ctx,
     HDC dc;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val * 255.0);
+    if (xpost_object_get_type(redval) == realtype)
+        redval = xpost_cons_int(redval.real_.val * 255.0);
     else
-        val.int_.val *= 255;
+        redval.int_.val *= 255;
+    if (xpost_object_get_type(greenval) == realtype)
+        greenval = xpost_cons_int(greenval.real_.val * 255.0);
+    else
+        greenval.int_.val *= 255;
+    if (xpost_object_get_type(blueval) == realtype)
+        blueval = xpost_cons_int(blueval.real_.val * 255.0);
+    else
+        blueval.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -311,7 +321,8 @@ int _putpix (Xpost_Context *ctx,
     if (y.int_.val < 0 || y.int_.val >= bdcget(ctx, devdic, consname(ctx, "height")).int_.val)
         return 0;
 
-    private.buf[y.int_.val * private.width + x.int_.val] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+    private.buf[y.int_.val * private.width + x.int_.val] =
+        redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
 
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
@@ -341,13 +352,22 @@ int _getpix (Xpost_Context *ctx,
                      privatestr.comp_.ent, 0, sizeof private, &private);
 
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_cons_int(private.buf[y.int_.val * private.width + x.int_.val]));
+        xpost_cons_int( (private.buf[y.int_.val * private.width + x.int_.val]
+                >> 16) & 0xFF));
+    xpost_stack_push(ctx->lo, ctx->os,
+        xpost_cons_int( (private.buf[y.int_.val * private.width + x.int_.val]
+            >> 8) & 0xFF));
+    xpost_stack_push(ctx->lo, ctx->os,
+        xpost_cons_int( private.buf[y.int_.val * private.width + x.int_.val]
+            & 0xFF));
     return 0;
 }
 
 static
 int _drawline (Xpost_Context *ctx,
-               Xpost_Object val,
+               Xpost_Object redval,
+               Xpost_Object greenval,
+               Xpost_Object blueval,
                Xpost_Object x1,
                Xpost_Object y1,
                Xpost_Object x2,
@@ -372,10 +392,18 @@ int _drawline (Xpost_Context *ctx,
     int i;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val * 255.0);
+    if (xpost_object_get_type(redval) == realtype)
+        redval = xpost_cons_int(redval.real_.val * 255.0);
     else
-        val.int_.val *= 255;
+        redval.int_.val *= 255;
+    if (xpost_object_get_type(greenval) == realtype)
+        greenval = xpost_cons_int(greenval.real_.val * 255.0);
+    else
+        greenval.int_.val *= 255;
+    if (xpost_object_get_type(blueval) == realtype)
+        blueval = xpost_cons_int(blueval.real_.val * 255.0);
+    else
+        blueval.int_.val *= 255;
     if (xpost_object_get_type(x1) == realtype)
         x1 = xpost_cons_int(x1.real_.val);
     if (xpost_object_get_type(y1) == realtype)
@@ -409,7 +437,8 @@ int _drawline (Xpost_Context *ctx,
             _y2 = tmp;
         }
         for (y = _y1; y <= _y2; y++)
-            private.buf[y * private.width + _x1] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+            private.buf[y * private.width + _x1] =
+                redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
 
         dc = CreateCompatibleDC(private.ctx);
         SelectObject(dc, private.bitmap);
@@ -431,7 +460,8 @@ int _drawline (Xpost_Context *ctx,
             _x2 = tmp;
         }
         for (x = _x1; x <= _x2; x++)
-            private.buf[_y1 * private.width + x] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+            private.buf[_y1 * private.width + x] =
+                redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
 
         dc = CreateCompatibleDC(private.ctx);
         SelectObject(dc, private.bitmap);
@@ -460,7 +490,8 @@ int _drawline (Xpost_Context *ctx,
     err = 2 * deltay - deltax;
     for (i = 1; i <= deltax; ++i)
     {
-        private.buf[y * private.width + x] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+        private.buf[y * private.width + x] =
+            redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
         while (err >= 0)
         {
             if (interchange)
@@ -506,7 +537,9 @@ int _drawline (Xpost_Context *ctx,
 
 static
 int _fillrect (Xpost_Context *ctx,
-               Xpost_Object val,
+               Xpost_Object redval,
+               Xpost_Object greenval,
+               Xpost_Object blueval,
                Xpost_Object x,
                Xpost_Object y,
                Xpost_Object width,
@@ -522,10 +555,18 @@ int _fillrect (Xpost_Context *ctx,
     int j;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val * 255.0);
+    if (xpost_object_get_type(redval) == realtype)
+        redval = xpost_cons_int(redval.real_.val * 255.0);
     else
-        val.int_.val *= 255;
+        redval.int_.val *= 255;
+    if (xpost_object_get_type(greenval) == realtype)
+        greenval = xpost_cons_int(greenval.real_.val * 255.0);
+    else
+        greenval.int_.val *= 255;
+    if (xpost_object_get_type(blueval) == realtype)
+        blueval = xpost_cons_int(blueval.real_.val * 255.0);
+    else
+        blueval.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -567,7 +608,8 @@ int _fillrect (Xpost_Context *ctx,
     {
         for (j = 0; j < width.int_.val; j++)
         {
-            private.buf[(y.int_.val + i) * private.width + x.int_.val + j] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+            private.buf[(y.int_.val + i) * private.width + x.int_.val + j] =
+                redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
         }
     }
 
@@ -650,8 +692,8 @@ int newwin32device (Xpost_Context *ctx,
 static
 unsigned int _loadwin32devicecont_opcode;
 
-/* Specializes or sub-classes the PGMIMAGE device class.
-   load PGMIMAGE
+/* Specializes or sub-classes the PPMIMAGE device class.
+   load PPMIMAGE
    load and call ps procedure .copydict which leaves copy on stack
    call loadXXXdevicecont by continuation.
 */
@@ -661,7 +703,7 @@ int loadwin32device (Xpost_Context *ctx)
     Xpost_Object classdic;
     int ret;
 
-    ret = Aload(ctx, consname(ctx, "PGMIMAGE"));
+    ret = Aload(ctx, consname(ctx, "PPMIMAGE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
@@ -684,23 +726,35 @@ int loadwin32devicecont (Xpost_Context *ctx,
     Xpost_Object userdict;
     Xpost_Object op;
 
+    bdcput(ctx, classdic, consname(ctx, "nativecolorspace"), consname(ctx, "DeviceRGB"));
+
     op = consoper(ctx, "win32CreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
     op = consoper(ctx, "win32Create", _create, 1, 3, integertype, integertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Create"), op);
 
-    op = consoper(ctx, "win32PutPix", _putpix, 0, 4, numbertype, numbertype, numbertype, dicttype);
+    op = consoper(ctx, "win32PutPix", _putpix, 0, 6,
+            numbertype, numbertype, numbertype, /* r g b color values */
+            numbertype, numbertype, /* x y coords */
+            dicttype); /* devdic */
     bdcput(ctx, classdic, consname(ctx, "PutPix"), op);
 
-    op = consoper(ctx, "win32GetPix", _getpix, 1, 3, numbertype, numbertype, dicttype);
+    op = consoper(ctx, "win32GetPix", _getpix, 3, 3,
+            numbertype, numbertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
 
-    op = consoper(ctx, "win32DrawLine", _drawline, 0, 6, numbertype, numbertype, numbertype,
-       numbertype, numbertype, dicttype);
+    op = consoper(ctx, "win32DrawLine", _drawline, 0, 8,
+            numbertype, numbertype, numbertype, /* r g b color values */
+            numbertype, numbertype, /* x1 y1 */
+            numbertype, numbertype, /* x2 y2 */
+            dicttype); /* devdic */
     bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
 
-    op = consoper(ctx, "win32FillRect", _fillrect, 0, 6,
-            numbertype, numbertype, numbertype, numbertype, numbertype, dicttype);
+    op = consoper(ctx, "win32FillRect", _fillrect, 0, 8,
+            numbertype, numbertype, numbertype, /* r g b color values */
+            numbertype, numbertype, /* x y coords */
+            numbertype, numbertype, /* width height */
+            dicttype); /* devdic */
     bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
 
     op = consoper(ctx, "win32Emit", _emit, 0, 1, dicttype);

@@ -199,11 +199,11 @@ int _create_cont (Xpost_Context *ctx,
                 values);
     }
 
-    private.cmap = private.scr->default_colormap;
+    //private.cmap = private.scr->default_colormap;
     /* create colormap */
-    //private.cmap = xcb_generate_id(private.c);
-    //xcb_create_colormap(private.c, XCB_COLORMAP_ALLOC_NONE, private.cmap,
-    //        private.win, private.scr->root_visual);
+    private.cmap = xcb_generate_id(private.c);
+    xcb_create_colormap(private.c, XCB_COLORMAP_ALLOC_NONE, private.cmap,
+            private.win, private.scr->root_visual);
 
     xpost_context_install_event_handler(ctx, operfromcode(_event_handler_opcode));
 
@@ -219,7 +219,9 @@ int _create_cont (Xpost_Context *ctx,
 
 static
 int _putpix (Xpost_Context *ctx,
-             Xpost_Object val,
+             Xpost_Object redval,
+             Xpost_Object greenval,
+             Xpost_Object blueval,
              Xpost_Object x,
              Xpost_Object y,
              Xpost_Object devdic)
@@ -228,10 +230,18 @@ int _putpix (Xpost_Context *ctx,
     PrivateData private;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val * 255.0);
+    if (xpost_object_get_type(redval) == realtype)
+        redval = xpost_cons_int(redval.real_.val * 65535.0);
     else
-        val.int_.val *= 255;
+        redval.int_.val *= 65535;
+    if (xpost_object_get_type(greenval) == realtype)
+        greenval = xpost_cons_int(greenval.real_.val * 65535.0);
+    else
+        greenval.int_.val *= 65535;
+    if (xpost_object_get_type(blueval) == realtype)
+        blueval = xpost_cons_int(blueval.real_.val * 65535.0);
+    else
+        blueval.int_.val *= 65535;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -257,9 +267,9 @@ int _putpix (Xpost_Context *ctx,
 
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
-                    val.int_.val * 257,
-                    val.int_.val * 257,
-                    val.int_.val * 257),
+                    redval.int_.val,
+                    greenval.int_.val,
+                    blueval.int_.val),
                 0);
         if (!rep)
             return unregistered;
@@ -301,7 +311,9 @@ int _getpix (Xpost_Context *ctx,
 
 static
 int _drawline (Xpost_Context *ctx,
-               Xpost_Object val,
+               Xpost_Object redval,
+               Xpost_Object greenval,
+               Xpost_Object blueval,
                Xpost_Object x1,
                Xpost_Object y1,
                Xpost_Object x2,
@@ -312,10 +324,18 @@ int _drawline (Xpost_Context *ctx,
     PrivateData private;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val * 255.0);
+    if (xpost_object_get_type(redval) == realtype)
+        redval = xpost_cons_int(redval.real_.val * 65535.0);
     else
-        val.int_.val *= 255;
+        redval.int_.val *= 65535;
+    if (xpost_object_get_type(greenval) == realtype)
+        greenval = xpost_cons_int(greenval.real_.val * 65535.0);
+    else
+        greenval.int_.val *= 65535;
+    if (xpost_object_get_type(blueval) == realtype)
+        blueval = xpost_cons_int(blueval.real_.val * 65535.0);
+    else
+        blueval.int_.val *= 65535;
     if (xpost_object_get_type(x1) == realtype)
         x1 = xpost_cons_int(x1.real_.val);
     if (xpost_object_get_type(y1) == realtype)
@@ -335,9 +355,9 @@ int _drawline (Xpost_Context *ctx,
 
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
-                    val.int_.val * 257,
-                    val.int_.val * 257,
-                    val.int_.val * 257),
+                    redval.int_.val,
+                    greenval.int_.val,
+                    blueval.int_.val),
                 0);
         if (!rep)
             return unregistered;
@@ -362,7 +382,9 @@ int _drawline (Xpost_Context *ctx,
 
 static
 int _fillrect (Xpost_Context *ctx,
-               Xpost_Object val,
+               Xpost_Object redval,
+               Xpost_Object greenval,
+               Xpost_Object blueval,
                Xpost_Object x,
                Xpost_Object y,
                Xpost_Object width,
@@ -375,10 +397,18 @@ int _fillrect (Xpost_Context *ctx,
     int i,j;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(val) == realtype)
-        val = xpost_cons_int(val.real_.val * 255.0);
+    if (xpost_object_get_type(redval) == realtype)
+        redval = xpost_cons_int(redval.real_.val * 65535.0);
     else
-        val.int_.val *= 255;
+        redval.int_.val *= 65535;
+    if (xpost_object_get_type(greenval) == realtype)
+        greenval = xpost_cons_int(greenval.real_.val * 65535.0);
+    else
+        greenval.int_.val *= 65535;
+    if (xpost_object_get_type(blueval) == realtype)
+        blueval = xpost_cons_int(blueval.real_.val * 65535.0);
+    else
+        blueval.int_.val *= 65535;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -421,9 +451,9 @@ int _fillrect (Xpost_Context *ctx,
 
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
-                    val.int_.val * 257,
-                    val.int_.val * 257,
-                    val.int_.val * 257),
+                    redval.int_.val,
+                    greenval.int_.val,
+                    blueval.int_.val),
                 0);
         if (!rep)
             return unregistered;
@@ -522,8 +552,8 @@ int newxcbdevice (Xpost_Context *ctx,
 static
 unsigned int _loadxcbdevicecont_opcode;
 
-/* Specializes or sub-classes the PGMIMAGE device class.
-   load PGMIMAGE
+/* Specializes or sub-classes the PPMIMAGE device class.
+   load PPMIMAGE
    load and call ps procedure .copydict which leaves copy on stack
    call loadxcbdevicecont by continuation.
  */
@@ -533,7 +563,7 @@ int loadxcbdevice (Xpost_Context *ctx)
     Xpost_Object classdic;
     int ret;
 
-    ret = Aload(ctx, consname(ctx, "PGMIMAGE"));
+    ret = Aload(ctx, consname(ctx, "PPMIMAGE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
@@ -556,23 +586,35 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     Xpost_Object userdict;
     Xpost_Object op;
 
+    bdcput(ctx, classdic, consname(ctx, "nativecolorspace"),
+            consname(ctx, "DeviceRGB"));
+
     op = consoper(ctx, "xcbCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
     op = consoper(ctx, "xcbCreate", _create, 1, 3, integertype, integertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Create"), op);
 
-    op = consoper(ctx, "xcbPutPix", _putpix, 0, 4, numbertype, numbertype, numbertype, dicttype);
+    op = consoper(ctx, "xcbPutPix", _putpix, 0, 6,
+            numbertype, numbertype, numbertype, /* r g b color values */
+            numbertype, numbertype, /* x y coords */
+            dicttype); /* devdic */
     bdcput(ctx, classdic, consname(ctx, "PutPix"), op);
 
-    op = consoper(ctx, "xcbGetPix", _getpix, 1, 3, numbertype, numbertype, dicttype);
+    op = consoper(ctx, "xcbGetPix", _getpix, 3, 3, numbertype, numbertype, dicttype);
     bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
 
-    op = consoper(ctx, "xcbDrawLine", _drawline, 0, 6, numbertype, numbertype, numbertype,
-       numbertype, numbertype, dicttype);
+    op = consoper(ctx, "xcbDrawLine", _drawline, 0, 8,
+            numbertype, numbertype, numbertype, /* r g b color values */
+            numbertype, numbertype, /* x1 y1 */
+            numbertype, numbertype, /* x2 y2 */
+            dicttype); /* devdic */
     bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
 
-    op = consoper(ctx, "xcbFillRect", _fillrect, 0, 6,
-            numbertype, numbertype, numbertype, numbertype, numbertype, dicttype);
+    op = consoper(ctx, "xcbFillRect", _fillrect, 0, 8,
+            numbertype, numbertype, numbertype, /* r g b color values */
+            numbertype, numbertype, /* x y */
+            numbertype, numbertype, /* width height */
+            dicttype); /* devdic */
     bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
 
     op = consoper(ctx, "xcbEmit", _emit, 0, 1, dicttype);

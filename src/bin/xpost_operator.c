@@ -393,6 +393,10 @@ call:
                         hold->data[3], hold->data[4]); break;
         case 6: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3], hold->data[4], hold->data[5]); break;
+        case 7: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+                        hold->data[3], hold->data[4], hold->data[5], hold->data[6]); break;
+        case 8: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+                        hold->data[3], hold->data[4], hold->data[5], hold->data[6], hold->data[7]); break;
         default: ret = unregistered;
     }
     if (ret)

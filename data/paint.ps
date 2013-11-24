@@ -46,9 +46,9 @@
     ]
     {
         dup length 2 gt {
-            DEVICE /nativecolorspace get setcolorspace currentcolor
-                %FIXME 'exch' won't work with multiple color vals
-            exch DEVICE dup /FillPoly get exec
+            [ DEVICE /nativecolorspace get setcolorspace currentcolor
+            counttomark 2 add -1 roll DEVICE dup /FillPoly get exec
+            pop
             flushpage
         }{
             pop
@@ -76,20 +76,23 @@
         }
         {          % ... xN-1 yN-1 xN yN
             4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
-            DEVICE /nativecolorspace get setcolorspace currentcolor
-            %FIXME: 5 1 roll won't work with multiple color vals
-            5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
+            [ DEVICE /nativecolorspace get setcolorspace currentcolor
+            counttomark 5 add -4 roll
+            %5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
             %pstack(L)=
             DEVICE dup /DrawLine get exec  % ... xN-1 yN-1 xN yN
+            pop
             4 2 roll pop pop % ... xN yN
         }
         {}
         {            % x0 y0 xN yN
             4 2 roll % xN yN x0 y0
-            DEVICE /nativecolorspace get setcolorspace currentcolor
-            5 1 roll % gray xN yN x0 y0
+            [ DEVICE /nativecolorspace get setcolorspace currentcolor
+            counttomark 5 add -4 roll
+            %5 1 roll % gray xN yN x0 y0
             %pstack(C)=
             DEVICE dup /DrawLine get exec  % -
+            pop
         }
         pathforall
         cleartomark
