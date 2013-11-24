@@ -346,14 +346,6 @@ int _getpix (Xpost_Context *ctx,
 }
 
 static
-int _sign (int x)
-{
-	if (x < 0) return -1;
-	else if (x == 0) return 0;
-	else return 1;
-}
-
-static
 int _drawline (Xpost_Context *ctx,
                Xpost_Object val,
                Xpost_Object x1,
@@ -373,11 +365,11 @@ int _drawline (Xpost_Context *ctx,
     int deltay;
     int x;
     int y;
-	int s1;
-	int s2;
-	int interchange;
-	int err;
-	int i;
+    int s1;
+    int s2;
+    int interchange;
+    int err;
+    int i;
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(val) == realtype)
@@ -403,8 +395,8 @@ int _drawline (Xpost_Context *ctx,
     _y1 = y1.int_.val;
     _y2 = y2.int_.val;
 
-	XPOST_LOG_INFO("_drawline(%d, %d, %d, %d)",
-			_x1, _y1, _x2, _y2);
+    XPOST_LOG_INFO("_drawline(%d, %d, %d, %d)",
+            _x1, _y1, _x2, _y2);
 
     if (_x1 == _x2)
     {
@@ -450,41 +442,39 @@ int _drawline (Xpost_Context *ctx,
         return 0;
     }
 
+    x = _x1;
+    y = _y1;
+    deltax = abs(_x2 - _x1);
+    s1 = ((_x2 - _x1) < 0) ? - 1 : 1;
+    deltay = abs(_y2 - _y1);
+    s2 = ((_y2 - _y1) < 0) ? -1 : 1;
+    interchange = (deltay > deltax);
+    if (interchange)
+    {
+        int tmp;
 
-
-	x = _x1;
-	y = _y1;
-	deltax = abs(_x2 - _x1);
-	s1 = _sign(_x2 - _x1);
-	deltay = abs(_y2 - _y1);
-	s2 = _sign(_y2 - _y1);
-	interchange = (deltay > deltax);
-	if (interchange)
-	{
-		int tmp;
-
-		tmp = deltax;
-		deltax = deltay;
-		deltay = tmp;
-	}
-	err = 2 * deltay - deltax;
-	for (i = 1; i <= deltax; ++i)
-	{
-		private.buf[y * private.width + x] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
-		while (err >= 0)
-		{
-			if (interchange)
-				x += s1;
-			else
-				y += s2;
-			err -= 2 * deltax;
-		}
-		if (interchange)
-			y += s2;
-		else
-			x += s1;
-		err += 2 * deltay;
-	}
+        tmp = deltax;
+        deltax = deltay;
+        deltay = tmp;
+    }
+    err = 2 * deltay - deltax;
+    for (i = 1; i <= deltax; ++i)
+    {
+        private.buf[y * private.width + x] = val.int_.val << 16 | val.int_.val << 8 | val.int_.val;
+        while (err >= 0)
+        {
+            if (interchange)
+                x += s1;
+            else
+                y += s2;
+            err -= 2 * deltax;
+        }
+        if (interchange)
+            y += s2;
+        else
+            x += s1;
+        err += 2 * deltay;
+    }
 
     if (_x1 > _x2)
     {
