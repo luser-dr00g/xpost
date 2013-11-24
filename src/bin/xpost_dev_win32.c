@@ -126,8 +126,8 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
-    bdcput(ctx, classdic, consname(ctx, "width"), w);
-    bdcput(ctx, classdic, consname(ctx, "height"), h);
+    bdcput(ctx, classdic, consname(ctx, "width"), width);
+    bdcput(ctx, classdic, consname(ctx, "height"), height);
 
      /* call device class's ps-level .copydict procedure,
         then call _create_cont, by continuation. */
