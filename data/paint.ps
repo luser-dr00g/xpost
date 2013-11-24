@@ -5,6 +5,7 @@
 % -  erasepage  -
 % paint current page white
 /erasepage {
+    (erasepage)=
     %gsave
     %    initclip
     %    1 setgray
@@ -12,9 +13,10 @@
     %grestore
     gsave
         1 setgray
-        DEVICE /nativecolorspace get setcolorspace currentcolor
+        currentcolordict DEVICE /nativecolorspace get get exec
         0 0 DEVICE /dimensions get aload pop
         %exch 1 sub exch 1 sub
+        pstack()=
         DEVICE dup /FillRect get exec
     
         flushpage
@@ -46,7 +48,7 @@
     ]
     {
         dup length 2 gt {
-            [ DEVICE /nativecolorspace get setcolorspace currentcolor
+            [ currentcolordict DEVICE /nativecolorspace get get exec
             counttomark 2 add -1 roll DEVICE dup /FillPoly get exec
             pop
             flushpage
@@ -76,7 +78,7 @@
         }
         {          % ... xN-1 yN-1 xN yN
             4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
-            [ DEVICE /nativecolorspace get setcolorspace currentcolor
+            [ currentcolordict DEVICE /nativecolorspace get get exec
             counttomark 5 add -4 roll
             %5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
             %pstack(L)=
@@ -87,7 +89,7 @@
         {}
         {            % x0 y0 xN yN
             4 2 roll % xN yN x0 y0
-            [ DEVICE /nativecolorspace get setcolorspace currentcolor
+            [ currentcolordict DEVICE /nativecolorspace get get exec
             counttomark 5 add -4 roll
             %5 1 roll % gray xN yN x0 y0
             %pstack(C)=

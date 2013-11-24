@@ -2,7 +2,13 @@
 
 
 /setcolorspace {
+    %[ currentcolor setcolordict currentcolorspace get counttomark 2 add -1 roll
     graphicsdict /currgstate get exch /colorspace exch put
+    graphicsdict /currgstate get /colorcomp1 0.0 put
+    graphicsdict /currgstate get /colorcomp2 0.0 put
+    graphicsdict /currgstate get /colorcomp3 0.0 put
+    graphicsdict /currgstate get /colorcomp4 0.0 put
+    %exec pop
 } def
 
 /currentcolorspace {
@@ -61,8 +67,8 @@
     /DeviceRGB <<
         /DeviceGray {
             graphicsdict /currgstate get /colorcomp1 get
-            graphicsdict /currgstate get /colorcomp1 get
-            graphicsdict /currgstate get /colorcomp1 get
+            dup
+            dup
         }
         /DeviceRGB {
             graphicsdict /currgstate get /colorcomp1 get
