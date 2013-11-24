@@ -61,12 +61,12 @@ Xpost_Object consbar(Xpost_Context *ctx, unsigned sz);
 /** 
    * @brief store value in an array
 */
-void arrput(Xpost_Memory_File *mem, Xpost_Object a, integer i, Xpost_Object o);
+int arrput(Xpost_Memory_File *mem, Xpost_Object a, integer i, Xpost_Object o);
 
 /** 
  * @brief store value in a banked array
 */
-void barput(Xpost_Context *ctx, Xpost_Object a, integer i, Xpost_Object o);
+int barput(Xpost_Context *ctx, Xpost_Object a, integer i, Xpost_Object o);
 
 /** 
  * @brief extract value from an array

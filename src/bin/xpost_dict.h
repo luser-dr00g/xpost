@@ -146,7 +146,7 @@ void dicput(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Ob
 /*! 
    store key and value in banked dictionary
 */
-void bdcput(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k, Xpost_Object v);
+int bdcput(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k, Xpost_Object v);
 
 /*! 
    undefine key in dictionary

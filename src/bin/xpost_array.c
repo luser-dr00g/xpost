@@ -38,6 +38,7 @@
 
 #include <assert.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"  /* arrays live in mfile, accessed via mtab */
 #include "xpost_object.h"  /* array is an object, containing objects */
 #include "xpost_stack.h"  /* may count the save stack */
@@ -74,7 +75,11 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
         ent = 0;
     } else {
         if (!xpost_memory_table_alloc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype, &ent ))
-            error(VMerror, "consarr cannot allocate array");
+        {
+            //error(VMerror, "consarr cannot allocate array");
+            XPOST_LOG_ERR("cannot allocate array");
+            return null;
+        }
         tab = (void *)(mem->base);
         rent = ent;
         xpost_memory_table_find_relative(mem, &tab, &rent);
@@ -94,7 +99,9 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
                     ent, i, (unsigned)sizeof(Xpost_Object), &null);
             if (!ret)
             {
-                error(rangecheck, "consarr cannot fill array value");
+                //error(rangecheck, "consarr cannot fill array value");
+                XPOST_LOG_ERR("cannot fill array value");
+                return null;
             }
         }
     }
@@ -127,7 +134,7 @@ Xpost_Object consbar(Xpost_Context *ctx,
 /** Copy if necessary,
    call put.
 */
-void arrput(Xpost_Memory_File *mem,
+int arrput(Xpost_Memory_File *mem,
             Xpost_Object a,
             integer i,
             Xpost_Object o)
@@ -135,14 +142,19 @@ void arrput(Xpost_Memory_File *mem,
     if (!xpost_save_ent_is_saved(mem, a.comp_.ent))
         xpost_save_save_ent(mem, arraytype, a.comp_.sz, a.comp_.ent);
     if (i > a.comp_.sz)
-        error(rangecheck, "arrput");
+    {
+        //error(rangecheck, "arrput");
+        XPOST_LOG_ERR("cannot put value in array");
+        return 0;
+    }
     xpost_memory_put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
+    return 1;
 }
 
 /** Select Xpost_Memory_File according to BANK flag,
    call arrput.
 */
-void barput(Xpost_Context *ctx,
+int barput(Xpost_Context *ctx,
             Xpost_Object a,
             integer i,
             Xpost_Object o)
@@ -155,7 +167,7 @@ void barput(Xpost_Context *ctx,
             error(invalidaccess, "local value into global array");
     }
 
-    arrput(mem, a, i, o);
+    return arrput(mem, a, i, o);
 }
 
 /* call get. */
