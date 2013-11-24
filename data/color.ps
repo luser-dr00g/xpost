@@ -1,5 +1,6 @@
 (loading color.ps...)=
 
+
 /setcolorspace {
     graphicsdict /currgstate get exch /colorspace exch put
 } def
@@ -28,7 +29,7 @@
 
 /.min { % x y  . x (if x < y)
         %        y (otherwise)
-    2 copy lt not {exch} if pop
+    2 copy gt{exch}if pop
 } def
 
 /ColorConversion << % <</dest <</source {source-to-dest conversion}>> >>
@@ -68,7 +69,15 @@
             graphicsdict /currgstate get /colorcomp2 get
             graphicsdict /currgstate get /colorcomp3 get
         }
-        /DeviceCMYK { }
+        /DeviceCMYK {
+            graphicsdict /currgstate get /colorcomp4 get % k
+            1 graphicsdict /currgstate get /colorcomp1 get % k 1 c
+            2 index add 1 .min sub % k 1-min(1,c+k)
+            1 graphicsdict /currgstate get /colorcomp2 get % k R 1 m
+            3 index add 1 .min sub % k R 1-min(1,m+k)
+            1 graphicsdict /currgstate get /colorcomp2 get % k R G 1 y
+            5 4 roll add 1 .min sub % R G 1-min(1,y+k)
+        }
     >>
     /DeviceCMYK <<
         /DeviceGray {
@@ -77,7 +86,13 @@
             0
             1 graphicsdict /currgstate get /colorcomp1 get sub
         }
-        /DeviceRGB { }
+        /DeviceRGB {
+            1 graphicsdict /currgstate get /colorcomp1 get sub % c
+            1 graphicsdict /currgstate get /colorcomp2 get sub % c m
+            1 graphicsdict /currgstate get /colorcomp3 get sub % c m y
+            3 copy .min .min % c m y k
+            %FIXME invoke undercolorremoval and blackgeneration
+        }
         /DeviceCMYK {
             graphicsdict /currgstate get /colorcomp1 get
             graphicsdict /currgstate get /colorcomp2 get

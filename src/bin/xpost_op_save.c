@@ -85,6 +85,7 @@ int Zsave (Xpost_Context *ctx)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_save_create_snapshot_object(ctx->lo)))
         return stackoverflow;
+    printf("save\n");
     return 0;
 }
 
@@ -110,6 +111,7 @@ int Vrestore (Xpost_Context *ctx,
         xpost_save_restore_snapshot(ctx->lo);
         z--;
     }
+    printf("restore\n");
     return 0;
 }
 

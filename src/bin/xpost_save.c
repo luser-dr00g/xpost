@@ -102,15 +102,20 @@ Xpost_Object xpost_save_create_snapshot_object (Xpost_Memory_File *mem)
     return v;
 }
 
-/* check ent's tlev against current save level (save-stack count) */
+/* check ent's llev and tlev
+   against current save level (save-stack count)
+   returns 1 if ent is saved (or not necessary to save),
+   returns 0 if ent needs to be saved before changing. 
+ */
 unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
                   unsigned ent)
 {
     Xpost_Memory_Table *tab;
-    unsigned cnt;
-    unsigned tlev;
+    unsigned int llev;
+    unsigned int tlev;
     unsigned int vs;
     int ret;
+    Xpost_Object sav;
 
     ret = xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
@@ -119,7 +124,7 @@ unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
         XPOST_LOG_ERR("cannot load save stack");
         return 0;
     }
-    cnt = xpost_stack_count(mem, vs);
+    sav = xpost_stack_topdown_fetch(mem, vs, 0);
     ret = xpost_memory_table_find_relative(mem, &tab, &ent);
     if (!ret)
     {
@@ -128,12 +133,16 @@ unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
     }
     tlev = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK)
         >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET;
+    llev = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_MASK)
+        >> XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET;
 
-    return tlev == cnt;
+    return llev < sav.save_.lev ?
+        tlev == sav.save_.lev : 1;
 }
 
 /* make a clone of ent, return new ent */
-static unsigned copy(Xpost_Memory_File *mem,
+static
+unsigned int _copy_ent(Xpost_Memory_File *mem,
               unsigned ent)
 {
     Xpost_Memory_Table *tab;
@@ -150,7 +159,7 @@ static unsigned copy(Xpost_Memory_File *mem,
     }
     if (!xpost_memory_table_alloc(mem, tab->tab[ent].sz, tab->tab[ent].tag, &new))
     {
-        XPOST_LOG_ERR("copy cannot allocate entity to backup object");
+        XPOST_LOG_ERR("cannot allocate entity to backup object");
         return 0;
     }
     ent = tent;
@@ -169,6 +178,7 @@ static unsigned copy(Xpost_Memory_File *mem,
             mem->base + tab->tab[ent].adr,
             tab->tab[ent].sz);
 
+    XPOST_LOG_INFO("ent %u copied to ent %u", ent, new);
     return new;
 }
 
@@ -209,7 +219,7 @@ void xpost_save_save_ent(Xpost_Memory_File *mem,
     o.saverec_.tag = tag;
     o.saverec_.pad = pad;
     o.saverec_.src = ent;
-    o.saverec_.cpy = copy(mem, ent);
+    o.saverec_.cpy = _copy_ent(mem, ent);
     xpost_stack_push(mem, sav.save_.stk, o);
 }
 

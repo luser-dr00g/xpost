@@ -42,41 +42,55 @@ dup (initial rng seed: )=only =
 dup /initialsrand exch def
 srand
 
-% curves
+( curves)=
 
+save
 0 setlinewidth
 20 { randcurve randgray stroke } repeat
 (initial rng seed: )=only initialsrand =
 showpage
+restore
 
+save
 10 { randcurve randwidth randgray stroke } repeat
 (initial rng seed: )=only initialsrand =
 showpage
+restore
 
-% boxes
+( boxes)=
 
+save
 0 setlinewidth
 40 { randbox randgray stroke newpath } repeat
 (initial rng seed: )=only initialsrand =
 showpage
+restore
 
+save
 10 { randbox randgray fill newpath } repeat
 (initial rng seed: )=only initialsrand =
 showpage
+restore
 
-% lines
+( lines)=
 
+save
 0 setlinewidth
 50 { randline randgray stroke } repeat
 (initial rng seed: )=only initialsrand =
 showpage
+restore
 
+save
 15 { randline randwidth randgray stroke } repeat
 (initial rng seed: )=only initialsrand =
 showpage
+restore
 
+save
 10 { randbox randgray fill newpath } repeat
 (initial rng seed: )=only initialsrand =
 showpage
+restore
 
 (initial rng seed: )=only initialsrand =

@@ -569,7 +569,8 @@ int _xpost_memory_table_alloc_new (Xpost_Memory_File *mem,
     ++tab->nextent;
     if (ent > (1 << (sizeof(word)*8)) - 1)
     {
-        XPOST_LOG_ERR("Warning: ent numbers exceed object capacity!");
+        XPOST_LOG_ERR("Warning: ent number %u exceed object storage max %u",
+                ent, (1 << (sizeof(word)*8)) - 1);
     }
 
     if (!xpost_memory_file_alloc(mem, sz, &adr))
