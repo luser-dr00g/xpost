@@ -217,7 +217,11 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
     d.comp_.sz = sz;
     d.comp_.off = 0;
     if (!xpost_memory_table_alloc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype, &ent))
-        error(VMerror, "consdic cannot allocate dictionary");
+    {
+        //error(VMerror, "consdic cannot allocate dictionary");
+        XPOST_LOG_ERR("cannot allocate dictionary");
+        return null;
+    }
     d.comp_.ent = ent;
 
     tab = (void *)(mem->base);
@@ -412,7 +416,9 @@ Xpost_Object unextend (Xpost_Object e)
     } else if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_REAL) {
         o = xpost_cons_real(d);
     } else {
-        error(unregistered, "unextend: invalid extended number object");
+        //error(unregistered, "unextend: invalid extended number object");
+        XPOST_LOG_ERR("invalid extended number object");
+        return null;
     }
     return o;
 }
@@ -593,7 +599,7 @@ retry:
 
 /* select mfile according to BANK field,
    call dicput. */
-void bdcput(Xpost_Context *ctx,
+int bdcput(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k,
         Xpost_Object v)
@@ -603,16 +609,24 @@ void bdcput(Xpost_Context *ctx,
         if ( mem == ctx->gl
                 && xpost_object_is_composite(k)
                 && mem != xpost_context_select_memory(ctx, k))
-            error(invalidaccess, "local key into global dict");
+        {
+            //error(invalidaccess, "local key into global dict");
+            XPOST_LOG_ERR("local key into global dict");
+            return invalidaccess;
+        }
         if ( mem == ctx->gl
                 && xpost_object_is_composite(v)
-                && mem != xpost_context_select_memory(ctx, v)) {
+                && mem != xpost_context_select_memory(ctx, v))
+        {
             xpost_object_dump(v);
-            error(invalidaccess, "local value into global dict");
+            //error(invalidaccess, "local value into global dict");
+            XPOST_LOG_ERR("local value into global dict");
+            return invalidaccess;
         }
     }
 
     dicput(ctx, xpost_context_select_memory(ctx, d), d, k, v);
+    return 0;
 }
 
 /* undefine key from dict */

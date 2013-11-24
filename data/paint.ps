@@ -46,11 +46,14 @@
         pathforall
         ]
     ]
+    pstack()=
     {
         dup length 2 gt {
             [ currentcolordict DEVICE /nativecolorspace get get exec
-            counttomark 2 add -1 roll DEVICE dup /FillPoly get exec
+            counttomark 2 add -1 roll
+            DEVICE dup /FillPoly get exec
             pop
+            pstack()=
             flushpage
         }{
             pop
@@ -100,7 +103,6 @@
         cleartomark
     }{
         strokepath
-        doclip
         fill
     } ifelse
 

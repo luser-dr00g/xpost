@@ -65,7 +65,7 @@ int xpost_context_init_ctxlist(Xpost_Memory_File *mem)
     ret = xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned), 0, &ent);
     if (!ret)
     {
-        return 0; /* was error(unregistered) */
+        return 0; /* was unregistered error */
     }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
     tab = (void *)mem->base;
