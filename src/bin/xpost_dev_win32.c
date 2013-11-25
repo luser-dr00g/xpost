@@ -90,18 +90,18 @@ int _event_handler (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-	MSG msg;
+    MSG msg;
 
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      privatestr.comp_.ent, 0, sizeof private, &private);
 
-	if (PeekMessage(&msg, private.window, 0, 0, PM_REMOVE))
-	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
+    if (PeekMessage(&msg, private.window, 0, 0, PM_REMOVE))
+    {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
 
     return 0;
 }
