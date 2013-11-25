@@ -142,10 +142,10 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     /* printf("freeing %d bytes\n", xpost_memory_table_get_size(mem, ent)); */
 
     /* copy the current free-list head to the data area of the ent. */
-    memcpy(mem->base+a, mem->base+z, sizeof(unsigned int));
+    memcpy(mem->base + a, mem->base + z, sizeof(unsigned int));
 
     /* copy the ent number into the free-list head */
-    memcpy(mem->base+z, &ent, sizeof(unsigned int));
+    memcpy(mem->base + z, &ent, sizeof(unsigned int));
 
     return sz;
 }
@@ -179,7 +179,7 @@ void xpost_free_dump(Xpost_Memory_File *mem)
         {
             return;
         }
-        memcpy(&e, mem->base+z, sizeof(unsigned int));
+        memcpy(&e, mem->base + z, sizeof(unsigned int));
     }
 }
 
@@ -210,12 +210,12 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     while (e) /* e is not zero */
     {
         unsigned int tsz;
-        if (e > (1 << (sizeof(word)*8)) - 1)
+        if (e > (1 << (sizeof(word) * 8)) - 1)
         {
             XPOST_LOG_ERR("ent number %u exceeds object storage max %u",
-                    e, (1 << (sizeof(word)*8)) - 1);
+                    e, (1 << (sizeof(word) * 8)) - 1);
         }
-        ret = xpost_memory_table_get_size(mem,e, &tsz);
+        ret = xpost_memory_table_get_size(mem, e, &tsz);
         if (!ret)
         {
             XPOST_LOG_ERR("cannot retrieve size of ent %u", e);
@@ -226,13 +226,13 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
             Xpost_Memory_Table *tab;
             unsigned int ent;
             unsigned int ad;
-            ret = xpost_memory_table_get_addr(mem,e, &ad);
+            ret = xpost_memory_table_get_addr(mem, e, &ad);
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot retrieve address of ent %u", e);
                 return 0;
             }
-            memcpy(mem->base+z, mem->base + ad, sizeof(unsigned int));
+            memcpy(mem->base + z, mem->base + ad, sizeof(unsigned int));
             ent = e;
             ret = xpost_memory_table_find_relative(mem, &tab, &ent);
             if (!ret)
@@ -250,7 +250,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
             XPOST_LOG_ERR("cannot retrieve address for ent %u", e);
             return 0;
         }
-        memcpy(&e, mem->base+z, sizeof(unsigned int));
+        memcpy(&e, mem->base + z, sizeof(unsigned int));
     }
     /* finished scanning free list */
 
