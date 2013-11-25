@@ -78,6 +78,11 @@ typedef enum {
 } Xpost_Garbage_Params;
 
 /**
+ * Maximum size to accept from an allocation relative to the size requested
+ */
+#define XPOST_FREE_ACCEPT_OVERSIZE 2
+
+/**
  * @brief  initialize the FREE special entity which points
  *         to the head of the free list
  */
