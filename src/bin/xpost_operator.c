@@ -212,6 +212,7 @@ Xpost_Object consoper(Xpost_Context *ctx,
             {
                 //error(VMerror, "consoper cannot allocate signature block");
                 XPOST_LOG_ERR("cannot allocate signature block");
+                XPOST_LOG_ERR("operator %s NOT installed", name);
                 return null;
             }
             optab = (void *)(ctx->gl->base + optadr); // recalc
@@ -226,6 +227,12 @@ Xpost_Object consoper(Xpost_Context *ctx,
                     optab[opcode].sigadr,
                     optab[opcode].n * sizeof(signat),
                     (optab[opcode].n + 1) * sizeof(signat));
+            if (!t)
+            {
+                XPOST_LOG_ERR("cannot allocate new sig table");
+                XPOST_LOG_ERR("operator %s NOT installed", name);
+                return null;
+            }
             optab = (void *)(ctx->gl->base + optadr); // recalc
             optab[opcode].sigadr = t;
 
@@ -239,6 +246,7 @@ Xpost_Object consoper(Xpost_Context *ctx,
             {
                 //error(VMerror, "consoper cannot allocate type block");
                 XPOST_LOG_ERR("cannot allocate type block");
+                XPOST_LOG_ERR("operator %s NOT installed", name);
                 return null;
             }
             sp[si].t = ad;
