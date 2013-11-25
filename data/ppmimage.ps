@@ -349,26 +349,42 @@ DATA_DIR(/qsort.ps)strcat run
     end } %FillPoly
 
     /.printppm { % dump PGM format to stdout
-        (P2\n)=only
+        (P3\n)=only
         dup 0 get length =only %w
         ( )=only
         dup length =only %h
         (\n)=only
         (255\n)=only %max
-        {{=only( )=only}forall(\n)=only}forall %data
+        {
+            {
+                dup -16 bitshift =only( )=only
+                dup -8 bitshift 16#ff and =only( )=only
+                dup 16#ff and =only( )=only
+            }forall
+            (\n)=only
+        }forall %data
         (\n)=only
     }
 
     /.writeppm { % img (filename)
         2 dict begin
         {/f /a}{exch def}forall
-        f (P2\n) writestring
+        f (P3\n) writestring
         f a 0 get length =string cvs writestring
         f ( ) writestring
         f a length =string cvs writestring
         f (\n255\n) writestring
         a {
             {
+                dup -16 bitshift
+                =string cvs dup length exch
+                    f exch writestring
+                    neg 4 add { f ( ) writestring } repeat
+                dup -8 bitshift 16#ff and
+                =string cvs dup length exch
+                    f exch writestring
+                    neg 4 add { f ( ) writestring } repeat
+                dup 16#ff and
                 =string cvs dup length exch
                     f exch writestring
                     neg 4 add { f ( ) writestring } repeat
@@ -383,12 +399,12 @@ DATA_DIR(/qsort.ps)strcat run
         /OutputFileName where { pop
             ImgData
             OutputFileName (w) file
-            .writepgm
+            .writeppm
             f closefile
         }{
             ImgData
             (%stdout) (w) file
-            .writepgm
+            .writeppm
         } ifelse
     end }
 >> def
