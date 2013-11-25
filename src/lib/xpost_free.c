@@ -75,6 +75,18 @@ int xpost_free_init(Xpost_Memory_File *mem)
 }
 
 /* free this ent! returns reclaimed size or -1 on error
+
+   The free list is a chain of unused ents and their associated memory.
+   The free list head is ent 0, which points (via the address field in
+   the memory table entry for ent 0) to a 32bit int which is either 0
+   (ie. a "NULL" "pointer", also a link back to the head (!)) or the ent
+   number of the next free allocation. Any subsequent ents in the chain
+   will have the next ent or 0 in the first 4 bytes of the allocation.
+
+   (All allocations are padded to at least an even word and zero-sized
+   allocations are ignored, so any ent that can be put on this is
+   guaranteed to have at least these 4 bytes allocated to it.)
+
  */
 int xpost_free_memory_ent(Xpost_Memory_File *mem,
                           unsigned int ent)
