@@ -282,7 +282,7 @@ int _putpix (Xpost_Context *ctx,
 
     {
         xcb_alloc_color_reply_t *rep;
-
+        unsigned int value;
         xcb_point_t p;
         p.x = x.int_.val;
         p.y = y.int_.val;
@@ -296,10 +296,9 @@ int _putpix (Xpost_Context *ctx,
         if (!rep)
             return unregistered;
 
-        {
-            unsigned int value[] = { rep->pixel };
-            xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, value);
-        }
+        value = rep->pixel;
+        free(rep);
+        xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, &value);
 
         xcb_poly_point(private.c, XCB_COORD_MODE_ORIGIN,
                 private.img, private.gc, 1, &p);
@@ -374,6 +373,7 @@ int _drawline (Xpost_Context *ctx,
 
     {
         xcb_alloc_color_reply_t *rep;
+        unsigned int value;
 
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
@@ -384,10 +384,9 @@ int _drawline (Xpost_Context *ctx,
         if (!rep)
             return unregistered;
 
-        {
-            unsigned int value[] = { rep->pixel };
-            xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, value);
-        }
+        value = rep->pixel;
+        free(rep);
+        xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, &value);
     }
 
     {
@@ -470,6 +469,7 @@ int _fillrect (Xpost_Context *ctx,
 
     {
         xcb_alloc_color_reply_t *rep;
+        unsigned int value;
 
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
@@ -480,10 +480,9 @@ int _fillrect (Xpost_Context *ctx,
         if (!rep)
             return unregistered;
 
-        {
-            unsigned int value[] = { rep->pixel };
-            xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, value);
-        }
+        value = rep->pixel;
+        free(rep);
+        xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, &value);
 
         for (i=0; i < height.int_.val; i++)
         {
