@@ -71,15 +71,9 @@ static
 unsigned int _event_handler_opcode;
 
 static
-int _event_handler (Xpost_Context *ctx)
+int _event_handler (Xpost_Context *ctx,
+                    Xpost_Object devdic)
 {
-    Xpost_Object devdic;
-    int ret;
-
-    ret = Aload(ctx, consname(ctx, "DEVICE"));
-    if (ret)
-        return ret;
-    devdic = xpost_stack_pop(ctx->lo, ctx->os);
 
     return 0;
 }
@@ -205,7 +199,9 @@ int _create_cont (Xpost_Context *ctx,
     xcb_create_colormap(private.c, XCB_COLORMAP_ALLOC_NONE, private.cmap,
             private.win, private.scr->root_visual);
 
-    xpost_context_install_event_handler(ctx, operfromcode(_event_handler_opcode));
+    xpost_context_install_event_handler(ctx,
+            operfromcode(_event_handler_opcode),
+            devdic);
 
 
     /* save private data struct in string */
@@ -517,7 +513,7 @@ int _destroy (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
             sizeof private, &private);
 
-    xpost_context_install_event_handler(ctx, null);
+    xpost_context_install_event_handler(ctx, null, null);
 
     xcb_disconnect(private.c);
 
@@ -633,7 +629,7 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     op = consoper(ctx, "newxcbdevice", newxcbdevice, 1, 2, integertype, integertype);
     bdcput(ctx, userdict, consname(ctx, "newxcbdevice"), op);
 
-    op = consoper(ctx, "xcbEventHandler", _event_handler, 0, 0);
+    op = consoper(ctx, "xcbEventHandler", _event_handler, 0, 1, dicttype);
     _event_handler_opcode = op.mark_.padw;
 
     return 0;

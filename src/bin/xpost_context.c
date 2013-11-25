@@ -303,9 +303,11 @@ void xpost_context_dump(Xpost_Context *ctx)
 }
 
 int xpost_context_install_event_handler(Xpost_Context *ctx,
-                                        Xpost_Object operator)
+                                        Xpost_Object operator,
+                                        Xpost_Object device)
 {
     ctx->event_handler = operator;
+    ctx->window_device = device;
     return 1;
 }
 

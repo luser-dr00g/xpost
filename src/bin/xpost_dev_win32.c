@@ -85,15 +85,9 @@ static
 unsigned int _event_handler_opcode;
 
 static
-int _event_handler (Xpost_Context *ctx)
+int _event_handler (Xpost_Context *ctx,
+                    Xpost_Object devdic)
 {
-    Xpost_Object devdic;
-    int ret;
-
-    ret = Aload(ctx, consname(ctx, "DEVICE"));
-    if (ret)
-        return ret;
-    devdic = xpost_stack_pop(ctx->lo, ctx->os);
 
     return 0;
 }
@@ -256,7 +250,9 @@ int _create_cont (Xpost_Context *ctx,
         goto free_bitmap_info;
     }
 
-    xpost_context_install_event_handler(ctx, operfromcode(_event_handler_opcode));
+    xpost_context_install_event_handler(ctx,
+            operfromcode(_event_handler_opcode),
+            devdic);
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
@@ -651,7 +647,7 @@ int _destroy (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
                      sizeof(private), &private);
 
-    xpost_context_install_event_handler(ctx, null);
+    xpost_context_install_event_handler(ctx, null, null);
 
     free(private.bitmap_info);
     ReleaseDC(private.window, private.ctx);
@@ -770,7 +766,7 @@ int loadwin32devicecont (Xpost_Context *ctx,
     op = consoper(ctx, "newwin32device", newwin32device, 1, 2, integertype, integertype);
     bdcput(ctx, userdict, consname(ctx, "newwin32device"), op);
 
-    op = consoper(ctx, "win32EventHandler", _event_handler, 0, 0);
+    op = consoper(ctx, "win32EventHandler", _event_handler, 0, 1, dicttype);
     _event_handler_opcode = op.mark_.padw;
 
     return 0;
@@ -778,7 +774,8 @@ int loadwin32devicecont (Xpost_Context *ctx,
 
 /*
    install the loadXXXdevice which may be called during graphics initialization
-   to produce the operator newXXXdevice which instantiates the device dictionary.
+   to produce the operator newXXXdevice
+   which creates the device instance dictionary.
 */
 int initwin32ops (Xpost_Context *ctx,
                   Xpost_Object sd)

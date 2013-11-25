@@ -40,6 +40,7 @@ typedef struct
     unsigned quit;  /**< if 1 cause mainloop() to return, if 0 keep looping */
 
     Xpost_Object event_handler;
+    Xpost_Object window_device;
 
 } Xpost_Context;
 
@@ -72,6 +73,7 @@ void xpost_context_dump(Xpost_Context *ctx);
  * @brief install a function to be called by eval()
  */
 int xpost_context_install_event_handler(Xpost_Context *ctx,
-                                        Xpost_Object operator);
+                                        Xpost_Object operator,
+                                        Xpost_Object device);
 
 #endif
