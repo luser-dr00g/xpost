@@ -16,7 +16,7 @@
         currentcolordict DEVICE /nativecolorspace get get exec
         0 0 DEVICE /dimensions get aload pop
         %exch 1 sub exch 1 sub
-        pstack()=
+        %pstack()=
         DEVICE dup /FillRect get exec
     
         flushpage
@@ -53,7 +53,7 @@
             counttomark 2 add -1 roll
             DEVICE dup /FillPoly get exec
             pop
-            pstack()=
+            %pstack()=
             flushpage
         }{
             pop
