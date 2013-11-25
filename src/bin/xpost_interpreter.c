@@ -693,8 +693,8 @@ int xpost_create(void)
     int ret;
 
     //test_memory();
-    if (!test_garbage_collect())
-        return 0;
+    //if (!test_garbage_collect())
+        //return 0;
 
     nextid = 0; //reset process counter
 
