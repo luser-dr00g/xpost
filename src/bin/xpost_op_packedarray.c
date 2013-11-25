@@ -85,6 +85,8 @@ int packedarray (Xpost_Context *ctx,
     int i;
     Xpost_Object a, v;
     a = consbar(ctx, n.int_.val);
+    if (xpost_object_get_type(a) == nulltype)
+        return VMerror;
     
     for (i=n.int_.val; i > 0; i--) {
         v = xpost_stack_pop(ctx->lo, ctx->os);

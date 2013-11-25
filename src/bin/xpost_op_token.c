@@ -190,6 +190,8 @@ Xpost_Object grok (Xpost_Context *ctx,
              int (*next)(Xpost_Context *ctx, Xpost_Object *src),
              void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src))
 {
+    Xpost_Object obj;
+
     if (ns == NBUF)
         error(limitcheck, "grok buf maxxed");
     s[ns] = '\0';  //fsm_check & consname  terminate on \0
@@ -258,7 +260,10 @@ Xpost_Object grok (Xpost_Context *ctx,
                       if (sp-s > NBUF) error(limitcheck, "grok string exceeds buf");
                       else *sp++ = c;
                   }
-                  return xpost_object_cvlit(consbst(ctx, sp-s, s));
+                  obj = consbst(ctx, sp-s, s);
+                  if (xpost_object_get_type(obj) == nulltype)
+                      return null;
+                  return xpost_object_cvlit(obj);
               }
 
     case '<': {
@@ -286,7 +291,10 @@ Xpost_Object grok (Xpost_Context *ctx,
                       if (sp-s > NBUF) error(limitcheck, "grok hexstring exceeds buf");
                       *sp++ = d;
                   }
-                  return xpost_object_cvlit(consbst(ctx, sp-s, s));
+                  obj = consbst(ctx, sp-s, s);
+                  if (xpost_object_get_type(obj) == nulltype)
+                      return null;
+                  return xpost_object_cvlit(obj);
               }
 
     case '>': {

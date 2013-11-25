@@ -63,6 +63,8 @@ int Idict(Xpost_Context *ctx,
 {
     Xpost_Object dic;
     dic = consbdc(ctx, I.int_.val);
+    if (xpost_object_get_type(dic) == nulltype)
+        return VMerror;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(dic));
     return 0;
 }
@@ -83,6 +85,8 @@ int dictomark(Xpost_Context *ctx)
     if ((i % 2) == 1)
         return rangecheck;
     d = consbdc(ctx, i);
+    if (xpost_object_get_type(d) == nulltype)
+        return VMerror;
     for ( ; i > 0; i -= 2){
         v = xpost_stack_pop(ctx->lo, ctx->os);
         k = xpost_stack_pop(ctx->lo, ctx->os);

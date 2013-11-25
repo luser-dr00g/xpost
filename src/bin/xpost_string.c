@@ -32,6 +32,7 @@
 # include <config.h>
 #endif
 
+#include "xpost_log.h"
 #include "xpost_memory.h"  // strings live in mfile, accessed via mtab
 #include "xpost_object.h"  // strings are objects
 #include "xpost_stack.h"
@@ -54,7 +55,11 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
 
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
     if (!xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype, &ent))
-        error(VMerror, "consstr cannot allocate string");
+    {
+        //error(VMerror, "consstr cannot allocate string");
+        XPOST_LOG_ERR("cannot allocate string");
+        return null;
+    }
     if (ini)
     {
         ret = xpost_memory_put(mem, ent, 0, sz, ini);
@@ -80,9 +85,11 @@ Xpost_Object consbst(Xpost_Context *ctx,
 {
     Xpost_Object s;
     s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
-    xpost_stack_push(ctx->lo, ctx->hold, s);
-    if (ctx->vmmode==GLOBAL)
-        s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+    if (xpost_object_get_type(s) != nulltype) {
+        xpost_stack_push(ctx->lo, ctx->hold, s);
+        if (ctx->vmmode==GLOBAL)
+            s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+    }
     return s;
 }
 

@@ -218,6 +218,7 @@ unsigned addname(Xpost_Context *ctx,
     Xpost_Memory_File *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
     unsigned names;
     unsigned u;
+    Xpost_Object str;
 
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
@@ -227,7 +228,13 @@ unsigned addname(Xpost_Context *ctx,
     //dumpmtab(ctx->gl, 0);
     //unsigned vmmode = ctx->vmmode;
     //ctx->vmmode = GLOBAL;
-    xpost_stack_push(mem, names, consbst(ctx, strlen(s), s));
+    str = consbst(ctx, strlen(s), s);
+    if (xpost_object_get_type(str) == nulltype)
+    {
+        XPOST_LOG_ERR("cannot allocate name string");
+        return 0;
+    }
+    xpost_stack_push(mem, names, str);
     //ctx->vmmode = vmmode;
     return u;
 }

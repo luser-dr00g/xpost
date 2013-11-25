@@ -79,6 +79,8 @@ int Iarray (Xpost_Context *ctx,
     Xpost_Object t;
 
     t = consbar(ctx, I.int_.val);
+    if (xpost_object_get_type(t) == nulltype)
+        return VMerror;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(t));
 
     return 0;
@@ -99,6 +101,8 @@ int arrtomark (Xpost_Context *ctx)
         return unmatchedmark;
     i = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
     a = consbar(ctx, i);
+    if (xpost_object_get_type(a) == nulltype)
+        return VMerror;
     for ( ; i > 0; i--){
         v = xpost_stack_pop(ctx->lo, ctx->os);
         barput(ctx, a, i-1, v);

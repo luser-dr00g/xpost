@@ -164,9 +164,17 @@ int Sgetenv (Xpost_Context *ctx,
     str[S.comp_.sz] = '\0';
     r = getenv(str);
     if (r)
-        xpost_stack_push(ctx->lo, ctx->os, consbst(ctx, strlen(r), r));
+    {
+        Xpost_Object strobj;
+        strobj = consbst(ctx, strlen(r), r);
+        if (xpost_object_get_type(strobj) == nulltype)
+            return VMerror;
+        xpost_stack_push(ctx->lo, ctx->os, strobj);
+    }
     else
+    {
         return undefined;
+    }
     return 0;
 }
 

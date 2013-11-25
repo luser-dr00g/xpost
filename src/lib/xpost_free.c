@@ -50,12 +50,20 @@ int xpost_free_init(Xpost_Memory_File *mem)
     unsigned int val = 0;
     int ret;
 
-    ret = xpost_memory_table_alloc(mem, sizeof(unsigned int), 0, &ent);
+    /* allocate the free list head: 4 bytes in ent 0
+       allocate additional 1k "scratch" space to protect
+       interpreter data from NULL writes
+     */
+    ret = xpost_memory_table_alloc(mem, 1024, 0, &ent);
     if (!ret)
     {
         return 0;
     }
+
+    /* make sure this is the correct ent */
     assert (ent == XPOST_MEMORY_TABLE_SPECIAL_FREE);
+
+    /* set to zero (== NULL == link-back-to-head) */
     ret = xpost_memory_put(mem, ent, 0, sizeof(unsigned int), &val);
     if (!ret)
     {
@@ -63,31 +71,19 @@ int xpost_free_init(Xpost_Memory_File *mem)
         return 0;
     }
 
+    /* set zero size to enable guards against NULL writes */
+    {
+        Xpost_Memory_Table *tab = (Xpost_Memory_Table *)mem->base;
+        tab->tab[XPOST_MEMORY_TABLE_SPECIAL_FREE].sz = 0;
+    }
+
+    /* make free list available for general memory allocations */
     (void) xpost_memory_register_free_list_alloc_function(mem, xpost_free_alloc);
 
-    /*
-       unsigned int ent;
-       xpost_memory_table_alloc(mem, 0, 0, &ent);
-       Xpost_Memory_Table *tab = (void *)mem->base;
-       xpost_memory_file_alloc(mem, sizeof(unsigned int), &tab->tab[ent].adr);
-   */
     return 1;
 }
 
-/* free this ent! returns reclaimed size or -1 on error
-
-   The free list is a chain of unused ents and their associated memory.
-   The free list head is ent 0, which points (via the address field in
-   the memory table entry for ent 0) to a 32bit int which is either 0
-   (ie. a "NULL" "pointer", also a link back to the head (!)) or the ent
-   number of the next free allocation. Any subsequent ents in the chain
-   will have the next ent or 0 in the first 4 bytes of the allocation.
-
-   (All allocations are padded to at least an even word and zero-sized
-   allocations are ignored, so any ent that can be put on this is
-   guaranteed to have at least these 4 bytes allocated to it.)
-
- */
+/* free this ent! returns reclaimed size or -1 on error */
 int xpost_free_memory_ent(Xpost_Memory_File *mem,
                           unsigned int ent)
 {
@@ -110,7 +106,7 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     }
     a = tab->tab[rent].adr;
     sz = tab->tab[rent].sz;
-    if (sz == 0) return 0;
+    if (sz == 0) return 0; /* do not add zero-size allocations to list */
 
     if (tab->tab[rent].tag == filetype)
     {
@@ -195,7 +191,7 @@ void xpost_free_dump(Xpost_Memory_File *mem)
     }
 }
 
-/* scan the free list for a suitably sized bit of memory,
+/* scan the free list for a suitably-sized bit of memory,
 
    if the allocator falls back to fresh memory XPOST_GARBAGE_COLLECTION_PERIOD times,
         it triggers a collection.
@@ -233,7 +229,10 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
             XPOST_LOG_ERR("cannot retrieve size of ent %u", e);
             return 0;
         }
-        if (tsz >= sz)
+
+        /* if this ent is sufficient to hold sz,
+           but does not waste more than sz bytes, use it */
+        if (tsz >= sz && tsz <= sz * 2)
         {
             Xpost_Memory_Table *tab;
             unsigned int ent;

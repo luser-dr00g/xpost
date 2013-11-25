@@ -54,6 +54,8 @@ int Istring(Xpost_Context *ctx,
 {
     Xpost_Object str;
     str = consbst(ctx, I.int_.val, NULL);
+    if (xpost_object_get_type(str) == nulltype)
+        return VMerror;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(str));
     return 0;
 }

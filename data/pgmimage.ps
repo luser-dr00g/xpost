@@ -263,7 +263,15 @@ DATA_DIR(/qsort.ps)strcat run
         /maxx minx neg def
         /maxy maxx def
         poly {
-            aload pop .maxmin
+            dup type /arraytype eq {
+                dup length 2 eq {
+                    aload pop .maxmin
+                }{
+                    pop
+                } ifelse
+            }{
+                pop
+            } ifelse
         } forall
 
         /x_max width .5 add def

@@ -147,11 +147,15 @@ int _create_cont (Xpost_Context *ctx,
     integer width = w.int_.val;
     integer height = h.int_.val;
     int scrno;
-    int i;
     unsigned char  depth;
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
+    if (xpost_object_get_type(privatestr) == nulltype)
+    {
+        XPOST_LOG_ERR("cannot allocat private data structure");
+        return unregistered;
+    }
     bdcput(ctx, devdic, consname(ctx, "Private"), privatestr);
 
     private.width = width;

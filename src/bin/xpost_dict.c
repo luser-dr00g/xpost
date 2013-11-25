@@ -257,9 +257,12 @@ Xpost_Object consbdc(Xpost_Context *ctx,
                unsigned sz)
 {
     Xpost_Object d = consdic(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
-    xpost_stack_push(ctx->lo, ctx->hold, d);
-    if (ctx->vmmode == GLOBAL)
-        d.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+    if (xpost_object_get_type(d) != nulltype)
+    {
+        xpost_stack_push(ctx->lo, ctx->hold, d);
+        if (ctx->vmmode == GLOBAL)
+            d.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+    }
     return d;
 }
 

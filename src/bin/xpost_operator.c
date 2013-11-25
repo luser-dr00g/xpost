@@ -462,6 +462,11 @@ int initop(Xpost_Context *ctx)
     unsigned int optadr;
 
     sd = consbdc(ctx, SDSIZE);
+    if (xpost_object_get_type(sd) == nulltype)
+    {
+        XPOST_LOG_ERR("cannot allocate systemdict");
+        return 0;
+    }
     bdcput(ctx, sd, consname(ctx, "systemdict"), sd);
     xpost_stack_push(ctx->lo, ctx->ds, sd);
     tab = NULL;

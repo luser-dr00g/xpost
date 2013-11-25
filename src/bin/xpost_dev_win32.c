@@ -164,6 +164,11 @@ int _create_cont (Xpost_Context *ctx,
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
+    if (xpost_object_get_type(privatestr) == nulltype)
+    {
+        XPOST_LOG_ERR("cannot allocate private data structure");
+        return unregistered;
+    }
     bdcput(ctx, devdic, consname(ctx, "Private"), privatestr);
 
     /* create and map window */

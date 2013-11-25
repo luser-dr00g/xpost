@@ -157,6 +157,11 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx)
     {
         Xpost_Object gd; //globaldict
         gd = consbdc(ctx, 100);
+        if (xpost_object_get_type(gd) == nulltype)
+        {
+            XPOST_LOG_ERR("cannot allocate globaldict");
+            return 0;
+        }
         bdcput(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
         xpost_stack_push(ctx->lo, ctx->ds, gd);
     }
@@ -168,6 +173,11 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx)
     {
         Xpost_Object ud; //userdict
         ud = consbdc(ctx, 100);
+        if (xpost_object_get_type(ud) == nulltype)
+        {
+            XPOST_LOG_ERR("cannot allocate userdict");
+            return 0;
+        }
         bdcput(ctx, ud, consname(ctx, "userdict"), ud);
         xpost_stack_push(ctx->lo, ctx->ds, ud);
     }
