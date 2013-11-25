@@ -1,0 +1,103 @@
+loadgraphics
+
+/randgray {
+	rand 256 mod 255 div setgray
+} def
+
+/randcolor {
+    rand 1001 mod 1000 div
+    rand 1001 mod 1000 div
+    rand 1001 mod 1000 div setrgbcolor
+} def
+
+/randwidth {
+	rand 10 mod setlinewidth
+} def
+
+/randpoint {
+    rand 500 mod
+    rand 400 mod
+} def
+
+/randline {
+    randpoint moveto
+    randpoint lineto
+} def
+
+/randbox {
+    rand 300 mod
+    rand 200 mod
+    randpoint moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+} def
+
+/randcurve {
+    randpoint
+    moveto
+    randpoint
+    randpoint
+    randpoint
+    curveto
+} def
+
+%realtime
+-1890236260
+dup (initial rng seed: )=only =
+dup /initialsrand exch def
+srand
+
+( curves)=
+
+save
+0 setlinewidth
+20 { randcurve randcolor stroke } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+restore
+
+save
+10 { randcurve randwidth randcolor stroke } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+restore
+
+( boxes)=
+
+save
+0 setlinewidth
+40 { randbox randcolor stroke newpath } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+restore
+
+save
+10 { randbox randcolor fill newpath } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+restore
+
+( lines)=
+
+save
+0 setlinewidth
+50 { randline randcolor stroke } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+restore
+
+save
+15 { randline randwidth randcolor stroke } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+restore
+
+save
+10 { randbox randcolor fill newpath } repeat
+(initial rng seed: )=only initialsrand =
+showpage
+restore
+
+(initial rng seed: )=only initialsrand =
