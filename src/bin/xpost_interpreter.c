@@ -440,12 +440,19 @@ int eval(Xpost_Context *ctx)
        and then return 0.
        it should leave all stacks undisturbed.
      */
-    if (xpost_object_get_type(ctx->event_handler) == operatortype) {
+    if (xpost_object_get_type(ctx->event_handler) == operatortype
+            && xpost_object_get_type(ctx->window_device) == dicttype) {
+        if (!xpost_stack_push(ctx->lo, ctx->os, ctx->window_device))
+        {
+            return stackoverflow;
+        }
         ret = opexec(ctx, ctx->event_handler.mark_.padw);
 		if (ret)
+        {
             XPOST_LOG_ERR("event_handler returned %d (%s)",
                     ret, errorname[ret]);
 			//return ret;
+        }
     }
 
     if ( xpost_object_is_exe(t) ) /* if executable */
