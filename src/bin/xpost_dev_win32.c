@@ -281,9 +281,9 @@ int _create_cont (Xpost_Context *ctx,
 
 static
 int _putpix (Xpost_Context *ctx,
-             Xpost_Object redval,
-             Xpost_Object greenval,
-             Xpost_Object blueval,
+             Xpost_Object red,
+             Xpost_Object green,
+             Xpost_Object blue,
              Xpost_Object x,
              Xpost_Object y,
              Xpost_Object devdic)
@@ -293,18 +293,18 @@ int _putpix (Xpost_Context *ctx,
     HDC dc;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(redval) == realtype)
-        redval = xpost_cons_int(redval.real_.val * 255.0);
+    if (xpost_object_get_type(red) == realtype)
+        red = xpost_cons_int(red.real_.val * 255.0);
     else
-        redval.int_.val *= 255;
-    if (xpost_object_get_type(greenval) == realtype)
-        greenval = xpost_cons_int(greenval.real_.val * 255.0);
+        red.int_.val *= 255;
+    if (xpost_object_get_type(green) == realtype)
+        green = xpost_cons_int(green.real_.val * 255.0);
     else
-        greenval.int_.val *= 255;
-    if (xpost_object_get_type(blueval) == realtype)
-        blueval = xpost_cons_int(blueval.real_.val * 255.0);
+        green.int_.val *= 255;
+    if (xpost_object_get_type(blue) == realtype)
+        blue = xpost_cons_int(blue.real_.val * 255.0);
     else
-        blueval.int_.val *= 255;
+        blue.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -322,7 +322,7 @@ int _putpix (Xpost_Context *ctx,
         return 0;
 
     private.buf[y.int_.val * private.width + x.int_.val] =
-        redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
+        red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
 
     dc = CreateCompatibleDC(private.ctx);
     SelectObject(dc, private.bitmap);
@@ -365,9 +365,9 @@ int _getpix (Xpost_Context *ctx,
 
 static
 int _drawline (Xpost_Context *ctx,
-               Xpost_Object redval,
-               Xpost_Object greenval,
-               Xpost_Object blueval,
+               Xpost_Object red,
+               Xpost_Object green,
+               Xpost_Object blue,
                Xpost_Object x1,
                Xpost_Object y1,
                Xpost_Object x2,
@@ -392,18 +392,18 @@ int _drawline (Xpost_Context *ctx,
     int i;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(redval) == realtype)
-        redval = xpost_cons_int(redval.real_.val * 255.0);
+    if (xpost_object_get_type(red) == realtype)
+        red = xpost_cons_int(red.real_.val * 255.0);
     else
-        redval.int_.val *= 255;
-    if (xpost_object_get_type(greenval) == realtype)
-        greenval = xpost_cons_int(greenval.real_.val * 255.0);
+        red.int_.val *= 255;
+    if (xpost_object_get_type(green) == realtype)
+        green = xpost_cons_int(green.real_.val * 255.0);
     else
-        greenval.int_.val *= 255;
-    if (xpost_object_get_type(blueval) == realtype)
-        blueval = xpost_cons_int(blueval.real_.val * 255.0);
+        green.int_.val *= 255;
+    if (xpost_object_get_type(blue) == realtype)
+        blue = xpost_cons_int(blue.real_.val * 255.0);
     else
-        blueval.int_.val *= 255;
+        blue.int_.val *= 255;
     if (xpost_object_get_type(x1) == realtype)
         x1 = xpost_cons_int(x1.real_.val);
     if (xpost_object_get_type(y1) == realtype)
@@ -438,7 +438,7 @@ int _drawline (Xpost_Context *ctx,
         }
         for (y = _y1; y <= _y2; y++)
             private.buf[y * private.width + _x1] =
-                redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
+                red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
 
         dc = CreateCompatibleDC(private.ctx);
         SelectObject(dc, private.bitmap);
@@ -461,7 +461,7 @@ int _drawline (Xpost_Context *ctx,
         }
         for (x = _x1; x <= _x2; x++)
             private.buf[_y1 * private.width + x] =
-                redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
+                red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
 
         dc = CreateCompatibleDC(private.ctx);
         SelectObject(dc, private.bitmap);
@@ -491,7 +491,7 @@ int _drawline (Xpost_Context *ctx,
     for (i = 1; i <= deltax; ++i)
     {
         private.buf[y * private.width + x] =
-            redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
+            red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
         while (err >= 0)
         {
             if (interchange)
@@ -537,9 +537,9 @@ int _drawline (Xpost_Context *ctx,
 
 static
 int _fillrect (Xpost_Context *ctx,
-               Xpost_Object redval,
-               Xpost_Object greenval,
-               Xpost_Object blueval,
+               Xpost_Object red,
+               Xpost_Object green,
+               Xpost_Object blue,
                Xpost_Object x,
                Xpost_Object y,
                Xpost_Object width,
@@ -555,18 +555,18 @@ int _fillrect (Xpost_Context *ctx,
     int j;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(redval) == realtype)
-        redval = xpost_cons_int(redval.real_.val * 255.0);
+    if (xpost_object_get_type(red) == realtype)
+        red = xpost_cons_int(red.real_.val * 255.0);
     else
-        redval.int_.val *= 255;
-    if (xpost_object_get_type(greenval) == realtype)
-        greenval = xpost_cons_int(greenval.real_.val * 255.0);
+        red.int_.val *= 255;
+    if (xpost_object_get_type(green) == realtype)
+        green = xpost_cons_int(green.real_.val * 255.0);
     else
-        greenval.int_.val *= 255;
-    if (xpost_object_get_type(blueval) == realtype)
-        blueval = xpost_cons_int(blueval.real_.val * 255.0);
+        green.int_.val *= 255;
+    if (xpost_object_get_type(blue) == realtype)
+        blue = xpost_cons_int(blue.real_.val * 255.0);
     else
-        blueval.int_.val *= 255;
+        blue.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -609,7 +609,7 @@ int _fillrect (Xpost_Context *ctx,
         for (j = 0; j < width.int_.val; j++)
         {
             private.buf[(y.int_.val + i) * private.width + x.int_.val + j] =
-                redval.int_.val << 16 | greenval.int_.val << 8 | blueval.int_.val;
+                red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
         }
     }
 

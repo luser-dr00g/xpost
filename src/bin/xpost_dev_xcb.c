@@ -219,8 +219,8 @@ int _create_cont (Xpost_Context *ctx,
 
 static
 int _putpix (Xpost_Context *ctx,
-             Xpost_Object redval,
-             Xpost_Object greenval,
+             Xpost_Object red,
+             Xpost_Object green,
              Xpost_Object blueval,
              Xpost_Object x,
              Xpost_Object y,
@@ -230,14 +230,14 @@ int _putpix (Xpost_Context *ctx,
     PrivateData private;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(redval) == realtype)
-        redval = xpost_cons_int(redval.real_.val * 65535.0);
+    if (xpost_object_get_type(red) == realtype)
+        red = xpost_cons_int(red.real_.val * 65535.0);
     else
-        redval.int_.val *= 65535;
-    if (xpost_object_get_type(greenval) == realtype)
-        greenval = xpost_cons_int(greenval.real_.val * 65535.0);
+        red.int_.val *= 65535;
+    if (xpost_object_get_type(green) == realtype)
+        green = xpost_cons_int(green.real_.val * 65535.0);
     else
-        greenval.int_.val *= 65535;
+        green.int_.val *= 65535;
     if (xpost_object_get_type(blueval) == realtype)
         blueval = xpost_cons_int(blueval.real_.val * 65535.0);
     else
@@ -267,8 +267,8 @@ int _putpix (Xpost_Context *ctx,
 
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
-                    redval.int_.val,
-                    greenval.int_.val,
+                    red.int_.val,
+                    green.int_.val,
                     blueval.int_.val),
                 0);
         if (!rep)
@@ -311,8 +311,8 @@ int _getpix (Xpost_Context *ctx,
 
 static
 int _drawline (Xpost_Context *ctx,
-               Xpost_Object redval,
-               Xpost_Object greenval,
+               Xpost_Object red,
+               Xpost_Object green,
                Xpost_Object blueval,
                Xpost_Object x1,
                Xpost_Object y1,
@@ -324,14 +324,14 @@ int _drawline (Xpost_Context *ctx,
     PrivateData private;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(redval) == realtype)
-        redval = xpost_cons_int(redval.real_.val * 65535.0);
+    if (xpost_object_get_type(red) == realtype)
+        red = xpost_cons_int(red.real_.val * 65535.0);
     else
-        redval.int_.val *= 65535;
-    if (xpost_object_get_type(greenval) == realtype)
-        greenval = xpost_cons_int(greenval.real_.val * 65535.0);
+        red.int_.val *= 65535;
+    if (xpost_object_get_type(green) == realtype)
+        green = xpost_cons_int(green.real_.val * 65535.0);
     else
-        greenval.int_.val *= 65535;
+        green.int_.val *= 65535;
     if (xpost_object_get_type(blueval) == realtype)
         blueval = xpost_cons_int(blueval.real_.val * 65535.0);
     else
@@ -355,8 +355,8 @@ int _drawline (Xpost_Context *ctx,
 
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
-                    redval.int_.val,
-                    greenval.int_.val,
+                    red.int_.val,
+                    green.int_.val,
                     blueval.int_.val),
                 0);
         if (!rep)
@@ -382,8 +382,8 @@ int _drawline (Xpost_Context *ctx,
 
 static
 int _fillrect (Xpost_Context *ctx,
-               Xpost_Object redval,
-               Xpost_Object greenval,
+               Xpost_Object red,
+               Xpost_Object green,
                Xpost_Object blueval,
                Xpost_Object x,
                Xpost_Object y,
@@ -397,14 +397,14 @@ int _fillrect (Xpost_Context *ctx,
     int i,j;
 
     /* fold numbers to integertype */
-    if (xpost_object_get_type(redval) == realtype)
-        redval = xpost_cons_int(redval.real_.val * 65535.0);
+    if (xpost_object_get_type(red) == realtype)
+        red = xpost_cons_int(red.real_.val * 65535.0);
     else
-        redval.int_.val *= 65535;
-    if (xpost_object_get_type(greenval) == realtype)
-        greenval = xpost_cons_int(greenval.real_.val * 65535.0);
+        red.int_.val *= 65535;
+    if (xpost_object_get_type(green) == realtype)
+        green = xpost_cons_int(green.real_.val * 65535.0);
     else
-        greenval.int_.val *= 65535;
+        green.int_.val *= 65535;
     if (xpost_object_get_type(blueval) == realtype)
         blueval = xpost_cons_int(blueval.real_.val * 65535.0);
     else
@@ -451,8 +451,8 @@ int _fillrect (Xpost_Context *ctx,
 
         rep = xcb_alloc_color_reply(private.c,
                 xcb_alloc_color(private.c, private.cmap,
-                    redval.int_.val,
-                    greenval.int_.val,
+                    red.int_.val,
+                    green.int_.val,
                     blueval.int_.val),
                 0);
         if (!rep)
