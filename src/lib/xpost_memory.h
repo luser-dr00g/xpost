@@ -409,7 +409,7 @@ int xpost_memory_table_set_size (
  * @param[out] mark The mark field.
  * @return 1 on success, 0 on failure.
  *
- * If succesful, this function stores the mark field
+ * If successful, this function stores the mark field
  * of the entity @p ent in @p mem through the @p mark pointer.
  */
 int xpost_memory_table_get_mark (
@@ -470,8 +470,8 @@ int xpost_memory_table_set_tag (
  *
  * @param[in,out] mem The memory file.
  * @param[in] ent The entity.
- * @param[in] offset The offset.
- * @param[in] sz The entity size.
+ * @param[in] offset The offset, in units of @p sz bytes.
+ * @param[in] sz The size of the transfer.
  * @param[out] dest A buffer
  * @return 1 on success, 0 on failure.
  *
@@ -492,8 +492,8 @@ int xpost_memory_get (
  *
  * @param[in,out] mem The memory file.
  * @param[in] ent The entity.
- * @param[in] offset The offset.
- * @param[in] sz The entity size.
+ * @param[in] offset The offset, in units of @p sz bytes.
+ * @param[in] sz The size of the transfer.
  * @param[in] src A buffer
  * @return 1 on success, 0 on failure.
  *

@@ -66,6 +66,7 @@ typedef struct {
     xcb_colormap_t cmap;
 } PrivateData;
 
+static int _flush (Xpost_Context *ctx, Xpost_Object devdic);
 
 static
 unsigned int _event_handler_opcode;
@@ -74,6 +75,31 @@ static
 int _event_handler (Xpost_Context *ctx,
                     Xpost_Object devdic)
 {
+    Xpost_Object privatestr;
+    PrivateData private;
+    xcb_generic_event_t *event;
+
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            privatestr.comp_.ent, 0, sizeof private, &private);
+
+    event = xcb_poll_for_event(private.c);
+    if (event)
+    {
+        switch(event->response_type & ~0x80)
+        {
+        case XCB_EXPOSE:
+            _flush(ctx, devdic);
+            break;
+        default:
+            break;
+        }
+        free(event);
+    }
+    else if (xcb_connection_has_error(private.c))
+        return unregistered;
 
     return 0;
 }
