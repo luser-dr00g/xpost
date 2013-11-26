@@ -81,6 +81,7 @@ typedef enum {
  * Maximum size to accept from an allocation relative to the size requested
  */
 #define XPOST_FREE_ACCEPT_OVERSIZE 2
+#define XPOST_FREE_ACCEPT_DENOM 1
 
 /**
  * @brief  initialize the FREE special entity which points
