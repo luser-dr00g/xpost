@@ -27,8 +27,8 @@ VMAJ=v_maj
 AC_SUBST([VMAJ])
 
 AC_DEFINE([XPOST_VERSION_MAJ], [v_maj], [Define to the major version of the library])
-AC_DEFINE([XPOST_VERSION_MIN], [v_min], [Define to the major version of the library])
-AC_DEFINE([XPOST_VERSION_MIC], [v_mic], [Define to the major version of the library])
+AC_DEFINE([XPOST_VERSION_MIN], [v_min], [Define to the minor version of the library])
+AC_DEFINE([XPOST_VERSION_MIC], [v_mic], [Define to the micro version of the library])
 
 ### Additional options to configure
 
