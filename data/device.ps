@@ -16,11 +16,11 @@ DATA_DIR (/image.ps) strcat run
 %/DEVICE 400 300 newwin32device def
 
 %breakhere
-newdefaultdevice
+newdefaultdevice % defined in xpost_interpreter.c:setdatadir()
 
 DEVICE begin
-    %/defaultmatrix [ 1 0 0 -1 0 height ] def
-    /defaultmatrix [ 1 0 0 1 0 0 ] def
+    /defaultmatrix [ 1 0 0 -1 0 height ] def
+    %/defaultmatrix [ 1 0 0 1 0 0 ] def
 end
 
 /flushpage {

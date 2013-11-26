@@ -29,7 +29,7 @@
     closepath
     flattenpath
     doclip
-    %[ { 2 array astore [ exch } { 2 array astore } {} {]} pathforall ]
+    %[ { 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall ]
     [
         [ % mark
         {
@@ -43,7 +43,7 @@
         { 2 array astore } % ... mark [x0 y0] ... [xN yN]
         {}
         { counttomark 1 sub index } % ... mark [x0 y0] ... [x0 y0]
-        pathforall
+        .devpathforall
         ]
     ]
     pstack()=
@@ -99,7 +99,7 @@
             DEVICE dup /DrawLine get exec  % -
             pop
         }
-        pathforall
+        .devpathforall
         cleartomark
     }{
         strokepath

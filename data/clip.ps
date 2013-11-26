@@ -147,7 +147,7 @@ end } def
         { 2 array astore }  % ... mark [x0 y0] ... [xN yN]
         {}
         { counttomark 1 sub index } % ... mark [x0 y0] ... [x0 y0]
-        pathforall
+        .devpathforall
         ]  % /PA mark [...] [...] [...] 
     ] def
 
@@ -157,7 +157,7 @@ end } def
         { 2 array astore }
         {}
         {]}
-        pathforall
+        .devpathforall
     ] def
 
     %(PA: )print PA ==

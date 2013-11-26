@@ -129,7 +129,9 @@
 
 % x y r angle1 angle2  arc  -
 % append a circular arc to the current path
-/arc { 10 dict begin
+/arc {
+DICT %10 dict
+begin
     {angle2 angle1 r y x}{exch def}forall
     /fx { cos r mul x add } def
     /fx' { sin r mul x add } def
@@ -157,7 +159,7 @@
     %    pstack()=
     %    curveto
     %} repeat
-end } def
+end } dup 0 5 dict put def
 
 % -  closepath  -
 % connect subpath back to its starting point
@@ -482,7 +484,44 @@ end } def
 % move line curve close  pathforall  -
 % enumerate current path
 /pathforall {
-5 dict begin
+DICT %5 dict
+begin
+    {close curve line move}{exch def}forall
+    0 1 cpath length 1 sub {
+        /cp exch def
+        0 1 cpath cp get % subpath
+        length 1 sub {
+            cpath cp get exch get % elem
+            dup /cmd get /close ne {
+                dup /data get % elem [data]
+                aload length  % elem d a t a n
+                dup 2 eq {
+                    pop
+                    itransform
+                    3 2 roll
+                }{
+                    6 eq {
+                        6 2 roll itransform
+                        6 2 roll itransform
+                        6 2 roll itransform
+                        7 6 roll
+                    }{
+                        /pathforall cvx /unregistered signalerror
+                    } ifelse
+                } ifelse
+                %1 add -1 roll % d a t a elem
+            } if
+            /cmd get cvx exec
+        } for
+    } for
+end
+} dup 0 5 dict put def
+
+% move line curve close  .devpathforall  -
+% enumerate current path
+/.devpathforall {
+DICT %5 dict
+begin
     {close curve line move}{exch def}forall
     0 1 cpath length 1 sub {
         /cp exch def
@@ -498,6 +537,6 @@ end } def
         } for
     } for
 end
-} def
+} dup 0 5 dict put def
 
 (eof path.ps)=
