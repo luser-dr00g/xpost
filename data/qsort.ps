@@ -39,17 +39,17 @@
     %end
     3 index 1 index get % a l r pI p
     4 index 3 index 3 index % a l r pI p  a r pI
-    //swap exec % a l r pI p
+    .swap %//swap exec % a l r pI p
     3 index % a l r pI p sI
     dup 1 5 index 1 sub { % a l r pI p sI  i
         6 index 1 index get 3 index cmp { % a l r pI p sI  i
             6 index exch 2 index % a l r pI p sI  a i sI
-            //swap exec % a l r pI p sI
+            .swap %//swap exec % a l r pI p sI
             1 add % a l r pI p sI+1
         }{ pop } ifelse
     } for % a l r pI p sI
     5 index 1 index 5 index % a l r pI p sI  a sI r
-    //swap exec % a l r pI p sI
+    .swap %//swap exec % a l r pI p sI
     6 1 roll pop pop pop pop pop
 } bind def
 

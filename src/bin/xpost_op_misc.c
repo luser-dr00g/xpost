@@ -205,6 +205,20 @@ int SSputenv (Xpost_Context *ctx,
 }
 
 static
+int _array_swap(Xpost_Context *ctx,
+                Xpost_Object a,
+                Xpost_Object i,
+                Xpost_Object j)
+{
+    Xpost_Object a_i, a_j;
+    a_i = barget(ctx, a, i.int_.val);
+    a_j = barget(ctx, a, j.int_.val);
+    barput(ctx, a, i.int_.val, a_j);
+    barput(ctx, a, j.int_.val, a_i);
+    return 0;
+}
+
+static
 int traceon (Xpost_Context *ctx)
 {
     (void)ctx;
@@ -298,6 +312,9 @@ int initopx(Xpost_Context *ctx,
 
     op = consoper(ctx, "getenv", Sgetenv, 1, 1, stringtype); INSTALL;
     op = consoper(ctx, "putenv", SSputenv, 0, 2, stringtype, stringtype); INSTALL;
+
+    op = consoper(ctx, ".swap", _array_swap, 0, 3,
+            arraytype, integertype, integertype); INSTALL;
 
     op = consoper(ctx, "traceon", traceon, 0, 0); INSTALL;
     op = consoper(ctx, "traceoff", traceoff, 0, 0); INSTALL;
