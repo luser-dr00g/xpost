@@ -64,4 +64,18 @@ int xpost_init(void);
  */
 int xpost_quit(void);
 
+/**
+ * @brief Retrieve the version of the library.
+ *
+ * @param[out] maj The major version.
+ * @param[out] min The minor version.
+ * @param[out] mic The micro version.
+ *
+ * This function stores the major, minor and micro version of the library
+ * respectively in the buffers @p maj, @p min and @p mic. @p maj, @p min
+ * and @p mic can be @c NULL.
+ */
+void
+xpost_version_get(int *maj, int *min, int *mic);
+
 #endif
