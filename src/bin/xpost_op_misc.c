@@ -271,6 +271,11 @@ int initopx(Xpost_Context *ctx,
     Xpost_Object n,op;
     unsigned int optadr;
 
+    char *productstr = "Xpost";
+    char *versionstr = "0.0";
+    int revno = 1;
+    int serno = 0;
+
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
@@ -278,13 +283,15 @@ int initopx(Xpost_Context *ctx,
 
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "null"), null);
-    //version: see init.ps
+    bdcput(ctx, sd, consname(ctx, "version"),
+            xpost_object_cvlit(consbst(ctx, strlen(versionstr), versionstr)));
     op = consoper(ctx, "realtime", realtime, 1, 0); INSTALL;
     //usertime
     //languagelevel
-    //product: see init.ps (Xpost3)
-    //revision
-    //serialnumber
+    bdcput(ctx, sd, consname(ctx, "product"),
+            xpost_object_cvlit(consbst(ctx, strlen(productstr), productstr)));
+    bdcput(ctx, sd, consname(ctx, "revision"), xpost_cons_int(revno));
+    bdcput(ctx, sd, consname(ctx, "serialnumber"), xpost_cons_int(serno));
     //executive: see init.ps
     //echo: see opf.c
     //prompt: see init.ps
