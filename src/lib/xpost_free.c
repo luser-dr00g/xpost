@@ -233,7 +233,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
         /* if this ent is sufficient to hold sz,
            but does not waste more than sz bytes, use it */
         if (tsz >= sz &&
-                tsz <= sz * XPOST_FREE_ACCEPT_OVERSIZE)
+                tsz * XPOST_FREE_ACCEPT_DENOM <= sz * XPOST_FREE_ACCEPT_OVERSIZE)
         {
             Xpost_Memory_Table *tab;
             unsigned int ent;
