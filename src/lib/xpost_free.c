@@ -88,10 +88,10 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
                           unsigned int ent)
 {
     Xpost_Memory_Table *tab;
-    unsigned int rent = ent;
-    unsigned int a;
-    unsigned int z;
-    unsigned int sz;
+    unsigned int rent = ent; /* relative ent index */
+    unsigned int z; /* free list pointer */
+    unsigned int a; /* adr associated with ent */
+    unsigned int sz; /* sz associated with adr */
     int ret;
     /* return; */
 
@@ -149,10 +149,44 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     }
     /* printf("freeing %d bytes\n", xpost_memory_table_get_size(mem, ent)); */
 
-    /* copy the current free-list head to the data area of the ent. */
+    //while current node < size of ent being added
+        //load next ent in list
+    while (1)
+    {
+        unsigned int t;
+        unsigned int ta;
+        unsigned int tsz;
+
+        /* get the next ent from z node */
+        memcpy(&t, mem->base + z, sizeof(unsigned int));
+
+        if (t == 0) /* end of the list */
+            break;
+
+        ret = xpost_memory_table_get_size(mem, t, &tsz);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot get size from ent on free list");
+            return -1;
+        }
+
+        if (tsz > sz) /* this is the place */
+            break;
+
+        ret = xpost_memory_table_get_addr(mem, t, &ta);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot get addr from ent on free list");
+            return -1;
+        }
+
+        z = ta;
+    }
+
+    /* copy the current free-list node to the data area of the ent. */
     memcpy(mem->base + a, mem->base + z, sizeof(unsigned int));
 
-    /* copy the ent number into the free-list head */
+    /* copy the ent number into the free-list node */
     memcpy(mem->base + z, &ent, sizeof(unsigned int));
 
     return sz;
@@ -232,12 +266,18 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
 
         /* if this ent is sufficient to hold sz,
            but does not waste more than sz bytes, use it */
-        if (tsz >= sz &&
-                tsz * XPOST_FREE_ACCEPT_DENOM <= sz * XPOST_FREE_ACCEPT_OVERSIZE)
+        if (tsz >= sz)
         {
             Xpost_Memory_Table *tab;
             unsigned int ent;
             unsigned int ad;
+
+            /* if this ent is too big */
+            if (tsz * XPOST_FREE_ACCEPT_DENOM > sz * XPOST_FREE_ACCEPT_OVERSIZE)
+            {
+                return 0; /* early exit to _new allocator since free list is sorted */
+            }
+
             ret = xpost_memory_table_get_addr(mem, e, &ad);
             if (!ret)
             {

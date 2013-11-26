@@ -209,6 +209,7 @@ Xpost_Object grok (Xpost_Context *ctx,
         base = strtol(s, &s, 10);
         if (base > 36 || base < 2)
             error(limitcheck, "grok bad radix");
+        errno = 0;
         num = strtol(s+1, NULL, base);
         if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
             error(limitcheck, "grok radixnumber out of range");
