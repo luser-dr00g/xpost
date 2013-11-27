@@ -1,10 +1,16 @@
 (loading clip.ps...)=
 
 /initclip {
-    graphicsdict /currgstate get 
-        dup /currpath get   % currpath
-        exch /currmatrix get % currmatrix
+    %stash current path and matrix on stack
+    %graphicsdict /currgstate get 
+    %    dup /currpath get   % currpath
+    %    exch /currmatrix get % currmatrix
+    graphicsdict /currgstate get
+        dup /currpath get
+    matrix currentmatrix
 
+    %construct the initial clipping path
+    % with an identity matrix (ie. userspace==devicespace)
     newpath
     matrix setmatrix
     DEVICE /dimensions get
@@ -15,11 +21,35 @@
     neg 0 rlineto
     closepath
 
+    %move path to clipregion, restore matrix and path from stack
+    %graphicsdict /currgstate get
+    %    dup dup /currpath get /clipregion exch put
+    %    dup 3 2 roll /currmatrix exch put
+    %    exch /currpath exch put
+    setmatrix
     graphicsdict /currgstate get
         dup dup /currpath get /clipregion exch put
-        dup 3 2 roll /currmatrix exch put
         exch /currpath exch put
-} def
+} %pop
+{
+    gsave
+        newpath
+        DEVICE /dimensions get
+        aload pop
+        idtransform
+        abs exch abs exch
+        0 0 moveto
+        1 index 0 rlineto
+        0 exch rlineto
+        neg 0 rlineto
+        closepath
+    graphicsdict /currgstate get /currpath get
+    grestore
+    graphicsdict /currgstate get exch
+    /clipregion exch put
+} pop
+def
+
 
 /clip {
     doclip
@@ -130,7 +160,6 @@ end } def
     %    dup length 1 sub get /cmd /close eq 
     %def
     %closepath
-    %(doclip)=
 
     flattenpath
     /PA [                           % PAth    polygon array
@@ -160,8 +189,9 @@ end } def
         .devpathforall
     ] def
 
-    %(PA: )print PA ==
-    %(CR: )print CR ==
+    %(doclip)=
+    (PA: )print PA ==
+    (CR: )print CR ==
 
     CR { % one clipping polygon
         dup dup length 1 sub get % polygon final-point

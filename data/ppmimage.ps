@@ -44,6 +44,9 @@ DATA_DIR(/qsort.ps)strcat run
                 /dimensions [width height] def
             end
         } if
+        %dup /defaultmatrix known {
+        %    dup /defaultmatrix 2 copy get matrix copy put
+        %} if
     }
     /Create { % width height IMAGE  .  IMAGE'
     begin {/height /width}{exch def}forall
