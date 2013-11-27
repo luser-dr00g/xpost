@@ -399,26 +399,23 @@ end } dup 0 5 dict put def
         ptdiff                             % el dx dy
         magang                             % el rad ang
         currentlinewidth .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
-        ravec itransform rmoveto           % el rad ang      %rmoveto
-        %cpath ===
-        2 copy ravec itransform rlineto    % el rad ang      %rlineto
-        %cpath ===
+        ravec idtransform
+        rmoveto           % el rad ang      %rmoveto
+        2 copy ravec idtransform
+        rlineto    % el rad ang      %rlineto
         currentlinewidth 1 index 90 add    % el rad ang lw -ang_perp
-        ravec itransform rlineto           % el rad ang      %rlineto
-        %cpath ===
-        180 add ravec itransform rlineto   % el rad ang      %rlineto
-        %cpath ===
+        ravec idtransform
+        rlineto           % el rad ang      %rlineto
+        180 add ravec idtransform
+        rlineto   % el rad ang      %rlineto
         closepath                          % el              %closepath
-        %cpath ===
         %dup /cmd /move put
         %cpath addtopath
-        %/data get aload pop itransform moveto
+        %/data get aload pop idtransform moveto
         pop
         strokedict /cp get
-        %aload pop
-        %itransform moveto
+        %aload pop itransform moveto
         << /data 3 2 roll /cmd /move >> cpath addtopath
-        %cpath ===
     }
     /close 1 index %{ pop }
     /curve { pop }
@@ -484,7 +481,8 @@ end } dup 0 5 dict put def
 % move line curve close  pathforall  -
 % enumerate current path
 /pathforall {
-DICT %5 dict
+%DICT
+5 dict
 begin
     {close curve line move}{exch def}forall
     0 1 cpath length 1 sub {
@@ -515,12 +513,15 @@ begin
         } for
     } for
 end
-} dup 0 5 dict put def
+}
+%dup 0 5 dict put
+def
 
 % move line curve close  .devpathforall  -
 % enumerate current path
 /.devpathforall {
-DICT %5 dict
+%DICT
+5 dict
 begin
     {close curve line move}{exch def}forall
     0 1 cpath length 1 sub {
@@ -537,6 +538,8 @@ begin
         } for
     } for
 end
-} dup 0 5 dict put def
+}
+%dup 0 5 dict put
+def
 
 (eof path.ps)=

@@ -231,6 +231,7 @@ false exch {
 %currentpacking
 
 (currentpoint)=
+5 5 moveto
 currentpoint count 2 eq check
 clear
 
@@ -473,7 +474,15 @@ matrix currentmatrix aload pop
 %(gt)=
 
 %handleerror
-%identmatrix
+
+(identmatrix)=
+matrix identmatrix aload pop
+    0 eq check
+    0 eq check
+    1 eq check
+    0 eq check
+    0 eq check
+    1 eq check
 
 (idiv)=
 3 2 idiv 1 eq check
