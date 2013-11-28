@@ -414,6 +414,34 @@ void initevaltype(void)
     XPOST_OBJECT_TYPES(AS_EVALINIT)
 }
 
+int idleproc (Xpost_Context *ctx)
+{
+    int ret;
+    /*
+       call window device's event_handler function
+       which should check for Events or Messages from the 
+       underlying Window System, process one or more of them,
+       and then return 0.
+       it should leave all stacks undisturbed.
+     */
+    if (xpost_object_get_type(ctx->event_handler) == operatortype
+            && xpost_object_get_type(ctx->window_device) == dicttype) {
+        if (!xpost_stack_push(ctx->lo, ctx->os, ctx->window_device))
+        {
+            return stackoverflow;
+        }
+        ret = opexec(ctx, ctx->event_handler.mark_.padw);
+		if (ret)
+        {
+            XPOST_LOG_ERR("event_handler returned %d (%s)",
+                    ret, errorname[ret]);
+			//return ret;
+        }
+    }
+    return 0;
+}
+
+
 /* one iteration of the central loop */
 int eval(Xpost_Context *ctx)
 {
@@ -441,28 +469,6 @@ int eval(Xpost_Context *ctx)
         printf("Exec Stack: ");
         xpost_stack_dump(ctx->lo, ctx->es);
         printf("\n");
-    }
-
-    /*
-       call window device's event_handler function
-       which should check for Events or Messages from the 
-       underlying Window System, process one or more of them,
-       and then return 0.
-       it should leave all stacks undisturbed.
-     */
-    if (xpost_object_get_type(ctx->event_handler) == operatortype
-            && xpost_object_get_type(ctx->window_device) == dicttype) {
-        if (!xpost_stack_push(ctx->lo, ctx->os, ctx->window_device))
-        {
-            return stackoverflow;
-        }
-        ret = opexec(ctx, ctx->event_handler.mark_.padw);
-		if (ret)
-        {
-            XPOST_LOG_ERR("event_handler returned %d (%s)",
-                    ret, errorname[ret]);
-			//return ret;
-        }
     }
 
     if ( xpost_object_is_exe(t) ) /* if executable */
