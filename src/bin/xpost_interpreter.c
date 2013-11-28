@@ -471,6 +471,8 @@ int eval(Xpost_Context *ctx)
         printf("\n");
     }
 
+    idleproc(ctx);
+
     if ( xpost_object_is_exe(t) ) /* if executable */
         ret = evaltype[xpost_object_get_type(t)](ctx);
     else
