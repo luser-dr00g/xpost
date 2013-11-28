@@ -43,6 +43,22 @@ loadgraphics
     curveto
 } def
 
+/drawingtime 0 def
+
+/beginpage {
+    save
+    realtime
+} def
+
+/endpage {
+    (initial rng seed: )=only initialsrand =
+    neg realtime add
+    dup drawingtime add /drawingtime exch def
+    (final realtime - initial realtime:)=only =
+    showpage
+    restore
+} def
+
 %realtime
 %-1890236260
 1
@@ -60,53 +76,40 @@ fill
 
 ( curves)=
 
-save
-0 setlinewidth
-20 { randcurve randcolor stroke } repeat
-(initial rng seed: )=only initialsrand =
-showpage
-restore
+beginpage
+    0 setlinewidth
+    20 { randcurve randcolor stroke } repeat
+endpage
 
-save
-10 { randcurve randwidth randcolor stroke } repeat
-(initial rng seed: )=only initialsrand =
-showpage
-restore
+beginpage
+    10 { randcurve randwidth randcolor stroke } repeat
+endpage
 
 ( boxes)=
 
-save
-0 setlinewidth
-40 { randbox randcolor stroke newpath } repeat
-(initial rng seed: )=only initialsrand =
-showpage
-restore
+beginpage
+    0 setlinewidth
+    40 { randbox randcolor stroke newpath } repeat
+endpage
 
-save
-10 { randbox randcolor fill newpath } repeat
-(initial rng seed: )=only initialsrand =
-showpage
-restore
+beginpage
+    10 { randbox randcolor fill newpath } repeat
+endpage
 
 ( lines)=
 
-save
-0 setlinewidth
-50 { randline randcolor stroke } repeat
-(initial rng seed: )=only initialsrand =
-showpage
-restore
+beginpage
+    0 setlinewidth
+    50 { randline randcolor stroke } repeat
+endpage
 
-save
-15 { randline randwidth randcolor stroke } repeat
-(initial rng seed: )=only initialsrand =
-showpage
-restore
+beginpage
+    15 { randline randwidth randcolor stroke } repeat
+endpage
 
-save
-10 { randbox randcolor fill newpath } repeat
-(initial rng seed: )=only initialsrand =
-showpage
-restore
+beginpage
+    10 { randbox randcolor fill newpath } repeat
+endpage
 
 (initial rng seed: )=only initialsrand =
+(total drawing time: )=only drawingtime =
