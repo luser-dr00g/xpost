@@ -5,8 +5,7 @@
     %graphicsdict /currgstate get 
     %    dup /currpath get   % currpath
     %    exch /currmatrix get % currmatrix
-    graphicsdict /currgstate get
-        dup /currpath get
+    graphicsdict /currgstate get /currpath get
     matrix currentmatrix
 
     %construct the initial clipping path

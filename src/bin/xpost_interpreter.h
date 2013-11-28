@@ -70,6 +70,8 @@ Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void);
 unsigned xpost_interpreter_cid_init(void);
 Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid);
 
+int idleproc (Xpost_Context *ctx);
+
 extern int TRACE;
 
 int xpost_interpreter_init(Xpost_Interpreter *itp);
