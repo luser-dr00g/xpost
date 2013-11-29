@@ -96,7 +96,8 @@ splint_process = splint \
 -nestcomment -noeffect -redef -shiftnegative -castfcnptr \
 -shiftimplementation -predboolothers -exportlocal -mustfreefresh \
 -preproc \
-$(top_srcdir)/src/bin/*.c
+-Isrc/lib \
+$(top_srcdir)/src/{bin,lib}/*.[ch]
 else
 splint_process = echo "splint not found. Update PATH or install splint."
 endif
