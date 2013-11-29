@@ -173,6 +173,7 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
     if (!ret)
     {
         XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        return 0;
     }
     memcpy(mem->base + adr,
             mem->base + tab->tab[ent].adr,
@@ -195,6 +196,7 @@ void xpost_save_save_ent(Xpost_Memory_File *mem,
     unsigned rent = ent;
     Xpost_Object sav;
     unsigned int adr;
+    unsigned int cpy;
     int ret;
 
     ret = xpost_memory_table_get_addr(mem,
@@ -219,7 +221,14 @@ void xpost_save_save_ent(Xpost_Memory_File *mem,
     o.saverec_.tag = tag;
     o.saverec_.pad = pad;
     o.saverec_.src = ent;
-    o.saverec_.cpy = _copy_ent(mem, ent);
+    cpy = _copy_ent(mem, ent);
+    if (cpy == 0)
+    {
+        XPOST_LOG_ERR("unable to make copy of ent %d", ent);
+        return;
+    }
+
+    o.saverec_.cpy = cpy;
     xpost_stack_push(mem, sav.save_.stk, o);
 }
 

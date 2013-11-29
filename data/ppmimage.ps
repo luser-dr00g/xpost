@@ -269,8 +269,8 @@ DATA_DIR(/qsort.ps)strcat run
     /FillPoly { % r g b polygon IMAGE  .  -
     begin {poly b g r}{exch def}forall
 
-        %(\nFillPoly)=
-        %r =only( )=only g =only( )=only b =only( )=only poly ==
+        (\nFillPoly)=
+        r =only( )=only g =only( )=only b =only( )=only poly ==
 
         /minx 16#7ffffff def
         /miny minx def
@@ -295,6 +295,8 @@ DATA_DIR(/qsort.ps)strcat run
         [
         poly {
             /Q exch def
+            (P=)=only P ==
+            (Q=)=only Q ==
             x_max miny floor cvi .5 add % [ x_max miny+.5
             1                           % [ x_max miny+.5 1
             maxy ceiling cvi .5 sub     % [ x_max miny+.5 1 maxy-.5
@@ -311,7 +313,7 @@ DATA_DIR(/qsort.ps)strcat run
             /P Q def
         } forall
         ]        % [list-of-x/y-intersections
-        %dup ==()=
+        dup ==()=
 
         (sort scanline intersection list)=
         dup { % comparitor  % [x1 y1] [x2 y2] . bool
@@ -327,7 +329,7 @@ DATA_DIR(/qsort.ps)strcat run
                 lt             % (y1 < y2)
             } ifelse
         } qsort   % [sorted-list-of-intersections]
-        %dup ==()=
+        dup ==()=
 
         %(%lineedit)(r)file pop %pause
 
