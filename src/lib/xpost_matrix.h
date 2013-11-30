@@ -32,6 +32,10 @@
 #ifndef XPOST_MATRIX_H
 #define XPOST_MATRIX_H
 
+#ifndef XPOST_OBJECT_H
+# error MUST #include "xpost_object.h" before this file
+#endif
+
 /*
   [ xx xy xz ]
   | yx yy yz |

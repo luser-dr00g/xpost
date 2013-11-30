@@ -28,5 +28,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifndef XPOST_OP_MATRIX_H
+#define XPOST_OP_MATRIX_H
+
 int initopmatrix(Xpost_Context *ctx, Xpost_Object sd);
+
+#endif
 
