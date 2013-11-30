@@ -1,6 +1,8 @@
 (loading clip.ps...)=
 
 /initclip {
+    %(initclip)=
+
     %stash current path and matrix on stack
     %graphicsdict /currgstate get 
     %    dup /currpath get   % currpath
@@ -25,6 +27,7 @@
     %    dup dup /currpath get /clipregion exch put
     %    dup 3 2 roll /currmatrix exch put
     %    exch /currpath exch put
+    %pstack() =
     setmatrix
     graphicsdict /currgstate get
         dup dup /currpath get /clipregion exch put

@@ -6,8 +6,8 @@
     /colorcomp2 0
     /colorcomp3 0
     /colorcomp4 0
-    %/currmatrix [ 1 0 0 1 0 0 ]
-    /currmatrix DEVICE /defaultmatrix get matrix copy
+    /currmatrix [ 1 0 0 1 0 0 ]
+    %/currmatrix DEVICE /defaultmatrix get matrix copy
     /scratchmatrix [ 1 0 0 1 0 0 ]
     /currpath 1 dict
     /clipregion 1 dict
@@ -42,17 +42,20 @@
 
 /gstatecopy { % dict1 dict2 . dict2'
     begin
-    {
-        dup type /arraytype eq {
-            exch
-            currentdict 1 index known {
-                load
-            }{
+    { % key val
+        %pstack()= %1 index =
+        dup type /arraytype eq { % key val
+            exch % val key
+            currentdict 1 index known { % val key
+                currentdict exch get % val dict2-val
+                copy % dict2-val
                 pop
-                dup length array
+            }{ % val key
+                exch % key val
+                dup length array % key val val2
+                copy % key val2
+                def
             } ifelse
-            copy
-            pop
         }{
             def
         } ifelse
