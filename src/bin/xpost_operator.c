@@ -426,6 +426,7 @@ call:
 #include "xpost_op_misc.h"
 #include "xpost_op_packedarray.h"
 #include "xpost_op_param.h"
+#include "xpost_op_matrix.h"
 #ifdef HAVE_WIN32
 # include "xpost_dev_win32.h"
 #endif
@@ -525,6 +526,7 @@ int initop(Xpost_Context *ctx)
 
     initoppa(ctx, sd);
     initopparam(ctx, sd);
+    initopmatrix(ctx, sd);
 #ifdef _WIN32
     initwin32ops(ctx, sd);
 #endif
