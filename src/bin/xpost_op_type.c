@@ -84,6 +84,8 @@ static
 int Atype(Xpost_Context *ctx,
            Xpost_Object o)
 {
+    if (xpost_object_get_type(o) >= XPOST_OBJECT_NTYPES)
+        return unregistered;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, xpost_object_type_names[xpost_object_get_type(o)])));
     return 0;
 }
