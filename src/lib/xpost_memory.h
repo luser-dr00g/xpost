@@ -508,6 +508,9 @@ int xpost_memory_put (
         unsigned int sz,
         const void *src);
 
+void xpost_memory_table_dump_ent (Xpost_Memory_File *mem,
+                                  unsigned int ent);
+
 /**
  * @brief Dump the memory table data and associated memory
  * locations from the given memory file to stdout.
