@@ -430,3 +430,14 @@ end % userdict
 
 $error/initializing false put % ready to go!
 false setglobal
+
+% debug ps functions
+/break{ /hook /pause load def } def
+/clearhook{ /hook {} store } def
+/doprompt{
+    (\nbreak>)print flush
+    (%lineedit)(r)file
+    cvx {exec}stopped pop } def
+/pause{ doprompt } def
+/hook{ } def
+
