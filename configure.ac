@@ -130,20 +130,37 @@ AC_SUBST([WC])
 
 ### Checks for libraries
 
+xpost_requirements_bin_pc=""
+xpost_requirements_lib_pc=""
+AC_SUBST([xpost_requirements_lib_pc])
+
+# fontconfig
+PKG_CHECK_EXISTS([fontconfig],
+   [
+    have_fontconfig="yes"
+    xpost_requirements_lib_pc="${xpost_requirements_lib_pc} fontconfig"
+    AC_DEFINE([HAVE_FONTCONFIG], [1], [Define to 1 if Fontconfig is detected])
+   ],
+   [have_fontconfig="no"])
+
 # libxcb
-PKG_CHECK_MODULES([XCB],
-   [xcb-image xcb],
+PKG_CHECK_EXISTS([xcb-image xcb],
    [
     have_xcb="yes"
+    xpost_requirements_bin_pc="${xpost_requirements_bin_pc} xcb-image xcb"
     AC_DEFINE([HAVE_XCB], [1], [Define to 1 if XCB is detected])
    ],
    [have_xcb="no"])
 
-if test "x${enable_large_object}" = "xyes" ; then
-   AC_DEFINE([WANT_LARGE_OBJECT], [1], [Define to 1 if large object are wanted])
+AM_CONDITIONAL([HAVE_XCB], [test "x${have_xcb}" = "xyes"])
+
+if ! test "x${xpost_requirements_lib_pc}" = "x" ; then
+   PKG_CHECK_MODULES([XPOST_LIB], [${xpost_requirements_lib_pc}])
 fi
 
-AM_CONDITIONAL([HAVE_XCB], [test "x${have_xcb}" = "xyes"])
+if ! test "x${xpost_requirements_bin_pc}" = "x" ; then
+   PKG_CHECK_MODULES([XPOST_BIN], [${xpost_requirements_bin_pc}])
+fi
 
 # check
 have_tests="no"
@@ -335,6 +352,7 @@ echo "  mmap support.........: ${have_mmap} (mremap: ${have_mremap})"
 else
 echo "  mmap support.........: no"
 fi
+echo "  Fontconfig support...: ${have_fontconfig}"
 echo "  Devices:"
 echo "    PGM image..........: always"
 echo "    XCB................: ${have_xcb}"
