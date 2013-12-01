@@ -106,6 +106,19 @@ _xpost_main_usage(const char *filename)
     printf("  -h, --help             show this message\n");
 }
 
+static void
+_xpost_main_device_list(void)
+{
+    printf("supported devices:\n");
+    printf("\tPGM\n");
+#ifdef HAVE_XCB
+    printf("\tXCB\n");
+#endif
+#ifdef _WIN32
+    printf("\tGDI\n");
+#endif
+}
+
 int main(int argc, char *argv[])
 {
     const char *output_file = NULL;
@@ -113,6 +126,14 @@ int main(int argc, char *argv[])
     const char *ps_file = NULL;
     const char *filename = argv[0];
     int i;
+
+#ifdef _WIN32
+    device = "GDI";
+#elif defined HAVE_XCB
+    device = "XCB";
+#else
+    device = "PGM";
+#endif
 
     if (!xpost_init())
     {
@@ -150,6 +171,12 @@ int main(int argc, char *argv[])
                      (!strcmp(argv[i], "--license")))
             {
                 _xpost_main_license();
+                return EXIT_SUCCESS;
+            }
+            else if ((!strcmp(argv[i], "-D")) ||
+                     (!strcmp(argv[i], "--device-list")))
+            {
+                _xpost_main_device_list();
                 return EXIT_SUCCESS;
             }
             else XPOST_MAIN_IF_OPT("-o", "--output=", output_file)
