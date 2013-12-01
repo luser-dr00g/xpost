@@ -838,6 +838,46 @@ int xpost_memory_put (Xpost_Memory_File *mem,
 }
 
 
+void xpost_memory_table_dump_ent (Xpost_Memory_File *mem,
+                                  unsigned int ent)
+{
+    Xpost_Memory_Table *tab;
+    unsigned int u;
+    unsigned int i = ent;
+    unsigned int e = ent;
+    if (!xpost_memory_table_find_relative(mem, &tab, &i))
+    {
+        XPOST_LOG_ERR("%d entity not found %u", VMerror, e);
+        return;
+    }
+    XPOST_ERROR_DUMP("ent %d (%d): "
+            "adr %u 0x%04x, "
+            "sz [%u], "
+            "mark %s rfct %d llev %d tlev %d\n",
+            e, i,
+            tab->tab[i].adr, tab->tab[i].adr,
+            tab->tab[i].sz,
+            tab->tab[i].mark
+                & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK ? "#" : "_",
+            (tab->tab[i].mark
+                & XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_MASK)
+                >> XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET,
+            (tab->tab[i].mark
+                & XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_MASK)
+                >> XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET,
+            (tab->tab[i].mark
+                & XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK)
+                >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);
+        for (u = 0; u < tab->tab[i].sz; u++)
+        {
+            XPOST_ERROR_DUMP(" %02x%c",
+                    mem->base[ tab->tab[i].adr + u ],
+                    isprint(mem->base[ tab->tab[i].adr + u]) ?
+                        mem->base[ tab->tab[i].adr + u ] :
+                        ' ');
+        }
+}
+
 void xpost_memory_table_dump (const Xpost_Memory_File *mem)
 {
     unsigned int i;
