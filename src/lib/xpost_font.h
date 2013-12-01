@@ -37,6 +37,8 @@
  * @brief Font manipuation functions
  */
 
+typedef struct _Xpost_Font_Face Xpost_Font_Face;
+
 /**
  * @brief Initialize the font module.
  *
@@ -60,5 +62,9 @@ int xpost_font_init(void);
  * @see xpost_quit()
  */
 void xpost_font_quit(void);
+
+Xpost_Font_Face *xpost_font_face_new_from_file(const char *name);
+
+void xpost_font_face_free(Xpost_Font_Face *face);
 
 #endif
