@@ -444,6 +444,8 @@ int contfilenameforall (Xpost_Context *ctx,
     char *str;
     char *src;
     int len;
+    Xpost_Object interval;
+
     globbuf = oglob.glob_.ptr;
     if (oglob.glob_.off < globbuf->gl_pathc) {
         //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
@@ -461,7 +463,10 @@ int contfilenameforall (Xpost_Context *ctx,
         if (len > Scr.comp_.sz)
             return rangecheck;
         memcpy(str, src, len);
-        xpost_stack_push(ctx->lo, ctx->os, arrgetinterval(Scr, 0, len));
+        interval = arrgetinterval(Scr, 0, len);
+        if (xpost_object_get_type(interval) == invalidtype)
+            return rangecheck;
+        xpost_stack_push(ctx->lo, ctx->os, interval);
         xpost_stack_push(ctx->lo, ctx->es, Proc);
 
     } else {

@@ -286,7 +286,7 @@ int Zstop(Xpost_Context *ctx)
     while (c--) {
         x = xpost_stack_pop(ctx->lo, ctx->es);
         if (xpost_object_get_type(x) == invalidtype)
-            return unregistered;
+            return execstackunderflow;
         if(objcmp(ctx, f, x) == 0) {
             if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1)))
                 return stackoverflow;

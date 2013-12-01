@@ -96,15 +96,21 @@ int arrtomark (Xpost_Context *ctx)
 {
     int i;
     Xpost_Object a, v;
+    Xpost_Object t;
 
     if (Zcounttomark(ctx))
         return unmatchedmark;
-    i = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
+    t = xpost_stack_pop(ctx->lo, ctx->os);
+    if (xpost_object_get_type(t) == invalidtype)
+        return stackunderflow;
+    i = t.int_.val;
     a = consbar(ctx, i);
     if (xpost_object_get_type(a) == nulltype)
         return VMerror;
     for ( ; i > 0; i--){
         v = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(v) == invalidtype)
+            return stackunderflow;
         barput(ctx, a, i-1, v);
     }
     (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
@@ -206,12 +212,16 @@ int Aastore (Xpost_Context *ctx,
 {
     Xpost_Object t;
     int i;
+    unsigned int cnt;
 
+    cnt = xpost_stack_count(ctx->lo, ctx->os);
+    if (cnt < A.comp_.sz)
+        return stackunderflow;
     for (i = A.comp_.sz - 1; i >= 0; i--)
     {
         t = xpost_stack_pop(ctx->lo, ctx->os);
-        if (xpost_object_get_type(t) == invalidtype)
-            return stackunderflow;
+        //if (xpost_object_get_type(t) == invalidtype)
+            //return stackunderflow;
         barput(ctx, A, i, t);
     }
     xpost_stack_push(ctx->lo, ctx->os, A);
@@ -243,6 +253,7 @@ int Aforall(Xpost_Context *ctx,
              Xpost_Object A,
              Xpost_Object P)
 {
+    Xpost_Object interval;
     if (A.comp_.sz == 0)
         return 0;
 
@@ -255,7 +266,10 @@ int Aforall(Xpost_Context *ctx,
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(A, 1, A.comp_.sz - 1))))
+    interval = arrgetinterval(A, 1, A.comp_.sz - 1);
+    if (xpost_object_get_type(interval) == invalidtype)
+        return rangecheck;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(interval)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;

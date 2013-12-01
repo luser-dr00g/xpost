@@ -40,6 +40,7 @@
 #include "xpost_object.h"  /* save/restore examines objects */
 #include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */
 
+#include "xpost_error.h"
 #include "xpost_save.h"  /* double-check prototypes */
 
 /*
@@ -252,11 +253,15 @@ void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
         return;
     }
     sav = xpost_stack_pop(mem, v); // save-object (stack of saverec_'s)
+    if (xpost_object_get_type(sav) == invalidtype)
+        return;
     cnt = xpost_stack_count(mem, sav.save_.stk);
     while (cnt--) {
         Xpost_Object rec;
         unsigned hold;
         rec = xpost_stack_pop(mem, sav.save_.stk);
+        if (xpost_object_get_type(rec) == invalidtype)
+            return;
         sent = rec.saverec_.src;
         cent = rec.saverec_.cpy;
         ret = xpost_memory_table_find_relative(mem, &stab, &sent);

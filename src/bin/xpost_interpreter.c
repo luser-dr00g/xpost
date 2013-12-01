@@ -264,7 +264,11 @@ int evalload(Xpost_Context *ctx)
     if (ret)
         return ret;
     if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0))) {
-        if (!xpost_stack_push(ctx->lo, ctx->es, xpost_stack_pop(ctx->lo, ctx->os)))
+        Xpost_Object q;
+        q = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(q) == invalidtype)
+            return stackunderflow;
+        if (!xpost_stack_push(ctx->lo, ctx->es, q))
 			return ret;
     }
     return 0;
@@ -276,6 +280,8 @@ int evaloperator(Xpost_Context *ctx)
 {
     int ret;
     Xpost_Object op = xpost_stack_pop(ctx->lo, ctx->es);
+    if (xpost_object_get_type(op) == invalidtype)
+        return stackunderflow;
 
     if (TRACE)
         dumpoper(ctx, op.mark_.padw);
@@ -292,9 +298,18 @@ int evalarray(Xpost_Context *ctx)
     Xpost_Object a = xpost_stack_pop(ctx->lo, ctx->es);
     Xpost_Object b;
 
+    if (xpost_object_get_type(a) == invalidtype)
+        return stackunderflow;
+
     switch (a.comp_.sz) {
     default /* > 1 */:
-        xpost_stack_push(ctx->lo, ctx->es, arrgetinterval(a, 1, a.comp_.sz - 1) );
+        {
+            Xpost_Object interval;
+            interval = arrgetinterval(a, 1, a.comp_.sz - 1);
+            if (xpost_object_get_type(interval) == invalidtype)
+                return rangecheck;
+            xpost_stack_push(ctx->lo, ctx->es, interval);
+        }
         /*@fallthrough@*/
     case 1:
         b = barget(ctx, a, 0);
@@ -330,9 +345,15 @@ int evalstring(Xpost_Context *ctx)
 	if (ret)
 		return ret;
     b = xpost_stack_pop(ctx->lo, ctx->os);
+    if (xpost_object_get_type(b) == invalidtype)
+        return stackunderflow;
     if (b.int_.val) {
         t = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(t) == invalidtype)
+            return stackunderflow;
         s = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(s) == invalidtype)
+            return stackunderflow;
         if (!xpost_stack_push(ctx->lo, ctx->es, s))
 			return execstackoverflow;
         if (xpost_object_get_type(t)==arraytype)
