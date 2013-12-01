@@ -32,31 +32,129 @@
 # include <config.h>
 #endif
 
-#ifdef HAVE_FONTCONFIG
+#ifdef HAVE_FONT
 # include <fontconfig/fontconfig.h>
+
+# include <ft2build.h>
+# include FT_FREETYPE_H
 #endif
 
+#include "xpost_log.h"
 #include "xpost_font.h"
+
+struct _Xpost_Font_Face
+{
+    FT_Face face;
+};
+
+static FT_Library _xpost_font_ft_library;
 
 int
 xpost_font_init(void)
 {
-#ifdef HAVE_FONTCONFIG
-    return FcInit();
-#else
-    return 1;
+#ifdef HAVE_FONT
+    FT_Error err_ft;
+    FcBool err_fc;
+
+    err_ft = FT_Init_FreeType(&_xpost_font_ft_library);
+    if (err_ft)
+        return 0;
+
+    err_fc = FcInit();
+    if (!err_fc)
+    {
+        FT_Done_FreeType(_xpost_font_ft_library);
+        return 0;
+    }
 #endif
+    return 1;
 }
 
 void
 xpost_font_quit(void)
 {
-#ifdef HAVE_FONTCONFIG
+#ifdef HAVE_FONT
     FcFini();
+    FT_Done_FreeType(_xpost_font_ft_library);
 #endif
 }
 
-/* FT_FACE */
-/* xpost_font_face_get(const char *name) */
-/* { */
-/* } */
+Xpost_Font_Face *
+xpost_font_face_new_from_file(const char *name)
+{
+#ifdef HAVE_FONT
+    char file[PATH_MAX];
+    FcPattern *pattern;
+    FcPattern *match;
+    Xpost_Font_Face *face;
+    FcResult result;
+    FT_Error err;
+    int idx;
+
+    face = (Xpost_Font_Face *)malloc(sizeof(Xpost_Font_Face));
+    if (!face)
+        return NULL;
+
+    /* FIXME: parse name first ? */
+
+    pattern = FcNameParse((const FcChar8 *)name);
+    if (!pattern)
+        goto free_face;
+
+    if (!FcConfigSubstitute (NULL, pattern, FcMatchPattern))
+        goto destroy_pattern;
+
+    FcDefaultSubstitute(pattern);
+    match = FcFontMatch(NULL, pattern, &result);
+    if (result != FcResultMatch)
+        goto destroy_pattern;
+
+    result = FcPatternGetString(match, FC_FILE, 0, (FcChar8 **)&file);
+    if (result != FcResultMatch)
+        goto destroy_match;
+
+    XPOST_LOG_INFO("Font %s found in file %s", name, file);
+
+    result = FcPatternGetInteger(match, FC_INDEX, 0, &idx);
+    if (result != FcResultMatch)
+        goto destroy_match;
+
+    XPOST_LOG_INFO("Font %s found has index %d", name, idx);
+
+    err = FT_New_Face(_xpost_font_ft_library, file, idx, &face->face) ;
+    if (err == FT_Err_Unknown_File_Format)
+    {
+        XPOST_LOG_ERR("Font format unsupported");
+        goto destroy_match;
+    }
+    else if (err)
+    {
+        XPOST_LOG_ERR("Font file %s can not be opened or read or is broken", file);
+        goto destroy_match;
+    }
+
+    FcPatternDestroy(match);
+    FcPatternDestroy(pattern);
+
+    return face;
+
+  destroy_match:
+    FcPatternDestroy(match);
+  destroy_pattern:
+    FcPatternDestroy(pattern);
+  free_face:
+    free(face);
+#endif
+
+    return NULL;
+}
+
+void
+xpost_font_face_free(Xpost_Font_Face *face)
+{
+    if (!face)
+        return;
+
+    FT_Done_Face(face->face);
+    free(face);
+}
