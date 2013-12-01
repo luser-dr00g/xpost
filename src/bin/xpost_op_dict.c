@@ -79,9 +79,14 @@ int dictomark(Xpost_Context *ctx)
 {
     int i;
     Xpost_Object d, k, v;
+    Xpost_Object t;
+
     if (Zcounttomark(ctx))
         return unmatchedmark;
-    i = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
+    t = xpost_stack_pop(ctx->lo, ctx->os);
+    if (xpost_object_get_type(t) == invalidtype)
+        return stackunderflow;
+    i = t.int_.val;
     if ((i % 2) == 1)
         return rangecheck;
     d = consbdc(ctx, i);
@@ -89,7 +94,11 @@ int dictomark(Xpost_Context *ctx)
         return VMerror;
     for ( ; i > 0; i -= 2){
         v = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(v) == invalidtype)
+            return stackunderflow;
         k = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(k) == invalidtype)
+            return stackunderflow;
         bdcput(ctx, d, k, v);
     }
     (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
@@ -209,7 +218,7 @@ int Astore(Xpost_Context *ctx,
 {
     Xpost_Object D;
     Awhere(ctx, K);
-    if (xpost_stack_pop(ctx->lo, ctx->os).int_.val) {
+    if (xpost_stack_pop(ctx->lo, ctx->os).int_.val) { /* booleantype */
         D = xpost_stack_pop(ctx->lo, ctx->os);
     } else {
         D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);

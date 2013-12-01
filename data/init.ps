@@ -113,6 +113,7 @@ userdict begin
     dup /integertype exch def
     /realtype exch def
 
+    /invalidtype { pop (@INVALID@) tprint } def
     /nulltype { pop (null ) tprint } def
     /dicttype { pop (-dict- ) tprint } def
     /filetype { pop (-file- ) tprint } def

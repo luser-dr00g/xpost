@@ -158,16 +158,21 @@ int Sanchorsearch(Xpost_Context *ctx,
                    Xpost_Object seek)
 {
     char *s, *k;
+    Xpost_Object interval;
+
     if (seek.comp_.sz > str.comp_.sz)
         return rangecheck;
     s = charstr(ctx, str);
     k = charstr(ctx, seek);
     if (ancsearch(s, k, seek.comp_.sz)) {
-        xpost_stack_push(ctx->lo, ctx->os,
-                arrgetinterval(str, seek.comp_.sz, 
-                    str.comp_.sz - seek.comp_.sz)); /* post */
-        xpost_stack_push(ctx->lo, ctx->os,
-                arrgetinterval(str, 0, seek.comp_.sz)); /* match */
+        interval = arrgetinterval(str, seek.comp_.sz, str.comp_.sz - seek.comp_.sz);
+        if (xpost_object_get_type(interval) == invalidtype)
+            return rangecheck;
+        xpost_stack_push(ctx->lo, ctx->os, interval); /* post */
+        interval = arrgetinterval(str, 0, seek.comp_.sz);
+        if (xpost_object_get_type(interval) == invalidtype)
+            return rangecheck;
+        xpost_stack_push(ctx->lo, ctx->os, interval); /* match */
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
     } else {
         xpost_stack_push(ctx->lo, ctx->os, str);
@@ -183,19 +188,26 @@ int Ssearch(Xpost_Context *ctx,
 {
     int i;
     char *s, *k;
+    Xpost_Object interval;
+
     if (seek.comp_.sz > str.comp_.sz)
         return rangecheck;
     s = charstr(ctx, str);
     k = charstr(ctx, seek);
     for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++) {
         if (ancsearch(s+i, k, seek.comp_.sz)) {
-            xpost_stack_push(ctx->lo, ctx->os, 
-                    arrgetinterval(str, i + seek.comp_.sz,
-                        str.comp_.sz - seek.comp_.sz - i)); /* post */
-            xpost_stack_push(ctx->lo, ctx->os,
-                    arrgetinterval(str, i, seek.comp_.sz)); /* match */
-            xpost_stack_push(ctx->lo, ctx->os,
-                    arrgetinterval(str, 0, i)); /* pre */
+            interval = arrgetinterval(str, i + seek.comp_.sz, str.comp_.sz - seek.comp_.sz - i);
+            if (xpost_object_get_type(interval) == invalidtype)
+                return rangecheck;
+            xpost_stack_push(ctx->lo, ctx->os, interval); /* post */
+            interval = arrgetinterval(str, i, seek.comp_.sz);
+            if (xpost_object_get_type(interval) == invalidtype)
+                return rangecheck;
+            xpost_stack_push(ctx->lo, ctx->os, interval); /* match */
+            interval = arrgetinterval(str, 0, i);
+            if (xpost_object_get_type(interval) == invalidtype)
+                return rangecheck;
+            xpost_stack_push(ctx->lo, ctx->os, interval); /* pre */
             xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
             return 0;
         }
@@ -210,6 +222,7 @@ int Sforall(Xpost_Context *ctx,
              Xpost_Object S,
              Xpost_Object P)
 {
+    Xpost_Object interval;
     if (S.comp_.sz == 0) return 0;
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
@@ -220,7 +233,10 @@ int Sforall(Xpost_Context *ctx,
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(arrgetinterval(S, 1, S.comp_.sz-1))))
+    interval = arrgetinterval(S, 1, S.comp_.sz-1);
+    if (xpost_object_get_type(interval) == invalidtype)
+        return rangecheck;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(interval)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
