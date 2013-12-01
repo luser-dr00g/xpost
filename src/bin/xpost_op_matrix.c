@@ -143,7 +143,7 @@ static
 int _matrix (Xpost_Context *ctx)
 {
     Xpost_Object psmat;
-    psmat = consbar(ctx, 6);
+    psmat = xpost_object_cvlit(consbar(ctx, 6));
     return _ident_matrix(ctx, psmat);
 }
 
@@ -215,10 +215,6 @@ int _translate (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
-    if (xpost_object_get_type(xt) == integertype)
-        xt = xpost_cons_real(xt.int_.val);
-    if (xpost_object_get_type(yt) == integertype)
-        yt = xpost_cons_real(yt.int_.val);
     xpost_matrix_translate(&mat, xt.real_.val, yt.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -233,10 +229,6 @@ int _mat_translate (Xpost_Context *ctx,
                     Xpost_Object psmat)
 {
     Xpost_Matrix mat;
-    if (xpost_object_get_type(xt) == integertype)
-        xt = xpost_cons_real(xt.int_.val);
-    if (xpost_object_get_type(yt) == integertype)
-        yt = xpost_cons_real(yt.int_.val);
     xpost_matrix_translate(&mat, xt.real_.val, yt.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -250,10 +242,6 @@ int _scale (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
-    if (xpost_object_get_type(xs) == integertype)
-        xs = xpost_cons_real(xs.int_.val);
-    if (xpost_object_get_type(ys) == integertype)
-        ys = xpost_cons_real(ys.int_.val);
     xpost_matrix_scale(&mat, xs.real_.val, ys.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -268,10 +256,6 @@ int _mat_scale (Xpost_Context *ctx,
             Xpost_Object psmat)
 {
     Xpost_Matrix mat;
-    if (xpost_object_get_type(xs) == integertype)
-        xs = xpost_cons_real(xs.int_.val);
-    if (xpost_object_get_type(ys) == integertype)
-        ys = xpost_cons_real(ys.int_.val);
     xpost_matrix_scale(&mat, xs.real_.val, ys.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -284,8 +268,6 @@ int _rotate (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
-    if (xpost_object_get_type(angle) == integertype)
-        angle = xpost_cons_real(angle.int_.val);
     xpost_matrix_rotate(&mat, RAD_PER_DEG * angle.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -299,8 +281,6 @@ int _mat_rotate (Xpost_Context *ctx,
                  Xpost_Object psmat)
 {
     Xpost_Matrix mat;
-    if (xpost_object_get_type(angle) == integertype)
-        angle = xpost_cons_real(angle.int_.val);
     xpost_matrix_rotate(&mat, RAD_PER_DEG * angle.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
