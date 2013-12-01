@@ -68,11 +68,11 @@ srand
 
 %[1 0 0 -1 0 DEVICE /height get] setmatrix
 
-50 50 moveto % should be at (50,50) from the bottom left corner
-0 60 rlineto
-60 0 rlineto
-0 -60 rlineto
-fill
+%50 50 moveto % should be at (50,50) from the bottom left corner
+%0 60 rlineto
+%60 0 rlineto
+%0 -60 rlineto
+%fill
 
 ( curves)=
 
@@ -82,7 +82,17 @@ beginpage
 endpage
 
 beginpage
-    10 { randcurve randwidth randcolor stroke } repeat
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    break
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
 endpage
 
 ( boxes)=

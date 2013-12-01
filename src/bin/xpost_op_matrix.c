@@ -215,6 +215,7 @@ int _translate (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
+    psmat = xpost_object_cvlit(consbar(ctx, 6));
     xpost_matrix_translate(&mat, xt.real_.val, yt.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -242,6 +243,7 @@ int _scale (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
+    psmat = xpost_object_cvlit(consbar(ctx, 6));
     xpost_matrix_scale(&mat, xs.real_.val, ys.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -268,6 +270,7 @@ int _rotate (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
+    psmat = xpost_object_cvlit(consbar(ctx, 6));
     xpost_matrix_rotate(&mat, RAD_PER_DEG * angle.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -492,8 +495,8 @@ int initopmatrix(Xpost_Context *ctx,
     op = consoper(ctx, "scale", _scale, 0, 2, floattype, floattype); INSTALL;
     op = consoper(ctx, "scale", _mat_scale, 1, 3, floattype, floattype, arraytype); INSTALL;
 
-    op = consoper(ctx, "rotate", _rotate, 0, 2, floattype, floattype); INSTALL;
-    op = consoper(ctx, "rotate", _mat_rotate, 1, 3, floattype, floattype, arraytype); INSTALL;
+    op = consoper(ctx, "rotate", _rotate, 0, 1, floattype); INSTALL;
+    op = consoper(ctx, "rotate", _mat_rotate, 1, 2, floattype, arraytype); INSTALL;
 
     op = consoper(ctx, "concat", _concat, 0, 1, arraytype); INSTALL;
     op = consoper(ctx, "concatmatrix", _concat_matrix, 1, 3,

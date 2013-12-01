@@ -1,7 +1,7 @@
 %test.ps
 % testing examples borrowed from the Operator Details in the PLRM, 1ed.
 %traceon
-/break { currentfile flushfile } def
+%/break { currentfile flushfile } def
 
 
 /failcount 0 def
@@ -758,7 +758,7 @@ saveobj restore
 %stop
 
 (stopped)=
-breakhere
+%breakhere
 { ... } stopped check
 
 (store)=
