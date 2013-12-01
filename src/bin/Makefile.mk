@@ -77,13 +77,11 @@ src_bin_itp_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 -DPACKAGE_INSTALL_DIR=\"$(prefix)/\" \
 -DTESTMODULE_ITP \
-@XCB_CFLAGS@
-
-src_bin_itp_CFLAGS = @XPOST_BIN_CFLAGS@
+@XPOST_BIN_CFLAGS@
 
 src_bin_itp_LDADD = \
 src/lib/libxpost.la \
-@XCB_LIBS@ \
+@XPOST_BIN_LIBS@ \
 @XPOST_BIN_LDFLAGS@ \
 -lm
 

@@ -29,57 +29,36 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
+#ifndef XPOST_FONT_H
+#define XPOST_FONT_H
+
+/**
+ * @file xpost_font.h
+ * @brief Font manipuation functions
+ */
+
+/**
+ * @brief Initialize the font module.
+ *
+ * @return 1 on success, 0 otherwise.
+ *
+ * This function initializes the font module. It is called by
+ * xpost_init().
+ *
+ * @see xpost_font_quit()
+ * @see xpost_init()
+ */
+int xpost_font_init(void);
+
+/**
+ * @brief Shut down the font module.
+ *
+ * This function shuts down the font module. It is called by
+ * xpost_quit().
+ *
+ * @see xpost_font_init()
+ * @see xpost_quit()
+ */
+void xpost_font_quit(void);
+
 #endif
-
-#include "xpost_log.h"
-#include "xpost_memory.h"
-#include "xpost_font.h"
-#include "xpost_main.h"
-
-static int _xpost_init_count = 0;
-
-int
-xpost_init(void)
-{
-    if (++_xpost_init_count != 1)
-        return _xpost_init_count;
-
-    if (!xpost_log_init())
-        return --_xpost_init_count;
-
-    if (!xpost_memory_init())
-        return --_xpost_init_count;
-
-    if (!xpost_font_init())
-        return --_xpost_init_count;
-
-    return _xpost_init_count;
-}
-
-int
-xpost_quit(void)
-{
-    if (_xpost_init_count <= 0)
-    {
-        XPOST_LOG_ERR("Init count not greater than 0 in shutdown.");
-        return 0;
-    }
-
-    if (--_xpost_init_count != 0)
-        return _xpost_init_count;
-
-    xpost_font_quit();
-    xpost_log_quit();
-
-    return _xpost_init_count;
-}
-
-void
-xpost_version_get(int *maj, int *min, int *mic)
-{
-    if (maj) *maj = XPOST_VERSION_MAJ;
-    if (min) *min = XPOST_VERSION_MIN;
-    if (mic) *mic = XPOST_VERSION_MIC;
-}
