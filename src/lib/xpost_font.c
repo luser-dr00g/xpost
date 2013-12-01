@@ -47,7 +47,8 @@ struct _Xpost_Font_Face
     FT_Face face;
 };
 
-static FT_Library _xpost_font_ft_library;
+static FcConfig *_xpost_font_fc_config = NULL;
+static FT_Library _xpost_font_ft_library = NULL;
 
 int
 xpost_font_init(void)
@@ -66,6 +67,8 @@ xpost_font_init(void)
         FT_Done_FreeType(_xpost_font_ft_library);
         return 0;
     }
+
+    _xpost_font_fc_config = FcInitLoadConfigAndFonts();
 #endif
     return 1;
 }
@@ -74,6 +77,7 @@ void
 xpost_font_quit(void)
 {
 #ifdef HAVE_FONT
+    FcConfigDestroy(_xpost_font_fc_config);
     FcFini();
     FT_Done_FreeType(_xpost_font_ft_library);
 #endif
@@ -83,7 +87,7 @@ Xpost_Font_Face *
 xpost_font_face_new_from_file(const char *name)
 {
 #ifdef HAVE_FONT
-    char file[PATH_MAX];
+    char *file;
     FcPattern *pattern;
     FcPattern *match;
     Xpost_Font_Face *face;
@@ -101,11 +105,11 @@ xpost_font_face_new_from_file(const char *name)
     if (!pattern)
         goto free_face;
 
-    if (!FcConfigSubstitute (NULL, pattern, FcMatchPattern))
+    if (!FcConfigSubstitute (_xpost_font_fc_config, pattern, FcMatchPattern))
         goto destroy_pattern;
 
     FcDefaultSubstitute(pattern);
-    match = FcFontMatch(NULL, pattern, &result);
+    match = FcFontMatch(_xpost_font_fc_config, pattern, &result);
     if (result != FcResultMatch)
         goto destroy_pattern;
 
@@ -119,7 +123,7 @@ xpost_font_face_new_from_file(const char *name)
     if (result != FcResultMatch)
         goto destroy_match;
 
-    XPOST_LOG_INFO("Font %s found has index %d", name, idx);
+    XPOST_LOG_INFO("Font %s has index %d", name, idx);
 
     err = FT_New_Face(_xpost_font_ft_library, file, idx, &face->face) ;
     if (err == FT_Err_Unknown_File_Format)
