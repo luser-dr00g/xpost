@@ -65,6 +65,8 @@ Xpost_Object _get_ctm(Xpost_Context *ctx)
     Xpost_Object psctm;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return invalid;
     gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
     gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
     psctm = bdcget(ctx, gs, consname(ctx, "currmatrix"));
