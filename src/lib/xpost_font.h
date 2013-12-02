@@ -63,7 +63,7 @@ int xpost_font_init(void);
  */
 void xpost_font_quit(void);
 
-Xpost_Font_Face *xpost_font_face_new_from_file(const char *name);
+Xpost_Font_Face *xpost_font_face_new_from_name(const char *name);
 
 void xpost_font_face_free(Xpost_Font_Face *face);
 

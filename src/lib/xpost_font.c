@@ -84,7 +84,7 @@ xpost_font_quit(void)
 }
 
 Xpost_Font_Face *
-xpost_font_face_new_from_file(const char *name)
+xpost_font_face_new_from_name(const char *name)
 {
 #ifdef HAVE_FONT
     char *file;
