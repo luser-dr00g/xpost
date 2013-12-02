@@ -202,10 +202,18 @@ static
 int Scvn(Xpost_Context *ctx,
           Xpost_Object s)
 {
-    char *t = alloca(s.comp_.sz+1);
+    char *t;
+    Xpost_Object name;
+
+    t = alloca(s.comp_.sz+1);
     memcpy(t, charstr(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
-    xpost_stack_push(ctx->lo, ctx->os, consname(ctx, t));
+    name = consname(ctx, t);
+    if (xpost_object_is_exe(s))
+        name = xpost_object_cvx(name);
+    else
+        name = xpost_object_cvlit(name);
+    xpost_stack_push(ctx->lo, ctx->os, name);
     return 0;
 }
 
