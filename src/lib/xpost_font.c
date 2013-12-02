@@ -32,6 +32,8 @@
 # include <config.h>
 #endif
 
+#include <stdlib.h>
+
 #ifdef HAVE_FONT
 # include <fontconfig/fontconfig.h>
 
@@ -44,11 +46,15 @@
 
 struct _Xpost_Font_Face
 {
+#ifdef HAVE_FONT
     FT_Face face;
+#endif
 };
 
+#ifdef HAVE_FONT
 static FcConfig *_xpost_font_fc_config = NULL;
 static FT_Library _xpost_font_ft_library = NULL;
+#endif
 
 int
 xpost_font_init(void)
@@ -148,6 +154,8 @@ xpost_font_face_new_from_name(const char *name)
     FcPatternDestroy(pattern);
   free_face:
     free(face);
+#else
+    (void)name;
 #endif
 
     return NULL;
@@ -156,9 +164,13 @@ xpost_font_face_new_from_name(const char *name)
 void
 xpost_font_face_free(Xpost_Font_Face *face)
 {
+#ifdef HAVE_FONT
     if (!face)
         return;
 
     FT_Done_Face(face->face);
     free(face);
+#else
+    (void)face;
+#endif
 }
