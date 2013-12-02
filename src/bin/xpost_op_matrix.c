@@ -483,35 +483,55 @@ int initopmatrix(Xpost_Context *ctx,
 
     op = consoper(ctx, "initmatrix", _init_matrix, 0, 0); INSTALL;
 
-    op = consoper(ctx, "identmatrix", _ident_matrix, 1, 1, arraytype); INSTALL;
-    op = consoper(ctx, "defaultmatrix", _default_matrix, 1, 1, arraytype); INSTALL;
+    op = consoper(ctx, "identmatrix", _ident_matrix, 1, 1,
+            arraytype); INSTALL;
+    op = consoper(ctx, "defaultmatrix", _default_matrix, 1, 1,
+            arraytype); INSTALL;
 
-    op = consoper(ctx, "currentmatrix", _current_matrix, 1, 1, arraytype); INSTALL;
-    op = consoper(ctx, "setmatrix", _set_matrix, 0, 1, arraytype); INSTALL;
+    op = consoper(ctx, "currentmatrix", _current_matrix, 1, 1,
+            arraytype); INSTALL;
+    op = consoper(ctx, "setmatrix", _set_matrix, 0, 1,
+            arraytype); INSTALL;
 
-    op = consoper(ctx, "translate", _translate, 0, 2, floattype, floattype); INSTALL;
-    op = consoper(ctx, "translate", _mat_translate, 1, 3, floattype, floattype, arraytype); INSTALL;
+    op = consoper(ctx, "translate", _translate, 0, 2,
+            floattype, floattype); INSTALL;
+    op = consoper(ctx, "translate", _mat_translate, 1, 3,
+            floattype, floattype, arraytype); INSTALL;
 
-    op = consoper(ctx, "scale", _scale, 0, 2, floattype, floattype); INSTALL;
-    op = consoper(ctx, "scale", _mat_scale, 1, 3, floattype, floattype, arraytype); INSTALL;
+    op = consoper(ctx, "scale", _scale, 0, 2,
+            floattype, floattype); INSTALL;
+    op = consoper(ctx, "scale", _mat_scale, 1, 3,
+            floattype, floattype, arraytype); INSTALL;
 
-    op = consoper(ctx, "rotate", _rotate, 0, 1, floattype); INSTALL;
-    op = consoper(ctx, "rotate", _mat_rotate, 1, 2, floattype, arraytype); INSTALL;
+    op = consoper(ctx, "rotate", _rotate, 0, 1,
+            floattype); INSTALL;
+    op = consoper(ctx, "rotate", _mat_rotate, 1, 2,
+            floattype, arraytype); INSTALL;
 
-    op = consoper(ctx, "concat", _concat, 0, 1, arraytype); INSTALL;
+    op = consoper(ctx, "concat", _concat, 0, 1,
+            arraytype); INSTALL;
     op = consoper(ctx, "concatmatrix", _concat_matrix, 1, 3,
             arraytype, arraytype, arraytype); INSTALL;
 
-    op = consoper(ctx, "transform", _transform, 2, 2, floattype, floattype); INSTALL;
-    op = consoper(ctx, "transform", _mat_transform, 2, 3, floattype, floattype, arraytype); INSTALL;
-    op = consoper(ctx, "dtransform", _dtransform, 2, 2, floattype, floattype); INSTALL;
-    op = consoper(ctx, "dtransform", _mat_dtransform, 2, 3, floattype, floattype, arraytype); INSTALL;
-    op = consoper(ctx, "itransform", _itransform, 2, 2, floattype, floattype); INSTALL;
-    op = consoper(ctx, "itransform", _mat_itransform, 2, 3, floattype, floattype, arraytype); INSTALL;
-    op = consoper(ctx, "idtransform", _idtransform, 2, 2, floattype, floattype); INSTALL;
-    op = consoper(ctx, "idtransform", _mat_idtransform, 2, 3, floattype, floattype, arraytype); INSTALL;
+    op = consoper(ctx, "transform", _transform, 2, 2,
+            floattype, floattype); INSTALL;
+    op = consoper(ctx, "transform", _mat_transform, 2, 3,
+            floattype, floattype, arraytype); INSTALL;
+    op = consoper(ctx, "dtransform", _dtransform, 2, 2,
+            floattype, floattype); INSTALL;
+    op = consoper(ctx, "dtransform", _mat_dtransform, 2, 3,
+            floattype, floattype, arraytype); INSTALL;
+    op = consoper(ctx, "itransform", _itransform, 2, 2,
+            floattype, floattype); INSTALL;
+    op = consoper(ctx, "itransform", _mat_itransform, 2, 3,
+            floattype, floattype, arraytype); INSTALL;
+    op = consoper(ctx, "idtransform", _idtransform, 2, 2,
+            floattype, floattype); INSTALL;
+    op = consoper(ctx, "idtransform", _mat_idtransform, 2, 3,
+            floattype, floattype, arraytype); INSTALL;
 
-    op = consoper(ctx, "invertmatrix", _invert_matrix, 1, 2, arraytype, arraytype); INSTALL;
+    op = consoper(ctx, "invertmatrix", _invert_matrix, 1, 2,
+            arraytype, arraytype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */
