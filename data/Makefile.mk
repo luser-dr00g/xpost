@@ -13,6 +13,7 @@ data/matrix.ps \
 data/path.ps \
 data/paint.ps \
 data/init.ps \
+data/prepr.ps \
 data/m.pic \
 data/m.ps \
 data/qsort.ps \
@@ -37,6 +38,7 @@ data/matrix.ps \
 data/path.ps \
 data/paint.ps \
 data/init.ps \
+data/prepr.ps \
 data/m.pic \
 data/m.ps \
 data/qsort.ps \

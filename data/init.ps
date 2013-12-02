@@ -442,3 +442,9 @@ false setglobal
 /pause{ doprompt } def
 /hook{ } def
 
+/.dir {
+    (*) { = } 128 string filenameforall
+} def
+
+DATA_DIR (/prepr.ps) strcat run  % use nifty preview prompt!
+
