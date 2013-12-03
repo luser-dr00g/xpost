@@ -67,6 +67,7 @@ void *alloca (size_t);
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
+#include "xpost_font.h"
 
 #include "xpost_save.h"
 #include "xpost_context.h"
@@ -92,6 +93,7 @@ int _findfont (Xpost_Context *ctx,
     Xpost_Object privatestr;
     struct fontdata data;
     char *fname;
+    Xpost_Font_Face *face;
 
     fontstr = strname(ctx, fontname);
     fname = alloca(fontstr.comp_.sz + 1);
@@ -102,7 +104,8 @@ int _findfont (Xpost_Context *ctx,
     privatestr = consbst(ctx, sizeof data, NULL);
     bdcput(ctx, fontdict, consname(ctx, "Private"), privatestr);
 
-    /* TODO initialize font data, with x-scale and y-scale set to 1 */
+    /* initialize font data, with x-scale and y-scale set to 1 */
+    face = xpost_font_face_new_from_name(fname);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof data, &data);
