@@ -667,17 +667,17 @@ static void setdatadir(Xpost_Context *ctx, Xpost_Object sd)
     bdcput(ctx, sd,
         consname(ctx, "newdefaultdevice"),
         xpost_object_cvx(consbst(ctx,
-        CNT_STR("loadwin32device /DEVICE 400 300 breakhere newwin32device def"))));
+        CNT_STR("loadwin32device /DEVICE 612 792 breakhere newwin32device def"))));
 #elif defined HAVE_XCB
     bdcput(ctx, sd,
         consname(ctx, "newdefaultdevice"),
         xpost_object_cvx(consbst(ctx,
-        CNT_STR("loadxcbdevice /DEVICE 400 300 newxcbdevice def"))));
+        CNT_STR("loadxcbdevice /DEVICE 612 792 newxcbdevice def"))));
 #else
     bdcput(ctx, sd,
         consname(ctx, "newdefaultdevice"),
         xpost_object_cvx(consbst(ctx,
-        CNT_STR("/DEVICE 50 50 newPGMIMAGEdevice def"))));
+        CNT_STR("/DEVICE 50 50 newPGMIMAGEdevice def"))));  /* small size for terminal output */
 #endif
 
     ctx->vmmode = LOCAL;
