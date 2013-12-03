@@ -46,8 +46,10 @@
         ]
         dup length 0 eq {pop} if
     ]
-    (fill)=
-    pstack()=
+    /DEBUGFILL where { pop
+        (fill)=
+        pstack()=
+    } if
     {
         dup length 2 gt {
             [ currentcolordict DEVICE /nativecolorspace get get exec
