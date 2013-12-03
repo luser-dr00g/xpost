@@ -72,6 +72,13 @@ static
 unsigned int _event_handler_opcode;
 
 static
+Xpost_Object namePrivate;
+static
+Xpost_Object namewidth;
+static
+Xpost_Object nameheight;
+
+static
 int _event_handler (Xpost_Context *ctx,
                     Xpost_Object devdic)
 {
@@ -81,7 +88,10 @@ int _event_handler (Xpost_Context *ctx,
 
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    privatestr = bdcget(ctx, devdic,
+            //consname(ctx, "Private")
+            namePrivate
+            );
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -119,8 +129,14 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
-    bdcput(ctx, classdic, consname(ctx, "width"), width);
-    bdcput(ctx, classdic, consname(ctx, "height"), height);
+    bdcput(ctx, classdic,
+            //consname(ctx, "width")
+            namewidth
+            , width);
+    bdcput(ctx, classdic,
+            //consname(ctx, "height")
+            nameheight
+            , height);
 
     /* call device class's ps-level .copydict procedure,
        then call _create_cont, by continuation. */
@@ -156,7 +172,10 @@ int _create_cont (Xpost_Context *ctx,
         XPOST_LOG_ERR("cannot allocat private data structure");
         return unregistered;
     }
-    bdcput(ctx, devdic, consname(ctx, "Private"), privatestr);
+    bdcput(ctx, devdic,
+            //consname(ctx, "Private")
+            namePrivate
+            , privatestr);
 
     private.width = width;
     private.height = height;
@@ -274,14 +293,23 @@ int _putpix (Xpost_Context *ctx,
         y = xpost_cons_int(y.real_.val);
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    privatestr = bdcget(ctx, devdic,
+            //consname(ctx, "Private")
+            namePrivate
+            );
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
     /* check bounds */
-    if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic, consname(ctx, "width")).int_.val)
+    if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic,
+                //consname(ctx, "width")
+                namewidth
+                ).int_.val)
         return 0;
-    if (y.int_.val < 0 || y.int_.val >= bdcget(ctx, devdic, consname(ctx, "height")).int_.val)
+    if (y.int_.val < 0 || y.int_.val >= bdcget(ctx, devdic,
+                //consname(ctx, "height")
+                nameheight
+                ).int_.val)
         return 0;
 
     {
@@ -325,7 +353,10 @@ int _getpix (Xpost_Context *ctx,
     PrivateData private;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    privatestr = bdcget(ctx, devdic,
+            //consname(ctx, "Private")
+            namePrivate
+            );
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -371,7 +402,10 @@ int _drawline (Xpost_Context *ctx,
         y2 = xpost_cons_int(y2.real_.val);
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    privatestr = bdcget(ctx, devdic,
+            //consname(ctx, "Private")
+            namePrivate
+            );
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -458,11 +492,20 @@ int _fillrect (Xpost_Context *ctx,
     if (y.int_.val < 0) y.int_.val = 0;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    privatestr = bdcget(ctx, devdic,
+            //consname(ctx, "Private")
+            namePrivate
+            );
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
-    w = bdcget(ctx, devdic, consname(ctx,"width")).int_.val;
-    h = bdcget(ctx, devdic, consname(ctx,"height")).int_.val;
+    w = bdcget(ctx, devdic,
+            //consname(ctx,"width")
+            namewidth
+            ).int_.val;
+    h = bdcget(ctx, devdic,
+            //consname(ctx,"height")
+            nameheight
+            ).int_.val;
 
     if (x.int_.val >= w || y.int_.val >= h)
         return 0;
@@ -512,7 +555,10 @@ int _flush (Xpost_Context *ctx,
     PrivateData private;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    privatestr = bdcget(ctx, devdic,
+            //consname(ctx, "Private")
+            namePrivate
+            );
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -538,7 +584,10 @@ int _destroy (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
-    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    privatestr = bdcget(ctx, devdic,
+            //consname(ctx, "Private")
+            namePrivate
+            );
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
             sizeof private, &private);
 
@@ -674,6 +723,10 @@ int initxcbops (Xpost_Context *ctx,
     unsigned int optadr;
     oper *optab;
     Xpost_Object n,op;
+
+    namePrivate = consname(ctx, "Private");
+    namewidth = consname(ctx, "width");
+    nameheight = consname(ctx, "height");
 
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);

@@ -102,9 +102,9 @@ int _yxcomp (const void *left, const void *right)
         righty.real_.val : righty.int_.val;
     if (lty == rty) {
         if (ltx < rtx) {
-            return -1;
-        } else if (ltx > rtx) {
             return 1;
+        } else if (ltx > rtx) {
+            return -1;
         } else {
             return 0;
         }
