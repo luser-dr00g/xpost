@@ -163,6 +163,12 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
         XPOST_LOG_ERR("cannot allocate entity to backup object");
         return 0;
     }
+    if (new > (1 << (sizeof(word) * 8)) - 1)
+    {
+        XPOST_LOG_ERR("ent number %u exceeds object storage max %u",
+                    new, (1 << (sizeof(word) * 8)) - 1);
+        return 0;
+    }
     ent = tent;
     ret = xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
     if (!ret)

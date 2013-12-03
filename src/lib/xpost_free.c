@@ -254,9 +254,12 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
         unsigned int tsz;
         if (e > (1 << (sizeof(word) * 8)) - 1)
         {
+            unsigned int zero = 0;
             XPOST_LOG_ERR("ent number %u exceeds object storage max %u",
                     e, (1 << (sizeof(word) * 8)) - 1);
-            return 0;
+            /* bad element found: discard free list */
+            xpost_memory_put(mem, 0, 0, sizeof zero, &zero);
+            return 2; /* request collection to fill the list */
         }
         ret = xpost_memory_table_get_size(mem, e, &tsz);
         if (!ret)
