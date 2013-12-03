@@ -428,6 +428,7 @@ call:
 #include "xpost_op_param.h"
 #include "xpost_op_matrix.h"
 #include "xpost_op_font.h"
+#include "xpost_dev_generic.h"
 #ifdef HAVE_WIN32
 # include "xpost_dev_win32.h"
 #endif
@@ -529,6 +530,7 @@ int initop(Xpost_Context *ctx)
     initopparam(ctx, sd);
     initopmatrix(ctx, sd);
     initopfont(ctx, sd);
+    initdevgenericops(ctx, sd);
 #ifdef _WIN32
     initwin32ops(ctx, sd);
 #endif

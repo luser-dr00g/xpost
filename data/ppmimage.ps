@@ -269,9 +269,11 @@ DATA_DIR(/qsort.ps)strcat run
     /FillPoly { % r g b polygon IMAGE  .  -
     begin {poly b g r}{exch def}forall
 
-        (\nFillPoly)=
+        /DEBUGFILL where { pop
+            (\nFillPoly)=
+            r =only( )=only g =only( )=only b =only( )=only poly ==
+        } if
         %hook
-        r =only( )=only g =only( )=only b =only( )=only poly ==
 
         /minx 16#7ffffff def
         /miny minx def
@@ -291,13 +293,15 @@ DATA_DIR(/qsort.ps)strcat run
 
         /x_max width .5 add def
 
-        (intersect polygon edges with scanlines)=
+        (FillPoly:<intersect polygon edges with scanlines>)=
         /P poly poly length 1 sub get def
         [
         poly {
             /Q exch def
-            (P=)=only P ==
-            (Q=)=only Q ==
+            /DEBUGFILL where { pop
+                (P=)=only P ==
+                (Q=)=only Q ==
+            } if
             x_max miny floor cvi .5 add % [ x_max miny+.5
             1                           % [ x_max miny+.5 1
             maxy ceiling cvi .5 sub     % [ x_max miny+.5 1 maxy-.5
@@ -314,9 +318,12 @@ DATA_DIR(/qsort.ps)strcat run
             /P Q def
         } forall
         ]        % [list-of-x/y-intersections
-        dup ==()=
+        /DEBUGFILL where { pop
+            dup ==()=
+        } if
 
-        (sort scanline intersection list)=
+        (FillPoly:<sort scanline intersection list>)=
+        {
         dup { % comparitor  % [x1 y1] [x2 y2] . bool
             1 index 1 get
             1 index 1 get
@@ -330,7 +337,11 @@ DATA_DIR(/qsort.ps)strcat run
                 lt             % (y1 < y2)
             } ifelse
         } qsort   % [sorted-list-of-intersections]
-        dup ==()=
+        } pop
+        dup .yxsort
+        /DEBUGFILL where { pop
+            dup ==()=
+        } if
 
         %(%lineedit)(r)file pop %pause
 
