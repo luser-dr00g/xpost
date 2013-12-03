@@ -62,6 +62,9 @@
 #include "xpost_operator.h"  // eval functions call operators
 #include "xpost_pathname.h" // determine whether xpost is installed
 
+static
+Xpost_Object namedollarerror;
+
 int TRACE = 0;
 Xpost_Interpreter *itpdata;
 int initializing = 1;
@@ -151,6 +154,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx)
     (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
     (void)consname(ctx, "getinterval"); /* middle of the start */
     (void)consname(ctx, "setmiterlimit"); /* middle of the end */
+    namedollarerror = consname(ctx, "$error");
 
     initop(ctx); /* populate the optab (and systemdict) with operators */
 
@@ -549,7 +553,7 @@ void _onerror(Xpost_Context *ctx,
     sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
     /* printf("2\n"); */
 
-    dollarerror = bdcget(ctx, sd, consname(ctx, "$error"));
+    dollarerror = bdcget(ctx, sd, namedollarerror);
     /* printf("3\n"); */
     /* FIXME: does errormsg need to be volatile ?? If no, below cast is useless */
     errmsg = (char *)errormsg;
