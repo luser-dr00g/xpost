@@ -87,7 +87,7 @@ int _yxcomp (const void *left, const void *right)
     const Xpost_Object *lt = left;
     const Xpost_Object *rt = right;
     Xpost_Object leftx, lefty, rightx, righty;
-    real ltx, lty, rtx, rty;
+    integer ltx, lty, rtx, rty;
     leftx = barget(localctx, *lt, 0);
     lefty = barget(localctx, *lt, 1);
     rightx = barget(localctx, *rt, 0);
@@ -120,19 +120,25 @@ static
 int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
 {
     unsigned char *arrcontents;
+    unsigned int arradr;
+    Xpost_Memory_File *mem;
 
-    arrcontents = alloca(arr.comp_.sz * sizeof arr);
-    if (!xpost_memory_get(xpost_context_select_memory(ctx, arr),
-                arr.comp_.ent, 0, arr.comp_.sz * sizeof arr, arrcontents))
+    //arrcontents = alloca(arr.comp_.sz * sizeof arr);
+    //if (!xpost_memory_get(xpost_context_select_memory(ctx, arr),
+    //            arr.comp_.ent, 0, arr.comp_.sz * sizeof arr, arrcontents))
+    //    return VMerror;
+    mem = xpost_context_select_memory(ctx, arr);
+    if (!xpost_memory_table_get_addr(mem, arr.comp_.ent, &arradr))
         return VMerror;
+    arrcontents = (mem->base + arradr);
 
     localctx = ctx;
     qsort(arrcontents, arr.comp_.sz, sizeof arr, _yxcomp);
     localctx = NULL;
 
-    if (!xpost_memory_put(xpost_context_select_memory(ctx, arr),
-                arr.comp_.ent, 0, arr.comp_.sz * sizeof arr, arrcontents))
-        return VMerror;
+    //if (!xpost_memory_put(xpost_context_select_memory(ctx, arr),
+    //            arr.comp_.ent, 0, arr.comp_.sz * sizeof arr, arrcontents))
+    //    return VMerror;
 
     return 0;
 }
