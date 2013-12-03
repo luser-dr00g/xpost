@@ -109,7 +109,7 @@ int _yxcomp (const void *left, const void *right)
             return 0;
         }
     } else {
-        if (lty < rtx)
+        if (lty < rty)
             return -1;
         else
             return 1;
