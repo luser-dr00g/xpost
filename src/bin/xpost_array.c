@@ -149,8 +149,7 @@ int arrput(Xpost_Memory_File *mem,
         XPOST_LOG_ERR("cannot put value in array");
         return 0;
     }
-    xpost_memory_put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
-    return 1;
+    return xpost_memory_put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
 }
 
 /** Select Xpost_Memory_File according to BANK flag,

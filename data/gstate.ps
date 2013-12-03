@@ -82,6 +82,9 @@ graphicsdict begin
         gstackarray gptr get
             %dup {exch = ==} forall
         currgstate gstatecopy pop
+        gptr 0 gt { %discard all but one element, for grestoreall
+            gstackarray gptr null put % discard stack copy
+        } if
         /gptr gptr 1 sub def
     } if
 end

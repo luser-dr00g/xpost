@@ -222,7 +222,8 @@ int Aastore (Xpost_Context *ctx,
         t = xpost_stack_pop(ctx->lo, ctx->os);
         //if (xpost_object_get_type(t) == invalidtype)
             //return stackunderflow;
-        barput(ctx, A, i, t);
+        if (!barput(ctx, A, i, t))
+            return VMerror;
     }
     xpost_stack_push(ctx->lo, ctx->os, A);
     return 0;
