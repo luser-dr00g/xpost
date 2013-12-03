@@ -11,7 +11,7 @@ loadgraphics
 } def
 
 /randwidth {
-	rand 10 mod setlinewidth
+	rand 7 mod 1.5 mul setlinewidth
 } def
 
 /randpoint {
@@ -68,18 +68,31 @@ srand
 
 %[1 0 0 -1 0 DEVICE /height get] setmatrix
 
-50 50 moveto % should be at (50,50) from the bottom left corner
-0 60 rlineto
-60 0 rlineto
-0 -60 rlineto
-fill
+%50 50 moveto % should be at (50,50) from the bottom left corner
+%0 60 rlineto
+%60 0 rlineto
+%0 -60 rlineto
+%fill
+
+
+( lines)=
+
+%beginpage
+%    0 setlinewidth
+%    50 { randline randcolor stroke } repeat
+%endpage
+
+beginpage
+    15 { randline randwidth randcolor stroke } repeat
+endpage
+
 
 ( curves)=
 
-beginpage
-    0 setlinewidth
-    20 { randcurve randcolor stroke } repeat
-endpage
+%beginpage
+%    0 setlinewidth
+%    20 { randcurve randcolor stroke } repeat
+%endpage
 
 beginpage
     randcurve randwidth randcolor stroke
@@ -95,26 +108,11 @@ beginpage
     randcurve randwidth randcolor stroke
 endpage
 
+
 ( boxes)=
 
 beginpage
-    0 setlinewidth
-    40 { randbox randcolor stroke newpath } repeat
-endpage
-
-beginpage
-    10 { randbox randcolor fill newpath } repeat
-endpage
-
-( lines)=
-
-beginpage
-    0 setlinewidth
-    50 { randline randcolor stroke } repeat
-endpage
-
-beginpage
-    15 { randline randwidth randcolor stroke } repeat
+    40 { randbox randwidth randcolor stroke newpath } repeat
 endpage
 
 beginpage
