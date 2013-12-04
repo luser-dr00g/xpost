@@ -1,6 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -99,17 +100,15 @@ xpost_font_quit(void)
 #endif
 }
 
-void *
-xpost_font_face_new_from_name(const char *name)
+static char *
+_xpost_font_face_filename_and_index_get(const char *name, int *idx)
 {
-#if defined (HAVE_FREETYPE) && defined (HAVE_FONTCONFIG)
-    FT_Face face;
-    FT_Error err;
+# ifdef HAVE_FONTCONFIG
     FcPattern *pattern;
     FcPattern *match;
     char *file;
+    char *filename;
     FcResult result;
-    int idx;
 
     /* FIXME: parse name first ? */
 
@@ -131,33 +130,58 @@ xpost_font_face_new_from_name(const char *name)
 
     XPOST_LOG_INFO("Font %s found in file %s", name, file);
 
-    result = FcPatternGetInteger(match, FC_INDEX, 0, &idx);
+    result = FcPatternGetInteger(match, FC_INDEX, 0, idx);
     if (result != FcResultMatch)
         goto destroy_match;
 
-    XPOST_LOG_INFO("Font %s has index %d", name, idx);
+    XPOST_LOG_INFO("Font %s has index %d", name, *idx);
 
-    err = FT_New_Face(_xpost_font_ft_library, file, idx, &face) ;
-    if (err == FT_Err_Unknown_File_Format)
-    {
-        XPOST_LOG_ERR("Font format unsupported");
-        goto destroy_match;
-    }
-    else if (err)
-    {
-        XPOST_LOG_ERR("Font file %s can not be opened or read or is broken", file);
-        goto destroy_match;
-    }
+    filename = strdup(file);
 
     FcPatternDestroy(match);
     FcPatternDestroy(pattern);
 
-    return face;
+    return filename;
 
   destroy_match:
     FcPatternDestroy(match);
   destroy_pattern:
     FcPatternDestroy(pattern);
+#endif
+
+    return NULL;
+}
+
+void *
+xpost_font_face_new_from_name(const char *name)
+{
+#ifdef HAVE_FREETYPE
+    FT_Face face;
+    FT_Error err;
+    char *filename;
+    int idx;
+
+    filename = _xpost_font_face_filename_and_index_get(name, &idx);
+    if (!filename)
+        return NULL;
+
+    err = FT_New_Face(_xpost_font_ft_library, filename, idx, &face) ;
+    if (err == FT_Err_Unknown_File_Format)
+    {
+        XPOST_LOG_ERR("Font format unsupported");
+        free(filename);
+        return NULL;
+    }
+    else if (err)
+    {
+        XPOST_LOG_ERR("Font file %s can not be opened or read or is broken", filename);
+        free(filename);
+        return NULL;
+    }
+
+    free(filename);
+
+    return face;
 #else
     (void)name;
 #endif
