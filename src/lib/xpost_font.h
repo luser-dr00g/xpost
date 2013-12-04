@@ -32,12 +32,14 @@
 #ifndef XPOST_FONT_H
 #define XPOST_FONT_H
 
+#ifndef XPOST_OBJECT_H
+# error MUST #include "xpost_object.h" before this file
+#endif
+
 /**
  * @file xpost_font.h
  * @brief Font manipuation functions
  */
-
-typedef struct _Xpost_Font_Face Xpost_Font_Face;
 
 /**
  * @brief Initialize the font module.
@@ -63,8 +65,10 @@ int xpost_font_init(void);
  */
 void xpost_font_quit(void);
 
-Xpost_Font_Face *xpost_font_face_new_from_name(const char *name);
+void *xpost_font_face_new_from_name(const char *name);
 
-void xpost_font_face_free(Xpost_Font_Face *face);
+void xpost_font_face_free(void *face);
+
+void xpost_font_face_scale(void *face, real scale);
 
 #endif

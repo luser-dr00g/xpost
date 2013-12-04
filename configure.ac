@@ -134,14 +134,24 @@ xpost_requirements_bin_pc=""
 xpost_requirements_lib_pc=""
 AC_SUBST([xpost_requirements_lib_pc])
 
-# fontconfig freetype
+# fontconfig
 PKG_CHECK_EXISTS([fontconfig freetype2],
    [
-    have_font="yes"
-    xpost_requirements_lib_pc="${xpost_requirements_lib_pc} fontconfig freetype2"
-    AC_DEFINE([HAVE_FONT], [1], [Define to 1 if Fontconfig and Freetype are detected])
+    have_fontconfig="yes"
+    xpost_requirements_lib_pc="${xpost_requirements_lib_pc} fontconfig"
+    AC_DEFINE([HAVE_FONTCONFIG], [1], [Define to 1 if Fontconfig are detected])
    ],
-   [have_font="no"])
+   [have_fontconfig="no"])
+
+# freetype
+PKG_CHECK_EXISTS([freetype2],
+   [
+    have_freetype="yes"
+    xpost_requirements_lib_pc="${xpost_requirements_lib_pc} freetype2"
+    xpost_requirements_bin_pc="${xpost_requirements_lib_pc} freetype2"
+    AC_DEFINE([HAVE_FREETYPE], [1], [Define to 1 if Freetype are detected])
+   ],
+   [have_freetype="no"])
 
 # libxcb
 PKG_CHECK_EXISTS([xcb-image xcb],
@@ -352,7 +362,8 @@ echo "  mmap support.........: ${have_mmap} (mremap: ${have_mremap})"
 else
 echo "  mmap support.........: no"
 fi
-echo "  Font support.........: ${have_font}"
+echo "  Freetype support.....: ${have_freetype}"
+echo "  Fontconfig support...: ${have_fontconfig}"
 echo "  Devices:"
 echo "    PGM image..........: always"
 echo "    XCB................: ${have_xcb}"
