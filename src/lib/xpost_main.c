@@ -34,6 +34,7 @@
 #endif
 
 #include "xpost_log.h"
+#include "xpost_object.h"
 #include "xpost_memory.h"
 #include "xpost_font.h"
 #include "xpost_main.h"
