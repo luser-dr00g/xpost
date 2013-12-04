@@ -159,9 +159,12 @@ int Adef(Xpost_Context *ctx,
           Xpost_Object K,
           Xpost_Object V)
 {
+    int ret;
     //Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
     //dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
-    bdcput(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
+    ret = bdcput(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
+    if (ret)
+        return ret;
     //puts("!def!");
     //dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
     return 0;

@@ -293,7 +293,9 @@ DATA_DIR(/qsort.ps)strcat run
 
         /x_max width .5 add def
 
-        (FillPoly:<intersect polygon edges with scanlines>)=
+        /DEBUGFILL where { pop
+            (FillPoly:<intersect polygon edges with scanlines>)=
+        } if
         /P poly poly length 1 sub get def
         [
         poly {
@@ -322,7 +324,9 @@ DATA_DIR(/qsort.ps)strcat run
             dup ==()=
         } if
 
-        (FillPoly:<sort scanline intersection list>)=
+        /DEBUGFILL where { pop
+            (FillPoly:<sort scanline intersection list>)=
+        } if
         {
         dup { % comparitor  % [x1 y1] [x2 y2] . bool
             1 index 1 get
@@ -345,7 +349,9 @@ DATA_DIR(/qsort.ps)strcat run
 
         %(%lineedit)(r)file pop %pause
 
-        (FillPoly:<set pixels on each scanline>)=
+        /DEBUGFILL where { pop
+            (FillPoly:<set pixels on each scanline>)=
+        } if
         aload length 2 idiv { % repeat
             exch aload pop
             3 2 roll aload pop

@@ -292,7 +292,7 @@ unsigned dicmaxlength(Xpost_Memory_File *mem,
    copy over all non-null key/value pairs,
    swap adrs in the two table slots. */
 static
-void dicgrow(Xpost_Context *ctx,
+int dicgrow(Xpost_Context *ctx,
              Xpost_Object d)
 {
     Xpost_Memory_File *mem;
@@ -315,11 +315,11 @@ void dicgrow(Xpost_Context *ctx,
     dp = (void *)(mem->base + ad);
     sz = (dp->sz + 1);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
-    for ( i=0; i < sz; i++)
-        /* if (objcmp(ctx, tp[2*i], null) != 0) { */
+    for ( i=0; i < sz; i++) {
         if (xpost_object_get_type(tp[2*i]) != nulltype) {
             dicput(ctx, mem, n, tp[2*i], tp[2*i+1]);
         }
+    }
 #ifdef DEBUGDIC
     printf("n: ");
     dumpdic(mem, n);
@@ -348,9 +348,10 @@ void dicgrow(Xpost_Context *ctx,
         if (xpost_free_memory_ent(mem, n.comp_.ent) < 0)
         {
             XPOST_LOG_ERR("cannot free old dict");
-            return;
+            return 0;
         }
     }
+    return 1;
 }
 
 /* is it full? (y/n) */
@@ -565,20 +566,25 @@ int dicput(Xpost_Context *ctx,
     Xpost_Object *e;
     dichead *dp;
     unsigned int ad;
+    int ret;
 
     if (!xpost_save_ent_is_saved(mem, d.comp_.ent))
         if (!xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent))
             return VMerror;
 
-retry:
     e = diclookup(ctx, mem, d, k);
 
     if (e == NULL)
     {
         /* error("dict overfull"); */
         /* grow dict! */
-        dicgrow(ctx, d);
-        goto retry;
+        ret = dicgrow(ctx, d);
+        if (!ret)
+            return VMerror;
+
+        e = diclookup(ctx, mem, d, k);
+        if (e == NULL)
+            return VMerror;
     }
     else if (xpost_object_get_type(e[0]) == invalidtype)
     {
@@ -590,8 +596,15 @@ retry:
         if (dicfull(mem, d)) {
             /*error("dict full"); */
             /*grow dict! */
-            dicgrow(ctx, d);
-            goto retry;
+            ret = dicgrow(ctx, d);
+            if (!ret)
+                return VMerror;
+
+            e = diclookup(ctx, mem, d, k);
+
+            if (e == NULL)
+                return VMerror;
+
         }
         xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
         dp = (void *)(mem->base + ad);
