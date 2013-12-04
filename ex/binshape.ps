@@ -1,0 +1,14 @@
+%!
+<<
+0{(1)print}
+1{(0)print}
+10{()=}
+/#{load exec}
+/rho ARGUMENTS 0 get cvi
+/enn 0
+/set{[rho{rand rand 30 mod 2 idiv 3 mul neg bitshift}repeat]}
+/lin{[exch{dup 2 idiv exch 2 mod #}forall]10 #}
+/zer{/enn enn 1 add def enn 6 mod 0 eq{dup 0 exch{add}forall rho 1.1 exp lt{pop set}if}if}
+>>begin
+set{lin zer}loop
+
