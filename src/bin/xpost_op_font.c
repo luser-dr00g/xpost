@@ -138,7 +138,7 @@ int _scalefont (Xpost_Context *ctx,
             privatestr.comp_.ent, 0, sizeof data, &data);
 
     /* scale x and y sizes by @p size */
-    xpost_font_face_scale(face, size.real_.val);
+    xpost_font_face_scale(data.face, size.real_.val);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof data, &data);
