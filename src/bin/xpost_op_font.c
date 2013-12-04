@@ -63,6 +63,11 @@ void *alloca (size_t);
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
+#ifdef HAVE_FREETYPE
+# include <ft2build.h>
+# include FT_FREETYPE_H
+#endif
+
 #include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
@@ -82,13 +87,14 @@ void *alloca (size_t);
 
 typedef struct fontdata
 {
-    void *face;
+    FT_Face face;
 } fontdata;
 
 static
 int _findfont (Xpost_Context *ctx,
                Xpost_Object fontname)
 {
+#ifdef HAVE_FREETYPE
     Xpost_Object fontstr;
     Xpost_Object fontdict;
     Xpost_Object privatestr;
@@ -105,12 +111,15 @@ int _findfont (Xpost_Context *ctx,
     bdcput(ctx, fontdict, consname(ctx, "Private"), privatestr);
 
     /* initialize font data, with x-scale and y-scale set to 1 */
-    data.face = xpost_font_face_new_from_name(fname);
+    data.face = (FT_Face)xpost_font_face_new_from_name(fname);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof data, &data);
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
     return 0;
+#else
+    return invalidfont;
+#endif
 }
 
 
@@ -128,10 +137,8 @@ int _scalefont (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof data, &data);
 
-    /* TODO scale x and y sizes by @p size */
-    {
-        void *face = data.face;
-    }
+    /* scale x and y sizes by @p size */
+    xpost_font_face_scale(face, size.real_.val);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof data, &data);
