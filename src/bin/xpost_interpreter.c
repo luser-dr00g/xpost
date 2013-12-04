@@ -273,7 +273,7 @@ int evalload(Xpost_Context *ctx)
         Xpost_Object q;
         q = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(q) == invalidtype)
-            return stackunderflow;
+            return undefined;
         if (!xpost_stack_push(ctx->lo, ctx->es, q))
 			return ret;
     }
