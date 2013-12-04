@@ -50,8 +50,10 @@
  *
  * For a global vm, collect() calls itself recursively upon each
  * associated local vm, with dosweep = 0, markall = 1.
+ *
+ * returns size collected or -1 if error occured.
  */
-unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall);
+int collect(Xpost_Memory_File *mem, int dosweep, int markall);
 
 /**
  * @brief perform a short functionality test
