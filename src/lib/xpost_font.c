@@ -34,82 +34,88 @@
 
 #include <stdlib.h>
 
-#ifdef HAVE_FONT
+#ifdef HAVE_FONTCONFIG
 # include <fontconfig/fontconfig.h>
+#endif
 
+#ifdef HAVE_FREETYPE
 # include <ft2build.h>
 # include FT_FREETYPE_H
 #endif
 
 #include "xpost_log.h"
+#include "xpost_object.h"
 #include "xpost_font.h"
 
-struct _Xpost_Font_Face
-{
-#ifdef HAVE_FONT
-    FT_Face face;
-#endif
-};
-
-#ifdef HAVE_FONT
+#ifdef HAVE_FONTCONFIG
 static FcConfig *_xpost_font_fc_config = NULL;
+#endif
+
+#ifdef HAVE_FREETYPE
 static FT_Library _xpost_font_ft_library = NULL;
 #endif
 
 int
 xpost_font_init(void)
 {
-#ifdef HAVE_FONT
+#ifdef HAVE_FREETYPE
     FT_Error err_ft;
-    FcBool err_fc;
 
     err_ft = FT_Init_FreeType(&_xpost_font_ft_library);
-    if (err_ft)
-        return 0;
-
-    err_fc = FcInit();
-    if (!err_fc)
+    if (!err_ft)
     {
-        FT_Done_FreeType(_xpost_font_ft_library);
-        return 0;
+# ifdef HAVE_FONTCONFIG
+        FcBool err_fc;
+
+        err_fc = FcInit();
+        if (!err_fc)
+        {
+            FT_Done_FreeType(_xpost_font_ft_library);
+            return 0;
+        }
+
+        _xpost_font_fc_config = FcInitLoadConfigAndFonts();
+
+        return 1;
+# endif
     }
 
-    _xpost_font_fc_config = FcInitLoadConfigAndFonts();
+    return 0;
 #endif
-    return 1;
+
+return 1;
 }
 
 void
 xpost_font_quit(void)
 {
-#ifdef HAVE_FONT
+# ifdef HAVE_FONTCONFIG
     FcConfigDestroy(_xpost_font_fc_config);
     FcFini();
+#endif
+
+#ifdef HAVE_FREETYPE
     FT_Done_FreeType(_xpost_font_ft_library);
 #endif
 }
 
-Xpost_Font_Face *
+void *
 xpost_font_face_new_from_name(const char *name)
 {
-#ifdef HAVE_FONT
-    char *file;
+#if defined (HAVE_FREETYPE) && defined (HAVE_FONTCONFIG)
+    FT_Face face;
+    FT_Error err;
     FcPattern *pattern;
     FcPattern *match;
-    Xpost_Font_Face *face;
+    char *file;
     FcResult result;
-    FT_Error err;
     int idx;
-
-    face = (Xpost_Font_Face *)malloc(sizeof(Xpost_Font_Face));
-    if (!face)
-        return NULL;
 
     /* FIXME: parse name first ? */
 
     pattern = FcNameParse((const FcChar8 *)name);
     if (!pattern)
-        goto free_face;
+        return NULL;
 
     if (!FcConfigSubstitute (_xpost_font_fc_config, pattern, FcMatchPattern))
         goto destroy_pattern;
@@ -131,7 +137,7 @@ xpost_font_face_new_from_name(const char *name)
 
     XPOST_LOG_INFO("Font %s has index %d", name, idx);
 
-    err = FT_New_Face(_xpost_font_ft_library, file, idx, &face->face) ;
+    err = FT_New_Face(_xpost_font_ft_library, file, idx, &face) ;
     if (err == FT_Err_Unknown_File_Format)
     {
         XPOST_LOG_ERR("Font format unsupported");
@@ -152,8 +158,6 @@ xpost_font_face_new_from_name(const char *name)
     FcPatternDestroy(match);
   destroy_pattern:
     FcPatternDestroy(pattern);
-  free_face:
-    free(face);
 #else
     (void)name;
 #endif
@@ -162,15 +166,34 @@ xpost_font_face_new_from_name(const char *name)
 }
 
 void
-xpost_font_face_free(Xpost_Font_Face *face)
+xpost_font_face_free(void *face)
 {
-#ifdef HAVE_FONT
+#ifdef HAVE_FREETYPE
     if (!face)
         return;
 
-    FT_Done_Face(face->face);
-    free(face);
+    FT_Done_Face(face);
 #else
     (void)face;
+#endif
+}
+
+void
+xpost_font_face_scale(void *face, real scale)
+{
+#ifdef HAVE_FREETYPE
+    FT_Matrix matrix;
+
+    if (!face || (scale <= 0))
+        return;
+
+    matrix.xx = (FT_Fixed)(scale * 0x10000L);
+    matrix.xy = 0;
+    matrix.yx = 0;
+    matrix.yy = (FT_Fixed)(scale * 0x10000L);
+    FT_Set_Transform((FT_Face)face, &matrix, NULL);
+#else
+    (void)face;
+    (void)scale;
 #endif
 }
