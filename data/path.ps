@@ -17,7 +17,7 @@
 /newpath {
     graphicsdict /currgstate get
         /currpath 1 dict put
-} def
+} bind def
 
 % -  currentpoint  x y
 % return current point coordinates
@@ -30,9 +30,9 @@
         /data get dup length 2 sub 2 getinterval % last data pair
         aload pop itransform
     } ifelse
-} def
+} bind def
 
-/cpath { graphicsdict /currgstate get /currpath get } def
+/cpath { graphicsdict /currgstate get /currpath get } bind def
 
 /addtopath { % << /data [...] /cmd /... >> <<path>>
     %(addtopath)=
@@ -72,7 +72,7 @@
     } ifelse
     %(addtopath final pstack:)= pstack()=
     %(addtopath exit)=
-} def
+} bind def
 
 % x y  moveto  -
 % set current point to (x,y)
@@ -80,7 +80,7 @@
     transform
     2 array astore
     << /data 3 2 roll /cmd /move >> cpath addtopath
-} def
+} bind def
 
 % dx dy  rmoveto  -
 % relative moveto
@@ -89,7 +89,7 @@
     3 2 roll add
     3 1 roll add exch
     moveto
-} def
+} bind def
 
 % x y  lineto  -
 % append straight line to (x,y)
@@ -97,7 +97,7 @@
     transform
     2 array astore
     << /data 3 2 roll /cmd /line >> cpath addtopath
-} def
+} bind def
 
 % dx dy  rlineto  -
 % relative lineto
@@ -106,7 +106,7 @@
     3 2 roll add
     3 1 roll add exch
     lineto
-} def
+} bind def
 
 % x1 y1 x2 y2 x3 y3  curveto  -
 % append Bezier cubic section
@@ -114,7 +114,7 @@
     3 { 6 2 roll transform } repeat
     6 array astore
     << /data 3 2 roll /cmd /curve >> cpath addtopath
-} def
+} bind def
 
 % dx1 dy1 dx2 dy2 dx3 dy3  rcurveto  -
 % relative curveto
@@ -125,7 +125,7 @@
         3 1 roll add exch
     } repeat
     curveto
-} def
+} bind def
 
 % x y r angle1 angle2  arc  -
 % append a circular arc to the current path
@@ -174,19 +174,19 @@ end } dup 0 5 dict put def
             << /data 3 2 roll /cmd /close >> cpath addtopath
         } ifelse
     } if
-} def
+} bind def
 
 /median { % P0 P3 = x0 y0 x1 y1
     3 -1 roll add .5 mul % x0 x1 y0+y1/2
     3 1 roll add .5 mul  % (y0+y1)/2 (x0+x1)/2
     exch % (1/2)(P0+P3)
-} def
+} bind def
 
 /dist { % P1 P2 = x1 y1 x2 y2
     3 -1 roll sub dup mul % x1 x2 (y2-y1)^2
     3 1 roll exch sub dup mul % (y2-y1)^2 (x2-x1)^2
     add sqrt % dist
-} def
+} bind def
 
 %FIXME: account for device resolution
 %calculate the pythagorean distance between the
@@ -204,7 +204,7 @@ end } dup 0 5 dict put def
     8 2 roll pop pop pop pop             % B(1/2) P0 P3
     median % B(1/2) (1/2)(P0+P3)
     dist
-} def
+} bind def
 
 /getpair { % xN yN .. x0 y0 N  getpair  xN yN .. x0 y0 xN yN
                % a0 a1 b0 b1 1
@@ -213,7 +213,7 @@ end } dup 0 5 dict put def
     index      % a0 a1 b0 b1 4 a0
     exch 1 sub % a0 a1 b0 b1 a0 3
     index      % a0 a1 b0 b1 a0 a1
-} def
+} bind def
 
 % P'0 = P0           = P0
 % P'1 = P01          = P0 P1 median
@@ -268,7 +268,7 @@ end } dup 0 5 dict put def
         << /data 3 2 roll /data get 4 2 getinterval /cmd /line >>
         cpath addtopath
     } ifelse
-} def
+} bind def
 
 /flattendict <<
     /move {
@@ -302,7 +302,7 @@ end } dup 0 5 dict put def
         } for
         pop
     } if
-} def
+} bind def
 
 /reversedict <<
     /close { % p i sp_i j sp_i_j
@@ -352,7 +352,7 @@ end } dup 0 5 dict put def
 /dopending {
     pendingdict reversedict /pending get get exec
     cpath addtopath
-} def
+} bind def
 
 /reversepath {
     cpath length 0 gt {
@@ -370,23 +370,23 @@ end } dup 0 5 dict put def
         } for
         pop
     } if
-} def
+} bind def
 
 /ptdiff { % P0 P1
     3 -1 roll sub
     3 1 roll exch sub exch % dx dy
-} def
+} bind def
 
 /magang { % dx dy  .  rad ang
     2 copy 
     dup mul exch dup mul add sqrt
     3 1 roll exch atan
-} def
+} bind def
 
 /ravec { % rad ang  .  dx dy
     dup cos 2 index mul  % rad ang rad*cos(ang)
     3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
-} def
+} bind def
 
 /strokedict <<
     /move {
@@ -439,7 +439,7 @@ end } dup 0 5 dict put def
         } for
         pop
     } if
-} def
+} bind def
 
 /maxmin {
     2 copy
@@ -447,13 +447,13 @@ end } dup 0 5 dict put def
     dup maxx gt { /maxx exch def }{ pop } ifelse
     dup miny lt { /miny exch def }{ pop } ifelse
     dup minx lt { /minx exch def }{ pop } ifelse
-} def
+} bind def
 
 /clippath {
     graphicsdict /currgstate get
         dup /clipregion get
         /currpath exch put
-} def
+} bind def
 
 /pathbbox {
     cpath length 0 eq {
@@ -477,7 +477,7 @@ end } dup 0 5 dict put def
         minx miny maxx maxy
         end
     } ifelse
-} def
+} bind def
 
 % move line curve close  pathforall  -
 % enumerate current path
@@ -516,7 +516,7 @@ begin
 end
 }
 %dup 0 5 dict put
-def
+bind def
 
 % move line curve close  .devpathforall  -
 % enumerate current path
@@ -541,6 +541,6 @@ begin
 end
 }
 %dup 0 5 dict put
-def
+bind def
 
 (eof path.ps)=
