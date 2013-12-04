@@ -619,9 +619,11 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
         {
             if (mem->garbage_collect_is_installed)
             {
-                unsigned sz_reclaimed;
+                int sz_reclaimed;
 
                 sz_reclaimed = mem->garbage_collect(mem, 1, 0);
+                if (sz_reclaimed == -1)
+                    return 0;
                 if (sz_reclaimed > sz)
                 {
                     ret = mem->free_list_alloc(mem, sz, tag, entity);

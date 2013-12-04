@@ -86,22 +86,23 @@ void unmark(Xpost_Memory_File *mem)
 
 /* set the MARK in the mark in the tab[ent] */
 static
-void markent(Xpost_Memory_File *mem,
+int markent(Xpost_Memory_File *mem,
         unsigned ent)
 {
     Xpost_Memory_Table *tab;
 
     if (ent < mem->start)
-        return;
+        return 1;
 
     tab = (void *)(mem->base);
 
     if (!xpost_memory_table_find_relative(mem,&tab,&ent))
     {
         XPOST_LOG_ERR("cannot find table for ent %u", ent);
-        return;
+        return 0;
     }
     tab->tab[ent].mark |= XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
+    return 1;
 }
 
 /* is it marked? */
@@ -190,7 +191,12 @@ int markobject(Xpost_Context *ctx,
         if (!marked(mem, o.comp_.ent, &ret))
             return 0;
         if (!ret) {
-            markent(mem, o.comp_.ent);
+            ret = markent(mem, o.comp_.ent);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot mark array");
+                return 0;
+            }
             ret = xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
             if (!ret)
             {
@@ -215,7 +221,12 @@ int markobject(Xpost_Context *ctx,
         if (!marked(mem, o.comp_.ent, &ret))
             return 0;
         if (!ret) {
-            markent(mem, o.comp_.ent);
+            ret = markent(mem, o.comp_.ent);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot mark array");
+                return 0;
+            }
             ret = xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
             if (!ret)
             {
@@ -237,14 +248,24 @@ int markobject(Xpost_Context *ctx,
             else
                 break;
         }
-        markent(mem, o.comp_.ent);
+        ret = markent(mem, o.comp_.ent);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot mark array");
+            return 0;
+        }
         break;
 
     case filetype:
         if (mem == ctx->gl) {
             printf("file found in global vm\n");
         } else {
-            markent(mem, o.mark_.padw);
+            ret = markent(mem, o.mark_.padw);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot mark array");
+                return 0;
+            }
         }
         break;
     }
@@ -304,8 +325,18 @@ next:
     for (i=0; i < s->top; i++) {
         /* markobject(ctx, mem, s->data[i]); */
         /* marksavestack(ctx, mem, s->data[i].save_.stk); */
-        markent(mem, s->data[i].saverec_.src);
-        markent(mem, s->data[i].saverec_.cpy);
+        ret = markent(mem, s->data[i].saverec_.src);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot mark array");
+            return 0;
+        }
+        ret = markent(mem, s->data[i].saverec_.cpy);
+        if (!ret)
+        {
+            XPOST_LOG_ERR("cannot mark array");
+            return 0;
+        }
         if (s->data[i].saverec_.tag == dicttype) {
             ret = xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
             if (!ret)
@@ -456,9 +487,9 @@ unsigned sweep(Xpost_Memory_File *mem)
 /* clear all marks,
    determine GLOBAL/LOCAL and mark all root stacks,
    sweep.
-   return reclaimed size
+   return reclaimed size or -1 if error occured.
  */
-unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
+int collect(Xpost_Memory_File *mem, int dosweep, int markall)
 {
     unsigned i;
     unsigned *cid;
@@ -480,7 +511,7 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
     if (!ret)
     {
         XPOST_LOG_ERR("cannot load context list");
-        return 0;
+        return -1;
     }
     cid = (void *)(mem->base + ad);
     for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
@@ -502,20 +533,20 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
         {
             XPOST_LOG_ERR("cannot load save stack for %s memory",
                     mem == ctx->gl? "global" : "local");
-            return 0;
+            return -1;
         }
         if (!marksave(ctx, mem, ad))
-            return 0;
+            return -1;
         ret = xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &ad);
         if (!ret)
         {
             XPOST_LOG_ERR("cannot load name stack for %s memory",
                     mem == ctx->gl? "global" : "local");
-            return 0;
+            return -1;
         }
         if (!markstack(ctx, mem, ad, markall))
-            return 0;
+            return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = xpost_interpreter_cid_get_context(cid[i]);
@@ -532,20 +563,20 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
         {
             XPOST_LOG_ERR("cannot load save stack for %s memory",
                     mem == ctx->gl? "global" : "local");
-            return 0;
+            return -1;
         }
         if (!marksave(ctx, mem, ad))
-            return 0;
+            return -1;
         ret = xpost_memory_table_get_addr(mem, 
                 XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &ad);
         if (!ret)
         {
             XPOST_LOG_ERR("cannot load name stack for %s memory",
                     mem == ctx->gl? "global" : "local");
-            return 0;
+            return -1;
         }
         if (!markstack(ctx, mem, ad, markall))
-            return 0;
+            return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = xpost_interpreter_cid_get_context(cid[i]);
@@ -554,25 +585,25 @@ unsigned collect(Xpost_Memory_File *mem, int dosweep, int markall)
             printf("marking os\n");
 #endif
             if (!markstack(ctx, mem, ctx->os, markall))
-                return 0;
+                return -1;
 
 #ifdef DEBUG_GC
             printf("marking ds\n");
 #endif
             if (!markstack(ctx, mem, ctx->ds, markall))
-                return 0;
+                return -1;
 
 #ifdef DEBUG_GC
             printf("marking es\n");
 #endif
             if (!markstack(ctx, mem, ctx->es, markall))
-                return 0;
+                return -1;
 
 #ifdef DEBUG_GC
             printf("marking hold\n");
 #endif
             if (!markstack(ctx, mem, ctx->hold, markall))
-                return 0;
+                return -1;
         }
     }
 
