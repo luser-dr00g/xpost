@@ -82,6 +82,7 @@ void *alloca (size_t);
 
 typedef struct fontdata
 {
+    Xpost_Font_Face *face;
 } fontdata;
 
 static
@@ -107,6 +108,7 @@ int _findfont (Xpost_Context *ctx,
     /* initialize font data, with x-scale and y-scale set to 1 */
     face = xpost_font_face_new_from_name(fname);
 
+    data.face = face;
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof data, &data);
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
