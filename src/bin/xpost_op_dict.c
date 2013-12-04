@@ -234,7 +234,12 @@ int DAget(Xpost_Context *ctx,
            Xpost_Object D,
            Xpost_Object K)
 {
-    xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, D, K));
+    Xpost_Object v;
+
+    v = bdcget(ctx, D, K);
+    if (xpost_object_get_type(v) == invalidtype)
+        return undefined;
+    xpost_stack_push(ctx->lo, ctx->os, v);
     return 0;
 }
 

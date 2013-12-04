@@ -530,7 +530,8 @@ void _onerror(Xpost_Context *ctx,
 
     if (itpdata->in_onerror) {
         fprintf(stderr, "LOOP in error handler\nabort\n");
-        exit(undefinedresult);
+        ++ctx->quit;
+        //exit(undefinedresult);
     }
 
     itpdata->in_onerror = 1;
@@ -554,6 +555,12 @@ void _onerror(Xpost_Context *ctx,
     /* printf("2\n"); */
 
     dollarerror = bdcget(ctx, sd, namedollarerror);
+    if (xpost_object_get_type(dollarerror) == invalidtype)
+    {
+        XPOST_LOG_ERR("cannot load $error dict for error: %s",
+                errorname[err]);
+        return;
+    }
     /* printf("3\n"); */
     /* FIXME: does errormsg need to be volatile ?? If no, below cast is useless */
     errmsg = (char *)errormsg;

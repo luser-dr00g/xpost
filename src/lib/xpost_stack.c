@@ -70,10 +70,13 @@ void xpost_stack_dump (Xpost_Memory_File *mem,
     {
         for (i = 0; i < s->top; i++)
         {
-            XPOST_ERROR_DUMP("%d:", a++);
+            //XPOST_ERROR_DUMP("%d:", a++);
+            printf("%d:", a++);
             xpost_object_dump(s->data[i]);
         }
         if (i != XPOST_STACK_SEGMENT_SIZE)
+            break;
+        if (s->nextseg == 0)
             break;
         s = (Xpost_Stack *)(mem->base + s->nextseg);
     }

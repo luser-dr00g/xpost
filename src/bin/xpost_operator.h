@@ -94,6 +94,7 @@ int opexec(Xpost_Context *ctx, unsigned opcode);
     bdcput(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + optadr); // recalc
 
+int breakhere(Xpost_Context *ctx);
 int initop(Xpost_Context *ctx);
 
 #endif

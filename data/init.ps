@@ -16,7 +16,7 @@ true setglobal
     length exch length exch 1 index add % a b an bn+an
     string dup 0 6 -1 roll putinterval % b an str
     dup 4 2 roll exch putinterval % (ab)
-} def
+} bind def
 
 /DATA_DIR 
     /PACKAGE_DATA_DIR dup where {
@@ -49,14 +49,14 @@ DATA_DIR print
         //=string cvs
     } if
     print
-} def
+} bind def
 /=only //=print def
 
 
 /= {
     //=print exec
     (\n) print
-} def
+} bind def
 
 %dumpnames dumpvm
 %debugloadon
@@ -448,4 +448,4 @@ false setglobal
 
 DATA_DIR (/prepr.ps) strcat run  % use nifty preview prompt!
 
-loadgraphics
+%loadgraphics

@@ -141,15 +141,21 @@ int arrput(Xpost_Memory_File *mem,
             integer i,
             Xpost_Object o)
 {
+    int ret;
     if (!xpost_save_ent_is_saved(mem, a.comp_.ent))
-        xpost_save_save_ent(mem, arraytype, a.comp_.sz, a.comp_.ent);
+        if (!xpost_save_save_ent(mem, arraytype, a.comp_.sz, a.comp_.ent))
+            return VMerror;
     if (i > a.comp_.sz)
     {
         //error(rangecheck, "arrput");
         XPOST_LOG_ERR("cannot put value in array");
-        return 0;
+        /*breakhere((Xpost_Context *)mem);*/
+        return rangecheck;
     }
-    return xpost_memory_put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
+    ret = xpost_memory_put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
+    if (!ret)
+        return VMerror;
+    return 0;
 }
 
 /** Select Xpost_Memory_File according to BANK flag,

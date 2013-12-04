@@ -445,7 +445,6 @@ call:
    which you can follow back to the main loop (gdb> next),
    just as it's about to read the next token.
  */
-static
 int breakhere(Xpost_Context *ctx)
 {
     (void)ctx;

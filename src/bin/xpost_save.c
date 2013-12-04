@@ -192,7 +192,7 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
 
 /* set tlev for ent to current save level
    push saverec relating ent to saved copy */
-void xpost_save_save_ent(Xpost_Memory_File *mem,
+int xpost_save_save_ent(Xpost_Memory_File *mem,
            unsigned tag,
            unsigned pad,
            unsigned ent)
@@ -211,7 +211,7 @@ void xpost_save_save_ent(Xpost_Memory_File *mem,
     if (!ret)
     {
         XPOST_LOG_ERR("cannot load save stack");
-        return;
+        return 0;
     }
     sav = xpost_stack_topdown_fetch(mem, adr, 0);
 
@@ -219,7 +219,7 @@ void xpost_save_save_ent(Xpost_Memory_File *mem,
     if (!ret)
     {
         XPOST_LOG_ERR("cannot find table for ent %u", ent);
-        return;
+        return 0;
     }
     tlev = sav.save_.lev;
     tab->tab[rent].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK; // clear TLEV field
@@ -232,11 +232,12 @@ void xpost_save_save_ent(Xpost_Memory_File *mem,
     if (cpy == 0)
     {
         XPOST_LOG_ERR("unable to make copy of ent %d", ent);
-        return;
+        return 0;
     }
 
     o.saverec_.cpy = cpy;
     xpost_stack_push(mem, sav.save_.stk, o);
+    return 1;
 }
 
 /* for each saverec from current save stack

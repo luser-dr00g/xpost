@@ -123,6 +123,8 @@ int _scalefont (Xpost_Context *ctx,
     struct fontdata data;
 
     privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof data, &data);
 

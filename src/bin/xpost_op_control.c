@@ -324,7 +324,12 @@ int Aexecstack(Xpost_Context *ctx,
     int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
     for (i=0; i < z; i++)
-        barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
+    {
+        int ret;
+        ret = barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
+        if (ret)
+            return ret;
+    }
     subarr = arrgetinterval(A, 0, z);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;

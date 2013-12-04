@@ -81,7 +81,7 @@ unsigned xpost_save_ent_is_saved(Xpost_Memory_File *mem, unsigned ent);
 /*
  * @brief add ent to current snapshot
  */
-void xpost_save_save_ent(Xpost_Memory_File *mem, unsigned tag, unsigned pad, unsigned ent);
+int xpost_save_save_ent(Xpost_Memory_File *mem, unsigned tag, unsigned pad, unsigned ent);
 
 /*
  * @brief rewind the stack 1 level, reverting memory to previous snapshot.

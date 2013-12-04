@@ -345,7 +345,11 @@ void dicgrow(Xpost_Context *ctx,
         dtab->tab[dent].sz = ntab->tab[nent].sz;
         ntab->tab[nent].sz = hold;
 
-        xpost_free_memory_ent(mem, n.comp_.ent);
+        if (xpost_free_memory_ent(mem, n.comp_.ent) < 0)
+        {
+            XPOST_LOG_ERR("cannot free old dict");
+            return;
+        }
     }
 }
 
@@ -525,8 +529,8 @@ Xpost_Object dicget(Xpost_Context *ctx,
     e = diclookup(ctx, mem, d, k);
     if (e == NULL || xpost_object_get_type(e[0]) == nulltype)
     {
-        error(undefined, "dicget");
-        return null;
+        //error(undefined, "dicget");
+        return invalid;
     }
     else if (xpost_object_get_type(e[1]) == magictype)
     {
@@ -552,7 +556,7 @@ Xpost_Object bdcget(Xpost_Context *ctx,
        increase nused,
        set key,
        update value. */
-void dicput(Xpost_Context *ctx,
+int dicput(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k,
@@ -562,7 +566,9 @@ void dicput(Xpost_Context *ctx,
     dichead *dp;
     unsigned int ad;
 
-    if (!xpost_save_ent_is_saved(mem, d.comp_.ent)) xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent);
+    if (!xpost_save_ent_is_saved(mem, d.comp_.ent))
+        if (!xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent))
+            return VMerror;
 
 retry:
     e = diclookup(ctx, mem, d, k);
@@ -595,9 +601,10 @@ retry:
     else if (xpost_object_get_type(e[1]) == magictype)
     {
         e[1].magic_.pair->put(ctx, d, k, v);
-        return;
+        return 0;
     }
     e[1] = v;
+    return 0;
 }
 
 /* select mfile according to BANK field,
@@ -628,12 +635,11 @@ int bdcput(Xpost_Context *ctx,
         }
     }
 
-    dicput(ctx, xpost_context_select_memory(ctx, d), d, k, v);
-    return 0;
+    return dicput(ctx, xpost_context_select_memory(ctx, d), d, k, v);
 }
 
 /* undefine key from dict */
-void dicundef(Xpost_Context *ctx,
+int dicundef(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -649,7 +655,9 @@ void dicundef(Xpost_Context *ctx,
     int lastisset = 0;
     int found = 0;
 
-    if (!xpost_save_ent_is_saved(mem, d.comp_.ent)) xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent);
+    if (!xpost_save_ent_is_saved(mem, d.comp_.ent))
+        if (!xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent))
+            return VMerror;
 
     xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
     dp = (void *)(mem->base + ad);
@@ -660,6 +668,7 @@ void dicundef(Xpost_Context *ctx,
     e = diclookup(ctx, mem, d, k); /*find slot for key */
     if (e == NULL || objcmp(ctx,e[0],null) == 0) {
         error(undefined, "dicundef");
+        return undefined;
     }
 
     /*find last chained key and value with same hash */
@@ -702,6 +711,7 @@ void dicundef(Xpost_Context *ctx,
         e[1] = null;
     }
 
+    return 0;
 }
 
 /* undefine key from banked dict */

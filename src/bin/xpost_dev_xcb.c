@@ -88,10 +88,9 @@ int _event_handler (Xpost_Context *ctx,
 
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            );
+    privatestr = bdcget(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -167,7 +166,7 @@ int _create_cont (Xpost_Context *ctx,
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
-    if (xpost_object_get_type(privatestr) == nulltype)
+    if (xpost_object_get_type(privatestr) == invalidtype)
     {
         XPOST_LOG_ERR("cannot allocat private data structure");
         return unregistered;
@@ -293,10 +292,9 @@ int _putpix (Xpost_Context *ctx,
         y = xpost_cons_int(y.real_.val);
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            );
+    privatestr = bdcget(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -353,10 +351,9 @@ int _getpix (Xpost_Context *ctx,
     PrivateData private;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            );
+    privatestr = bdcget(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -402,10 +399,9 @@ int _drawline (Xpost_Context *ctx,
         y2 = xpost_cons_int(y2.real_.val);
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            );
+    privatestr = bdcget(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -492,10 +488,9 @@ int _fillrect (Xpost_Context *ctx,
     if (y.int_.val < 0) y.int_.val = 0;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            );
+    privatestr = bdcget(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
     w = bdcget(ctx, devdic,
@@ -555,10 +550,9 @@ int _flush (Xpost_Context *ctx,
     PrivateData private;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            );
+    privatestr = bdcget(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             privatestr.comp_.ent, 0, sizeof private, &private);
 
@@ -584,10 +578,9 @@ int _destroy (Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
-    privatestr = bdcget(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            );
+    privatestr = bdcget(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
             sizeof private, &private);
 

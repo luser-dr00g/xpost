@@ -151,8 +151,7 @@ int Aput(Xpost_Context *ctx,
           Xpost_Object I,
           Xpost_Object O)
 {
-    barput(ctx, A, I.int_.val, O);
-    return 0;
+    return barput(ctx, A, I.int_.val, O);
 }
 
 /* array index count  getinterval  subarray
@@ -213,6 +212,7 @@ int Aastore (Xpost_Context *ctx,
     Xpost_Object t;
     int i;
     unsigned int cnt;
+    int ret;
 
     cnt = xpost_stack_count(ctx->lo, ctx->os);
     if (cnt < A.comp_.sz)
@@ -222,8 +222,9 @@ int Aastore (Xpost_Context *ctx,
         t = xpost_stack_pop(ctx->lo, ctx->os);
         //if (xpost_object_get_type(t) == invalidtype)
             //return stackunderflow;
-        if (!barput(ctx, A, i, t))
-            return VMerror;
+        ret = barput(ctx, A, i, t);
+        if (ret)
+            return ret;
     }
     xpost_stack_push(ctx->lo, ctx->os, A);
     return 0;
