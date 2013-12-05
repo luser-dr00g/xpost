@@ -531,7 +531,7 @@ int xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
 }
 
 int xpost_memory_register_garbage_collect_function(Xpost_Memory_File *mem,
-    unsigned int (*garbage_collect)(struct Xpost_Memory_File *mem, int dosweep, int markall))
+    int (*garbage_collect)(struct Xpost_Memory_File *mem, int dosweep, int markall))
 {
     mem->garbage_collect = garbage_collect;
     mem->garbage_collect_is_installed = 1;
@@ -567,10 +567,10 @@ int _xpost_memory_table_alloc_new (Xpost_Memory_File *mem,
 
     ent = tab->nextent;
     ++tab->nextent;
-    if (ent > (1 << (sizeof(word)*8)) - 1)
+    if (ent > XPOST_OBJECT_COMP_MAX_ENT)
     {
         XPOST_LOG_ERR("Warning: ent number %u exceed object storage max %u",
-                ent, (1 << (sizeof(word)*8)) - 1);
+                ent, XPOST_OBJECT_COMP_MAX_ENT);
     }
 
     if (!xpost_memory_file_alloc(mem, sz, &adr))

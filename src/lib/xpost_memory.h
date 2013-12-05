@@ -138,7 +138,7 @@ typedef struct Xpost_Memory_File
                            unsigned int *entity);
 
     int garbage_collect_is_installed;
-    unsigned int (*garbage_collect)(struct Xpost_Memory_File *mem,
+    int (*garbage_collect)(struct Xpost_Memory_File *mem,
                                     int dosweep,
                                     int markall);
 } Xpost_Memory_File;
@@ -294,7 +294,7 @@ int xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
     int (*free_list_alloc)(struct Xpost_Memory_File *mem, unsigned sz, unsigned tag, unsigned int *entity));
 
 int xpost_memory_register_garbage_collect_function(Xpost_Memory_File *mem,
-    unsigned int (*garbage_collect)(struct Xpost_Memory_File *mem, int dosweep, int markall));
+    int (*garbage_collect)(struct Xpost_Memory_File *mem, int dosweep, int markall));
 
 /**
  * @brief Allocate memory, returns table index.
