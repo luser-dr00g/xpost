@@ -284,7 +284,7 @@ int Freadline (Xpost_Context *ctx,
     int n, c = ' ';
     if (!filestatus(ctx->lo, F))
         return ioerror;
-    if (!xpost_object_is_writeable(F))
+    if (!xpost_object_is_readable(F))
         return invalidaccess;
     f = filefile(ctx->lo, F);
     s = charstr(ctx, S);
