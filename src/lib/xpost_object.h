@@ -128,7 +128,8 @@ typedef enum
     XPOST_OBJECT_TAG_DATA_EXTENDED_INT_OFFSET,
     XPOST_OBJECT_TAG_DATA_EXTENDED_REAL_OFFSET,
     XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD_OFFSET,
-    XPOST_OBJECT_TAG_DATA_NBITS,  /* this MUST be < 16, the size of the tag field */
+    XPOST_OBJECT_TAG_EXTRA_BITS,
+    XPOST_OBJECT_TAG_DATA_NBITS = XPOST_OBJECT_TAG_EXTRA_BITS,  /* this MUST be < 16, the size of the tag field */
 
     XPOST_OBJECT_TAG_DATA_FLAG_VALID =
         01 << XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET,
@@ -280,6 +281,7 @@ typedef struct
                     object offset in array,
                     index in dict (only during `forall` operator) */
 } Xpost_Object_Comp;
+#define XPOST_OBJECT_COMP_MAX_ENT ((1 << (sizeof(word)*8)) - 1)
 
 /**
  * @struct Xpost_Object_Save
@@ -467,6 +469,18 @@ Xpost_Object_Type xpost_object_get_type (Xpost_Object obj);
  */
 int xpost_object_is_composite (Xpost_Object obj);
 
+/**
+ * @brief Yield the ent number (memory table index)
+ *        for a composite object.
+ * @return ent number or -1 if not composite.
+ */
+int xpost_object_get_ent(Xpost_Object obj);
+
+/**
+ * @brief set the ent number in the object.
+ */
+Xpost_Object xpost_object_set_ent(Xpost_Object obj,
+                                  unsigned int ent);
 
 /**
  * @brief Determine whether the object is executable or not.

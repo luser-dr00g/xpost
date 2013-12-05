@@ -150,6 +150,22 @@ int xpost_object_is_composite (Xpost_Object obj)
     return 0;
 }
 
+int xpost_object_get_ent(Xpost_Object obj)
+{
+    if (!xpost_object_is_composite(obj))
+        return -1;
+    return obj.comp_.ent;
+}
+
+Xpost_Object xpost_object_set_ent(Xpost_Object obj,
+                                  unsigned int ent)
+{
+    if (!xpost_object_is_composite(obj))
+        return invalid;
+    obj.comp_.ent = ent;
+    return obj;
+}
+
 int xpost_object_is_exe(Xpost_Object obj)
 {
     return !(obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_LIT);
