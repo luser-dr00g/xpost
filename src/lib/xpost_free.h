@@ -80,7 +80,7 @@ typedef enum {
 /**
  * Maximum size to accept from an allocation relative to the size requested
  */
-#define XPOST_FREE_ACCEPT_OVERSIZE 5
+#define XPOST_FREE_ACCEPT_OVERSIZE 8
 #define XPOST_FREE_ACCEPT_DENOM 1
 
 /**
