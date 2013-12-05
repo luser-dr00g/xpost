@@ -241,9 +241,12 @@ _xpost_log_fprint_cb(FILE *stream,
                      void *data, /* later for XML output */
                      va_list args)
 {
+    va_list args_copy;
     char *str;
     int res;
     int s;
+
+    va_copy(args_copy, args);
 
     s = vsnprintf(NULL, 0, fmt, args);
     if (s == -1)
@@ -253,7 +256,7 @@ _xpost_log_fprint_cb(FILE *stream,
     if (!str)
         return;
 
-    s = vsnprintf(str, s + 1, fmt, args);
+    s = vsnprintf(str, s + 1, fmt, args_copy);
     if (s == -1)
     {
         free(str);
