@@ -88,9 +88,12 @@ def
     /f exch def
     /p exch def
     /n p length 1 sub def
-    %(n=)print n =
-    n 0 gt {
+    /DEBUGCLIP where { pop
+        (n=)print n =
+    } if
+    n 0 gt { % else nothing to do.
 
+    % P = p[n-1] to start !!No. our poly has a duplicate point at the end
     %/P p n 1 sub get def
     %/d P length 1 sub def
     /P p 0 get def
@@ -99,18 +102,24 @@ def
         p 1 1 index length 1 sub getinterval {
             /Q exch def
             /fQ Q aload pop f evaluate def
-            %(P=)print P ==
-            %(Q=)print Q ==
-            %(fP=)print fP ==
-            %(fQ=)print fQ ==
+            /DEBUGCLIP where { pop
+                (P=)print P ==
+                (Q=)print Q ==
+                (fP=)print fP ==
+                (fQ=)print fQ ==
+            } if
             fP 0 le {
                 counttomark 0 eq {
                     P
-                    %(P)=
+                    /DEBUGCLIP where { pop
+                        (P)=
+                    } if
                 } if
                 fQ 0 le {
                     Q
-                    %(Q)=
+                    /DEBUGCLIP where { pop
+                        (Q)=
+                    } if
                 }{
                     fP 0 lt {
                         /QP fQ fP sub def
@@ -118,7 +127,9 @@ def
                             fQ P 0 get mul fP Q 0 get mul sub QP div
                             fQ P 1 get mul fP Q 1 get mul sub QP div
                         ]
-                        %(I)=
+                        /DEBUGCLIP where { pop
+                            (I)=
+                        } if
                     } if
                 } ifelse
             }{
@@ -129,17 +140,23 @@ def
                             fQ P 0 get mul fP Q 0 get mul sub QP div
                             fQ P 1 get mul fP Q 1 get mul sub QP div
                         ]
-                        %(I)=
+                        /DEBUGCLIP where { pop
+                            (I)=
+                        } if
                     } if
                     Q
-                    %(Q)=
+                    /DEBUGCLIP where { pop
+                        (Q)=
+                    } if
                 } if
             } ifelse
             /P Q def
             /fP fQ def
         } forall
     ]
-    %dup ==
+    /DEBUGCLIP where { pop
+        dup ==
+    } if
 
     }{ % n==0
         p
@@ -191,9 +208,11 @@ end } def
         .devpathforall
     ] def
 
-    %(doclip)=
-    %(PA: )print PA ==
-    %(CR: )print CR ==
+    /DEBUGCLIP where { pop
+        (doclip)=
+        (PA: )print PA ==
+        (CR: )print CR ==
+    } if
 
     CR { % one clipping polygon
         dup dup length 1 sub get % polygon final-point
@@ -202,7 +221,9 @@ end } def
             /V exch def
             [ U aload pop V aload pop p2abc ]  % clip-line
             /CL exch def
-            %CL ==
+            /DEBUGCLIP where { pop
+                CL ==
+            } if
 
             /PA [ PA { % one subject polygon
                 CL hodgman-sutherland
@@ -212,7 +233,11 @@ end } def
         } forall
     } forall
     newpath
-    %PA ==
+
+    /DEBUGCLIP where { pop
+        PA ==
+    } if
+
     PA {
         dup length 0 gt {
             dup 0 get << /data 3 2 roll /cmd /move >> cpath addtopath
