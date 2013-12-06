@@ -178,12 +178,12 @@ int Freadhexstring (Xpost_Context *ctx,
         do {
             c[0] = fgetc(f);
             if (c[0] == EOF) ++eof;
-        } while(!eof && strchr(hex, c[0]) == NULL);
+        } while(!eof && strchr(hex, c[0]) != NULL);
         if (!eof) {
             do {
                 c[1] = fgetc(f);
                 if (c[1] == EOF) ++eof;
-            } while(!eof && strchr(hex, c[1]) == NULL);
+            } while(!eof && strchr(hex, c[1]) != NULL);
         } else {
             c[1] = '0';
         }
@@ -214,9 +214,9 @@ int Fwritehexstring (Xpost_Context *ctx,
     s = charstr(ctx, S);
 
     for(n=0; n < S.comp_.sz; n++) {
-        if (fputc(hex[s[n] / 16], f))
+        if (fputc(hex[s[n] / 16], f) == EOF)
             return ioerror;
-        if (fputc(hex[s[n] % 16], f))
+        if (fputc(hex[s[n] % 16], f) == EOF)
             return ioerror;
     }
     return 0;
