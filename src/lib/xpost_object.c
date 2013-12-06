@@ -154,7 +154,9 @@ int xpost_object_get_ent(Xpost_Object obj)
 {
     if (!xpost_object_is_composite(obj))
         return -1;
-    return obj.comp_.ent;
+    return (unsigned int)obj.comp_.ent +
+        ((obj.comp_.tag >> XPOST_OBJECT_TAG_DATA_EXTRA_BITS)
+         << (8*sizeof(word)));
 }
 
 Xpost_Object xpost_object_set_ent(Xpost_Object obj,
@@ -163,6 +165,9 @@ Xpost_Object xpost_object_set_ent(Xpost_Object obj,
     if (!xpost_object_is_composite(obj))
         return invalid;
     obj.comp_.ent = ent;
+    obj.comp_.tag &= (1 << XPOST_OBJECT_TAG_DATA_EXTRA_BITS) - 1;
+    obj.comp_.tag |= (ent >> (8*sizeof(word)))
+        << XPOST_OBJECT_TAG_DATA_EXTRA_BITS;
     return obj;
 }
 

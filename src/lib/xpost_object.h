@@ -284,7 +284,7 @@ typedef struct
                     object offset in array,
                     index in dict (only during `forall` operator) */
 } Xpost_Object_Comp;
-#define XPOST_OBJECT_COMP_MAX_ENT ((1 << (sizeof(word)*8)) - 1)
+#define XPOST_OBJECT_COMP_MAX_ENT ((1 << (sizeof(word)*8 + XPOST_OBJECT_TAG_EXTRA_BITS_SIZE)) - 1)
 
 /**
  * @struct Xpost_Object_Save
