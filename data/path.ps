@@ -388,6 +388,16 @@ end } dup 0 5 dict put def
     3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
 } bind def
 
+%
+% replace lineto segments . with 
+%                         |
+%                         |
+%       1 lineto --.-- closepath 5
+%       2 lineto |   |
+%                |   | lineto 4
+%                |----
+%          3 lineto     moveto 6
+%
 /strokedict <<
     /move {
         strokedict /cp 2 index /data get put
