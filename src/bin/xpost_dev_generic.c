@@ -192,9 +192,15 @@ int _fillpoly (Xpost_Context *ctx,
        //generically, we construct the loop body dynamically.
 
        //first push the number of elements
+       //we're using a repeat loop which looks like:
+       //    count proc  -repeat- 
+       //
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(numlines));
 
+       //then push a mark object to begin array construction
+       //this array is our loop body
         xpost_stack_push(ctx->lo, ctx->os, mark);
+
        //the loop body finds the 4 coordinate numbers on the stack
        //and must roll the color values beneath these numbers on the stack 
 
@@ -220,7 +226,11 @@ int _fillpoly (Xpost_Context *ctx,
           //just need to push the devdic and DrawLine
          
         xpost_stack_push(ctx->lo, ctx->os, devdic);
-        xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, devdic, consname(ctx, "DrawLine")));
+        Xpost_Object drawline = bdcget(ctx, devdic, consname(ctx, "DrawLine");
+        xpost_stack_push(ctx->lo, ctx->os, drawline));
+        //if drawline is a procedure, we also need to call exec
+        if (xpost_object_get_type(drawline) == arraytype)
+            xpost_stack_push(ctx->lo, ctx->os, consname(ctx, "exec"));
 
        //Then construct the loop-body procedure array.
            xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "]")));
@@ -237,8 +247,8 @@ int _fillpoly (Xpost_Context *ctx,
         //from the order in which we desire them to execute.
         //What we're doing is:
 
-        //opstack> xy xy xy xy xy xy xy xy xy [ comp1 5 1 roll DEVICE DrawLine (exec)?
-        //                                    [ comp1 comp2 comp3 7 3 roll DEVICE DrawLine (exec)?
+        //opstack> xyxy xyxy xyxy ... xyxy [ comp1 5 1 roll DEVICE DrawLine (exec)?
+        //                                 [ comp1 comp2 comp3 7 3 roll DEVICE DrawLine (exec)?
         //execstack> repeat cvx ]
         //                      ^ construct array
         //                   ^ make executable
@@ -250,6 +260,8 @@ int _fillpoly (Xpost_Context *ctx,
            xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "cvx")));
            xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "]")));
 
+        //performance could be increased by factoring-out calls to consname()
+        //or using opcode shortcuts.
 #endif
 }
 
