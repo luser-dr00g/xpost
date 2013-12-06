@@ -127,6 +127,9 @@ int main(int argc, char *argv[])
     const char *filename = argv[0];
     int i;
 
+    printf("EXTRA_BITS_SIZE = %d\n", XPOST_OBJECT_TAG_EXTRA_BITS_SIZE);
+    printf("COMP_MAX_ENT = %d\n", XPOST_OBJECT_COMP_MAX_ENT);
+
 #ifdef _WIN32
     device = "GDI";
 #elif defined HAVE_XCB
