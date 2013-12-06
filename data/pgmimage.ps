@@ -303,6 +303,7 @@ DATA_DIR(/qsort.ps)strcat run
         %dup ==()=
 
         (sort scanline intersection list)=
+        {
         dup { % comparitor  % [x1 y1] [x2 y2] . bool
             1 index 1 get
             1 index 1 get
@@ -316,7 +317,11 @@ DATA_DIR(/qsort.ps)strcat run
                 lt             % (y1 < y2)
             } ifelse
         } qsort   % [sorted-list-of-intersections]
-        %dup ==()=
+        } pop
+        dup .yxsort
+        /DEBUGFILL where { pop
+            dup ==()=
+        } if
 
         %(%lineedit)(r)file pop %pause
 
