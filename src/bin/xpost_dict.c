@@ -159,10 +159,10 @@ cont:
                                 (signed)(L.mark_.padw - R.mark_.padw):
                                     (signed)((L.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK) - (R.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK));
 
-        case dicttype: /*@fallthrough@*/ /*return !( L.comp_.ent == R.comp_.ent ); */
+        case dicttype: /*@fallthrough@*/ /*return !( xpost_object_get_ent(L) == xpost_object_get_ent(R) ); */
         case arraytype: return !( L.comp_.sz == R.comp_.sz
                                 && (L.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK) == (R.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)
-                                && L.comp_.ent == R.comp_.ent
+                                && xpost_object_get_ent(L) == xpost_object_get_ent(R)
                                 && L.comp_.off == R.comp_.off ); /* 0 if all eq */
 
         case stringtype: return L.comp_.sz == R.comp_.sz ?
@@ -180,7 +180,7 @@ unsigned hash(Xpost_Object k)
             | (k.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
             << 1) /* ignore flags (except BANK!) */
         + (k.comp_.sz << 3)
-        + (k.comp_.ent << 7)
+        + (xpost_object_get_ent(k) << 7)
         + (k.comp_.off << 5);
     /* h = xpost_object_get_type(k); /\* test collisions. *\/ */
 #ifdef DEBUGDIC
@@ -222,10 +222,11 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
         XPOST_LOG_ERR("cannot allocate dictionary");
         return null;
     }
-    d.comp_.ent = ent;
+    //d.comp_.ent = ent;
+    d = xpost_object_set_ent(d, ent);
 
     tab = (void *)(mem->base);
-    rent = d.comp_.ent;
+    rent = ent;
     xpost_memory_table_find_relative(mem, &tab, &rent);
     xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     cnt = xpost_stack_count(mem, vs);
@@ -234,7 +235,7 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
             | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET)
             | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET) );
 
-    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
+    xpost_memory_table_get_addr(mem, ent, &ad);
     dp = (void *)(mem->base + ad); /* clear header */
     dp->tag = dicttype;
     dp->sz = sz;
@@ -272,7 +273,7 @@ unsigned diclength(Xpost_Memory_File *mem,
 {
     unsigned int da;
     dichead *dp;
-    xpost_memory_table_get_addr(mem, d.comp_.ent, &da);
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &da);
     dp = (void *)(mem->base + da);
     return dp->nused;
 }
@@ -283,7 +284,7 @@ unsigned dicmaxlength(Xpost_Memory_File *mem,
 {
     unsigned int da;
     dichead *dp;
-    xpost_memory_table_get_addr(mem, d.comp_.ent, &da);
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &da);
     dp = (void *)(mem->base + da);
     return dp->sz;
 }
@@ -311,7 +312,7 @@ int dicgrow(Xpost_Context *ctx,
 #endif
     n = consdic(mem, newsz = 2 * dicmaxlength(mem, d));
 
-    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     sz = (dp->sz + 1);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
@@ -330,8 +331,8 @@ int dicgrow(Xpost_Context *ctx,
         unsigned dent, nent;
         unsigned hold;
 
-        dent = d.comp_.ent;
-        nent = n.comp_.ent;
+        dent = xpost_object_get_ent(d);
+        nent = xpost_object_get_ent(n);
         xpost_memory_table_find_relative(mem, &dtab, &dent);
         xpost_memory_table_find_relative(mem, &ntab, &nent);
 
@@ -371,7 +372,7 @@ void dumpdic(Xpost_Memory_File *mem,
     unsigned sz;
     unsigned i;
 
-    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
     sz = (dp->sz + 1);
@@ -481,7 +482,7 @@ Xpost_Object *diclookup(Xpost_Context *ctx,
 
     k = clean_key(ctx, k);
 
-    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
     sz = (dp->sz + 1);
@@ -568,8 +569,8 @@ int dicput(Xpost_Context *ctx,
     unsigned int ad;
     int ret;
 
-    if (!xpost_save_ent_is_saved(mem, d.comp_.ent))
-        if (!xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent))
+    if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
+        if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
             return VMerror;
 
     e = diclookup(ctx, mem, d, k);
@@ -606,7 +607,7 @@ int dicput(Xpost_Context *ctx,
                 return VMerror;
 
         }
-        xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
+        xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
         dp = (void *)(mem->base + ad);
         ++ dp->nused;
         e[0] = clean_key(ctx, k);
@@ -668,11 +669,11 @@ int dicundef(Xpost_Context *ctx,
     int lastisset = 0;
     int found = 0;
 
-    if (!xpost_save_ent_is_saved(mem, d.comp_.ent))
-        if (!xpost_save_save_ent(mem, dicttype, 0, d.comp_.ent))
+    if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
+        if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
             return VMerror;
 
-    xpost_memory_table_get_addr(mem, d.comp_.ent, &ad);
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
 

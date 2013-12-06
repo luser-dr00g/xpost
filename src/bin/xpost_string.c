@@ -70,7 +70,8 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
     }
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;
-    o.comp_.ent = ent;
+    //o.comp_.ent = ent;
+    o = xpost_object_set_ent(o, ent);
     o.comp_.off = 0;
 
     return o;
@@ -104,7 +105,7 @@ char *charstr(Xpost_Context *ctx,
 {
     Xpost_Memory_File *f;
     Xpost_Memory_Table *tab;
-    unsigned ent = S.comp_.ent;
+    unsigned ent = xpost_object_get_ent(S);
     f = xpost_context_select_memory(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
     xpost_memory_table_find_relative(f, &tab, &ent);
     return (void *)(f->base + tab->tab[ent].adr + S.comp_.off);
@@ -120,7 +121,7 @@ void strput(Xpost_Memory_File *mem,
     byte b = c;
     int ret;
 
-    ret = xpost_memory_put(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
+    ret = xpost_memory_put(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
         error(rangecheck, "strput");
@@ -144,7 +145,7 @@ integer strget(Xpost_Memory_File *mem,
     byte b;
     int ret;
 
-    ret = xpost_memory_get(mem, s.comp_.ent, s.comp_.off + i, 1, &b);
+    ret = xpost_memory_get(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
         error(rangecheck, "strget cannot access byte in string");

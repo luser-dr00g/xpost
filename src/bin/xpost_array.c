@@ -28,7 +28,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/** \file ar.c
+/** \file xpost_array.c
    array functions
 */
 
@@ -111,8 +111,9 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
         | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED
                 << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = (word)sz;
-    o.comp_.ent = (word)ent;
+    //o.comp_.ent = (word)ent;
     o.comp_.off = 0;
+    o = xpost_object_set_ent(o, ent);
     return o;
 } 
 
@@ -142,8 +143,8 @@ int arrput(Xpost_Memory_File *mem,
             Xpost_Object o)
 {
     int ret;
-    if (!xpost_save_ent_is_saved(mem, a.comp_.ent))
-        if (!xpost_save_save_ent(mem, arraytype, a.comp_.sz, a.comp_.ent))
+    if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(a)))
+        if (!xpost_save_save_ent(mem, arraytype, a.comp_.sz, xpost_object_get_ent(a)))
             return VMerror;
     if (i > a.comp_.sz)
     {
@@ -152,7 +153,7 @@ int arrput(Xpost_Memory_File *mem,
         /*breakhere((Xpost_Context *)mem);*/
         return rangecheck;
     }
-    ret = xpost_memory_put(mem, a.comp_.ent, (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
+    ret = xpost_memory_put(mem, xpost_object_get_ent(a), (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
     if (!ret)
         return VMerror;
     return 0;
@@ -185,7 +186,7 @@ Xpost_Object arrget(Xpost_Memory_File *mem,
     Xpost_Object o;
     int ret;
 
-    ret = xpost_memory_get(mem, a.comp_.ent, (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
+    ret = xpost_memory_get(mem, xpost_object_get_ent(a), (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
     if (!ret)
     {
         error(rangecheck, "arrget");

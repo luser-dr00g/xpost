@@ -322,11 +322,11 @@ int Dcopy(Xpost_Context *ctx,
 
     mem = xpost_context_select_memory(ctx, S);
     sz = dicmaxlength(mem, S);
-    ret = xpost_memory_table_get_addr(mem, S.comp_.ent, &ad);
+    ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(S), &ad);
     if (!ret)
     {
         XPOST_LOG_ERR("cannot retrieve address for dict ent %u",
-                S.comp_.ent);
+                xpost_object_get_ent(S));
         return VMerror;
     }
     tp = (void *)(mem->base + ad + sizeof(dichead));
@@ -354,11 +354,11 @@ int DPforall (Xpost_Context *ctx,
         Xpost_Object *tp;
         int ret;
 
-        ret = xpost_memory_table_get_addr(mem, D.comp_.ent, &ad);
+        ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(D), &ad);
         if (!ret)
         {
             XPOST_LOG_ERR("cannot retrieve address for dict ent %u",
-                    D.comp_.ent);
+                    xpost_object_get_ent(D));
             return VMerror;
         }
         tp = (void *)(mem->base + ad + sizeof(dichead)); 

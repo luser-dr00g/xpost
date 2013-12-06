@@ -82,7 +82,7 @@ void _psmat2xmat (Xpost_Context *ctx,
     Xpost_Object arr[6];
     int i;
     xpost_memory_get(xpost_context_select_memory(ctx, psm),
-            psm.comp_.ent, 0, sizeof arr, arr);
+            xpost_object_get_ent(psm), 0, sizeof arr, arr);
     for (i=0; i < 6; i++)
     {
         if (xpost_object_get_type(arr[i]) == integertype)
@@ -126,7 +126,7 @@ void _xmat2psmat (Xpost_Context *ctx,
         xpost_cons_real(m->yz)
     };
     xpost_memory_put(xpost_context_select_memory(ctx, psm),
-            psm.comp_.ent, 0, sizeof arr, arr);
+            xpost_object_get_ent(psm), 0, sizeof arr, arr);
 
     /*
     barput(ctx, psm, 0, xpost_cons_real(m->xx));
