@@ -1,0 +1,117 @@
+(loading paint.ps)=
+
+% Painting Operators
+
+% -  erasepage  -
+% paint current page white
+/erasepage {
+    (erasepage)=
+    %gsave
+    %    initclip
+    %    1 setgray
+    %    clippath fill
+    %grestore
+    gsave
+        1 setgray
+        currentcolordict DEVICE /nativecolorspace get get exec
+        0 0 DEVICE /dimensions get aload pop
+        %exch 1 sub exch 1 sub
+        %pstack()=
+        DEVICE dup /FillRect get exec
+        flushpage
+    grestore
+} def
+
+% -  fill  -
+% fill current path with current color
+/fill {
+    closepath
+    flattenpath
+    doclip
+    %[ { 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall ]
+    [
+        [ % mark
+        {
+            2 array astore % ... mark ... [x0 y0]
+            counttomark 1 ne {
+                counttomark 1 add 1 roll % ... [x0 y0] mark ...
+                ] exch % ... [ ... ] [x0 y0]
+                [ exch % ... [ ... ] [ [x0 y0]
+            } if % ... +++ mark [x0 y0]
+        }
+        { 2 array astore } % ... mark [x0 y0] ... [xN yN]
+        {}
+        { counttomark 1 sub index } % ... mark [x0 y0] ... [x0 y0]
+        .devpathforall
+        ]
+        dup length 0 eq {pop} if
+    ]
+    /DEBUGFILL where { pop
+        (fill)=
+        pstack()=
+    } if
+    {
+        dup length 2 gt {
+            [ currentcolordict DEVICE /nativecolorspace get get exec
+            counttomark 2 add -1 roll
+            DEVICE dup /FillPoly get exec
+            pop
+            %pstack()=
+            flushpage
+        }{
+            pop
+        } ifelse
+    } forall
+
+    newpath
+} def
+
+% -  eofill  -
+% fill using even-odd rule
+/eofill {
+} def
+
+% -  stroke  -
+% draw line along current path
+/stroke {
+    currentlinewidth 0 eq {
+        flattenpath
+        doclip
+        mark
+        {          % x0 y0 
+            2 copy % x0 y0 x0 y0
+            %pstack(M)=
+        }
+        {          % ... xN-1 yN-1 xN yN
+            4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
+            [ currentcolordict DEVICE /nativecolorspace get get exec
+            counttomark 5 add -4 roll
+            %5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
+            %pstack(L)=
+            DEVICE dup /DrawLine get exec  % ... xN-1 yN-1 xN yN
+            pop
+            4 2 roll pop pop % ... xN yN
+        }
+        {}
+        {            % x0 y0 xN yN
+            4 2 roll % xN yN x0 y0
+            [ currentcolordict DEVICE /nativecolorspace get get exec
+            counttomark 5 add -4 roll
+            %5 1 roll % gray xN yN x0 y0
+            %pstack(C)=
+            DEVICE dup /DrawLine get exec  % -
+            pop
+        }
+        .devpathforall
+        cleartomark
+    }{
+        strokepath
+        fill
+    } ifelse
+
+    flushpage
+
+    newpath
+} def
+
+(eof paint.ps)=

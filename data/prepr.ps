@@ -1,0 +1,65 @@
+%!
+% prepr.ps
+% preview-prompt
+% If the stack is empty, it displays the standard, Adobe prompt
+% PS>
+% But if the stack is not empty, the prompt will contain a digest
+% of the stack contents, single letters for most types,
+% t or f for booleans, 0-9 for the integers 0-9 respectively,
+% + for integers 10 and above. - for integers below zero
+% Capital Letters for Composite Objects
+% lowercase letters for simple objects
+%
+
+1 dict begin
+/ti [
+    %simple
+    /nulltype     { pop (#) print }
+    /marktype     { pop ([) print }
+    /nametype     { xcheck { (\\) } { (/) } ifelse print }
+    /integertype  { dup 0 lt { pop (-) print }{
+            dup 10 lt { ( ) cvs print }{ pop (+) print } ifelse
+        } ifelse }
+    /realtype     { pop (r) print }
+    /booleantype  { { (t) }{ (f) } ifelse print }
+    /fonttype     { pop ($) print }
+    %composite
+    /arraytype    { xcheck { ( ) dup 0 16#7D put }{ (]) } ifelse print }
+    /stringtype   { pop (S) print }
+    /packedarraytype { pop (A) print }
+    /dicttype     { pop (D) print }
+    /filetype     { pop (F) print }
+    /operatortype { pop (O) print }
+    /savetype     { pop (V) print }
+    /default      { pop (?) print }
+%attempt to use the level-2 dict constructor >>
+{ (>>) cvx cvn exec def } stopped { pop
+    %level-1 workaround
+    counttomark 2 idiv dup dict begin { def } repeat
+    cleartomark currentdict end def
+} if
+
+
+/prompt {
+    (PS) print
+    count
+    dup 0 eq {
+        pop
+    }{
+        (<) print
+        dup 1 add copy % ... n ... n
+        -1 1 {
+            -1 roll
+            //ti 1 index type
+            2 copy known not { pop /default } if
+            get exec
+        } for
+        pop
+    } ifelse
+    (>) print
+    flush
+}
+end def
+
+%/undef where { pop currentdict /ti undef } if
+
