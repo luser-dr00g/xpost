@@ -154,6 +154,10 @@ int _fillpoly (Xpost_Context *ctx,
     int numlines;
     Xpost_Object x1, y1, x2, y2;
     Xpost_Object drawline;
+    struct point {
+        int x, y;
+    } *points;
+    int i;
 
     colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
     if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
@@ -174,8 +178,26 @@ int _fillpoly (Xpost_Context *ctx,
         return unregistered;
     }
 
+    /* extract polygon vertices from ps array */
+    points = alloca(poly.comp_.sz * sizeof *points);
+    for (i=0; i < poly.comp_.sz; i++)
+    {
+        Xpost_Object pair, x, y;
+        pair = barget(ctx, poly, i);
+        x = barget(ctx, pair, 0);
+        y = barget(ctx, pair, 1);
+        if (xpost_object_get_type(x) == realtype)
+            x = xpost_cons_int(x.real_.val);
+        if (xpost_object_get_type(y) == realtype)
+            y = xpost_cons_int(y.real_.val);
+
+        points[i].x = x.int_.val;
+        points[i].y = y.int_.val;
+    }
+
     /* compute scanline intersections and arrange ((x1,y1),(x2,y2)) pairs
      */
+
 
     /*call the device's DrawLine generically with continuations */
 
@@ -270,6 +292,7 @@ int _fillpoly (Xpost_Context *ctx,
     /*performance could be increased by factoring-out calls to consname()
       or using opcode shortcuts.
      */
+    return 0;
 }
 
 int initdevgenericops (Xpost_Context *ctx,
