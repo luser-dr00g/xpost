@@ -143,6 +143,36 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
     return 0;
 }
 
+static
+int _fillpoly (Xpost_Context *ctx,
+               Xpost_Object poly,
+               Xpost_Object devdic)
+{
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+
+    colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
+    if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = xpost_stack_pop(ctx->lo, ctx->os);
+    }
+    else if (objcmp(ctx, colorspace, consname(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp3 = xpost_stack_pop(ctx->lo, ctx->os);
+        comp2 = xpost_stack_pop(ctx->lo, ctx->os);
+        comp1 = xpost_stack_pop(ctx->lo, ctx->os);
+    }
+    else 
+    {
+        XPOST_LOG_ERR("unimplemented device color space");
+        return unregistered;
+    }
+
+}
+
 int initdevgenericops (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
@@ -155,6 +185,7 @@ int initdevgenericops (Xpost_Context *ctx,
     optab = (oper *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, ".yxsort", _yxsort, 0, 1, arraytype); INSTALL;
+    op = consoper(ctx, ".fillpoly", _fillpoly, 0, 2, arraytype, dicttype); INSTALL;
 
     return 0;
 }
