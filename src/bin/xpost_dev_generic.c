@@ -171,6 +171,86 @@ int _fillpoly (Xpost_Context *ctx,
         return unregistered;
     }
 
+    /* compute scanline intersections and arrange ((x1,y1),(x2,y2)) pairs
+     */
+
+#if 0
+       //we can call the device's DrawLine genericly with continuations
+
+       //exch call to DrawLine looks like this
+       //comp1 (comp2 comp3)? x1 y1 x2 y2 DEVICE >-- DrawLine
+       //So what we'll do is push all the points on the stack
+
+       //for each line
+        xpost_stack_push(ctx->lo, ctx->os, x1);
+        xpost_stack_push(ctx->lo, ctx->os, y1);
+        xpost_stack_push(ctx->lo, ctx->os, x2);
+        xpost_stack_push(ctx->lo, ctx->os, y2);
+
+       //then we'll use a repeat loop to call DrawLine
+       //on each set of 4 numbers. But in order to treat the color space
+       //generically, we construct the loop body dynamically.
+
+       //first push the number of elements
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(numlines));
+
+        xpost_stack_push(ctx->lo, ctx->os, mark);
+       //the loop body finds the 4 coordinate numbers on the stack
+       //and must roll the color values beneath these numbers on the stack 
+
+        switch (ncomp) {
+        case 1:
+            xpost_stack_push(ctx->lo, ctx->os, comp1);
+            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(5)); /* total elements to roll */
+            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(1)); /* color components to move */
+            break;
+        case 3:
+            xpost_stack_push(ctx->lo, ctx->os, comp1);
+            xpost_stack_push(ctx->lo, ctx->os, comp2);
+            xpost_stack_push(ctx->lo, ctx->os, comp3);
+            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(7)); /* total elements to roll */
+            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(3)); /* color components to move */
+            break;
+        }
+        xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, "roll")));
+          //at this point we have the desired stack picture:
+          //
+          //     comp1 (comp2 comp3)? x1 y1 x2 y2
+          //
+          //just need to push the devdic and DrawLine
+         
+        xpost_stack_push(ctx->lo, ctx->os, devdic);
+        xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, devdic, consname(ctx, "DrawLine")));
+
+       //Then construct the loop-body procedure array.
+           xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "]")));
+
+       //Then, after the loop-body array is constructed, we need to call cvx on it.
+           xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "cvx")));
+       //"after" means this line, which pushes on the stack, goes *before* the consname("]") line.
+       //I'll summarize these lines again.
+
+        //After this, we call `repeat` and we're done.
+            xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "repeat")));
+
+       //Again since these are scheduled on a stack, we need to push them in reverse order
+        //from the order in which we desire them to execute.
+        //What we're doing is:
+
+        //opstack> xy xy xy xy xy xy xy xy xy [ comp1 5 1 roll DEVICE DrawLine (exec)?
+        //                                    [ comp1 comp2 comp3 7 3 roll DEVICE DrawLine (exec)?
+        //execstack> repeat cvx ]
+        //                      ^ construct array
+        //                   ^ make executable
+        //             ^ call the loop operator
+
+        //So the sequence in C should be:
+
+           xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "repeat")));
+           xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "cvx")));
+           xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "]")));
+
+#endif
 }
 
 int initdevgenericops (Xpost_Context *ctx,
