@@ -6,8 +6,8 @@
     /colorcomp2 0
     /colorcomp3 0
     /colorcomp4 0
-    /currmatrix [ 1 0 0 1 0 0 ]
     %/currmatrix DEVICE /defaultmatrix get matrix copy
+    /currmatrix [ 1 0 0 1 0 0 ]
     /scratchmatrix [ 1 0 0 1 0 0 ]
     /currpath 1 dict
     /clipregion 1 dict
@@ -16,6 +16,10 @@
     /linecap 0
     /linejoin 2
 >> def
+/gstatetemplate { //gstatetemplate
+    dup /currmatrix [ 1 0 0 1 0 0 ] put
+    dup /scratchmatrix [ 1 0 0 1 0 0 ] put
+} def
 
 
 
