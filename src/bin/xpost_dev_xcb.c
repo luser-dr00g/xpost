@@ -49,6 +49,7 @@
 #include "xpost_error.h"
 #include "xpost_dict.h" /* get/put values in dicts */
 #include "xpost_string.h" /* get/put values in strings */
+#include "xpost_array.h"
 #include "xpost_name.h" /* create names */
 #include "xpost_operator.h" /* create operators */
 #include "xpost_op_dict.h" /* call Aload operator for convenience */
@@ -265,7 +266,7 @@ static
 int _putpix (Xpost_Context *ctx,
              Xpost_Object red,
              Xpost_Object green,
-             Xpost_Object blueval,
+             Xpost_Object blue,
              Xpost_Object x,
              Xpost_Object y,
              Xpost_Object devdic)
@@ -282,10 +283,10 @@ int _putpix (Xpost_Context *ctx,
         green = xpost_cons_int(green.real_.val * 65535.0);
     else
         green.int_.val *= 65535;
-    if (xpost_object_get_type(blueval) == realtype)
-        blueval = xpost_cons_int(blueval.real_.val * 65535.0);
+    if (xpost_object_get_type(blue) == realtype)
+        blue = xpost_cons_int(blue.real_.val * 65535.0);
     else
-        blueval.int_.val *= 65535;
+        blue.int_.val *= 65535;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -321,7 +322,7 @@ int _putpix (Xpost_Context *ctx,
                 xcb_alloc_color(private.c, private.cmap,
                     red.int_.val,
                     green.int_.val,
-                    blueval.int_.val),
+                    blue.int_.val),
                 0);
         if (!rep)
             return unregistered;
@@ -366,7 +367,7 @@ static
 int _drawline (Xpost_Context *ctx,
                Xpost_Object red,
                Xpost_Object green,
-               Xpost_Object blueval,
+               Xpost_Object blue,
                Xpost_Object x1,
                Xpost_Object y1,
                Xpost_Object x2,
@@ -385,10 +386,10 @@ int _drawline (Xpost_Context *ctx,
         green = xpost_cons_int(green.real_.val * 65535.0);
     else
         green.int_.val *= 65535;
-    if (xpost_object_get_type(blueval) == realtype)
-        blueval = xpost_cons_int(blueval.real_.val * 65535.0);
+    if (xpost_object_get_type(blue) == realtype)
+        blue = xpost_cons_int(blue.real_.val * 65535.0);
     else
-        blueval.int_.val *= 65535;
+        blue.int_.val *= 65535;
     if (xpost_object_get_type(x1) == realtype)
         x1 = xpost_cons_int(x1.real_.val);
     if (xpost_object_get_type(y1) == realtype)
@@ -413,7 +414,7 @@ int _drawline (Xpost_Context *ctx,
                 xcb_alloc_color(private.c, private.cmap,
                     red.int_.val,
                     green.int_.val,
-                    blueval.int_.val),
+                    blue.int_.val),
                 0);
         if (!rep)
             return unregistered;
@@ -439,7 +440,7 @@ static
 int _fillrect (Xpost_Context *ctx,
                Xpost_Object red,
                Xpost_Object green,
-               Xpost_Object blueval,
+               Xpost_Object blue,
                Xpost_Object x,
                Xpost_Object y,
                Xpost_Object width,
@@ -460,10 +461,10 @@ int _fillrect (Xpost_Context *ctx,
         green = xpost_cons_int(green.real_.val * 65535.0);
     else
         green.int_.val *= 65535;
-    if (xpost_object_get_type(blueval) == realtype)
-        blueval = xpost_cons_int(blueval.real_.val * 65535.0);
+    if (xpost_object_get_type(blue) == realtype)
+        blue = xpost_cons_int(blue.real_.val * 65535.0);
     else
-        blueval.int_.val *= 65535;
+        blue.int_.val *= 65535;
     if (xpost_object_get_type(x) == realtype)
         x = xpost_cons_int(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
@@ -517,7 +518,7 @@ int _fillrect (Xpost_Context *ctx,
                 xcb_alloc_color(private.c, private.cmap,
                     red.int_.val,
                     green.int_.val,
-                    blueval.int_.val),
+                    blue.int_.val),
                 0);
         if (!rep)
             return unregistered;
@@ -541,6 +542,85 @@ int _fillrect (Xpost_Context *ctx,
     }
     return 0;
 }
+
+static
+int _fillpoly (Xpost_Context *ctx,
+               Xpost_Object red,
+               Xpost_Object green,
+               Xpost_Object blue,
+               Xpost_Object poly,
+               Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+
+    /* fold numbers to integertype */
+    if (xpost_object_get_type(red) == realtype)
+        red = xpost_cons_int(red.real_.val * 65535.0);
+    else
+        red.int_.val *= 65535;
+    if (xpost_object_get_type(green) == realtype)
+        green = xpost_cons_int(green.real_.val * 65535.0);
+    else
+        green.int_.val *= 65535;
+    if (xpost_object_get_type(blue) == realtype)
+        blue = xpost_cons_int(blue.real_.val * 65535.0);
+    else
+        blue.int_.val *= 65535;
+
+    /* load private data struct from string */
+    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+
+    {
+        xcb_point_t *points;
+        int i;
+        xcb_alloc_color_reply_t *rep;
+        unsigned int value;
+
+        rep = xcb_alloc_color_reply(private.c,
+                xcb_alloc_color(private.c, private.cmap,
+                    red.int_.val,
+                    green.int_.val,
+                    blue.int_.val),
+                0);
+        if (!rep)
+            return unregistered;
+
+        value = rep->pixel;
+        free(rep);
+        xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, &value);
+
+        points = alloca((poly.comp_.sz //+ 1
+                    ) * sizeof *points);
+        for (i=0; i < poly.comp_.sz; i++)
+        {
+            Xpost_Object pair, x, y;
+            pair = barget(ctx, poly, i);
+            x = barget(ctx, pair, 0);
+            y = barget(ctx, pair, 1);
+            if (xpost_object_get_type(x) == realtype)
+                x = xpost_cons_int(x.real_.val);
+            if (xpost_object_get_type(y) == realtype)
+                y = xpost_cons_int(y.real_.val);
+
+            points[i].x = x.int_.val;
+            points[i].y = y.int_.val;
+        }
+        //points[i].x = points[0].x;
+        //points[i].y = points[0].y;
+
+        xcb_fill_poly(private.c, private.img, private.gc,
+                XCB_POLY_SHAPE_CONVEX,
+                XCB_COORD_MODE_ORIGIN,
+                poly.comp_.sz //+ 1
+                , points);
+    }
+
+    return 0;
+}
+
 
 static
 int _flush (Xpost_Context *ctx,
@@ -683,6 +763,11 @@ int loadxcbdevicecont (Xpost_Context *ctx,
             numbertype, numbertype, /* width height */
             dicttype); /* devdic */
     bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
+
+    op = consoper(ctx, "xcbFillPoly", _fillpoly, 0, 5,
+            numbertype, numbertype, numbertype,
+            arraytype, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "FillPoly"), op);
 
     op = consoper(ctx, "xcbEmit", _emit, 0, 1, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Emit"), op);
