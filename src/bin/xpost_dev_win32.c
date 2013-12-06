@@ -239,13 +239,6 @@ int _create_cont (Xpost_Context *ctx,
     private.width = width;
     private.height = height;
 
-    ShowWindow(private.window, SW_SHOWNORMAL);
-    if (!UpdateWindow(private.window))
-    {
-        XPOST_LOG_ERR("UpdateWindow() failed");
-        goto destroy_window;
-    }
-
     private.ctx = GetDC(private.window);
     if (!private.ctx)
     {
@@ -254,7 +247,7 @@ int _create_cont (Xpost_Context *ctx,
     }
 
     private.bitmap_info = (BITMAPINFO_XPOST *)malloc(sizeof(BITMAPINFO_XPOST));
-    if (!private.ctx)
+    if (!private.bitmap_info)
     {
         XPOST_LOG_ERR("allocating bitmap info data failed");
         goto release_dc;
@@ -285,6 +278,13 @@ int _create_cont (Xpost_Context *ctx,
     {
         XPOST_LOG_ERR("CreateDIBSection() failed");
         goto free_bitmap_info;
+    }
+
+    ShowWindow(private.window, SW_SHOWNORMAL);
+    if (!UpdateWindow(private.window))
+    {
+        XPOST_LOG_ERR("UpdateWindow() failed");
+        goto destroy_window;
     }
 
     xpost_context_install_event_handler(ctx,
