@@ -125,10 +125,10 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
 
     //arrcontents = alloca(arr.comp_.sz * sizeof arr);
     //if (!xpost_memory_get(xpost_context_select_memory(ctx, arr),
-    //            arr.comp_.ent, 0, arr.comp_.sz * sizeof arr, arrcontents))
+    //            xpost_object_get_ent(arr), 0, arr.comp_.sz * sizeof arr, arrcontents))
     //    return VMerror;
     mem = xpost_context_select_memory(ctx, arr);
-    if (!xpost_memory_table_get_addr(mem, arr.comp_.ent, &arradr))
+    if (!xpost_memory_table_get_addr(mem, xpost_object_get_ent(arr), &arradr))
         return VMerror;
     arrcontents = (mem->base + arradr);
 
@@ -137,7 +137,7 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
     localctx = NULL;
 
     //if (!xpost_memory_put(xpost_context_select_memory(ctx, arr),
-    //            arr.comp_.ent, 0, arr.comp_.sz * sizeof arr, arrcontents))
+    //            xpost_object_get_ent(arr), 0, arr.comp_.sz * sizeof arr, arrcontents))
     //    return VMerror;
 
     return 0;

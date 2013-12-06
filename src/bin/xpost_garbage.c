@@ -188,19 +188,19 @@ int markobject(Xpost_Context *ctx,
                 break;
         }
         if (!mem) return 0;
-        if (!marked(mem, o.comp_.ent, &ret))
+        if (!marked(mem, xpost_object_get_ent(o), &ret))
             return 0;
         if (!ret) {
-            ret = markent(mem, o.comp_.ent);
+            ret = markent(mem, xpost_object_get_ent(o));
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot mark array");
                 return 0;
             }
-            ret = xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
+            ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(o), &ad);
             if (!ret)
             {
-                XPOST_LOG_ERR("cannot retrieve address for array ent %u", o.comp_.ent);
+                XPOST_LOG_ERR("cannot retrieve address for array ent %u", xpost_object_get_ent(o));
                 return 0;
             }
             if (!markarray(ctx, mem, ad, o.comp_.sz, markall))
@@ -218,19 +218,19 @@ int markobject(Xpost_Context *ctx,
             else
                 break;
         }
-        if (!marked(mem, o.comp_.ent, &ret))
+        if (!marked(mem, xpost_object_get_ent(o), &ret))
             return 0;
         if (!ret) {
-            ret = markent(mem, o.comp_.ent);
+            ret = markent(mem, xpost_object_get_ent(o));
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot mark array");
                 return 0;
             }
-            ret = xpost_memory_table_get_addr(mem, o.comp_.ent, &ad);
+            ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(o), &ad);
             if (!ret)
             {
-                XPOST_LOG_ERR("cannot retrieve address for dict ent %u", o.comp_.ent);
+                XPOST_LOG_ERR("cannot retrieve address for dict ent %u", xpost_object_get_ent(o));
                 return 0;
             }
             if (!markdict(ctx, mem, ad, markall))
@@ -248,7 +248,7 @@ int markobject(Xpost_Context *ctx,
             else
                 break;
         }
-        ret = markent(mem, o.comp_.ent);
+        ret = markent(mem, xpost_object_get_ent(o));
         if (!ret)
         {
             XPOST_LOG_ERR("cannot mark array");

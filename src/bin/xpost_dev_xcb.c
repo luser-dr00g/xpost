@@ -92,7 +92,7 @@ int _event_handler (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     event = xcb_poll_for_event(private.c);
     if (event)
@@ -254,7 +254,7 @@ int _create_cont (Xpost_Context *ctx,
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     /* return device instance dictionary to ps */
     xpost_stack_push(ctx->lo, ctx->os, devdic);
@@ -296,7 +296,7 @@ int _putpix (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     /* check bounds */
     if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic,
@@ -336,7 +336,7 @@ int _putpix (Xpost_Context *ctx,
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     return 0;
 }
@@ -355,7 +355,7 @@ int _getpix (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     /* ?? I don't know ...
        make a 1-pixel image and use copy_area?  ... */
@@ -403,7 +403,7 @@ int _drawline (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     {
         xcb_alloc_color_reply_t *rep;
@@ -492,7 +492,7 @@ int _fillrect (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
     w = bdcget(ctx, devdic,
             //consname(ctx,"width")
             namewidth
@@ -554,7 +554,7 @@ int _flush (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     xcb_copy_area(private.c, private.img, private.win, private.gc,
             0, 0, 0, 0, private.width, private.height);
@@ -581,7 +581,7 @@ int _destroy (Xpost_Context *ctx,
     privatestr = bdcget(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr), xpost_object_get_ent(privatestr), 0,
             sizeof private, &private);
 
     xpost_context_install_event_handler(ctx, null, null);

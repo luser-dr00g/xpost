@@ -128,8 +128,8 @@ typedef enum
     XPOST_OBJECT_TAG_DATA_EXTENDED_INT_OFFSET,
     XPOST_OBJECT_TAG_DATA_EXTENDED_REAL_OFFSET,
     XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD_OFFSET,
-    XPOST_OBJECT_TAG_EXTRA_BITS,
-    XPOST_OBJECT_TAG_DATA_NBITS = XPOST_OBJECT_TAG_EXTRA_BITS,  /* this MUST be < 16, the size of the tag field */
+    XPOST_OBJECT_TAG_DATA_EXTRA_BITS,
+    XPOST_OBJECT_TAG_DATA_NBITS = XPOST_OBJECT_TAG_DATA_EXTRA_BITS,  /* this MUST be < 16, the size of the tag field */
 
     XPOST_OBJECT_TAG_DATA_FLAG_VALID =
         01 << XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET,
@@ -152,7 +152,7 @@ typedef enum
             /**< extended object was real */
     XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD =
         01 << XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD_OFFSET
-            /* for onerror to reset stack */
+            /**< for _onerror to reset stack */
 } Xpost_Object_Tag_Data;
 
 /**
@@ -202,6 +202,9 @@ typedef int integer;         /* assumed 32-bit */
 typedef float real;          /* assumed IEEE 754 32-bit floating-point */
 typedef dword addr;
 #endif
+
+#define XPOST_OBJECT_TAG_EXTRA_BITS_SIZE  (sizeof(word)*8 - XPOST_OBJECT_TAG_DATA_EXTRA_BITS)
+            /**< for extending the ent field for composite objects */
 
 /*
  *
@@ -473,6 +476,8 @@ int xpost_object_is_composite (Xpost_Object obj);
  * @brief Yield the ent number (memory table index)
  *        for a composite object.
  * @return ent number or -1 if not composite.
+ *
+ * filetype objects bypass these functions and use the dword field .mark_.padw
  */
 int xpost_object_get_ent(Xpost_Object obj);
 

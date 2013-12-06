@@ -114,7 +114,7 @@ int _findfont (Xpost_Context *ctx,
     data.face = (FT_Face)xpost_font_face_new_from_name(fname);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof data, &data);
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
     return 0;
 #else
@@ -135,13 +135,13 @@ int _scalefont (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof data, &data);
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
 
     /* scale x and y sizes by @p size */
     xpost_font_face_scale(data.face, size.real_.val);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof data, &data);
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
     return 0;
 }
@@ -193,7 +193,7 @@ int _show (Xpost_Context *ctx,
 
     privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof data, &data);
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
 
     cstr = alloca(str.comp_.sz + 1);
     memcpy(cstr, charstr(ctx, str), str.comp_.sz);

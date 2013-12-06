@@ -371,9 +371,10 @@ int opexec(Xpost_Context *ctx,
 
 call:
     /* If we're executing the context's "currentobject",
-       set the number of arguments consumed,
+       set the number of arguments consumed in the pad0 of currentobject,
        and set a flag declaring that this has been done.
-       This is so onerror() can reset the stack (if possible).
+       This is so onerror() can reset the stack
+       (if hold has not been clobbered by another call to opexec).
     */
     if (ctx->currentobject.tag == operatortype 
             && ctx->currentobject.mark_.padw == opcode) {
@@ -472,7 +473,7 @@ int initop(Xpost_Context *ctx)
     bdcput(ctx, sd, consname(ctx, "systemdict"), sd);
     xpost_stack_push(ctx->lo, ctx->ds, sd);
     tab = NULL;
-    ent = sd.comp_.ent;
+    ent = xpost_object_get_ent(sd);
     xpost_memory_table_find_relative(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // make systemdict immune to collection
 

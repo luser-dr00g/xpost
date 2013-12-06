@@ -104,7 +104,7 @@ int _event_handler (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     privatestr.comp_.ent, 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     if (PeekMessage(&msg, private.window, 0, 0, PM_REMOVE))
     {
@@ -293,7 +293,7 @@ int _create_cont (Xpost_Context *ctx,
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-                     privatestr.comp_.ent, 0, sizeof(private), &private);
+                     xpost_object_get_ent(privatestr), 0, sizeof(private), &private);
 
     /* return device instance dictionary to ps */
     xpost_stack_push(ctx->lo, ctx->os, devdic);
@@ -348,7 +348,7 @@ int _putpix (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     privatestr.comp_.ent, 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     /* check bounds */
     if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic,
@@ -373,7 +373,7 @@ int _putpix (Xpost_Context *ctx,
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     return 0;
 }
@@ -392,7 +392,7 @@ int _getpix (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     privatestr.comp_.ent, 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     xpost_stack_push(ctx->lo, ctx->os,
         xpost_cons_int( (private.buf[y.int_.val * private.width + x.int_.val]
@@ -461,7 +461,7 @@ int _drawline (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     _x1 = x1.int_.val;
     _x2 = x2.int_.val;
@@ -640,7 +640,7 @@ int _fillrect (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            privatestr.comp_.ent, 0, sizeof private, &private);
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
     w = bdcget(ctx, devdic,
             //consname(ctx,"width")
             namewidth
@@ -687,7 +687,7 @@ int _emit (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     privatestr.comp_.ent, 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     UpdateWindow(private.window);
 
@@ -705,7 +705,7 @@ int _destroy (Xpost_Context *ctx,
     privatestr = bdcget(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr), privatestr.comp_.ent, 0,
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr), xpost_object_get_ent(privatestr), 0,
                      sizeof(private), &private);
 
     xpost_context_install_event_handler(ctx, null, null);

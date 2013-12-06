@@ -114,7 +114,7 @@ int initnames(Xpost_Context *ctx)
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &nstk);
     xpost_stack_push(ctx->gl, nstk, consbst(ctx, CNT_STR("_not_a_name_")));
-    assert (xpost_stack_topdown_fetch(ctx->gl, nstk, 0).comp_.ent == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
+    assert (xpost_object_get_ent(xpost_stack_topdown_fetch(ctx->gl, nstk, 0)) == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
 
     ctx->vmmode = LOCAL;
     ret = xpost_memory_table_alloc(ctx->lo, 0, 0, &ent); //lo:NAMES
@@ -141,8 +141,8 @@ int initnames(Xpost_Context *ctx)
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &nstk);
     xpost_stack_push(ctx->lo, nstk, consbst(ctx, CNT_STR("_not_a_name_")));
-    //assert (xpost_stack_topdown_fetch(ctx->lo, nstk, 0).comp_.ent == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
-    if (xpost_stack_topdown_fetch(ctx->lo, nstk, 0).comp_.ent != XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME)
+    //assert (xpost_object_get_ent(xpost_stack_topdown_fetch(ctx->lo, nstk, 0)) == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
+    if (xpost_object_get_ent(xpost_stack_topdown_fetch(ctx->lo, nstk, 0)) != XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME)
         XPOST_LOG_ERR("Warning: bogus name not in special position");
 
     ctx->vmmode = mode;
