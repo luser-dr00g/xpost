@@ -20,7 +20,9 @@ data/qsort.ps \
 data/s.pic \
 data/s.ps \
 data/test.ps \
-data/testdraw.ps
+data/testdraw.ps \
+data/tea1.ps \
+data/mat.ps
 
 psfilesdir = $(pkgdatadir)
 
@@ -45,4 +47,6 @@ data/qsort.ps \
 data/s.pic \
 data/s.ps \
 data/test.ps \
-data/testdraw.ps
+data/testdraw.ps \
+data/tea1.ps \
+data/mat.ps
