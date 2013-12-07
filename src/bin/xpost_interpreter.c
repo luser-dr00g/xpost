@@ -131,7 +131,7 @@ Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid)
 
 
 static
-int _xpost_interpreter_extra_context_init(Xpost_Context *ctx)
+int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device)
 {
     int ret;
     ret = initnames(ctx); /* NAMES NAMET */
@@ -156,7 +156,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx)
     (void)consname(ctx, "setmiterlimit"); /* middle of the end */
     namedollarerror = consname(ctx, "$error");
 
-    initop(ctx); /* populate the optab (and systemdict) with operators */
+    initop(ctx, device); /* populate the optab (and systemdict) with operators */
 
     {
         Xpost_Object gd; //globaldict
@@ -191,7 +191,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx)
 
 
 /* initialize itpdata */
-int xpost_interpreter_init(Xpost_Interpreter *itpptr)
+int xpost_interpreter_init(Xpost_Interpreter *itpptr, const char *device)
 {
     int ret;
 
@@ -200,7 +200,7 @@ int xpost_interpreter_init(Xpost_Interpreter *itpptr)
     {
         return 0;
     }
-    ret = _xpost_interpreter_extra_context_init(&itpptr->ctab[0]);
+    ret = _xpost_interpreter_extra_context_init(&itpptr->ctab[0], device);
     if (!ret)
     {
         return 0;
@@ -628,7 +628,7 @@ Xpost_Context *xpost_ctx;
 
 /* set global pagesize, initialize eval's jump-table */
 static
-int initalldata(void)
+int initalldata(const char *device)
 {
     int ret;
 
@@ -646,7 +646,7 @@ int initalldata(void)
        populate OPTAB and systemdict with operators.
        push systemdict, globaldict, and userdict on dict stack
      */
-    ret = xpost_interpreter_init(itpdata);
+    ret = xpost_interpreter_init(itpdata, device);
     if (!ret)
     {
         return 0;
@@ -659,7 +659,8 @@ int initalldata(void)
     return 1;
 }
 
-static void setdatadir(Xpost_Context *ctx, Xpost_Object sd)
+static
+void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd)
 {
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
@@ -697,7 +698,8 @@ static void setdatadir(Xpost_Context *ctx, Xpost_Object sd)
 }
 
 /* load init.ps and err.ps while systemdict is writeable */
-static void loadinitps(Xpost_Context *ctx)
+static
+void loadinitps(Xpost_Context *ctx)
 {
     assert(ctx->gl->base);
     xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
@@ -739,7 +741,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-int xpost_create(void)
+int xpost_create(const char *device)
 {
     Xpost_Object sd, ud;
     int ret;
@@ -751,7 +753,7 @@ int xpost_create(void)
     nextid = 0; //reset process counter
 
     /* Allocate and initialize all interpreter data structures. */
-    ret = initalldata();
+    ret = initalldata(device);
     if (!ret)
     {
         return 0;
@@ -761,7 +763,7 @@ int xpost_create(void)
     sd = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0);
     ud = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 2);
 
-    setdatadir(xpost_ctx, sd);
+    setlocalconfig(xpost_ctx, sd);
 
     loadinitps(xpost_ctx);
 
