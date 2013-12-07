@@ -839,7 +839,8 @@ int loadwin32devicecont (Xpost_Context *ctx,
    which creates the device instance dictionary.
 */
 int initwin32ops (Xpost_Context *ctx,
-                  Xpost_Object sd)
+                  Xpost_Object sd,
+                  const char *device)
 {
     unsigned int optadr;
     oper *optab;
@@ -853,9 +854,18 @@ int initwin32ops (Xpost_Context *ctx,
                                 XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
                                 &optadr);
     optab = (oper *)(ctx->gl->base + optadr);
-    op = consoper(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
-    op = consoper(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
-    _loadwin32devicecont_opcode = op.mark_.padw;
+    if (strcmp(device, "gl") == 0)
+    {
+        op = consoper(ctx, "loadwin32device", loadwin32gldevice, 1, 0); INSTALL;
+        op = consoper(ctx, "loadwin32devicecont", loadwin32gldevicecont, 1, 1, dicttype);
+        _loadwin32devicecont_opcode = op.mark_.padw;
+    }
+    else
+    {
+        op = consoper(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
+        op = consoper(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
+        _loadwin32devicecont_opcode = op.mark_.padw;
+    }
 
     return 0;
 }
