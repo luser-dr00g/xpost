@@ -47,14 +47,22 @@ xpost_init(void)
     if (++_xpost_init_count != 1)
         return _xpost_init_count;
 
+	printf("xpost_init()\n");
+
     if (!xpost_log_init())
         return --_xpost_init_count;
+
+	printf("xpost_log_init()\n");
 
     if (!xpost_memory_init())
         return --_xpost_init_count;
 
+	printf("xpost_memory_init()\n");
+
     if (!xpost_font_init())
         return --_xpost_init_count;
+
+	printf("xpost_font_init()\n");
 
     return _xpost_init_count;
 }

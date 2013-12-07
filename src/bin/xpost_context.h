@@ -41,6 +41,7 @@ typedef struct
 
     Xpost_Object event_handler;
     Xpost_Object window_device;
+	const char *device_str;
 
 } Xpost_Context;
 

@@ -95,6 +95,6 @@ int opexec(Xpost_Context *ctx, unsigned opcode);
     optab = (void *)(ctx->gl->base + optadr); // recalc
 
 int breakhere(Xpost_Context *ctx);
-int initop(Xpost_Context *ctx, const char *device);
+int initop(Xpost_Context *ctx);
 
 #endif

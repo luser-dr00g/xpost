@@ -81,9 +81,6 @@ typedef struct
 } PrivateData;
 
 static
-const char *_device_str;
-
-static
 unsigned int _event_handler_opcode;
 
 static
@@ -601,7 +598,7 @@ int _fillrect (Xpost_Context *ctx,
     int i;
     int j;
 
-	if (strcmp(_device_str, "gl") == 0)
+	if (strcmp(ctx->device_str, "gl") == 0)
 		/* do opengl stuff */;
 
     /* fold numbers to integertype */
@@ -844,14 +841,11 @@ int loadwin32devicecont (Xpost_Context *ctx,
    which creates the device instance dictionary.
 */
 int initwin32ops (Xpost_Context *ctx,
-                  Xpost_Object sd,
-                  const char *device)
+                  Xpost_Object sd)
 {
     unsigned int optadr;
     oper *optab;
     Xpost_Object n,op;
-
-	_device_str = device;
 
     namePrivate = consname(ctx, "Private");
     namewidth = consname(ctx, "width");

@@ -156,7 +156,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
     (void)consname(ctx, "setmiterlimit"); /* middle of the end */
     namedollarerror = consname(ctx, "$error");
 
-    initop(ctx, device); /* populate the optab (and systemdict) with operators */
+    initop(ctx); /* populate the optab (and systemdict) with operators */
 
     {
         Xpost_Object gd; //globaldict
@@ -185,6 +185,8 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
         bdcput(ctx, ud, consname(ctx, "userdict"), ud);
         xpost_stack_push(ctx->lo, ctx->ds, ud);
     }
+
+	ctx->device_str = device;
 
     return 1;
 }
