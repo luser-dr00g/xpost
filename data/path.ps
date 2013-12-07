@@ -388,6 +388,11 @@ end } dup 0 5 dict put def
     3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
 } bind def
 
+/minlinewidth {
+    currentlinewidth
+    dup 1 lt { pop 1 } if
+} bind def
+
 %
 % replace lineto segments . with 
 %                         |
@@ -409,12 +414,14 @@ end } dup 0 5 dict put def
         2 copy 2 array astore strokedict /cp 3 2 roll put
         ptdiff                             % el dx dy
         magang                             % el rad ang
-        currentlinewidth .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
+        minlinewidth
+        .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
         ravec idtransform
         rmoveto           % el rad ang      %rmoveto
         2 copy ravec idtransform
         rlineto    % el rad ang      %rlineto
-        currentlinewidth 1 index 90 add    % el rad ang lw -ang_perp
+        minlinewidth
+        1 index 90 add    % el rad ang lw -ang_perp
         ravec idtransform
         rlineto           % el rad ang      %rlineto
         180 add ravec idtransform
@@ -434,6 +441,8 @@ end } dup 0 5 dict put def
 
 /strokepath {
     flattenpath
+    matrix currentmatrix
+    matrix setmatrix
     cpath length 0 gt {
         cpath newpath
         0 1 2 index length 1 sub { % path i
@@ -449,6 +458,7 @@ end } dup 0 5 dict put def
         } for
         pop
     } if
+    setmatrix
 } bind def
 
 /maxmin {
