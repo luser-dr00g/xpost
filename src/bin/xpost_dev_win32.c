@@ -82,7 +82,7 @@ typedef struct
     BITMAPINFO_XPOST *bitmap_info;
     HBITMAP bitmap;
     unsigned int *buf;
-} Render_Data;
+} Render_Data_Gdi;
 
 static
 unsigned int _event_handler_opcode;
@@ -133,12 +133,12 @@ _xpost_dev_win32_procedure(HWND   window,
         case WM_CREATE:
         {
             RECT rect;
-            Render_Data *rd;
+            Render_Data_Gdi *rd;
             LONG_PTR res;
             int width;
             int height;
 
-            rd = (Render_Data *)malloc(sizeof(Render_Data));
+            rd = (Render_Data_Gdi *)malloc(sizeof(Render_Data_Gdi));
             if (!rd)
                 return -1;
 
@@ -364,7 +364,7 @@ int _putpix (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    Render_Data *rd;
+    Render_Data_Gdi *rd;
     HDC cdc;
 
     /* fold numbers to integertype */
@@ -404,7 +404,7 @@ int _putpix (Xpost_Context *ctx,
                 ).int_.val)
         return 0;
 
-    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    rd = (Render_Data_Gdi *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (!rd)
         return 0;
 
@@ -428,7 +428,7 @@ int _getpix (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    Render_Data *rd;
+    Render_Data_Gdi *rd;
 
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, namePrivate);
@@ -437,7 +437,7 @@ int _getpix (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
-    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    rd = (Render_Data_Gdi *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (!rd)
         return 0;
 
@@ -467,7 +467,7 @@ int _drawline (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    Render_Data *rd;
+    Render_Data_Gdi *rd;
     HDC cdc;
     int _x1;
     int _x2;
@@ -520,7 +520,7 @@ int _drawline (Xpost_Context *ctx,
     XPOST_LOG_INFO("_drawline(%d, %d, %d, %d)",
             _x1, _y1, _x2, _y2);
 
-    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    rd = (Render_Data_Gdi *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (!rd)
         return 0;
 
@@ -634,7 +634,7 @@ int _fillrect (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    Render_Data *rd;
+    Render_Data_Gdi *rd;
     HDC cdc;
     int w;
     int h;
@@ -699,7 +699,7 @@ int _fillrect (Xpost_Context *ctx,
     if (y.int_.val + height.int_.val > h)
         height.int_.val = h - y.int_.val;
 
-    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    rd = (Render_Data_Gdi *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (!rd)
         return 0;
 
@@ -759,7 +759,7 @@ int _destroy (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    Render_Data *rd;
+    Render_Data_Gdi *rd;
 
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, namePrivate);
@@ -770,7 +770,7 @@ int _destroy (Xpost_Context *ctx,
 
     xpost_context_install_event_handler(ctx, null, null);
 
-    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    rd = (Render_Data_Gdi *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (rd)
     {
         DeleteObject(rd->bitmap);
