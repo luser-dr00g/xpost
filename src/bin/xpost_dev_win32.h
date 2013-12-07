@@ -36,6 +36,7 @@
  * @brief install operator loadWin32device
  */
 int initwin32ops (Xpost_Context *ctx,
-                  Xpost_Object sd);
+                  Xpost_Object sd,
+				  const char *device);
 
 #endif

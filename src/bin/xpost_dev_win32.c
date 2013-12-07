@@ -80,6 +80,8 @@ typedef struct
     int height;
 } PrivateData;
 
+static
+const char *_device_str;
 
 static
 unsigned int _event_handler_opcode;
@@ -599,6 +601,9 @@ int _fillrect (Xpost_Context *ctx,
     int i;
     int j;
 
+	if (strcmp(_device_str, "gl") == 0)
+		/* do opengl stuff */;
+
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
         red = xpost_cons_int(red.real_.val * 255.0);
@@ -846,6 +851,8 @@ int initwin32ops (Xpost_Context *ctx,
     oper *optab;
     Xpost_Object n,op;
 
+	_device_str = device;
+
     namePrivate = consname(ctx, "Private");
     namewidth = consname(ctx, "width");
     nameheight = consname(ctx, "height");
@@ -854,18 +861,9 @@ int initwin32ops (Xpost_Context *ctx,
                                 XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
                                 &optadr);
     optab = (oper *)(ctx->gl->base + optadr);
-    if (strcmp(device, "gl") == 0)
-    {
-        op = consoper(ctx, "loadwin32device", loadwin32gldevice, 1, 0); INSTALL;
-        op = consoper(ctx, "loadwin32devicecont", loadwin32gldevicecont, 1, 1, dicttype);
-        _loadwin32devicecont_opcode = op.mark_.padw;
-    }
-    else
-    {
-        op = consoper(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
-        op = consoper(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
-        _loadwin32devicecont_opcode = op.mark_.padw;
-    }
+	op = consoper(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
+	op = consoper(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
+	_loadwin32devicecont_opcode = op.mark_.padw;
 
     return 0;
 }
