@@ -55,7 +55,7 @@
  * but it must be large enough to hold all parameters in a
  * type-checked postscript operator.
  */
-#define XPOST_STACK_SEGMENT_SIZE 20
+#define XPOST_STACK_SEGMENT_SIZE 500
 
 typedef struct
 {

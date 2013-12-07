@@ -73,15 +73,15 @@
  *                           been allocated since the previous collection.
  */
 typedef enum {
-    XPOST_GARBAGE_COLLECTION_PERIOD = 5000,  /**< number of times to grow before collecting */
+    XPOST_GARBAGE_COLLECTION_PERIOD = 10000,  /**< number of times to grow before collecting */
     XPOST_GARBAGE_COLLECTION_THRESHOLD = 10000  /**< number of bytes to allocate before collecting */
 } Xpost_Garbage_Params;
 
 /**
  * Maximum size to accept from an allocation relative to the size requested
  */
-#define XPOST_FREE_ACCEPT_OVERSIZE 8
-#define XPOST_FREE_ACCEPT_DENOM 1
+#define XPOST_FREE_ACCEPT_OVERSIZE 4
+#define XPOST_FREE_ACCEPT_DENOM 3
 
 /**
  * @brief  initialize the FREE special entity which points

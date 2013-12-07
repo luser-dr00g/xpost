@@ -58,7 +58,7 @@
  * right one. This isn't a lengthy operation, but it is a complicated
  * address calcuation that may not be pipeline-friendly.
  */
-#define XPOST_MEMORY_TABLE_SIZE 200
+#define XPOST_MEMORY_TABLE_SIZE 2000
 
 
 /*

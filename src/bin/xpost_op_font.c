@@ -101,7 +101,10 @@ int _findfont (Xpost_Context *ctx,
     struct fontdata data;
     char *fname;
 
-    fontstr = strname(ctx, fontname);
+    if (xpost_object_get_type(fontname) == nametype)
+        fontstr = strname(ctx, fontname);
+    else
+        fontstr = fontname;
     fname = alloca(fontstr.comp_.sz + 1);
     memcpy(fname, charstr(ctx, fontstr), fontstr.comp_.sz);
     fname[fontstr.comp_.sz] = '\0';
@@ -231,6 +234,7 @@ int initopfont (Xpost_Context *ctx,
     optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "findfont", _findfont, 1, 1, nametype); INSTALL;
+    op = consoper(ctx, "findfont", _findfont, 1, 1, stringtype); INSTALL;
     op = consoper(ctx, "scalefont", _scalefont, 1, 2, dicttype, floattype); INSTALL;
     //op = consoper(ctx, "makefont", _makefont, 1, 2, dicttype, arraytype); INSTALL;
     op = consoper(ctx, "setfont", _setfont, 1, 1, dicttype); INSTALL;
