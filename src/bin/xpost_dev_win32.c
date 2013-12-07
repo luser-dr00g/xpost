@@ -72,13 +72,17 @@ typedef struct
 {
     HINSTANCE instance;
     HWND window;
+    int width;
+    int height;
+} PrivateData;
+
+typedef struct
+{
     HDC ctx;
     BITMAPINFO_XPOST *bitmap_info;
     HBITMAP bitmap;
     unsigned int *buf;
-    int width;
-    int height;
-} PrivateData;
+} Render_Data;
 
 static
 unsigned int _event_handler_opcode;
@@ -126,6 +130,89 @@ _xpost_dev_win32_procedure(HWND   window,
 {
     switch (message)
     {
+        case WM_CREATE:
+        {
+            RECT rect;
+            Render_Data *rd;
+            LONG_PTR res;
+            int width;
+            int height;
+
+            rd = (Render_Data *)malloc(sizeof(Render_Data));
+            if (!rd)
+                return -1;
+
+            if (!GetClientRect(window, &rect))
+            {
+                XPOST_LOG_ERR("GetClientRect() failed");
+                goto free_rd;
+            }
+
+            rd->bitmap_info = (BITMAPINFO_XPOST *)malloc(sizeof(BITMAPINFO_XPOST));
+            if (!rd->bitmap_info)
+            {
+                XPOST_LOG_ERR("allocating bitmap info data failed");
+                goto free_rd;
+            }
+
+            width = rect.right - rect.left;
+            height= rect.bottom - rect.top;
+
+            rd->bitmap_info->bih.biSize = sizeof(BITMAPINFOHEADER);
+            rd->bitmap_info->bih.biWidth = width;
+            rd->bitmap_info->bih.biHeight = -height;
+            rd->bitmap_info->bih.biPlanes = 1;
+            rd->bitmap_info->bih.biSizeImage = 4 * width * height;
+            rd->bitmap_info->bih.biXPelsPerMeter = 0;
+            rd->bitmap_info->bih.biYPelsPerMeter = 0;
+            rd->bitmap_info->bih.biClrUsed = 0;
+            rd->bitmap_info->bih.biClrImportant = 0;
+            rd->bitmap_info->bih.biBitCount = 32;
+            rd->bitmap_info->bih.biCompression = BI_BITFIELDS;
+            rd->bitmap_info->masks[0] = 0x00ff0000;
+            rd->bitmap_info->masks[1] = 0x0000ff00;
+            rd->bitmap_info->masks[2] = 0x000000ff;
+
+            rd->ctx = GetDC(window);
+            if (!rd->ctx)
+            {
+                XPOST_LOG_ERR("GetDC() failed");
+                goto free_bitmap_info;
+            }
+
+            rd->bitmap = CreateDIBSection(rd->ctx,
+                                          (const BITMAPINFO *)rd->bitmap_info,
+                                          DIB_RGB_COLORS,
+                                          (void **)(&rd->buf),
+                                          NULL,
+                                          0);
+            if (!rd->bitmap)
+            {
+                XPOST_LOG_ERR("CreateDIBSection() failed");
+                goto release_dc;
+            }
+
+            SetLastError(0);
+            res = SetWindowLongPtr(window, GWLP_USERDATA, (LONG_PTR)rd);
+            if ((res == 0) && (GetLastError() != 0))
+            {
+                XPOST_LOG_ERR("SetWindowLongPtr() failed %ld", GetLastError());
+                goto delete_dib;
+            }
+
+            return 0;
+
+          delete_dib:
+            DeleteObject(rd->bitmap);
+          release_dc:
+            ReleaseDC(window, rd->ctx);
+          free_bitmap_info:
+            free(rd->bitmap_info);
+          free_rd:
+            free(rd);
+
+            return -1;
+        }
         default:
             return DefWindowProc(window, message, window_param, data_param);
     }
@@ -238,47 +325,6 @@ int _create_cont (Xpost_Context *ctx,
     private.width = width;
     private.height = height;
 
-    private.ctx = GetDC(private.window);
-    if (!private.ctx)
-    {
-        XPOST_LOG_ERR("GetDC() failed");
-        goto destroy_window;
-    }
-
-    private.bitmap_info = (BITMAPINFO_XPOST *)malloc(sizeof(BITMAPINFO_XPOST));
-    if (!private.bitmap_info)
-    {
-        XPOST_LOG_ERR("allocating bitmap info data failed");
-        goto release_dc;
-    }
-
-    private.bitmap_info->bih.biSize = sizeof(BITMAPINFOHEADER);
-    private.bitmap_info->bih.biWidth = width;
-    private.bitmap_info->bih.biHeight = -height;
-    private.bitmap_info->bih.biPlanes = 1;
-    private.bitmap_info->bih.biSizeImage = 4 * width * height;
-    private.bitmap_info->bih.biXPelsPerMeter = 0;
-    private.bitmap_info->bih.biYPelsPerMeter = 0;
-    private.bitmap_info->bih.biClrUsed = 0;
-    private.bitmap_info->bih.biClrImportant = 0;
-    private.bitmap_info->bih.biBitCount = 32;
-    private.bitmap_info->bih.biCompression = BI_BITFIELDS;
-    private.bitmap_info->masks[0] = 0x00ff0000;
-    private.bitmap_info->masks[1] = 0x0000ff00;
-    private.bitmap_info->masks[2] = 0x000000ff;
-
-    private.bitmap = CreateDIBSection(private.ctx,
-                                      (const BITMAPINFO *)private.bitmap_info,
-                                      DIB_RGB_COLORS,
-                                      (void **)(&private.buf),
-                                      NULL,
-                                      0);
-    if (!private.bitmap)
-    {
-        XPOST_LOG_ERR("CreateDIBSection() failed");
-        goto free_bitmap_info;
-    }
-
     ShowWindow(private.window, SW_SHOWNORMAL);
     if (!UpdateWindow(private.window))
     {
@@ -298,10 +344,6 @@ int _create_cont (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, devdic);
     return 0;
 
-  free_bitmap_info:
-    free(private.bitmap_info);
-  release_dc:
-    ReleaseDC(private.window, private.ctx);
   destroy_window:
     DestroyWindow(private.window);
   unregister_class:
@@ -322,7 +364,8 @@ int _putpix (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    HDC dc;
+    Render_Data *rd;
+    HDC cdc;
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
@@ -361,18 +404,18 @@ int _putpix (Xpost_Context *ctx,
                 ).int_.val)
         return 0;
 
-    private.buf[y.int_.val * private.width + x.int_.val] =
+    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    if (!rd)
+        return 0;
+
+    rd->buf[y.int_.val * private.width + x.int_.val] =
         red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
 
-    dc = CreateCompatibleDC(private.ctx);
-    SelectObject(dc, private.bitmap);
-    BitBlt(private.ctx, x.int_.val, y.int_.val, 1, 1,
-           dc, x.int_.val, y.int_.val, SRCCOPY);
-    DeleteDC(dc);
-
-    /* save private data struct in string */
-    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+    cdc = CreateCompatibleDC(rd->ctx);
+    SelectObject(cdc, rd->bitmap);
+    BitBlt(rd->ctx, x.int_.val, y.int_.val, 1, 1,
+           cdc, x.int_.val, y.int_.val, SRCCOPY);
+    DeleteDC(cdc);
 
     return 0;
 }
@@ -385,6 +428,7 @@ int _getpix (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
+    Render_Data *rd;
 
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, namePrivate);
@@ -393,15 +437,20 @@ int _getpix (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
+    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    if (!rd)
+        return 0;
+
     xpost_stack_push(ctx->lo, ctx->os,
-        xpost_cons_int( (private.buf[y.int_.val * private.width + x.int_.val]
-                >> 16) & 0xFF));
+                     xpost_cons_int( (rd->buf[y.int_.val * private.width + x.int_.val]
+                                      >> 16) & 0xFF));
     xpost_stack_push(ctx->lo, ctx->os,
-        xpost_cons_int( (private.buf[y.int_.val * private.width + x.int_.val]
-            >> 8) & 0xFF));
+                     xpost_cons_int( (rd->buf[y.int_.val * private.width + x.int_.val]
+                                      >> 8) & 0xFF));
     xpost_stack_push(ctx->lo, ctx->os,
-        xpost_cons_int( private.buf[y.int_.val * private.width + x.int_.val]
-            & 0xFF));
+                     xpost_cons_int(rd->buf[y.int_.val * private.width + x.int_.val]
+                                     & 0xFF));
+
     return 0;
 }
 
@@ -418,7 +467,8 @@ int _drawline (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    HDC dc;
+    Render_Data *rd;
+    HDC cdc;
     int _x1;
     int _x2;
     int _y1;
@@ -470,6 +520,10 @@ int _drawline (Xpost_Context *ctx,
     XPOST_LOG_INFO("_drawline(%d, %d, %d, %d)",
             _x1, _y1, _x2, _y2);
 
+    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    if (!rd)
+        return 0;
+
     if (_x1 == _x2)
     {
         if (_y1 > _y2)
@@ -481,16 +535,10 @@ int _drawline (Xpost_Context *ctx,
             _y2 = tmp;
         }
         for (y = _y1; y <= _y2; y++)
-            private.buf[y * private.width + _x1] =
+            rd->buf[y * private.width + _x1] =
                 red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
 
-        dc = CreateCompatibleDC(private.ctx);
-        SelectObject(dc, private.bitmap);
-        BitBlt(private.ctx, _x1, _y1, 1, _y2 - _y1 + 1,
-               dc, _x1, _y1, SRCCOPY);
-        DeleteDC(dc);
-
-        return 0;
+        goto bit_blit;
     }
 
     if (_y1 == _y2)
@@ -504,16 +552,10 @@ int _drawline (Xpost_Context *ctx,
             _x2 = tmp;
         }
         for (x = _x1; x <= _x2; x++)
-            private.buf[_y1 * private.width + x] =
+            rd->buf[_y1 * private.width + x] =
                 red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
 
-        dc = CreateCompatibleDC(private.ctx);
-        SelectObject(dc, private.bitmap);
-        BitBlt(private.ctx, _x1, _y1, _x2 - _x1 + 1, 1,
-               dc, _x1, _y1, SRCCOPY);
-        DeleteDC(dc);
-
-        return 0;
+        goto bit_blit;
     }
 
     x = _x1;
@@ -534,7 +576,7 @@ int _drawline (Xpost_Context *ctx,
     err = 2 * deltay - deltax;
     for (i = 1; i <= deltax; ++i)
     {
-        private.buf[y * private.width + x] =
+        rd->buf[y * private.width + x] =
             red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
         while (err >= 0)
         {
@@ -569,12 +611,12 @@ int _drawline (Xpost_Context *ctx,
         _y2 = tmp;
     }
 
-
-    dc = CreateCompatibleDC(private.ctx);
-    SelectObject(dc, private.bitmap);
-    BitBlt(private.ctx, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1,
-           dc, _x1, _y1, SRCCOPY);
-    DeleteDC(dc);
+  bit_blit:
+    cdc = CreateCompatibleDC(rd->ctx);
+    SelectObject(cdc, rd->bitmap);
+    BitBlt(rd->ctx, _x1, _y1, _x2 - _x1 + 1, _y2 - _y1 + 1,
+           cdc, _x1, _y1, SRCCOPY);
+    DeleteDC(cdc);
 
     return 0;
 }
@@ -592,14 +634,12 @@ int _fillrect (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    HDC dc;
+    Render_Data *rd;
+    HDC cdc;
     int w;
     int h;
     int i;
     int j;
-
-	if (strcmp(ctx->device_str, "gl") == 0)
-		/* do opengl stuff */;
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
@@ -659,27 +699,36 @@ int _fillrect (Xpost_Context *ctx,
     if (y.int_.val + height.int_.val > h)
         height.int_.val = h - y.int_.val;
 
+    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    if (!rd)
+        return 0;
+
+	if (strcmp(ctx->device_str, "gl") == 0)
+    {
+		/* do opengl stuff */;
+    }
+
     for (i = 0; i < height.int_.val; i++)
     {
         for (j = 0; j < width.int_.val; j++)
         {
-            private.buf[(y.int_.val + i) * private.width + x.int_.val + j] =
+            rd->buf[(y.int_.val + i) * private.width + x.int_.val + j] =
                 red.int_.val << 16 | green.int_.val << 8 | blue.int_.val;
         }
     }
 
-    dc = CreateCompatibleDC(private.ctx);
-    SelectObject(dc, private.bitmap);
-    BitBlt(private.ctx, x.int_.val, y.int_.val, width.int_.val, height.int_.val,
-           dc, x.int_.val, y.int_.val, SRCCOPY);
-    DeleteDC(dc);
+    cdc = CreateCompatibleDC(rd->ctx);
+    SelectObject(cdc, rd->bitmap);
+    BitBlt(rd->ctx, x.int_.val, y.int_.val, width.int_.val, height.int_.val,
+           cdc, x.int_.val, y.int_.val, SRCCOPY);
+    DeleteDC(cdc);
 
     return 0;
 }
 
 static
-int _emit (Xpost_Context *ctx,
-           Xpost_Object devdic)
+int _flush (Xpost_Context *ctx,
+            Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
@@ -696,12 +745,21 @@ int _emit (Xpost_Context *ctx,
     return 0;
 }
 
+/* Emit here is the same as Flush
+   But Flush is called (if available) by all raster operators
+   for smoother previewing.
+ */
+static
+int (*_emit) (Xpost_Context *ctx,
+           Xpost_Object devdic) = _flush;
+
 static
 int _destroy (Xpost_Context *ctx,
               Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
+    Render_Data *rd;
 
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, namePrivate);
@@ -712,8 +770,14 @@ int _destroy (Xpost_Context *ctx,
 
     xpost_context_install_event_handler(ctx, null, null);
 
-    free(private.bitmap_info);
-    ReleaseDC(private.window, private.ctx);
+    rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
+    if (rd)
+    {
+        DeleteObject(rd->bitmap);
+        ReleaseDC(private.window, rd->ctx);
+        free(rd->bitmap_info);
+        free(rd);
+    }
     DestroyWindow(private.window);
 
     if (!UnregisterClass("XPOST_DEV_WIN32", private.instance))
@@ -818,6 +882,9 @@ int loadwin32devicecont (Xpost_Context *ctx,
 
     op = consoper(ctx, "win32Emit", _emit, 0, 1, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Emit"), op);
+
+    op = consoper(ctx, "win32Flush", _flush, 0, 1, dicttype);
+    bdcput(ctx, classdic, consname(ctx, "Flush"), op);
 
     op = consoper(ctx, "win32Destroy", _destroy, 0, 1, dicttype);
     bdcput(ctx, classdic, consname(ctx, "Destroy"), op);
