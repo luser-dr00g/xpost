@@ -77,7 +77,6 @@ srand
 
 doprompt
 
-( lines)=
 
 {
     100 100 moveto
@@ -89,29 +88,32 @@ doprompt
     clip
 } pop%exec%pop
 
-%beginpage
-%    0 setlinewidth
-%    50 { randline randcolor stroke } repeat
-%endpage
+(single-pixel lines)=
+beginpage
+    0 setlinewidth
+    50 { randline randcolor stroke } repeat
+endpage
 
+(stroked lines)=
 beginpage
     15 { randline randwidth randcolor stroke } repeat
 endpage
 
 
-( curves)=
 
-%beginpage
-%    0 setlinewidth
-%    20 { randcurve randcolor stroke } repeat
-%endpage
+(single-pixel curves)=
+beginpage
+    0 setlinewidth
+    20 { randcurve randcolor stroke } repeat
+endpage
 
+(stroked curves)=
 beginpage
     randcurve randwidth randcolor stroke
     randcurve randwidth randcolor stroke
     randcurve randwidth randcolor stroke
     randcurve randwidth randcolor stroke
-    break
+    %break
     randcurve randwidth randcolor stroke
     randcurve randwidth randcolor stroke
     randcurve randwidth randcolor stroke
@@ -121,14 +123,21 @@ beginpage
 endpage
 
 
-( boxes)=
 
+(single-pixel boxes)=
 beginpage
-    10 { randbox randwidth randcolor stroke newpath } repeat
+    0 setlinewidth
+    20 { randbox randcolor stroke newpath } repeat
 endpage
 
+(stroked boxes)=
 beginpage
-    5 { randbox randcolor fill newpath } repeat
+    20 { randbox randwidth randcolor stroke newpath } repeat
+endpage
+
+(filled boxes)=
+beginpage
+    20 { randbox randcolor fill newpath } repeat
 endpage
 
 (initial rng seed: )=only initialsrand =
