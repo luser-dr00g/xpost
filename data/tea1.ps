@@ -1,0 +1,545 @@
+%!
+%%BoundingBox: 109 246 492 487
+%-109 -246 translate
+%%BoundingBox: 111 368 458 553
+%-111 -368 translate
+%%BoundingBox: 1 0 345 184
+%%BoundingBox: 114 368 456 551
+%-114 -368 translate
+%%BoundingBox: 0 0 342 183
+%%BoundingBox: 159 190 467 349
+%-159 -190 translate
+
+300 200 translate
+1 150 dup dup scale div setlinewidth
+
+/olddiv /div load def
+/div { dup 0 eq { pop pop 100000 }{ olddiv } ifelse } bind def
+
+%(mat.ps)run  %include matrix library
+%(det.ps)run  %determinant function (includes mat.ps)
+%!
+%det.ps
+(mat.ps)run
+/signalerror where{pop}{/signalerror/.error load def}ifelse
+
+/elem { % M i j
+	3 1 roll get exch get % M_i_j
+} bind def
+
+/det {
+	dup length 1 index 0 get length ne { /det cvx /typecheck signalerror } if
+	1 dict begin /M exch def
+		M length 2 eq {
+			M 0 0 elem
+			M 1 1 elem mul
+			M 0 1 elem
+			M 1 0 elem mul sub
+		}{
+			M length 3 eq {
+				M aload pop cross dot
+			}{ /det cvx /rangecheck signalerror } ifelse
+		} ifelse
+	end
+} bind def
+
+
+/tok{ token pop exch pop }bind def
+/s{(,){search{ tok 3 1 roll }{ tok exit }ifelse }loop }bind def
+/f(teapot)(r)file def
+/patch[ f token pop { [ f 100 string readline pop s ] } repeat ]def
+/vert[ f token pop { [ f 100 string readline pop s ] } repeat ]def
+/patch[ patch{ [exch { 1 sub vert exch get }forall ] }forall ]def
+%vert == patch == %test data input flush quit
+
+/makerot {
+	Theta 0 get roty        % pan
+	Theta 1 get rotx matmul % tilt
+	Theta 2 get rotz matmul % twist
+} def
+
+/R 30 def
+/H 6 def
+/ang 10 def
+
+/I3 3 ident def      % 3D identity matrix
+/Cam [
+	ang sin R mul
+	H 
+	ang cos R mul
+] def  % world coords of camera center viewpoint
+/Theta [
+	ang 180 add
+	H R atan
+	0
+] def % y-rotation x-rotation z-rotation
+/Eye [ 0 0 -15 ] def  % eye relative to camera vp
+/Rot makerot def          % initial rotation seq
+/light [ 10 10 5 ] def % light vector
+
+/Model -90 rotx def % model->world transform
+
+/proj {
+	Model matmul 0 get			   % perform model->world transform
+	Cam {sub} vop                  % translate to camera coords
+	Rot matmul                     % perform camera rotation
+	0 get                          % extract vector from 1x3 matrix
+	aload pop Eye aload pop  % extract dot x,y,z and eye xyz
+	4 3 roll div exch neg          % perform perspective projection
+	4 3 roll add 1 index mul
+	4 1 roll 3 1 roll sub mul exch % (ez/dz)(dx-ex) (ez/dz)(dy-ey)
+} bind def
+
+/median { % [x0 y0 z0] [x1 y1 z1]
+	{add 2 div} vop % [ (x0+x1)/2 (y0+y1)/2 (z0+z1)/2 ]
+} bind def
+
+/decasteljau { % [P0] P1 P2 P3  .  P0 P1' P2' P3'  P3' P4' P5' P3
+	{p3 p2 p1 p0}{exch def}forall
+	/p01 p0 p1 median def
+	/p12 p1 p2 median def
+	/p23 p2 p3 median def
+	/p012 p01 p12 median def
+	/p123 p12 p23 median def
+	/p0123 p012 p123 median def
+	p0 p01 p012 p0123
+	p0123 p123 p23 p3
+} def
+
+/splitrows { % [b0 .. b15]  .  [c0 .. c15] [d0 .. d15]
+	aload pop % b0 .. b15
+	4 {
+		16 12 roll decasteljau
+		8 4 roll
+		20 4 roll
+	} repeat
+	16 array astore
+	17 1 roll 16 array astore
+} bind def
+
+/xpose {
+	aload pop % 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15
+	15 12 roll % 0 4 5 6 7 8 9 10 11 12 13 14 15 1 2 3
+	14 11 roll % 0 4 8 9 10 11 12 13 14 15 1 2 3 5 6 7
+	13 10 roll % 0 4 8 12 13 14 15 1 2 3 5 6 7 9 10 11
+
+	12 9 roll % 0 4 8 12 1 2 3 5 6 7 9 10 11 13 14 15
+	11 9 roll % 0 4 8 12 1 5 6 7 9 10 11 13 14 15 2 3
+	10 8 roll % 0 4 8 12 1 5 9 10 11 13 14 15 2 3 6 7
+	9 7 roll % 0 4 8 12 1 5 9 13 14 15 2 3 6 7 10 11
+
+	8 6 roll % 0 4 8 12 1 5 9 13 2 3 6 7 10 11 14 15
+	7 6 roll % 0 4 8 12 1 5 9 13 2 6 7 10 11 14 15 3
+	6 5 roll % 0 4 8 12 1 5 9 13 2 6 10 11 14 15 3 7
+	5 4 roll % 0 4 8 12 1 5 9 13 2 6 10 14 15 3 7 11
+	4 3 roll % 0 4 8 12 1 5 9 13 2 6 10 14 3 7 11 15
+	16 array astore
+} bind def
+
+/splitcols {
+	xpose
+	splitrows
+	xpose exch xpose
+} def
+
+1{ /patch[ patch{ splitrows }forall ]def }repeat
+1{ /patch[ patch{ splitcols }forall ]def }repeat
+(patches divided)= flush
+
+% convert patches to triangles
+/tri[ patch{ 
+	dup [ exch          % p [ p
+		dup 0 get exch  % p [ p0 p
+		dup 3 get exch  % p [ p0 p3 p
+		12 get ] exch   % [ p0 p3 p12 ] p
+	[ exch              % [ p0 p3 p12 ] [ p
+		dup 3 get exch  % [ p0 p3 p12 ] [ p3 p
+		dup 12 get exch % [ p0 p3 p12 ] [ p3 p12 p
+		15 get          % [ p0 p3 p12 ] [ p3 p12 p15 
+		3 2 roll        % [ p0 p3 p12 ] [ p12 p15 p3
+		exch            % [ p0 p3 p12 ] [ p12 p3 p15
+		]     
+}forall ]def %tri { == } forall
+
+{
+/doubletri tri length 2 mul array def
+doubletri 0 tri putinterval
+doubletri tri length tri putinterval
+/tri doubletri def
+}
+pop
+%exec
+
+/color {
+	normal mag 0 lt { /normal normal [-1 -1 -1] {mul} vop def }if
+	normal light dot 1 add 4 div
+%1 exch sub
+setgray} def
+
+/vistri { true } def
+
+/drawtri {
+	vistri {
+	dup % tri tri
+	aload pop 1 index % tri p0 p1 p2 p1
+	{sub}vop % tri p0 p1 v12
+	3 1 roll {sub}vop % tri v12 v01
+	cross /normal exch def
+	{proj} forall
+	moveto lineto lineto closepath
+	color
+	gsave stroke grestore
+	fill
+	}{ pop } ifelse
+	flushpage
+} bind def
+
+
+/unshift { % [ e1 .. eN ] e0  .  [ e0 e1 .. eN ]
+	%exch aload length 1 add array astore
+	exch % e A
+	dup length 1 add array % e A B
+	dup 0 4 3 roll % e B B 0 A
+	putinterval % a B
+	dup dup length 1 sub 4 3 roll % B B Bn-1 a
+	put
+} bind def
+
+/shift {
+	aload length /LEN exch def
+	LEN rand LEN mod roll
+	LEN 1 sub array astore exch
+} bind def
+
+/shift { % [ e0 e1 .. eN ]  .  [ e1 .. eN ] e0
+	%aload length 1 sub array astore exch
+	dup 0 get exch dup length 1 sub 1 exch getinterval exch
+} bind def
+
+
+/nextplane { [ rand 360 mod  0  rand 360 mod  0 ] } def
+/n 2 def
+/m 1 def
+/nextplane { [ rand n mod  rand n mod  rand n mod  0 ] } def
+/nextplane { [ rand n mod m sub  rand n mod m sub  rand n mod m sub  0 ] } def
+/nextplane { [ rand n mod m sub  rand n mod m sub  rand n mod m sub  rand n mod m sub ] } def
+
+/prevplane [ 1 0 0 0 ] def
+/nextplane { prevplane dup
+	aload pop 4 1 roll 4 array astore /prevplane exch def } def
+
+/counter 0 def
+/nextplane {
+	[ counter 1 and
+		counter -1 bitshift 1 and
+		counter -2 bitshift 1 and
+		counter -3 bitshift 1 and ]
+	/counter counter 1 add 16 mod def
+} def
+
+/Ang 0 def
+/nextplane { [
+	Ang cos  0 %rand n mod 
+	Ang sin  0 %rand n mod m sub
+	]
+	/Ang Ang 60 add 360 mod def } def
+
+/prevplane [ 1 0 0 0 ] def
+/nextplane {
+	prevplane
+	%/prevplane [ prevplane aload pop 4 1 roll neg ] def
+	/prevplane [ prevplane aload pop pop 3 1 roll %neg
+	0 ] def
+} def
+
+/initplist {
+	[
+	0 .3 4 {
+		/x exch def
+	  [ 1 0 0 x ]
+	  [ .7 0 .7 x ]
+	  %[ .7 0 -.7 x ]
+	  [ 0 0 1 x ]
+	  [ 0 1 0 x ]
+
+	  [ 1 0 0 x neg ]
+	  [ .7 0 .7 x neg ]
+	  %[ .7 0 -.7 x neg ]
+	  [ 0 0 1 x neg ]
+	  %[ 0 1 0 x neg ]
+	} for
+	]
+} def
+
+/initplist {
+	[
+		0 .1 5 { /x exch def
+		[ 1 0 0 x ]
+		[ 0 0 1 x ]
+		[ 1 0 0 x neg ]
+		[ 0 0 1 x neg ]
+		} for
+	]
+} def
+
+/initplist {
+	[
+		0 30 360 { /x exch def
+		[ x cos 0 x sin 0 ]
+		[ 1 0 0 x 90 div 2 sub ]
+		[ 0 0 1 x 90 div 2 sub ]
+		} for
+	]
+} def
+
+/initplist {
+	[
+		[ 0 0 1 0 ]
+		%[ 0 0 1 1 ]
+		%[ 0 0 1 -1 ]
+		[ 0 1 0 0 ]
+		%[ 0 1 0 1 ]
+		[ 1 0 0 0 ]
+		
+		%1 .1 4 { /x exch def
+			%[ 1 0 0 x ]
+			%[ 1 0 0 x neg ]
+		%} for
+	]
+} def
+
+/initplist {
+	[
+	[ 0 1 0 0 ]
+	[ 0 0 1 0 ]
+	[ 1 0 0 0 ]
+	0 10 360 { /A exch def
+		[ A sin H A cos 0 ]
+		[ H A sin A cos 0 ]
+	} for
+	0 30 360 { /A exch def
+	1 .4 5 { /x exch def
+		[ A cos A sin H x ]
+		%[ A sin H A cos x neg 1 sub ]
+	} for
+	} for
+	]
+} def
+
+/planelist initplist def
+planelist ==
+
+/nextplane {
+	count 3 sub
+	planelist length mod
+	(plane=)print dup =only ( )print
+	planelist exch get
+	dup ==
+} def
+
+/nextplane {
+	planelist shift exch
+	dup length 0 eq { pop initplist } if
+	/planelist exch store
+	dup ==
+} def
+
+
+(building bsp-tree)= flush
+/makebsp { % [ triangles ]  .  bsptree
+	(depth=)print count =only ( )print
+	(triangles=)print dup length =only ( )print
+%5 dict
+<</P[]/PM[]/plane[]/front[]/behind[]/F<<>>/B<<>>>>
+begin
+
+	dup length 1 le{dup length 0 eq{pop}{
+		aload pop
+		/P exch def
+		P drawtri
+	}ifelse}{ % length>1
+
+	% P: Partitioning Polygon (triangle)
+	shift /P exch def
+	P drawtri
+
+	% make column vectors of homogeneous coords
+	%/PM P transpose aload pop [1 1 1] 4 array astore def
+	%/plane [
+	%  PM 0 3 getinterval det 
+	%  [ PM 0 get PM 2 get PM 3 get ] det 
+	%  [ PM 0 get PM 1 get PM 3 get ] det 
+	%  PM 1 3 getinterval det 3 mul
+	%  .33 mul
+	%] def
+	/plane nextplane def
+
+	/front [] def
+	/behind [] def
+	{ %forall  [P4 P5 P6] = [[x4 y4 z4][x5 y5 z5][x6 y6 z6]]
+		/T exch def
+		T transpose % [[x4 x5 x6][y4 y5 y6][z4 z5 z6]]
+		{aload pop add add} forall % (x4+x5+x6) (y4+y5+y6) (z4+z5+z6)
+
+		plane 2 get mul 3 1 roll % z|C| (x) (y)
+		plane 1 get mul 3 1 roll % y|B| z|C| (x)
+		plane 0 get mul          % y|B| z|C| x|A|
+		plane 3 get add add add  % Ax+By+Cz+D
+
+		0 le { /front front
+		}{ /behind behind
+		} ifelse
+		T unshift def
+	} forall
+
+	%front == ()= behind == flush (%lineedit)(r)file pop
+
+	%/B behind makebsp def
+	behind currentdict end exch
+		makebsp
+	exch begin /B exch def
+
+	%/F front makebsp def
+	front currentdict end exch
+		makebsp
+	exch begin /F exch def
+
+	/behind [] def
+	/front [] def %clear lists (discard memory)
+
+	} ifelse
+currentdict end
+} bind def
+
+/bsp tri makebsp def
+%bsp === currentfile flushfile
+
+/drawbsp { % bsptree  .  -
+	begin
+
+	plane length 0 eq {
+		P length 0 ne { P drawtri } if
+		end
+	}{
+		Cam aload pop
+		plane 2 get mul 3 1 roll
+		plane 1 get mul 3 1 roll
+		plane 0 get mul
+		plane 3 get add add add
+
+		%pstack()=
+
+		0 gt {
+			B currentdict end exch drawbsp begin
+			P drawtri
+			F end drawbsp
+		}{
+			F currentdict end exch drawbsp begin
+			P drawtri
+			B end drawbsp
+		} ifelse
+	} ifelse
+} bind def
+
+
+/trisort {
+} def
+
+
+/visible { % patch  .  patch boolean
+	dup % p p
+	dup 3 get exch dup 0 get exch 12 get % p p3 p0 p12
+	1 index {sub} vop % p p3 p0 v0->12
+	3 1 roll {sub} vop % p v0->12 v0->3
+	cross /normal exch def
+	dup
+	[ exch dup 0 get exch dup 3 get exch dup 12 get exch 15 get ]
+	{ Cam {sub} vop normal dot 0 ge } forall
+	%add add add 4 div 0 lt
+	or or or
+} def
+
+/vistri { % tri  .  tri boolean
+	dup %aload pop
+	{ Model matmul 0 get			   % perform model->world transform
+	}forall
+	1 index {sub} vop
+	3 1 roll {sub} vop
+	cross /normal exch def
+	dup 1 get
+	Cam %exch
+	{sub} vop
+	normal dot 0 gt
+} def
+
+%/vistri { true } def
+
+/drawpatch {
+
+	% Four corners
+	%[ exch dup 0 get exch dup 3 get exch dup 12 get exch 15 get ]
+
+	true {
+
+		[ exch
+			% control rows
+			%dup 4 get exch dup 5 get exch dup 6 get exch dup 7 get exch
+			%dup 11 get exch dup 10 get exch dup 9 get exch dup 8 get exch
+
+			% control columns
+			%dup 1 get exch dup 5 get exch dup 9 get exch dup 13 get exch
+			%dup 14 get exch dup 10 get exch dup 6 get exch dup 2 get exch
+
+			% Boundary curves
+			dup 8 get exch dup 4 get exch dup 0 get exch %curveto4 
+			dup 14 get exch dup 13 get exch dup 12 get exch %curveto3 
+			dup 7 get exch dup 11 get exch dup 15 get exch %curveto2 
+			dup 1 get exch dup 2 get exch dup 3 get exch %curveto1 
+			dup 0 get exch %moveto
+		pop ]
+
+		{ proj } forall
+
+		moveto curveto curveto curveto curveto
+		%moveto lineto lineto lineto lineto lineto lineto lineto closepath
+		%moveto lineto lineto lineto lineto lineto lineto lineto closepath
+
+		stroke
+		%flushpage flush (%lineedit)(r)file pop
+
+	}{
+		pop
+	}ifelse
+
+} def
+
+{
+
+	% camera revolves around Y axis at height H, dist R
+
+	/Cam [
+	ang sin R mul
+	H 
+	ang cos R mul
+	] def
+
+	/Theta [
+	ang 180 add
+	H R atan
+	0
+	] def   % rotate camera back to origin
+	/Rot makerot def        % squash rotation sequence into a matrix
+
+	%patch { drawpatch } forall
+	%tri { drawtri } forall
+	bsp drawbsp
+
+	pstack
+	showpage
+	300 200 translate
+	1 150 dup dup scale div setlinewidth
+
+	%exit
+	/ang ang 10 add def
+} loop
+
