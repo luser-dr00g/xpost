@@ -172,6 +172,11 @@ if ! test "x${xpost_requirements_bin_pc}" = "x" ; then
    PKG_CHECK_MODULES([XPOST_BIN], [${xpost_requirements_bin_pc}])
 fi
 
+# OpenGL
+if test "x${have_win32}" = "xyes" ; then
+   XPOST_BIN_LIBS="${XPOST_BIN_LIBS} -lopengl32"
+fi
+
 # check
 have_tests="no"
 if test "x${enable_tests}" = "xyes" ; then
