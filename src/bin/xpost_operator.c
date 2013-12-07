@@ -454,7 +454,7 @@ int breakhere(Xpost_Context *ctx)
 
 /* create systemdict and call
    all initop?* functions, installing all operators */
-int initop(Xpost_Context *ctx, const char *device)
+int initop(Xpost_Context *ctx)
 {
     Xpost_Object op;
     Xpost_Object n;
@@ -532,7 +532,7 @@ int initop(Xpost_Context *ctx, const char *device)
     initopfont(ctx, sd);
     initdevgenericops(ctx, sd);
 #ifdef _WIN32
-    initwin32ops(ctx, sd, device);
+    initwin32ops(ctx, sd);
 #endif
 #ifdef HAVE_XCB
     initxcbops(ctx, sd);
