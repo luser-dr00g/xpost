@@ -23,7 +23,8 @@ data/test.ps \
 data/testdraw.ps \
 data/tea1.ps \
 data/mat.ps \
-data/teapot
+data/teapot \
+data/sin1x.ps
 
 psfilesdir = $(pkgdatadir)
 
@@ -51,4 +52,5 @@ data/test.ps \
 data/testdraw.ps \
 data/tea1.ps \
 data/mat.ps \
-data/teapot
+data/teapot \
+data/sin1x.ps

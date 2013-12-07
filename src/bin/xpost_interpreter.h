@@ -74,12 +74,12 @@ int idleproc (Xpost_Context *ctx);
 
 extern int TRACE;
 
-int xpost_interpreter_init(Xpost_Interpreter *itp);
+int xpost_interpreter_init(Xpost_Interpreter *itp, const char *device);
 void xpost_interpreter_exit(Xpost_Interpreter *itp);
 
 /* 3 simple top-level functions */
 
-int xpost_create(void);
+int xpost_create(const char *device);
 void xpost_run(void);
 void xpost_destroy(void);
 
