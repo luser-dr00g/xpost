@@ -73,7 +73,7 @@ typedef struct oper {
 enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
     floattype, numbertype, proctype };
 
-#define MAXOPS 180
+#define MAXOPS 200
 #define SDSIZE 10
 
 int initoptab(Xpost_Context *ctx);

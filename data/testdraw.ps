@@ -78,6 +78,16 @@ srand
 
 ( lines)=
 
+{
+    100 100 moveto
+    0 300 rlineto
+    400 0 rlineto
+    0 -300 rlineto
+    %-400 0 rlineto
+    closepath
+    clip
+} pop%exec%pop
+
 %beginpage
 %    0 setlinewidth
 %    50 { randline randcolor stroke } repeat
@@ -122,3 +132,6 @@ endpage
 
 (initial rng seed: )=only initialsrand =
 (total drawing time: )=only drawingtime =
+(vmstatus (max used save-level): )=
+vmstatus = = =
+

@@ -10,7 +10,7 @@
     graphicsdict /currgstate get /currpath get
     matrix currentmatrix
 
-    %construct the initial clipping path
+    %construct the initial clipping path CCW
     % with an identity matrix (ie. userspace==devicespace)
     newpath
     matrix setmatrix
@@ -201,12 +201,23 @@ end } def
 
     /CR                         % Clip Region   clippath array
     clippath [
-        { 2 array astore [ exch }
+        %{ 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall
+        [
+        { 2 array astore
+            counttomark 1 ne {
+                counttomark 1 add 1 roll
+                ] exch
+                [ exch
+            } if
+        }
         { 2 array astore }
         {}
-        {]}
+        { counttomark 1 sub index }
         .devpathforall
-    ] def
+        ]
+    ]
+    %pstack()=
+    def
 
     /DEBUGCLIP where { pop
         (doclip)=
