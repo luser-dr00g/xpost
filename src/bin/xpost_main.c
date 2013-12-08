@@ -81,6 +81,18 @@ if ((!strcmp(argv[i], so)) || \
     } \
 }
 
+static const char *_xpost_main_devices[] =
+{
+    "pgm",
+#ifdef _WIN32
+    "gdi",
+    "gl",
+#else
+    "xcb",
+#endif
+    NULL
+};
+
 static void
 _xpost_main_license(void)
 {
@@ -100,7 +112,8 @@ _xpost_main_usage(const char *filename)
     printf("Postscript level 2 interpreter\n\n");
     printf("Options:\n");
     printf("  -o, --output=[FILE]    output file\n");
-    printf("  -d, --device=[STRING]  string device\n");
+    printf("  -D, --device-list      device list\n");
+    printf("  -d, --device=[STRING]  device name\n");
     printf("  -L, --license          show program license\n");
     printf("  -V, --version          show program version\n");
     printf("  -h, --help             show this message\n");
@@ -109,14 +122,15 @@ _xpost_main_usage(const char *filename)
 static void
 _xpost_main_device_list(void)
 {
+    int i;
+
     printf("supported devices:\n");
-    printf("\tPGM\n");
-#ifdef HAVE_XCB
-    printf("\tXCB\n");
-#endif
-#ifdef _WIN32
-    printf("\tGDI\n");
-#endif
+    i = 0;
+    while (_xpost_main_devices[i])
+    {
+        printf("\t%s\n", _xpost_main_devices[i]);
+        i++;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -125,17 +139,18 @@ int main(int argc, char *argv[])
     const char *device = NULL;
     const char *ps_file = NULL;
     const char *filename = argv[0];
+    int have_device;
     int i;
 
     printf("EXTRA_BITS_SIZE = %d\n", XPOST_OBJECT_TAG_EXTRA_BITS_SIZE);
     printf("COMP_MAX_ENT = %d\n", XPOST_OBJECT_COMP_MAX_ENT);
 
 #ifdef _WIN32
-    device = "GDI";
+    device = "gdi";
 #elif defined HAVE_XCB
-    device = "XCB";
+    device = "xcb";
 #else
-    device = "PGM";
+    device = "pgm";
 #endif
 
     if (!xpost_init())
@@ -188,7 +203,7 @@ int main(int argc, char *argv[])
             {
                 printf("unknown option\n");
                 _xpost_main_usage(filename);
-                return -1;
+                goto quit_xpost;
             }
         }
         else
@@ -198,6 +213,25 @@ int main(int argc, char *argv[])
     }
 
     xpost_is_installed(filename); /* mallocs char* exedir */
+
+    /* check devices */
+    have_device = 0;
+    i = 0;
+    while (_xpost_main_devices[i])
+    {
+        if (strcmp(_xpost_main_devices[i], device) == 0)
+        {
+            have_device = 1;
+            break;
+        }
+        i++;
+    }
+    if (!have_device)
+    {
+        XPOST_LOG_ERR("wrong device.");
+        _xpost_main_usage(filename);
+        goto quit_xpost;
+    }
 
     if (!xpost_create(device))
     {
