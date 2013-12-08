@@ -511,7 +511,7 @@ int _putpix (Xpost_Context *ctx,
         }
         case RENDER_BACKEND_GL:
             glBegin(GL_POINTS);
-            glColor4f(red.real_.val, green.real_.val, blue.real_.val, 1.0f);
+            glColor4f(red.int_.val / 255.0f, green.int_.val / 255.0f, blue.int_.val / 255.0f, 1.0f);
             glVertex2f(x.int_.val, y.int_.val);
             glEnd();
             rd->backend.gl.changed = 1;
@@ -745,7 +745,7 @@ int _drawline (Xpost_Context *ctx,
         }
         case RENDER_BACKEND_GL:
             glBegin(GL_LINES);
-            glColor4f(red.real_.val, green.real_.val, blue.real_.val, 1.0f);
+            glColor4f(red.int_.val / 255.0f, green.int_.val / 255.0f, blue.int_.val / 255.0f, 1.0f);
             glVertex2f(_x1, _y1);
             glVertex2f(_x2, _y2);
             glEnd();
