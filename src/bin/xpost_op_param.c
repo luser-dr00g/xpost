@@ -99,6 +99,31 @@ int vmstatus (Xpost_Context *ctx) {
     return 0;
 }
 
+static
+int globalvmstatus (Xpost_Context *ctx) {
+    int lev, used, max;
+    unsigned int vstk;
+
+    if (!xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk))
+    {
+        XPOST_LOG_ERR("cannot load save stack");
+        return VMerror;
+    }
+    lev = xpost_stack_count(ctx->gl, vstk);
+    used = ctx->gl->used + ctx->gl->used;
+    max = ctx->gl->max + ctx->gl->max;
+
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(lev)))
+        return stackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(used)))
+        return stackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(max)))
+        return stackoverflow;
+    return 0;
+}
+
+
 int initopparam(Xpost_Context *ctx,
              Xpost_Object sd)
 {
@@ -113,6 +138,7 @@ int initopparam(Xpost_Context *ctx,
 
     op = consoper(ctx, "vmreclaim", vmreclaim, 0, 1, integertype); INSTALL;
     op = consoper(ctx, "vmstatus", vmstatus, 3, 0); INSTALL;
+    op = consoper(ctx, "globalvmstatus", globalvmstatus, 3, 0); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     op = consoper(ctx, "save", Zsave, 1, 0); INSTALL;
