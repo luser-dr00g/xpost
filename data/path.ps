@@ -130,36 +130,16 @@
 % x y r angle1 angle2  arc  -
 % append a circular arc to the current path
 /arc {
-DICT %10 dict
-begin
-    {angle2 angle1 r y x}{exch def}forall
-    /fx { cos r mul x add } def
-    /fx' { sin r mul x add } def
-    /fy { sin r mul y add } def
-    /fy' { cos r mul y add } def
-    /N 5 def
-    /h angle2 angle1 sub N div def
-    /t angle1 def
-    /_x t fx def
-    /_y t fy def
-    _x _y
-    pstack()=
-    cpath length 0 eq
-    { moveto }{ lineto } ifelse  % start pt
-    %B(t)= P1*(1-t)^3 + P2*3t(1-t)^2 + P3*t^2(1-t) + P4*t^3
-    %N {
-    %    t h 3 div add dup
-    %    fx' exch fy'  % ctrl pt 1
-    %    /t t h add def
-    %    /_x t fx def
-    %    /_y t fy def
-    %    t h 3 div sub dup
-    %    fx' exch fy'  % ctrl pt 2
-    %    _x _y         % end pt
-    %    pstack()=
-    %    curveto
-    %} repeat
-end } dup 0 5 dict put def
+    2 { dup 360 gt { dup 360 div truncate 360 mul sub } if exch } repeat
+    2 { dup 0 lt { 360 add } if exch } repeat
+    2 copy exch sub dup 90 gt { % recurse
+        .5 mul % x y r a1 a2 da/2
+        6 copy sub arc
+        3 2 roll add exch arc
+    }{ pop
+        % draw single bezier
+    } ifelse
+} def
 
 % -  closepath  -
 % connect subpath back to its starting point
