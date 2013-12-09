@@ -33,6 +33,17 @@
 # include <config.h>
 #endif
 
+#ifdef TIME_WITH_SYS_TIME
+# include <sys/time.h>
+# include <time.h>
+#else
+# ifdef HAVE_SYS_TIME_H
+#  include <sys/time.h>
+# else
+#  include <time.h>
+# endif
+#endif
+
 #include "xpost_log.h"
 #include "xpost_object.h"
 #include "xpost_memory.h"
@@ -40,29 +51,33 @@
 #include "xpost_main.h"
 
 static int _xpost_init_count = 0;
+static double _xpost_start_time = 0.0;
 
 int
 xpost_init(void)
 {
+#ifdef HAVE_GETTIMEOFDAY
+    struct timeval tv;
+#endif
+
     if (++_xpost_init_count != 1)
         return _xpost_init_count;
-
-	printf("xpost_init()\n");
 
     if (!xpost_log_init())
         return --_xpost_init_count;
 
-	printf("xpost_log_init()\n");
-
     if (!xpost_memory_init())
         return --_xpost_init_count;
-
-	printf("xpost_memory_init()\n");
 
     if (!xpost_font_init())
         return --_xpost_init_count;
 
-	printf("xpost_font_init()\n");
+#ifdef HAVE_GETTIMEOFDAY
+    gettimeofday(&tv, NULL);
+    _xpost_start_time = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
+#else
+    _xpost_start_time = time(NULL) * 1000;
+#endif
 
     return _xpost_init_count;
 }
@@ -91,4 +106,10 @@ xpost_version_get(int *maj, int *min, int *mic)
     if (maj) *maj = XPOST_VERSION_MAJ;
     if (min) *min = XPOST_VERSION_MIN;
     if (mic) *mic = XPOST_VERSION_MIC;
+}
+
+double
+xpost_start_time_get(void)
+{
+    return _xpost_start_time;
 }
