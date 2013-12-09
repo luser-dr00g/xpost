@@ -127,6 +127,11 @@
     curveto
 } bind def
 
+/tan {
+    dup sin exch
+    cos exch div
+} def
+
 % x y r angle1 angle2  arc  -
 % append a circular arc to the current path
 /arc {
@@ -138,6 +143,40 @@
         3 2 roll add exch arc
     }{ pop
         % draw single bezier
+        dup sin exch cos atan exch  % x y r e2 a1
+        dup sin exch cos atan       % x y r e2 e1
+        4 index 1 index cos 4 index % x y r e2 e1 x cos(e1) r
+        mul add                     % x y r e2 e1 P1x
+        4 index 2 index sin 5 index % x y r e2 e1 P1x y sin(e1) r
+        mul add                     % x y r e2 e1 P1x P1y
+        2 copy { currentpoint pop pop } stopped {
+            moveto
+        }{
+            lineto
+        } ifelse
+
+        3 index 3 index             % x y r e2 e1 P1x P1y e2 e1
+        sub dup                     % x y r e2 e1 P1x P1y de de
+        .5 mul tan dup mul
+        3 mul 4 add sqrt            % x y r e2 e1 Px Py de sqrt
+        exch sin mul 1 sub 3 div    % x y r e2 e1 Px Py alpha
+        3 index sin 6 index mul
+        neg 1 index mul 3 index add % x y r e2 e1 Px Py alpha Q1x
+        5 4 roll cos 6 index mul
+        2 index mul 3 index add     % x y r e2 Px Py alpha Q1x Q1y
+        9 2 roll                    % Q1x Q1y x y r e2 Px Py alpha
+        3 1 roll pop pop            % Q1x Q1y x y r e2 alpha
+        1 index cos 3 index mul     % Q1x Q1y x y r e2 alpha rcos(e2)
+        6 5 roll add                % Q1x Q1y y r e2 alpha P2x
+        2 index sin 4 index mul     % Q1x Q1y y r e2 alpha P2x rsin(e2)
+        6 5 roll add                % Q1x Q1y r e2 alpha P2x P2y
+        3 index sin 5 index mul     % Q1x Q1y r e2 alpha P2x P2y rsin(e2)
+        neg 3 index mul neg 2 index add % Q1x Q1y r e2 alpha P2x P2y Q2x
+        5 4 roll cos 5 4 roll mul   % Q1x Q1y alpha P2x P2y Q2x rcos(e2)
+        5 4 roll mul neg 2 index add % Q1x Q1y P2x P2y Q2x Q2y
+        4 2 roll                     % Q1x Q1y Q2x Q2y P2x P2y
+
+        curveto
     } ifelse
 } def
 
