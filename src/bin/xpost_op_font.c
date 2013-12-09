@@ -182,10 +182,12 @@ int _show (Xpost_Context *ctx,
     struct fontdata data;
     char *cstr;
     Xpost_Object path;
+    Xpost_Object subpath;
     Xpost_Object pathelem;
     Xpost_Object pathelemdata;
     Xpost_Object datax, datay;
     real xpos, ypos;
+    char *ch;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
     if (xpost_object_get_type(userdict) != dicttype)
@@ -202,9 +204,12 @@ int _show (Xpost_Context *ctx,
     memcpy(cstr, charstr(ctx, str), str.comp_.sz);
     cstr[str.comp_.sz] = '\0';
 
+    /*FIXME if any of these calls fail, should return nocurrentpoint; */
     path = bdcget(ctx, gs, consname(ctx, "currpath")); 
-    pathelem = bdcget(ctx, path, xpost_cons_int(
+    subpath = bdcget(ctx, path, xpost_cons_int(
                 diclength(xpost_context_select_memory(ctx,path), path) - 1));
+    pathelem = bdcget(ctx, subpath, xpost_cons_int(
+                diclength(xpost_context_select_memory(ctx,subpath), subpath) - 1));
     pathelemdata = bdcget(ctx, pathelem, consname(ctx, "data"));
     datax = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 2);
     datay = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 1);
@@ -216,6 +221,18 @@ int _show (Xpost_Context *ctx,
     ypos = datay.real_.val;
 
     /* TODO render text in char *cstr  with font data  at position xpos ypos */
+#ifdef HAVE_FREETYPE
+    for (ch = cstr; *ch; ch++) {
+        FT_UInt glyph_index;
+        int err;
+
+        glyph_index = FT_Get_Char_Index(data.face, *ch);
+        err = FT_Load_Glyph(data.face, glyph_index, FT_LOAD_DEFAULT);
+        if (data.face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
+            err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
+
+    }
+#endif
 
     return 0;
 }
