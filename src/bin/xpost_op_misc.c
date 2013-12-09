@@ -75,6 +75,7 @@ void *alloca (size_t);
 #endif
 
 
+#include "xpost_main.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -137,14 +138,36 @@ static
 int realtime (Xpost_Context *ctx)
 {
     double sec;
+    long long lsec;
 #ifdef HAVE_GETTIMEOFDAY
-        struct timeval tv;
-        gettimeofday(&tv, NULL);
-        sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
 #else
-        sec = time(NULL) * 1000;
+    sec = time(NULL) * 1000;
 #endif
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(sec)))
+    lsec = sec;
+    lsec &= 0x00000000ffffffff; /* truncate any large value */
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int((int)lsec)))
+        return stackoverflow;
+    return 0;
+}
+
+static
+int usertime (Xpost_Context *ctx)
+{
+    double sec;
+    long long lsec;
+#ifdef HAVE_GETTIMEOFDAY
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
+#else
+    sec = time(NULL) * 1000;
+#endif
+    lsec = sec - xpost_start_time_get();
+    lsec &= 0x00000000ffffffff; /* truncate any large value */
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int((int)lsec)))
         return stackoverflow;
     return 0;
 }
@@ -300,7 +323,7 @@ int initopx(Xpost_Context *ctx,
     bdcput(ctx, sd, consname(ctx, "version"),
             xpost_object_cvlit(consbst(ctx, strlen(versionstr), versionstr)));
     op = consoper(ctx, "realtime", realtime, 1, 0); INSTALL;
-    //usertime
+    op = consoper(ctx, "usertime", usertime, 1, 0); INSTALL;
     //languagelevel
     bdcput(ctx, sd, consname(ctx, "product"),
             xpost_object_cvlit(consbst(ctx, strlen(productstr), productstr)));

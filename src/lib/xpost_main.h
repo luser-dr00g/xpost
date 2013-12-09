@@ -75,7 +75,17 @@ int xpost_quit(void);
  * respectively in the buffers @p maj, @p min and @p mic. @p maj, @p min
  * and @p mic can be @c NULL.
  */
-void
-xpost_version_get(int *maj, int *min, int *mic);
+void xpost_version_get(int *maj, int *min, int *mic);
+
+/**
+ * @brief Return the start time when library is initialized.
+ *
+ * @return The start time.
+ *
+ * This function returns a time set in xpost_init(). It is used to
+ * measure the time spent in the Postscript interpreter (in the
+ * usertime operator).
+ */
+double xpost_start_time_get(void);
 
 #endif
