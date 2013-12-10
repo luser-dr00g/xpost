@@ -1,0 +1,112 @@
+%!
+%%Title: Hugo's Fractal
+%%Creator: Hugo M. Ayala'89, MIT
+%%EndComments
+
+gsave
+
+/scl .1 def
+/depth 6 def
+
+2 setlinecap
+0 setgray
+1 setlinewidth
+
+/prorand {rand 32768 div 32768 div 1 sub scl mul} def
+/findrow {8 mul 7 sub sqrt 1 add 2 div truncate} def
+/findindex {dup 1 sub mul 2 div 1 add} def
+/findcolumn {dup findrow findindex sub} def
+/findnewrow {2 mul 1 sub} def
+/findnewcolumn {2 mul} def
+/findarraysize {dup 1 add mul 2 div 1 add} def
+/findnumoflines {dup 1 sub mul 2 div 3 mul} def
+/findnumpoints {dup 1 add mul 2 div} def
+/gtol {2 exch exp 1 add} def
+/fixangle {dup 180 ge {180 sub} if} def
+/backangle {dup 180 ge {180 sub} {180 add} ifelse} def
+
+/splitline
+{tpx btx add 2 div /mdx exch def
+tpy bty add 2 div /mdy exch def
+tpy bty sub tpx btx sub atan
+90 add fixangle
+/lineangle exch def
+tpy bty sub dup mul
+tpx btx sub dup mul
+add sqrt /linelen exch def
+prorand linelen mul dup
+lineangle cos mul mdx add /mdx exch def
+lineangle sin mul mdy add /mdy exch def} def
+
+/findnewindex
+{cvi /oldindex exch def
+oldindex findrow cvi dup /oldrow exch def
+findindex oldindex exch sub cvi /oldcolumn exch def
+oldrow findnewrow cvi dup /newrow exch def findindex
+oldcolumn findnewcolumn cvi dup /newcolumn exch def add
+cvi /newindex exch def} def
+
+/drawfractal
+{1 1 generation gtol 1 sub findnumpoints
+{cvi /topindex exch def
+topindex dup findcolumn exch findrow 1 add findindex add cvi
+/leftindex exch def
+leftindex 1 add cvi /rightindex exch def
+/tpx oldarrayx topindex get def
+/tpy oldarrayy topindex get def
+/btx oldarrayx leftindex get def
+/bty oldarrayy leftindex get def
+/mdx oldarrayx rightindex get def
+/mdy oldarrayy rightindex get def
+tpx tpy moveto
+btx bty lineto
+mdx mdy lineto
+closepath stroke} for} def
+
+/generatefractal
+{1 1 depth
+{/generation exch def
+generation gtol findarraysize cvi dup
+array /newarrayx exch def
+array /newarrayy exch def
+1 1 generation 1 sub gtol findnumpoints
+{findnewindex
+newarrayx newindex
+oldarrayx oldindex get put
+newarrayy newindex
+oldarrayy oldindex get put} for
+1 1 generation 1 sub gtol 1 sub findnumpoints
+{findnewindex
+newcolumn newrow 2 add findindex add cvi dup
+/leftindex exch def 2 add cvi
+/rightindex exch def
+newcolumn newrow 1 add findindex add cvi
+/mindex exch def
+/tpx newarrayx newindex get def
+/tpy newarrayy newindex get def
+/btx newarrayx leftindex get def
+/bty newarrayy leftindex get def
+splitline
+newarrayx mindex mdx put
+newarrayy mindex mdy put
+mindex 1 add cvi /mindex exch def
+/btx newarrayx rightindex get def
+/bty newarrayy rightindex get def
+splitline
+newarrayx mindex mdx put
+newarrayy mindex mdy put
+/mindex leftindex 1 add cvi def
+/tpx newarrayx leftindex get def
+/tpy newarrayy leftindex get def
+splitline
+newarrayx mindex mdx put
+newarrayy mindex mdy put} for
+/oldarrayx newarrayx def
+/oldarrayy newarrayy def
+7 generation sub 5 div setlinewidth
+drawfractal showpage} for} def
+
+/oldarrayx [0 540 72 72] def
+/oldarrayy [0 396 720 72] def
+generatefractal
+grestore

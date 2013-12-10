@@ -1,0 +1,151 @@
+loadgraphics
+
+/randgray {
+	rand 256 mod 255 div setgray
+} def
+
+/randcolor {
+    rand 1001 mod 1000 div
+    rand 1001 mod 1000 div
+    rand 1001 mod 1000 div setrgbcolor
+} def
+
+/randwidth {
+	rand 7 mod 1.5 mul setlinewidth
+} def
+
+/randpoint {
+    rand 500 mod
+    rand 400 mod
+} def
+
+/randline {
+    randpoint moveto
+    randpoint lineto
+} def
+
+/randbox {
+    rand 300 mod
+    rand 200 mod
+    randpoint moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+} def
+
+/randcurve {
+    randpoint
+    moveto
+    randpoint
+    randpoint
+    randpoint
+    curveto
+} def
+
+/drawingtime 0 def
+
+/beginpage {
+    save
+    realtime
+} def
+
+/endpage {
+    (initial rng seed: )=only initialsrand =
+    neg realtime add
+    dup drawingtime add /drawingtime exch def
+    (final realtime - initial realtime:)=only =
+    showpage
+    restore
+} def
+
+%realtime
+%-1890236260
+1
+dup (initial rng seed: )=only =
+dup /initialsrand exch def
+srand
+.75 setflat
+
+%[1 0 0 -1 0 DEVICE /height get] setmatrix
+
+300 400 100 0 360 arc stroke
+
+%50 50 moveto % should be at (50,50) from the bottom left corner
+%0 60 rlineto
+%60 0 rlineto
+%0 -60 rlineto
+%fill
+
+doprompt
+
+
+{
+    100 100 moveto
+    0 300 rlineto
+    400 0 rlineto
+    0 -300 rlineto
+    %-400 0 rlineto
+    closepath
+    clip
+} pop%exec%pop
+
+(single-pixel lines)=
+beginpage
+    0 setlinewidth
+    50 { randline randcolor stroke } repeat
+endpage
+
+(stroked lines)=
+beginpage
+    15 { randline randwidth randcolor stroke } repeat
+endpage
+
+
+
+(single-pixel curves)=
+beginpage
+    0 setlinewidth
+    20 { randcurve randcolor stroke } repeat
+endpage
+
+(stroked curves)=
+beginpage
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    %break
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+    randcurve randwidth randcolor stroke
+endpage
+
+
+
+(single-pixel boxes)=
+beginpage
+    0 setlinewidth
+    20 { randbox randcolor stroke newpath } repeat
+endpage
+
+(stroked boxes)=
+beginpage
+    20 { randbox randwidth randcolor stroke newpath } repeat
+endpage
+
+(filled boxes)=
+beginpage
+    20 { randbox randcolor fill newpath } repeat
+endpage
+
+(initial rng seed: )=only initialsrand =
+(total drawing time: )=only drawingtime =
+(vmstatus (max used save-level): )=
+vmstatus = = =
+(globalvmstatus (max used save-level): )=
+globalvmstatus = = =
+

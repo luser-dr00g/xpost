@@ -1,0 +1,39 @@
+%!
+
+/circ {
+	gsave
+		currentpoint newpath % cx cy
+		currentlinewidth 3 mul % cx cy r
+		0 360 % cx cy r ang^ ang$
+		arc fill
+	grestore
+} def
+
+/sin1x { 16 dict begin
+	{N x1 x0}{exch def}forall   %name args
+	/f { 1 exch div sin } def   %f(x) = sin(1/x)
+	/f' { 1 exch div cos } def  %f'(x) = cos(1/x)
+	/h x1 x0 sub N div def      %dx
+	/x x0 def                   %x = x0
+	/y x f def                  %y = f(x)
+	/s x f' def                 %s = f'(x)
+	x y moveto
+	N {
+		circ
+		x h 3 div add
+		y h 3 div s mul add  % x+(dx/3) y+(dx/3)*s           ctrl pt 1
+		/x x h add def          %x = x + dx
+		/y x f def              %y = f(x)
+		/s x f' def             %s = f'(x)
+		x h 3 div sub
+		y h 3 div s mul sub  % x+dx-(dx/3) f(x+dx)-(dx/3)*s  ctrl pt 2
+		x y                  % x+dx f(x+dx)                  end pt
+		curveto
+	} repeat
+} def
+
+300 400 translate
+1 200 dup dup scale div currentlinewidth mul setlinewidth
+
+-1 1 100 sin1x stroke
+showpage
