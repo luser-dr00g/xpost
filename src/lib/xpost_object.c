@@ -35,7 +35,6 @@
 #include <stdio.h>
 
 #include "xpost_log.h"
-#include "xpost_error.h"
 #include "xpost_object.h"
 
 /**
@@ -243,7 +242,7 @@ Xpost_Object xpost_object_cvlit (Xpost_Object obj)
 static
 void _xpost_object_dump_composite (Xpost_Object obj)
 {
-    XPOST_LOG_DUMP_INFO(" %c "
+    XPOST_LOG_DUMP(" %c "
             "%" XPOST_FMT_WORD(u) " "
             "%" XPOST_FMT_WORD(u) " "
             "%" XPOST_FMT_WORD(u) " "
@@ -264,7 +263,7 @@ void xpost_object_dump (Xpost_Object obj)
     switch (xpost_object_get_type(obj))
     {
     default: /*@fallthrough@*/
-    case invalidtype: XPOST_LOG_DUMP_INFO("<invalid object "
+    case invalidtype: XPOST_LOG_DUMP("<invalid object "
                               "%04" XPOST_FMT_WORD(x) " "
                               "%04" XPOST_FMT_WORD(x) " "
                               "%04" XPOST_FMT_WORD(x) " "
@@ -275,32 +274,32 @@ void xpost_object_dump (Xpost_Object obj)
                               obj.comp_.off);
                       break;
 
-    case nulltype: XPOST_LOG_DUMP_INFO("<null>");
+    case nulltype: XPOST_LOG_DUMP("<null>");
                    break;
-    case marktype: XPOST_LOG_DUMP_INFO("<mark>");
+    case marktype: XPOST_LOG_DUMP("<mark>");
                    break;
 
-    case booleantype: XPOST_LOG_DUMP_INFO("<boolean %s>",
+    case booleantype: XPOST_LOG_DUMP("<boolean %s>",
                               obj.int_.val ? "true" : "false");
                       break;
-    case integertype: XPOST_LOG_DUMP_INFO("<integer %" XPOST_FMT_INTEGER(d) ">",
+    case integertype: XPOST_LOG_DUMP("<integer %" XPOST_FMT_INTEGER(d) ">",
                               obj.int_.val);
                       break;
-    case realtype: XPOST_LOG_DUMP_INFO("<real %" XPOST_FMT_REAL ">",
+    case realtype: XPOST_LOG_DUMP("<real %" XPOST_FMT_REAL ">",
                            obj.real_.val);
                    break;
 
-    case stringtype: XPOST_LOG_DUMP_INFO("<string");
+    case stringtype: XPOST_LOG_DUMP("<string");
                      _xpost_object_dump_composite(obj);
                      break;
-    case arraytype: XPOST_LOG_DUMP_INFO("<array");
+    case arraytype: XPOST_LOG_DUMP("<array");
                     _xpost_object_dump_composite(obj);
                     break;
-    case dicttype: XPOST_LOG_DUMP_INFO("<dict");
+    case dicttype: XPOST_LOG_DUMP("<dict");
                    _xpost_object_dump_composite(obj);
                    break;
 
-    case nametype: XPOST_LOG_DUMP_INFO("<name %c "
+    case nametype: XPOST_LOG_DUMP("<name %c "
                            "%" XPOST_FMT_WORD(u) " "
                            "%" XPOST_FMT_WORD(u) " "
                            "%" XPOST_FMT_DWORD(u) ">",
@@ -311,22 +310,22 @@ void xpost_object_dump (Xpost_Object obj)
                            obj.mark_.padw);
                    break;
 
-    case operatortype: XPOST_LOG_DUMP_INFO("<operator "
+    case operatortype: XPOST_LOG_DUMP("<operator "
                                "%" XPOST_FMT_DWORD(u) ">",
                                obj.mark_.padw);
                        break;
-    case filetype: XPOST_LOG_DUMP_INFO("<file "
+    case filetype: XPOST_LOG_DUMP("<file "
                            "%" XPOST_FMT_DWORD(u) ">",
                            obj.mark_.padw);
                    break;
 
-    case savetype: XPOST_LOG_DUMP_INFO("<save>");
+    case savetype: XPOST_LOG_DUMP("<save>");
                    break;
-    case contexttype: XPOST_LOG_DUMP_INFO("<context>");
+    case contexttype: XPOST_LOG_DUMP("<context>");
                       break;
-    case extendedtype: XPOST_LOG_DUMP_INFO("<extended>");
+    case extendedtype: XPOST_LOG_DUMP("<extended>");
                        break;
-    case globtype: XPOST_LOG_DUMP_INFO("<glob>");
+    case globtype: XPOST_LOG_DUMP("<glob>");
                    break;
     }
 }

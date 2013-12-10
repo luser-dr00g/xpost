@@ -44,7 +44,6 @@
 #include "xpost_memory.h"  /* Xpost_Memory_File */
 #include "xpost_object.h"  /* Xpost_Object */
 #include "xpost_stack.h"  /* stack */
-#include "../lib/xpost_error.h"
 
 #include "xpost_context.h"
 #include "xpost_interpreter.h"  /* access context struct */
@@ -80,37 +79,37 @@ void error(unsigned err,
     /* following will become "fallback" code
        if jmpbuf is not set */
 
-    XPOST_LOG_DUMP_INFO("\nError: %s", errorname[err]);
-    XPOST_LOG_DUMP_INFO("\nObject: ");
+    XPOST_LOG_DUMP("\nError: %s", errorname[err]);
+    XPOST_LOG_DUMP("\nObject: ");
     xpost_object_dump(itpdata->ctab[0].currentobject);
-    XPOST_LOG_DUMP_INFO("\nExtra: %s", msg);
-    XPOST_LOG_DUMP_INFO("\nlast system error:", strerror(errno));
+    XPOST_LOG_DUMP("\nExtra: %s", msg);
+    XPOST_LOG_DUMP("\nlast system error:", strerror(errno));
 
-    XPOST_LOG_DUMP_INFO("\nError: %s", errorname[err]);
-    XPOST_LOG_DUMP_INFO("\nExtra: %s", msg);
+    XPOST_LOG_DUMP("\nError: %s", errorname[err]);
+    XPOST_LOG_DUMP("\nExtra: %s", msg);
 
     ctx = &itpdata->ctab[0];
-    XPOST_LOG_DUMP_INFO("\nopstack: ");
+    XPOST_LOG_DUMP("\nopstack: ");
     xpost_stack_dump(ctx->lo, ctx->os);
-    XPOST_LOG_DUMP_INFO("\nexecstack: ");
+    XPOST_LOG_DUMP("\nexecstack: ");
     xpost_stack_dump(ctx->lo, ctx->es);
-    XPOST_LOG_DUMP_INFO("\ndictstack: ");
+    XPOST_LOG_DUMP("\ndictstack: ");
     xpost_stack_dump(ctx->lo, ctx->ds);
-    XPOST_LOG_DUMP_INFO("\nholdstack: ");
+    XPOST_LOG_DUMP("\nholdstack: ");
     xpost_stack_dump(ctx->lo, ctx->hold);
 
-    XPOST_LOG_DUMP_INFO("\nLocal VM: ");
+    XPOST_LOG_DUMP("\nLocal VM: ");
     xpost_memory_file_dump(ctx->lo);
     xpost_memory_table_dump(ctx->lo);
-    XPOST_LOG_DUMP_INFO("\nGlobal VM: ");
+    XPOST_LOG_DUMP("\nGlobal VM: ");
     xpost_memory_file_dump(ctx->gl);
     xpost_memory_table_dump(ctx->gl);
 
-    XPOST_LOG_DUMP_INFO("\nGlobal Name Stack: ");
+    XPOST_LOG_DUMP("\nGlobal Name Stack: ");
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &gnad);
     xpost_stack_dump(ctx->gl, gnad);
-    XPOST_LOG_DUMP_INFO("\nLocal Name Stack: ");
+    XPOST_LOG_DUMP("\nLocal Name Stack: ");
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &lnad);
     xpost_stack_dump(ctx->lo, lnad);

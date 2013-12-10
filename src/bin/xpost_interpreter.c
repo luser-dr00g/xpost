@@ -485,19 +485,19 @@ int eval(Xpost_Context *ctx)
     assert(ctx->gl->base);
 
     if (TRACE) {
-        //XPOST_LOG_DUMP_INFO("\neval\n");
-        XPOST_LOG_DUMP_INFO("eval(): Executing: ");
+        //XPOST_LOG_DUMP("\neval\n");
+        XPOST_LOG_DUMP("eval(): Executing: ");
         xpost_object_dump(t);
-        //XPOST_LOG_DUMP_INFO("\n");
-        XPOST_LOG_DUMP_INFO("Stack: ");
+        //XPOST_LOG_DUMP("\n");
+        XPOST_LOG_DUMP("Stack: ");
         xpost_stack_dump(ctx->lo, ctx->os);
-        //XPOST_LOG_DUMP_INFO("\n");
-        XPOST_LOG_DUMP_INFO("Dict Stack: ");
+        //XPOST_LOG_DUMP("\n");
+        XPOST_LOG_DUMP("Dict Stack: ");
         xpost_stack_dump(ctx->lo, ctx->ds);
-        //XPOST_LOG_DUMP_INFO("\n");
-        XPOST_LOG_DUMP_INFO("Exec Stack: ");
+        //XPOST_LOG_DUMP("\n");
+        XPOST_LOG_DUMP("Exec Stack: ");
         xpost_stack_dump(ctx->lo, ctx->es);
-        //XPOST_LOG_DUMP_INFO("\n");
+        //XPOST_LOG_DUMP("\n");
     }
 
     idleproc(ctx);
