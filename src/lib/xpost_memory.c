@@ -448,7 +448,7 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
         return;
     }
 
-    XPOST_ERROR_DUMP("{mfile: base = %p, "
+    XPOST_LOG_DUMP_INFO("{mfile: base = %p, "
             "used = 0x%x (%u), "
             "max = 0x%x (%u), "
             "start = %d}\n",
@@ -467,31 +467,31 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
             {
                 for (v = u - 16; v < u; v++)
                 {
-                    XPOST_ERROR_DUMP("%c",
+                    XPOST_LOG_DUMP_INFO("%c",
                         isprint(mem->base[v]) ?
                         mem->base[v] : '.');
                 }
             }
-            XPOST_ERROR_DUMP("\n%06u %04x: ", u, u);
+            XPOST_LOG_DUMP_INFO("\n%06u %04x: ", u, u);
         }
-        XPOST_ERROR_DUMP("%02x ", mem->base[u]);
+        XPOST_LOG_DUMP_INFO("%02x ", mem->base[u]);
     }
 
     if ((u-1)%16 != 0)
     { /* did not print in the last iteration of the loop */
         for (v = u; u%16 != 0; v++)
         {
-            XPOST_ERROR_DUMP("   ");
+            XPOST_LOG_DUMP_INFO("   ");
         }
         for (v = u - (u % 16); v < u; v++)
         {
-            XPOST_ERROR_DUMP("%c",
+            XPOST_LOG_DUMP_INFO("%c",
                     isprint(mem->base[v]) ?
                     mem->base[v] : '.');
         }
     }
 
-    XPOST_ERROR_DUMP("\n");
+    XPOST_LOG_DUMP_INFO("\n");
 }
 
 
@@ -852,7 +852,7 @@ void xpost_memory_table_dump_ent (Xpost_Memory_File *mem,
         XPOST_LOG_ERR("%d entity not found %u", VMerror, e);
         return;
     }
-    XPOST_ERROR_DUMP("ent %d (%d): "
+    XPOST_LOG_DUMP_INFO("ent %d (%d): "
             "adr %u 0x%04x, "
             "sz [%u], "
             "mark %s rfct %d llev %d tlev %d\n",
@@ -872,7 +872,7 @@ void xpost_memory_table_dump_ent (Xpost_Memory_File *mem,
                 >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);
         for (u = 0; u < tab->tab[i].sz; u++)
         {
-            XPOST_ERROR_DUMP(" %02x%c",
+            XPOST_LOG_DUMP_INFO(" %02x%c",
                     mem->base[ tab->tab[i].adr + u ],
                     isprint(mem->base[ tab->tab[i].adr + u]) ?
                         mem->base[ tab->tab[i].adr + u ] :
@@ -889,12 +889,12 @@ void xpost_memory_table_dump (const Xpost_Memory_File *mem)
 
 next_table:
     tab = (Xpost_Memory_Table *)(mem->base + mtabadr);
-    XPOST_ERROR_DUMP("nexttab: 0x%04x\n", tab->nexttab);
-    XPOST_ERROR_DUMP("nextent: %u\n", tab->nextent);
+    XPOST_LOG_DUMP_INFO("nexttab: 0x%04x\n", tab->nexttab);
+    XPOST_LOG_DUMP_INFO("nextent: %u\n", tab->nextent);
     for (i = 0; i < tab->nextent; i++, e++)
     {
         unsigned int u;
-        XPOST_ERROR_DUMP("ent %d (%d): "
+        XPOST_LOG_DUMP_INFO("ent %d (%d): "
                 "adr %u 0x%04x, "
                 "sz [%u], "
                 "mark %s rfct %d llev %d tlev %d\n",
@@ -914,13 +914,13 @@ next_table:
                     >> XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);
         for (u = 0; u < tab->tab[i].sz; u++)
         {
-            XPOST_ERROR_DUMP(" %02x%c",
+            XPOST_LOG_DUMP_INFO(" %02x%c",
                     mem->base[ tab->tab[i].adr + u ],
                     isprint(mem->base[ tab->tab[i].adr + u]) ?
                         mem->base[ tab->tab[i].adr + u ] :
                         ' ');
         }
-        XPOST_ERROR_DUMP("\n");
+        XPOST_LOG_DUMP_INFO("\n");
     }
     if (tab->nextent == XPOST_MEMORY_TABLE_SIZE)
     {
