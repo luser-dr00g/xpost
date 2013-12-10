@@ -44,10 +44,10 @@
  * @brief Log a message on the specified level and format.
  */
 #define XPOST_LOG(l, ...) \
-  xpost_log_print(l, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+    xpost_log_print(l, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
 
 /**
- * @def XPOST_LOG_ERR(fmt, ...)
+ * @def XPOST_LOG_ERR(...)
  * @brief Log a message with level #XPOST_LOG_LEVEL_ERR on the default
  * domain with the specified format.
  */
@@ -55,7 +55,7 @@
     XPOST_LOG(XPOST_LOG_LEVEL_ERR, __VA_ARGS__)
 
 /**
- * @def XPOST_LOG_WARN(fmt, ...)
+ * @def XPOST_LOG_WARN(...)
  * @brief Log a message with level #XPOST_LOG_LEVEL_WARN on the default
  * domain with the specified format.
  */
@@ -63,7 +63,7 @@
     XPOST_LOG(XPOST_LOG_LEVEL_WARN, __VA_ARGS__)
 
 /**
- * @def XPOST_LOG_INFO(fmt, ...)
+ * @def XPOST_LOG_INFO(...)
  * @brief Log a message with level #XPOST_LOG_LEVEL_INFO on the default
  * domain with the specified format.
  */
@@ -71,12 +71,31 @@
     XPOST_LOG(XPOST_LOG_LEVEL_INFO, __VA_ARGS__)
 
 /**
- * @def XPOST_LOG_DBG(fmt, ...)
+ * @def XPOST_LOG_DBG(...)
  * @brief Log a message with level #XPOST_LOG_LEVEL_DBG on the default
  * domain with the specified format.
  */
 #define XPOST_LOG_DBG(...) \
     XPOST_LOG(XPOST_LOG_LEVEL_DBG, __VA_ARGS__)
+
+/**
+ * @def XPOST_LOG_DUMP(...)
+ * @brief Dump in file a message on the specified level and format.
+ */
+#define XPOST_LOG_DUMP(l, ...)                                           \
+    xpost_log_print_dump(l, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+
+#define XPOST_LOG_DUMP_ERR(...) \
+    XPOST_LOG_DUMP(XPOST_LOG_LEVEL_ERR, __VA_ARGS__)
+
+#define XPOST_LOG_DUMP_WARN(...) \
+    XPOST_LOG_DUMP(XPOST_LOG_LEVEL_WARN, __VA_ARGS__)
+
+#define XPOST_LOG_DUMP_INFO(...) \
+    XPOST_LOG_DUMP(XPOST_LOG_LEVEL_INFO, __VA_ARGS__)
+
+#define XPOST_LOG_DUMP_DBG(...) \
+    XPOST_LOG_DUMP(XPOST_LOG_LEVEL_DBG, __VA_ARGS__)
 
 /**
  * @enum Xpost_Log_Level
@@ -205,5 +224,11 @@ void xpost_log_print(Xpost_Log_Level level,
                      const char *fct,
                      int line,
                      const char *fmt, ...);
+
+void xpost_log_print_dump(Xpost_Log_Level level,
+                          const char *file,
+                          const char *fct,
+                          int line,
+                          const char *fmt, ...);
 
 #endif

@@ -375,3 +375,26 @@ xpost_log_print(Xpost_Log_Level level,
     _xpost_log_print_cb(level, file, fct, line, fmt, _xpost_log_print_cb_data, args);
     va_end(args);
 }
+
+void
+xpost_log_print_dump(Xpost_Log_Level level,
+                     const char *file,
+                     const char *fct,
+                     int line,
+                     const char *fmt, ...)
+{
+    va_list args;
+
+    if (!fmt)
+    {
+        fprintf(stderr, "ERROR: %s() fmt == NULL\n", __FUNCTION__);
+        return;
+    }
+
+    if (level > _xpost_log_level)
+        return;
+
+    va_start(args, fmt);
+    _xpost_log_fprint_cb(_xpost_log_dump_file, level, file, fct, line, fmt, NULL, args);
+    va_end(args);
+}
