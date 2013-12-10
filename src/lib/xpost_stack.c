@@ -69,7 +69,7 @@ void xpost_stack_dump (Xpost_Memory_File *mem,
     {
         for (i = 0; i < s->top; i++)
         {
-            XPOST_ERROR_DUMP("%d:", a++);
+            XPOST_LOG_DUMP_INFO("%d:", a++);
             xpost_object_dump(s->data[i]);
         }
         if (i != XPOST_STACK_SEGMENT_SIZE)

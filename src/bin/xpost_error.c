@@ -79,44 +79,42 @@ void error(unsigned err,
 
     /* following will become "fallback" code
        if jmpbuf is not set */
-    xpost_error_begin_dump();
 
-    XPOST_ERROR_DUMP("\nError: %s", errorname[err]);
-    XPOST_ERROR_DUMP("\nObject: ");
+    XPOST_LOG_DUMP_INFO("\nError: %s", errorname[err]);
+    XPOST_LOG_DUMP_INFO("\nObject: ");
     xpost_object_dump(itpdata->ctab[0].currentobject);
-    XPOST_ERROR_DUMP("\nExtra: %s", msg);
-    XPOST_ERROR_DUMP("\nlast system error:", strerror(errno));
+    XPOST_LOG_DUMP_INFO("\nExtra: %s", msg);
+    XPOST_LOG_DUMP_INFO("\nlast system error:", strerror(errno));
 
-    XPOST_ERROR_DUMP("\nError: %s", errorname[err]);
-    XPOST_ERROR_DUMP("\nExtra: %s", msg);
+    XPOST_LOG_DUMP_INFO("\nError: %s", errorname[err]);
+    XPOST_LOG_DUMP_INFO("\nExtra: %s", msg);
 
     ctx = &itpdata->ctab[0];
-    XPOST_ERROR_DUMP("\nopstack: ");
+    XPOST_LOG_DUMP_INFO("\nopstack: ");
     xpost_stack_dump(ctx->lo, ctx->os);
-    XPOST_ERROR_DUMP("\nexecstack: ");
+    XPOST_LOG_DUMP_INFO("\nexecstack: ");
     xpost_stack_dump(ctx->lo, ctx->es);
-    XPOST_ERROR_DUMP("\ndictstack: ");
+    XPOST_LOG_DUMP_INFO("\ndictstack: ");
     xpost_stack_dump(ctx->lo, ctx->ds);
-    XPOST_ERROR_DUMP("\nholdstack: ");
+    XPOST_LOG_DUMP_INFO("\nholdstack: ");
     xpost_stack_dump(ctx->lo, ctx->hold);
 
-    XPOST_ERROR_DUMP("\nLocal VM: ");
+    XPOST_LOG_DUMP_INFO("\nLocal VM: ");
     xpost_memory_file_dump(ctx->lo);
     xpost_memory_table_dump(ctx->lo);
-    XPOST_ERROR_DUMP("\nGlobal VM: ");
+    XPOST_LOG_DUMP_INFO("\nGlobal VM: ");
     xpost_memory_file_dump(ctx->gl);
     xpost_memory_table_dump(ctx->gl);
 
-    XPOST_ERROR_DUMP("\nGlobal Name Stack: ");
+    XPOST_LOG_DUMP_INFO("\nGlobal Name Stack: ");
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &gnad);
     xpost_stack_dump(ctx->gl, gnad);
-    XPOST_ERROR_DUMP("\nLocal Name Stack: ");
+    XPOST_LOG_DUMP_INFO("\nLocal Name Stack: ");
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &lnad);
     xpost_stack_dump(ctx->lo, lnad);
 
-    xpost_error_end_dump();
     exit(EXIT_FAILURE);
 }
 
