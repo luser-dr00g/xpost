@@ -43,6 +43,15 @@ loadgraphics
     curveto
 } def
 
+/randarc {
+	randpoint
+	rand 300 mod % r
+	rand 400 mod
+	rand 400 mod
+	pstack()=
+	arc
+} def
+
 /drawingtime 0 def
 
 /beginpage {
@@ -90,6 +99,11 @@ doprompt
     clip
 } pop%exec%pop
 
+(arcs)=
+beginpage
+	20 { randarc randcolor stroke newpath } repeat
+endpage
+
 (single-pixel lines)=
 beginpage
     0 setlinewidth
@@ -129,7 +143,9 @@ endpage
 (single-pixel boxes)=
 beginpage
     0 setlinewidth
-    20 { randbox randcolor stroke newpath } repeat
+    3 { randbox randcolor stroke newpath } repeat
+	break
+    17 { randbox randcolor stroke newpath } repeat
 endpage
 
 (stroked boxes)=
