@@ -161,12 +161,13 @@
 % x y r angle1 angle2  arc  -
 % append a circular arc to the current path
 /arc {
-    2 { dup 360 gt { dup 360 div truncate 360 mul sub } if exch } repeat
+    2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
     2 { dup 0 lt { 360 add } if exch } repeat
     2 copy exch sub dup 90 gt { % recurse
         .5 mul % x y r a1 a2 da/2
-        6 copy sub arc
+        6 copy
         3 2 roll add exch arc
+        sub arc
     }{ pop
         % draw single bezier
         arcbez
