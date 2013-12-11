@@ -132,31 +132,29 @@
     cos exch div
 } def
 
-/arcbez { % draw single bezier
+/arcbez { % draw single bezier % x y r angle1 angle2
     5 dict begin
-    {ang2 ang1 r yc xc}{exch def}forall
-    /ax r ang1 cos mul def
-    /ay r ang1 sin mul def
-    /x1 ax xc add def
-    /y1 ay yc add def
-    /bx r ang2 cos mul def
-    /by r ang2 sin mul def
-    /x4 bx xc add def
-    /y4 by yc add def
-
-    %/q1 ax ax mul ay ay mul add def
-    %/q2 q1 ax bx mul ay by mul add add def
-    %/k2 .75  2 q1 q2 mul mul sqrt  q2 sub mul
-    %    ax by mul  ay bx mul  sub div def
-    %/k2 k2 2 mul def
-
-    /k2 4 2 sqrt 1 sub 3 div mul def
-
-    /x2 x1 k2 ay mul sub def
-    /y2 y1 k2 ax mul add def
-    /x3 x4 k2 by mul add def
-    /y3 y4 k2 bx mul sub def
-    x1 y1  x2 y2  x3 y3  x4 y4
+    /mat matrix currentmatrix def
+    5 3 roll translate % r angle1 angle2
+    3 2 roll dup scale % angle1 angle2
+    2 copy exch sub /da exch def % da=a2-a1
+    add 2 div rotate
+    /da_2 da 2 div def
+    /sin_a da_2 sin def
+    /cos_a da_2 cos def
+    4 cos_a sub 3 div % x1
+    1 cos_a sub cos_a 3 sub mul
+    3 sin_a mul div   % x1 y1
+    neg
+    1 index           % x1 y1 x2(==x1)
+    1 index neg       % x1 y1 x2 y2(==-y1)
+    cos_a sin_a neg   % x1 y1 x2 y2 x3 y3
+    cos_a sin_a       %               ... x0 y0
+    4 { 8 2 roll transform } repeat
+    mat setmatrix
+    4 { 8 2 roll itransform } repeat
+    { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+    curveto
     end
 } def
 
@@ -172,9 +170,6 @@
     }{ pop
         % draw single bezier
         arcbez
-        8 6 roll
-        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
-        curveto
     } ifelse
 } def
 
