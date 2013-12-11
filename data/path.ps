@@ -134,11 +134,19 @@
 
 /arcbez { % draw single bezier % x y r angle1 angle2
     5 dict begin
-    /mat matrix currentmatrix def
-    5 3 roll translate % r angle1 angle2
-    3 2 roll dup scale % angle1 angle2
+    /mat matrix def
+    5 3 roll
+    mat translate % r angle1 angle2
+    pop
+    3 2 roll dup
+    matrix
+    scale % angle1 angle2
+    mat mat concatmatrix pop
     2 copy exch sub /da exch def % da=a2-a1
-    add 2 div rotate
+    add 2 div
+    matrix
+    rotate
+    mat mat concatmatrix pop
     /da_2 da 2 div def
     /sin_a da_2 sin def
     /cos_a da_2 cos def
@@ -150,9 +158,10 @@
     1 index neg       % x1 y1 x2 y2(==-y1)
     cos_a sin_a neg   % x1 y1 x2 y2 x3 y3
     cos_a sin_a       %               ... x0 y0
-    4 { 8 2 roll transform } repeat
-    mat setmatrix
-    4 { 8 2 roll itransform } repeat
+    4 { 8 2 roll mat transform } repeat
+    %4 { 8 2 roll transform } repeat
+    %mat setmatrix
+    %4 { 8 2 roll itransform } repeat
     { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
     curveto
     end
