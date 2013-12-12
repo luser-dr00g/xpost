@@ -144,7 +144,7 @@ int _event_handler (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
                      xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
-    if (PeekMessage(&msg, private.window, 0, 0, PM_REMOVE))
+    while (PeekMessage(&msg, private.window, 0, 0, PM_REMOVE))
     {
         TranslateMessage(&msg);
         DispatchMessage(&msg);

@@ -175,7 +175,8 @@
         % draw single bezier
         arcbez % x1 y1 x2 y2 x3 y3 x0 y0
         4 2 roll % x1 y1 x2 y2 x0 y0  x3 y3
-        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+        %{ currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+		cpath length 0 eq { moveto }{ lineto } ifelse
         6 2 roll % x0 y0 x1 y1 x2 y2
         4 2 roll % x0 y0 x2 y2 x1 y1
         6 4 roll % x2 y2 x1 y1 x0 y0
@@ -197,7 +198,8 @@
         % draw single bezier
         arcbez % x1 y1 x2 y2 x3 y3  x0 y0
         %4 2 roll
-        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+        %{ currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+		cpath length 0 eq { moveto }{ lineto } ifelse
         %6 2 roll
         %4 2 roll
         %6 4 roll
