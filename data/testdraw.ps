@@ -15,8 +15,8 @@ loadgraphics
 } def
 
 /randpoint {
-    rand 500 mod
-    rand 400 mod
+    rand 600 mod
+    rand 700 mod
 } def
 
 /randline {
@@ -48,8 +48,32 @@ loadgraphics
 	rand 300 mod % r
 	rand 400 mod
 	rand 400 mod
-	pstack()=
 	arc
+} def
+
+/randpieslice {
+	randpoint
+    2 copy moveto
+	rand 300 mod % r
+	rand 400 mod
+	rand 400 mod
+	arc
+    fill
+} def
+
+/randpie {
+	randpoint
+    2 copy moveto
+	rand 300 mod % r
+	rand 400 mod
+	rand 400 mod
+    5 copy
+	arc
+    fill
+    randcolor
+    5 copy pop pop pop moveto
+    arcn
+    fill
 } def
 
 /drawingtime 0 def
@@ -101,7 +125,13 @@ doprompt
 
 (arcs)=
 beginpage
-	20 { randarc randcolor stroke newpath } repeat
+	20 { randarc randwidth randcolor stroke newpath } repeat
+endpage
+
+(pie-slices)=
+beginpage
+    10 { randcolor randpie newpath } repeat
+    10 { randcolor randpieslice newpath } repeat
 endpage
 
 (single-pixel lines)=

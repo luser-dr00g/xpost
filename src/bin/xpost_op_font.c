@@ -188,6 +188,7 @@ int _show (Xpost_Context *ctx,
     Xpost_Object datax, datay;
     real xpos, ypos;
     char *ch;
+    Xpost_Object devdic;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
     if (xpost_object_get_type(userdict) != dicttype)
@@ -195,6 +196,8 @@ int _show (Xpost_Context *ctx,
     gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
     gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
     fontdict = bdcget(ctx, gs, consname(ctx, "currfont"));
+
+    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
 
     privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
