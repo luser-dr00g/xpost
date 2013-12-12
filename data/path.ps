@@ -132,21 +132,17 @@
     cos exch div
 } def
 
+% packs the center-point, radius and center-angle in a matrix
+% then performs the simpler task of calculating a bezier
+% for the arc that is symmetrical about the x-axis
+% formula derived from http://www.tinaja.com/glib/bezarc1.pdf
 /arcbez { % draw single bezier % x y r angle1 angle2
     5 dict begin
     /mat matrix def
-    5 3 roll
-    mat translate % r angle1 angle2
-    pop
-    3 2 roll dup
-    matrix
-    scale % angle1 angle2
-    mat mat concatmatrix pop
-    2 copy exch sub /da exch def % da=a2-a1
-    add 2 div
-    matrix
-    rotate
-    mat mat concatmatrix pop
+    5 3 roll mat translate pop                         % r angle1 angle2
+    3 2 roll dup matrix scale mat mat concatmatrix pop % angle1 angle2
+    2 copy exch sub /da exch def                       % da=a2-a1
+    add 2 div matrix rotate mat mat concatmatrix pop
     /da_2 da 2 div def
     /sin_a da_2 sin def
     /cos_a da_2 cos def
@@ -159,27 +155,53 @@
     cos_a sin_a neg   % x1 y1 x2 y2 x3 y3
     cos_a sin_a       %               ... x0 y0
     4 { 8 2 roll mat transform } repeat
-    %4 { 8 2 roll transform } repeat
-    %mat setmatrix
-    %4 { 8 2 roll itransform } repeat
-    { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
-    curveto
+    pstack()=
     end
 } def
 
 % x y r angle1 angle2  arc  -
-% append a circular arc to the current path
+% append a counterclockwise circular arc to the current path
 /arc {
     2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
+    2 copy gt { 360 add } if % s.b. angle2 > angle1
     2 { dup 0 lt { 360 add } if exch } repeat
+    2 copy gt { 360 add } if % s.b. angle2 > angle1
     2 copy exch sub dup 90 gt { % recurse
         .5 mul % x y r a1 a2 da/2
         6 copy
-        3 2 roll add exch arc
         sub arc
+        3 2 roll add exch arc
     }{ pop
         % draw single bezier
-        arcbez
+        arcbez % x1 y1 x2 y2 x3 y3 x0 y0
+        4 2 roll % x1 y1 x2 y2 x0 y0  x3 y3
+        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+        6 2 roll % x0 y0 x1 y1 x2 y2
+        4 2 roll % x0 y0 x2 y2 x1 y1
+        6 4 roll % x2 y2 x1 y1 x0 y0
+        curveto
+    } ifelse
+} def
+
+/arcn {
+    2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
+    2 copy lt { exch 360 add exch } if % s.b. angle1 > angle2
+    2 { dup 0 lt { 360 add } if exch } repeat
+    2 copy lt { exch 360 add exch } if % s.b. angle1 > angle2
+    2 copy sub dup 90 gt { % recurse
+        .5 mul % x y r a1 a2 da/2
+        6 copy
+        3 2 roll exch sub exch arcn
+        add arcn
+    }{ pop
+        % draw single bezier
+        arcbez % x1 y1 x2 y2 x3 y3  x0 y0
+        %4 2 roll
+        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+        %6 2 roll
+        %4 2 roll
+        %6 4 roll
+        curveto
     } ifelse
 } def
 
