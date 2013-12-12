@@ -169,6 +169,48 @@ int _setfont (Xpost_Context *ctx,
     return 0;
 }
 
+static
+void _draw_bitmap (Xpost_Context *ctx,
+              Xpost_Object devdic,
+              Xpost_Object putpix,
+              FT_Bitmap *bitmap,
+              int xpos,
+              int ypos,
+              int ncomp,
+              Xpost_Object comp1,
+              Xpost_Object comp2,
+              Xpost_Object comp3)
+{
+    int i, j;
+    unsigned char *tmp;
+
+    tmp = bitmap->buffer;
+
+    for (i = 0; i < bitmap->rows; i++)
+    {
+        for (j = 0; j < bitmap->width; j++)
+        {
+            if (*tmp) {
+
+                switch(ncomp) {
+                case 1:
+                    xpost_stack_push(ctx->lo, ctx->os, comp1);
+                    break;
+                case 3:
+                    xpost_stack_push(ctx->lo, ctx->os, comp1);
+                    xpost_stack_push(ctx->lo, ctx->os, comp2);
+                    xpost_stack_push(ctx->lo, ctx->os, comp3);
+                    break;
+                }
+                xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpos+j));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ypos+i));
+                xpost_stack_push(ctx->lo, ctx->os, devdic);
+                xpost_stack_push(ctx->lo, ctx->es, putpix);
+            }
+            ++tmp;
+        }
+    }
+}
 
 static
 int _show (Xpost_Context *ctx,
@@ -189,7 +231,12 @@ int _show (Xpost_Context *ctx,
     real xpos, ypos;
     char *ch;
     Xpost_Object devdic;
+    Xpost_Object putpix;
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
 
+    /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
     if (xpost_object_get_type(userdict) != dicttype)
         return dictstackunderflow;
@@ -197,16 +244,21 @@ int _show (Xpost_Context *ctx,
     gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
     fontdict = bdcget(ctx, gs, consname(ctx, "currfont"));
 
+    /* load the device */
     devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
 
+    /* get the font data from the font dict */
     privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
 
+    /* get a c-style nul-terminated string */
     cstr = alloca(str.comp_.sz + 1);
     memcpy(cstr, charstr(ctx, str), str.comp_.sz);
     cstr[str.comp_.sz] = '\0';
 
+    /* get the current pen position */
     /*FIXME if any of these calls fail, should return nocurrentpoint; */
     path = bdcget(ctx, gs, consname(ctx, "currpath")); 
     subpath = bdcget(ctx, path, xpost_cons_int(
@@ -223,7 +275,21 @@ int _show (Xpost_Context *ctx,
     xpos = datax.real_.val;
     ypos = datay.real_.val;
 
-    /* TODO render text in char *cstr  with font data  at position xpos ypos */
+    colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
+    if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
+    }
+    else if (objcmp(ctx, colorspace, consname(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
+        comp2 = bdcget(ctx, gs, consname(ctx, "colorcomp2"));
+        comp3 = bdcget(ctx, gs, consname(ctx, "colorcomp3"));
+    }
+
+    /* TODO render text in char *cstr  with font data  at pen position xpos ypos */
 #ifdef HAVE_FREETYPE
     for (ch = cstr; *ch; ch++) {
         FT_UInt glyph_index;
@@ -232,10 +298,20 @@ int _show (Xpost_Context *ctx,
         glyph_index = FT_Get_Char_Index(data.face, *ch);
         err = FT_Load_Glyph(data.face, glyph_index, FT_LOAD_DEFAULT);
         if (data.face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
-            err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
-
+        {
+            //err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
+            err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_MONO);
+            _draw_bitmap(ctx, devdic, putpix,
+                    &data.face->glyph->bitmap,
+                    xpos+data.face->glyph->bitmap_left,
+                    ypos+data.face->glyph->bitmap_top,
+                    ncomp, comp1, comp2, comp3);
+        }
+        xpos += data.face->glyph->advance.x >> 6;
     }
 #endif
+
+    /* TODO update current position in the graphics state */
 
     return 0;
 }
