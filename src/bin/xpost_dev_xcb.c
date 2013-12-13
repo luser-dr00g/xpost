@@ -612,7 +612,7 @@ int _fillpoly (Xpost_Context *ctx,
         //points[i].y = points[0].y;
 
         xcb_fill_poly(private.c, private.img, private.gc,
-                XCB_POLY_SHAPE_CONVEX,
+                XCB_POLY_SHAPE_NONCONVEX,
                 XCB_COORD_MODE_ORIGIN,
                 poly.comp_.sz //+ 1
                 , points);
