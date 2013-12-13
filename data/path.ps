@@ -137,12 +137,14 @@
 % for the arc that is symmetrical about the x-axis
 % formula derived from http://www.tinaja.com/glib/bezarc1.pdf
 /arcbez { % draw single bezier % x y r angle1 angle2
-    5 dict begin
-    /mat matrix def
+	DICT
+    %5 dict
+	begin
+    %/mat matrix def
     5 3 roll mat translate pop                         % r angle1 angle2
-    3 2 roll dup matrix scale mat mat concatmatrix pop % angle1 angle2
+    3 2 roll dup mat1 scale mat mat concatmatrix pop % angle1 angle2
     2 copy exch sub /da exch def                       % da=a2-a1
-    add 2 div matrix rotate mat mat concatmatrix pop
+    add 2 div mat1 rotate mat mat concatmatrix pop
     /da_2 da 2 div def
     /sin_a da_2 sin def
     /cos_a da_2 cos def
@@ -157,7 +159,12 @@
     4 { 8 2 roll mat transform } repeat
     %pstack()=
     end
-} def
+}
+dup 0 10 dict
+	dup /mat matrix put
+	dup /mat1 matrix put
+put
+def
 
 % x y r angle1 angle2  arc  -
 % append a counterclockwise circular arc to the current path
@@ -548,8 +555,8 @@
 % move line curve close  pathforall  -
 % enumerate current path
 /pathforall {
-%DICT
-5 dict
+DICT
+%5 dict
 begin
     {close curve line move}{exch def}forall
     0 1 cpath length 1 sub {
@@ -581,14 +588,14 @@ begin
     } for
 end
 }
-%dup 0 5 dict put
+dup 0 10 dict put
 bind def
 
 % move line curve close  .devpathforall  -
 % enumerate current path
 /.devpathforall {
-%DICT
-5 dict
+DICT
+%5 dict
 begin
     {close curve line move}{exch def}forall
     0 1 cpath length 1 sub {
@@ -606,7 +613,7 @@ begin
     } for
 end
 }
-%dup 0 5 dict put
+dup 0 10 dict put
 bind def
 
 (eof path.ps)=

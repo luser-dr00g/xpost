@@ -70,7 +70,7 @@ def
     3 -1 roll mul    % A B x0 A By0
     3 1 roll mul     % A B By0 Ax0
     add neg          % A B C
-} def
+} bind def
 
 % evaluate and hodgman-sutherland
 % from Bill Casselman's Mathematical Illustrations, ch. 5.
@@ -81,10 +81,13 @@ def
     3 2 roll mul % C x A By
     3 1 roll mul % C By Ax
     add add
-} def
+} bind def
 
 % polygon [A B C]  .  new-polygon
-/hodgman-sutherland { 4 dict begin
+/hodgman-sutherland {
+	DICT
+	%10 dict
+	begin
     /f exch def
     /p exch def
     /n p length 1 sub def
@@ -162,7 +165,10 @@ def
         p
     } ifelse
 
-end } def
+end }
+dup 0 10 dict put
+bind
+def
 
 
 %clip the current path by the clipregion
@@ -172,7 +178,10 @@ end } def
 %    convert line to [A B C] form
 %    feed polygon and line to hodgman-sutherland,
 %       receiving new polygon.
-/doclip { 4 dict begin
+/doclip {
+	%DICT
+	10 dict
+	begin
 
     %/isclosed 
     %    cpath dup length 1 sub get 
@@ -269,6 +278,9 @@ end } def
         } ifelse
     } forall
 
-end } def
+end }
+%dup 0 10 dict put
+bind
+def
 
 (eof clip.ps)=
