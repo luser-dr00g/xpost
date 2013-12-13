@@ -219,7 +219,10 @@ DATA_DIR(/qsort.ps)strcat run
     % x1 y1 x2 y2 x3 y3 x4 y4  .  x5 y5 true
     %                             false
     % inspired by the code at http: / / alienryderflex.com/intersect/
-    /.intersect { 8 dict begin
+    /.intersect {
+		DICT
+		%8 dict
+		begin
         {Dy Dx Cy Cx By Bx Ay Ax}{exch def}forall
 
         %[ Ax Ay Bx By Cx Cy Dx Dy ]{=only( )=only} forall
@@ -264,7 +267,9 @@ DATA_DIR(/qsort.ps)strcat run
 
         %dup { 3 copy =only( )=only exch =only( )=only =only } if ()=
 
-    end } bind
+    end }
+	dup 0 8 dict put
+	bind
 
     /FillPoly { % r g b polygon IMAGE  .  -
     begin {poly b g r}{exch def}forall
