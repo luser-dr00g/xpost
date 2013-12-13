@@ -164,6 +164,7 @@ dup 0 10 dict
 	dup /mat matrix put
 	dup /mat1 matrix put
 put
+bind
 def
 
 % x y r angle1 angle2  arc  -
@@ -189,7 +190,9 @@ def
         6 4 roll % x2 y2 x1 y1 x0 y0
         curveto
     } ifelse
-} def
+}
+bind
+def
 
 /arcn {
     2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
@@ -212,7 +215,9 @@ def
         %6 4 roll
         curveto
     } ifelse
-} def
+}
+bind
+def
 
 % -  closepath  -
 % connect subpath back to its starting point
