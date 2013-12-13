@@ -20,7 +20,7 @@
         DEVICE dup /FillRect get exec
         flushpage
     grestore
-} def
+} bind def
 
 % -  fill  -
 % fill current path with current color
@@ -64,7 +64,7 @@
 
     flushpage
     newpath
-} def
+} bind def
 
 % -  eofill  -
 % fill using even-odd rule
@@ -110,6 +110,6 @@
     } ifelse
 
     newpath
-} def
+} bind def
 
 (eof paint.ps)=
