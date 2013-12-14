@@ -429,6 +429,14 @@ end % userdict
     initgraphics
 } def
 
+/testfont {
+    loadgraphics
+    /Times-Roman findfont
+    20 scalefont
+    100 100 moveto
+    (Hello World!) show
+} def
+
 $error/initializing false put % ready to go!
 false setglobal
 
