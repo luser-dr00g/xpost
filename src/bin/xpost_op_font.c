@@ -293,6 +293,11 @@ int _show (Xpost_Context *ctx,
         return invalidfont;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
