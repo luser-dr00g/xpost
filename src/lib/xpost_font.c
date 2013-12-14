@@ -206,16 +206,7 @@ void
 xpost_font_face_scale(void *face, real scale)
 {
 #ifdef HAVE_FREETYPE
-    FT_Matrix matrix;
-
-    if (!face || (scale <= 0))
-        return;
-
-    matrix.xx = (FT_Fixed)(scale * 0x10000L);
-    matrix.xy = 0;
-    matrix.yx = 0;
-    matrix.yy = (FT_Fixed)(scale * 0x10000L);
-    FT_Set_Transform((FT_Face)face, &matrix, NULL);
+    FT_Set_Char_Size((FT_Face)face, 0, (FT_F26Dot6)(scale * 64), 96, 96);
 #else
     (void)face;
     (void)scale;
