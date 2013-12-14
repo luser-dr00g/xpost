@@ -293,21 +293,26 @@ int _show (Xpost_Context *ctx,
 #ifdef HAVE_FREETYPE
     for (ch = cstr; *ch; ch++) {
         FT_UInt glyph_index;
-        int err;
+        FT_Error err;
 
         glyph_index = FT_Get_Char_Index(data.face, *ch);
         err = FT_Load_Glyph(data.face, glyph_index, FT_LOAD_DEFAULT);
+        if (err)
+        {
+            XPOST_LOG_ERR("Can not load glyph (error : %d)", err);
+            continue;
+        }
         if (data.face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
         {
-            //err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
-            err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_MONO);
+            err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
             _draw_bitmap(ctx, devdic, putpix,
                     &data.face->glyph->bitmap,
-                    xpos+data.face->glyph->bitmap_left,
-                    ypos+data.face->glyph->bitmap_top,
+                    xpos + data.face->glyph->bitmap_left,
+                    ypos - data.face->glyph->bitmap_top,
                     ncomp, comp1, comp2, comp3);
         }
         xpos += data.face->glyph->advance.x >> 6;
+        ypos += data.face->glyph->advance.y >> 6;
     }
 #endif
 
