@@ -21,6 +21,12 @@ newdefaultdevice % defined in xpost_interpreter.c:setdatadir()
 DEVICE begin
     /defaultmatrix [ 1 0 0 -1 0 height ] def
     %/defaultmatrix [ 1 0 0 1 0 0 ] def
+
+    % override ps fillpoly with operator
+    % unless already overridden.
+    %/FillPoly load type /operatortype ne {
+        /FillPoly /.fillpoly load def
+    %} if
 end
 
 /flushpage {

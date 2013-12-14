@@ -59,6 +59,7 @@ void *alloca (size_t);
 #endif
 
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h> /* abs */
 #include <string.h>
 
@@ -76,6 +77,10 @@ void *alloca (size_t);
 #include "xpost_operator.h" /* create operators */
 #include "xpost_op_dict.h" /* call Aload operator for convenience */
 #include "xpost_dev_generic.h" /* check prototypes */
+
+struct point {
+    real x, y;
+};
 
 /* FIXME: re-entrancy */
 static
@@ -144,6 +149,85 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
 }
 
 static
+int _intersect (double ax, double ay,  double bx, double by,
+                double cx, double cy,  double dx, double dy,
+                int *rx, int *ry)
+{
+    double distAB;
+    double theCos;
+    double theSin;
+    double newX;
+    double ABpos;
+
+    //printf("%f %f  %f %f  %f %f  %f %f\n",
+    //        ax, ay,  bx, by,  cx, cy,  dx, dy);
+
+    /* reject degenerate line */
+    if ((ax == bx && ay == by) || (cx == dx && cy == dy))
+        return 0;
+
+    /* reject coinciding endpoints */
+    if ((ax == cx && ay == cy) || (bx == cx && by == cy) ||
+            (ax == dx && ay == dy) || (bx == dx && by == dy))
+        return 0;
+
+    /* translate by -ax, -ay */
+    bx -= ax;  by -= ay;
+    cx -= ax;  cy -= ay;
+    dx -= ax;  dy -= ay;
+
+    /* length of AB */
+    distAB = sqrt(bx * bx + by * by);
+
+    /* rotate AB to x-axis */
+    theCos = bx / distAB;
+    theSin = by / distAB;
+    newX = cx * theCos + cy * theSin;
+    cy = cy * theCos - cx * theSin;
+    cx = newX;
+    newX = dx * theCos + dy * theSin;
+    dy = dy * theCos - dx * theSin;
+    dx = newX;
+
+    /* no intersection */
+    if ((cy < 0 && dy < 0) || (cy > 0 && dy > 0))
+        return 0;
+
+    if (dy == cy) return 0;
+    ABpos = dx + ((cx - dx) * dy) / (dy - cy);
+    if (ABpos < 0 || ABpos > distAB)
+        return 0;
+
+    *rx = ax + ABpos * theCos;
+    *ry = ay + ABpos * theSin;
+
+    printf("  -> %d %d\n",
+            *rx, *ry);
+    return 1;
+}
+
+static
+int _cyxcomp (const void *left, const void *right)
+{
+    const struct point *lt = left;
+    const struct point *rt = right;
+    if (lt->y == rt->y) {
+        if (lt->x < rt->x) {
+            return 1;
+        } else if (lt->x > rt->x) {
+            return -1;
+        } else {
+            return 0;
+        }
+    } else {
+        if (lt->y < rt->y)
+            return -1;
+        else
+            return 1;
+    }
+}
+
+static
 int _fillpoly (Xpost_Context *ctx,
                Xpost_Object poly,
                Xpost_Object devdic)
@@ -152,13 +236,18 @@ int _fillpoly (Xpost_Context *ctx,
     int ncomp;
     Xpost_Object comp1, comp2, comp3;
     int numlines;
-    Xpost_Object x1, y1, x2, y2;
+    /* Xpost_Object x1, y1, x2, y2; */
     Xpost_Object drawline;
-    struct point {
-        int x, y;
-    } *points;
-    int i;
+    struct point *points, *intersections;
+    int i, j;
+    real yscan;
+    real minx = 0x7ffffff;
+    real miny = minx;
+    real maxx = -minx;
+    real maxy = maxx;
+    int width;
 
+    width = bdcget(ctx, devdic, consname(ctx, "width")).int_.val;
     colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
     if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
     {
@@ -186,32 +275,71 @@ int _fillpoly (Xpost_Context *ctx,
         pair = barget(ctx, poly, i);
         x = barget(ctx, pair, 0);
         y = barget(ctx, pair, 1);
-        if (xpost_object_get_type(x) == realtype)
-            x = xpost_cons_int(x.real_.val);
-        if (xpost_object_get_type(y) == realtype)
-            y = xpost_cons_int(y.real_.val);
+        if (xpost_object_get_type(x) == integertype)
+            x = xpost_cons_real(x.int_.val);
+        if (xpost_object_get_type(y) == integertype)
+            y = xpost_cons_real(y.int_.val);
 
-        points[i].x = x.int_.val;
-        points[i].y = y.int_.val;
+        points[i].x = x.real_.val;
+        points[i].y = y.real_.val;
     }
 
-    /* compute scanline intersections and arrange ((x1,y1),(x2,y2)) pairs
-     */
+    /* find bounding box */
+    for (i = 0; i < poly.comp_.sz; i++){
+        if (points[i].x < minx)
+            minx = points[i].x;
+        if (points[i].x > maxx)
+            maxx = points[i].x;
+        if (points[i].y < miny)
+            miny = points[i].y;
+        if (points[i].y > maxy)
+            maxy = points[i].y;
+    }
 
+    intersections = alloca((maxy - miny) * 2 * 2 * sizeof *intersections);
 
-    /*call the device's DrawLine generically with continuations */
+    /* intersect polygon edges with scanlines */
+    for (i = 0, j = 0; i < poly.comp_.sz - 1; i++){
+        int rx, ry;
+        for (yscan = miny + 0.5; yscan < maxy; yscan += 1.0){
+            if (_intersect(points[i].x, points[i].y,
+                        points[i+1].x, points[i+1].y,
+                        minx - 0.1, yscan,
+                        maxx + 0.1, yscan,
+                        &rx, &ry)){
+                intersections[j].x = rx;
+                intersections[j].y = ry;
+                j++;
+            }
+        }
+    }
+    numlines = j / 2;
 
-    /*exch call to DrawLine looks like this
+    /* sort intersection points */
+    qsort(intersections, j, sizeof *intersections, _cyxcomp);
+
+    /* arrange ((x1,y1),(x2,y2)) pairs */
+    for (i = 0; i < numlines * 2; i += 2) {
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].x)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].y)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].x)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].y)));
+    }
+
+    /*call the device's DrawLine generically with continuations.
+      each call to DrawLine looks like this
 
          comp1 (comp2 comp3)? x1 y1 x2 y2 DEVICE >-- DrawLine
 
      So what we'll do is push all the points on the stack */
 
-    /*for each line */
+    /*for each line: */
+    /*
         xpost_stack_push(ctx->lo, ctx->os, x1);
         xpost_stack_push(ctx->lo, ctx->os, y1);
         xpost_stack_push(ctx->lo, ctx->os, x2);
         xpost_stack_push(ctx->lo, ctx->os, y2);
+    */
 
     /*then we'll use a repeat loop to call DrawLine
      on each set of 4 numbers. But in order to treat the color space
