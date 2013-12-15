@@ -198,9 +198,7 @@ void _draw_bitmap (Xpost_Context *ctx,
             //pix = tmp[j];
             switch(bitmap->pixel_mode) {
                 case FT_PIXEL_MODE_MONO:
-                    pix = tmp[j/8];
-                    pix >>= (j % 8);
-                    pix &= 1;
+                    pix = (tmp[j/8] >> (7 - (j % 8))) & 1;
                     break;
                 case FT_PIXEL_MODE_GRAY:
                     pix = tmp[j];
