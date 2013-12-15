@@ -202,12 +202,12 @@ void _draw_bitmap (Xpost_Context *ctx,
             //pix = tmp[j];
             switch (pixel_mode)
             {
-                case FT_PIXEL_MODE_MONO:
+                case XPOST_FONT_PIXEL_MODE_MONO:
                     pix = tmp[j/8];
                     pix >>= (j % 8);
                     pix &= 1;
                     break;
-                case FT_PIXEL_MODE_GRAY:
+                case XPOST_FONT_PIXEL_MODE_GRAY:
                     pix = tmp[j];
                     break;
                 default:
@@ -353,11 +353,10 @@ int _show (Xpost_Context *ctx,
     has_kerning = xpost_font_face_kerning_has(data.face);
     glyph_previous = 0;
     for (ch = cstr; *ch; ch++) {
-        FT_UInt glyph_index;
-        FT_Error err;
+        unsigned int glyph_index;
 
-        glyph_index = FT_Get_Char_Index(data.face, *ch);
-        if (has_kerning && glyph_previous && glyph_index)
+        glyph_index = xpost_font_face_glyph_index_get(data.face, *ch);
+        if (has_kerning && glyph_previous && (glyph_index > 0))
         {
             long delta_x;
             long delta_y;
@@ -369,21 +368,8 @@ int _show (Xpost_Context *ctx,
                 ypos += delta_y >> 6;
             }
         }
-        err = FT_Load_Glyph(data.face, glyph_index, FT_LOAD_DEFAULT);
-        if (err)
-        {
-            XPOST_LOG_ERR("Can not load glyph (error : %d)", err);
+        if (!xpost_font_face_glyph_render(data.face, glyph_index))
             continue;
-        }
-        if (data.face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
-        {
-            err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
-            if (err)
-            {
-                XPOST_LOG_ERR("Can not render  non bitmap glyph (error : %d)", err);
-                continue;
-            }
-        }
         //err = FT_Bitmap_Convert();
         _draw_bitmap(ctx, devdic, putpix,
                 data.face->glyph->bitmap.buffer,
