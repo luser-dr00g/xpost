@@ -189,8 +189,10 @@ void _draw_bitmap (Xpost_Context *ctx,
 
     for (i = 0; i < bitmap->rows; i++)
     {
+        printf("\n");
         for (j = 0; j < bitmap->width; j++)
         {
+            printf("%c", *tmp? 'X':'_');
             if (*tmp) {
 
                 switch(ncomp) {
