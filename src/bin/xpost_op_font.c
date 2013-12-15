@@ -173,7 +173,11 @@ static
 void _draw_bitmap (Xpost_Context *ctx,
               Xpost_Object devdic,
               Xpost_Object putpix,
-              FT_Bitmap *bitmap,
+              const unsigned char *buffer,
+              int rows,
+              int width,
+              int pitch,
+              char pixel_mode,
               int xpos,
               int ypos,
               int ncomp,
@@ -182,21 +186,22 @@ void _draw_bitmap (Xpost_Context *ctx,
               Xpost_Object comp3)
 {
     int i, j;
-    unsigned char *tmp;
+    const unsigned char *tmp;
     unsigned int pix;
 
-    tmp = bitmap->buffer;
-    XPOST_LOG_INFO("bitmap->rows = %d, bitmap->width = %d", bitmap->rows, bitmap->width);
-    XPOST_LOG_INFO("bitmap->pitch = %d", bitmap->pitch);
-    XPOST_LOG_INFO("bitmap->pixel_mode = %d", bitmap->pixel_mode);
+    tmp = buffer;
+    XPOST_LOG_INFO("bitmap rows = %d, bitmap width = %d", rows, width);
+    XPOST_LOG_INFO("bitmap pitch = %d", pitch);
+    XPOST_LOG_INFO("bitmap pixel_mode = %d", pixel_mode);
 
-    for (i = 0; i < bitmap->rows; i++)
+    for (i = 0; i < rows; i++)
     {
         printf("\n");
-        for (j = 0; j < bitmap->width; j++)
+        for (j = 0; j < width; j++)
         {
             //pix = tmp[j];
-            switch(bitmap->pixel_mode) {
+            switch (pixel_mode)
+            {
                 case FT_PIXEL_MODE_MONO:
                     pix = tmp[j/8];
                     pix >>= (j % 8);
@@ -210,31 +215,33 @@ void _draw_bitmap (Xpost_Context *ctx,
                     return;
             }
             printf("%c", pix? 'X':'_');
-            if (pix) {
-
-                switch(ncomp) {
-                case 1:
-                    xpost_stack_push(ctx->lo, ctx->os, comp1);
-                    break;
-                case 3:
-                    xpost_stack_push(ctx->lo, ctx->os, comp1);
-                    xpost_stack_push(ctx->lo, ctx->os, comp2);
-                    xpost_stack_push(ctx->lo, ctx->os, comp3);
-                    break;
+            if (pix)
+            {
+                switch (ncomp)
+                {
+                    case 1:
+                        xpost_stack_push(ctx->lo, ctx->os, comp1);
+                        break;
+                    case 3:
+                        xpost_stack_push(ctx->lo, ctx->os, comp1);
+                        xpost_stack_push(ctx->lo, ctx->os, comp2);
+                        xpost_stack_push(ctx->lo, ctx->os, comp3);
+                        break;
                 }
                 xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpos+j));
                 xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ypos+i));
                 xpost_stack_push(ctx->lo, ctx->os, devdic);
                 if (xpost_object_get_type(putpix) == operatortype)
                     xpost_stack_push(ctx->lo, ctx->es, putpix);
-                else {
+                else
+                {
                     xpost_stack_push(ctx->lo, ctx->os, putpix);
                     xpost_stack_push(ctx->lo, ctx->es,
                             consname(ctx, "exec"));
                 }
             }
         }
-        tmp += bitmap->pitch;
+        tmp += pitch;
     }
 }
 
@@ -379,7 +386,11 @@ int _show (Xpost_Context *ctx,
         }
         //err = FT_Bitmap_Convert();
         _draw_bitmap(ctx, devdic, putpix,
-                &data.face->glyph->bitmap,
+                data.face->glyph->bitmap.buffer,
+                data.face->glyph->bitmap.rows,
+                data.face->glyph->bitmap.width,
+                data.face->glyph->bitmap.pitch,
+                data.face->glyph->bitmap.pixel_mode,
                 xpos + data.face->glyph->bitmap_left,
                 ypos - data.face->glyph->bitmap_top,
                 ncomp, comp1, comp2, comp3);
