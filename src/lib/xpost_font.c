@@ -213,6 +213,55 @@ xpost_font_face_scale(void *face, real scale)
 #endif
 }
 
+unsigned int
+xpost_font_face_glyph_index_get(void *face, char c)
+{
+#ifdef HAVE_FREETYPE
+    return FT_Get_Char_Index(face, c);
+#else
+    (void)face;
+    (void)c;
+    return -1;
+#endif
+}
+
+int
+xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
+{
+#ifdef HAVE_FREETYPE
+    FT_Error err;
+
+    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
+    if (!err)
+    {
+        if (((FT_Face)face)->glyph->format != FT_GLYPH_FORMAT_BITMAP)
+        {
+            err = FT_Render_Glyph(((FT_Face)face)->glyph, FT_RENDER_MODE_NORMAL);
+            if (!err)
+                return 1;
+            else
+            {
+                XPOST_LOG_ERR("Can not render  non bitmap glyph (error : %d)", err);
+                return 0;
+            }
+        }
+        else
+            return 1;
+    }
+    else
+    {
+        XPOST_LOG_ERR("Can not load glyph (error : %d)", err);
+        return 0;
+    }
+#else
+    (void)face;
+    (void)glyph_index;
+    return 0;
+#endif
+
+    return 0;
+}
+
 int
 xpost_font_face_kerning_has(void *face)
 {
@@ -229,13 +278,14 @@ xpost_font_face_kerning_has(void *face)
 }
 
 int
-xpost_font_face_kerning_delta_get(void *face, unsigned int previous, unsigned int glyph_index, long *delta_x, long *delta_y)
+xpost_font_face_kerning_delta_get(void *face, unsigned int glyph_previous, unsigned int glyph_index, long *delta_x, long *delta_y)
 {
 #ifdef HAVE_FREETYPE
     FT_Vector delta;
     FT_Error err;
 
-    err = FT_Get_Kerning((FT_Face)face, previous, glyph_index, FT_KERNING_DEFAULT, &delta);
+    err = FT_Get_Kerning((FT_Face)face, glyph_previous, glyph_index,
+                         FT_KERNING_DEFAULT, &delta);
     if (!err)
     {
         *delta_x = delta.x;
