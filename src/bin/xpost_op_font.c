@@ -183,17 +183,34 @@ void _draw_bitmap (Xpost_Context *ctx,
 {
     int i, j;
     unsigned char *tmp;
+    unsigned int pix;
 
     tmp = bitmap->buffer;
     XPOST_LOG_INFO("bitmap->rows = %d, bitmap->width = %d", bitmap->rows, bitmap->width);
+    XPOST_LOG_INFO("bitmap->pitch = %d", bitmap->pitch);
+    XPOST_LOG_INFO("bitmap->pixel_mode = %d", bitmap->pixel_mode);
 
     for (i = 0; i < bitmap->rows; i++)
     {
         printf("\n");
         for (j = 0; j < bitmap->width; j++)
         {
-            printf("%c", *tmp? 'X':'_');
-            if (*tmp) {
+            //pix = tmp[j];
+            switch(bitmap->pixel_mode) {
+                case FT_PIXEL_MODE_MONO:
+                    pix = tmp[j/8];
+                    pix >>= (j % 8);
+                    pix &= 1;
+                    break;
+                case FT_PIXEL_MODE_GRAY:
+                    pix = tmp[j];
+                    break;
+                default:
+                    XPOST_LOG_ERR("unsupported pixel_mode");
+                    return;
+            }
+            printf("%c", pix? 'X':'_');
+            if (pix) {
 
                 switch(ncomp) {
                 case 1:
@@ -216,8 +233,8 @@ void _draw_bitmap (Xpost_Context *ctx,
                             consname(ctx, "exec"));
                 }
             }
-            ++tmp;
         }
+        tmp += bitmap->pitch;
     }
 }
 
@@ -337,7 +354,13 @@ int _show (Xpost_Context *ctx,
         if (data.face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
         {
             err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
+            if (err)
+            {
+                XPOST_LOG_ERR("Can not render glyph (error : %d)", err);
+                continue;
+            }
         }
+        //err = FT_Bitmap_Convert();
         _draw_bitmap(ctx, devdic, putpix,
                 &data.face->glyph->bitmap,
                 xpos + data.face->glyph->bitmap_left,
