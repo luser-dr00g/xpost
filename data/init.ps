@@ -436,9 +436,9 @@ end % userdict
     /GRAPHICS_LOADED where { pop }{
         DATA_DIR (/graphics.ps) strcat run
         userdict /GRAPHICS_LOADED true put
-        initgraphics
-        /USEDRAWLINE true def
     } ifelse
+	initgraphics
+	/USEDRAWLINE true def
 } def
 
 /testfont {
