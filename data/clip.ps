@@ -239,15 +239,18 @@ def
         /U exch def
         {
             /V exch def
-            [ U aload pop V aload pop p2abc ]  % clip-line
-            /CL exch def
-            /DEBUGCLIP where { pop
-                CL ==
-            } if
+			U type /arraytype eq
+			V type /arraytype eq and {
+				[ U aload pop V aload pop p2abc ]  % clip-line
+				/CL exch def
+				/DEBUGCLIP where { pop
+					CL ==
+				} if
 
-            /PA [ PA { % one subject polygon
-                CL hodgman-sutherland
-            } forall ] def
+				/PA [ PA { % one subject polygon
+					CL hodgman-sutherland
+				} forall ] def
+			} if
 
             /U V def
         } forall
