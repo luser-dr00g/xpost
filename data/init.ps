@@ -415,6 +415,18 @@ end % userdict
 %traceon
 %debugloadon
 
+/selectfont {
+    dup type /arraytype eq {
+        exch findfont
+        exch makefont
+        setfont
+    }{
+        exch findfont
+        exch scalefont
+        setfont
+    } ifelse
+} def
+
 /runtest {
     DATA_DIR (/test.ps) strcat run
 } def
@@ -424,15 +436,15 @@ end % userdict
     /GRAPHICS_LOADED where { pop }{
         DATA_DIR (/graphics.ps) strcat run
         userdict /GRAPHICS_LOADED true put
+        initgraphics
+        /USEDRAWLINE true def
     } ifelse
-	/USEDRAWLINE true def
-    initgraphics
 } def
 
 /testfont {
     loadgraphics
     /Times-Roman findfont
-    20 scalefont
+    40 scalefont
     setfont
     100 100 moveto
     (Hello World!) show

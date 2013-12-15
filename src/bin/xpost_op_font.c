@@ -242,6 +242,7 @@ int _show (Xpost_Context *ctx,
     Xpost_Object colorspace;
     int ncomp;
     Xpost_Object comp1, comp2, comp3;
+    Xpost_Object finalize;
 
     /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
@@ -309,7 +310,16 @@ int _show (Xpost_Context *ctx,
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
 
-    /* TODO render text in char *cstr  with font data  at pen position xpos ypos */
+    finalize = xpost_object_cvx(consbar(ctx, 5));
+    /* fill-in final pos before return */
+    barput(ctx, finalize, 0, xpost_cons_real(xpos));
+    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
+    barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
+    barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    /* render text in char *cstr  with font data  at pen position xpos ypos */
 #ifdef HAVE_FREETYPE
     for (ch = cstr; *ch; ch++) {
         FT_UInt glyph_index;
@@ -336,7 +346,9 @@ int _show (Xpost_Context *ctx,
     }
 #endif
 
-    /* TODO update current position in the graphics state */
+    /* update current position in the graphics state */
+    barput(ctx, finalize, 0, xpost_cons_real(xpos));
+    barput(ctx, finalize, 1, xpost_cons_real(ypos));
 
     return 0;
 }
