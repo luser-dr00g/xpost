@@ -201,8 +201,7 @@ int _intersect (double ax, double ay,  double bx, double by,
     *rx = ax + ABpos * theCos;
     *ry = ay + ABpos * theSin;
 
-    printf("  -> %d %d\n",
-            *rx, *ry);
+    //printf("  -> %d %d\n", *rx, *ry);
     return 1;
 }
 
