@@ -185,6 +185,7 @@ void _draw_bitmap (Xpost_Context *ctx,
     unsigned char *tmp;
 
     tmp = bitmap->buffer;
+    XPOST_LOG_INFO("bitmap->rows = %d, bitmap->width = %d", bitmap->rows, bitmap->width);
 
     for (i = 0; i < bitmap->rows; i++)
     {
@@ -205,7 +206,13 @@ void _draw_bitmap (Xpost_Context *ctx,
                 xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpos+j));
                 xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ypos+i));
                 xpost_stack_push(ctx->lo, ctx->os, devdic);
-                xpost_stack_push(ctx->lo, ctx->es, putpix);
+                if (xpost_object_get_type(putpix) == operatortype)
+                    xpost_stack_push(ctx->lo, ctx->es, putpix);
+                else {
+                    xpost_stack_push(ctx->lo, ctx->os, putpix);
+                    xpost_stack_push(ctx->lo, ctx->es,
+                            consname(ctx, "exec"));
+                }
             }
             ++tmp;
         }
@@ -243,20 +250,28 @@ int _show (Xpost_Context *ctx,
     gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
     gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
     fontdict = bdcget(ctx, gs, consname(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
 
     /* load the device */
     devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
     putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
+    XPOST_LOG_INFO("loaded DEVICE and PutPix");
 
     /* get the font data from the font dict */
     privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
     cstr = alloca(str.comp_.sz + 1);
     memcpy(cstr, charstr(ctx, str), str.comp_.sz);
     cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
 
     /* get the current pen position */
     /*FIXME if any of these calls fail, should return nocurrentpoint; */
@@ -274,6 +289,7 @@ int _show (Xpost_Context *ctx,
         datay = xpost_cons_real(datay.int_.val);
     xpos = datax.real_.val;
     ypos = datay.real_.val;
+    XPOST_LOG_INFO("currentpoint: %f %f", xpos, ypos);
 
     colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
     if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
@@ -287,7 +303,11 @@ int _show (Xpost_Context *ctx,
         comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
         comp2 = bdcget(ctx, gs, consname(ctx, "colorcomp2"));
         comp3 = bdcget(ctx, gs, consname(ctx, "colorcomp3"));
+    } else {
+        XPOST_LOG_ERR("unimplemented device colorspace");
+        return unregistered;
     }
+    XPOST_LOG_INFO("ncomp = %d", ncomp);
 
     /* TODO render text in char *cstr  with font data  at pen position xpos ypos */
 #ifdef HAVE_FREETYPE
@@ -305,12 +325,12 @@ int _show (Xpost_Context *ctx,
         if (data.face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
         {
             err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
-            _draw_bitmap(ctx, devdic, putpix,
-                    &data.face->glyph->bitmap,
-                    xpos + data.face->glyph->bitmap_left,
-                    ypos - data.face->glyph->bitmap_top,
-                    ncomp, comp1, comp2, comp3);
         }
+        _draw_bitmap(ctx, devdic, putpix,
+                &data.face->glyph->bitmap,
+                xpos + data.face->glyph->bitmap_left,
+                ypos - data.face->glyph->bitmap_top,
+                ncomp, comp1, comp2, comp3);
         xpos += data.face->glyph->advance.x >> 6;
         ypos += data.face->glyph->advance.y >> 6;
     }
