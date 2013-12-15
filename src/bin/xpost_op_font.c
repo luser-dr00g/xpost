@@ -158,7 +158,7 @@ int _setfont (Xpost_Context *ctx,
     Xpost_Object gd;
     Xpost_Object gs;
 
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     if (xpost_object_get_type(userdict) != dicttype)
         return dictstackunderflow;
     gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
@@ -419,5 +419,3 @@ int initopfont (Xpost_Context *ctx,
 
     return 0;
 }
-
-
