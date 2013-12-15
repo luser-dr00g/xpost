@@ -170,9 +170,11 @@ def
 % x y r angle1 angle2  arc  -
 % append a counterclockwise circular arc to the current path
 /arc {
+    dup 0 lt { 360 add exch 360 add exch } if
+    1 index 0 lt { 360 add exch 360 add exch } if
     2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
     2 copy gt { 360 add } if % s.b. angle2 > angle1
-    2 { dup 0 lt { 360 add } if exch } repeat
+    %2 { dup 0 lt { 360 add } if exch } repeat
     2 copy gt { 360 add } if % s.b. angle2 > angle1
     2 copy exch sub dup 90 gt { % recurse
         .5 mul % x y r a1 a2 da/2
@@ -195,9 +197,11 @@ bind
 def
 
 /arcn {
+    dup 0 lt { 360 add exch 360 add exch } if
+    1 index 0 lt { 360 add exch 360 add exch } if
     2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
     2 copy lt { exch 360 add exch } if % s.b. angle1 > angle2
-    2 { dup 0 lt { 360 add } if exch } repeat
+    %2 { dup 0 lt { 360 add } if exch } repeat
     2 copy lt { exch 360 add exch } if % s.b. angle1 > angle2
     2 copy sub dup 90 gt { % recurse
         .5 mul % x y r a1 a2 da/2

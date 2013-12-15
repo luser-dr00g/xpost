@@ -1,0 +1,103 @@
+%!
+
+/up {
+    currentpoint
+    gsave newpath
+    moveto
+    .5 .5 rlineto
+    stroke
+    grestore
+} def
+
+/up-flag {
+    currentpoint
+    gsave newpath
+    moveto
+    .5 .5 rlineto
+    0 .2 rlineto
+    .1 0 rlineto
+    0 -.1 rlineto
+    -.1 0 rlineto
+    stroke
+    grestore
+} def
+
+/down {
+    currentpoint
+    gsave newpath
+    moveto
+    .5 -.5 rlineto
+    stroke
+    grestore
+} def
+
+/down-flag {
+    currentpoint
+    gsave newpath
+    moveto
+    .5 -.5 rlineto
+    0 .2 rlineto
+    .1 0 rlineto
+    0 -.1 rlineto
+    -.1 0 rlineto
+    stroke
+    grestore
+} def
+
+/straight {
+    currentpoint
+    gsave newpath
+    moveto
+    0 -.8 rlineto
+    .15 0 rlineto
+    stroke
+    grestore
+} def
+
+/bent {
+    currentpoint
+    gsave newpath
+    moveto
+    .4 -.3 rlineto
+    -.3 -.4 rlineto
+    .1 -.05 rlineto
+    stroke
+    grestore
+} def
+
+/turned {
+    currentpoint
+    gsave newpath
+    moveto
+    .3 -.5 rlineto
+    .2 .2 rlineto
+    stroke
+    grestore
+} def
+
+% left-leg right-leg left-arm right-arm unit x y
+/fig {
+    gsave newpath
+    moveto
+    dup dup scale
+    1 exch div setlinewidth
+    currentpoint .1 -90 270 arc
+    %currentpoint .2 0 360 arc
+    %currentpoint .1 90 450 arc
+    currentpoint fill  %head
+    moveto
+    0 -.3 rlineto  %neck
+    exec -1 1 scale  %right-arm
+    exec -1 1 scale  %left-arm
+    0 -.5 rlineto  %body
+    exec -1 1 scale  %right-leg
+    exec -1 1 scale  %left-leg
+    stroke
+    grestore
+} def
+
+//turned //bent //down //down     50 100 200 fig
+//straight //straight //up //down 50 150 200 fig
+//turned //turned //up //up       50 200 200 fig
+//bent //bent //down //up-flag    50 250 200 fig
+
