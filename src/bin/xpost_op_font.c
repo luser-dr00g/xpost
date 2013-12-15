@@ -274,7 +274,7 @@ int _show (Xpost_Context *ctx,
     unsigned int glyph_previous;
 
     /* load the graphicsdict, current graphics state, and current font */
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     if (xpost_object_get_type(userdict) != dicttype)
         return dictstackunderflow;
     gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
@@ -305,7 +305,7 @@ int _show (Xpost_Context *ctx,
 
     /* get the current pen position */
     /*FIXME if any of these calls fail, should return nocurrentpoint; */
-    path = bdcget(ctx, gs, consname(ctx, "currpath")); 
+    path = bdcget(ctx, gs, consname(ctx, "currpath"));
     subpath = bdcget(ctx, path, xpost_cons_int(
                 diclength(xpost_context_select_memory(ctx,path), path) - 1));
     pathelem = bdcget(ctx, subpath, xpost_cons_int(
