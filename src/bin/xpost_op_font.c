@@ -263,6 +263,9 @@ int _show (Xpost_Context *ctx,
     Xpost_Object comp1, comp2, comp3;
     Xpost_Object finalize;
 
+    int has_kerning;
+    unsigned int glyph_previous;
+
     /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
     if (xpost_object_get_type(userdict) != dicttype)
@@ -340,11 +343,25 @@ int _show (Xpost_Context *ctx,
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
 #ifdef HAVE_FREETYPE
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
     for (ch = cstr; *ch; ch++) {
         FT_UInt glyph_index;
         FT_Error err;
 
         glyph_index = FT_Get_Char_Index(data.face, *ch);
+        if (has_kerning && glyph_previous && glyph_index)
+        {
+            long delta_x;
+            long delta_y;
+
+            if (xpost_font_face_kerning_delta_get(data.face, glyph_previous, glyph_index,
+                                                  &delta_x, &delta_y))
+            {
+                xpos += delta_x >> 6;
+                ypos += delta_y >> 6;
+            }
+        }
         err = FT_Load_Glyph(data.face, glyph_index, FT_LOAD_DEFAULT);
         if (err)
         {
@@ -356,7 +373,7 @@ int _show (Xpost_Context *ctx,
             err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
             if (err)
             {
-                XPOST_LOG_ERR("Can not render glyph (error : %d)", err);
+                XPOST_LOG_ERR("Can not render  non bitmap glyph (error : %d)", err);
                 continue;
             }
         }
@@ -368,6 +385,7 @@ int _show (Xpost_Context *ctx,
                 ncomp, comp1, comp2, comp3);
         xpos += data.face->glyph->advance.x >> 6;
         ypos += data.face->glyph->advance.y >> 6;
+        glyph_previous = glyph_index;
     }
 #endif
 

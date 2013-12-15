@@ -71,4 +71,8 @@ void xpost_font_face_free(void *face);
 
 void xpost_font_face_scale(void *face, real scale);
 
+int xpost_font_face_kerning_has(void *face);
+
+int xpost_font_face_kerning_delta_get(void *face, unsigned int previous, unsigned int glyph_index, long *delta_x, long *delta_y);
+
 #endif

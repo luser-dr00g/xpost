@@ -212,3 +212,45 @@ xpost_font_face_scale(void *face, real scale)
     (void)scale;
 #endif
 }
+
+int
+xpost_font_face_kerning_has(void *face)
+{
+#ifdef HAVE_FREETYPE
+    if (!FT_HAS_KERNING(((FT_Face)face)))
+        return 1;
+
+    XPOST_LOG_INFO("Face has no kerning information");
+#else
+    (void)face;
+#endif
+
+    return 0;
+}
+
+int
+xpost_font_face_kerning_delta_get(void *face, unsigned int previous, unsigned int glyph_index, long *delta_x, long *delta_y)
+{
+#ifdef HAVE_FREETYPE
+    FT_Vector delta;
+    FT_Error err;
+
+    err = FT_Get_Kerning((FT_Face)face, previous, glyph_index, FT_KERNING_DEFAULT, &delta);
+    if (!err)
+    {
+        *delta_x = delta.x;
+        *delta_y = delta.y;
+        return 1;
+    }
+
+    XPOST_LOG_INFO("Can not retrieve kerning (error : %d)", err);
+#else
+    (void)face;
+    (void)previous;
+    (void)glyph_index;
+    (void)delta_x;
+    (void)delta_y;
+#endif
+
+    return 0;
+}
