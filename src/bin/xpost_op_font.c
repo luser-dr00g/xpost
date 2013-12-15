@@ -158,7 +158,7 @@ int _setfont (Xpost_Context *ctx,
     Xpost_Object gd;
     Xpost_Object gs;
 
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     if (xpost_object_get_type(userdict) != dicttype)
         return dictstackunderflow;
     gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
@@ -173,7 +173,11 @@ static
 void _draw_bitmap (Xpost_Context *ctx,
               Xpost_Object devdic,
               Xpost_Object putpix,
-              FT_Bitmap *bitmap,
+              const unsigned char *buffer,
+              int rows,
+              int width,
+              int pitch,
+              char pixel_mode,
               int xpos,
               int ypos,
               int ncomp,
@@ -182,25 +186,26 @@ void _draw_bitmap (Xpost_Context *ctx,
               Xpost_Object comp3)
 {
     int i, j;
-    unsigned char *tmp;
+    const unsigned char *tmp;
     unsigned int pix;
 
-    tmp = bitmap->buffer;
-    XPOST_LOG_INFO("bitmap->rows = %d, bitmap->width = %d", bitmap->rows, bitmap->width);
-    XPOST_LOG_INFO("bitmap->pitch = %d", bitmap->pitch);
-    XPOST_LOG_INFO("bitmap->pixel_mode = %d", bitmap->pixel_mode);
+    tmp = buffer;
+    XPOST_LOG_INFO("bitmap rows = %d, bitmap width = %d", rows, width);
+    XPOST_LOG_INFO("bitmap pitch = %d", pitch);
+    XPOST_LOG_INFO("bitmap pixel_mode = %d", pixel_mode);
 
-    for (i = 0; i < bitmap->rows; i++)
+    for (i = 0; i < rows; i++)
     {
         printf("\n");
-        for (j = 0; j < bitmap->width; j++)
+        for (j = 0; j < width; j++)
         {
             //pix = tmp[j];
-            switch(bitmap->pixel_mode) {
-                case FT_PIXEL_MODE_MONO:
+            switch (pixel_mode)
+            {
+                case XPOST_FONT_PIXEL_MODE_MONO:
                     pix = (tmp[j/8] >> (7 - (j % 8))) & 1;
                     break;
-                case FT_PIXEL_MODE_GRAY:
+                case XPOST_FONT_PIXEL_MODE_GRAY:
                     pix = tmp[j];
                     break;
                 default:
@@ -208,31 +213,33 @@ void _draw_bitmap (Xpost_Context *ctx,
                     return;
             }
             printf("%c", pix? 'X':'_');
-            if (pix) {
-
-                switch(ncomp) {
-                case 1:
-                    xpost_stack_push(ctx->lo, ctx->os, comp1);
-                    break;
-                case 3:
-                    xpost_stack_push(ctx->lo, ctx->os, comp1);
-                    xpost_stack_push(ctx->lo, ctx->os, comp2);
-                    xpost_stack_push(ctx->lo, ctx->os, comp3);
-                    break;
+            if (pix)
+            {
+                switch (ncomp)
+                {
+                    case 1:
+                        xpost_stack_push(ctx->lo, ctx->os, comp1);
+                        break;
+                    case 3:
+                        xpost_stack_push(ctx->lo, ctx->os, comp1);
+                        xpost_stack_push(ctx->lo, ctx->os, comp2);
+                        xpost_stack_push(ctx->lo, ctx->os, comp3);
+                        break;
                 }
                 xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpos+j));
                 xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ypos+i));
                 xpost_stack_push(ctx->lo, ctx->os, devdic);
                 if (xpost_object_get_type(putpix) == operatortype)
                     xpost_stack_push(ctx->lo, ctx->es, putpix);
-                else {
+                else
+                {
                     xpost_stack_push(ctx->lo, ctx->os, putpix);
                     xpost_stack_push(ctx->lo, ctx->es,
                             consname(ctx, "exec"));
                 }
             }
         }
-        tmp += bitmap->pitch;
+        tmp += pitch;
     }
 }
 
@@ -261,8 +268,11 @@ int _show (Xpost_Context *ctx,
     Xpost_Object comp1, comp2, comp3;
     Xpost_Object finalize;
 
+    int has_kerning;
+    unsigned int glyph_previous;
+
     /* load the graphicsdict, current graphics state, and current font */
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2); 
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     if (xpost_object_get_type(userdict) != dicttype)
         return dictstackunderflow;
     gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
@@ -293,7 +303,7 @@ int _show (Xpost_Context *ctx,
 
     /* get the current pen position */
     /*FIXME if any of these calls fail, should return nocurrentpoint; */
-    path = bdcget(ctx, gs, consname(ctx, "currpath")); 
+    path = bdcget(ctx, gs, consname(ctx, "currpath"));
     subpath = bdcget(ctx, path, xpost_cons_int(
                 diclength(xpost_context_select_memory(ctx,path), path) - 1));
     pathelem = bdcget(ctx, subpath, xpost_cons_int(
@@ -338,34 +348,39 @@ int _show (Xpost_Context *ctx,
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
 #ifdef HAVE_FREETYPE
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
     for (ch = cstr; *ch; ch++) {
-        FT_UInt glyph_index;
-        FT_Error err;
+        unsigned int glyph_index;
 
-        glyph_index = FT_Get_Char_Index(data.face, *ch);
-        err = FT_Load_Glyph(data.face, glyph_index, FT_LOAD_DEFAULT);
-        if (err)
+        glyph_index = xpost_font_face_glyph_index_get(data.face, *ch);
+        if (has_kerning && glyph_previous && (glyph_index > 0))
         {
-            XPOST_LOG_ERR("Can not load glyph (error : %d)", err);
-            continue;
-        }
-        if (data.face->glyph->format != FT_GLYPH_FORMAT_BITMAP)
-        {
-            err = FT_Render_Glyph(data.face->glyph, FT_RENDER_MODE_NORMAL);
-            if (err)
+            long delta_x;
+            long delta_y;
+
+            if (xpost_font_face_kerning_delta_get(data.face, glyph_previous, glyph_index,
+                                                  &delta_x, &delta_y))
             {
-                XPOST_LOG_ERR("Can not render glyph (error : %d)", err);
-                continue;
+                xpos += delta_x >> 6;
+                ypos += delta_y >> 6;
             }
         }
+        if (!xpost_font_face_glyph_render(data.face, glyph_index))
+            continue;
         //err = FT_Bitmap_Convert();
         _draw_bitmap(ctx, devdic, putpix,
-                &data.face->glyph->bitmap,
+                data.face->glyph->bitmap.buffer,
+                data.face->glyph->bitmap.rows,
+                data.face->glyph->bitmap.width,
+                data.face->glyph->bitmap.pitch,
+                data.face->glyph->bitmap.pixel_mode,
                 xpos + data.face->glyph->bitmap_left,
                 ypos - data.face->glyph->bitmap_top,
                 ncomp, comp1, comp2, comp3);
         xpos += data.face->glyph->advance.x >> 6;
         ypos += data.face->glyph->advance.y >> 6;
+        glyph_previous = glyph_index;
     }
 #endif
 
@@ -402,5 +417,3 @@ int initopfont (Xpost_Context *ctx,
 
     return 0;
 }
-
-
