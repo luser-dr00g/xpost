@@ -110,6 +110,8 @@ int _findfont (Xpost_Context *ctx,
 
     /* initialize font data, with x-scale and y-scale set to 1 */
     data.face = xpost_font_face_new_from_name(fname);
+    if (data.face == NULL)
+        return invalidfont;
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
@@ -134,6 +136,9 @@ int _scalefont (Xpost_Context *ctx,
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+
+    if (data.face == NULL)
+        return invalidfont;
 
     /* scale x and y sizes by @p size */
     xpost_font_face_scale(data.face, size.real_.val);
