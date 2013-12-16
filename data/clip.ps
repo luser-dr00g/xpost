@@ -1,0 +1,286 @@
+(loading clip.ps...)=
+
+/initclip {
+    %(initclip)=
+
+    %stash current path and matrix on stack
+    %graphicsdict /currgstate get 
+    %    dup /currpath get   % currpath
+    %    exch /currmatrix get % currmatrix
+    graphicsdict /currgstate get /currpath get
+    matrix currentmatrix
+
+    %construct the initial clipping path CCW
+    % with an identity matrix (ie. userspace==devicespace)
+    newpath
+    matrix setmatrix
+    DEVICE /dimensions get
+    aload pop
+    0 0 moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    closepath
+
+    %move path to clipregion, restore matrix and path from stack
+    %graphicsdict /currgstate get
+    %    dup dup /currpath get /clipregion exch put
+    %    dup 3 2 roll /currmatrix exch put
+    %    exch /currpath exch put
+    %pstack() =
+    setmatrix
+    graphicsdict /currgstate get
+        dup dup /currpath get /clipregion exch put
+        exch /currpath exch put
+} %pop
+{
+    gsave
+        newpath
+        DEVICE /dimensions get
+        aload pop
+        idtransform
+        abs exch abs exch
+        0 0 moveto
+        1 index 0 rlineto
+        0 exch rlineto
+        neg 0 rlineto
+        closepath
+    graphicsdict /currgstate get /currpath get
+    grestore
+    graphicsdict /currgstate get exch
+    /clipregion exch put
+} pop
+def
+
+
+/clip {
+    doclip
+    graphicsdict /currgstate get
+    dup /currpath get /clipregion exch put
+    %newpath %NO! clip does not disturb the current path.
+} def
+
+
+/p2abc { % x0 y0 x1 y1
+    exch 3 index sub
+    exch 2 index sub % x0 y0 dx dy
+    exch         % x0 y0 A B
+    neg
+    2 copy 6 2 roll  % A B x0 y0 A B
+    3 -1 roll mul    % A B x0 A By0
+    3 1 roll mul     % A B By0 Ax0
+    add neg          % A B C
+} bind def
+
+% evaluate and hodgman-sutherland
+% from Bill Casselman's Mathematical Illustrations, ch. 5.
+
+/evaluate { %    x y [A B C]
+    aload pop    % x y A B C
+    5 1 roll     % C x y A B
+    3 2 roll mul % C x A By
+    3 1 roll mul % C By Ax
+    add add
+} bind def
+
+% polygon [A B C]  .  new-polygon
+/hodgman-sutherland {
+	DICT
+	%10 dict
+	begin
+    /f exch def
+    /p exch def
+    /n p length 1 sub def
+    /DEBUGCLIP where { pop
+        (n=)print n =
+    } if
+    n 0 gt { % else nothing to do.
+
+    % P = p[n-1] to start !!No. our poly has a duplicate point at the end
+    %/P p n 1 sub get def
+    %/d P length 1 sub def
+    /P p 0 get def
+    /fP P aload pop f evaluate def
+    [
+        p 1 1 index length 1 sub getinterval {
+            /Q exch def
+            /fQ Q aload pop f evaluate def
+            /DEBUGCLIP where { pop
+                (P=)print P ==
+                (Q=)print Q ==
+                (fP=)print fP ==
+                (fQ=)print fQ ==
+            } if
+            fP 0 le {
+                counttomark 0 eq {
+                    P
+                    /DEBUGCLIP where { pop
+                        (P)=
+                    } if
+                } if
+                fQ 0 le {
+                    Q
+                    /DEBUGCLIP where { pop
+                        (Q)=
+                    } if
+                }{
+                    fP 0 lt {
+                        /QP fQ fP sub def
+                        [
+                            fQ P 0 get mul fP Q 0 get mul sub QP div
+                            fQ P 1 get mul fP Q 1 get mul sub QP div
+                        ]
+                        /DEBUGCLIP where { pop
+                            (I)=
+                        } if
+                    } if
+                } ifelse
+            }{
+                fQ 0 le {
+                    fQ 0 lt {
+                        /QP fQ fP sub def
+                        [
+                            fQ P 0 get mul fP Q 0 get mul sub QP div
+                            fQ P 1 get mul fP Q 1 get mul sub QP div
+                        ]
+                        /DEBUGCLIP where { pop
+                            (I)=
+                        } if
+                    } if
+                    Q
+                    /DEBUGCLIP where { pop
+                        (Q)=
+                    } if
+                } if
+            } ifelse
+            /P Q def
+            /fP fQ def
+        } forall
+    ]
+    /DEBUGCLIP where { pop
+        dup ==
+    } if
+
+    }{ % n==0
+        p
+    } ifelse
+
+end }
+dup 0 10 dict put
+bind
+def
+
+
+%clip the current path by the clipregion
+% convert the path to an array of polygons (arrays of points)
+% convert clipregion to array of polygons
+% traverse the clipregion
+%    convert line to [A B C] form
+%    feed polygon and line to hodgman-sutherland,
+%       receiving new polygon.
+/doclip {
+	%DICT
+	10 dict
+	begin
+
+    %/isclosed 
+    %    cpath dup length 1 sub get 
+    %    dup length 1 sub get /cmd /close eq 
+    %def
+    %closepath
+
+    flattenpath
+    /PA [                           % PAth    polygon array
+        [  % mark
+        {
+            2 array astore  % ... mark ... [x0 y0]
+            counttomark 1 ne {
+                counttomark 1 add 1 roll % ... [x0 y0] mark ...
+                ] exch  % ... [ ... ] [x0 y0]
+                [ exch  % ... [ ... ] [ [x0 y0]
+            } if  % ... mark [x0 y0]
+            %pstack()=
+        }
+        { 2 array astore }  % ... mark [x0 y0] ... [xN yN]
+        {}
+        { counttomark 1 sub index } % ... mark [x0 y0] ... [x0 y0]
+        .devpathforall
+        ]  % /PA mark [...] [...] [...] 
+    ] def
+
+    /CR                         % Clip Region   clippath array
+    clippath [
+        %{ 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall
+        [
+        { 2 array astore
+            counttomark 1 ne {
+                counttomark 1 add 1 roll
+                ] exch
+                [ exch
+            } if
+        }
+        { 2 array astore }
+        {}
+        { counttomark 1 sub index }
+        .devpathforall
+        ]
+    ]
+    %pstack()=
+    def
+
+    /DEBUGCLIP where { pop
+        (doclip)=
+        (PA: )print PA ==
+        (CR: )print CR ==
+    } if
+
+    CR { % one clipping polygon
+        dup dup length 1 sub get % polygon final-point
+        /U exch def
+        {
+            /V exch def
+            [ U aload pop V aload pop p2abc ]  % clip-line
+            /CL exch def
+            /DEBUGCLIP where { pop
+                CL ==
+            } if
+
+            /PA [ PA { % one subject polygon
+                CL hodgman-sutherland
+            } forall ] def
+
+            /U V def
+        } forall
+    } forall
+    newpath
+
+    /DEBUGCLIP where { pop
+        PA ==
+    } if
+
+    PA {
+        dup length 0 gt {
+            dup 0 get << /data 3 2 roll /cmd /move >> cpath addtopath
+            1 1 index length 1 sub getinterval {
+                << /data 3 2 roll /cmd /line >> cpath addtopath
+            } forall
+
+            cpath dup length 1 sub get
+            dup 0 get /data get
+            exch dup length 1 sub get /data get
+            aload pop 3 2 roll aload pop % x0 y0 xN yN
+            exch 4 1 roll % xN x0 y0 yN
+            eq 3 1 roll eq and {
+                closepath
+            } if
+        }{
+            pop
+        } ifelse
+    } forall
+
+end }
+%dup 0 10 dict put
+bind
+def
+
+(eof clip.ps)=
