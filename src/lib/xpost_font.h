@@ -149,6 +149,8 @@ unsigned int xpost_font_face_glyph_index_get(void *face, char c);
  */
 int xpost_font_face_glyph_render(void *face, unsigned int glyph_index);
 
+void xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, int *width, int *pitch, char *pixel_mode, int *left, int *top, long *advance_x, long *advance_y);
+
 /**
  * @brief Check if the given font has kerning feature.
  *
