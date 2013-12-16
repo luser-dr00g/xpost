@@ -63,11 +63,6 @@ void *alloca (size_t);
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
-#ifdef HAVE_FREETYPE
-# include <ft2build.h>
-# include FT_FREETYPE_H
-#endif
-
 #include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
@@ -87,7 +82,7 @@ void *alloca (size_t);
 
 typedef struct fontdata
 {
-    FT_Face face;
+    void *face;
 } fontdata;
 
 static
@@ -114,7 +109,7 @@ int _findfont (Xpost_Context *ctx,
     bdcput(ctx, fontdict, consname(ctx, "Private"), privatestr);
 
     /* initialize font data, with x-scale and y-scale set to 1 */
-    data.face = (FT_Face)xpost_font_face_new_from_name(fname);
+    data.face = xpost_font_face_new_from_name(fname);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
@@ -293,6 +288,11 @@ int _show (Xpost_Context *ctx,
         return invalidfont;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -352,6 +352,15 @@ int _show (Xpost_Context *ctx,
     glyph_previous = 0;
     for (ch = cstr; *ch; ch++) {
         unsigned int glyph_index;
+        unsigned char *buffer;
+        int rows;
+        int width;
+        int pitch;
+        char pixel_mode;
+        int left;
+        int top;
+        long advance_x;
+        long advance_y;
 
         glyph_index = xpost_font_face_glyph_index_get(data.face, *ch);
         if (has_kerning && glyph_previous && (glyph_index > 0))
@@ -368,18 +377,13 @@ int _show (Xpost_Context *ctx,
         }
         if (!xpost_font_face_glyph_render(data.face, glyph_index))
             continue;
-        //err = FT_Bitmap_Convert();
+        xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width, &pitch, &pixel_mode, &left, &top, &advance_x, &advance_y);
         _draw_bitmap(ctx, devdic, putpix,
-                data.face->glyph->bitmap.buffer,
-                data.face->glyph->bitmap.rows,
-                data.face->glyph->bitmap.width,
-                data.face->glyph->bitmap.pitch,
-                data.face->glyph->bitmap.pixel_mode,
-                xpos + data.face->glyph->bitmap_left,
-                ypos - data.face->glyph->bitmap_top,
+                buffer, rows, width, pitch, pixel_mode,
+                xpos + left, ypos - top,
                 ncomp, comp1, comp2, comp3);
-        xpos += data.face->glyph->advance.x >> 6;
-        ypos += data.face->glyph->advance.y >> 6;
+        xpos += advance_x >> 6;
+        ypos += advance_y >> 6;
         glyph_previous = glyph_index;
     }
 #endif

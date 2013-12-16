@@ -262,6 +262,33 @@ xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
     return 0;
 }
 
+void
+xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, int *width, int *pitch, char *pixel_mode, int *left, int *top, long *advance_x, long *advance_y)
+{
+#ifdef HAVE_FREETYPE
+    *buffer = ((FT_Face)face)->glyph->bitmap.buffer;
+    *rows = ((FT_Face)face)->glyph->bitmap.rows;
+    *width = ((FT_Face)face)->glyph->bitmap.width;
+    *pitch = ((FT_Face)face)->glyph->bitmap.pitch;
+    *pixel_mode = ((FT_Face)face)->glyph->bitmap.pixel_mode;
+    *left = ((FT_Face)face)->glyph->bitmap_left;
+    *top = ((FT_Face)face)->glyph->bitmap_top;
+    *advance_x = ((FT_Face)face)->glyph->advance.x;
+    *advance_y = ((FT_Face)face)->glyph->advance.y;
+#else
+    (void)face;
+    (void)buffer;
+    (void)rows;
+    (void)width;
+    (void)pitch;
+    (void)pixel_mode;
+    (void)left;
+    (void)top;
+    (void)advance_x;
+    (void)advance_y;
+#endif
+}
+
 int
 xpost_font_face_kerning_has(void *face)
 {
