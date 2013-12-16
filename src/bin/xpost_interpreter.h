@@ -80,7 +80,7 @@ void xpost_interpreter_exit(Xpost_Interpreter *itp);
 /* 3 simple top-level functions */
 
 int xpost_create(const char *device);
-void xpost_run(void);
+void xpost_run(const char *ps_file);
 void xpost_destroy(void);
 
 #endif

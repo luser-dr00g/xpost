@@ -47,7 +47,7 @@
    */
 Xpost_Object consstr(Xpost_Memory_File *mem,
                      unsigned sz,
-                     /*@NULL@*/ char *ini)
+                     /*@NULL@*/ const char *ini)
 {
     unsigned ent;
     Xpost_Object o;
@@ -82,7 +82,7 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
    */
 Xpost_Object consbst(Xpost_Context *ctx,
                      unsigned sz,
-                     /*@NULL@*/ char *ini)
+                     /*@NULL@*/ const char *ini)
 {
     Xpost_Object s;
     s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);

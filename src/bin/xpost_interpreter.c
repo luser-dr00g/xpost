@@ -783,7 +783,7 @@ int xpost_create(const char *device)
 }
 
 
-void xpost_run(void)
+void xpost_run(const char *ps_file)
 {
     Xpost_Object lsav;
     int llev;
@@ -795,11 +795,19 @@ void xpost_run(void)
     xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0));
         /* `start` proc defined in init.ps runs `executive` which prompts for user input
            'startstdin' does not prompt
+           
+           'startfile' executes a named file
+               wrapped in a stopped context with handleerror
          */
-    if (isatty(fileno(stdin)))
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
-    else
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startstdin")));
+    if (ps_file) {
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(consbst(xpost_ctx, strlen(ps_file), ps_file)));
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startfile")));
+    } else {
+        if (isatty(fileno(stdin)))
+            xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
+        else
+            xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startstdin")));
+    }
 
     (void) xpost_save_create_snapshot_object(xpost_ctx->gl);
     lsav = xpost_save_create_snapshot_object(xpost_ctx->lo);
@@ -823,6 +831,18 @@ void xpost_run(void)
 void xpost_destroy(void)
 {
     //dumpoper(ctx, 1); // is this pointer value constant?
+    if (xpost_object_get_type(xpost_ctx->window_device) == dicttype)
+    {
+        Xpost_Object Destroy;
+        Destroy = bdcget(xpost_ctx, xpost_ctx->window_device, consname(xpost_ctx, "Destroy"));
+        if (xpost_object_get_type(Destroy) == operatortype) {
+            int ret;
+            xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_ctx->window_device);
+            ret = opexec(xpost_ctx, Destroy.mark_.padw);
+            if (ret)
+                XPOST_LOG_ERR("error destroying window device %s", errorname[ret]);
+        }
+    }
     printf("bye!\n");
     fflush(NULL);
     //collect(itpdata->ctab->gl, 1, 1);

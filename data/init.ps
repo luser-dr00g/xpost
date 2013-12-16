@@ -170,6 +170,12 @@ end
 /start {
     currentglobal
     false setglobal
+    {
+        loadgraphics
+    } stopped {
+        (unable to load graphics)print
+        quit
+    } if
     userdict /quit {
         %exit
         //execdict /quitflag true put
@@ -184,7 +190,29 @@ end
 
 /startstdin {
     {
+        loadgraphics
+    } stopped {
+        (unable to load graphics)print
+        quit
+    } if
+    {
         (%stdin) run
+    } stopped {
+        handleerror
+    } if
+    quit
+} def
+
+/startfile { % (filename)
+    /inputfilename exch def
+    {
+        loadgraphics
+    } stopped {
+        (unable to load graphics)print
+        quit
+    } if
+    {
+        inputfilename (r) file cvx exec
     } stopped {
         handleerror
     } if
