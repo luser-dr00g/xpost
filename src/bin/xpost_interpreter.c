@@ -845,7 +845,7 @@ void xpost_destroy(void)
     }
     printf("bye!\n");
     fflush(NULL);
-    //collect(itpdata->ctab->gl, 1, 1);
+    collect(itpdata->ctab->gl, 1, 1);
     xpost_interpreter_exit(itpdata);
     free(itpdata);
 }
