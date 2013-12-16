@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
         goto quit_xpost;
     }
 
-    xpost_run();
+    xpost_run(ps_file);
     xpost_destroy();
     free(exedir);
 

@@ -34,8 +34,8 @@
 /* strings
    */
 
-Xpost_Object consstr(Xpost_Memory_File *mem, unsigned sz, /*@NULL@*/ char *ini);
-Xpost_Object consbst(Xpost_Context *ctx, unsigned sz, /*@NULL@*/ char *ini);
+Xpost_Object consstr(Xpost_Memory_File *mem, unsigned sz, /*@NULL@*/ const char *ini);
+Xpost_Object consbst(Xpost_Context *ctx, unsigned sz, /*@NULL@*/ const char *ini);
 /*@dependent@*/
 char *charstr(Xpost_Context *ctx, Xpost_Object S);
 void strput(Xpost_Memory_File *mem, Xpost_Object s, integer i, integer c);
