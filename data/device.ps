@@ -2,6 +2,7 @@
 
 DATA_DIR (/image.ps) strcat run
 
+breakhere
 %/DEVICE <<
 %    /dimensions [ 100 100 ]
 %    /defaultmatrix [ 1 0 0 1 0 0 ]
@@ -24,9 +25,9 @@ DEVICE begin
 
     % override ps fillpoly with operator
     % unless already overridden.
-    %/FillPoly load type /operatortype ne {
+    /FillPoly load type /operatortype ne {
         /FillPoly /.fillpoly load def
-    %} if
+    } if
 end
 
 /flushpage {
@@ -51,4 +52,4 @@ end
     erasepage
 } bind def
 
-(eof device.ps)=
+(eof device.ps)print
