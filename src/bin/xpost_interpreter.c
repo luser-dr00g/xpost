@@ -260,7 +260,7 @@ int evalload(Xpost_Context *ctx)
     if (TRACE)
     {
         Xpost_Object s = strname(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
-        printf("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
+        XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
     }
 
     if (!xpost_stack_push(ctx->lo, ctx->os,

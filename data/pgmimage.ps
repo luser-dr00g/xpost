@@ -52,6 +52,7 @@ DATA_DIR(/qsort.ps)strcat run
     begin {/height /width}{exch def}forall
     currentdict end
     dup /.copydict get exec
+    begin
         /ImgData height array def
         0 1 height 1 sub {
             ImgData exch width string put

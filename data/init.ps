@@ -443,6 +443,27 @@ end % userdict
 %traceon
 %debugloadon
 
+/fontsubstitutions <<
+    /Times-Roman (Nimbus Roman No9 L)
+    /Courier (Liberation Mono)
+    /Helvetica (DejaVu Sans)
+>> def
+
+/findfont {
+    {
+        //findfont
+    } stopped {
+        fontsubstitutions exch 2 copy known {
+            get
+            //findfont
+        }{
+            exch pop
+            (no defined substitute for unfound font)=
+            =
+        } ifelse
+    } if
+} def
+
 /selectfont {
     dup type /arraytype eq {
         exch findfont
