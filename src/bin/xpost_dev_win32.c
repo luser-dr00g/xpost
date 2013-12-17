@@ -273,6 +273,8 @@ int _create_cont (Xpost_Context *ctx,
         goto unregister_class;
     }
 
+    SetWindowText(private.window, "Xpost");
+
     rd = (Render_Data *)malloc(sizeof(Render_Data_Gdi));
     if (!rd)
     {

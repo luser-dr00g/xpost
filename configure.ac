@@ -154,10 +154,10 @@ PKG_CHECK_EXISTS([freetype2],
    [have_freetype="no"])
 
 # libxcb
-PKG_CHECK_EXISTS([xcb-image xcb],
+PKG_CHECK_EXISTS([xcb-image xcb-icccm xcb],
    [
     have_xcb="yes"
-    xpost_requirements_bin_pc="${xpost_requirements_bin_pc} xcb-image xcb"
+    xpost_requirements_bin_pc="${xpost_requirements_bin_pc} xcb-image xcb-icccm xcb"
     AC_DEFINE([HAVE_XCB], [1], [Define to 1 if XCB is detected])
    ],
    [have_xcb="no"])
