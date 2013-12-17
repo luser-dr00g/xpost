@@ -1,22 +1,22 @@
-XPost3 Internals (formerly the README)
+XPost Internals (formerly the README)
 
 ______________
-XPost3 is a work-in-progress Level-2 Postscript interpreter. Currently it
+XPost is a work-in-progress Level-2 Postscript interpreter. Currently it
 implements the complete Level-1 core (minus graphics). Level-2 features
 implemented: growing stacks, growing dicts, << /dictionary/syntax >>.
 
 [ the paragraph is outdated, see the README
 Upon cloning the repository, the commands `make` and `make test`
 should compile all the modules and create and run all the tests.
-`./itp` will run the "interpreter test", which runs the interactive executive.
+`./xpost` will run the "interpreter test", which runs the interactive executive.
 ]
 
 The source should be portable across all gcc targets.
 Please raise an issue at
     http://code.google.com/p/xpost/issues/list
-if you have difficulty compiling. 
+if you have difficulty compiling.
 
-[ XPost2 is available in the downloads as a .zip of the source directory.
+[ previous XPost is available in the downloads as a .zip of the source directory.
 It was written and tested with Debian Lenny on an Olpc XO-1 laptop.
 (Well, it's not the /whole/ source directory, but all text files needed
 by the makefile) It is no longer being maintained.
@@ -25,21 +25,21 @@ for using:
 or, for just reading:
     http://code.google.com/p/xpost/downloads/detail?name=xpost2.pdf ]
 
-Developer note: for working with the postscript level, ie. 
+Developer note: for working with the postscript level, ie.
 working with the protoype (primitive) graphics code.
 Xpost has the ability to determine if it is being run from the
 real installation directory or just being from the source directory.
   cd xpost
   make
-  alias itp="$PWD/src/bin/itp"
+  alias xpost="$PWD/src/bin/xpost"
 will create a temporary shell alias for the current session.
 When running run the source directory, xpost considers itself
 "not installed", and looks for the postscript initialization files
 from the /data directory relative to the repository's root.
 Assuming the exec call that launched xpost set the argv[0] string
-appropriately, or a /proc filesystem exists, xpost will locate 
+appropriately, or a /proc filesystem exists, xpost will locate
 itself and its data.
-This means changes to the postscript files will (obviously) 
+This means changes to the postscript files will (obviously)
 change the behavior of the interpreter. This ability has been
 found useful in adjusting the `breakhere` debugging operator
 in postscript code.
@@ -47,7 +47,7 @@ in postscript code.
 
 
 
-XPost3 is being designed along different principles from previous versions.
+XPost is being designed along different principles from previous versions.
 Transparency (debugability), simplicity (borrowing certain OOP concepts
 like encapsulation), speed (choosing appropriate algorithms), extensibility
 (growing stacks. support for multiple contexts). It is being written and
@@ -59,7 +59,7 @@ Thanks to the cross-platform powers of the autotools setup
 
   -- Modules --
 
-The various modules were written and tested separately before being 
+The various modules were written and tested separately before being
 coupled together to achieve the necessary basic functionality.
 Each module retains its unit-test, its main() function, guarded
 by #ifdef TESTMODULE_(MODULENAME). These tests are now inactive,
@@ -82,7 +82,7 @@ are mostly updated to reflect changes in the rest of the code.
       xpost_dict             dichead dictionary
       xpost_name              name
       xpost_garbage           garbage collector
-itp   xpost_main
+xpost xpost_main
       xpost_interpreter      context
           osunix              unix-dependent functions
           osmswin             windows (mingw) hacks
@@ -110,20 +110,20 @@ itp   xpost_main
          opdimc               canvases (*)
 
 The file and operator modules were copied with little modification
-from xpost2, and so were not deemed to require separate tests.
+from previuos xpost, and so were not deemed to require separate tests.
 
         Data-structure
           Hierarchy
     (Inter-relation(?))
         -------------
                 itpdata
-      gc     context     
+      gc     context
         mfile       stack
              mtab     object
                  array
                  dict
                  string
- 
+
 The structures are rather closely "coupled" together.
 Each piece relying upon appropriate facilities from other modules.
 But a hierarchy of a sort does exist. The itpdata structure
@@ -146,10 +146,10 @@ operator modules which are closer to Postscript.
 
 Core           Objects                Operators
 ----           -------                ---------
-xpost_memory  
+xpost_memory
   \- xpost_stack
   /    \- xpost_save .  .  .- - - - - -/- xpost_op_save - save/restore operators
-xpost_object - object                 /- - - - /- xpost_op_token 
+xpost_object - object                 /- - - - /- xpost_op_token
                                                 token operator for file and string
   \- xpost_file - file - - - - - - - -/-  xpost_op_file -/- file operators
   |    |~ - - osunix   |(file uses one of these)
@@ -164,13 +164,13 @@ xpost_object - object                 /- - - - /- xpost_op_token
  objects)                   (all of  \- - xpost_op_math - math operators
                          these create \ - xpost_op_packedarray - (simulated)
                      operator objects) \- xpost_op_misc - misc operators
-                     
+
             -----------------
                     | - - xpost_error - error handler (used everywhere
                     |
                     xpost_interpreter - interpreter (uses everything)
-          
-         
+
+
 
 Virtual Memory
 --------------
@@ -218,7 +218,7 @@ NAMES and NAMET are for the Name String stack and Name Tree,
 a ternary search tree. The same old ternary search tree,
 this time updated to live in the memory file.
 
-Bogusname is an allocated name string corresponding to the 
+Bogusname is an allocated name string corresponding to the
 Not-Found result. So zero means no and asking what no means
 is Bogus.
 
@@ -259,7 +259,7 @@ which live in the memory file.
 
 These three modules (memory, stack, & save) are considered the "core"
 of the whole thing. I wrote these and then sat on them for over a year
-while making revisions to xpost2, periodically re-reading the code
+while making revisions to previuos xpost, periodically re-reading the code
 to make sure it still made sense.
 
 
@@ -299,11 +299,11 @@ have funky names. (cf. Murphy's Law)
 Save and Restore
 ----------------
 
-The save stack holds save-records with two entities, the source and the 
+The save stack holds save-records with two entities, the source and the
 copy. restore merely has to exchange the addresses of the two entities.
-All array and dictionary write operations ensure that the memory is 
+All array and dictionary write operations ensure that the memory is
 saved at the current level before writing.
-This should be more efficient than any of my previous drafts. 
+This should be more efficient than any of my previous drafts.
 "True" copy-on-write and no pointer-chasing.
 
 Arrays ("xpost_array") and dictionaries ("xpost_dict") are automatically
@@ -329,7 +329,7 @@ like copying a pointer from the free list get pretty involved, eg.
 This line copies the "pointer" (unsigned) value indicated by the
 entity e into the memory "pointed to" by the "pointer" z.
 
-The free list head is in special entity FREE in mtab[0]. 
+The free list head is in special entity FREE in mtab[0].
 Its size is reported as 0, but the adr points to an unsigned int
 value which holds the ent number of the next element of the
 the free list. An ent number of zero terminates the list.
@@ -340,20 +340,20 @@ It appears to be functioning now.
 Operator Handling
 -----------------
 
-Xpost3 continues to use the same bizarre twisted loop to check
+Xpost continues to use the same bizarre twisted loop to check
 the stack contents for a combined typecheck/stackunderflow-error
-+ polymorphic variadic dispatch, copying argument from the 
++ polymorphic variadic dispatch, copying argument from the
 postscript stack to the operator-function's calling frame.
 It's all very perverse and clever.
 
-But profiling xpost2 showed a big bottleneck with all this trickery.
+But profiling previuos xpost showed a big bottleneck with all this trickery.
 So a possible optimization is to replace the operator-signature
-type with a dedicated function pointer to a function that 
+type with a dedicated function pointer to a function that
 implements the desired stack-checking. This would factor-out
 quite a bit of redundant computation, I think. For instance,
 most operators are not defined to accept the `anytype` pattern,
 therefore most operators would check the stack faster by omitting
-this clause. 
+this clause.
 
 This will likely require some truly heinous name-mangling.
 
@@ -372,7 +372,7 @@ only marks global data; likewise for a local sweep, only mark locals.
 
 Context IDs, `cid`s, are generated sequentially, starting from 1.
 They are designed so that `(cid - 1) % MAXCONTEXT` will yield the
-index in the ctab of the context. So the allocator increments 
+index in the ctab of the context. So the allocator increments
 until this formula yields an empty slot. This lets us re-use slots
 while still maintaining unique IDs for all processes in the history
 (until the `unsigned` wraps TO//DO fix this timebomb -- not a problem,
@@ -410,6 +410,6 @@ Win-Win.
 
 https://bugs.freedesktop.org/show_bug.cgi?id=67464
 
-I may need to release under a different license. Still learning 
+I may need to release under a different license. Still learning
 about that part (who ain't??).
 

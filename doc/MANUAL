@@ -4,18 +4,22 @@ What can it do? How much of Postscript is written? How much is tested?
 All of these are very good questions. Hopefully we'll address some of
 them in the following.
 
-Xpost3 is still in the "under-construction" phase. But I'm happy enough
+Xpost is still in the "under-construction" phase. But I'm happy enough
 with it that I think it should be considered an "alpha" status product.
-The testing is not extensive, but it is in place, and has been used 
+The testing is not extensive, but it is in place, and has been used
 throughout the development. In fact the interpreter that can be run
 right now is actually just the "interpreter test" of the interpreter
 module. But, enough of that. I promised no "internals" here.
 
+**** begin : what to do with that paragraph ? Seems not valid anymore ***
+
 It's an important fact that the available interpreter is the interpreter
-*test*, because when you clone the repo and run `make` or `make all` 
+*test*, because when you clone the repo and run `make` or `make all`
 (which are the same), you'll also need to run `make test` or `make itp`
 to create the ./itp executable. Once it's ready to be part of `make all`,
 that will herald "beta" status.
+
+*** end ***
 
 == Download and get a PS> prompt ==
 
@@ -24,7 +28,7 @@ everything. Tested on cygwin, should work fine on Linux.
 
 Clone the Mercurial repository with
 
-  hg clone https://luser.droog@code.google.com/p/xpost/ 
+  hg clone https://luser.droog@code.google.com/p/xpost/
 
 Configure and compile all the source objects.
 
@@ -34,8 +38,7 @@ Configure and compile all the source objects.
   [ The testing portion needs reworking and is not currently
   compiled by make. ........................................
 
-Compile and run the tests (Recommended. But you can also run
-`make itp` and launch the interpreter with `./itp`.)
+Compile and run the tests.
 
   make test
 
@@ -49,12 +52,11 @@ or `echo $status` in csh.
 Run the interpreter.
 
   cd src/bin
-  ./itp
+  ./xpost
 
-^test itp.c
 loading init.ps...
 loading err.ps...
-Xpost3 Version 0
+Xpost Version 0.0.1
 PS>
 
 Type `quit` or send an EOF (ctrl-D or maybe ctrl-Z) to quit
@@ -72,7 +74,7 @@ I've asked about this on Stack Overflow.
 If the values are constant for most systems, then we can consider
 the quick-launch idea to be a viable pursuit. For the moment the
 risk is such that the whole thing falls into the "premature optimization"
-bucket. 
+bucket.
 
 
 == Examples ==
@@ -91,7 +93,7 @@ ubf119.ps - the 119 char universal binary-function lookup table
 ubf70.ps - the 70 char universal binary-function lookup table
 
 Some of these were written to make use of Ghostscript's argument
-processing option `gs -- prog.ps arg0 arg1 arg2`. But xpost3 doesn't
+processing option `gs -- prog.ps arg0 arg1 arg2`. But xpost doesn't
 do that yet, so you'll have to define
 
   /ARGUMENTS [ (A) (Bm) (F#m) (F#m) ] def
@@ -104,7 +106,7 @@ to set this variable before running.
 == Postscript arithmetic ==
 
 Just a brief review of what you should already know if you're trying
-to use xpost. Postscript uses a Reverse-Polish Syntax where the 
+to use xpost. Postscript uses a Reverse-Polish Syntax where the
 operator follows the operands.
 
   a + b      Infix Notation (ALGOL, C)
@@ -242,7 +244,7 @@ indicates how many elements to move and in which direction.
 
     "Positive J to roll away", "Negative to bring 'em back".
 
-So the next step in revising our function is to remove the /x name 
+So the next step in revising our function is to remove the /x name
 as well.
 
   % a b c x  quadratic  ax^2+bx+c
@@ -256,14 +258,14 @@ as well.
   } def
 
 If we apply `bind` to the procedure, all the operator names will
-be replaced by the operators themselves, and the function now 
+be replaced by the operators themselves, and the function now
 performs no dictionary lookups at all.
 
   /quadratic load bind ==
 { 4 2 -roll- 1 -index- -mul- 4 1 -roll- 1 -index- -mul- -mul- -add- -add- }
 
 This function will now execute as quickly as possible,
-and it will not interact with the current namespace 
+and it will not interact with the current namespace
 and it does not allocate any data.
 
 
@@ -325,13 +327,12 @@ but leaves the procedure invocation intact.
 Xpost's %statementedit special file features secondary prompts at each
 newline, reminding you of which open constructs are awaiting a terminator.
 
-$ ./itp
+$ ./xpost
 
-^test itp.c
 loading init.ps...
 loading err.ps...
 $error
-Xpost3 Version 0
+Xpost Version 0.0.1
 PS>{
 {.:}
 PS<1>(
@@ -339,10 +340,10 @@ PS<1>(
 PS<2>[
 PS<3>]
 PS<3>pstack
-[ ] 
+[ ]
 (
 )
-{ } 
+{ }
 PS<3>{{{
 {{{.:}
 {{.:}

@@ -1,7 +1,7 @@
 
-bin_PROGRAMS = src/bin/itp
+bin_PROGRAMS = src/bin/xpost
 
-src_bin_itp_SOURCES = \
+src_bin_xpost_SOURCES = \
 src/bin/xpost_array.c \
 src/bin/xpost_dict.c \
 src/bin/xpost_error.c \
@@ -63,7 +63,7 @@ src/bin/xpost_string.h \
 src/bin/xpost_save.h
 
 if HAVE_WIN32
-src_bin_itp_SOURCES += \
+src_bin_xpost_SOURCES += \
 src/bin/glob.c \
 src/bin/glob.h \
 src/bin/xpost_dev_win32.c \
@@ -71,26 +71,25 @@ src/bin/xpost_dev_win32.h
 endif
 
 if HAVE_XCB
-src_bin_itp_SOURCES += \
+src_bin_xpost_SOURCES += \
 src/bin/xpost_dev_xcb.c \
 src/bin/xpost_dev_xcb.h
 endif
 
-src_bin_itp_CPPFLAGS = \
+src_bin_xpost_CPPFLAGS = \
 -I$(top_srcdir)/src/lib \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 -DPACKAGE_INSTALL_DIR=\"$(prefix)/\" \
--DTESTMODULE_ITP \
 @XPOST_BIN_CFLAGS@
 
-src_bin_itp_LDADD = \
+src_bin_xpost_LDADD = \
 src/lib/libxpost.la \
 @XPOST_BIN_LIBS@ \
 @XPOST_BIN_LDFLAGS@ \
 -lm
 
 if HAVE_WIN32
-src_bin_itp_LDADD += \
+src_bin_xpost_LDADD += \
 -lgdi32
 endif
 
