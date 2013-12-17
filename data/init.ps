@@ -445,17 +445,26 @@ end % userdict
 
 /fontsubstitutions <<
     /Times-Roman (Nimbus Roman No9 L)
+    dup (URW Bookman L)
+
     /Courier (Liberation Mono)
+    dup /FreeMono
+    dup (Hershey\\-Plain\\-Triplex)
+    dup (DejaVu Sans Mono)
+
     /Helvetica (DejaVu Sans)
+    dup (Nimbus Sans L)
+
+    /Palatino-Roman (URW Palladio L)
 >> def
 
 /findfont {
-    {
+    {   % try the operator
         //findfont
-    } stopped {
-        fontsubstitutions exch 2 copy known {
+    } stopped { % operator failed: 
+        fontsubstitutions exch 2 copy known { % try substitution
             get
-            //findfont
+            findfont
         }{
             exch pop
             (no defined substitute for unfound font)=
