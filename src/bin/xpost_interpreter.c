@@ -620,7 +620,6 @@ int mainloop(Xpost_Context *ctx)
 
 
 
-//#ifdef TESTMODULE_ITP
 
 /* global shortcut for a single-threaded interpreter */
 Xpost_Context *xpost_ctx;
@@ -849,5 +848,3 @@ void xpost_destroy(void)
     xpost_interpreter_exit(itpdata);
     free(itpdata);
 }
-
-//#endif
