@@ -30,10 +30,12 @@ m4/ltversion.m4
 m4/lt~obsolete.m4
 missing
 stamp-h1
+xpost.pc
+src/bin/xpost
+src/tests/xpost_suite
 *.Po
 *.o
 *.exe
-src/tests/xpost_suite
 *.la
 *.lo
 itp
