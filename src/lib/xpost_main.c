@@ -44,16 +44,36 @@
 # endif
 #endif
 
+#include "xpost.h"
 #include "xpost_log.h"
 #include "xpost_object.h"
 #include "xpost_memory.h"
 #include "xpost_font.h"
 #include "xpost_main.h"
 
+
+/*============================================================================*
+ *                                  Local                                     *
+ *============================================================================*/
+
 static int _xpost_init_count = 0;
 static double _xpost_start_time = 0.0;
 
-int
+/*============================================================================*
+ *                                 Global                                     *
+ *============================================================================*/
+
+double
+xpost_start_time_get(void)
+{
+    return _xpost_start_time;
+}
+
+/*============================================================================*
+ *                                   API                                      *
+ *============================================================================*/
+
+XPAPI int
 xpost_init(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
@@ -82,7 +102,7 @@ xpost_init(void)
     return _xpost_init_count;
 }
 
-int
+XPAPI int
 xpost_quit(void)
 {
     if (_xpost_init_count <= 0)
@@ -100,16 +120,10 @@ xpost_quit(void)
     return _xpost_init_count;
 }
 
-void
+XPAPI void
 xpost_version_get(int *maj, int *min, int *mic)
 {
     if (maj) *maj = XPOST_VERSION_MAJ;
     if (min) *min = XPOST_VERSION_MIN;
     if (mic) *mic = XPOST_VERSION_MIC;
-}
-
-double
-xpost_start_time_get(void)
-{
-    return _xpost_start_time;
 }

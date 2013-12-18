@@ -5,19 +5,20 @@ PACKAGE_DOCNAME = $(PACKAGE_TARNAME)-$(PACKAGE_VERSION)-doc
 
 if XPOST_BUILD_DOC
 
+XPOST_DOC_CLEANFILES = doc/html/ doc/latex/ $(PACKAGE_DOCNAME).tar*
+
+XPOST_CLEANFILES += $(XPOST_DOC_CLEANFILES)
+
 doc-clean:
-	rm -rf doc/html/ doc/latex/ $(PACKAGE_DOCNAME).tar*
+	rm -rf $(XPOST_DOC_CLEANFILES)
 
 doc: all doc-clean
 	$(DOXYGEN) doc/Doxyfile
-	rm -rf $(PACKAGE_DOCNAME).tar*
 	mkdir -p $(PACKAGE_DOCNAME)/doc
 	cp -rf doc/html/ doc/latex/ $(PACKAGE_DOCNAME)/doc
 	tar cf $(PACKAGE_DOCNAME).tar $(PACKAGE_DOCNAME)/
 	bzip2 -9 $(PACKAGE_DOCNAME).tar
 	rm -rf $(PACKAGE_DOCNAME)/
-
-clean-local: doc-clean
 
 else
 

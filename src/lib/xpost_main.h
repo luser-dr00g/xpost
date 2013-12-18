@@ -37,47 +37,8 @@
  * @brief Initializing and quitting functions
  */
 
-
 /**
- * @brief Initialize the xpost library.
- *
- * @return The new init count. Will be 0 if initialization failed.
- *
- * The first time this function is called, it will perform all the internal
- * initialization required for the library to function properly and increment
- * the initialization counter. Any subsequent call only increment this counter
- * and return its new value, so it's safe to call this function more than once.
- *
- * @see xpost_quit();
- */
-int xpost_init(void);
-
-/**
- * @brief Quit the xpost library.
- *
- * @return The new init count.
- *
- * If xpost_init() was called more than once for the running application,
- * xpost_quit() will decrement the initialization counter and return its
- * new value, without doing anything else. When the counter reaches 0, all
- * of the internal elements will be shutdown and any memory used freed.
- */
-int xpost_quit(void);
-
-/**
- * @brief Retrieve the version of the library.
- *
- * @param[out] maj The major version.
- * @param[out] min The minor version.
- * @param[out] mic The micro version.
- *
- * This function stores the major, minor and micro version of the library
- * respectively in the buffers @p maj, @p min and @p mic. @p maj, @p min
- * and @p mic can be @c NULL.
- */
-void xpost_version_get(int *maj, int *min, int *mic);
-
-/**
+ * @internal
  * @brief Return the start time when library is initialized.
  *
  * @return The start time.
