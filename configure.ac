@@ -110,6 +110,9 @@ if test "x${ac_cv_prog_cc_c99}" = "xno" ; then
    AC_MSG_ERROR([Can not find a C99 compliant compiler. Exiting...])
 fi
 
+# pkg-config
+PKG_PROG_PKG_CONFIG
+
 # documentation
 XPOST_CHECK_DOXYGEN([build_doc="yes"], [build_doc="no"])
 
@@ -132,7 +135,9 @@ AC_SUBST([WC])
 
 xpost_requirements_bin_pc=""
 xpost_requirements_lib_pc=""
+xpost_requirements_lib_libs="-lm"
 AC_SUBST([xpost_requirements_lib_pc])
+AC_SUBST([xpost_requirements_lib_libs])
 
 # fontconfig
 PKG_CHECK_EXISTS([fontconfig freetype2],
@@ -172,9 +177,9 @@ if ! test "x${xpost_requirements_bin_pc}" = "x" ; then
    PKG_CHECK_MODULES([XPOST_BIN], [${xpost_requirements_bin_pc}])
 fi
 
-# OpenGL
+# GDI, OpenGL
 if test "x${have_win32}" = "xyes" ; then
-   XPOST_BIN_LIBS="${XPOST_BIN_LIBS} -lopengl32"
+   XPOST_BIN_LIBS="${XPOST_BIN_LIBS} -lopengl32 -lgdi32"
 fi
 
 # check
@@ -207,6 +212,10 @@ fi
 AM_CONDITIONAL([HAVE_VALGRIND], [test "x${have_valgrind}" = "xyes"])
 
 AC_SUBST([VALGRIND])
+
+# we finalize the setup
+
+XPOST_LIB_LIBS="${XPOST_LIB_LIBS} ${xpost_requirements_lib_libs}"
 
 
 ### Checks for header files

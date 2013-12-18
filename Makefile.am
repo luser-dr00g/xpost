@@ -23,11 +23,38 @@ missing \
 $(DIST_ARCHIVES)
 
 EXTRA_DIST =
+XPOST_CLEANFILES =
 
 include src/lib/Makefile.mk
 include src/bin/Makefile.mk
 include data/Makefile.mk
 include doc/Makefile.mk
+
+sed_process = \
+$(SED) \
+-e 's,@VERSION\@,$(VERSION),g' \
+-e 's,@VMAJ\@,$(VMAJ),g' \
+-e 's,@prefix\@,$(prefix),g' \
+-e 's,@exec_prefix\@,$(exec_prefix),g' \
+-e 's,@libdir\@,$(libdir),g' \
+-e 's,@includedir\@,$(includedir),g' \
+-e 's,@pkgincludedir\@,$(pkgincludedir),g' \
+-e 's,@xpost_requirements_lib_pc\@,$(xpost_requirements_lib_pc),g' \
+-e 's,@xpost_requirements_lib_libs\@,$(xpost_requirements_lib_libs),g' \
+< $< > $@ || rm $@
+
+pc_verbose = $(pc_verbose_@AM_V@)
+pc_verbose_ = $(pc_verbose_@AM_DEFAULT_V@)
+pc_verbose_0 = @echo "  PC      " $@;
+
+xpost.pc: $(top_srcdir)/xpost.pc.in Makefile
+	$(AM_V_at)rm -f $@
+	$(pc_verbose)$(sed_process)
+
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = xpost.pc
+
+XPOST_CLEANFILES += xpost.pc
 
 # Unit tests
 
@@ -50,6 +77,11 @@ check-local:
 endif
 
 EXTRA_DIST += \
+autogen.sh \
+xpost.pc.in \
 m4/xpost.m4 \
 valgrind_wrapper.sh \
 glibc.supp
+
+clean-local:
+	rm -rf $(XPOST_CLEANFILES)

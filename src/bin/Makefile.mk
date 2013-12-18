@@ -88,11 +88,6 @@ src/lib/libxpost.la \
 @XPOST_BIN_LDFLAGS@ \
 -lm
 
-if HAVE_WIN32
-src_bin_xpost_LDADD += \
--lgdi32
-endif
-
 if HAVE_SPLINT
 splint_process = splint \
 +posixlib -boolops -predboolint +ignoresigns -type +charindex \
