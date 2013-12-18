@@ -38,6 +38,7 @@
 #include <stdlib.h> /* EXIT_FAILURE */
 #include <string.h> /* free */
 
+#include "xpost.h"
 #include "xpost_pathname.h" /* xpost_is_installed exedir */
 #include "xpost_memory.h" /* Xpost_Memory_File */
 #include "xpost_object.h" /* Xpost_Object */
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
     int have_device;
     int i;
 
-    printf("EXTRA_BITS_SIZE = %d\n", XPOST_OBJECT_TAG_EXTRA_BITS_SIZE);
+    printf("EXTRA_BITS_SIZE = %ld\n", XPOST_OBJECT_TAG_EXTRA_BITS_SIZE);
     printf("COMP_MAX_ENT = %d\n", XPOST_OBJECT_COMP_MAX_ENT);
 
 #ifdef _WIN32
