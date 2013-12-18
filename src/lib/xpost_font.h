@@ -99,7 +99,7 @@ void *xpost_font_face_new_from_name(const char *name);
 /**
  * @brief Free the given font.
  *
- * @param[inout] face The font face.
+ * @param[in,out] face The font face.
  *
  * This function frees the memory stored by @p face.
  *
