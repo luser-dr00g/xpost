@@ -464,7 +464,7 @@ end % userdict
     } stopped { % operator failed: 
         fontsubstitutions exch 2 copy known { % try substitution
             get
-            findfont
+            findfont % call proc (tail-)recursively 
         }{
             exch pop
             (no defined substitute for unfound font)=
@@ -473,6 +473,8 @@ end % userdict
     } if
 } def
 
+%   /fontname size  selectfont  -
+% /fontname matrix  selectfont  -
 /selectfont {
     dup type /arraytype eq {
         exch findfont
@@ -484,6 +486,20 @@ end % userdict
         setfont
     } ifelse
 } def
+
+% x y w h
+/rect {
+    dup 0 lt { neg 3 2 roll 1 index sub 3 1 roll } if
+    1 index 0 lt { exch neg 4 3 roll 1 index sub 4 1 roll exch } if
+    4 2 roll moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+} def
+
+/rectfill { rect fill } def
+/rectstroke { rect stroke } def
+/rectclip { rect clip } def
 
 /runtest {
     DATA_DIR (/test.ps) strcat run
