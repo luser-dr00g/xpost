@@ -420,6 +420,17 @@ int initopfont (Xpost_Context *ctx,
     op = consoper(ctx, "setfont", _setfont, 1, 1, dicttype); INSTALL;
 
     op = consoper(ctx, "show", _show, 0, 1, stringtype); INSTALL;
+    /*
+    op = consoper(ctx, "widthshow", _widthshow, 0, 4,
+        integertype, integertype, integertype, stringtype); INSTALL;
+    op = consoper(ctx, "ashow", _ashow, 0, 3,
+        integertype, integertype, stringtype); INSTALL;
+    op = consoper(ctx, "awidthshow", _awidthshow, 0, 6,
+        integertype, integertype, integertype, integertype, integertype,
+        stringtype); INSTALL;
+    op = consoper(ctx, "kshow", _kshow, 0, 2,
+        proctype, stringtype); INSTALL;
+    */
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
     bdcput(ctx, sd, consname(ctx, "mark"), mark); */

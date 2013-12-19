@@ -12,6 +12,7 @@ data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
 data/paint.ps \
+data/font.ps \
 data/init.ps \
 data/prepr.ps \
 data/m.pic \
@@ -42,6 +43,7 @@ data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
 data/paint.ps \
+data/font.ps \
 data/init.ps \
 data/prepr.ps \
 data/m.pic \
