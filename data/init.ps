@@ -458,19 +458,29 @@ end % userdict
     /Palatino-Roman (URW Palladio L)
 >> def
 
+% For the moment, we consider any fonts handled by FreeType to be Type 1.
+% The FontDirectory will merely hold defined Type 3 fonts.
+/FontDirectory <<
+>> def
+
 /findfont {
-    {   % try the operator
-        //findfont
-    } stopped { % operator failed: 
-        fontsubstitutions exch 2 copy known { % try substitution
-            get
-            findfont % call proc (tail-)recursively 
-        }{
-            exch pop
-            (no defined substitute for unfound font)=
-            =
-        } ifelse
-    } if
+    FontDirectory 1 index known {
+        FontDirectory exch get
+    }{
+        {   % try the operator
+            //findfont
+            dup /FontType 1 put
+        } stopped { % operator failed: 
+            fontsubstitutions exch 2 copy known { % try substitution
+                get
+                findfont % call proc (tail-)recursively 
+            }{
+                exch pop
+                (no defined substitute for unfound font)=
+                =
+            } ifelse
+        } if
+    } ifelse
 } def
 
 %   /fontname size  selectfont  -
@@ -488,13 +498,17 @@ end % userdict
 } def
 
 % x y w h
-/rect {
-    dup 0 lt { neg 3 2 roll 1 index sub 3 1 roll } if
+/rect { %ccw in device space
+    dtransform 4 2 roll transform 4 2 roll
+    dup 0 gt { neg 3 2 roll 1 index sub 3 1 roll } if
     1 index 0 lt { exch neg 4 3 roll 1 index sub 4 1 roll exch } if
-    4 2 roll moveto
+    idtransform 4 2 roll itransform 
+    2 copy 6 2 roll
+    moveto
     1 index 0 rlineto
     0 exch rlineto
     neg 0 rlineto
+    lineto
 } def
 
 /rectfill { rect fill } def
