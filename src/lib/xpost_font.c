@@ -76,6 +76,8 @@ xpost_font_init(void)
         }
 
         _xpost_font_fc_config = FcInitLoadConfigAndFonts();
+        if (_xpost_font_fc_config == NULL)
+            XPOST_LOG_ERR("cannot load Fc config and fonts");
 
         return 1;
 # endif
@@ -121,8 +123,14 @@ _xpost_font_face_filename_and_index_get(const char *name, int *idx)
 
     FcDefaultSubstitute(pattern);
     match = FcFontMatch(_xpost_font_fc_config, pattern, &result);
-    if (result != FcResultMatch)
-        goto destroy_pattern;
+    //if (result != FcResultMatch) goto destroy_pattern;
+    switch (result) {
+        case FcResultMatch: break;
+        case FcResultNoMatch: goto destroy_pattern;
+        case FcResultTypeMismatch: break;
+        case FcResultNoId: break;
+        case FcResultOutOfMemory: goto destroy_pattern;
+    }
 
     result = FcPatternGetString(match, FC_FILE, 0, (FcChar8 **)&file);
     if (result != FcResultMatch)
