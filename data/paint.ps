@@ -115,4 +115,32 @@
     newpath
 } bind def
 
+/bitsdict <<
+    1 {
+    }
+    2 {
+    }
+    4 {
+    }
+    8 {
+    }
+    12 {
+    }
+>> def
+
+% width height bits/sample matrix datasrc  image  -
+/image {
+    10 dict begin
+    {datasrc mat bits height width}{exch def}forall
+    bitsdict bits get exec
+    end
+} def
+
+% width height polarity matrix datasrc  imagemask  -
+/imagemask {
+    10 dict begin
+    {datasrc mat polarity height width}{exch def}forall
+    end
+} def
+
 (eof paint.ps)=
