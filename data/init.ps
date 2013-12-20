@@ -438,11 +438,11 @@ true setglobal
     } def
     } pop
 
-end % userdict
-
 %traceon
 %debugloadon
 
+currentglobal
+false setglobal
 /fontsubstitutions <<
     /Times-Roman (Nimbus Roman No9 L)
     dup (URW Bookman L)
@@ -460,8 +460,12 @@ end % userdict
 
 % For the moment, we consider any fonts handled by FreeType to be Type 1.
 % The FontDirectory will merely hold defined Type 3 fonts.
-/FontDirectory <<
+/FontDirectory
+<<
 >> def
+setglobal
+
+end % userdict
 
 /findfont {
     FontDirectory 1 index known {

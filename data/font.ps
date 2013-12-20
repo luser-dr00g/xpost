@@ -23,17 +23,45 @@
 
 /scalefont {
     1 index /FontType get 3 ne { //scalefont }{
+        dup matrix scale makefont
     } ifelse
 } def
 
 /makefont {
     1 index /FontType get 3 ne { //makefont }{
+        1 index /FontMatrix get dup concatmatrix pop
     } ifelse
+} def
+
+/setcharwidth {
+    graphicsdict /currgstate get /currfont get
+    dup /xadvance 5 4 roll put
+    /yadvance 3 2 roll put
+} def
+
+/setcachedevice {
+    pop pop pop pop
+    setcharwidth
 } def
 
 /show {
     graphicsdict /currgstate get /currfont get
     dup /FontType get 3 ne { pop //show }{
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get concat
+        exch
+        pstack()=
+        {
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+        } forall
+    grestore
     } ifelse
 } def
 

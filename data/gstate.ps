@@ -137,6 +137,12 @@ end
     graphicsdict /currgstate get exch gstatecopy
 } def
 
+% -  currentfont  dict
+% return current font from the graphics state
+/currentfont {
+    graphicsdict /currgstate get /currfont get
+} def
+
 % proc  settransfer  -
 % install gray-tranfer procedure
 /settransfer {
