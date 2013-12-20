@@ -465,6 +465,7 @@ int _invert_matrix (Xpost_Context *ctx,
     mat2.xz = (mat1.xy * mat1.yz - mat1.yy * mat1.xz) * invdet;
     mat2.yz = (mat1.yx * mat1.xz - mat1.xx * mat1.yz) * invdet;
     _xmat2psmat(ctx, &mat2, psmat2);
+    xpost_stack_push(ctx->lo, ctx->os, psmat2);
     return 0;
 }
 
