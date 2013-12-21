@@ -330,7 +330,7 @@ int Aexecstack(Xpost_Context *ctx,
         if (ret)
             return ret;
     }
-    subarr = arrgetinterval(A, 0, z);
+    subarr = xpost_object_get_interval(A, 0, z);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;
     if (!xpost_stack_push(ctx->lo, ctx->os, subarr))

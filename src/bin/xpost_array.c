@@ -76,7 +76,6 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
     } else {
         if (!xpost_memory_table_alloc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype, &ent ))
         {
-            //error(VMerror, "consarr cannot allocate array");
             XPOST_LOG_ERR("cannot allocate array");
             return null;
         }
@@ -99,7 +98,6 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
                     ent, i, (unsigned)sizeof(Xpost_Object), &null);
             if (!ret)
             {
-                //error(rangecheck, "consarr cannot fill array value");
                 XPOST_LOG_ERR("cannot fill array value");
                 return null;
             }
@@ -148,7 +146,6 @@ int arrput(Xpost_Memory_File *mem,
             return VMerror;
     if (i > a.comp_.sz)
     {
-        //error(rangecheck, "arrput");
         XPOST_LOG_ERR("cannot put value in array");
         /*breakhere((Xpost_Context *)mem);*/
         return rangecheck;
@@ -172,7 +169,8 @@ int barput(Xpost_Context *ctx,
         if ( mem == ctx->gl
                 && xpost_object_is_composite(o)
                 && mem != xpost_context_select_memory(ctx, o))
-            error(invalidaccess, "local value into global array");
+            //error(invalidaccess, "local value into global array");
+            return invalidaccess;
     }
 
     return arrput(mem, a, i, o);
@@ -189,7 +187,8 @@ Xpost_Object arrget(Xpost_Memory_File *mem,
     ret = xpost_memory_get(mem, xpost_object_get_ent(a), (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
     if (!ret)
     {
-        error(rangecheck, "arrget");
+        //error(rangecheck, "arrget");
+        return invalid;
     }
 
     return o;
@@ -202,23 +201,6 @@ Xpost_Object barget(Xpost_Context *ctx,
               integer i)
 {
     return arrget(xpost_context_select_memory(ctx, a), a, i);
-}
-
-/* adjust the offset and size fields in the object.
-   NB. since this function only modifies the fields in the object
-   itself, it also works for string and dict objects which use
-   the same comp_ substructure. So this function is used everywhere
-   for strings and dicts. It does not touch VM.
- */
-Xpost_Object arrgetinterval(Xpost_Object a,
-                      integer off,
-                      integer sz)
-{
-    if (sz - off > a.comp_.sz)
-        return invalid; /* should be interpreted as a rangecheck error */
-    a.comp_.off += off;
-    a.comp_.sz = sz;
-    return a;
 }
 
 #ifdef TESTMODULE_AR

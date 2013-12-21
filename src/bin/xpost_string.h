@@ -38,8 +38,8 @@ Xpost_Object consstr(Xpost_Memory_File *mem, unsigned sz, /*@NULL@*/ const char 
 Xpost_Object consbst(Xpost_Context *ctx, unsigned sz, /*@NULL@*/ const char *ini);
 /*@dependent@*/
 char *charstr(Xpost_Context *ctx, Xpost_Object S);
-void strput(Xpost_Memory_File *mem, Xpost_Object s, integer i, integer c);
-void bstput(Xpost_Context *ctx, Xpost_Object s, integer i, integer c);
+int strput(Xpost_Memory_File *mem, Xpost_Object s, integer i, integer c);
+int bstput(Xpost_Context *ctx, Xpost_Object s, integer i, integer c);
 integer strget(Xpost_Memory_File *mem, Xpost_Object s, integer i);
 integer bstget(Xpost_Context *ctx, Xpost_Object s, integer i);
 

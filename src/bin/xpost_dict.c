@@ -218,7 +218,6 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
     d.comp_.off = 0;
     if (!xpost_memory_table_alloc(mem, sizeof(dichead) + DICTABSZ(sz), dicttype, &ent))
     {
-        //error(VMerror, "consdic cannot allocate dictionary");
         XPOST_LOG_ERR("cannot allocate dictionary");
         return null;
     }
@@ -425,7 +424,6 @@ Xpost_Object unextend (Xpost_Object e)
     } else if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_REAL) {
         o = xpost_cons_real(d);
     } else {
-        //error(unregistered, "unextend: invalid extended number object");
         XPOST_LOG_ERR("invalid extended number object");
         return null;
     }
@@ -531,7 +529,6 @@ Xpost_Object dicget(Xpost_Context *ctx,
     e = diclookup(ctx, mem, d, k);
     if (e == NULL || xpost_object_get_type(e[0]) == nulltype)
     {
-        //error(undefined, "dicget");
         return invalid;
     }
     else if (xpost_object_get_type(e[1]) == magictype)
@@ -634,7 +631,6 @@ int bdcput(Xpost_Context *ctx,
                 && xpost_object_is_composite(k)
                 && mem != xpost_context_select_memory(ctx, k))
         {
-            //error(invalidaccess, "local key into global dict");
             XPOST_LOG_ERR("local key into global dict");
             return invalidaccess;
         }
@@ -643,7 +639,6 @@ int bdcput(Xpost_Context *ctx,
                 && mem != xpost_context_select_memory(ctx, v))
         {
             xpost_object_dump(v);
-            //error(invalidaccess, "local value into global dict");
             XPOST_LOG_ERR("local value into global dict");
             return invalidaccess;
         }
@@ -681,7 +676,6 @@ int dicundef(Xpost_Context *ctx,
 
     e = diclookup(ctx, mem, d, k); /*find slot for key */
     if (e == NULL || objcmp(ctx,e[0],null) == 0) {
-        error(undefined, "dicundef");
         return undefined;
     }
 

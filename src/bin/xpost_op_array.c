@@ -64,6 +64,8 @@ int a_copy (Xpost_Context *ctx,
     for (i = 0; i < S.comp_.sz; i++)
     {
         t = barget(ctx, S, i);
+        if (xpost_object_get_type(t) == invalidtype)
+            return rangecheck;
         barput(ctx, D, i, t);
     }
 
@@ -138,7 +140,11 @@ int Aget (Xpost_Context *ctx,
            Xpost_Object A,
            Xpost_Object I)
 {
-    if (!xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, I.int_.val)))
+    Xpost_Object t;
+    t = barget(ctx, A, I.int_.val);
+    if (xpost_object_get_type(t) == invalidtype)
+        return rangecheck;
+    if (!xpost_stack_push(ctx->lo, ctx->os, t))
         return stackoverflow;
     return 0;
 }
@@ -162,7 +168,7 @@ int Agetinterval (Xpost_Context *ctx,
                    Xpost_Object I,
                    Xpost_Object L)
 {
-    Xpost_Object subarr = arrgetinterval(A, I.int_.val, L.int_.val);
+    Xpost_Object subarr = xpost_object_get_interval(A, I.int_.val, L.int_.val);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;
     xpost_stack_push(ctx->lo, ctx->os, subarr);
@@ -180,7 +186,7 @@ int Aputinterval (Xpost_Context *ctx,
     Xpost_Object subarr;
     if (I.int_.val + S.comp_.sz > D.comp_.sz)
         return rangecheck;
-    subarr = arrgetinterval(D, I.int_.val, S.comp_.sz);
+    subarr = xpost_object_get_interval(D, I.int_.val, S.comp_.sz);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;
     a_copy(ctx, S, subarr);
@@ -241,7 +247,7 @@ int Acopy (Xpost_Context *ctx,
     if (D.comp_.sz < S.comp_.sz)
         return rangecheck;
     a_copy(ctx, S, D);
-    subarr = arrgetinterval(D, 0, S.comp_.sz);
+    subarr = xpost_object_get_interval(D, 0, S.comp_.sz);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;
     xpost_stack_push(ctx->lo, ctx->os, subarr);
@@ -268,7 +274,7 @@ int Aforall(Xpost_Context *ctx,
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
-    interval = arrgetinterval(A, 1, A.comp_.sz - 1);
+    interval = xpost_object_get_interval(A, 1, A.comp_.sz - 1);
     if (xpost_object_get_type(interval) == invalidtype)
         return rangecheck;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(interval)))

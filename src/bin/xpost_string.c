@@ -56,7 +56,6 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
     if (!xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype, &ent))
     {
-        //error(VMerror, "consstr cannot allocate string");
         XPOST_LOG_ERR("cannot allocate string");
         return null;
     }
@@ -65,7 +64,9 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
         ret = xpost_memory_put(mem, ent, 0, sz, ini);
         if (!ret)
         {
-            error(unregistered, "consstr cannot store initial value in string");
+            //error(unregistered, "consstr cannot store initial value in string");
+            XPOST_LOG_ERR("cannot store initial value in string");
+            return null;
         }
     }
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
@@ -113,7 +114,7 @@ char *charstr(Xpost_Context *ctx,
 
 
 /* put a value at index into a string */
-void strput(Xpost_Memory_File *mem,
+int strput(Xpost_Memory_File *mem,
             Xpost_Object s,
             integer i,
             integer c)
@@ -124,17 +125,19 @@ void strput(Xpost_Memory_File *mem,
     ret = xpost_memory_put(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
-        error(rangecheck, "strput");
+        //error(rangecheck, "strput");
+        return rangecheck;
     }
+    return 0;
 }
 
 /* put a value at index into a banked string */
-void bstput(Xpost_Context *ctx,
+int bstput(Xpost_Context *ctx,
             Xpost_Object s,
             integer i,
             integer c)
 {
-    strput(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
+    return strput(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
 }
 
 /* get a value from a string at index */
