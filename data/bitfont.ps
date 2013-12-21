@@ -1,0 +1,67 @@
+/bitfont <<
+    /FontType 3
+    /FontMatrix [.01 0 0 .01 0 0]
+    /FontBBox [ 0 0 50 70]
+    /Encoding 128 array
+    /_ (\377)
+    /# (\0)
+    /charprocs <<
+
+        /.notdef { 
+            # # # # #
+            # _ _ # #
+            # _ _ # #
+            # _ # _ #
+            # _ # _ #
+            # # _ _ #
+            # # # # #
+        }
+
+        32 { 
+            _ _ _ _ _
+            _ _ _ _ _
+            _ _ _ _ _
+            _ _ _ _ _
+            _ _ _ _ _
+            _ _ _ _ _
+            _ _ _ _ _
+        }
+        48 { 
+            _ # # # _
+            # _ _ _ #
+            # _ _ # #
+            # _ # _ #
+            # # _ _ #
+            _ # # # _
+            _ _ _ _ _
+        }
+        49 { 
+            _ _ # _ _
+            _ # # _ _
+            _ _ # _ _
+            _ _ # _ _
+            _ _ # _ _
+            _ # # # _
+            _ _ _ _ _
+        }
+
+    >>
+    /BuildChar {
+        %100 0 0 0 50 70 setcachedevice
+        80 0 setcharwidth
+        -1 1 scale
+        exch begin
+            charprocs exch
+            2 copy known not{pop/.notdef}if
+            get exec
+            5 7 8 FontMatrix {} image
+        end
+    }
+>> definefont
+pop
+
+100 100 moveto
+/bitfont 20 selectfont
+(0 1 0 1 ?) show
+
+showpage
