@@ -209,14 +209,12 @@ Xpost_Object consoper(Xpost_Context *ctx,
             unsigned adr;
             if (noop == MAXOPS-1)
             {
-                //error(unregistered, "optab too small!\n");
                 XPOST_LOG_ERR("optab too small in xpost_operator.h");
                 XPOST_LOG_ERR("operator %s NOT installed", name);
                 return null;
             }
             if (!xpost_memory_file_alloc(ctx->gl, sizeof(signat), &adr))
             {
-                //error(VMerror, "consoper cannot allocate signature block");
                 XPOST_LOG_ERR("cannot allocate signature block");
                 XPOST_LOG_ERR("operator %s NOT installed", name);
                 return null;
@@ -250,7 +248,6 @@ Xpost_Object consoper(Xpost_Context *ctx,
             unsigned int ad;
             if (!xpost_memory_file_alloc(ctx->gl, in, &ad))
             {
-                //error(VMerror, "consoper cannot allocate type block");
                 XPOST_LOG_ERR("cannot allocate type block");
                 XPOST_LOG_ERR("operator %s NOT installed", name);
                 return null;
@@ -272,7 +269,9 @@ Xpost_Object consoper(Xpost_Context *ctx,
             sp[si].fp = fp;
         }
     } else if (opcode == noop) {
-        error(unregistered, "operator not found\n");
+        //error(unregistered, "operator not found\n");
+        XPOST_LOG_ERR("operator not found");
+        return null;
     }
 
     o.tag = operatortype;
@@ -339,7 +338,12 @@ int opexec(Xpost_Context *ctx,
     sp = (void *)(ctx->gl->base + op.sigadr);
 
     ct = xpost_stack_count(ctx->lo, ctx->os);
-    if (op.n == 0) error(unregistered, "opexec");
+    if (op.n == 0)
+    {
+        //error(unregistered, "opexec");
+        XPOST_LOG_ERR("operator has no signatures");
+        return unregistered;
+    }
     for (i=0; i < op.n; i++) { /* try each signature */
         byte *t;
         if (ct < sp[i].in) {
