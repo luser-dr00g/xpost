@@ -135,7 +135,7 @@
                 datasrc
                 buf exch bp exch
                 dup length
-                pstack()=
+                %pstack()=
                 bp add /bp exch def
                 putinterval
             } loop
@@ -143,7 +143,8 @@
             %vdx vdy scale
             0 1 height 1 sub { /y exch def
                 0 1 width 1 sub { /x exch def
-                    buf y width mul x add get setcolor
+                    buf y width mul x add get 255 div
+                    setcolor
                     x %vdx mul
                     y %vdy mul %mat itransform
                     1 1 %vdx vdy %mat idtransform
