@@ -1,0 +1,96 @@
+% Type 3 font handling
+
+(loading font.ps\n)print
+
+/definefont {
+    dup type /dicttype ne
+    2 index type /nametype ne or {
+        /definefont cvx /typecheck signalerror
+    } if
+    {
+        dup /FontMatrix known not {stopped} if
+        dup /FontType known not {stopped} if
+        dup /FontMatrix known not {stopped} if
+        dup /Encoding known not {stopped} if
+        dup /BuildChar known not {stopped} if
+    } stopped {
+        /definefont cvx /invalidfont signalerror
+    } if
+    dup /FontName 3 index put
+    FontDirectory exch 2 index exch put
+    findfont
+} def
+
+/scalefont {
+    1 index /FontType get 3 ne { //scalefont }{
+        dup matrix scale makefont
+    } ifelse
+} def
+
+/makefont {
+    1 index /FontType get 3 ne { //makefont }{
+        1 index /FontMatrix get dup concatmatrix pop
+    } ifelse
+} def
+
+/setcharwidth {
+    graphicsdict /currgstate get /currfont get
+    dup /xadvance 5 4 roll put
+    /yadvance 3 2 roll put
+} def
+
+/setcachedevice {
+    pop pop pop pop
+    setcharwidth
+} def
+
+/show {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne { pop //show }{
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get concat
+        exch
+        %pstack()=
+        {
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+        } forall
+    grestore
+    } ifelse
+} def
+
+/widthshow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne { pop //widthshow }{
+    } ifelse
+} def
+
+/ashow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne { pop //ashow }{
+    } ifelse
+} def
+
+/awidthshow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne { pop //awidthshow }{
+    } ifelse
+} def
+
+/kshow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne { pop //kshow }{
+    } ifelse
+} def
+
+/stringwidth {
+} def
+
+(eof font.ps)print
+

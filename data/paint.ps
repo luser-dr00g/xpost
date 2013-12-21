@@ -1,0 +1,176 @@
+(loading paint.ps)=
+
+% Painting Operators
+
+% -  erasepage  -
+% paint current page white
+/erasepage {
+    (erasepage)=
+    %gsave
+    %    initclip
+    %    1 setgray
+    %    clippath fill
+    %grestore
+    gsave
+        1 setgray
+        [ currentcolordict DEVICE /nativecolorspace get get exec
+        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        0 0 DEVICE /dimensions get aload pop
+        DEVICE dup /FillRect get exec
+        pop
+        flushpage
+    grestore
+} bind def
+
+% -  fill  -
+% fill current path with current color
+/fill {
+    closepath
+    flattenpath
+    doclip
+    %[ { 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall ]
+    [
+        [ % mark
+        {
+            2 array astore % ... mark ... [x0 y0]
+            counttomark 1 ne {
+                counttomark 1 add 1 roll % ... [x0 y0] mark ...
+                ] exch % ... [ ... ] [x0 y0]
+                [ exch % ... [ ... ] [ [x0 y0]
+            } if % ... +++ mark [x0 y0]
+        }
+        { 2 array astore } % ... mark [x0 y0] ... [xN yN]
+        {}
+        { counttomark 1 sub index } % ... mark [x0 y0] ... [x0 y0]
+        .devpathforall
+        ]
+        dup length 0 eq {pop} if
+    ]
+    /DEBUGFILL where { pop
+        (fill)=
+        pstack()=
+    } if
+    {
+        dup length 2 gt {
+            [ currentcolordict DEVICE /nativecolorspace get get exec
+            counttomark { currenttransfer exec counttomark 1 roll } repeat
+            counttomark 2 add -1 roll
+            DEVICE dup /FillPoly get exec
+            pop
+            %pstack()=
+        }{
+            pop
+        } ifelse
+    } forall
+
+    flushpage
+    newpath
+} bind def
+
+% -  eofill  -
+% fill using even-odd rule
+/eofill {
+} def
+
+% -  stroke  -
+% draw line along current path
+/stroke {
+    currentlinewidth 0 eq {
+        flattenpath
+        doclip
+        mark
+        {          % x0 y0 
+            2 copy % x0 y0 x0 y0
+            %pstack(M)=
+        }
+        {          % ... xN-1 yN-1 xN yN
+            4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
+            [ currentcolordict DEVICE /nativecolorspace get get exec
+            counttomark { currenttransfer exec counttomark 1 roll } repeat
+            counttomark 5 add -4 roll
+            %5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
+            %pstack(L)=
+            DEVICE dup /DrawLine get exec  % ... xN-1 yN-1 xN yN
+            pop
+            4 2 roll pop pop % ... xN yN
+        }
+        {}
+        {            % x0 y0 xN yN
+            4 2 roll % xN yN x0 y0
+            [ currentcolordict DEVICE /nativecolorspace get get exec
+            counttomark { currenttransfer exec counttomark 1 roll } repeat
+            counttomark 5 add -4 roll
+            %5 1 roll % gray xN yN x0 y0
+            %pstack(C)=
+            DEVICE dup /DrawLine get exec  % -
+            pop
+        }
+        .devpathforall
+        cleartomark
+    }{
+        strokepath
+        fill
+    } ifelse
+
+    newpath
+} bind def
+
+/bitsdict <<
+    1 {
+    }
+    2 {
+    }
+    4 {
+    }
+    8 {
+        gsave
+            /vdx 1 width div def
+            /vdy 1 height div def
+            /DeviceGray setcolorspace
+            /bz width height mul def
+            /buf bz string def
+            /bp 0 def
+            {
+                bp bz 1 sub gt {exit} if
+                datasrc
+                buf exch bp exch
+                dup length
+                %pstack()=
+                bp add /bp exch def
+                putinterval
+            } loop
+            mat mat invertmatrix concat
+            %vdx vdy scale
+            0 1 height 1 sub { /y exch def
+                0 1 width 1 sub { /x exch def
+                    buf y width mul x add get 255 div
+                    setcolor
+                    x %vdx mul
+                    y %vdy mul %mat itransform
+                    1 1 %vdx vdy %mat idtransform
+                    rectfill
+                } for
+            } for
+        grestore
+    }
+    12 {
+    }
+>> def
+
+% width height bits/sample matrix datasrc  image  -
+/image {
+    pstack()=
+    10 dict begin
+    {datasrc mat bits height width}{exch def}forall
+    bitsdict bits get exec
+    end
+} def
+
+% width height polarity matrix datasrc  imagemask  -
+/imagemask {
+    10 dict begin
+    {datasrc mat polarity height width}{exch def}forall
+    end
+} def
+
+(eof paint.ps)=
