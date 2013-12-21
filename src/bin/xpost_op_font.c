@@ -118,6 +118,8 @@ int _findfont (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
     return 0;
 #else
+    (void)ctx;
+    (void)fontname;
     return invalidfont;
 #endif
 }
@@ -169,6 +171,7 @@ int _setfont (Xpost_Context *ctx,
     return 0;
 }
 
+#ifdef HAVE_FREETYPE
 static
 void _draw_bitmap (Xpost_Context *ctx,
               Xpost_Object devdic,
@@ -242,6 +245,7 @@ void _draw_bitmap (Xpost_Context *ctx,
         tmp += pitch;
     }
 }
+#endif
 
 static
 int _show_char(Xpost_Context *ctx,
@@ -292,8 +296,22 @@ int _show_char(Xpost_Context *ctx,
             ncomp, comp1, comp2, comp3);
     *xpos += advance_x >> 6;
     *ypos += advance_y >> 6;
-#endif
     *glyph_previous = glyph_index;
+#else
+    (void)ctx;
+    (void)devdic;
+    (void)putpix;
+    (void)data;
+    (void)xpos;
+    (void)ypos;
+    (void)ch;
+    (void)glyph_previous;
+    (void)has_kerning;
+    (void)ncomp;
+    (void)comp1;
+    (void)comp2;
+    (void)comp3;
+#endif
     return 0;
 }
 
