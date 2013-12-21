@@ -52,7 +52,7 @@
         newpath
         dup /FontMatrix get concat
         exch
-        pstack()=
+        %pstack()=
         {
             gsave
                 1 index /BuildChar get exec
@@ -87,6 +87,9 @@
     graphicsdict /currgstate get /currfont get
     dup /FontType get 3 ne { pop //kshow }{
     } ifelse
+} def
+
+/stringwidth {
 } def
 
 (eof font.ps)print

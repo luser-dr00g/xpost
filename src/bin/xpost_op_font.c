@@ -298,6 +298,46 @@ int _show_char(Xpost_Context *ctx,
 }
 
 static
+int _get_current_point (Xpost_Context *ctx,
+                        Xpost_Object gs,
+                        real *xpos,
+                        real *ypos)
+{
+    Xpost_Object path;
+    Xpost_Object subpath;
+    Xpost_Object pathelem;
+    Xpost_Object pathelemdata;
+    Xpost_Object datax, datay;
+
+    /* get the current pen position */
+    /*FIXME if any of these calls fail, should return nocurrentpoint; */
+    path = bdcget(ctx, gs, consname(ctx, "currpath"));
+    subpath = bdcget(ctx, path, xpost_cons_int(
+                diclength(xpost_context_select_memory(ctx,path), path) - 1));
+    if (xpost_object_get_type(subpath) == invalidtype)
+        return nocurrentpoint;
+    pathelem = bdcget(ctx, subpath, xpost_cons_int(
+                diclength(xpost_context_select_memory(ctx,subpath), subpath) - 1));
+    if (xpost_object_get_type(pathelem) == invalidtype)
+        return nocurrentpoint;
+    pathelemdata = bdcget(ctx, pathelem, consname(ctx, "data"));
+    if (xpost_object_get_type(pathelemdata) == invalidtype)
+        return nocurrentpoint;
+
+    datax = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 2);
+    datay = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 1);
+    if (xpost_object_get_type(datax) == integertype)
+        datax = xpost_cons_real(datax.int_.val);
+    if (xpost_object_get_type(datay) == integertype)
+        datay = xpost_cons_real(datay.int_.val);
+    *xpos = datax.real_.val;
+    *ypos = datay.real_.val;
+    XPOST_LOG_INFO("currentpoint: %f %f", xpos, ypos);
+
+    return 0;
+}
+
+static
 int _show (Xpost_Context *ctx,
            Xpost_Object str)
 {
@@ -308,11 +348,6 @@ int _show (Xpost_Context *ctx,
     Xpost_Object privatestr;
     struct fontdata data;
     char *cstr;
-    Xpost_Object path;
-    Xpost_Object subpath;
-    Xpost_Object pathelem;
-    Xpost_Object pathelemdata;
-    Xpost_Object datax, datay;
     real xpos, ypos;
     char *ch;
     Xpost_Object devdic;
@@ -321,6 +356,7 @@ int _show (Xpost_Context *ctx,
     int ncomp;
     Xpost_Object comp1, comp2, comp3;
     Xpost_Object finalize;
+    int ret;
 
     int has_kerning;
     unsigned int glyph_previous;
@@ -336,7 +372,7 @@ int _show (Xpost_Context *ctx,
         return invalidfont;
     XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
 
-    /* load the device */
+    /* load the device and PutPix member function */
     devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
     putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
     XPOST_LOG_INFO("loaded DEVICE and PutPix");
@@ -360,23 +396,9 @@ int _show (Xpost_Context *ctx,
     cstr[str.comp_.sz] = '\0';
     XPOST_LOG_INFO("append nul to string");
 
-    /* get the current pen position */
-    /*FIXME if any of these calls fail, should return nocurrentpoint; */
-    path = bdcget(ctx, gs, consname(ctx, "currpath"));
-    subpath = bdcget(ctx, path, xpost_cons_int(
-                diclength(xpost_context_select_memory(ctx,path), path) - 1));
-    pathelem = bdcget(ctx, subpath, xpost_cons_int(
-                diclength(xpost_context_select_memory(ctx,subpath), subpath) - 1));
-    pathelemdata = bdcget(ctx, pathelem, consname(ctx, "data"));
-    datax = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 2);
-    datay = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 1);
-    if (xpost_object_get_type(datax) == integertype)
-        datax = xpost_cons_real(datax.int_.val);
-    if (xpost_object_get_type(datay) == integertype)
-        datay = xpost_cons_real(datay.int_.val);
-    xpos = datax.real_.val;
-    ypos = datay.real_.val;
-    XPOST_LOG_INFO("currentpoint: %f %f", xpos, ypos);
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
 
     colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
     if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
