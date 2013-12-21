@@ -244,6 +244,60 @@ void _draw_bitmap (Xpost_Context *ctx,
 }
 
 static
+int _show_char(Xpost_Context *ctx,
+        Xpost_Object devdic,
+        Xpost_Object putpix,
+        struct fontdata data,
+        real *xpos,
+        real *ypos,
+        unsigned int ch,
+        unsigned int *glyph_previous,
+        int has_kerning,
+        int ncomp,
+        Xpost_Object comp1,
+        Xpost_Object comp2,
+        Xpost_Object comp3)
+{
+#ifdef HAVE_FREETYPE
+    unsigned int glyph_index;
+    unsigned char *buffer;
+    int rows;
+    int width;
+    int pitch;
+    char pixel_mode;
+    int left;
+    int top;
+    long advance_x;
+    long advance_y;
+
+    glyph_index = xpost_font_face_glyph_index_get(data.face, ch);
+    if (has_kerning && *glyph_previous && (glyph_index > 0))
+    {
+        long delta_x;
+        long delta_y;
+
+        if (xpost_font_face_kerning_delta_get(data.face, *glyph_previous, glyph_index,
+                                              &delta_x, &delta_y))
+        {
+            *xpos += delta_x >> 6;
+            *ypos += delta_y >> 6;
+        }
+    }
+    if (!xpost_font_face_glyph_render(data.face, glyph_index))
+        return 0;
+    xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width, &pitch, &pixel_mode, &left, &top, &advance_x, &advance_y);
+    _draw_bitmap(ctx, devdic, putpix,
+            buffer, rows, width, pitch, pixel_mode,
+            *xpos + left, *ypos - top,
+            ncomp, comp1, comp2, comp3);
+    *xpos += advance_x >> 6;
+    *ypos += advance_y >> 6;
+#endif
+    *glyph_previous = glyph_index;
+    return 0;
+}
+
+static
 int _show (Xpost_Context *ctx,
            Xpost_Object str)
 {
@@ -352,46 +406,12 @@ int _show (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
-#ifdef HAVE_FREETYPE
     has_kerning = xpost_font_face_kerning_has(data.face);
     glyph_previous = 0;
     for (ch = cstr; *ch; ch++) {
-        unsigned int glyph_index;
-        unsigned char *buffer;
-        int rows;
-        int width;
-        int pitch;
-        char pixel_mode;
-        int left;
-        int top;
-        long advance_x;
-        long advance_y;
-
-        glyph_index = xpost_font_face_glyph_index_get(data.face, *ch);
-        if (has_kerning && glyph_previous && (glyph_index > 0))
-        {
-            long delta_x;
-            long delta_y;
-
-            if (xpost_font_face_kerning_delta_get(data.face, glyph_previous, glyph_index,
-                                                  &delta_x, &delta_y))
-            {
-                xpos += delta_x >> 6;
-                ypos += delta_y >> 6;
-            }
-        }
-        if (!xpost_font_face_glyph_render(data.face, glyph_index))
-            continue;
-        xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width, &pitch, &pixel_mode, &left, &top, &advance_x, &advance_y);
-        _draw_bitmap(ctx, devdic, putpix,
-                buffer, rows, width, pitch, pixel_mode,
-                xpos + left, ypos - top,
+        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
                 ncomp, comp1, comp2, comp3);
-        xpos += advance_x >> 6;
-        ypos += advance_y >> 6;
-        glyph_previous = glyph_index;
     }
-#endif
 
     /* update current position in the graphics state */
     barput(ctx, finalize, 0, xpost_cons_real(xpos));
@@ -430,6 +450,7 @@ int initopfont (Xpost_Context *ctx,
         stringtype); INSTALL;
     op = consoper(ctx, "kshow", _kshow, 0, 2,
         proctype, stringtype); INSTALL;
+    op = consoper(ctx, "stringwidth", _stringwidth, 2, 1, stringtype); INSTALL;
     */
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);

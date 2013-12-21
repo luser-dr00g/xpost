@@ -246,8 +246,10 @@ end
     dup type /dicttype ne {
         /setpagedevice cvx /typecheck signalerror
     } if
+    pop
 } def
 /currentpagedevice {
+    1 dict
 } def
 
 
