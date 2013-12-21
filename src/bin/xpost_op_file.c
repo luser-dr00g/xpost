@@ -463,7 +463,7 @@ int contfilenameforall (Xpost_Context *ctx,
         if (len > Scr.comp_.sz)
             return rangecheck;
         memcpy(str, src, len);
-        interval = arrgetinterval(Scr, 0, len);
+        interval = xpost_object_get_interval(Scr, 0, len);
         if (xpost_object_get_type(interval) == invalidtype)
             return rangecheck;
         xpost_stack_push(ctx->lo, ctx->os, interval);

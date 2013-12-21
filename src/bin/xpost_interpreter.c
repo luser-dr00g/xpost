@@ -86,7 +86,7 @@ Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
         }
     }
     XPOST_LOG_ERR("cannot allocate Xpost_Memory_File, gtab exhausted");
-    return NULL; /* was error(unregistered) */
+    return NULL;
 }
 
 /* find the next unused mfile in the local memory table */
@@ -99,7 +99,7 @@ Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
         }
     }
     XPOST_LOG_ERR("cannot allocate Xpost_Memory_File, ltab exhausted");
-    return NULL; /* was error(unregistered) */
+    return NULL;
 }
 
 
@@ -115,7 +115,9 @@ unsigned xpost_interpreter_cid_init(void)
     unsigned startid = nextid;
     while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 ) {
         if (nextid == startid + MAXCONTEXT)
+        {
             error(unregistered, "ctab full. cannot create new process");
+        }
     }
     return nextid;
 }
@@ -313,7 +315,7 @@ int evalarray(Xpost_Context *ctx)
     default /* > 1 */:
         {
             Xpost_Object interval;
-            interval = arrgetinterval(a, 1, a.comp_.sz - 1);
+            interval = xpost_object_get_interval(a, 1, a.comp_.sz - 1);
             if (xpost_object_get_type(interval) == invalidtype)
                 return rangecheck;
             xpost_stack_push(ctx->lo, ctx->es, interval);
@@ -639,7 +641,12 @@ int initalldata(const char *device)
     /* allocate the top-level itpdata data structure. */
     null = xpost_object_cvlit(null);
     itpdata = malloc(sizeof*itpdata);
-    if (!itpdata) error(unregistered, "itpdata=malloc failed");
+    if (!itpdata)
+    {
+        //error(unregistered, "itpdata=malloc failed");
+        XPOST_LOG_ERR("itpdata=malloc failed");
+        return 0;
+    }
     memset(itpdata, 0, sizeof*itpdata);
 
     /* allocate and initialize the first context structure

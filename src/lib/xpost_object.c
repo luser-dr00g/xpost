@@ -170,6 +170,22 @@ Xpost_Object xpost_object_set_ent(Xpost_Object obj,
     return obj;
 }
 
+/* adjust the offset and size fields in the object.
+   NB. since this function only modifies the fields in the object
+   itself, it works for array, string and dict objects which use
+   the same comp_ substructure.  It does not touch VM.
+ */
+Xpost_Object xpost_object_get_interval(Xpost_Object a,
+                      integer off,
+                      integer sz)
+{
+    if (sz - off > a.comp_.sz)
+        return invalid; /* should be interpreted as a rangecheck error */
+    a.comp_.off += off;
+    a.comp_.sz = sz;
+    return a;
+}
+
 int xpost_object_is_exe(Xpost_Object obj)
 {
     return !(obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_LIT);

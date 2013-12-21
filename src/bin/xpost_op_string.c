@@ -74,8 +74,13 @@ int s_copy(Xpost_Context *ctx,
             Xpost_Object D)
 {
     unsigned i;
+    int ret;
     for (i = 0; i < S.comp_.sz; i++)
-        bstput(ctx, D, i, bstget(ctx, S, i));
+    {
+        ret = bstput(ctx, D, i, bstget(ctx, S, i));
+        if (ret)
+            return ret;
+    }
     return 0;
 }
 
@@ -88,7 +93,7 @@ int Scopy(Xpost_Context *ctx,
     if (D.comp_.sz < S.comp_.sz)
         return rangecheck;
     s_copy(ctx, S, D);
-    subs = arrgetinterval(D, 0, S.comp_.sz);
+    subs = xpost_object_get_interval(D, 0, S.comp_.sz);
     if (xpost_object_get_type(subs) == invalidtype)
         return rangecheck;
     xpost_stack_push(ctx->lo, ctx->os, subs);
@@ -110,8 +115,7 @@ int Sput(Xpost_Context *ctx,
           Xpost_Object I,
           Xpost_Object C)
 {
-    bstput(ctx, S, I.int_.val, C.int_.val);
-    return 0;
+    return bstput(ctx, S, I.int_.val, C.int_.val);
 }
 
 static
@@ -120,7 +124,7 @@ int Sgetinterval(Xpost_Context *ctx,
                   Xpost_Object I,
                   Xpost_Object L)
 {
-    Xpost_Object subs = arrgetinterval(S, I.int_.val, L.int_.val);
+    Xpost_Object subs = xpost_object_get_interval(S, I.int_.val, L.int_.val);
     if (xpost_object_get_type(subs) == invalidtype)
         return rangecheck;
     xpost_stack_push(ctx->lo, ctx->os, subs);
@@ -133,7 +137,7 @@ int Sputinterval(Xpost_Context *ctx,
                   Xpost_Object I,
                   Xpost_Object S)
 {
-    Xpost_Object subs = arrgetinterval(D, I.int_.val, S.comp_.sz);
+    Xpost_Object subs = xpost_object_get_interval(D, I.int_.val, S.comp_.sz);
     if (xpost_object_get_type(subs) == invalidtype)
         return rangecheck;
     s_copy(ctx, S, subs);
@@ -165,11 +169,11 @@ int Sanchorsearch(Xpost_Context *ctx,
     s = charstr(ctx, str);
     k = charstr(ctx, seek);
     if (ancsearch(s, k, seek.comp_.sz)) {
-        interval = arrgetinterval(str, seek.comp_.sz, str.comp_.sz - seek.comp_.sz);
+        interval = xpost_object_get_interval(str, seek.comp_.sz, str.comp_.sz - seek.comp_.sz);
         if (xpost_object_get_type(interval) == invalidtype)
             return rangecheck;
         xpost_stack_push(ctx->lo, ctx->os, interval); /* post */
-        interval = arrgetinterval(str, 0, seek.comp_.sz);
+        interval = xpost_object_get_interval(str, 0, seek.comp_.sz);
         if (xpost_object_get_type(interval) == invalidtype)
             return rangecheck;
         xpost_stack_push(ctx->lo, ctx->os, interval); /* match */
@@ -196,15 +200,15 @@ int Ssearch(Xpost_Context *ctx,
     k = charstr(ctx, seek);
     for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++) {
         if (ancsearch(s+i, k, seek.comp_.sz)) {
-            interval = arrgetinterval(str, i + seek.comp_.sz, str.comp_.sz - seek.comp_.sz - i);
+            interval = xpost_object_get_interval(str, i + seek.comp_.sz, str.comp_.sz - seek.comp_.sz - i);
             if (xpost_object_get_type(interval) == invalidtype)
                 return rangecheck;
             xpost_stack_push(ctx->lo, ctx->os, interval); /* post */
-            interval = arrgetinterval(str, i, seek.comp_.sz);
+            interval = xpost_object_get_interval(str, i, seek.comp_.sz);
             if (xpost_object_get_type(interval) == invalidtype)
                 return rangecheck;
             xpost_stack_push(ctx->lo, ctx->os, interval); /* match */
-            interval = arrgetinterval(str, 0, i);
+            interval = xpost_object_get_interval(str, 0, i);
             if (xpost_object_get_type(interval) == invalidtype)
                 return rangecheck;
             xpost_stack_push(ctx->lo, ctx->os, interval); /* pre */
@@ -233,7 +237,7 @@ int Sforall(Xpost_Context *ctx,
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
-    interval = arrgetinterval(S, 1, S.comp_.sz-1);
+    interval = xpost_object_get_interval(S, 1, S.comp_.sz-1);
     if (xpost_object_get_type(interval) == invalidtype)
         return rangecheck;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(interval)))

@@ -487,6 +487,13 @@ int xpost_object_get_ent(Xpost_Object obj);
 Xpost_Object xpost_object_set_ent(Xpost_Object obj,
                                   unsigned int ent);
 
+/** 
+ * @brief adjust the size and offset fields in the object
+*/
+Xpost_Object xpost_object_get_interval(Xpost_Object a,
+                                       integer s,
+                                       integer n);
+
 /**
  * @brief Determine whether the object is executable or not.
  *

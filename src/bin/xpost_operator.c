@@ -207,7 +207,13 @@ Xpost_Object consoper(Xpost_Context *ctx,
     if (fp) {
         if (opcode == noop) { /* a new operator */
             unsigned adr;
-            if (noop == MAXOPS-1) error(unregistered, "optab too small!\n");
+            if (noop == MAXOPS-1)
+            {
+                //error(unregistered, "optab too small!\n");
+                XPOST_LOG_ERR("optab too small in xpost_operator.h");
+                XPOST_LOG_ERR("operator %s NOT installed", name);
+                return null;
+            }
             if (!xpost_memory_file_alloc(ctx->gl, sizeof(signat), &adr))
             {
                 //error(VMerror, "consoper cannot allocate signature block");

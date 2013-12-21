@@ -78,10 +78,4 @@ Xpost_Object arrget(Xpost_Memory_File *mem, Xpost_Object a, integer i);
 */
 Xpost_Object barget(Xpost_Context *ctx, Xpost_Object a, integer i);
 
-/** 
- * @brief adjust the size and offset fields in the object
- * (works for strings, too)
-*/
-Xpost_Object arrgetinterval(Xpost_Object a, integer s, integer n);
-
 #endif

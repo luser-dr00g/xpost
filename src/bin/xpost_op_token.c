@@ -58,7 +58,7 @@
 #include "xpost_op_dict.h"
 #include "xpost_op_token.h"
 
-enum { NBUF = BUFSIZ };
+enum { NBUF = 2 * BUFSIZ };
 
 static
 int puff (Xpost_Context *ctx,
