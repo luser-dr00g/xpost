@@ -102,6 +102,7 @@ xpost_font_quit(void)
 #endif
 }
 
+#ifdef HAVE_FREETYPE
 static char *
 _xpost_font_face_filename_and_index_get(const char *name, int *idx)
 {
@@ -155,10 +156,11 @@ _xpost_font_face_filename_and_index_get(const char *name, int *idx)
     FcPatternDestroy(match);
   destroy_pattern:
     FcPatternDestroy(pattern);
-#endif
+# endif
 
     return NULL;
 }
+#endif
 
 void *
 xpost_font_face_new_from_name(const char *name)
@@ -331,7 +333,7 @@ xpost_font_face_kerning_delta_get(void *face, unsigned int glyph_previous, unsig
     XPOST_LOG_INFO("Can not retrieve kerning (error : %d)", err);
 #else
     (void)face;
-    (void)previous;
+    (void)glyph_previous;
     (void)glyph_index;
     (void)delta_x;
     (void)delta_y;
