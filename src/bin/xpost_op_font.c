@@ -391,7 +391,7 @@ int _show (Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
 
     /* load the device and PutPix member function */
-    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    devdic = bdcget(ctx, gs, consname(ctx, "device"));
     putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
     XPOST_LOG_INFO("loaded DEVICE and PutPix");
 
@@ -498,7 +498,7 @@ int _ashow (Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
 
     /* load the device and PutPix member function */
-    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    devdic = bdcget(ctx, gs, consname(ctx, "device"));
     putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
     XPOST_LOG_INFO("loaded DEVICE and PutPix");
 
@@ -608,7 +608,7 @@ int _widthshow (Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
 
     /* load the device and PutPix member function */
-    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    devdic = bdcget(ctx, gs, consname(ctx, "device"));
     putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
     XPOST_LOG_INFO("loaded DEVICE and PutPix");
 
@@ -723,7 +723,7 @@ int _awidthshow (Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
 
     /* load the device and PutPix member function */
-    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    devdic = bdcget(ctx, gs, consname(ctx, "device"));
     putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
     XPOST_LOG_INFO("loaded DEVICE and PutPix");
 

@@ -1,33 +1,20 @@
 (loading device.ps...)=
 
-DATA_DIR (/image.ps) strcat run
+DATA_DIR (/image.ps) strcat run  % image.ps implements device base classes
 
-breakhere
-%/DEVICE <<
-%    /dimensions [ 100 100 ]
-%    /defaultmatrix [ 1 0 0 1 0 0 ]
-%>> def
-
-%/DEVICE 50 50 newPGMIMAGEdevice def
-
-%loadxcbdevice
-%/DEVICE 400 300 newxcbdevice def
-
-%loadwin32device
-%/DEVICE 400 300 newwin32device def
-
-%breakhere
 newdefaultdevice % defined in xpost_interpreter.c:setdatadir()
+                 % as similar to one of these:
+%/DEVICE 50 50 newPGMIMAGEdevice def
+%loadxcbdevice /DEVICE 400 300 newxcbdevice def
+%loadwin32device /DEVICE 400 300 newwin32device def
 
 DEVICE begin
     /defaultmatrix [ 1 0 0 -1 0 height ] def
-    %/defaultmatrix [ 1 0 0 1 0 0 ] def
 
     % override ps fillpoly with operator
-    % unless already overridden.
-    /FillPoly load type /operatortype ne {
+    %/FillPoly load type /operatortype ne { % unless already overridden.
         /FillPoly /.fillpoly load def
-    } if
+    %} if
 end
 
 /flushpage {
@@ -52,4 +39,4 @@ end
     erasepage
 } bind def
 
-(eof device.ps)print
+(eof device.ps\n)print
