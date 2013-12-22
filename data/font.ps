@@ -68,19 +68,35 @@
 
 /widthshow {
     graphicsdict /currgstate get /currfont get
-    dup /FontType get 3 ne { pop //widthshow }{
+    dup /FontType get 3 ne {
+        pop
+        4 2 roll dtransform
+        4 2 roll
+        //widthshow
+    }{
     } ifelse
 } def
 
 /ashow {
     graphicsdict /currgstate get /currfont get
-    dup /FontType get 3 ne { pop //ashow }{
+    dup /FontType get 3 ne {
+        pop
+        3 1 roll dtransform
+        3 2 roll
+        //ashow
+    }{
     } ifelse
 } def
 
 /awidthshow {
     graphicsdict /currgstate get /currfont get
-    dup /FontType get 3 ne { pop //awidthshow }{
+    dup /FontType get 3 ne {
+        pop
+        5 1 roll dtransform
+        5 3 roll dtransform
+        5 2 roll
+        //awidthshow
+    }{
     } ifelse
 } def
 

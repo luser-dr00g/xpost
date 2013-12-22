@@ -460,7 +460,344 @@ int _show (Xpost_Context *ctx,
     return 0;
 }
 
+static
+int _ashow (Xpost_Context *ctx,
+            Xpost_Object dx,
+            Xpost_Object dy,
+            Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos, ypos;
+    char *ch;
+    Xpost_Object devdic;
+    Xpost_Object putpix;
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+    Xpost_Object finalize;
+    int ret;
 
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
+    gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
+    fontdict = bdcget(ctx, gs, consname(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* load the device and PutPix member function */
+    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
+    XPOST_LOG_INFO("loaded DEVICE and PutPix");
+
+    /* get the font data from the font dict */
+    privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
+
+    colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
+    if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
+    }
+    else if (objcmp(ctx, colorspace, consname(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
+        comp2 = bdcget(ctx, gs, consname(ctx, "colorcomp2"));
+        comp3 = bdcget(ctx, gs, consname(ctx, "colorcomp3"));
+    } else {
+        XPOST_LOG_ERR("unimplemented device colorspace");
+        return unregistered;
+    }
+    XPOST_LOG_INFO("ncomp = %d", ncomp);
+
+    finalize = xpost_object_cvx(consbar(ctx, 5));
+    /* fill-in final pos before return */
+    barput(ctx, finalize, 0, xpost_cons_real(xpos));
+    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
+    barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
+    barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    /* render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++) {
+        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                ncomp, comp1, comp2, comp3);
+        xpos += dx.real_.val;
+        ypos += dy.real_.val;
+    }
+
+    /* update current position in the graphics state */
+    barput(ctx, finalize, 0, xpost_cons_real(xpos));
+    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+
+    return 0;
+}
+
+static
+int _widthshow (Xpost_Context *ctx,
+                Xpost_Object cx,
+                Xpost_Object cy,
+                Xpost_Object charcode,
+                Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos, ypos;
+    char *ch;
+    Xpost_Object devdic;
+    Xpost_Object putpix;
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+    Xpost_Object finalize;
+    int ret;
+
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
+    gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
+    fontdict = bdcget(ctx, gs, consname(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* load the device and PutPix member function */
+    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
+    XPOST_LOG_INFO("loaded DEVICE and PutPix");
+
+    /* get the font data from the font dict */
+    privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
+
+    colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
+    if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
+    }
+    else if (objcmp(ctx, colorspace, consname(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
+        comp2 = bdcget(ctx, gs, consname(ctx, "colorcomp2"));
+        comp3 = bdcget(ctx, gs, consname(ctx, "colorcomp3"));
+    } else {
+        XPOST_LOG_ERR("unimplemented device colorspace");
+        return unregistered;
+    }
+    XPOST_LOG_INFO("ncomp = %d", ncomp);
+
+    finalize = xpost_object_cvx(consbar(ctx, 5));
+    /* fill-in final pos before return */
+    barput(ctx, finalize, 0, xpost_cons_real(xpos));
+    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
+    barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
+    barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    /* render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++) {
+        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                ncomp, comp1, comp2, comp3);
+        if (*ch == charcode.int_.val)
+        {
+            xpos += cx.real_.val;
+            ypos += cy.real_.val;
+        }
+    }
+
+    /* update current position in the graphics state */
+    barput(ctx, finalize, 0, xpost_cons_real(xpos));
+    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+
+    return 0;
+}
+
+static
+int _awidthshow (Xpost_Context *ctx,
+                 Xpost_Object cx,
+                 Xpost_Object cy,
+                 Xpost_Object charcode,
+                 Xpost_Object dx,
+                 Xpost_Object dy,
+                 Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos, ypos;
+    char *ch;
+    Xpost_Object devdic;
+    Xpost_Object putpix;
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+    Xpost_Object finalize;
+    int ret;
+
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
+    gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
+    fontdict = bdcget(ctx, gs, consname(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* load the device and PutPix member function */
+    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    putpix = bdcget(ctx, devdic, consname(ctx, "PutPix"));
+    XPOST_LOG_INFO("loaded DEVICE and PutPix");
+
+    /* get the font data from the font dict */
+    privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
+
+    colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
+    if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
+    }
+    else if (objcmp(ctx, colorspace, consname(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp1 = bdcget(ctx, gs, consname(ctx, "colorcomp1"));
+        comp2 = bdcget(ctx, gs, consname(ctx, "colorcomp2"));
+        comp3 = bdcget(ctx, gs, consname(ctx, "colorcomp3"));
+    } else {
+        XPOST_LOG_ERR("unimplemented device colorspace");
+        return unregistered;
+    }
+    XPOST_LOG_INFO("ncomp = %d", ncomp);
+
+    finalize = xpost_object_cvx(consbar(ctx, 5));
+    /* fill-in final pos before return */
+    barput(ctx, finalize, 0, xpost_cons_real(xpos));
+    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
+    barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
+    barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    /* render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++) {
+        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                ncomp, comp1, comp2, comp3);
+        xpos += dx.real_.val;
+        ypos += dy.real_.val;
+        if (*ch == charcode.int_.val)
+        {
+            xpos += cx.real_.val;
+            ypos += cy.real_.val;
+        }
+    }
+
+    /* update current position in the graphics state */
+    barput(ctx, finalize, 0, xpost_cons_real(xpos));
+    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+
+    return 0;
+}
 int initopfont (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
@@ -480,14 +817,14 @@ int initopfont (Xpost_Context *ctx,
     op = consoper(ctx, "setfont", _setfont, 1, 1, dicttype); INSTALL;
 
     op = consoper(ctx, "show", _show, 0, 1, stringtype); INSTALL;
-    /*
-    op = consoper(ctx, "widthshow", _widthshow, 0, 4,
-        integertype, integertype, integertype, stringtype); INSTALL;
     op = consoper(ctx, "ashow", _ashow, 0, 3,
-        integertype, integertype, stringtype); INSTALL;
+        floattype, floattype, stringtype); INSTALL;
+    op = consoper(ctx, "widthshow", _widthshow, 0, 4,
+        floattype, floattype, integertype, stringtype); INSTALL;
     op = consoper(ctx, "awidthshow", _awidthshow, 0, 6,
-        integertype, integertype, integertype, integertype, integertype,
+        floattype, floattype, integertype, floattype, floattype,
         stringtype); INSTALL;
+    /*
     op = consoper(ctx, "kshow", _kshow, 0, 2,
         proctype, stringtype); INSTALL;
     op = consoper(ctx, "stringwidth", _stringwidth, 2, 1, stringtype); INSTALL;
