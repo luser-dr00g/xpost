@@ -29,10 +29,15 @@ userdict begin
     DATA_DIR (/paint.ps) strcat run
     DATA_DIR (/font.ps) strcat run
 
+graphicsdict /currgstate get /device DEVICE put
+/DEVICE { graphicsdict /currgstate get /device get } def
+
 end %userdict
 
 
-/TESTGRAPHICS where {pop}{ currentfile flushfile} ifelse
+/TESTGRAPHICS where {pop}{
+    (eof graphics.ps)=
+    currentfile flushfile} ifelse
 (TESTGRAPHICS graphics)=
 
 initgraphics

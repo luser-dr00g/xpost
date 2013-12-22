@@ -174,11 +174,27 @@ int _default_matrix(Xpost_Context *ctx,
                    Xpost_Object psmat)
 {
     Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
     Xpost_Object devdic;
     Xpost_Object defmat;
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    devdic = bdcget(ctx, userdict, consname(ctx, "DEVICE"));
+    gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
+    if (xpost_object_get_type(gd) == invalidtype)
+        return undefined;
+    XPOST_LOG_INFO("loaded graphicsdict");
+    gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
+    if (xpost_object_get_type(gs) == invalidtype)
+        return undefined;
+    XPOST_LOG_INFO("loaded gstate");
+    devdic = bdcget(ctx, gs, consname(ctx, "device"));
+    if (xpost_object_get_type(devdic) == invalidtype)
+        return undefined;
+    XPOST_LOG_INFO("loaded device");
     defmat = bdcget(ctx, devdic, consname(ctx, "defaultmatrix"));
+    if (xpost_object_get_type(defmat) == invalidtype)
+        return undefined;
+    XPOST_LOG_INFO("loaded defaultmatrix");
     xpost_stack_push(ctx->lo, ctx->os, defmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "copy")));
