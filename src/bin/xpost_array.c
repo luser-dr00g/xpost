@@ -169,7 +169,6 @@ int barput(Xpost_Context *ctx,
         if ( mem == ctx->gl
                 && xpost_object_is_composite(o)
                 && mem != xpost_context_select_memory(ctx, o))
-            //error(invalidaccess, "local value into global array");
             return invalidaccess;
     }
 
@@ -187,7 +186,6 @@ Xpost_Object arrget(Xpost_Memory_File *mem,
     ret = xpost_memory_get(mem, xpost_object_get_ent(a), (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
     if (!ret)
     {
-        //error(rangecheck, "arrget");
         return invalid;
     }
 

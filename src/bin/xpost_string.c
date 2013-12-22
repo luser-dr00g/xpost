@@ -64,7 +64,6 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
         ret = xpost_memory_put(mem, ent, 0, sz, ini);
         if (!ret)
         {
-            //error(unregistered, "consstr cannot store initial value in string");
             XPOST_LOG_ERR("cannot store initial value in string");
             return null;
         }
@@ -125,7 +124,6 @@ int strput(Xpost_Memory_File *mem,
     ret = xpost_memory_put(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
-        //error(rangecheck, "strput");
         return rangecheck;
     }
     return 0;
@@ -141,9 +139,10 @@ int bstput(Xpost_Context *ctx,
 }
 
 /* get a value from a string at index */
-integer strget(Xpost_Memory_File *mem,
+int strget(Xpost_Memory_File *mem,
                Xpost_Object s,
-               integer i)
+               integer i,
+               integer *retval)
 {
     byte b;
     int ret;
@@ -151,18 +150,21 @@ integer strget(Xpost_Memory_File *mem,
     ret = xpost_memory_get(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
-        error(rangecheck, "strget cannot access byte in string");
+        //error(rangecheck, "strget cannot access byte in string");
+        return rangecheck;
     }
 
-    return b;
+    *retval = b;
+    return 0;
 }
 
 /* get a value from a banked string at index */
-integer bstget(Xpost_Context *ctx,
+int bstget(Xpost_Context *ctx,
                Xpost_Object s,
-               integer i)
+               integer i,
+               integer *retval)
 {
-    return strget(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i);
+    return strget(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, retval);
 }
 
 #ifdef TESTMODULE_ST

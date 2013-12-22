@@ -574,8 +574,7 @@ int dicput(Xpost_Context *ctx,
 
     if (e == NULL)
     {
-        /* error("dict overfull"); */
-        /* grow dict! */
+        /* dict overfull:  grow dict! */
         ret = dicgrow(ctx, d);
         if (!ret)
             return VMerror;
@@ -592,8 +591,7 @@ int dicput(Xpost_Context *ctx,
     else if (xpost_object_get_type(e[0]) == nulltype)
     {
         if (dicfull(mem, d)) {
-            /*error("dict full"); */
-            /*grow dict! */
+            /* dict full:  grow dict! */
             ret = dicgrow(ctx, d);
             if (!ret)
                 return VMerror;
@@ -764,7 +762,7 @@ int main(void)
 
     printf("1 load =\n");
     xpost_object_dump(bdcget(ctx, d, xpost_cons_int(1)));
-    /* xpost_object_dump(bdcget(ctx, d, xpost_cons_int(2))); /\* error("undefined"); *\/ */
+    /* xpost_object_dump(bdcget(ctx, d, xpost_cons_int(2)));  */
     printf("\n3 load =\n");
     xpost_object_dump(bdcget(ctx, d, xpost_cons_int(3)));
 

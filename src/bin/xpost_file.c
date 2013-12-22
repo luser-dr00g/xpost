@@ -148,7 +148,9 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
     f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
     /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
     if (!xpost_memory_table_alloc(mem, sizeof(FILE *), filetype, &ent))
+    {
         error(VMerror, "consfile cannot allocate file record");
+    }
     f.mark_.padw = ent;
     ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     if (!ret)
