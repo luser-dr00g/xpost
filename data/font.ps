@@ -192,6 +192,10 @@
 } def
 
 /stringwidth {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne { pop //stringwidth }{
+        0 0
+    } ifelse
 } def
 
 (eof font.ps)print
