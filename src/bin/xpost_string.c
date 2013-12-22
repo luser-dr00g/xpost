@@ -150,7 +150,6 @@ int strget(Xpost_Memory_File *mem,
     ret = xpost_memory_get(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
-        //error(rangecheck, "strget cannot access byte in string");
         return rangecheck;
     }
 
