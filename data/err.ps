@@ -19,7 +19,7 @@ $error begin
     /initializing true def
     /Extra () def
 end
-($error installed)=
+($error installed...)print
 
 /.error {
     false setglobal
@@ -51,7 +51,7 @@ end
     interrupt
 } def
 /signalerror /.error load def
-(.error installed)=
+(.error installed...)print
 
 /errordict 28 dict def
 errordict begin
@@ -103,11 +103,11 @@ errordict begin
     /interrupt { stop } def
     /unknownerror { /unknownerror //.error exec} def
 end
-(errordict installed)=
+(errordict installed...)print
 
 /handleerror { errordict /handleerror get exec } def
 /interrupt { stop } def
 
 end
 setglobal
-(eof err.ps)=
+(\neof err.ps\n)print
