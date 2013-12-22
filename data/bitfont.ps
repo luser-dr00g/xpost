@@ -122,12 +122,12 @@
         %100 0 0 0 50 70 setcachedevice
         80 0 setcharwidth
         %-1 1 scale
-        10 10 scale
+        %10 10 scale
         exch begin
             charprocs exch
             2 copy known not{pop/.notdef}if
             get exec
-            5 7 8 [-1 0 0 -1 1 1] {} image
+            5 7 8 [-.1 0 0 -.1 .1 .1] {} image
         end
     }
 >> definefont
@@ -135,6 +135,7 @@ pop
 
 100 100 moveto
 /bitfont 40 selectfont
+%break
 (0123456789?)
 show
 

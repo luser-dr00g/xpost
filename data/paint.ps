@@ -123,35 +123,35 @@
     4 {
     }
     8 {
-        gsave
-            /vdx 1 width div def
-            /vdy 1 height div def
-            /DeviceGray setcolorspace
-            /bz width height mul def
-            /buf bz string def
-            /bp 0 def
-            {
-                bp bz 1 sub gt {exit} if
-                datasrc
-                buf exch bp exch
-                dup length
-                %pstack()=
-                bp add /bp exch def
-                putinterval
-            } loop
-            mat mat invertmatrix concat
-            %vdx vdy scale
-            0 1 height 1 sub { /y exch def
-                0 1 width 1 sub { /x exch def
-                    buf y width mul x add get 255 div
-                    setcolor
-                    x %vdx mul
-                    y %vdy mul %mat itransform
-                    1 1 %vdx vdy %mat idtransform
-                    rectfill
-                } for
+        /vdx 1 width div def
+        /vdy 1 height div def
+        /DeviceGray setcolorspace
+        /bz width height mul def
+        /buf bz string def
+        /bp 0 def
+        {
+            bp bz 1 sub gt {exit} if
+            datasrc
+            buf exch bp exch
+            dup length
+            %pstack()=
+            bp add /bp exch def
+            putinterval
+        } loop
+        mat mat invertmatrix concat
+        %vdx vdy scale
+        0 1 height 1 sub { /y exch def
+            0 1 width 1 sub { /x exch def
+                buf y width mul x add get 255 div
+                setcolor
+                x %vdx mul
+                y %vdy mul %mat itransform
+                1 1 %vdx vdy %mat idtransform
+                pstack()=
+                rectfill
             } for
-        grestore
+        } for
+
     }
     12 {
     }
@@ -160,10 +160,13 @@
 % width height bits/sample matrix datasrc  image  -
 /image {
     pstack()=
-    10 dict begin
-    {datasrc mat bits height width}{exch def}forall
-    bitsdict bits get exec
-    end
+    gsave
+        newpath
+        10 dict begin
+        {datasrc mat bits height width}{exch def}forall
+        bitsdict bits get exec
+        end
+    grestore
 } def
 
 % width height polarity matrix datasrc  imagemask  -
