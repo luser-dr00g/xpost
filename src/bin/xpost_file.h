@@ -40,9 +40,9 @@ Xpost_Object consfile(Xpost_Memory_File *mem, /*@NULL@*/ FILE *fp);
 int fileopen(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);
 FILE *filefile(Xpost_Memory_File *mem, Xpost_Object f);
 int filestatus(Xpost_Memory_File *mem, Xpost_Object f);
-long filebytesavailable(Xpost_Memory_File *mem, Xpost_Object f);
-void fileclose(Xpost_Memory_File *mem, Xpost_Object f);
+int filebytesavailable(Xpost_Memory_File *mem, Xpost_Object f, long *retval);
+int fileclose(Xpost_Memory_File *mem, Xpost_Object f);
 Xpost_Object fileread(Xpost_Memory_File *mem, Xpost_Object f);
-void filewrite(Xpost_Memory_File *mem, Xpost_Object f, Xpost_Object b);
+int filewrite(Xpost_Memory_File *mem, Xpost_Object f, Xpost_Object b);
 
 #endif

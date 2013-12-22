@@ -119,7 +119,10 @@ static
 int Fclosefile (Xpost_Context *ctx,
                  Xpost_Object f)
 {
-    fileclose(ctx->lo, f);
+    int ret;
+    ret = fileclose(ctx->lo, f);
+    if (ret)
+        return ret;
     return 0;
 }
 
@@ -134,6 +137,8 @@ int Fread (Xpost_Context *ctx,
     if (!xpost_object_is_readable(f))
         return invalidaccess;
     b = fileread(ctx->lo, f);
+    if (xpost_object_get_type(b) == invalidtype)
+        return ioerror;
     if (b.int_.val != EOF) {
         xpost_stack_push(ctx->lo, ctx->os, b);
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
@@ -150,9 +155,12 @@ int Fwrite (Xpost_Context *ctx,
              Xpost_Object f,
              Xpost_Object i)
 {
+    int ret;
     if (!xpost_object_is_writeable(f))
         return invalidaccess;
-    filewrite(ctx->lo, f, i);
+    ret = filewrite(ctx->lo, f, i);
+    if (ret)
+        return ret;
     return 0;
 }
 
@@ -311,7 +319,12 @@ static
 int Fbytesavailable (Xpost_Context *ctx,
                       Xpost_Object F)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(filebytesavailable(ctx->lo, F)));
+    long bytes;
+    int ret;
+    ret = filebytesavailable(ctx->lo, F, &bytes);
+    if (ret)
+        return ret;
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(bytes));
     return 0;
 }
 
