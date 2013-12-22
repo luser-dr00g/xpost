@@ -508,6 +508,9 @@ int xpost_memory_put (
         unsigned int sz,
         const void *src);
 
+/**
+ * @brief Dump the allocation info for a single ent
+ */
 void xpost_memory_table_dump_ent (Xpost_Memory_File *mem,
                                   unsigned int ent);
 

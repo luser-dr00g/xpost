@@ -185,7 +185,6 @@ int tstinsert(Xpost_Memory_File *mem,
     if (!tadr) {
         if (!xpost_memory_file_alloc(mem, sizeof(tst), &tadr))
         {
-            //error(VMerror, "tstinsert cannot allocate tree node");
             XPOST_LOG_ERR("cannot allocate tree node");
             return VMerror;
         }
@@ -284,7 +283,7 @@ Xpost_Object consname(Xpost_Context *ctx,
             ret = tstinsert(mem, tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr, s, &t);
             if (ret)
             {
-                error(ret, ""); //VMerror
+                error(ret, ""); //this can only be a VMerror
                 //return invalid;
             }
             tab = (void *)mem->base; //recalc pointer

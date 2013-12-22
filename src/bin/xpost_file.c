@@ -457,7 +457,6 @@ Xpost_Object fileread(Xpost_Memory_File *mem,
 {
     if (!filestatus(mem, f))
     {
-        //error(ioerror, "fileread");
         return invalid;
     }
     return xpost_cons_int(fgetc(filefile(mem, f)));
@@ -471,12 +470,10 @@ int filewrite(Xpost_Memory_File *mem,
 {
     if (!filestatus(mem, f))
     {
-        //error(ioerror, "filewrite");
         return ioerror;
     }
     if (fputc(b.int_.val, filefile(mem, f)) == EOF)
     {
-        //error(ioerror, "filewrite");
         return ioerror;
     }
     return 0;

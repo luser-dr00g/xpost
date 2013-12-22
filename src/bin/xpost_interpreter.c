@@ -116,7 +116,6 @@ int xpost_interpreter_cid_init(unsigned *cid)
     while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 ) {
         if (nextid == startid + MAXCONTEXT)
         {
-            //error(unregistered, "ctab full. cannot create new process");
             XPOST_LOG_ERR("ctab full. cannot create new process");
             return 0;
         }
@@ -518,7 +517,7 @@ int eval(Xpost_Context *ctx)
     return ret;
 }
 
-/* called by mainloop() after longjmp from error() or propagated error codes.
+/* called by mainloop() after longjmp from error () or propagated error codes.
    pushes postscript-level error procedures
    and resumes normal execution.
  */
@@ -600,7 +599,7 @@ void _onerror(Xpost_Context *ctx,
 }
 
 
-/* the return point from all calls to error() that do not exit() */
+/* the return point from all calls to error () that do not exit() */
 jmp_buf jbmainloop;
 int jbmainloopset = 0;
 
