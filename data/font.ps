@@ -60,6 +60,7 @@
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
             translate
+            %hook
         } forall
     grestore
     } ifelse
