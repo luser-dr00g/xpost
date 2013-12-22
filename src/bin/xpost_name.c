@@ -172,29 +172,39 @@ unsigned tstsearch(Xpost_Memory_File *mem,
 
 /* add a string to the ternary search tree */
 static
-unsigned tstinsert(Xpost_Memory_File *mem,
+int tstinsert(Xpost_Memory_File *mem,
                    unsigned tadr,
-                   char *s)
+                   char *s,
+                   unsigned *retval)
 {
     tst *p;
     unsigned t; //temporary
     unsigned int nstk;
+    int ret;
 
     if (!tadr) {
         if (!xpost_memory_file_alloc(mem, sizeof(tst), &tadr))
-            error(VMerror, "tstinsert cannot allocate tree node");
+        {
+            //error(VMerror, "tstinsert cannot allocate tree node");
+            XPOST_LOG_ERR("cannot allocate tree node");
+            return VMerror;
+        }
         p = (void *)(mem->base + tadr);
         p->val = *s;
         p->lo = p->eq = p->hi = 0;
     }
     p = (void *)(mem->base + tadr);
     if ((unsigned)*s < p->val) {
-        t = tstinsert(mem, p->lo, s);
+        ret = tstinsert(mem, p->lo, s, &t);
+        if (ret)
+            return ret;
         p = (void *)(mem->base + tadr); //recalc pointer
         p->lo = t;
     } else if ((unsigned)*s == p->val) {
         if (*s) {
-            t = tstinsert(mem, p->eq, ++s);
+            ret = tstinsert(mem, p->eq, ++s, &t);
+            if (ret)
+                return ret;
             p = (void *)(mem->base + tadr); //recalc pointer
             p->eq = t;
         }else {
@@ -203,11 +213,15 @@ unsigned tstinsert(Xpost_Memory_File *mem,
             p->eq = xpost_stack_count(mem, nstk); /* payload when val == '\0' */
         }
     } else {
-        t = tstinsert(mem, p->hi, s);
+        ret = tstinsert(mem, p->hi, s, &t);
+        if (ret)
+            return ret;
         p = (void *)(mem->base + tadr); //recalc pointer
         p->hi = t;
     }
-    return tadr;
+    //return tadr;
+    *retval = tadr;
+    return 0;
 }
 
 /* add the name to the name stack, return index */
@@ -255,6 +269,7 @@ Xpost_Object consname(Xpost_Context *ctx,
     unsigned t;
     Xpost_Object o;
     unsigned int tstk;
+    int ret;
 
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE, &tstk);
@@ -266,7 +281,12 @@ Xpost_Object consname(Xpost_Context *ctx,
         if (!u) {
             Xpost_Memory_File *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
             Xpost_Memory_Table *tab = (void *)mem->base;
-            t = tstinsert(mem, tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr, s);
+            ret = tstinsert(mem, tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr, s, &t);
+            if (ret)
+            {
+                error(ret, ""); //VMerror
+                //return invalid;
+            }
             tab = (void *)mem->base; //recalc pointer
             tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = t;
             u = addname(ctx, s); // obeys vmmode

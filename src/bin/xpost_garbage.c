@@ -631,7 +631,7 @@ static
 int init_test_garbage()
 {
     int fd;
-    int cid;
+    unsigned int cid;
     char fname[] = "xmemXXXXXX";
     unsigned int tadr;
     int ret;
@@ -640,7 +640,9 @@ int init_test_garbage()
     itpdata = malloc(sizeof*itpdata);
     if (!itpdata) return 0;
     memset(itpdata, 0, sizeof*itpdata);
-    cid = xpost_interpreter_cid_init();
+    ret = xpost_interpreter_cid_init(&cid);
+    if (!ret)
+        return 0;
     ctx = xpost_interpreter_cid_get_context(cid);
     ctx->id = cid;
 
