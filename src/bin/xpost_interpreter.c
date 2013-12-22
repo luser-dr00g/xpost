@@ -415,7 +415,9 @@ int evalfile(Xpost_Context *ctx)
                 return execstackoverflow;
         }
     } else {
-        fileclose(ctx->lo, f);
+        ret = fileclose(ctx->lo, f);
+        if (ret)
+            XPOST_LOG_ERR("%s error closing file", errorname[ret]);
     }
     return 0;
 }

@@ -382,7 +382,6 @@ FILE *filefile(Xpost_Memory_File *mem,
     ret = xpost_memory_get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     if (!ret)
     {
-        //error(unregistered, "filefile cannot load FILE* from VM");
         return NULL;
     }
     return fp;
@@ -396,8 +395,9 @@ int filestatus(Xpost_Memory_File *mem,
 }
 
 /* call fstat. */
-long filebytesavailable(Xpost_Memory_File *mem,
-                        Xpost_Object f)
+int filebytesavailable(Xpost_Memory_File *mem,
+                        Xpost_Object f,
+                        long *retval)
 {
     int ret;
     FILE *fp;
@@ -407,18 +407,24 @@ long filebytesavailable(Xpost_Memory_File *mem,
     fp = filefile(mem, f);
     if (!fp) return -1;
     ret = fstat(fileno(fp), &sb);
-    if (ret != 0) error(ioerror, "fstat did not return 0");
+    if (ret != 0)
+    {
+        XPOST_LOG_ERR("fstat did not return 0");
+        return ioerror;
+    }
     if (sb.st_size > LONG_MAX)
         return LONG_MAX;
     sz = (long)sb.st_size;
     
     pos = ftell(fp);
-    return sz - pos;
+    //return sz - pos;
+    *retval = sz - pos;
+    return 0;
 }
 
 /* close the file,
    NULL the FILE*. */
-void fileclose(Xpost_Memory_File *mem,
+int fileclose(Xpost_Memory_File *mem,
                Xpost_Object f)
 {
     FILE *fp;
@@ -430,16 +436,18 @@ void fileclose(Xpost_Memory_File *mem,
 		printf("fclose");
 #endif
         if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
-            return;
+            return 0;
 
         fclose(fp);
         fp = NULL;
         ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
         if (!ret)
         {
-            error(VMerror, "fileclose cannot write NULL over FILE* in VM");
+            XPOST_LOG_ERR("cannot write NULL over FILE* in VM");
+            return VMerror;
         }
     }
+    return 0;
 }
 
 /* if the file is valid,
@@ -448,19 +456,29 @@ Xpost_Object fileread(Xpost_Memory_File *mem,
                 Xpost_Object f)
 {
     if (!filestatus(mem, f))
-        error(ioerror, "fileread");
+    {
+        //error(ioerror, "fileread");
+        return invalid;
+    }
     return xpost_cons_int(fgetc(filefile(mem, f)));
 }
 
 /* if the file is valid,
    write a byte. */
-void filewrite(Xpost_Memory_File *mem,
+int filewrite(Xpost_Memory_File *mem,
                Xpost_Object f,
                Xpost_Object b)
 {
     if (!filestatus(mem, f))
-        error(ioerror, "filewrite");
+    {
+        //error(ioerror, "filewrite");
+        return ioerror;
+    }
     if (fputc(b.int_.val, filefile(mem, f)) == EOF)
-        error(ioerror, "filewrite");
+    {
+        //error(ioerror, "filewrite");
+        return ioerror;
+    }
+    return 0;
 }
 
