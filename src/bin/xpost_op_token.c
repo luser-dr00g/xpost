@@ -516,7 +516,6 @@ int Ftoken (Xpost_Context *ctx,
     Xpost_Object t;
     int ret;
     if (!filestatus(ctx->lo, F))
-        //error(ioerror, "Ftoken");
         return ioerror;
     ret = toke(ctx, &F, Fnext, Fback, &t);
     if (ret)

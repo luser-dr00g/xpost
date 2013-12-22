@@ -66,6 +66,7 @@ void *alloca (size_t);
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "xpost_log.h"
 #include "xpost_memory.h"  /* files store FILE*s in (local) mfile */
 #include "xpost_object.h"  /* files are objects */
 #include "xpost_context.h"
@@ -149,13 +150,17 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
     /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
     if (!xpost_memory_table_alloc(mem, sizeof(FILE *), filetype, &ent))
     {
-        error(VMerror, "consfile cannot allocate file record");
+        //error(VMerror, "consfile cannot allocate file record");
+        XPOST_LOG_ERR("cannot allocate file record");
+        return invalid;
     }
     f.mark_.padw = ent;
     ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     if (!ret)
     {
-        error(unregistered, "consfile cannot save FILE* in VM");
+        //error(unregistered, "consfile cannot save FILE* in VM");
+        XPOST_LOG_ERR("cannot save FILE* in VM");
+        return invalid;
     }
     return f;
 }
@@ -163,24 +168,34 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
 /* pinch-off a tmpfile containing one line from file. */
 /*@null@*/
 static
-FILE *lineedit(FILE *in)
+int lineedit(FILE *in, FILE **out)
 {
     FILE *fp;
     int c;
 
     c = fgetc(in);
-    if (c == EOF) error(undefinedfilename, "%lineedit");
+    if (c == EOF)
+    {
+        //error(undefinedfilename, "%lineedit");
+        return undefinedfilename;
+    }
 #ifdef DEBUG_FILE
 	printf("tmpfile (fdopen)\n");
 #endif
     fp = f_tmpfile();
-    if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
+    if (fp == NULL) {
+        //error(ioerror, "tmpfile() returned NULL");
+        //return NULL;
+        return ioerror;
+    }
     while (c != EOF && c != '\n') {
         (void)fputc(c, fp);
         c = fgetc(in);
     }
     fseek(fp, 0, SEEK_SET);
-    return fp;
+    //return fp;
+    *out = fp;
+    return 0;
 }
 
 enum { MAXNEST = 20 };
@@ -188,7 +203,7 @@ enum { MAXNEST = 20 };
 /* pinch-off a tmpfile containing one "statement" from file. */
 /*@null@*/
 static
-FILE *statementedit(FILE *in)
+int statementedit(FILE *in, FILE **out)
 {
     FILE *fp;
     int c;
@@ -197,15 +212,24 @@ FILE *statementedit(FILE *in)
                        and an index into nest[] */
 
     c = fgetc(in);
-    if (c == EOF) error(undefinedfilename, "%statementedit");
+    if (c == EOF)
+    {
+        return undefinedfilename;
+    }
 #ifdef DEBUG_FILE
 	printf("tmpfile (fdopen)\n");
 #endif
     fp = f_tmpfile();
-    if (fp == NULL) { error(ioerror, "tmpfile() returned NULL"); return NULL; }
+    if (fp == NULL) {
+        XPOST_LOG_ERR("tmpfile() returned NULL");
+        return ioerror;
+    }
     do {
         if (defer > -1) {
-            if (defer > MAXNEST) error(syntaxerror, "syntaxerror");
+            if (defer > MAXNEST)
+            {
+                return syntaxerror;
+            }
             switch(nest[defer]) { /* what's the innermost nest? */
             case '{': /* within a proc, can end proc or begin proc, string, hex */
                 switch (c) {
@@ -249,7 +273,9 @@ next:
     } while(c != EOF);
 done:
     fseek(fp, 0, SEEK_SET);
-    return fp;
+    //return fp;
+    *out = fp;
+    return 0;
 }
 
 /* check for "special" filenames,
@@ -259,40 +285,57 @@ Xpost_Object fileopen(Xpost_Memory_File *mem,
         char *mode)
 {
     Xpost_Object f;
+    FILE *fp;
+    int ret;
+
     f.tag = filetype;
 
     if (strcmp(fn, "%stdin")==0) {
-        if (strcmp(mode, "r")!=0) error(invalidfileaccess, "fileopen");
+        if (strcmp(mode, "r")!=0)
+            error(invalidfileaccess, "fileopen");
         f = consfile(mem, stdin);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stdout")==0) {
-        if (strcmp(mode, "w")!=0) error(invalidfileaccess, "fileopen");
+        if (strcmp(mode, "w")!=0)
+            error(invalidfileaccess, "fileopen");
         f = consfile(mem, stdout);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stderr")==0) {
-        if (strcmp(mode, "w")!=0) error(invalidfileaccess, "fileopen");
+        if (strcmp(mode, "w")!=0)
+            error(invalidfileaccess, "fileopen");
         f = consfile(mem, stderr);
     } else if (strcmp(fn, "%lineedit")==0) {
-        f = consfile(mem, lineedit(stdin));
+        ret = lineedit(stdin, &fp);
+        if (ret)
+            error(ret, "");
+        f = consfile(mem, fp);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%statementedit")==0) {
-        f = consfile(mem, statementedit(stdin));
+        ret = statementedit(stdin, &fp);
+        if (ret)
+            error(ret, "");
+        f = consfile(mem, fp);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else {
-        FILE *fp;
 #ifdef DEBUG_FILE
 		printf("fopen\n");
 #endif
         fp = fopen(fn, mode);
         if (fp == NULL) {
             switch (errno) {
-            case EACCES: error(invalidfileaccess, "fileopen"); break;
-            case ENOENT: error(undefinedfilename, "fileopen"); break;
-            default: error(unregistered, "fileopen"); break;
+            case EACCES:
+                error(invalidfileaccess, "fileopen");
+                break;
+            case ENOENT:
+                error(undefinedfilename, "fileopen");
+                break;
+            default:
+                error(unregistered, "fileopen");
+                break;
             }
         }
         f = consfile(mem, fp);
