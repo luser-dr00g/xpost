@@ -110,16 +110,20 @@ unsigned nextid = 0;
 /* allocate a context-id and associated context struct
    returns cid;
  */
-unsigned xpost_interpreter_cid_init(void)
+int xpost_interpreter_cid_init(unsigned *cid)
 {
     unsigned startid = nextid;
     while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 ) {
         if (nextid == startid + MAXCONTEXT)
         {
-            error(unregistered, "ctab full. cannot create new process");
+            //error(unregistered, "ctab full. cannot create new process");
+            XPOST_LOG_ERR("ctab full. cannot create new process");
+            return 0;
         }
     }
-    return nextid;
+    //return nextid;
+    *cid = nextid;
+    return 1;
 }
 
 /* adapter:

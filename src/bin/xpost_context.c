@@ -259,7 +259,10 @@ int xpost_context_init(Xpost_Context *ctx)
 {
     int ret;
 
-    ctx->id = xpost_interpreter_cid_init();
+    ret = xpost_interpreter_cid_init(&ctx->id);
+    if (!ret)
+        return 0;
+
     ret = initlocal(ctx);
     if (!ret)
     {
@@ -320,9 +323,10 @@ unsigned int _fork1(Xpost_Context *ctx)
 {
     unsigned int newcid;
     Xpost_Context *newctx;
+    int ret;
 
     (void)ctx;
-    newcid = xpost_interpreter_cid_init();
+    ret = xpost_interpreter_cid_init(&newcid);
     newctx = xpost_interpreter_cid_get_context(newcid);
     initlocal(newctx);
     initglobal(newctx);
@@ -339,8 +343,9 @@ unsigned fork2(Xpost_Context *ctx)
 {
     unsigned newcid;
     Xpost_Context *newctx;
+    int ret;
 
-    newcid = xpost_interpreter_cid_init();
+    ret = xpost_interpreter_cid_init(&newcid);
     newctx = xpost_interpreter_cid_get_context(newcid);
     initlocal(ctx);
     newctx->gl = ctx->gl;
@@ -359,8 +364,9 @@ unsigned fork3(Xpost_Context *ctx)
 {
     unsigned newcid;
     Xpost_Context *newctx;
+    int ret;
 
-    newcid = xpost_interpreter_cid_init();
+    ret = xpost_interpreter_cid_init(&newcid);
     newctx = xpost_interpreter_cid_get_context(newcid);
     newctx->lo = ctx->lo;
     xpost_context_append_ctxlist(newctx->lo, newcid);
