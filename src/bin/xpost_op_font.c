@@ -350,7 +350,7 @@ int _get_current_point (Xpost_Context *ctx,
         datay = xpost_cons_real(datay.int_.val);
     *xpos = datax.real_.val;
     *ypos = datay.real_.val;
-    XPOST_LOG_INFO("currentpoint: %f %f", xpos, ypos);
+    XPOST_LOG_INFO("currentpoint: %f %f", *xpos, *ypos);
 
     return 0;
 }
