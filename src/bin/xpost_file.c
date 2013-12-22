@@ -150,7 +150,6 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
     /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
     if (!xpost_memory_table_alloc(mem, sizeof(FILE *), filetype, &ent))
     {
-        //error(VMerror, "consfile cannot allocate file record");
         XPOST_LOG_ERR("cannot allocate file record");
         return invalid;
     }
@@ -158,7 +157,6 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
     ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     if (!ret)
     {
-        //error(unregistered, "consfile cannot save FILE* in VM");
         XPOST_LOG_ERR("cannot save FILE* in VM");
         return invalid;
     }
@@ -176,7 +174,6 @@ int lineedit(FILE *in, FILE **out)
     c = fgetc(in);
     if (c == EOF)
     {
-        //error(undefinedfilename, "%lineedit");
         return undefinedfilename;
     }
 #ifdef DEBUG_FILE
@@ -184,8 +181,7 @@ int lineedit(FILE *in, FILE **out)
 #endif
     fp = f_tmpfile();
     if (fp == NULL) {
-        //error(ioerror, "tmpfile() returned NULL");
-        //return NULL;
+        XPOST_LOG_ERR("tmpfile() returned NULL");
         return ioerror;
     }
     while (c != EOF && c != '\n') {
@@ -280,9 +276,10 @@ done:
 
 /* check for "special" filenames,
    fallback to fopen. */
-Xpost_Object fileopen(Xpost_Memory_File *mem,
+int fileopen(Xpost_Memory_File *mem,
         char *fn,
-        char *mode)
+        char *mode,
+        Xpost_Object *retval)
 {
     Xpost_Object f;
     FILE *fp;
@@ -292,31 +289,41 @@ Xpost_Object fileopen(Xpost_Memory_File *mem,
 
     if (strcmp(fn, "%stdin")==0) {
         if (strcmp(mode, "r")!=0)
-            error(invalidfileaccess, "fileopen");
+        {
+            return invalidfileaccess;
+        }
         f = consfile(mem, stdin);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stdout")==0) {
         if (strcmp(mode, "w")!=0)
-            error(invalidfileaccess, "fileopen");
+        {
+            return invalidfileaccess;
+        }
         f = consfile(mem, stdout);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stderr")==0) {
         if (strcmp(mode, "w")!=0)
-            error(invalidfileaccess, "fileopen");
+        {
+            return invalidfileaccess;
+        }
         f = consfile(mem, stderr);
     } else if (strcmp(fn, "%lineedit")==0) {
         ret = lineedit(stdin, &fp);
         if (ret)
-            error(ret, "");
+        {
+            return ret;
+        }
         f = consfile(mem, fp);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%statementedit")==0) {
         ret = statementedit(stdin, &fp);
         if (ret)
-            error(ret, "");
+        {
+            return ret;
+        }
         f = consfile(mem, fp);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
@@ -328,13 +335,13 @@ Xpost_Object fileopen(Xpost_Memory_File *mem,
         if (fp == NULL) {
             switch (errno) {
             case EACCES:
-                error(invalidfileaccess, "fileopen");
+                return invalidfileaccess;
                 break;
             case ENOENT:
-                error(undefinedfilename, "fileopen");
+                return undefinedfilename;
                 break;
             default:
-                error(unregistered, "fileopen");
+                return unregistered;
                 break;
             }
         }
@@ -351,13 +358,16 @@ Xpost_Object fileopen(Xpost_Memory_File *mem,
             f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
             f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
         } else {
-            error(ioerror, "bad mode string");
+            XPOST_LOG_ERR("bad mode string");
+            return ioerror;
         }
 
     }
 
     f.tag |= XPOST_OBJECT_TAG_DATA_FLAG_LIT;
-    return f;
+    //return f;
+    *retval = f;
+    return 0;
 }
 
 /* adapter:
@@ -372,7 +382,8 @@ FILE *filefile(Xpost_Memory_File *mem,
     ret = xpost_memory_get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
     if (!ret)
     {
-        error(unregistered, "filefile cannot load FILE* from VM");
+        //error(unregistered, "filefile cannot load FILE* from VM");
+        return NULL;
     }
     return fp;
 }
@@ -426,7 +437,7 @@ void fileclose(Xpost_Memory_File *mem,
         ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
         if (!ret)
         {
-            error(unregistered, "fileclose cannot write NULL over FILE* in VM");
+            error(VMerror, "fileclose cannot write NULL over FILE* in VM");
         }
     }
 }
@@ -436,7 +447,8 @@ void fileclose(Xpost_Memory_File *mem,
 Xpost_Object fileread(Xpost_Memory_File *mem,
                 Xpost_Object f)
 {
-    if (!filestatus(mem, f)) error(ioerror, "fileread");
+    if (!filestatus(mem, f))
+        error(ioerror, "fileread");
     return xpost_cons_int(fgetc(filefile(mem, f)));
 }
 
@@ -446,7 +458,8 @@ void filewrite(Xpost_Memory_File *mem,
                Xpost_Object f,
                Xpost_Object b)
 {
-    if (!filestatus(mem, f)) error(ioerror, "filewrite");
+    if (!filestatus(mem, f))
+        error(ioerror, "filewrite");
     if (fputc(b.int_.val, filefile(mem, f)) == EOF)
         error(ioerror, "filewrite");
 }

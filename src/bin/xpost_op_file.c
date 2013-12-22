@@ -97,6 +97,8 @@ int Sfile (Xpost_Context *ctx,
 {
     Xpost_Object f;
     char *cfn, *cmode;
+    int ret;
+
     cfn = alloca(fn.comp_.sz + 1);
     memcpy(cfn, charstr(ctx, fn), fn.comp_.sz);
     cfn[fn.comp_.sz] = '\0';
@@ -104,7 +106,9 @@ int Sfile (Xpost_Context *ctx,
     memcpy(cmode, charstr(ctx, mode), mode.comp_.sz);
     cmode[mode.comp_.sz] = '\0';
 
-    f = fileopen(ctx->lo, cfn, cmode);
+    ret = fileopen(ctx->lo, cfn, cmode, &f);
+    if (ret)
+        return ret;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
     return 0;
 }
@@ -389,7 +393,10 @@ int Zcurrentfile (Xpost_Context *ctx)
             return 0;
         }
     }
-    xpost_stack_push(ctx->lo, ctx->os, consfile(ctx->lo, NULL));
+    o = consfile(ctx->lo, NULL);
+    if (xpost_object_get_type(o) == invalidtype)
+        return VMerror;
+    xpost_stack_push(ctx->lo, ctx->os, o);
     return 0;
 }
 

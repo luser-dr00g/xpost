@@ -37,7 +37,7 @@
    */
 
 Xpost_Object consfile(Xpost_Memory_File *mem, /*@NULL@*/ FILE *fp);
-Xpost_Object fileopen(Xpost_Memory_File *mem, char *fn, char *mode);
+int fileopen(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);
 FILE *filefile(Xpost_Memory_File *mem, Xpost_Object f);
 int filestatus(Xpost_Memory_File *mem, Xpost_Object f);
 long filebytesavailable(Xpost_Memory_File *mem, Xpost_Object f);
