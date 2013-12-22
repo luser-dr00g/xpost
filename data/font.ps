@@ -62,7 +62,9 @@
             translate
             %hook
         } forall
+        pop
     grestore
+
     } ifelse
 } def
 
@@ -74,6 +76,34 @@
         4 2 roll
         //widthshow
     }{
+    5 2 roll
+    3 dict begin
+    {charcode cy cx}{exch def}forall
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get
+        dup concat
+        cx cy 3 2 roll dtransform /cy exch def /cx exch def
+        exch
+        %pstack()=
+        {
+            dup /curcode exch def
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+            curcode charcode eq {
+                cx cy translate
+            } if
+            %hook
+        } forall
+        pop
+    grestore
+    end
+
     } ifelse
 } def
 
@@ -85,6 +115,31 @@
         3 2 roll
         //ashow
     }{
+    4 2 roll
+    2 dict begin
+    {dy dx}{exch def}forall
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get
+        dup concat
+        dx dy 3 2 roll dtransform /dy exch def /dx exch def
+        exch
+        %pstack()=
+        {
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+            dx dy translate
+            %hook
+        } forall
+        pop
+    grestore
+    end
+
     } ifelse
 } def
 
@@ -97,6 +152,36 @@
         5 2 roll
         //awidthshow
     }{
+    7 2 roll
+    5 dict begin
+    {charcode cy cx dy dx}{exch def}forall
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get
+        dup concat
+        dup dx dy 3 2 roll dtransform /dy exch def /dx exch def
+        cx cy 3 2 roll dtransform /cy exch def /cx exch def
+        exch
+        %pstack()=
+        {
+            dup /curcode exch def
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+            dx dy translate
+            curcode charcode eq {
+                cx cy translate
+            } if
+            %hook
+        } forall
+        pop
+    grestore
+    end
+
     } ifelse
 } def
 
