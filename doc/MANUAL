@@ -7,19 +7,8 @@ them in the following.
 Xpost is still in the "under-construction" phase. But I'm happy enough
 with it that I think it should be considered an "alpha" status product.
 The testing is not extensive, but it is in place, and has been used
-throughout the development. In fact the interpreter that can be run
-right now is actually just the "interpreter test" of the interpreter
-module. But, enough of that. I promised no "internals" here.
+throughout the development. 
 
-**** begin : what to do with that paragraph ? Seems not valid anymore ***
-
-It's an important fact that the available interpreter is the interpreter
-*test*, because when you clone the repo and run `make` or `make all`
-(which are the same), you'll also need to run `make test` or `make itp`
-to create the ./itp executable. Once it's ready to be part of `make all`,
-that will herald "beta" status.
-
-*** end ***
 
 == Download and get a PS> prompt ==
 
@@ -34,53 +23,27 @@ Configure and compile all the source objects.
 
   ./autogen.sh (or ./configure if autogen.sh has already been launched)
   make
+  make install   # or sudo make install
 
-  [ The testing portion needs reworking and is not currently
-  compiled by make. ........................................
+Run the interpreter. Type 'runtest' and enter to run the operator and 
+graphics tests.
 
-Compile and run the tests.
-
-  make test
-
-Double-check exit-status code from the tests.
-
-  echo $?
-
-or `echo $status` in csh.
-   ........................................................]
-
-Run the interpreter.
-
-  cd src/bin
   ./xpost
 
 loading init.ps...
 loading err.ps...
 Xpost Version 0.0.1
-PS>
+PS> runtest
 
 Type `quit` or send an EOF (ctrl-D or maybe ctrl-Z) to quit
 the interpreter.
 
-<operator 1 exch 0x406ea1>bye!
-
-There's an operator dump just before exit. I'd be very curious to
-know if anyone ever gets different values for the hex-number
-which is the pointer value of the C-function for the exch operator.
-I've asked about this on Stack Overflow.
-
-  http://stackoverflow.com/questions/18040735/will-statically-linked-functions-have-the-same-pointer-values-across-runs-on-the
-
-If the values are constant for most systems, then we can consider
-the quick-launch idea to be a viable pursuit. For the moment the
-risk is such that the whole thing falls into the "premature optimization"
-bucket.
 
 
 == Examples ==
 
-There are a few example programs demonstrating xpost's functionality
-even though it doesn't do any graphics, yet.
+There are a few example programs demonstrating xpost's base
+functionality without graphics. These are in the /ex subdirectory.
 
 binshape.ps  -  draw an infinite output of random 0s and 1s
 digit.ps - (doesn't work yet. uses <~ascii85~>, which xpost won't process (yet))
@@ -102,8 +65,16 @@ as an array of strings before you `(tab340.ps)run` or whatever.
 Check the source to see if it uses ARGUMENTS to know if you need
 to set this variable before running.
 
+Other examples have been added to the /data directory which is 
+also installed with `make install`. 
 
-== Postscript arithmetic ==
+  cd data
+  xpost dancingmen.ps  (some figures from a Sherlock Holmes episode)
+  xpost sin1x.ps     (approximating a function graphic with bezier interpolation)
+  xpost tea1.ps   (this one has some issues, try it with gs to see it)
+  xpost bitfont.ps  (a non-caching Type 3 font using 8-bit images)
+
+== Postscript arithmetic and function-calling ==
 
 Just a brief review of what you should already know if you're trying
 to use xpost. Postscript uses a Reverse-Polish Syntax where the
@@ -126,11 +97,13 @@ but short words.
     floor ceiling
     truncate round
 
+note:
+%<-- Postscript comments begin with '%' and run till the end of line -->$
+
 For example, if you define /a, /b, and /c to contain values for
 the variables in the formula "ax^2 + bx + c",
 
-%<-- Postscript comments begin with '%' and run till the end of line -->$
-    /a 25 def
+    /a 25 def   % define the variables a b and c
     /b 10 def
     /c 3 def
 
@@ -140,6 +113,7 @@ and a definition for x,
 
 you can calculate the value of the formula like this:
 
+                   % stack picture:
     a x x mul mul  % ax^2
     b x mul        % ax^2 bx
     c   add   add  % ax^2+bx+c
@@ -151,8 +125,8 @@ for the function and define it as x before applying the formula.
 
     % x  quadratic  ax^2+bx+c
     /quadratic {
-        /x exch def
-        a x x mul mul
+        /x exch def    % define x from stack
+        a x x mul mul  % calculate quadratic as above
         b x mul
         c add add
     } def
@@ -188,12 +162,12 @@ c and make them parameters, too, instead of hard-coded names.
 
     % a b c x  quadratic  ax^2+bx+c
     /quadratic {
-        /x exch def   % a b c
-        3 1 roll      % c a b
-        x mul         % c a bx
-        3 1 roll      % bx c a
-        x x mul mul   % bx c ax^2
-        add add
+        /x exch def   % a b c   % define x
+        3 1 roll      % c a b   % reorder elements
+        x mul         % c a bx  % calculate the bx term
+        3 1 roll      % bx c a  % reorder elements
+        x x mul mul   % bx c ax^2  % calculate the ax^2 term
+        add add                    % sum up
     } def
 
 This brings us to `roll`. As you can see from the stack comments,
@@ -249,12 +223,12 @@ as well.
 
   % a b c x  quadratic  ax^2+bx+c
   /quadratic {
-      4 2 roll     % c x a b
-      1 index mul  % c x a bx
-      4 1 roll     % bx c x a
-      1 index mul  % bx c x ax
-      mul          % bx c ax^2
-      add add
+      4 2 roll     % c x a b     % reorder elements
+      1 index mul  % c x a bx    % copy and multiply
+      4 1 roll     % bx c x a    % reorder elements
+      1 index mul  % bx c x ax   % copy and multiply
+      mul          % bx c ax^2   % multiply
+      add add                    % sum up
   } def
 
 If we apply `bind` to the procedure, all the operator names will
@@ -349,4 +323,5 @@ PS<3>{{{
 {{.:}
 {.:}
 PS<4>
+
 
