@@ -312,7 +312,7 @@ int _show_char(Xpost_Context *ctx,
     (void)comp2;
     (void)comp3;
 #endif
-    return 0;
+    return 1;
 }
 
 static
@@ -798,6 +798,109 @@ int _awidthshow (Xpost_Context *ctx,
 
     return 0;
 }
+
+static
+int _stringwidth (Xpost_Context *ctx,
+                  Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos = 0, ypos = 0;
+    char *ch;
+
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
+    gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
+    fontdict = bdcget(ctx, gs, consname(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* get the font data from the font dict */
+    privatestr = bdcget(ctx, fontdict, consname(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    /* do everything BUT
+       render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++) {
+        /* _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                ncomp, comp1, comp2, comp3); */
+
+#ifdef HAVE_FREETYPE
+        unsigned int glyph_index;
+        unsigned char *buffer;
+        int rows;
+        int width;
+        int pitch;
+        char pixel_mode;
+        int left;
+        int top;
+        long advance_x;
+        long advance_y;
+
+        glyph_index = xpost_font_face_glyph_index_get(data.face, *ch);
+        if (has_kerning && glyph_previous && (glyph_index > 0))
+        {
+            long delta_x;
+            long delta_y;
+
+            if (xpost_font_face_kerning_delta_get(data.face, glyph_previous, glyph_index,
+                                                  &delta_x, &delta_y))
+            {
+                xpos += delta_x >> 6;
+                ypos += delta_y >> 6;
+            }
+        }
+        if (!xpost_font_face_glyph_render(data.face, glyph_index))
+            return unregistered;
+        xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width, &pitch, &pixel_mode, &left, &top, &advance_x, &advance_y);
+        /*
+        _draw_bitmap(ctx, devdic, putpix,
+                buffer, rows, width, pitch, pixel_mode,
+                *xpos + left, *ypos - top,
+                ncomp, comp1, comp2, comp3);
+                */
+        xpos += advance_x >> 6;
+        ypos += advance_y >> 6;
+        glyph_previous = glyph_index;
+#endif
+
+    }
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(xpos));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(ypos));
+
+    return 0;
+}
+
 int initopfont (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
@@ -822,12 +925,12 @@ int initopfont (Xpost_Context *ctx,
     op = consoper(ctx, "widthshow", _widthshow, 0, 4,
         floattype, floattype, integertype, stringtype); INSTALL;
     op = consoper(ctx, "awidthshow", _awidthshow, 0, 6,
-        floattype, floattype, integertype, floattype, floattype,
-        stringtype); INSTALL;
+        floattype, floattype, integertype,
+        floattype, floattype, stringtype); INSTALL;
+    op = consoper(ctx, "stringwidth", _stringwidth, 2, 1, stringtype); INSTALL;
     /*
     op = consoper(ctx, "kshow", _kshow, 0, 2,
         proctype, stringtype); INSTALL;
-    op = consoper(ctx, "stringwidth", _stringwidth, 2, 1, stringtype); INSTALL;
     */
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
