@@ -643,7 +643,6 @@ int initalldata(const char *device)
     itpdata = malloc(sizeof*itpdata);
     if (!itpdata)
     {
-        //error(unregistered, "itpdata=malloc failed");
         XPOST_LOG_ERR("itpdata=malloc failed");
         return 0;
     }
