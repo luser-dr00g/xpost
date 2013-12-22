@@ -269,7 +269,6 @@ Xpost_Object consoper(Xpost_Context *ctx,
             sp[si].fp = fp;
         }
     } else if (opcode == noop) {
-        //error(unregistered, "operator not found\n");
         XPOST_LOG_ERR("operator not found");
         return null;
     }
@@ -340,7 +339,6 @@ int opexec(Xpost_Context *ctx,
     ct = xpost_stack_count(ctx->lo, ctx->os);
     if (op.n == 0)
     {
-        //error(unregistered, "opexec");
         XPOST_LOG_ERR("operator has no signatures");
         return unregistered;
     }

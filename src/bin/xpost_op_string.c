@@ -75,9 +75,14 @@ int s_copy(Xpost_Context *ctx,
 {
     unsigned i;
     int ret;
+    integer val;
+
     for (i = 0; i < S.comp_.sz; i++)
     {
-        ret = bstput(ctx, D, i, bstget(ctx, S, i));
+        ret = bstget(ctx, S, i, &val);
+        if (ret)
+            return ret;
+        ret = bstput(ctx, D, i, val);
         if (ret)
             return ret;
     }
@@ -105,7 +110,12 @@ int Sget(Xpost_Context *ctx,
           Xpost_Object S,
           Xpost_Object I)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(bstget(ctx, S, I.int_.val)));
+    integer val;
+    int ret;
+    ret = bstget(ctx, S, I.int_.val, &val);
+    if (ret)
+        return ret;
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(val));
     return 0;
 }
 
@@ -227,6 +237,9 @@ int Sforall(Xpost_Context *ctx,
              Xpost_Object P)
 {
     Xpost_Object interval;
+    integer val;
+    int ret;
+
     if (S.comp_.sz == 0) return 0;
     assert(ctx->gl->base);
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
@@ -249,7 +262,11 @@ int Sforall(Xpost_Context *ctx,
         if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
             return execstackoverflow;
     }
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(bstget(ctx, S, 0))))
+
+    ret = bstget(ctx, S, 0, &val);
+    if (ret)
+        return ret;
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(val)))
         return stackoverflow;
     return 0;
 }
