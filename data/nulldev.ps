@@ -1,0 +1,79 @@
+(loading nulldev.ps...)print
+
+/DEVICE { graphicsdict /currgstate get /device get } def
+/nulldevice {
+    graphicsdict /currgstate get /device
+    612 792 NULLDEV dup /Create get exec
+    put
+} def
+
+% NULLDEV device implements the "nulldevice", which
+% does not drawing, but otherwise performs all graphics operations
+% and will return appropriately-transformed graphics state parameters.
+%
+% In the list of procedures below, PGMIMAGE is the Class dictionary,
+% IMAGE is an instance returned by Create.
+%
+% procedures:
+%           width height PGMIMAGE  Create  ->  IMAGE
+%                   val x y IMAGE  PutPix  ->  -
+%                       x y IMAGE  GetPix  ->  val
+%           val x1 y1 x2 y2 IMAGE  DrawLine  ->  -
+%      val x y width height IMAGE  DrawRect  ->  -
+%      val x y width height IMAGE  FillRect  ->  -
+%               val polygon IMAGE  FillPoly  ->  -
+%                           IMAGE  Emit  ->  -
+%                           IMAGE  Destroy  ->  -
+%                           dict1  .copydict  dict2
+%
+
+/NULLDEV <<
+    /nativecolorspace /DeviceGray
+    /dimensions [0 0]
+
+    /.copydict {
+        dup length dict copy
+        dup /width known {
+            dup begin
+                /dimensions [width height] def
+            end
+        } if
+    }
+    /Create { % width height IMAGE  .  IMAGE'
+        begin {/height /width}{exch def}forall
+        currentdict end
+        dup /.copydict get exec
+    }
+
+    /Destroy { % IMAGE  .  -
+        pop
+    } 
+
+    /PutPix { % val x y IMAGE  .  -
+        pop pop pop pop
+    }
+
+    /GetPix { % x y IMAGE  .  val
+        pop pop pop  0
+    }
+
+    /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
+        pop pop pop pop pop pop
+    }
+
+    /DrawRect { % val x y w h IMAGE  .  -
+        pop pop pop pop pop pop
+    }
+
+    /FillRect { % val x y w h IMAGE  .  -
+        pop pop pop pop pop pop
+    }
+
+    /FillPoly { % val polygon IMAGE  .  -
+        pop pop pop
+    } 
+
+    /Emit { }
+>> def
+
+(eof nulldev.ps\n)print
