@@ -22,7 +22,11 @@
 } def
 
 /scalefont {
-    1 index /FontType get 3 ne { //scalefont }{
+    1 index /FontType get 3 ne {
+        0 dtransform
+        dup mul exch dup mul add sqrt
+        //scalefont
+    }{
         dup matrix scale makefont
     } ifelse
 } def
@@ -186,9 +190,25 @@
 } def
 
 /kshow {
-    graphicsdict /currgstate get /currfont get
-    dup /FontType get 3 ne { pop //kshow }{
-    } ifelse
+    5 dict begin
+        {str proc}{exch def}forall
+        /font graphicsdict /currgstate get /currfont get def
+        str length 0 gt { str length 1 eq {
+            str show
+        }{
+            str 0 1 getinterval % str<0..+1>
+            dup 0 get exch      % str[0] str<0..+1>
+            show
+            1 1 str length 1 sub { % str[N-1] N
+                str exch 1 getinterval
+                dup 0 get exch % str[N-1] str[N] str<N..+1>
+                3 1 roll       % str<N..+1>  str[N-1] str[N]
+                proc
+                dup 0 get exch  % str[N]  str<N..+1>
+                show  % str[N]
+            } for
+        } ifelse } if
+    end
 } def
 
 /stringwidth {
