@@ -67,7 +67,9 @@
             %hook
         } forall
         pop
+        0 0 transform
     grestore
+    itransform moveto
 
     } ifelse
 } def
@@ -105,8 +107,10 @@
             %hook
         } forall
         pop
+        0 0 transform
     grestore
     end
+    itransform moveto
 
     } ifelse
 } def
@@ -141,8 +145,10 @@
             %hook
         } forall
         pop
+        0 0 transform
     grestore
     end
+    itransform moveto
 
     } ifelse
 } def
@@ -183,8 +189,10 @@
             %hook
         } forall
         pop
+        0 0 transform
     grestore
     end
+    itransform moveto
 
     } ifelse
 } def
@@ -214,7 +222,16 @@
 /stringwidth {
     graphicsdict /currgstate get /currfont get
     dup /FontType get 3 ne { pop //stringwidth }{
-        0 0
+    pop
+    gsave
+        nulldevice
+        currentpoint 3 2 roll
+        show
+        currentpoint % x0 y0 x1 y1
+        3 2 roll sub % x0 x1 y1-y0
+        3 1 roll exch sub % y1-y0 x1-x0
+        exch
+    grestore
     } ifelse
 } def
 
