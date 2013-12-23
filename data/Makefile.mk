@@ -8,6 +8,7 @@ data/color.ps \
 data/image.ps \
 data/pgmimage.ps \
 data/ppmimage.ps \
+data/nulldev.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
@@ -40,6 +41,7 @@ data/color.ps \
 data/image.ps \
 data/pgmimage.ps \
 data/ppmimage.ps \
+data/nulldev.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
