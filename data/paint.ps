@@ -117,20 +117,79 @@
 
 /bitsdict <<
     1 {
+        {
+            bp bz ge {exit} if
+            datasrc % src
+            { % char
+                8 {
+                    dup % char char
+                    -1 bitshift exch % char>1 char
+                    1 and % char>1 c0
+                    255 mul % char>1 c0'
+                    buf exch bp exch put /bp bp 1 add def
+                } repeat
+                pop
+            } forall
+        } loop
     }
     2 {
+        {
+            bp bz ge {exit} if
+            datasrc % src
+            { % char
+
+                4 {
+                    dup % char char
+                    -2 bitshift exch % char>2 char
+                    3 and % char>2 c01
+                    85 mul  % char>2 c01'
+                    buf exch bp exch put /bp bp 1 add def
+                } repeat
+
+                %dup % char>2 char>2
+                %-2 bitshift exch % char>4 char>2
+                %3 and % char>4 c23
+                %85 mul  % char>4 c23'
+                %buf exch bp exch put /bp bp 1 add def
+
+                %dup % char>4 char>4
+                %-2 bitshift exch % char>6 char>4
+                %3 and % char>6 c45
+                %85 mul  % char>6 c45'
+                %buf exch bp exch put /bp bp 1 add def
+
+                %dup % char>6 char>6
+                %-2 bitshift exch % char>8 c67
+                %85 mul
+                %buf exch bp exch put /bp bp 1 add def
+
+                pop
+
+            } forall
+        } loop
     }
     4 {
+        {
+            bp bz ge {exit} if
+            datasrc % str
+            { % char
+                0 exch dup % 0 char char
+
+                2 {
+                    15 and % char  lo
+                    17 mul % char lo'
+                    buf exch bp exch put /bp bp 1 add def
+                    -4 bitshift % hi
+                } repeat % 0
+
+                pop
+
+            } forall
+        } loop
     }
     8 {
-        /vdx 1 width div def
-        /vdy 1 height div def
-        /DeviceGray setcolorspace
-        /bz width height mul def
-        /buf bz string def
-        /bp 0 def
         {
-            bp bz 1 sub gt {exit} if
+            bp bz ge {exit} if
             datasrc
             buf exch bp exch
             dup length
@@ -138,6 +197,28 @@
             bp add /bp exch def
             putinterval
         } loop
+    }
+    12 {
+    }
+>> def
+
+% width height bits/sample matrix datasrc  image  -
+/image {
+    pstack()=
+    gsave
+        newpath
+        10 dict begin
+        {datasrc mat bits height width}{exch def}forall
+
+        /vdx 1 width div def
+        /vdy 1 height div def
+        /DeviceGray setcolorspace
+        /bz width height mul def
+        /buf bz string def
+        /bp 0 def
+
+        bitsdict bits get exec
+
         mat mat invertmatrix concat
         %vdx vdy scale
         0 1 height 1 sub { /y exch def
@@ -152,19 +233,6 @@
             } for
         } for
 
-    }
-    12 {
-    }
->> def
-
-% width height bits/sample matrix datasrc  image  -
-/image {
-    pstack()=
-    gsave
-        newpath
-        10 dict begin
-        {datasrc mat bits height width}{exch def}forall
-        bitsdict bits get exec
         end
     grestore
 } def
