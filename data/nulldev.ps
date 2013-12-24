@@ -8,11 +8,14 @@
 } def
 
 % NULLDEV device implements the "nulldevice", which
-% does not drawing, but otherwise performs all graphics operations
+% does no drawing, but otherwise performs all graphics operations
 % and will return appropriately-transformed graphics state parameters.
 %
 % In the list of procedures below, PGMIMAGE is the Class dictionary,
 % IMAGE is an instance returned by Create.
+% The nulldevice implementations of these methods
+% merely have to consume these arguments from the stack
+% using `pop`.
 %
 % procedures:
 %           width height PGMIMAGE  Create  ->  IMAGE
