@@ -457,48 +457,115 @@ def
 
 %
 % replace lineto segments . with 
-%                         |
-%                         |
-%       1 lineto --.-- closepath 5
-%       2 lineto |   |
-%                |   | lineto 4
-%                |----
-%          3 lineto     moveto 6
-%
+%                         |              L LL
+%                         |              /C--
+%       1 rmoveto --.-- closepath 5     /
+%       2 rlineto |   |                      /
+%                 |   | rlineto 4       ---C/
+%                 |----                   R RR
+%         3 rlineto ^---moveto 6
+%                 R C L
+%           point 2   point 3
+%                 ----
+%                 |  | join
+%                 ----
+%                 1  4
+%           point RR  point LL
 /strokedict <<
+    /ang 0
+    /oldcp 2 array
+    /cp 2 array
+    /oldpointR 2 array
+    /oldpointL 2 array
+    /pointR 2 array
+    /pointRR 2 array
+    /pointL 2 array
+    /pointLL 2 array
     /move {
-        strokedict /cp 2 index /data get put
+        %strokedict /cp 2 index /data get put
+        dup /data get strokedict /cp get copy pop
         cpath addtopath
+        strokedict /justmoved true put
     }
-    /line {
+    /line { % el
+
         strokedict /cp get aload pop       % el x0 y0
         2 index /data get aload pop        % el x0 y0 x1 y1
-        2 copy 2 array astore strokedict /cp 3 2 roll put
+        strokedict /cp get strokedict /oldcp get copy pop % oldcp
+        2 copy strokedict /cp get astore pop % cp=(x1 y1)
+
         ptdiff                             % el dx dy
         magang                             % el rad ang
+        strokedict /oldang strokedict /ang get put
+        strokedict /ang 2 index put                        % ang=atan(dy/dx)
+        %(A)= pstack()=
+
         minlinewidth
         .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
         ravec idtransform
-        rmoveto           % el rad ang      %rmoveto
+        rmoveto              % el rad ang      %rmoveto 1
+        currentpoint strokedict /pointRR get astore pop % ptRR
+
         2 copy ravec idtransform
-        rlineto    % el rad ang      %rlineto
+        rlineto              % el rad ang      %rlineto 2
+        strokedict /pointR get strokedict /oldpointR get copy pop % oldptR
+        currentpoint strokedict /pointR get astore pop % ptR
+
         minlinewidth
-        1 index 90 add    % el rad ang lw -ang_perp
+        1 index 90 add       % el rad ang lw -ang_perp
         ravec idtransform
-        rlineto           % el rad ang      %rlineto
+        rlineto              % el rad ang      %rlineto 3
+        strokedict /pointL get strokedict /oldpointL get copy pop % oldptL
+        currentpoint strokedict /pointL get astore pop % ptL
+
         180 add ravec idtransform
-        rlineto   % el rad ang      %rlineto
-        closepath                          % el              %closepath
-        %dup /cmd /move put
-        %cpath addtopath
-        %/data get aload pop idtransform moveto
-        pop
-        strokedict /cp get
-        %aload pop itransform moveto
-        << /data 3 2 roll /cmd /move >> cpath addtopath
+        rlineto              % el rad ang      %rlineto 4
+        currentpoint strokedict /pointLL get astore pop % ptLL
+
+        closepath            % el              %closepath 5
+        pop  % discard original lineto element
+        (B)= pstack()=
+
+        strokedict /justmoved get not { % draw join
+            strokedict /ang get strokedict /oldang get sub
+            (C)= pstack()=
+            dup 0 le exch 180 ge or { % right turn
+
+                strokedict /oldcp get
+                aload pop moveto
+
+                strokedict /oldpointL get
+                aload pop lineto
+
+                strokedict /pointLL get aload pop lineto
+
+                (D)= pstack()=
+                closepath
+            }{ % left turn
+
+                strokedict /oldcp get
+                aload pop moveto
+
+                strokedict /oldpointR get
+                aload pop lineto
+
+                strokedict /pointRR get aload pop lineto
+
+                (E)= pstack()=
+                closepath
+            } ifelse
+        } if
+
+        strokedict /cp get 2 array copy
+        << /data 3 2 roll /cmd /move >> cpath addtopath % moveto 6
+
+        strokedict /justmoved false put
     }
-    /close 1 index %{ pop }
-    /curve { pop }
+    /close 1 index dup length array copy 
+    dup dup length 2 sub true put % .... /justmoved true put }
+    cvx
+    %pstack()=
+    /curve { pop } %s.b. eliminated by flattenpath
 >> def
 
 /strokepath {
@@ -513,6 +580,7 @@ def
                 0 1 2 index length 1 sub { % p i sp_i j
                     2 copy get             % p i sp_i j sp_i_j
                     strokedict 1 index /cmd get get exec
+                    (sd:)= pstack()=
                     pop                    % p i sp_i
                 } for              % p i sp_i
             } if
@@ -520,6 +588,9 @@ def
         } for
         pop
     } if
+    (sp:)= pstack()=
+    %dup type /arraytype ne {pop} if
+    %dup type /arraytype ne {pop} if
     setmatrix
 } bind def
 
