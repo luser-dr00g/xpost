@@ -16,14 +16,16 @@
     ifelse
 } def
 
-(test: loading graphics...)=
-flush
+%(test: loading graphics...)=
+%flush
 %(*){=}128 string filenameforall
 %(../../data)
 %DATA_DIR (/graphics.ps) strcat run initgraphics
-loadgraphics
+%loadgraphics  %graphics support is now always loaded
 
-pstack()=
+(Stack should be clear -V-\n)=
+pstack
+(                      -^-\n)=
 clear
 
 [ ] ==
@@ -716,12 +718,15 @@ saveobj restore
 %scalefont
 
 (search)=
-(1: (abbc) (ab) search {fail} if clear)=
+(1: (abbc) (ab) search not {fail} if clear)=
 (abbc) (ab) search not {fail} if clear
+
 (2: (abbc) (bb) search not {fail} if clear)=
 (abbc) (bb) search not {fail} if clear
+
 (3: (abbc) (bc) search not {fail} if clear)=
 (abbc) (bc) search not {fail} if clear
+
 (4: (abbc) (B) search {fail} if clear)=
 (abbc) (B) search {fail} if clear
 
