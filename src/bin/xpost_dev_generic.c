@@ -164,12 +164,25 @@ int _intersect (double ax, double ay,  double bx, double by,
 
     /* reject degenerate line */
     if ((ax == bx && ay == by) || (cx == dx && cy == dy))
+    {
         return 0;
+        if (ax == cx && ay == cy && ax != 0.0 && ay != 0.0)
+        {
+            *rx = ax;
+            *ry = ay;
+            return 1;
+        }
+    }
 
     /* reject coinciding endpoints */
     if ((ax == cx && ay == cy) || (bx == cx && by == cy) ||
             (ax == dx && ay == dy) || (bx == dx && by == dy))
+    {
         return 0;
+        *rx = ax;
+        *ry = ay;
+        return 1;
+    }
 
     /* translate by -ax, -ay */
     bx -= ax;  by -= ay;
@@ -300,11 +313,11 @@ int _fillpoly (Xpost_Context *ctx,
     /* intersect polygon edges with scanlines */
     for (i = 0, j = 0; i < poly.comp_.sz - 1; i++){
         int rx, ry;
-        for (yscan = miny + 0.5; yscan < maxy; yscan += 1.0){
+        for (yscan = miny + 0.5; yscan <= maxy; yscan += 1.0){
             if (_intersect(points[i].x, points[i].y,
                         points[i+1].x, points[i+1].y,
-                        minx - 0.1, yscan,
-                        maxx + 0.1, yscan,
+                        minx - 1.5, yscan,
+                        maxx + 1.5, yscan,
                         &rx, &ry)){
                 intersections[j].x = rx;
                 intersections[j].y = ry;
@@ -320,9 +333,9 @@ int _fillpoly (Xpost_Context *ctx,
     /* arrange ((x1,y1),(x2,y2)) pairs */
     for (i = 0; i < numlines * 2; i += 2) {
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].x)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].y)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].y - 0.5)));
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].x)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].y)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].y - 0.5)));
     }
 
     /*call the device's DrawLine generically with continuations.
