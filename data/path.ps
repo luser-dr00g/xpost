@@ -458,6 +458,10 @@ def
     dup 1 lt { pop 1 } if
 } bind def
 
+/dolinejoin { % RR|LL R|L C
+    moveto lineto lineto closepath
+} def
+
 %
 % replace lineto segments . with 
 %                         |              L LL
@@ -504,70 +508,59 @@ def
         strokedict /justmoved get {
             strokedict /firstang 2 index put
         } if
-        /DEBUGSTROKE where { pop
-            (A)= pstack()=
-        } if
+        /DEBUGSTROKE where { pop (A)= pstack()= } if
 
         minlinewidth
         .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
-        ravec idtransform
+        ravec %idtransform
         rmoveto              % el rad ang      %rmoveto 1
         currentpoint strokedict /pointRR get astore pop % ptRR
 
-        2 copy ravec idtransform
+        2 copy ravec %idtransform
         rlineto              % el rad ang      %rlineto 2
         strokedict /pointR get strokedict /oldpointR get copy pop % oldptR
         currentpoint strokedict /pointR get astore pop % ptR
 
         minlinewidth
         1 index 90 add       % el rad ang lw -ang_perp
-        ravec idtransform
+        ravec %idtransform
         rlineto              % el rad ang      %rlineto 3
         strokedict /pointL get strokedict /oldpointL get copy pop % oldptL
         currentpoint strokedict /pointL get astore pop % ptL
 
-        180 add ravec idtransform
+        180 add ravec %idtransform
         rlineto              % el rad ang      %rlineto 4
         currentpoint strokedict /pointLL get astore pop % ptLL
 
         closepath            % el              %closepath 5
         pop  % discard original lineto element
-        /DEBUGSTROKE where { pop
-            (B)= pstack()=
+        /DEBUGSTROKE where { pop (B)= pstack()= } if
+
+        strokedict /justmoved get {
+            strokedict /firstRR strokedict /pointRR get 2 array copy put
+            strokedict /firstLL strokedict /pointLL get 2 array copy put
         } if
 
         strokedict /justmoved get not { % draw join
             strokedict /ang get strokedict /oldang get sub
-            /DEBUGSTROKE where { pop
-                (C)= pstack()=
-            } if
+            /DEBUGSTROKE where { pop (C)= pstack()= } if
             dup 0 le exch 180 ge or { % right turn
 
-                strokedict /oldcp get
-                aload pop moveto
+                strokedict /pointLL get aload pop
+                strokedict /oldpointL get aload pop
+                strokedict /oldcp get aload pop
+                dolinejoin
 
-                strokedict /oldpointL get
-                aload pop lineto
-
-                strokedict /pointLL get aload pop lineto
-
-                /DEBUGSTROKE where { pop
-                    (D)= pstack()=
-                } if
+                /DEBUGSTROKE where { pop (D)= pstack()= } if
                 closepath
             }{ % left turn
 
-                strokedict /oldcp get
-                aload pop moveto
+                strokedict /pointRR get aload pop
+                strokedict /oldpointR get aload pop 
+                strokedict /oldcp get aload pop 
+                dolinejoin
 
-                strokedict /oldpointR get
-                aload pop lineto
-
-                strokedict /pointRR get aload pop lineto
-
-                /DEBUGSTROKE where { pop
-                    (E)= pstack()=
-                } if
+                /DEBUGSTROKE where { pop (E)= pstack()= } if
                 closepath
             } ifelse
         } if
@@ -588,70 +581,54 @@ def
         magang                             % el rad ang
         strokedict /oldang strokedict /ang get put
         strokedict /ang 2 index put                        % ang=atan(dy/dx)
-        /DEBUGSTROKE where { pop
-            (A)= pstack()=
-        } if
+        /DEBUGSTROKE where { pop (A)= pstack()= } if
 
         minlinewidth
         .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
-        ravec idtransform
+        ravec %idtransform
         rmoveto              % el rad ang      %rmoveto 1
         currentpoint strokedict /pointRR get astore pop % ptRR
 
-        2 copy ravec idtransform
+        2 copy ravec %idtransform
         rlineto              % el rad ang      %rlineto 2
         strokedict /pointR get strokedict /oldpointR get copy pop % oldptR
         currentpoint strokedict /pointR get astore pop % ptR
 
         minlinewidth
         1 index 90 add       % el rad ang lw -ang_perp
-        ravec idtransform
+        ravec %idtransform
         rlineto              % el rad ang      %rlineto 3
         strokedict /pointL get strokedict /oldpointL get copy pop % oldptL
         currentpoint strokedict /pointL get astore pop % ptL
 
-        180 add ravec idtransform
+        180 add ravec %idtransform
         rlineto              % el rad ang      %rlineto 4
         currentpoint strokedict /pointLL get astore pop % ptLL
 
         closepath            % el              %closepath 5
         pop  % discard original lineto element
-        /DEBUGSTROKE where { pop
-            (B)= pstack()=
-        } if
+        /DEBUGSTROKE where { pop (B)= pstack()= } if
 
         strokedict /justmoved get not { % draw join
             strokedict /ang get strokedict /oldang get sub
-            /DEBUGSTROKE where { pop
-                (C)= pstack()=
-            } if
+            /DEBUGSTROKE where { pop (C)= pstack()= } if
             dup 0 le exch 180 ge or { % right turn
 
-                strokedict /oldcp get
-                aload pop moveto
+                strokedict /pointLL get aload pop
+                strokedict /oldpointL get aload pop
+                strokedict /oldcp get aload pop
+                dolinejoin
 
-                strokedict /oldpointL get
-                aload pop lineto
-
-                strokedict /pointLL get aload pop lineto
-
-                /DEBUGSTROKE where { pop
-                    (D)= pstack()=
-                } if
+                /DEBUGSTROKE where { pop (D)= pstack()= } if
                 closepath
             }{ % left turn
 
-                strokedict /oldpointR get
-                aload pop lineto
+                strokedict /pointRR get aload pop
+                strokedict /oldpointR get aload pop
+                strokedict /oldcp get aload pop
+                dolinejoin
 
-                strokedict /oldcp get
-                aload pop moveto
-
-                strokedict /pointRR get aload pop lineto
-
-                /DEBUGSTROKE where { pop
-                    (E)= pstack()=
-                } if
+                /DEBUGSTROKE where { pop (E)= pstack()= } if
                 closepath
             } ifelse
 
@@ -659,28 +636,18 @@ def
             strokedict /firstang get strokedict /ang get sub
             dup 0 le exch 180 ge or { % right turn
 
-                strokedict /pointL get
-                aload pop moveto
-
-                strokedict /cp get
-                aload pop lineto
-
-                minlinewidth .5 mul
-                strokedict /firstang get 90 add ravec  %LL
-                rlineto
+                strokedict /firstLL get aload pop
+                strokedict /pointL get aload pop
+                strokedict /cp get aload pop
+                dolinejoin
 
                 closepath
             }{ % left turn
 
-                strokedict /pointR get
-                aload pop moveto
-
-                strokedict /cp get
-                aload pop lineto
-
-                minlinewidth .5 mul
-                strokedict /firstang get 90 sub ravec  %RR
-                rlineto
+                strokedict /firstRR get aload pop
+                strokedict /pointR get aload pop
+                strokedict /cp get aload pop
+                dolinejoin
 
                 closepath
             } ifelse
