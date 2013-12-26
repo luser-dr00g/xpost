@@ -166,12 +166,14 @@ int _intersect (double ax, double ay,  double bx, double by,
     if ((ax == bx && ay == by) || (cx == dx && cy == dy))
     {
         return 0;
+        /*
         if (ax == cx && ay == cy && ax != 0.0 && ay != 0.0)
         {
             *rx = ax;
             *ry = ay;
             return 1;
         }
+        */
     }
 
     /* reject coinciding endpoints */
@@ -179,9 +181,11 @@ int _intersect (double ax, double ay,  double bx, double by,
             (ax == dx && ay == dy) || (bx == dx && by == dy))
     {
         return 0;
+        /*
         *rx = ax;
         *ry = ay;
         return 1;
+        */
     }
 
     /* translate by -ax, -ay */
@@ -214,7 +218,7 @@ int _intersect (double ax, double ay,  double bx, double by,
     *rx = ax + ABpos * theCos;
     *ry = ay + ABpos * theSin;
 
-    //printf("  -> %d %d\n", *rx, *ry);
+    XPOST_LOG_INFO(">< %d %d\n", *rx, *ry);
     return 1;
 }
 
@@ -292,8 +296,8 @@ int _fillpoly (Xpost_Context *ctx,
         if (xpost_object_get_type(y) == integertype)
             y = xpost_cons_real(y.int_.val);
 
-        points[i].x = x.real_.val;
-        points[i].y = y.real_.val;
+        points[i].x = floor(x.real_.val);
+        points[i].y = floor(y.real_.val);
     }
 
     /* find bounding box */

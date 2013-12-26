@@ -101,6 +101,8 @@ def
     %/d P length 1 sub def
     /P p 0 get def
     /fP P aload pop f evaluate def
+    /starting true def
+    /first null def
     [
         p 1 1 index length 1 sub getinterval {
             /Q exch def
@@ -130,6 +132,10 @@ def
                             fQ P 0 get mul fP Q 0 get mul sub QP div
                             fQ P 1 get mul fP Q 1 get mul sub QP div
                         ]
+                        %dup /P exch def
+                        %/dup /Q exch def
+                        %/fQ -1 def
+                        %dup aload pop f evaluate /fQ exch def
                         /DEBUGCLIP where { pop
                             (I)=
                         } if
@@ -143,6 +149,16 @@ def
                             fQ P 0 get mul fP Q 0 get mul sub QP div
                             fQ P 1 get mul fP Q 1 get mul sub QP div
                         ]
+                        %dup /P exch def
+                        %/dup /Q exch def
+                        %/fQ -1 def
+                        %dup aload pop f evaluate /fQ exch def
+                        starting {
+                            /first 1 index
+                                pstack()=
+                                2 array copy
+                                def  % first point was clipped
+                        } if
                         /DEBUGCLIP where { pop
                             (I)=
                         } if
@@ -155,7 +171,17 @@ def
             } ifelse
             /P Q def
             /fP fQ def
+            /starting false def
         } forall
+        first type /nulltype ne { % if first point was clipped and path was closed, add final intersection
+            fQ 0 gt {
+                Q aload pop  % Qx Qy
+                p 0 get aload pop  % Qx Qy Px Py
+                3 2 roll eq 3 1 roll eq and { % Qx==Px&&Qy==Py
+                    first %2 array copy
+                } if
+            } if
+        } if
     ]
     /DEBUGCLIP where { pop
         dup ==
@@ -232,11 +258,14 @@ def
         (doclip)=
         (PA: )print PA ==
         (CR: )print CR ==
+        hook
     } if
 
     CR { % one clipping polygon
-        dup dup length 1 sub get % polygon final-point
+        %dup dup length 2 sub get % polygon final-point
+        dup 0 get
         /U exch def
+        1 1 index length 1 sub getinterval
         {
             /V exch def
             [ U aload pop V aload pop p2abc ]  % clip-line
@@ -271,7 +300,10 @@ def
             aload pop 3 2 roll aload pop % x0 y0 xN yN
             exch 4 1 roll % xN x0 y0 yN
             eq 3 1 roll eq and {
-                closepath
+                %closepath
+                cpath dup length 1 sub get
+                dup length 1 sub get
+                /cmd /close put
             } if
         }{
             pop
