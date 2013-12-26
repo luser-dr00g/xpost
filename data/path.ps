@@ -434,17 +434,20 @@ def
     } if
 } bind def
 
+% produce a vector from two points
 /ptdiff { % P0 P1
     3 -1 roll sub
     3 1 roll exch sub exch % dx dy
 } bind def
 
+% convert cartesian vector to polar
 /magang { % dx dy  .  rad ang
     2 copy 
     dup mul exch dup mul add sqrt
     3 1 roll exch atan
 } bind def
 
+% convert polar vector to cartesian
 /ravec { % rad ang  .  dx dy
     dup cos 2 index mul  % rad ang rad*cos(ang)
     3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
@@ -498,7 +501,12 @@ def
         magang                             % el rad ang
         strokedict /oldang strokedict /ang get put
         strokedict /ang 2 index put                        % ang=atan(dy/dx)
-        %(A)= pstack()=
+        strokedict /justmoved get {
+            strokedict /firstang 2 index put
+        } if
+        /DEBUGSTROKE where { pop
+            (A)= pstack()=
+        } if
 
         minlinewidth
         .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
@@ -524,11 +532,15 @@ def
 
         closepath            % el              %closepath 5
         pop  % discard original lineto element
-        (B)= pstack()=
+        /DEBUGSTROKE where { pop
+            (B)= pstack()=
+        } if
 
         strokedict /justmoved get not { % draw join
             strokedict /ang get strokedict /oldang get sub
-            (C)= pstack()=
+            /DEBUGSTROKE where { pop
+                (C)= pstack()=
+            } if
             dup 0 le exch 180 ge or { % right turn
 
                 strokedict /oldcp get
@@ -539,7 +551,9 @@ def
 
                 strokedict /pointLL get aload pop lineto
 
-                (D)= pstack()=
+                /DEBUGSTROKE where { pop
+                    (D)= pstack()=
+                } if
                 closepath
             }{ % left turn
 
@@ -551,7 +565,9 @@ def
 
                 strokedict /pointRR get aload pop lineto
 
-                (E)= pstack()=
+                /DEBUGSTROKE where { pop
+                    (E)= pstack()=
+                } if
                 closepath
             } ifelse
         } if
@@ -561,9 +577,121 @@ def
 
         strokedict /justmoved false put
     }
-    /close 1 index dup length array copy 
-    dup dup length 2 sub true put % .... /justmoved true put }
-    cvx
+    /close { % el
+
+        strokedict /cp get aload pop       % el x0 y0
+        2 index /data get aload pop        % el x0 y0 x1 y1
+        strokedict /cp get strokedict /oldcp get copy pop % oldcp
+        2 copy strokedict /cp get astore pop % cp=(x1 y1)
+
+        ptdiff                             % el dx dy
+        magang                             % el rad ang
+        strokedict /oldang strokedict /ang get put
+        strokedict /ang 2 index put                        % ang=atan(dy/dx)
+        /DEBUGSTROKE where { pop
+            (A)= pstack()=
+        } if
+
+        minlinewidth
+        .5 mul 1 index 90 sub % el rad ang .5lw ang_perp
+        ravec idtransform
+        rmoveto              % el rad ang      %rmoveto 1
+        currentpoint strokedict /pointRR get astore pop % ptRR
+
+        2 copy ravec idtransform
+        rlineto              % el rad ang      %rlineto 2
+        strokedict /pointR get strokedict /oldpointR get copy pop % oldptR
+        currentpoint strokedict /pointR get astore pop % ptR
+
+        minlinewidth
+        1 index 90 add       % el rad ang lw -ang_perp
+        ravec idtransform
+        rlineto              % el rad ang      %rlineto 3
+        strokedict /pointL get strokedict /oldpointL get copy pop % oldptL
+        currentpoint strokedict /pointL get astore pop % ptL
+
+        180 add ravec idtransform
+        rlineto              % el rad ang      %rlineto 4
+        currentpoint strokedict /pointLL get astore pop % ptLL
+
+        closepath            % el              %closepath 5
+        pop  % discard original lineto element
+        /DEBUGSTROKE where { pop
+            (B)= pstack()=
+        } if
+
+        strokedict /justmoved get not { % draw join
+            strokedict /ang get strokedict /oldang get sub
+            /DEBUGSTROKE where { pop
+                (C)= pstack()=
+            } if
+            dup 0 le exch 180 ge or { % right turn
+
+                strokedict /oldcp get
+                aload pop moveto
+
+                strokedict /oldpointL get
+                aload pop lineto
+
+                strokedict /pointLL get aload pop lineto
+
+                /DEBUGSTROKE where { pop
+                    (D)= pstack()=
+                } if
+                closepath
+            }{ % left turn
+
+                strokedict /oldpointR get
+                aload pop lineto
+
+                strokedict /oldcp get
+                aload pop moveto
+
+                strokedict /pointRR get aload pop lineto
+
+                /DEBUGSTROKE where { pop
+                    (E)= pstack()=
+                } if
+                closepath
+            } ifelse
+
+            %draw final line join
+            strokedict /firstang get strokedict /ang get sub
+            dup 0 le exch 180 ge or { % right turn
+
+                strokedict /pointL get
+                aload pop moveto
+
+                strokedict /cp get
+                aload pop lineto
+
+                minlinewidth .5 mul
+                strokedict /firstang get 90 add ravec  %LL
+                rlineto
+
+                closepath
+            }{ % left turn
+
+                strokedict /pointR get
+                aload pop moveto
+
+                strokedict /cp get
+                aload pop lineto
+
+                minlinewidth .5 mul
+                strokedict /firstang get 90 sub ravec  %RR
+                rlineto
+
+                closepath
+            } ifelse
+
+        } if
+
+        strokedict /cp get 2 array copy
+        << /data 3 2 roll /cmd /move >> cpath addtopath % moveto 6
+
+        strokedict /justmoved false put
+    }
     %pstack()=
     /curve { pop } %s.b. eliminated by flattenpath
 >> def
@@ -580,7 +708,7 @@ def
                 0 1 2 index length 1 sub { % p i sp_i j
                     2 copy get             % p i sp_i j sp_i_j
                     strokedict 1 index /cmd get get exec
-                    (sd:)= pstack()=
+                    %(sd:)= pstack()=
                     pop                    % p i sp_i
                 } for              % p i sp_i
             } if
@@ -588,7 +716,7 @@ def
         } for
         pop
     } if
-    (sp:)= pstack()=
+    %(sp:)= pstack()=
     %dup type /arraytype ne {pop} if
     %dup type /arraytype ne {pop} if
     setmatrix

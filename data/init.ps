@@ -564,6 +564,11 @@ false setglobal
     (*) { = } 128 string filenameforall
 } def
 
+/xpost {
+    (Xpost is running. Please type a command:\n)print
+    (Would you like to 'runtest' or 'testfont' or '(filename)run'?\n)print
+} def
+
 DATA_DIR (/prepr.ps) strcat run  % use nifty preview prompt!
 
 (eof init.ps\n)print
