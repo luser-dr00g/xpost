@@ -350,6 +350,7 @@ int AScvs (Xpost_Context *ctx,
     char strue[] = "true";
     char sfalse[] = "false";
     char smark[] = "-mark-";
+    char ssave[] = "-save-";
     int n;
     int ret;
 
@@ -360,6 +361,14 @@ int AScvs (Xpost_Context *ctx,
         memcpy(charstr(ctx, str), nostringval, sizeof(nostringval)-1);
         str.comp_.sz = sizeof(nostringval)-1;
         break;
+
+    case savetype:
+        if (str.comp_.sz < sizeof(ssave)-1)
+            return rangecheck;
+        memcpy(charstr(ctx, str), ssave, sizeof(ssave)-1);
+        str.comp_.sz = sizeof(ssave)-1;
+        break;
+
     case marktype:
         if (str.comp_.sz < sizeof(smark)-1)
             return rangecheck;

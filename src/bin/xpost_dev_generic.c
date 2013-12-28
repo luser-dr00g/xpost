@@ -218,7 +218,7 @@ int _intersect (double ax, double ay,  double bx, double by,
     *rx = ax + ABpos * theCos;
     *ry = ay + ABpos * theSin;
 
-    XPOST_LOG_INFO(">< %d %d\n", *rx, *ry);
+    XPOST_LOG_INFO(">< %d %d", *rx, *ry);
     return 1;
 }
 

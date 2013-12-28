@@ -459,7 +459,18 @@ def
 } bind def
 
 /dolinejoin { % RR|LL R|L C
-    moveto lineto lineto closepath
+    {
+        { moveto lineto lineto closepath } % miter join
+        { % XX X C
+            6 4 roll pop pop
+            2 copy moveto % X C
+            2 copy 6 2 roll % C X C
+            ptdiff dup mul exch dup mul add sqrt % C r
+            0 360 arc
+            closepath
+        } % round join
+        { moveto lineto lineto closepath } % bevel join
+    } currentlinejoin get exec
 } def
 
 %
