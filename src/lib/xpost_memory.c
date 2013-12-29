@@ -223,7 +223,7 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
         XPOST_LOG_ERR("%d mem->base is NULL, mem not initialized ?", VMerror);
         return 0;
     }
-    XPOST_LOG_INFO("exit memory file");
+    XPOST_LOG_INFO("exit memory file %s", mem->fname);
 
 #ifdef _WIN32
     UnmapViewOfFile(mem->base);
@@ -433,6 +433,7 @@ int xpost_memory_file_alloc (Xpost_Memory_File *mem,
     }
 
     *retaddr = adr;
+    XPOST_LOG_INFO("allocated %u bytes at %u in %s", sz, adr, mem->fname);
     return 1;
 }
 
@@ -634,7 +635,10 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
             }
         }
     }
-    return _xpost_memory_table_alloc_new(mem, sz, tag, entity);
+    ret = _xpost_memory_table_alloc_new(mem, sz, tag, entity);
+    XPOST_LOG_INFO("allocated %u bytes with tag %u as ent %u in %s",
+            sz, tag, *entity, mem->fname);
+    return ret;
 }
 
 

@@ -186,7 +186,7 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
             mem->base + tab->tab[ent].adr,
             tab->tab[ent].sz);
 
-    XPOST_LOG_INFO("ent %u copied to ent %u", ent, new);
+    XPOST_LOG_INFO("ent %u copied to ent %u in %s", ent, new, mem->fname);
     return new;
 }
 
