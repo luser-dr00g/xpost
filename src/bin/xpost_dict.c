@@ -345,7 +345,7 @@ int dicgrow(Xpost_Context *ctx,
         dtab->tab[dent].sz = ntab->tab[nent].sz;
         ntab->tab[nent].sz = hold;
 
-        if (xpost_free_memory_ent(mem, n.comp_.ent) < 0)
+        if (xpost_free_memory_ent(mem, xpost_object_get_ent(n)) < 0)
         {
             XPOST_LOG_ERR("cannot free old dict");
             return 0;
