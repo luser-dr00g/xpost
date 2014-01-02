@@ -149,6 +149,13 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
 }
 
 static
+int feq (double left, double right) {
+    if (fabs(left-right) < 0.00001)
+        return 1;
+    return 0;
+}
+
+static
 int _intersect (double ax, double ay,  double bx, double by,
                 double cx, double cy,  double dx, double dy,
                 int *rx, int *ry)
@@ -163,7 +170,8 @@ int _intersect (double ax, double ay,  double bx, double by,
     //        ax, ay,  bx, by,  cx, cy,  dx, dy);
 
     /* reject degenerate line */
-    if ((ax == bx && ay == by) || (cx == dx && cy == dy))
+    if ((feq(ax, bx) && feq(ay, by)) ||
+        (feq(cx, dx) && feq(cy, dy)))
     {
         return 0;
         /*
@@ -177,8 +185,10 @@ int _intersect (double ax, double ay,  double bx, double by,
     }
 
     /* reject coinciding endpoints */
-    if ((ax == cx && ay == cy) || (bx == cx && by == cy) ||
-            (ax == dx && ay == dy) || (bx == dx && by == dy))
+    if ((feq(ax, cx) && feq(ay, cy)) ||
+        (feq(bx, cx) && feq(by, cy)) ||
+        (feq(ax, dx) && feq(ay, dy)) ||
+        (feq(bx, dx) && feq(by, dy)))
     {
         return 0;
         /*
@@ -210,7 +220,7 @@ int _intersect (double ax, double ay,  double bx, double by,
     if ((cy < 0 && dy < 0) || (cy > 0 && dy > 0))
         return 0;
 
-    if (dy == cy) return 0;
+    if (feq(dy, cy)) return 0;
     ABpos = dx + ((cx - dx) * dy) / (dy - cy);
     if (ABpos < 0 || ABpos > distAB)
         return 0;
@@ -227,7 +237,7 @@ int _cyxcomp (const void *left, const void *right)
 {
     const struct point *lt = left;
     const struct point *rt = right;
-    if (lt->y == rt->y) {
+    if (feq(lt->y, rt->y)) {
         if (lt->x < rt->x) {
             return 1;
         } else if (lt->x > rt->x) {
@@ -320,8 +330,8 @@ int _fillpoly (Xpost_Context *ctx,
         for (yscan = miny + 0.5; yscan <= maxy; yscan += 1.0){
             if (_intersect(points[i].x, points[i].y,
                         points[i+1].x, points[i+1].y,
-                        minx - 1.5, yscan,
-                        maxx + 1.5, yscan,
+                        minx - 0.5, yscan,
+                        maxx + 0.5, yscan,
                         &rx, &ry)){
                 intersections[j].x = rx;
                 intersections[j].y = ry;
