@@ -329,7 +329,7 @@ int _fillpoly (Xpost_Context *ctx,
         comp2 = xpost_stack_pop(ctx->lo, ctx->os);
         comp1 = xpost_stack_pop(ctx->lo, ctx->os);
     }
-    else 
+    else
     {
         XPOST_LOG_ERR("unimplemented device color space");
         return unregistered;
@@ -415,8 +415,8 @@ int _fillpoly (Xpost_Context *ctx,
 
     /*first push the number of elements
      we're using a repeat loop which looks like:
-         count proc  -repeat- 
-    */ 
+         count proc  -repeat-
+    */
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(numlines));
 
     /*then push a mark object to begin array construction
@@ -446,11 +446,11 @@ int _fillpoly (Xpost_Context *ctx,
                 ));
 
       /*at this point we have the desired stack picture:
-        
+
              comp1 (comp2 comp3)? x1 y1 x2 y2
-        
+
         just need to push the devdic and DrawLine  */
-     
+
     xpost_stack_push(ctx->lo, ctx->os, devdic);
     drawline = bdcget(ctx, devdic,
             //consname(ctx, "DrawLine")
