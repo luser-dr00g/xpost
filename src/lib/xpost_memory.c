@@ -433,7 +433,9 @@ int xpost_memory_file_alloc (Xpost_Memory_File *mem,
     }
 
     *retaddr = adr;
+    /*
     XPOST_LOG_INFO("allocated %u bytes at %u in %s", sz, adr, mem->fname);
+      */
     return 1;
 }
 

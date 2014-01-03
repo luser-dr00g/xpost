@@ -32,11 +32,21 @@
 #ifndef XPOST_COMPAT_H
 #define XPOST_COMPAT_H
 
+/**
+ * @brief control the ECHO parameter of the terminal or console associated with file.
+ */
 void echoon(FILE *f);
 void echooff(FILE *f);
 
 #ifdef __MINGW32__
 
+/**
+ * @brief open a temporary file using @p template to generate the name.
+ *
+ * @returns new file descriptor
+ *
+ * Also modifies the @p template argument string.
+ */
 int mkstemp(char *template);
 
 #endif
