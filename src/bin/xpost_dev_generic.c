@@ -86,6 +86,17 @@ struct point {
 static
 Xpost_Context *localctx;
 
+static Xpost_Object namewidth;
+static Xpost_Object namenativecolorspace;
+static Xpost_Object nameDeviceGray;
+static Xpost_Object nameDeviceRGB;
+static Xpost_Object nameroll;
+static Xpost_Object nameDrawLine;
+static Xpost_Object nameexec;
+static Xpost_Object namerepeat;
+static Xpost_Object namecvx;
+static Xpost_Object nameRbracket;
+
 static
 int _yxcomp (const void *left, const void *right)
 {
@@ -148,30 +159,49 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
     return 0;
 }
 
+/*
+   feq is applied to determine if two pixel coordinates
+   are "close enough" to be considered equal.
+   It is used to reject cases in _intersect,
+   and to control the checking of both coordinates
+   when sorting (x,y) pairs in a y|x sort.
+   These values are device-space points derived from user-input,
+   so they are ultimately quantized to integers to address the raster,
+   but here we consider them quantized to a small fraction of unity,
+   somewhere between 0 and the true floating-point epsilon.
+ */
+#define PIXEL_TOLERANCE 0.0001
+
 static
-int feq (double left, double right) {
-    if (fabs(left-right) < 0.00001)
+inline
+int feq (real dif) {
+#ifdef _WANT_LARGE_OBJECT
+    if (fabs(dif) < PIXEL_TOLERANCE)
         return 1;
+#else
+    if (fabsf(dif) < PIXEL_TOLERANCE)
+        return 1;
+#endif
     return 0;
 }
 
 static
-int _intersect (double ax, double ay,  double bx, double by,
-                double cx, double cy,  double dx, double dy,
+int _intersect (real ax, real ay,  real bx, real by,
+                real cx, real cy,  real dx, real dy,
                 int *rx, int *ry)
 {
-    double distAB;
-    double theCos;
-    double theSin;
-    double newX;
-    double ABpos;
+    real distAB;
+    real theCos;
+    real theSin;
+    real newX;
+    real ABpos;
 
     //printf("%f %f  %f %f  %f %f  %f %f\n",
     //        ax, ay,  bx, by,  cx, cy,  dx, dy);
 
     /* reject degenerate line */
-    if ((feq(ax, bx) && feq(ay, by)) ||
-        (feq(cx, dx) && feq(cy, dy)))
+    if ((feq(ax - bx) && feq(ay - by)) ||
+        (feq(cx - dx) && feq(cy - dy)))
     {
         return 0;
         /*
@@ -185,10 +215,10 @@ int _intersect (double ax, double ay,  double bx, double by,
     }
 
     /* reject coinciding endpoints */
-    if ((feq(ax, cx) && feq(ay, cy)) ||
-        (feq(bx, cx) && feq(by, cy)) ||
-        (feq(ax, dx) && feq(ay, dy)) ||
-        (feq(bx, dx) && feq(by, dy)))
+    if ((feq(ax - cx) && feq(ay - cy)) ||
+        (feq(bx - cx) && feq(by - cy)) ||
+        (feq(ax - dx) && feq(ay - dy)) ||
+        (feq(bx - dx) && feq(by - dy)))
     {
         return 0;
         /*
@@ -220,7 +250,7 @@ int _intersect (double ax, double ay,  double bx, double by,
     if ((cy < 0 && dy < 0) || (cy > 0 && dy > 0))
         return 0;
 
-    if (feq(dy, cy)) return 0;
+    if (feq(dy - cy)) return 0;
     ABpos = dx + ((cx - dx) * dy) / (dy - cy);
     if (ABpos < 0 || ABpos > distAB)
         return 0;
@@ -237,7 +267,7 @@ int _cyxcomp (const void *left, const void *right)
 {
     const struct point *lt = left;
     const struct point *rt = right;
-    if (feq(lt->y, rt->y)) {
+    if (feq(lt->y - rt->y)) {
         if (lt->x < rt->x) {
             return 1;
         } else if (lt->x > rt->x) {
@@ -273,14 +303,26 @@ int _fillpoly (Xpost_Context *ctx,
     real maxy = maxx;
     int width;
 
-    width = bdcget(ctx, devdic, consname(ctx, "width")).int_.val;
-    colorspace = bdcget(ctx, devdic, consname(ctx, "nativecolorspace"));
-    if (objcmp(ctx, colorspace, consname(ctx, "DeviceGray")) == 0)
+    width = bdcget(ctx, devdic,
+            //consname(ctx, "width")
+            namewidth
+            ).int_.val;
+    colorspace = bdcget(ctx, devdic,
+            //consname(ctx, "nativecolorspace")
+            namenativecolorspace
+            );
+    if (objcmp(ctx, colorspace,
+                //consname(ctx, "DeviceGray")
+                nameDeviceGray
+                ) == 0)
     {
         ncomp = 1;
         comp1 = xpost_stack_pop(ctx->lo, ctx->os);
     }
-    else if (objcmp(ctx, colorspace, consname(ctx, "DeviceRGB")) == 0)
+    else if (objcmp(ctx, colorspace,
+                //consname(ctx, "DeviceRGB")
+                nameDeviceRGB
+                ) == 0)
     {
         ncomp = 3;
         comp3 = xpost_stack_pop(ctx->lo, ctx->os);
@@ -306,8 +348,8 @@ int _fillpoly (Xpost_Context *ctx,
         if (xpost_object_get_type(y) == integertype)
             y = xpost_cons_real(y.int_.val);
 
-        points[i].x = floor(x.real_.val);
-        points[i].y = floor(y.real_.val);
+        points[i].x = floor(x.real_.val + 0.5);
+        points[i].y = floor(y.real_.val + 0.5);
     }
 
     /* find bounding box */
@@ -398,7 +440,10 @@ int _fillpoly (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(3)); /* color components to move */
         break;
     }
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, "roll")));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(
+                //consname(ctx, "roll")
+                nameroll
+                ));
 
       /*at this point we have the desired stack picture:
         
@@ -407,12 +452,18 @@ int _fillpoly (Xpost_Context *ctx,
         just need to push the devdic and DrawLine  */
      
     xpost_stack_push(ctx->lo, ctx->os, devdic);
-    drawline = bdcget(ctx, devdic, consname(ctx, "DrawLine"));
+    drawline = bdcget(ctx, devdic,
+            //consname(ctx, "DrawLine")
+            nameDrawLine
+            );
     xpost_stack_push(ctx->lo, ctx->os, drawline);
 
     /*if drawline is a procedure, we also need to call exec */
     if (xpost_object_get_type(drawline) == arraytype)
-        xpost_stack_push(ctx->lo, ctx->os, consname(ctx, "exec"));
+        xpost_stack_push(ctx->lo, ctx->os,
+                //consname(ctx, "exec")
+                nameexec
+                );
 
     /*Then construct the loop-body procedure array. */
        //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "]")));
@@ -430,7 +481,8 @@ int _fillpoly (Xpost_Context *ctx,
       What we're doing is:
 
       opstack> xyxy xyxy xyxy ... xyxy numlines [ comp1 5 1 roll DEVICE DrawLine (exec)?
-                                       numlines [ comp1 comp2 comp3 7 3 roll DEVICE DrawLine (exec)?
+      -or for rgb color values-:
+                                   ... numlines [ comp1 comp2 comp3 7 3 roll DEVICE DrawLine (exec)?
       execstack> repeat cvx ]
                             ^ construct array
                          ^ make executable
@@ -439,9 +491,18 @@ int _fillpoly (Xpost_Context *ctx,
 
     /*So the sequence in C should be: */
 
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "repeat")));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "cvx")));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "]")));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(
+                //consname(ctx, "repeat")
+                namerepeat
+                ));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(
+                //consname(ctx, "cvx")
+                namecvx
+                ));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(
+                //consname(ctx, "]")
+                nameRbracket
+                ));
 
     /*performance could be increased by factoring-out calls to consname()
       or using opcode shortcuts.
@@ -462,6 +523,16 @@ int initdevgenericops (Xpost_Context *ctx,
 
     op = consoper(ctx, ".yxsort", _yxsort, 0, 1, arraytype); INSTALL;
     op = consoper(ctx, ".fillpoly", _fillpoly, 0, 2, arraytype, dicttype); INSTALL;
+    namewidth = consname(ctx, "width");
+    namenativecolorspace = consname(ctx, "nativecolorspace");
+    nameDeviceGray = consname(ctx, "DeviceGray");
+    nameDeviceRGB = consname(ctx, "DeviceRGB");
+    nameroll = consname(ctx, "roll");
+    nameDrawLine = consname(ctx, "DrawLine");
+    nameexec = consname(ctx, "exec");
+    namerepeat = consname(ctx, "repeat");
+    namecvx = consname(ctx, "cvx");
+    nameRbracket = consname(ctx, "]");
 
     return 0;
 }
