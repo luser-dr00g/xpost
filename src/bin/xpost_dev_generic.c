@@ -83,8 +83,7 @@ struct point {
 };
 
 /* FIXME: re-entrancy */
-static
-Xpost_Context *localctx;
+static Xpost_Context *localctx;
 
 static Xpost_Object namewidth;
 static Xpost_Object namenativecolorspace;
@@ -170,7 +169,11 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
    but here we consider them quantized to a small fraction of unity,
    somewhere between 0 and the true floating-point epsilon.
  */
-#define PIXEL_TOLERANCE 0.0001
+#ifdef _WANT_LARGE_OBJECT
+# define PIXEL_TOLERANCE 0.0001
+#else
+# define PIXEL_TOLERANCE 0.0001f
+#endif
 
 static
 inline
