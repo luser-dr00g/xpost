@@ -672,7 +672,7 @@ int initalldata(const char *device)
 }
 
 static
-void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd)
+void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd, const char *device)
 {
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
@@ -688,23 +688,58 @@ void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd)
             xpost_object_cvlit(consbst(ctx,
                     strlen(exedir), exedir)));
 
-    /* select default output device */
+    if (device) {
+        char *device_strings[][3] = {
+            { "pgm",   "",                "newPGMIMAGEdevice" },
+            { "ppm",   "",                "newPPMIMAGEdevice" },
+            { "null",  "",                "newnulldevice"     },
+            { "xcb",   "loadxcbdevice",   "newxcbdevice"      },
+            { "win32", "loadwin32device", "newwin32device"    },
+            { "gl",    "loadwin32device", "newwin32device"    },
+            { NULL, NULL, NULL }
+        };
+        char *strtemplate = "%s /DEVICE 612 792 %s def";
+        Xpost_Object namenewdev;
+        Xpost_Object newdevstr;
+        int i;
+
+        for (i = 0; device_strings[i][0]; i++) {
+            if (strcmp(device, device_strings[i][0]) == 0) {
+                break;
+            }
+        }
+        if (device_strings[i][0] == NULL)
+            XPOST_LOG_ERR("device string not found");
+        newdevstr = consbst(ctx,
+                strlen(strtemplate) - 4
+                + strlen(device_strings[i][1])
+                + strlen(device_strings[i][2]) + 1,
+                NULL);
+        sprintf(charstr(ctx, newdevstr), strtemplate,
+                device_strings[i][1], device_strings[i][2]);
+        --newdevstr.comp_.sz; /* trim the '\0' */
+
+        namenewdev = consname(ctx, "newdefaultdevice");
+        bdcput(ctx, sd, namenewdev, xpost_object_cvx(newdevstr));
+    } else {
+        /* select default output device */
 #if defined HAVE_WIN32
-    bdcput(ctx, sd,
-        consname(ctx, "newdefaultdevice"),
-        xpost_object_cvx(consbst(ctx,
-        CNT_STR("loadwin32device /DEVICE 612 792 breakhere newwin32device def"))));
+        bdcput(ctx, sd,
+            consname(ctx, "newdefaultdevice"),
+            xpost_object_cvx(consbst(ctx,
+            CNT_STR("loadwin32device /DEVICE 612 792 newwin32device def"))));
 #elif defined HAVE_XCB
-    bdcput(ctx, sd,
-        consname(ctx, "newdefaultdevice"),
-        xpost_object_cvx(consbst(ctx,
-        CNT_STR("loadxcbdevice /DEVICE 612 792 newxcbdevice def"))));
+        bdcput(ctx, sd,
+            consname(ctx, "newdefaultdevice"),
+            xpost_object_cvx(consbst(ctx,
+            CNT_STR("loadxcbdevice /DEVICE 612 792 newxcbdevice def"))));
 #else
-    bdcput(ctx, sd,
-        consname(ctx, "newdefaultdevice"),
-        xpost_object_cvx(consbst(ctx,
-        CNT_STR("/DEVICE 50 50 newPGMIMAGEdevice def"))));  /* small size for terminal output */
+        bdcput(ctx, sd,
+            consname(ctx, "newdefaultdevice"),
+            xpost_object_cvx(consbst(ctx,
+            CNT_STR("/DEVICE 50 50 newPGMIMAGEdevice def"))));  /* small size for terminal output */
 #endif
+    }
 
     ctx->vmmode = LOCAL;
 }
@@ -775,7 +810,7 @@ int xpost_create(const char *device)
     sd = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0);
     ud = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 2);
 
-    setlocalconfig(xpost_ctx, sd);
+    setlocalconfig(xpost_ctx, sd, device);
 
     loadinitps(xpost_ctx);
 

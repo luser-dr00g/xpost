@@ -3,8 +3,11 @@
 /DEVICE { graphicsdict /currgstate get /device get } def
 /nulldevice {
     graphicsdict /currgstate get /device
-    612 792 NULLDEV dup /Create get exec
+    612 792 newnulldevice
     put
+} def
+/newnulldevice { % width height
+    NULLDEV dup /Create get exec
 } def
 
 % NULLDEV device implements the "nulldevice", which
@@ -76,7 +79,9 @@
         pop pop pop
     } 
 
-    /Emit { }
+    /Emit {
+        pop
+    }
 >> def
 
 (eof nulldev.ps\n)print
