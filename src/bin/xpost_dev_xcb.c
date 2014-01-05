@@ -427,6 +427,9 @@ int _drawline (Xpost_Context *ctx,
     if (xpost_object_get_type(y2) == realtype)
         y2 = xpost_cons_int(y2.real_.val);
 
+    XPOST_LOG_INFO("_drawline(%d, %d, %d, %d)",
+            x1.int_.val, y1.int_.val, x2.int_.val, y2.int_.val);
+
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
