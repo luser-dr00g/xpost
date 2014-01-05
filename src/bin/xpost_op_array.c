@@ -141,6 +141,8 @@ int Aget (Xpost_Context *ctx,
            Xpost_Object I)
 {
     Xpost_Object t;
+    if (I.int_.val < 0)
+        return rangecheck;
     t = barget(ctx, A, I.int_.val);
     if (xpost_object_get_type(t) == invalidtype)
         return rangecheck;
@@ -157,6 +159,8 @@ int Aput(Xpost_Context *ctx,
           Xpost_Object I,
           Xpost_Object O)
 {
+    if (I.int_.val < 0)
+        return rangecheck;
     return barput(ctx, A, I.int_.val, O);
 }
 
@@ -168,7 +172,10 @@ int Agetinterval (Xpost_Context *ctx,
                    Xpost_Object I,
                    Xpost_Object L)
 {
-    Xpost_Object subarr = xpost_object_get_interval(A, I.int_.val, L.int_.val);
+    Xpost_Object subarr;
+    if (I.int_.val < 0)
+        return rangecheck;
+    subarr = xpost_object_get_interval(A, I.int_.val, L.int_.val);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;
     xpost_stack_push(ctx->lo, ctx->os, subarr);
@@ -184,6 +191,8 @@ int Aputinterval (Xpost_Context *ctx,
                    Xpost_Object S)
 {
     Xpost_Object subarr;
+    if (I.int_.val < 0)
+        return rangecheck;
     if (I.int_.val + S.comp_.sz > D.comp_.sz)
         return rangecheck;
     subarr = xpost_object_get_interval(D, I.int_.val, S.comp_.sz);

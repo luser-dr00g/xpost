@@ -372,12 +372,13 @@ int _fillpoly (Xpost_Context *ctx,
     /* intersect polygon edges with scanlines */
     for (i = 0, j = 0; i < poly.comp_.sz - 1; i++){
         int rx, ry;
-        for (yscan = miny + 0.5; yscan <= maxy; yscan += 1.0){
+        for (yscan = miny + 0.5; yscan < maxy; yscan += 1.0){
             if (_intersect(points[i].x, points[i].y,
                         points[i+1].x, points[i+1].y,
                         minx - 0.5, yscan,
                         maxx + 0.5, yscan,
-                        &rx, &ry)){
+                        &rx, &ry))
+            {
                 intersections[j].x = rx;
                 intersections[j].y = ry;
                 j++;
@@ -392,9 +393,9 @@ int _fillpoly (Xpost_Context *ctx,
     /* arrange ((x1,y1),(x2,y2)) pairs */
     for (i = 0; i < numlines * 2; i += 2) {
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].x)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].y - 0.5)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].y)));
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].x)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].y - 0.5)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].y)));
     }
 
     /*call the device's DrawLine generically with continuations.

@@ -189,7 +189,11 @@ endpage
 
 (filled boxes)=
 beginpage
-    20 { randbox randcolor fill newpath } repeat
+    %break
+    20 {
+        randbox randcolor fill newpath
+        %hook
+    } repeat
 endpage
 
 (initial rng seed: )=only initialsrand =
