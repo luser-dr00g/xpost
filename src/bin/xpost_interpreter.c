@@ -690,12 +690,12 @@ void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd, const char *device, cha
 
     if (device) {
         char *device_strings[][3] = {
-            { "pgm",   "",                "newPGMIMAGEdevice" },
-            { "ppm",   "",                "newPPMIMAGEdevice" },
-            { "null",  "",                "newnulldevice"     },
-            { "xcb",   "loadxcbdevice",   "newxcbdevice"      },
-            { "win32", "loadwin32device", "newwin32device"    },
-            { "gl",    "loadwin32device", "newwin32device"    },
+            { "pgm",  "",                "newPGMIMAGEdevice" },
+            { "ppm",  "",                "newPPMIMAGEdevice" },
+            { "null", "",                "newnulldevice"     },
+            { "xcb",  "loadxcbdevice",   "newxcbdevice"      },
+            { "gdi",  "loadwin32device", "newwin32device"    },
+            { "gl",   "loadwin32device", "newwin32device"    },
             { NULL, NULL, NULL }
         };
         char *strtemplate = "%s /DEVICE 612 792 %s def";
