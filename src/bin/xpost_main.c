@@ -34,6 +34,7 @@
 # include <config.h>
 #endif
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -330,16 +331,19 @@ int main(int argc, char *argv[])
 
     /* parse geometry if any */
     printf("geom 1 : %s\n", geometry);
-    _xpost_geometry_parse(geometry, &width, &height, &xoffset, &xsign, &yoffset, &ysign);
-    if ((geometry != NULL) && (width == -1))
+    if (geometry)
     {
-        XPOST_LOG_ERR("bad formatted geometry");
-        goto quit_xpost;
+        _xpost_geometry_parse(geometry, &width, &height, &xoffset, &xsign, &yoffset, &ysign);
+        if ((geometry != NULL) && (width == -1))
+        {
+            XPOST_LOG_ERR("bad formatted geometry");
+            goto quit_xpost;
+        }
+        printf("geom 2 : %dx%d%c%d%c%d\n",
+               width, height,
+               (xsign == 1) ? '+' : '-', xoffset,
+               (ysign == 1) ? '+' : '-', yoffset);
     }
-    printf("geom 2 : %dx%d%c%d%c%d\n",
-           width, height,
-           (xsign == 1) ? '+' : '-', xoffset,
-           (ysign == 1) ? '+' : '-', yoffset);
 
     /* check devices */
     have_device = 0;
