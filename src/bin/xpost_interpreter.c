@@ -191,7 +191,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
         xpost_stack_push(ctx->lo, ctx->ds, ud);
     }
 
-	ctx->device_str = device;
+    ctx->device_str = device;
 
     return 1;
 }
@@ -282,7 +282,7 @@ int evalload(Xpost_Context *ctx)
         if (xpost_object_get_type(q) == invalidtype)
             return undefined;
         if (!xpost_stack_push(ctx->lo, ctx->es, q))
-			return ret;
+            return ret;
     }
     return 0;
 }
@@ -347,7 +347,7 @@ static
 int evalstring(Xpost_Context *ctx)
 {
     Xpost_Object b,t,s;
-	int ret;
+    int ret;
 
     s = xpost_stack_pop(ctx->lo, ctx->es);
     if (!xpost_stack_push(ctx->lo, ctx->os, s))
@@ -355,8 +355,8 @@ int evalstring(Xpost_Context *ctx)
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     ret = opexec(ctx, ctx->opcode_shortcuts.token);
-	if (ret)
-		return ret;
+    if (ret)
+        return ret;
     b = xpost_stack_pop(ctx->lo, ctx->os);
     if (xpost_object_get_type(b) == invalidtype)
         return stackunderflow;
@@ -368,7 +368,7 @@ int evalstring(Xpost_Context *ctx)
         if (xpost_object_get_type(s) == invalidtype)
             return stackunderflow;
         if (!xpost_stack_push(ctx->lo, ctx->es, s))
-			return execstackoverflow;
+            return execstackoverflow;
         if (xpost_object_get_type(t)==arraytype)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os , t))
@@ -388,21 +388,21 @@ static
 int evalfile(Xpost_Context *ctx)
 {
     Xpost_Object b,f,t;
-	int ret;
+    int ret;
 
     f = xpost_stack_pop(ctx->lo, ctx->es);
     if (!xpost_stack_push(ctx->lo, ctx->os, f))
-		return stackoverflow;
+        return stackoverflow;
     assert(ctx->gl->base);
     //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
     ret = opexec(ctx, ctx->opcode_shortcuts.token);
-	if (ret)
-		return ret;
+    if (ret)
+        return ret;
     b = xpost_stack_pop(ctx->lo, ctx->os);
     if (b.int_.val) {
         t = xpost_stack_pop(ctx->lo, ctx->os);
         if (!xpost_stack_push(ctx->lo, ctx->es, f))
-			return execstackoverflow;
+            return execstackoverflow;
         if (xpost_object_get_type(t)==arraytype)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os, t))
@@ -455,7 +455,7 @@ int idleproc (Xpost_Context *ctx)
     int ret;
     /*
        call window device's event_handler function
-       which should check for Events or Messages from the 
+       which should check for Events or Messages from the
        underlying Window System, process one or more of them,
        and then return 0.
        it should leave all stacks undisturbed.
@@ -467,11 +467,11 @@ int idleproc (Xpost_Context *ctx)
             return stackoverflow;
         }
         ret = opexec(ctx, ctx->event_handler.mark_.padw);
-		if (ret)
+        if (ret)
         {
             XPOST_LOG_ERR("event_handler returned %d (%s)",
                     ret, errorname[ret]);
-			//return ret;
+            //return ret;
         }
     }
     return 0;
