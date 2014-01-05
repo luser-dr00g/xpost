@@ -111,7 +111,6 @@ _xpost_main_version(const char *filename)
 static void
 _xpost_main_usage(const char *filename)
 {
-    int i;
     printf("Usage: %s [options] [file.ps]\n\n", filename);
     printf("Postscript level 2 interpreter\n\n");
     printf("Options:\n");
@@ -121,10 +120,6 @@ _xpost_main_usage(const char *filename)
     printf("  -L, --license          show program license\n");
     printf("  -V, --version          show program version\n");
     printf("  -h, --help             show this message\n");
-    printf("Available devices: \n  ");
-    for (i = 0; _xpost_main_devices[i]; i++)
-        printf("%s  ", _xpost_main_devices[i]);
-    printf("\n");
 }
 
 static void
