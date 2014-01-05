@@ -178,7 +178,6 @@ _xpost_geometry_parse(const char *geometry, int *width, int *height, int *xoffse
 
     if (*endptr != 'x')
     {
-        XPOST_LOG_ERR("geometry: wrong formatted geometry");
         *width = -1;
         return;
     }
@@ -219,7 +218,6 @@ _xpost_geometry_parse(const char *geometry, int *width, int *height, int *xoffse
         *ysign = -1;
     else
     {
-        XPOST_LOG_ERR("geometry: wrong formatted geometry");
         *width = -1;
         return;
     }
