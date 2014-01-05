@@ -49,13 +49,12 @@
 #include "xpost_main.h"
 #include "xpost_pathname.h"
 
-int is_installed = 0;
-char *exedir;
-
 static
-int checkexepath (const char *exepath)
+int checkexepath (const char *exepath, char **pexedir)
 {
     char *slash;
+    char *exedir;
+    int is_installed = 0;
 
     /* replace windows's \\  so we can compare paths */
     slash = (char *)exepath;
@@ -80,7 +79,9 @@ int checkexepath (const char *exepath)
 #ifdef DEBUG_PATHNAME
     printf("is_installed: %d\n", is_installed);
 #endif
-    return 0;
+
+    *pexedir = exedir;
+    return is_installed;
 }
 
 static
@@ -98,7 +99,7 @@ char *appendtocwd (const char *relpath)
 }
 
 static
-int searchpathforargv0(const char *argv0)
+int searchpathforargv0(const char *argv0, char **pexedir)
 {
     (void)argv0;
     /*
@@ -108,11 +109,11 @@ int searchpathforargv0(const char *argv0)
        ie. argv[0] is a bare name,
        and no /proc/???/exe links are present
     */
-    return checkexepath(".");
+    return checkexepath(".", pexedir);
 }
 
 static
-int checkargv0 (const char *argv0)
+int checkargv0 (const char *argv0, char **pexedir)
 {
 #ifdef HAVE_WIN32
     if (argv0[1] == ':' &&
@@ -120,21 +121,23 @@ int checkargv0 (const char *argv0)
 #else
     if (argv0[0] == '/') /* absolute path */
 #endif
-        return checkexepath(argv0);
-    else if (strchr(argv0, '/')) /* relative path */
+    {
+        return checkexepath(argv0, pexedir);
+    }
+    else if (strchr(argv0, '/') != 0) /* relative path */
     {
         char *tmp;
         int ret;
         tmp = appendtocwd(argv0);
-        ret = checkexepath(tmp);
+        ret = checkexepath(tmp, pexedir);
         free(tmp);
         return ret;
     }
     else /* no path info: search $PATH */
-        return searchpathforargv0(argv0);
+        return searchpathforargv0(argv0, pexedir);
 }
 
-int xpost_is_installed (const char *argv0)
+int xpost_is_installed (const char *argv0, char **pexedir)
 {
     char buf[1024];
     ssize_t len;
@@ -151,11 +154,11 @@ int xpost_is_installed (const char *argv0)
         printf("removing '.libs' from pathname\n");
         memmove(libsptr, libsptr+6, strlen(libsptr+6)+1);
         printf("argv0: %s\n", argv0);
-        return checkargv0(argv0);
+        return checkargv0(argv0, pexedir);
     }
 
 #ifdef HAVE_WIN32
-    return checkargv0(argv0);
+    return checkargv0(argv0, pexedir);
 
     /*
       len = GetModuleFileName(NULL, buf, 1024);
@@ -163,7 +166,7 @@ int xpost_is_installed (const char *argv0)
       if (len == 0)
       return -1;
       else
-      return checkexepath(buf);
+      return checkexepath(buf, pexedir);
     */
 #else
 
@@ -181,9 +184,9 @@ int xpost_is_installed (const char *argv0)
             buf[len] = '\0';
 
     if (len == -1)
-        return checkargv0(argv0);
+        return checkargv0(argv0, pexedir);
     else
-        return checkexepath(buf);
+        return checkexepath(buf, pexedir);
 #endif
 }
 

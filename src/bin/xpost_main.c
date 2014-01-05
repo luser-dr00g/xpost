@@ -144,6 +144,8 @@ int main(int argc, char *argv[])
     const char *filename = argv[0];
     int have_device;
     int i;
+    int is_installed;
+    char *exedir;
 
     printf("EXTRA_BITS_SIZE = %u\n", XPOST_OBJECT_TAG_EXTRA_BITS_SIZE);
     printf("COMP_MAX_ENT = %u\n", XPOST_OBJECT_COMP_MAX_ENT);
@@ -215,7 +217,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    xpost_is_installed(filename); /* mallocs char* exedir */
+    is_installed = xpost_is_installed(filename, &exedir); /* mallocs char* exedir */
 
     /* check devices */
     have_device = 0;
@@ -236,7 +238,7 @@ int main(int argc, char *argv[])
         goto quit_xpost;
     }
 
-    if (!xpost_create(device))
+    if (!xpost_create(device, exedir, is_installed))
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
