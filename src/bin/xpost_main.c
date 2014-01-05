@@ -160,36 +160,30 @@ _xpost_atoi(char *str, int *v, char **endptr)
     return 1;
 }
 
-static void
+static int
 _xpost_geometry_parse(const char *geometry, int *width, int *height, int *xoffset, int *xsign, int *yoffset, int *ysign)
 {
     char *str;
     char *endptr;
     int val;
 
+    if (!geometry)
+        return 0;
+
     /* width */
     str = (char *)geometry;
     if (!_xpost_atoi(str, &val, &endptr))
-    {
-        *width = -1;
-        return;
-    }
+        return 0;
 
     *width = val;
 
     if (*endptr != 'x')
-    {
-        *width = -1;
-        return;
-    }
+        return 0;
 
     /* height */
     str = endptr + 1;
     if (!_xpost_atoi(str, &val, &endptr))
-    {
-        *width = -1;
-        return;
-    }
+        return 0;
 
     *height = val;
 
@@ -198,18 +192,12 @@ _xpost_geometry_parse(const char *geometry, int *width, int *height, int *xoffse
     else if (*endptr == '-')
         *xsign = -1;
     else
-    {
-        *width = -1;
-        return;
-    }
+        return 0;
 
     /* xoffset */
     str = endptr + 1;
     if (!_xpost_atoi(str, &val, &endptr))
-    {
-        *width = -1;
-        return;
-    }
+        return 0;
 
     *xoffset = val;
 
@@ -218,26 +206,19 @@ _xpost_geometry_parse(const char *geometry, int *width, int *height, int *xoffse
     else if (*endptr == '-')
         *ysign = -1;
     else
-    {
-        *width = -1;
-        return;
-    }
+        return 0;
 
     /* yoffset */
     str = endptr + 1;
     if (!_xpost_atoi(str, &val, &endptr))
-    {
-        *width = -1;
-        return;
-    }
+        return 0;
 
     *yoffset = val;
 
     if (*endptr != '\0')
-    {
-        *width = -1;
-        return;
-    }
+        return 0;
+
+    return 1;
 }
 
 int main(int argc, char *argv[])
@@ -254,6 +235,7 @@ int main(int argc, char *argv[])
     int yoffset = 0;
     int xsign = 1;
     int ysign = 1;
+    int have_geometry = 0;
     int i;
     int is_installed;
     char *exedir;
@@ -331,19 +313,16 @@ int main(int argc, char *argv[])
 
     /* parse geometry if any */
     printf("geom 1 : %s\n", geometry);
-    if (geometry)
+    have_geometry = _xpost_geometry_parse(geometry, &width, &height, &xoffset, &xsign, &yoffset, &ysign);
+    if (have_geometry)
     {
-        _xpost_geometry_parse(geometry, &width, &height, &xoffset, &xsign, &yoffset, &ysign);
-        if ((geometry != NULL) && (width == -1))
-        {
-            XPOST_LOG_ERR("bad formatted geometry");
-            goto quit_xpost;
-        }
-        printf("geom 2 : %dx%d%c%d%c%d\n",
-               width, height,
-               (xsign == 1) ? '+' : '-', xoffset,
-               (ysign == 1) ? '+' : '-', yoffset);
+        XPOST_LOG_ERR("bad formatted geometry");
+        goto quit_xpost;
     }
+    printf("geom 2 : %dx%d%c%d%c%d\n",
+           width, height,
+           (xsign == 1) ? '+' : '-', xoffset,
+           (ysign == 1) ? '+' : '-', yoffset);
 
     /* check devices */
     have_device = 0;
