@@ -289,7 +289,7 @@ int _create_cont (Xpost_Context *ctx,
         goto free_rd;
     }
 
-	if (strcmp(ctx->device_str, "gl") == 0)
+    if (strcmp(ctx->device_str, "gl") == 0)
     {
         PIXELFORMATDESCRIPTOR pfd;
         HGLRC glrc;
@@ -1100,9 +1100,9 @@ int initwin32ops (Xpost_Context *ctx,
                                 XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
                                 &optadr);
     optab = (oper *)(ctx->gl->base + optadr);
-	op = consoper(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
-	op = consoper(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
-	_loadwin32devicecont_opcode = op.mark_.padw;
+    op = consoper(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
+    op = consoper(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
+    _loadwin32devicecont_opcode = op.mark_.padw;
 
     return 0;
 }
