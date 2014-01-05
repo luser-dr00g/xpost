@@ -328,6 +328,7 @@ int main(int argc, char *argv[])
         }
     }
 
+    /* parse geometry if any */
     printf("geom 1 : %s\n", geometry);
     _xpost_geometry_parse(geometry, &width, &height, &xoffset, &xsign, &yoffset, &ysign);
     if ((geometry != NULL) && (width == -1))
@@ -339,8 +340,6 @@ int main(int argc, char *argv[])
            width, height,
            (xsign == 1) ? '+' : '-', xoffset,
            (ysign == 1) ? '+' : '-', yoffset);
-
-    is_installed = xpost_is_installed(filename, &exedir); /* mallocs char* exedir */
 
     /* check devices */
     have_device = 0;
@@ -354,12 +353,15 @@ int main(int argc, char *argv[])
         }
         i++;
     }
+
     if (!have_device)
     {
         XPOST_LOG_ERR("wrong device.");
         _xpost_main_usage(filename);
         goto quit_xpost;
     }
+
+    is_installed = xpost_is_installed(filename, &exedir); /* mallocs char* exedir */
 
     if (!xpost_create(device, exedir, is_installed))
     {
