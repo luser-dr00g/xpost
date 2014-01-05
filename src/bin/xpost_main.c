@@ -34,9 +34,10 @@
 # include <config.h>
 #endif
 
-#include <stdio.h> /* fprintf printf */
-#include <stdlib.h> /* EXIT_FAILURE */
-#include <string.h> /* free */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
 
 #include "xpost.h"
 #include "xpost_pathname.h" /* xpost_is_installed exedir */
@@ -114,12 +115,13 @@ _xpost_main_usage(const char *filename)
     printf("Usage: %s [options] [file.ps]\n\n", filename);
     printf("Postscript level 2 interpreter\n\n");
     printf("Options:\n");
-    printf("  -o, --output=[FILE]    output file\n");
-    printf("  -D, --device-list      device list\n");
-    printf("  -d, --device=[STRING]  device name\n");
-    printf("  -L, --license          show program license\n");
-    printf("  -V, --version          show program version\n");
-    printf("  -h, --help             show this message\n");
+    printf("  -o, --output=[FILE]           output file\n");
+    printf("  -D, --device-list             device list\n");
+    printf("  -d, --device=[STRING]         device name\n");
+    printf("  -g, --geometry=WxH{+-}X{+-}Y  geometry specification\n");
+    printf("  -L, --license                 show program license\n");
+    printf("  -V, --version                 show program version\n");
+    printf("  -h, --help                    show this message\n");
 }
 
 static void
@@ -136,13 +138,123 @@ _xpost_main_device_list(void)
     }
 }
 
+static int
+_xpost_atoi(char *str, int *v, char **endptr)
+{
+    long val;
+
+    errno = 0;
+    val = strtol(str, endptr, 10);;
+
+    if (((errno == ERANGE) &&
+         ((val == LONG_MAX) || (val == LONG_MIN))) ||
+        ((errno != 0) && (val == 0)))
+        return 0;
+
+    if (*endptr == str)
+        return 0;
+
+    *v = (int)val;
+
+    return 1;
+}
+
+static void
+_xpost_geometry_parse(const char *geometry, int *width, int *height, int *xoffset, int *xsign, int *yoffset, int *ysign)
+{
+    char *str;
+    char *endptr;
+    int val;
+
+    /* width */
+    str = (char *)geometry;
+    if (!_xpost_atoi(str, &val, &endptr))
+    {
+        *width = -1;
+        return;
+    }
+
+    *width = val;
+
+    if (*endptr != 'x')
+    {
+        XPOST_LOG_ERR("geometry: wrong formatted geometry");
+        *width = -1;
+        return;
+    }
+
+    /* height */
+    str = endptr + 1;
+    if (!_xpost_atoi(str, &val, &endptr))
+    {
+        *width = -1;
+        return;
+    }
+
+    *height = val;
+
+    if (*endptr == '+')
+        *xsign = 1;
+    else if (*endptr == '-')
+        *xsign = -1;
+    else
+    {
+        *width = -1;
+        return;
+    }
+
+    /* xoffset */
+    str = endptr + 1;
+    if (!_xpost_atoi(str, &val, &endptr))
+    {
+        *width = -1;
+        return;
+    }
+
+    *xoffset = val;
+
+    if (*endptr == '+')
+        *ysign = 1;
+    else if (*endptr == '-')
+        *ysign = -1;
+    else
+    {
+        XPOST_LOG_ERR("geometry: wrong formatted geometry");
+        *width = -1;
+        return;
+    }
+
+    /* yoffset */
+    str = endptr + 1;
+    if (!_xpost_atoi(str, &val, &endptr))
+    {
+        *width = -1;
+        return;
+    }
+
+    *yoffset = val;
+
+    if (*endptr != '\0')
+    {
+        *width = -1;
+        return;
+    }
+}
+
 int main(int argc, char *argv[])
 {
+    const char *geometry = NULL;
     const char *output_file = NULL;
     const char *device = NULL;
     const char *ps_file = NULL;
     const char *filename = argv[0];
     int have_device;
+    int width = -1;
+    int height = -1;
+    int xoffset = 0;
+    int yoffset = 0;
+    int xsign = 1;
+    int ysign = 1;
     int i;
     int is_installed;
     char *exedir;
@@ -204,6 +316,7 @@ int main(int argc, char *argv[])
             }
             else XPOST_MAIN_IF_OPT("-o", "--output=", output_file)
             else XPOST_MAIN_IF_OPT("-d", "--device=", device)
+            else XPOST_MAIN_IF_OPT("-g", "--geometry=", geometry)
             else
             {
                 printf("unknown option\n");
@@ -216,6 +329,18 @@ int main(int argc, char *argv[])
             ps_file = argv[i];
         }
     }
+
+    printf("geom 1 : %s\n", geometry);
+    _xpost_geometry_parse(geometry, &width, &height, &xoffset, &xsign, &yoffset, &ysign);
+    if ((geometry != NULL) && (width == -1))
+    {
+        XPOST_LOG_ERR("bad formatted geometry");
+        goto quit_xpost;
+    }
+    printf("geom 2 : %dx%d%c%d%c%d\n",
+           width, height,
+           (xsign == 1) ? '+' : '-', xoffset,
+           (ysign == 1) ? '+' : '-', yoffset);
 
     is_installed = xpost_is_installed(filename, &exedir); /* mallocs char* exedir */
 
