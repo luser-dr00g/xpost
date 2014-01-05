@@ -243,7 +243,7 @@ AC_CHECK_HEADERS([libgen.h unistd.h])
 
 AM_PROG_CC_C_O
 
-xpost_lib_cflags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers"
+xpost_lib_cflags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline"
 
 xpost_lib_ldflags="-fdata-sections -ffunction-sections"
 
@@ -259,7 +259,7 @@ AC_SUBST([XPOST_TEST_CPPFLAGS])
 XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [${xpost_lib_cflags}])
 XPOST_CHECK_LINKER_FLAGS([XPOST_LIB], [${xpost_lib_ldflags}])
 
-XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers])
+XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline])
 
 XPOST_CHECK_LINKER_FLAGS([XPOST_BIN], [-fdata-sections -ffunction-sections])
 
