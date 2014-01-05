@@ -31,8 +31,6 @@
 #ifndef XPOST_PATHNAME_H
 #define XPOST_PATHNAME_H
 
-extern int is_installed;
-extern char *exedir;
-int xpost_is_installed (const char *argv0);
+int xpost_is_installed (const char *argv0, char **pexedir);
 
 #endif

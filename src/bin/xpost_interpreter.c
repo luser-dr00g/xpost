@@ -672,7 +672,7 @@ int initalldata(const char *device)
 }
 
 static
-void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd, const char *device)
+void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd, const char *device, char *exedir, int is_installed)
 {
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
@@ -746,7 +746,7 @@ void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd, const char *device)
 
 /* load init.ps and err.ps while systemdict is writeable */
 static
-void loadinitps(Xpost_Context *ctx)
+void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
 {
     assert(ctx->gl->base);
     xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
@@ -770,25 +770,31 @@ void loadinitps(Xpost_Context *ctx)
     mainloop(ctx);
 }
 
-static void copyudtosd(Xpost_Context *ctx, Xpost_Object ud, Xpost_Object sd)
+static int copyudtosd(Xpost_Context *ctx, Xpost_Object ud, Xpost_Object sd)
 {
     /* copy userdict names to systemdict
         Problem: This is clearly an invalidaccess,
         and yet is required by the PLRM. Discussion:
 https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
      */
+    Xpost_Object ed, de;
 
     ignoreinvalidaccess = 1;
     bdcput(ctx, sd, consname(ctx, "userdict"), ud);
-    bdcput(ctx, sd, consname(ctx, "errordict"),
-           bdcget(ctx, ud, consname(ctx, "errordict")));
-    bdcput(ctx, sd, consname(ctx, "$error"),
-           bdcget(ctx, ud, consname(ctx, "$error")));
+    ed = bdcget(ctx, ud, consname(ctx, "errordict"));
+    if (xpost_object_get_type(ed) == invalidtype)
+        return undefined;
+    bdcput(ctx, sd, consname(ctx, "errordict"), ed);
+    de = bdcget(ctx, ud, consname(ctx, "$error"));
+    if (xpost_object_get_type(de) == invalidtype)
+        return undefined;
+    bdcput(ctx, sd, consname(ctx, "$error"), de);
     ignoreinvalidaccess = 0;
+    return 0;
 }
 
 
-int xpost_create(const char *device)
+int xpost_create(const char *device, char *exedir, int is_installed)
 {
     Xpost_Object sd, ud;
     int ret;
@@ -810,11 +816,16 @@ int xpost_create(const char *device)
     sd = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0);
     ud = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 2);
 
-    setlocalconfig(xpost_ctx, sd, device);
+    setlocalconfig(xpost_ctx, sd, device, exedir, is_installed);
 
-    loadinitps(xpost_ctx);
+    loadinitps(xpost_ctx, exedir, is_installed);
 
-    copyudtosd(xpost_ctx, ud, sd);
+    ret = copyudtosd(xpost_ctx, ud, sd);
+    if (ret)
+    {
+        XPOST_LOG_ERR("%s error in copyudtosd", errorname[ret]);
+        return 0;
+    }
 
     /* make systemdict readonly */
     bdcput(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
@@ -885,7 +896,7 @@ void xpost_destroy(void)
             xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_ctx->window_device);
             ret = opexec(xpost_ctx, Destroy.mark_.padw);
             if (ret)
-                XPOST_LOG_ERR("error destroying window device %s", errorname[ret]);
+                XPOST_LOG_ERR("%s error destroying window device", errorname[ret]);
         }
     }
     printf("bye!\n");

@@ -183,15 +183,17 @@ DATA_DIR(/qsort.ps)strcat run
 		/h h y add def
 		/w w x add def
 
-        /USEDRAWLINE where { pop
-
-            y 1 h {
-                r g b 4 3 roll
-                x exch w 1 index
-                currentdict DrawLine
-            } for
-
-        }{
+        {
+            /USEDRAWLINE where { pop
+                USEDRAWLINE {
+                    y 1 h {
+                        r g b 4 3 roll
+                        x exch w 1 index
+                        currentdict DrawLine
+                    } for
+                    exit
+                } if
+            } if
 
             r g b
             y 1 h { % r g b y
@@ -204,7 +206,7 @@ DATA_DIR(/qsort.ps)strcat run
             } for
             pop pop pop
 
-        } ifelse
+        exit } loop
 
     end } bind
 
@@ -362,12 +364,14 @@ DATA_DIR(/qsort.ps)strcat run
             exch aload pop
             3 2 roll aload pop
 
-            /USEDRAWLINE where { pop
-
-                r g b 7 3 roll
-                currentdict DrawLine
-
-            }{
+            {
+                /USEDRAWLINE where { pop
+                    USEDRAWLINE {
+                        r g b 7 3 roll
+                        currentdict DrawLine
+                        exit
+                    } if
+                } if
 
                 pop                        % xa ya xb
                 3 2 roll                   % ya xb xa
@@ -379,8 +383,7 @@ DATA_DIR(/qsort.ps)strcat run
                     currentdict PutPix
                 } for
                 pop
-
-            } ifelse
+            exit } loop
 
         } repeat
 

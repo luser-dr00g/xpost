@@ -518,7 +518,8 @@ int dicknown(Xpost_Context *ctx,
 }
 
 /* call diclookup,
-   return the value if the key is non-null. */
+   return the value if the key is non-null
+   or invalid if key is null (interpret as "undefined"). */
 Xpost_Object dicget(Xpost_Context *ctx,
         /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
