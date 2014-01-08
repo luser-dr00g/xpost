@@ -77,6 +77,7 @@ check-local:
 endif
 
 EXTRA_DIST += \
+COMPLIANCE \
 autogen.sh \
 xpost.pc.in \
 m4/xpost.m4 \
