@@ -1,0 +1,69 @@
+Xpost Postscript Compliance
+===========================
+
+Notation
+--------
+
+ [ ] : not implemented
+ [/] : partially implemented
+ [X] : implemented
+
+Level 1 operators
+-----------------
+
+ [ ] setdash
+ [ ] currentdash
+ [ ] arcto
+ [ ] fill with complex paths
+ [ ] eofill
+ [ ] clip with complex paths
+ [ ] eoclip
+ [ ] setlinejoin (implemented bevel joins and round joins)
+ [ ] currentlinejoin (implemented)
+ [ ] setlinecap (stubbed)
+ [ ] currentlinecap (stubbed)
+ [ ] image (implemented for 8-bit, 4-bit, 2-bit, and 1-bit)
+ [ ] imagemask
+ [ ] settransfer (implemented)
+ [ ] currenttransfer (implemented)
+ [ ] sethalftone  (low priority)
+ [ ] currenthalftone  (low priority)
+ [ ] makefont
+ [ ] ashow (implemented)
+ [ ] widthshow (implemented)
+ [ ] awidthshow (implemented)
+ [ ] kshow (implemented)
+ [ ] stringwidth (implemented)
+ [ ] Type-3 Fonts (implemented)
+ [ ] font data caching
+
+Level 2 operators
+-----------------
+
+ [ ] Named Resources
+ [ ] colorimage
+ [ ] image with dict argument
+ [ ] setcolortransfer
+ [ ] currentcolortransfer
+
+Display Postscript
+------------------
+
+ [ ] multiple contexts/devices
+
+NeWS
+----
+
+ [ ] classes
+ [ ] canvases
+ [ ] process type objects (magic dictionary controlling a DPS context)
+
+Typical output devices
+----------------------
+
+ [ ] tiff
+ [ ] jpeg
+ [ ] png
+ [ ] pdf
+ [ ] bounding-box
+ [ ] dsc-compliant distilled ps
