@@ -510,9 +510,14 @@ int filenameforall (Xpost_Context *ctx,
 
     tmp = charstr(ctx, Tmp);
     globbuf = malloc(sizeof *globbuf);
+    if (!globbuf)
+        return unregistered;
     ret = glob(tmp, 0, NULL, globbuf);
     if (ret != 0)
+    {
+        free(globbuf);
         return ioerror;
+    }
 
     oglob.glob_.tag = globtype;
     oglob.glob_.off = 0;
