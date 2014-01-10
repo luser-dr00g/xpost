@@ -290,11 +290,12 @@ xpost_log_init(void)
     int fd;
     char *endptr;
     const char *level;
-    long l;
 
     level = getenv("XPOST_LOG_LEVEL");
     if (level)
     {
+        long l;
+
         l = strtol(level, &endptr, 10);
         if (!((errno == ERANGE && (l == LONG_MAX || l == LONG_MIN)) ||
               (errno != 0 && l == 0) ||

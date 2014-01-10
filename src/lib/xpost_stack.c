@@ -113,8 +113,6 @@ int xpost_stack_push (Xpost_Memory_File *mem,
         Xpost_Object obj)
 {
     unsigned int newst;
-    unsigned int stadr;
-    int ret;
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr); /* load the stack */
 
     while (s->top == XPOST_STACK_SEGMENT_SIZE)
@@ -130,6 +128,9 @@ int xpost_stack_push (Xpost_Memory_File *mem,
     {
         if (s->nextseg == 0)
         {
+            unsigned int stadr;
+            int ret;
+
             stadr = (unsigned char *)s - mem->base;
             ret = xpost_stack_init(mem, &newst);
             if (!ret)
