@@ -148,7 +148,7 @@ Xpost_Object operfromcode(int opcode)
 }
 
 /* construct an operator object
-   if given a function-pointer, attempts to install a new operator 
+   if given a function-pointer, attempts to install a new operator
    in OPTAB, otherwise just perform a lookup
    if installing a new operator, out and in specify the number of
    output values the function may yield and the number of input
@@ -384,9 +384,9 @@ call:
        This is so onerror() can reset the stack
        (if hold has not been clobbered by another call to opexec).
     */
-    if (ctx->currentobject.tag == operatortype 
+    if (ctx->currentobject.tag == operatortype
             && ctx->currentobject.mark_.padw == opcode) {
-        ctx->currentobject.mark_.pad0 = sp[i].in; 
+        ctx->currentobject.mark_.pad0 = sp[i].in;
         ctx->currentobject.tag |= XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD;
     } else {
         /* Not executing current op.
@@ -556,6 +556,3 @@ int initop(Xpost_Context *ctx)
 
     return 1;
 }
-
-
-
