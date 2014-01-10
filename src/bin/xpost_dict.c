@@ -186,7 +186,7 @@ unsigned int hash(Xpost_Object k)
 #ifdef DEBUGDIC
     printf("\nhash(");
     xpost_object_dump(k);
-    printf(")=%d", h);
+    printf(")=%u", h);
 #endif
     return h;
 }
@@ -378,7 +378,7 @@ void dumpdic(Xpost_Memory_File *mem,
 
     printf("\n");
     for (i=0; i < sz; i++) {
-        printf("%d:", i);
+        printf("%u:", i);
         if (xpost_object_get_type(tp[2*i]) != nulltype) {
             xpost_object_dump(tp[2*i]);
         }
@@ -491,7 +491,7 @@ Xpost_Object *diclookup(Xpost_Context *ctx,
     printf("diclookup(");
     xpost_object_dump(k);
     printf(");");
-    printf("%%%d=%d",sz, h);
+    printf("%%%u=%u",sz, h);
 #endif
 
     RETURN_TAB_I_IF_EQ_K_OR_NULL
