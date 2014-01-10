@@ -53,8 +53,8 @@
 /* print a dump of the name string stacks, global and local */
 void dumpnames(Xpost_Context *ctx)
 {
-    unsigned stk;
-    unsigned cnt, i;
+    unsigned int stk;
+    unsigned int cnt, i;
     Xpost_Object str;
     char *s;
 
@@ -82,9 +82,9 @@ void dumpnames(Xpost_Context *ctx)
 int initnames(Xpost_Context *ctx)
 {
     Xpost_Memory_Table *tab;
-    unsigned ent;
-    unsigned t;
-    unsigned mode;
+    unsigned int ent;
+    unsigned int t;
+    unsigned int mode;
     unsigned int nstk;
     int ret;
 
@@ -152,15 +152,15 @@ int initnames(Xpost_Context *ctx)
 
 /* perform a search using the ternary search tree */
 static
-unsigned tstsearch(Xpost_Memory_File *mem,
-                   unsigned tadr,
+unsigned int tstsearch(Xpost_Memory_File *mem,
+                   unsigned int tadr,
                    char *s)
 {
     while (tadr) {
         tst *p = (void *)(mem->base + tadr);
-        if ((unsigned)*s < p->val) {
+        if ((unsigned int)*s < p->val) {
             tadr = p->lo;
-        } else if ((unsigned)*s == p->val) {
+        } else if ((unsigned int)*s == p->val) {
             if (*s++ == 0) return p->eq; /* payload when val == '\0' */
             tadr = p->eq;
         } else {
@@ -173,12 +173,12 @@ unsigned tstsearch(Xpost_Memory_File *mem,
 /* add a string to the ternary search tree */
 static
 int tstinsert(Xpost_Memory_File *mem,
-                   unsigned tadr,
+                   unsigned int tadr,
                    char *s,
-                   unsigned *retval)
+                   unsigned int *retval)
 {
     tst *p;
-    unsigned t; //temporary
+    unsigned int t; //temporary
     unsigned int nstk;
     int ret;
 
@@ -193,13 +193,13 @@ int tstinsert(Xpost_Memory_File *mem,
         p->lo = p->eq = p->hi = 0;
     }
     p = (void *)(mem->base + tadr);
-    if ((unsigned)*s < p->val) {
+    if ((unsigned int)*s < p->val) {
         ret = tstinsert(mem, p->lo, s, &t);
         if (ret)
             return ret;
         p = (void *)(mem->base + tadr); //recalc pointer
         p->lo = t;
-    } else if ((unsigned)*s == p->val) {
+    } else if ((unsigned int)*s == p->val) {
         if (*s) {
             ret = tstinsert(mem, p->eq, ++s, &t);
             if (ret)
@@ -225,12 +225,12 @@ int tstinsert(Xpost_Memory_File *mem,
 
 /* add the name to the name stack, return index */
 static
-unsigned addname(Xpost_Context *ctx,
+unsigned int addname(Xpost_Context *ctx,
                  char *s)
 {
     Xpost_Memory_File *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
-    unsigned names;
-    unsigned u;
+    unsigned int names;
+    unsigned int u;
     Xpost_Object str;
 
     xpost_memory_table_get_addr(mem,
@@ -239,7 +239,7 @@ unsigned addname(Xpost_Context *ctx,
 
     //xpost_memory_file_dump(ctx->gl);
     //dumpmtab(ctx->gl, 0);
-    //unsigned vmmode = ctx->vmmode;
+    //unsigned int vmmode = ctx->vmmode;
     //ctx->vmmode = GLOBAL;
     str = consbst(ctx, strlen(s), s);
     if (xpost_object_get_type(str) == nulltype)
@@ -264,8 +264,8 @@ unsigned addname(Xpost_Context *ctx,
 Xpost_Object consname(Xpost_Context *ctx,
                 char *s)
 {
-    unsigned u;
-    unsigned t;
+    unsigned int u;
+    unsigned int t;
     Xpost_Object o;
     unsigned int tstk;
     int ret;
@@ -313,7 +313,7 @@ Xpost_Object strname(Xpost_Context *ctx,
                Xpost_Object n)
 {
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, n);
-    unsigned names;
+    unsigned int names;
     Xpost_Object str;
     xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
