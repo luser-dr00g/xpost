@@ -16,6 +16,8 @@
     /linewidth 1
     /linecap 0
     /linejoin 2
+    /dasharray []
+    /dashoffset 0
     /currfont 1 dict
     /device DEVICE
 >> def
@@ -179,6 +181,18 @@ end
 % return current line cap
 /currentlinecap {
     graphicsdict /currgstate get /linecap get
+} def
+
+% array offset  setdash  -
+/setdash {
+    graphicsdict /currgstate get exch /dashoffset exch put
+    graphicsdict /currgstate get exch /dasharray exch put
+} def
+
+% -  currentdash  array offset
+/currentdash {
+    graphicsdict /currgstate get /dasharray get
+    graphicsdict /currgstate get /dashoffset get
 } def
 
 % int  setlinejoin  -
