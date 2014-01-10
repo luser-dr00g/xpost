@@ -65,7 +65,7 @@ void dumpnames(Xpost_Context *ctx)
     for (i=0; i < cnt; i++){
         str = xpost_stack_bottomup_fetch(ctx->gl, stk, i);
         s = charstr(ctx, str);
-        printf("%d: %*s\n", i, str.comp_.sz, s);
+        printf("%u: %*s\n", i, str.comp_.sz, s);
     }
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &stk);
@@ -74,7 +74,7 @@ void dumpnames(Xpost_Context *ctx)
     for (i=0; i < cnt; i++) {
         str = xpost_stack_bottomup_fetch(ctx->lo, stk, i);
         s = charstr(ctx, str);
-        printf("%d: %*s\n", i, str.comp_.sz, s);
+        printf("%u: %*s\n", i, str.comp_.sz, s);
     }
 }
 
