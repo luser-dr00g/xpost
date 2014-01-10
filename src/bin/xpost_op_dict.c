@@ -333,6 +333,7 @@ int Dcopy(Xpost_Context *ctx,
     for (i=0; i < sz+1; i++) {
         if (xpost_object_get_type(tp[2 * i]) != nulltype) {
             bdcput(ctx, D, tp[2*i], tp[2*i+1]);
+            tp = (void *)(mem->base + ad + sizeof(dichead)); /* recalc */
         }
     }
     xpost_stack_push(ctx->lo, ctx->os, D);
