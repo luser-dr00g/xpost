@@ -59,14 +59,14 @@
    wrap it up in an object.
 */
 Xpost_Object consarr(Xpost_Memory_File *mem,
-               unsigned sz)
+               unsigned int sz)
 {
-    unsigned ent;
-    unsigned rent;
-    unsigned cnt;
+    unsigned int ent;
+    unsigned int rent;
+    unsigned int cnt;
     Xpost_Memory_Table *tab;
     Xpost_Object o;
-    unsigned i;
+    unsigned int i;
     unsigned int vs;
 
     assert(mem->base);
@@ -74,7 +74,7 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
     if (sz == 0) {
         ent = 0;
     } else {
-        if (!xpost_memory_table_alloc(mem, (unsigned)(sz * sizeof(Xpost_Object)), arraytype, &ent ))
+        if (!xpost_memory_table_alloc(mem, (unsigned int)(sz * sizeof(Xpost_Object)), arraytype, &ent ))
         {
             XPOST_LOG_ERR("cannot allocate array");
             return null;
@@ -95,7 +95,7 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
             int ret;
 
             ret = xpost_memory_put(mem,
-                    ent, i, (unsigned)sizeof(Xpost_Object), &null);
+                    ent, i, (unsigned int)sizeof(Xpost_Object), &null);
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot fill array value");
@@ -120,7 +120,7 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
    set BANK flag.
 */
 Xpost_Object consbar(Xpost_Context *ctx,
-               unsigned sz)
+               unsigned int sz)
 {
     Xpost_Object a = consarr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (xpost_object_get_type(a) != nulltype)
@@ -150,7 +150,7 @@ int arrput(Xpost_Memory_File *mem,
         /*breakhere((Xpost_Context *)mem);*/
         return rangecheck;
     }
-    ret = xpost_memory_put(mem, xpost_object_get_ent(a), (unsigned)(a.comp_.off + i), (unsigned)sizeof(Xpost_Object), &o);
+    ret = xpost_memory_put(mem, xpost_object_get_ent(a), (unsigned int)(a.comp_.off + i), (unsigned int)sizeof(Xpost_Object), &o);
     if (!ret)
         return VMerror;
     return 0;
@@ -183,7 +183,7 @@ Xpost_Object arrget(Xpost_Memory_File *mem,
     Xpost_Object o;
     int ret;
 
-    ret = xpost_memory_get(mem, xpost_object_get_ent(a), (unsigned)(a.comp_.off +i), (unsigned)(sizeof(Xpost_Object)), &o);
+    ret = xpost_memory_get(mem, xpost_object_get_ent(a), (unsigned int)(a.comp_.off +i), (unsigned int)(sizeof(Xpost_Object)), &o);
     if (!ret)
     {
         return invalid;

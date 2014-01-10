@@ -70,7 +70,7 @@ static
 void unmark(Xpost_Memory_File *mem)
 {
     Xpost_Memory_Table *tab = (void *)(mem->base);
-    unsigned i;
+    unsigned int i;
 
     for (i = mem->start; i < tab->nextent; i++) {
         tab->tab[i].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
@@ -87,7 +87,7 @@ void unmark(Xpost_Memory_File *mem)
 /* set the MARK in the mark in the tab[ent] */
 static
 int markent(Xpost_Memory_File *mem,
-        unsigned ent)
+        unsigned int ent)
 {
     Xpost_Memory_Table *tab;
 
@@ -108,7 +108,7 @@ int markent(Xpost_Memory_File *mem,
 /* is it marked? */
 static
 int marked(Xpost_Memory_File *mem,
-        unsigned ent, int *retval)
+        unsigned int ent, int *retval)
 {
     Xpost_Memory_Table *tab = (void *)(mem->base);
     if (!xpost_memory_table_find_relative(mem,&tab,&ent))
@@ -128,7 +128,7 @@ int markobject(Xpost_Context *ctx, Xpost_Memory_File *mem, Xpost_Object o, int m
 static
 int markdict(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
-        unsigned adr,
+        unsigned int adr,
         int markall)
 {
     dichead *dp = (void *)(mem->base + adr);
@@ -146,12 +146,12 @@ int markdict(Xpost_Context *ctx,
 static
 int markarray(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
-        unsigned adr,
-        unsigned sz,
+        unsigned int adr,
+        unsigned int sz,
         int markall)
 {
     Xpost_Object *op = (void *)(mem->base + adr);
-    unsigned j;
+    unsigned int j;
 
     for (j=0; j < sz; j++) {
         if (!markobject(ctx, mem, op[j], markall))
@@ -276,11 +276,11 @@ int markobject(Xpost_Context *ctx,
 static
 int markstack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
-        unsigned stackadr,
+        unsigned int stackadr,
         int markall)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
-    unsigned i;
+    unsigned int i;
 
 #ifdef DEBUG_GC
     printf("marking stack of size %u\n", s->top);
@@ -309,10 +309,10 @@ next:
 static
 int marksavestack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
-        unsigned stackadr)
+        unsigned int stackadr)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
-    unsigned i;
+    unsigned int i;
     unsigned int ad;
     int ret;
     (void)ctx;
@@ -358,7 +358,7 @@ next:
                 return 0;
         }
         if (s->data[i].saverec_.tag == arraytype) {
-            unsigned sz = s->data[i].saverec_.pad;
+            unsigned int sz = s->data[i].saverec_.pad;
             ret = xpost_memory_table_get_addr(mem, s->data[i].saverec_.src, &ad);
             if (!ret)
             {
@@ -395,10 +395,10 @@ next:
 static
 int marksave(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
-        unsigned stackadr)
+        unsigned int stackadr)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
-    unsigned i;
+    unsigned int i;
 
 #ifdef DEBUG_GC
     printf("marking save stack of size %u\n", s->top);
@@ -424,14 +424,14 @@ next:
    return reclaimed size
  */
 static
-unsigned sweep(Xpost_Memory_File *mem)
+unsigned int sweep(Xpost_Memory_File *mem)
 {
     Xpost_Memory_Table *tab;
     int ntab;
-    unsigned zero = 0;
-    unsigned z;
-    unsigned i;
-    unsigned sz = 0;
+    unsigned int zero = 0;
+    unsigned int z;
+    unsigned int i;
+    unsigned int sz = 0;
     int ret;
 
     ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list head */
@@ -441,8 +441,8 @@ unsigned sweep(Xpost_Memory_File *mem)
         return 0;
     }
 
-    memcpy(mem->base+z, &zero, sizeof(unsigned)); /* discard list */
-    /* *(unsigned *)(mem->base+z) = 0; */
+    memcpy(mem->base+z, &zero, sizeof(unsigned int)); /* discard list */
+    /* *(unsigned int *)(mem->base+z) = 0; */
 
     /* scan first table */
     tab = (void *)(mem->base);
@@ -457,7 +457,7 @@ unsigned sweep(Xpost_Memory_File *mem)
                 XPOST_LOG_ERR("cannot free ent");
                 return sz;
             }
-            sz += (unsigned)ret;
+            sz += (unsigned int)ret;
         }
     }
 
@@ -476,7 +476,7 @@ unsigned sweep(Xpost_Memory_File *mem)
                     XPOST_LOG_ERR("cannot free ent");
                     return sz;
                 }
-                sz += (unsigned)ret;
+                sz += (unsigned int)ret;
             }
         }
     }
@@ -491,11 +491,11 @@ unsigned sweep(Xpost_Memory_File *mem)
  */
 int collect(Xpost_Memory_File *mem, int dosweep, int markall)
 {
-    unsigned i;
-    unsigned *cid;
+    unsigned int i;
+    unsigned int *cid;
     Xpost_Context *ctx = NULL;
     int isglobal;
-    unsigned sz = 0;
+    unsigned int sz = 0;
     unsigned int ad;
     int ret;
 
@@ -789,7 +789,7 @@ int test_garbage_collect(void)
 
     {
         Xpost_Object str;
-        unsigned pre, post, sz, ret;
+        unsigned int pre, post, sz, ret;
 
         pre = ctx->lo->used;
         str = consbst(ctx, 7, "0123456");
@@ -818,7 +818,7 @@ int test_garbage_collect(void)
     }
     {
         Xpost_Object arr;
-        unsigned pre, post, sz, ret;
+        unsigned int pre, post, sz, ret;
 
         pre = ctx->lo->used;
         arr = consbar(ctx, 5);
@@ -857,7 +857,7 @@ int test_garbage_collect(void)
 
 Xpost_Context *ctx;
 Xpost_Memory_File *mem;
-unsigned stac;
+unsigned int stac;
 
 
 /* void init(void) { */
@@ -867,7 +867,7 @@ unsigned stac;
 /*     xpost_save_init(&mem); */
 /*     xpost_context_init_ctxlist(&mem); */
 /*     Xpost_Memory_Table *tab = (void *)mem.base; */
-/*     unsigned ent = xpost_memory_table_alloc(&mem, 0, 0); */
+/*     unsigned int ent = xpost_memory_table_alloc(&mem, 0, 0); */
 /*     /\* xpost_memory_table_find_relative(&mem, &tab, &ent); *\/ */
 /*     stac = tab->tab[ent].adr = initstack(&mem); */
 /*     /\* mem.roots[0] = XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK; *\/ */
