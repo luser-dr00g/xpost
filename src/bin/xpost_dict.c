@@ -173,9 +173,9 @@ cont:
 
 /* more like scrambled eggs */
 static
-unsigned hash(Xpost_Object k)
+unsigned int hash(Xpost_Object k)
 {
-    unsigned h;
+    unsigned int h;
     h = ( (xpost_object_get_type(k)
             | (k.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
             << 1) /* ignore flags (except BANK!) */
@@ -197,16 +197,16 @@ unsigned hash(Xpost_Object k)
    Initialize a dichead in memory,
    just after the head, clear a table of pairs. */
 Xpost_Object consdic(Xpost_Memory_File *mem,
-               unsigned sz)
+               unsigned int sz)
 {
     Xpost_Memory_Table *tab;
     Xpost_Object d;
-    unsigned rent;
-    unsigned cnt;
-    unsigned ad;
+    unsigned int rent;
+    unsigned int cnt;
+    unsigned int ad;
     dichead *dp;
     Xpost_Object *tp;
-    unsigned i;
+    unsigned int i;
     unsigned int vs;
     unsigned int ent;
 
@@ -254,7 +254,7 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
    call consdic,
    set the BANK flag. */
 Xpost_Object consbdc(Xpost_Context *ctx,
-               unsigned sz)
+               unsigned int sz)
 {
     Xpost_Object d = consdic(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (xpost_object_get_type(d) != nulltype)
@@ -267,7 +267,7 @@ Xpost_Object consbdc(Xpost_Context *ctx,
 }
 
 /* get the nused field from the dichead */
-unsigned diclength(Xpost_Memory_File *mem,
+unsigned int diclength(Xpost_Memory_File *mem,
                    Xpost_Object d)
 {
     unsigned int da;
@@ -278,7 +278,7 @@ unsigned diclength(Xpost_Memory_File *mem,
 }
 
 /* get the sz field from the dichead */
-unsigned dicmaxlength(Xpost_Memory_File *mem,
+unsigned int dicmaxlength(Xpost_Memory_File *mem,
                       Xpost_Object d)
 {
     unsigned int da;
@@ -296,13 +296,13 @@ int dicgrow(Xpost_Context *ctx,
              Xpost_Object d)
 {
     Xpost_Memory_File *mem;
-    unsigned sz;
-    unsigned newsz;
-    unsigned ad;
+    unsigned int sz;
+    unsigned int newsz;
+    unsigned int ad;
     dichead *dp;
     Xpost_Object *tp;
     Xpost_Object n;
-    unsigned i;
+    unsigned int i;
 
     mem = xpost_context_select_memory(ctx, d);
 #ifdef DEBUGDIC
@@ -327,8 +327,8 @@ int dicgrow(Xpost_Context *ctx,
 
     {   /* exchange entities */
         Xpost_Memory_Table *dtab, *ntab;
-        unsigned dent, nent;
-        unsigned hold;
+        unsigned int dent, nent;
+        unsigned int hold;
 
         dent = xpost_object_get_ent(d);
         nent = xpost_object_get_ent(n);
@@ -365,11 +365,11 @@ int dicfull(Xpost_Memory_File *mem,
 void dumpdic(Xpost_Memory_File *mem,
              Xpost_Object d)
 {
-    unsigned ad;
+    unsigned int ad;
     dichead *dp;
     Xpost_Object *tp;
-    unsigned sz;
-    unsigned i;
+    unsigned int sz;
+    unsigned int i;
 
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
@@ -471,12 +471,12 @@ Xpost_Object *diclookup(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    unsigned ad;
+    unsigned int ad;
     dichead *dp;
     Xpost_Object *tp;
-    unsigned sz;
-    unsigned h;
-    unsigned i;
+    unsigned int sz;
+    unsigned int h;
+    unsigned int i;
 
     k = clean_key(ctx, k);
 
@@ -653,13 +653,13 @@ int dicundef(Xpost_Context *ctx,
         Xpost_Object k)
 {
     Xpost_Object *e;
-    unsigned ad;
+    unsigned int ad;
     dichead *dp;
     Xpost_Object *tp;
-    unsigned sz;
-    unsigned h;
-    unsigned i;
-    unsigned last = 0;
+    unsigned int sz;
+    unsigned int h;
+    unsigned int i;
+    unsigned int last = 0;
     int lastisset = 0;
     int found = 0;
 
