@@ -135,7 +135,7 @@ _xpost_log_print_prefix_func(FILE *stream,
     free(str);
 
     if ((int)res != s)
-        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %ld written\n", __FUNCTION__, s, res);
+        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %lu written\n", __FUNCTION__, s, res);
 
     SetConsoleTextAttribute(std_handle, scbi.wAttributes);
 
@@ -161,7 +161,7 @@ _xpost_log_print_prefix_func(FILE *stream,
     free(str);
 
     if ((int)res != s)
-        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %ld written\n", __FUNCTION__, s, res);
+        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %lu written\n", __FUNCTION__, s, res);
 
     s = snprintf(NULL, 0, "%s() ", fct);
     if (s == -1)
@@ -189,7 +189,7 @@ _xpost_log_print_prefix_func(FILE *stream,
     SetConsoleTextAttribute(std_handle, scbi.wAttributes);
 
     if ((int)res != s)
-        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %ld written\n", __FUNCTION__, s, res);
+        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %lu written\n", __FUNCTION__, s, res);
 
     return;
 

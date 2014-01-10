@@ -215,7 +215,7 @@ void xpost_free_dump(Xpost_Memory_File *mem)
         {
             return;
         }
-        printf("%d(%d) ", e, sz);
+        printf("%u(%u) ", e, sz);
         ret = xpost_memory_table_get_addr(mem, e, &z);
         if (!ret)
         {
