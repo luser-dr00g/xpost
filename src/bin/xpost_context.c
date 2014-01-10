@@ -58,11 +58,11 @@
    special entity in the mfile */
 int xpost_context_init_ctxlist(Xpost_Memory_File *mem)
 {
-    unsigned ent;
+    unsigned int ent;
     Xpost_Memory_Table *tab;
     int ret;
 
-    ret = xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned), 0, &ent);
+    ret = xpost_memory_table_alloc(mem, MAXCONTEXT * sizeof(unsigned int), 0, &ent);
     if (!ret)
     {
         return 0; /* was unregistered error */
@@ -70,18 +70,18 @@ int xpost_context_init_ctxlist(Xpost_Memory_File *mem)
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
     tab = (void *)mem->base;
     memset(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr, 0,
-            MAXCONTEXT * sizeof(unsigned));
+            MAXCONTEXT * sizeof(unsigned int));
 
     return 1;
 }
 
 /* add a context ID to the context list in mfile */
 int xpost_context_append_ctxlist(Xpost_Memory_File *mem,
-                  unsigned cid)
+                  unsigned int cid)
 {
     int i;
     Xpost_Memory_Table *tab;
-    unsigned *ctxlist;
+    unsigned int *ctxlist;
 
     tab = (void *)mem->base;
     ctxlist = (void *)(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr);
@@ -98,7 +98,7 @@ int xpost_context_append_ctxlist(Xpost_Memory_File *mem,
 
 /* build a stack, return address */
 static
-unsigned makestack(Xpost_Memory_File *mem)
+unsigned int makestack(Xpost_Memory_File *mem)
 {
     unsigned int ret;
     xpost_stack_init(mem, &ret);
@@ -339,9 +339,9 @@ unsigned int _fork1(Xpost_Context *ctx)
    (new "application"?)
    */
 static
-unsigned fork2(Xpost_Context *ctx)
+unsigned int fork2(Xpost_Context *ctx)
 {
-    unsigned newcid;
+    unsigned int newcid;
     Xpost_Context *newctx;
     int ret;
 
@@ -360,9 +360,9 @@ unsigned fork2(Xpost_Context *ctx)
    (lightweight process)
    */
 static
-unsigned fork3(Xpost_Context *ctx)
+unsigned int fork3(Xpost_Context *ctx)
 {
-    unsigned newcid;
+    unsigned int newcid;
     Xpost_Context *newctx;
     int ret;
 
