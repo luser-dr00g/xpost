@@ -213,6 +213,8 @@ int _create_cont (Xpost_Context *ctx,
     integer height = h.int_.val;
     WNDCLASSEX wc;
     RECT rect;
+    HICON icon = NULL;
+    HICON icon_sm = NULL;
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
@@ -228,6 +230,26 @@ int _create_cont (Xpost_Context *ctx,
 
     /* create and map window */
     private.instance = GetModuleHandle(NULL);
+    if (!private.instance)
+        return unregistered;
+
+    icon = LoadImage(private.instance,
+                     MAKEINTRESOURCE(101),
+                     IMAGE_ICON,
+                     GetSystemMetrics(SM_CXICON),
+                     GetSystemMetrics(SM_CYICON),
+                     LR_DEFAULTCOLOR);
+    if (!icon)
+        icon = LoadIcon(NULL, IDI_APPLICATION);
+
+    icon_sm = LoadImage(private.instance,
+                        MAKEINTRESOURCE(101),
+                        IMAGE_ICON,
+                        GetSystemMetrics(SM_CXSMICON),
+                        GetSystemMetrics(SM_CYSMICON),
+                        LR_DEFAULTCOLOR);
+    if (!icon_sm)
+        icon_sm = LoadIcon(NULL, IDI_APPLICATION);
 
     memset (&wc, 0, sizeof (WNDCLASSEX));
     wc.cbSize = sizeof (WNDCLASSEX);
@@ -236,12 +258,12 @@ int _create_cont (Xpost_Context *ctx,
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = private.instance;
-    wc.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+    wc.hIcon = icon;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(1 + COLOR_BTNFACE);
     wc.lpszMenuName =  NULL;
     wc.lpszClassName = "XPOST_DEV_WIN32";
-    wc.hIconSm = LoadIcon(NULL, IDI_APPLICATION);
+    wc.hIconSm = icon_sm;
 
     if(!RegisterClassEx(&wc))
     {

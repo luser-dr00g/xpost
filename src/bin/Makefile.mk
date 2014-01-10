@@ -67,7 +67,15 @@ src_bin_xpost_SOURCES += \
 src/bin/glob.c \
 src/bin/glob.h \
 src/bin/xpost_dev_win32.c \
-src/bin/xpost_dev_win32.h
+src/bin/xpost_dev_win32.h \
+src/bin/xpost.rc
+
+windres_verbose = $(windres_verbose_@AM_V@)
+windres_verbose_ = $(windres_verbose_@AM_DEFAULT_V@)
+windres_verbose_0 = $(AM_V_at)echo "  RC      " $@;
+
+.rc.o:
+	$(wc_verbose)windres -o $@ $<
 endif
 
 if HAVE_XCB
@@ -119,3 +127,5 @@ wc_verbose_0 = $(AM_V_at)echo "  WC      " $@;
 
 count: $(top_srcdir)/src/bin/*.c $(top_srcdir)/src/bin/*.h $(top_srcdir)/src/lib/*.c $(top_srcdir)/src/lib/*.h $(top_srcdir)/data/*.ps
 	$(wc_verbose)$(wc_process)
+
+EXTRA_DIST += src/bin/xpostlogo.ico
