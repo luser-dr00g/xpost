@@ -372,26 +372,30 @@ int DPforall (Xpost_Context *ctx,
                 if (xpost_object_get_type(k) == extendedtype)
                     k = unextend(k);
                 v = tp[2 * D.comp_.off + 1];
+
                 if (!xpost_stack_push(ctx->lo, ctx->os, k))
                     return stackoverflow;
                 if (!xpost_stack_push(ctx->lo, ctx->os, v))
                     return stackoverflow;
 
-                //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-                if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall)))
+                if (!xpost_stack_push(ctx->lo, ctx->es,
+                            operfromcode(ctx->opcode_shortcuts.forall)))
                     return execstackoverflow;
-                //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-                if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+                if (!xpost_stack_push(ctx->lo, ctx->es,
+                            operfromcode(ctx->opcode_shortcuts.cvx)))
                     return execstackoverflow;
-                if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+                if (!xpost_stack_push(ctx->lo, ctx->es,
+                            xpost_object_cvlit(P)))
                     return execstackoverflow;
+
                 ++D.comp_.off;
                 if (!xpost_stack_push(ctx->lo, ctx->es, D))
                     return execstackoverflow;
 
                 if (!xpost_stack_push(ctx->lo, ctx->es, P))
                     return execstackoverflow;
-                return 0;
+
+                return 0; /* loop continues by ps continuation */
             }
         }
     }
