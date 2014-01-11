@@ -134,6 +134,8 @@ int Pbind (Xpost_Context *ctx,
     return 0;
 }
 
+/* -  realtime  int
+   return real time in milliseconds */
 static
 int realtime (Xpost_Context *ctx)
 {
@@ -153,6 +155,8 @@ int realtime (Xpost_Context *ctx)
     return 0;
 }
 
+/* -  usertime  int
+   return execution time in milliseconds */
 static
 int usertime (Xpost_Context *ctx)
 {

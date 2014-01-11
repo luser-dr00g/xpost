@@ -275,28 +275,32 @@ int Aforall(Xpost_Context *ctx,
         return 0;
 
     assert(ctx->gl->base);
-    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall)))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                operfromcode(ctx->opcode_shortcuts.forall)))
         return execstackoverflow;
-    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                operfromcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
+
+    /* update array descriptor before push for next iteration */
     interval = xpost_object_get_interval(A, 1, A.comp_.sz - 1);
     if (xpost_object_get_type(interval) == invalidtype)
         return rangecheck;
+
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(interval)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
     if (xpost_object_is_exe(A)) {
-        //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+        if (!xpost_stack_push(ctx->lo, ctx->es,
+                    operfromcode(ctx->opcode_shortcuts.cvx)))
             return execstackoverflow;
     }
     if (!xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, 0)))
         return stackoverflow;
+
     return 0;
 }
 

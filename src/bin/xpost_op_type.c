@@ -80,6 +80,8 @@ void *alloca (size_t);
 #include "xpost_operator.h"
 #include "xpost_op_type.h"
 
+/* any  type  name
+   return type of any as a nametype object */
 static
 int Atype(Xpost_Context *ctx,
            Xpost_Object o)
@@ -91,6 +93,8 @@ int Atype(Xpost_Context *ctx,
     return 0;
 }
 
+/* obj   cvlit  obj
+   set executable attribute in obj to literal (quoted) */
 static
 int Acvlit(Xpost_Context *ctx,
             Xpost_Object o)
@@ -99,6 +103,8 @@ int Acvlit(Xpost_Context *ctx,
     return 0;
 }
 
+/* obj  cvx  obj
+   set executable attribute in obj to executable */
 static
 int Acvx(Xpost_Context *ctx,
           Xpost_Object o)
@@ -107,6 +113,8 @@ int Acvx(Xpost_Context *ctx,
     return 0;
 }
 
+/* obj  xcheck  bool
+   test executable attribute in obj */
 static
 int Axcheck(Xpost_Context *ctx,
              Xpost_Object o)
@@ -115,6 +123,8 @@ int Axcheck(Xpost_Context *ctx,
     return 0;
 }
 
+/* obj  executeonly  obj
+   reduce access attribute for obj to execute-only */
 static
 int Aexecuteonly(Xpost_Context *ctx,
                   Xpost_Object o)
@@ -125,6 +135,8 @@ int Aexecuteonly(Xpost_Context *ctx,
     return 0;
 }
 
+/* obj  noaccess  obj
+   reduce access attribute for obj to no-access */
 static
 int Anoaccess(Xpost_Context *ctx,
                Xpost_Object o)
@@ -135,6 +147,8 @@ int Anoaccess(Xpost_Context *ctx,
     return 0;
 }
 
+/* obj  readonly  obj
+   reduce access attribute for obj to read-only */
 static
 int Areadonly(Xpost_Context *ctx,
                Xpost_Object o)
@@ -145,6 +159,8 @@ int Areadonly(Xpost_Context *ctx,
     return 0;
 }
 
+/* obj  rcheck  bool
+   test obj for read-access */
 static
 int Archeck(Xpost_Context *ctx,
              Xpost_Object o)
@@ -153,6 +169,8 @@ int Archeck(Xpost_Context *ctx,
     return 0;
 }
 
+/* obj  wcheck  bool
+   test obj for write-access */
 static
 int Awcheck(Xpost_Context *ctx,
              Xpost_Object o)
@@ -161,6 +179,8 @@ int Awcheck(Xpost_Context *ctx,
     return 0;
 }
 
+/* number  cvi  int
+   convert number to integer */
 static
 int Ncvi(Xpost_Context *ctx,
           Xpost_Object n)
@@ -171,6 +191,8 @@ int Ncvi(Xpost_Context *ctx,
     return 0;
 }
 
+/* string  cvi  int
+   convert initial portion of string to integer */
 static
 int Scvi(Xpost_Context *ctx,
           Xpost_Object s)
@@ -198,6 +220,8 @@ int Scvi(Xpost_Context *ctx,
     return 0;
 }
 
+/* string  cvn  name
+   convert string to name */
 static
 int Scvn(Xpost_Context *ctx,
           Xpost_Object s)
@@ -217,6 +241,8 @@ int Scvn(Xpost_Context *ctx,
     return 0;
 }
 
+/* number  cvr  real
+   convert number to real */
 static
 int Ncvr(Xpost_Context *ctx,
           Xpost_Object n)
@@ -227,6 +253,8 @@ int Ncvr(Xpost_Context *ctx,
     return 0;
 }
 
+/* string  cvr  real
+   convert initial portion of string to real */
 static
 int Scvr(Xpost_Context *ctx,
           Xpost_Object str)
@@ -242,6 +270,7 @@ int Scvr(Xpost_Context *ctx,
     return 0;
 }
 
+/* helper function: fill buffer with radix representation of num */
 static
 int conv_rad(int num,
              int rad,
@@ -261,6 +290,8 @@ int conv_rad(int num,
     return off+1;
 }
 
+/* number radix string  cvrs  string
+   convert number to a radix representation in string */
 static
 int NRScvrs (Xpost_Context *ctx,
               Xpost_Object num,
@@ -280,6 +311,7 @@ int NRScvrs (Xpost_Context *ctx,
     return 0;
 }
 
+/* helper function: fill string with integer */
 static
 int conv_integ(real num,
                char *s,
@@ -296,6 +328,7 @@ int conv_integ(real num,
     return off + 1;
 }
 
+/* helper function: fill string with fraction */
 static
 int conv_frac (real num,
                char *s,
@@ -311,6 +344,7 @@ int conv_frac (real num,
     return 1 + conv_frac(frac, s+1, n-1);
 }
 
+/* helper function: fill string with real decimal representation */
 static
 int conv_real (real num,
                char *s,
@@ -341,6 +375,8 @@ int conv_real (real num,
     return off;
 }
 
+/* any string  cvs  string
+   convert any object to string representation */
 static
 int AScvs (Xpost_Context *ctx,
             Xpost_Object any,

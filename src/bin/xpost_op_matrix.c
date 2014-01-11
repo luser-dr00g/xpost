@@ -138,9 +138,13 @@ void _xmat2psmat (Xpost_Context *ctx,
     */
 }
 
+/* forward decl's */
 static int _ident_matrix (Xpost_Context *ctx, Xpost_Object psmat);
 static int _default_matrix(Xpost_Context *ctx, Xpost_Object psmat);
+static int _set_matrix (Xpost_Context *ctx, Xpost_Object psmat);
 
+/* -  matrix  matrix
+   create identity matrix */
 static
 int _matrix (Xpost_Context *ctx)
 {
@@ -149,6 +153,8 @@ int _matrix (Xpost_Context *ctx)
     return _ident_matrix(ctx, psmat);
 }
 
+/* matrix  identmatrix  matrix
+   fill matrix with identity transform */
 static
 int _ident_matrix (Xpost_Context *ctx,
                   Xpost_Object psmat)
@@ -160,15 +166,27 @@ int _ident_matrix (Xpost_Context *ctx,
     return 0;
 }
 
+/* -  initmatrix  -
+   set ctm to device default */
 static
 int _init_matrix (Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "setmatrix")));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "defaultmatrix")));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "matrix")));
+    xpost_stack_push(ctx->lo, ctx->es,
+            xpost_object_cvx(consname(ctx, "setmatrix")));
+    xpost_stack_push(ctx->lo, ctx->es,
+            xpost_object_cvx(consname(ctx, "defaultmatrix")));
+    xpost_stack_push(ctx->lo, ctx->es,
+            xpost_object_cvx(consname(ctx, "matrix")));
+    /*
+    _matrix(ctx);
+    _default_matrix(ctx, xpost_stack_pop(ctx->lo, ctx->os));
+    _set_matrix(ctx, xpost_stack_pop(ctx->lo, ctx->os));
+            */
     return 0;
 }
 
+/* matrix  defaultmatrix  matrix
+   fill matrix with device default matrix */
 static
 int _default_matrix(Xpost_Context *ctx,
                    Xpost_Object psmat)
@@ -206,6 +224,8 @@ int _default_matrix(Xpost_Context *ctx,
     return 0;
 }
 
+/* matrix  currentmatrix  matrix
+   fill matrix with ctm */
 static
 int _current_matrix (Xpost_Context *ctx,
                     Xpost_Object psmat)
@@ -218,6 +238,8 @@ int _current_matrix (Xpost_Context *ctx,
     return 0;
 }
 
+/* matrix  setmatrix  -
+   replace ctm by matrix */
 static
 int _set_matrix (Xpost_Context *ctx,
                 Xpost_Object psmat)
@@ -231,6 +253,8 @@ int _set_matrix (Xpost_Context *ctx,
     return 0;
 }
 
+/* tx ty  translate
+   translate user space by (tx, ty) */
 static
 int _translate (Xpost_Context *ctx,
                 Xpost_Object xt,
@@ -246,6 +270,8 @@ int _translate (Xpost_Context *ctx,
     return 0;
 }
 
+/* tx ty matrix  translate  matrix
+   define translation by (tx, ty) */
 static
 int _mat_translate (Xpost_Context *ctx,
                     Xpost_Object xt,
@@ -259,6 +285,8 @@ int _mat_translate (Xpost_Context *ctx,
     return 0;
 }
 
+/* sx sy  scale  -
+   scale user space by sx and sy */
 static
 int _scale (Xpost_Context *ctx,
             Xpost_Object xs,
@@ -274,6 +302,8 @@ int _scale (Xpost_Context *ctx,
     return 0;
 }
 
+/* sx sy matrix  scale  -
+   define scaling by sx and sy */
 static
 int _mat_scale (Xpost_Context *ctx,
             Xpost_Object xs,
@@ -287,6 +317,8 @@ int _mat_scale (Xpost_Context *ctx,
     return 0;
 }
 
+/* angle  rotate  -
+   rotate user space by angle degrees */
 static
 int _rotate (Xpost_Context *ctx,
              Xpost_Object angle)
@@ -301,6 +333,8 @@ int _rotate (Xpost_Context *ctx,
     return 0;
 }
 
+/* angle matrix  rotate  matrix
+   define rotation by angle degrees */
 static
 int _mat_rotate (Xpost_Context *ctx,
                  Xpost_Object angle,
@@ -313,6 +347,8 @@ int _mat_rotate (Xpost_Context *ctx,
     return 0;
 }
 
+/* matrix  concat  -
+   replace CTM by matrix X CTM */
 static
 int _concat (Xpost_Context *ctx,
              Xpost_Object psmat)
@@ -333,6 +369,8 @@ int _concat (Xpost_Context *ctx,
     return 0;
 }
 
+/* matrix1 matrix2 matrix3  concatmatrix  matrix3
+   fill matrix3 with matrix1 X matrix2 */
 static
 int _concat_matrix (Xpost_Context *ctx,
                     Xpost_Object psmat1,
@@ -348,6 +386,8 @@ int _concat_matrix (Xpost_Context *ctx,
     return 0;
 }
 
+/* x y matrix  transform  x' y'
+   transform (x,y) by matrix */
 static
 int _mat_transform (Xpost_Context *ctx,
                     Xpost_Object x,
@@ -364,6 +404,8 @@ int _mat_transform (Xpost_Context *ctx,
     return 0;
 }
 
+/* x y  transform  x' y'
+   transform (x,y) by CTM */
 static
 int _transform (Xpost_Context *ctx,
                 Xpost_Object x,
@@ -374,6 +416,8 @@ int _transform (Xpost_Context *ctx,
     return _mat_transform(ctx, x, y, psctm);
 }
 
+/* dx dy matrix  dtransform  dx' dy'
+   transform distance (dx,dy) by matrix */
 static
 int _mat_dtransform (Xpost_Context *ctx,
                     Xpost_Object x,
@@ -390,6 +434,8 @@ int _mat_dtransform (Xpost_Context *ctx,
     return 0;
 }
 
+/* dx dy  dtransform  dx' dy'
+   transform (dx,dy) by CTM */
 static
 int _dtransform (Xpost_Context *ctx,
                 Xpost_Object x,
@@ -400,6 +446,8 @@ int _dtransform (Xpost_Context *ctx,
     return _mat_dtransform(ctx, x, y, psctm);
 }
 
+/* x' y' matrix  itransform  x y
+   perform inverse transformation of (x',y') by matrix */
 static
 int _mat_itransform (Xpost_Context *ctx,
                     Xpost_Object x,
@@ -424,6 +472,8 @@ int _mat_itransform (Xpost_Context *ctx,
     return 0;
 }
 
+/* x' y'  itransform  x y
+   perform inverse transformation of (x',y') by CTM */
 static
 int _itransform (Xpost_Context *ctx,
                 Xpost_Object x,
@@ -434,6 +484,9 @@ int _itransform (Xpost_Context *ctx,
     return _mat_itransform(ctx, x, y, psctm);
 }
 
+/* dx' dy' matrix  idtransform  dx dy
+   perform inverse transform of distance
+   (dx',dy') by matrix */
 static
 int _mat_idtransform (Xpost_Context *ctx,
                     Xpost_Object x,
@@ -456,6 +509,9 @@ int _mat_idtransform (Xpost_Context *ctx,
     return 0;
 }
 
+/* dx' dy'  idtransform  dx dy
+   perform inverse transformation of distance
+   (dx',dy') by CTM */
 static
 int _idtransform (Xpost_Context *ctx,
                 Xpost_Object x,
@@ -466,6 +522,8 @@ int _idtransform (Xpost_Context *ctx,
     return _mat_idtransform(ctx, x, y, psctm);
 }
 
+/* matrix1 matrix2  invertmatrix  matrix2
+   fill matrix2 with inverse of matrix1 */
 static
 int _invert_matrix (Xpost_Context *ctx,
                     Xpost_Object psmat1,

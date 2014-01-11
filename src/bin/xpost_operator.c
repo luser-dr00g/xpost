@@ -133,6 +133,7 @@ void dumpoper(Xpost_Context *ctx,
             (void *)sig[0].fp );
 }
 
+/* create operator object by opcode number */
 Xpost_Object operfromcode(int opcode)
 {
     Xpost_Object op;
@@ -147,7 +148,7 @@ Xpost_Object operfromcode(int opcode)
     return op;
 }
 
-/* construct an operator object
+/* construct an operator object by name
    if given a function-pointer, attempts to install a new operator
    in OPTAB, otherwise just perform a lookup
    if installing a new operator, out and in specify the number of
@@ -278,9 +279,11 @@ Xpost_Object consoper(Xpost_Context *ctx,
     return o;
 }
 
-/*
-   clear hold
-   and pop n objects from opstack to hold stack.
+/* clear hold and pop n objects from opstack to hold stack.
+   The hold stack is used as temporary storage to hold the
+   arguments for an operator-function call.
+   If the operator-function does not itself call opexec,
+   the arguments may be restored by xpost_interpreter.c:_on_error().
  */
 static
 void holdn (Xpost_Context *ctx,
@@ -293,18 +296,13 @@ void holdn (Xpost_Context *ctx,
 
     assert(n < XPOST_MEMORY_TABLE_SIZE);
     hold = (void *)(ctx->lo->base + ctx->hold);
-    hold->top = 0; /* clear HOLD */
-    for (j=n; j--;) {
-    //j = n;
-    //while (j) {
-        //j--;
-        xpost_stack_push(ctx->lo, ctx->hold, xpost_stack_topdown_fetch(mem, stacadr, j));
+    hold->top = 0;     /* clear HOLD */
+    for (j=n; j--;) {  /* copy */
+        xpost_stack_push(ctx->lo, ctx->hold,
+                xpost_stack_topdown_fetch(mem, stacadr, j));
     }
-    for (j=n; j--;) {
-    //j = n;
-    //while (j) {
+    for (j=n; j--;) {  /* pop */
         (void)xpost_stack_pop(mem, stacadr);
-        //j--;
     }
 }
 

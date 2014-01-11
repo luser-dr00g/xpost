@@ -53,7 +53,8 @@
 #include "xpost_op_dict.h"
 
 int DEBUGLOAD = 0;
-int Awhere(Xpost_Context *ctx, Xpost_Object K); /* forward decl */
+int Awhere(Xpost_Context *ctx, Xpost_Object K); /* forward decl.
+                                                   store uses where */
 
 /* int  dict  dict
    create dictionary with capacity for int elements */
@@ -352,7 +353,9 @@ int DPforall (Xpost_Context *ctx,
     D.comp_.sz = dicmaxlength(mem, D); // cache size locally
     if (D.comp_.off <= D.comp_.sz) { // not finished?
         unsigned ad;
-        Xpost_Object *tp;
+        Xpost_Object *tp; /* dict Table Pointer, indexed by pairs,
+                             tp[2 * i] for a key and tp[2 * i + 1]
+                             for that key's associated value */
         int ret;
 
         ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(D), &ad);
@@ -388,14 +391,18 @@ int DPforall (Xpost_Context *ctx,
                             xpost_object_cvlit(P)))
                     return execstackoverflow;
 
-                ++D.comp_.off;
+                ++D.comp_.off; /* update offset in dict
+                                  before push for next iteration */
                 if (!xpost_stack_push(ctx->lo, ctx->es, D))
                     return execstackoverflow;
 
                 if (!xpost_stack_push(ctx->lo, ctx->es, P))
                     return execstackoverflow;
 
-                return 0; /* loop continues by ps continuation */
+                return 0; /* loop continues by ps continuation.
+                             thus, no need to recalc pointer since
+                             this function is re-entered from the
+                             beginning, with a new dict with ++D.comp_.off */
             }
         }
     }
@@ -416,7 +423,7 @@ int Zcurrentdict(Xpost_Context *ctx)
    -  $error  dict      % error control and status dictionary : err.ps
    -  systemdict  dict  % system dictionary : op.c init.ps
    -  userdict  dict    % writeable dictionary in local VM : xpost_context.c
-   %-  globaldict  dict  % writeable dictionary in global VM
+   -  globaldict  dict  % writeable dictionary in global VM : xpost_context.c
    %-  statusdict  dict  % product-dependent dictionary
    */
 

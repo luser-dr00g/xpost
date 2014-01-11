@@ -78,6 +78,8 @@ void *alloca (size_t);
 #include "xpost_operator.h"
 #include "xpost_op_control.h"
 
+/* any  exec  -
+   execute arbitrary object */
 static
 int Aexec (Xpost_Context *ctx,
             Xpost_Object O)
@@ -87,6 +89,8 @@ int Aexec (Xpost_Context *ctx,
     return 0;
 }
 
+/* bool proc  if  -
+   execute proc if bool is true */
 static
 int BPif (Xpost_Context *ctx,
            Xpost_Object B,
@@ -98,6 +102,9 @@ int BPif (Xpost_Context *ctx,
     return 0;
 }
 
+/* bool proc1 proc2  ifelse  -
+   execute proc1 if bool is true,
+   proc2 if bool is false */
 static
 int BPPifelse (Xpost_Context *ctx,
                 Xpost_Object B,
@@ -121,6 +128,9 @@ int BPPifelse (Xpost_Context *ctx,
     return 0;
 }
 
+/* initial increment limit proc  for  -
+   execute proc with values from initial by steps
+   of increment to limit */
 static
 int IIIPfor (Xpost_Context *ctx,
               Xpost_Object init,
@@ -134,27 +144,32 @@ int IIIPfor (Xpost_Context *ctx,
     int up = j > 0;
     if (up? i > n : i < n) return 0;
     assert(ctx->gl->base);
-    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "for", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.opfor)))
+
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                operfromcode(ctx->opcode_shortcuts.opfor)))
             return execstackoverflow;
-    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                operfromcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
+
     if (!xpost_stack_push(ctx->lo, ctx->es, lim))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, incr))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(i + j)))
         return execstackoverflow;
+
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->os, init))
         return stackoverflow;
+
     return 0;
 }
 
+/* same as IIIPfor but for reals */
 static
 int RRRPfor (Xpost_Context *ctx,
               Xpost_Object init,
@@ -188,27 +203,34 @@ int RRRPfor (Xpost_Context *ctx,
     return 0;
 }
 
+/* int proc  repeat  -
+   execute proc int times */
 static
 int IPrepeat (Xpost_Context *ctx,
                Xpost_Object n,
                Xpost_Object P)
 {
     if (n.int_.val <= 0) return 0;
-    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "repeat", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.repeat)))
+
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                operfromcode(ctx->opcode_shortcuts.repeat)))
         return execstackoverflow;
-    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                operfromcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
+
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
+
     return 0;
 }
 
+/* proc  loop  -
+   execute proc an indefinite number of times */
 static
 int Ploop (Xpost_Context *ctx,
             Xpost_Object P)
@@ -226,6 +248,8 @@ int Ploop (Xpost_Context *ctx,
     return 0;
 }
 
+/* -  exit  -
+   exit innermost active loop */
 static
 int Zexit (Xpost_Context *ctx)
 {
@@ -275,8 +299,10 @@ int Zexit (Xpost_Context *ctx)
 /* The stopped context is a boolean 'false' on the exec stack,
    so normal execution simply falls through and pushes the 
    false onto the operand stack. 'stop' then merely has to 
-   search for 'false' and push a 'true'.  */
+   search for 'false' and push a 'true', popping as it goes.  */
 
+/* -  stop  -
+   terminate stopped context */
 static
 int Zstop(Xpost_Context *ctx)
 {
@@ -297,6 +323,8 @@ int Zstop(Xpost_Context *ctx)
     return unregistered;
 }
 
+/* any  stopped  bool
+   establish context for catching stop */
 static
 int Astopped(Xpost_Context *ctx,
               Xpost_Object o)
@@ -308,6 +336,8 @@ int Astopped(Xpost_Context *ctx,
     return 0;
 }
 
+/* -  countexecstack  int
+   count elements on execution stack */
 static
 int Zcountexecstack(Xpost_Context *ctx)
 {
@@ -316,6 +346,8 @@ int Zcountexecstack(Xpost_Context *ctx)
     return 0;
 }
 
+/* array  execstack  subarray
+   copy execution stack into array */
 static
 int Aexecstack(Xpost_Context *ctx,
                 Xpost_Object A)
@@ -338,14 +370,18 @@ int Aexecstack(Xpost_Context *ctx,
     return 0;
 }
 
-//TODO start
-
+/* -  quit  -
+   terminate interpreter */
 static
 int Zquit(Xpost_Context *ctx)
 {
     ctx->quit = 1;
     return 0;
 }
+
+/* - start -
+   executed at interpreter startup */
+/* implemented in data/init.ps */
 
 int initopc (Xpost_Context *ctx,
               Xpost_Object sd)

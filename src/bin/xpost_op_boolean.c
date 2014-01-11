@@ -81,7 +81,8 @@ int Aeq (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) == 0));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(objcmp(ctx,x,y) == 0));
     return 0;
 }
 
@@ -92,7 +93,8 @@ int Ane (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) != 0));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(objcmp(ctx,x,y) != 0));
     return 0;
 }
 
@@ -103,7 +105,8 @@ int Age (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) >= 0));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(objcmp(ctx,x,y) >= 0));
     return 0;
 }
 
@@ -114,7 +117,8 @@ int Agt (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) > 0));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(objcmp(ctx,x,y) > 0));
     return 0;
 }
 
@@ -125,7 +129,8 @@ int Ale (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) <= 0));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(objcmp(ctx,x,y) <= 0));
     return 0;
 }
 
@@ -136,7 +141,8 @@ int Alt (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(objcmp(ctx,x,y) < 0));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(objcmp(ctx,x,y) < 0));
     return 0;
 }
 
@@ -147,7 +153,8 @@ int Band (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val & y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(x.int_.val & y.int_.val));
     return 0;
 }
 
@@ -156,7 +163,8 @@ int Iand (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val & y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_int(x.int_.val & y.int_.val));
     return 0;
 }
 
@@ -166,7 +174,8 @@ static
 int Bnot (Xpost_Context *ctx,
            Xpost_Object x)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( ! x.int_.val ));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool( ! x.int_.val ));
     return 0;
 }
 
@@ -174,7 +183,8 @@ static
 int Inot (Xpost_Context *ctx,
            Xpost_Object x)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int( ~ x.int_.val ));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_int( ~ x.int_.val ));
     return 0;
 }
 
@@ -185,7 +195,8 @@ int Bor (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val | y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(x.int_.val | y.int_.val));
     return 0;
 }
 
@@ -194,7 +205,8 @@ int Ior (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val | y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_int(x.int_.val | y.int_.val));
     return 0;
 }
 
@@ -205,7 +217,8 @@ int Bxor (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(x.int_.val ^ y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_bool(x.int_.val ^ y.int_.val));
     return 0;
 }
 
@@ -214,13 +227,15 @@ int Ixor (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val ^ y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os,
+            xpost_cons_int(x.int_.val ^ y.int_.val));
     return 0;
 }
 
-// true
+/* true */
+/* false */
+/* defined as the booleantype object directly */
 
-// false
 
 /* int1 shift  bitshift  int2
    bitwise shift of int1 (positive is left) */
@@ -230,10 +245,11 @@ int Ibitshift (Xpost_Context *ctx,
                 Xpost_Object y)
 {
     if (y.int_.val >= 0)
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val << y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os,
+                xpost_cons_int(x.int_.val << y.int_.val));
     else
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(
-                    (unsigned long)x.int_.val >> -y.int_.val));
+        xpost_stack_push(ctx->lo, ctx->os,
+                xpost_cons_int( (unsigned long)x.int_.val >> -y.int_.val));
     return 0;
 }
 
