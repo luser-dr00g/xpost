@@ -496,6 +496,9 @@ int toke (Xpost_Context *ctx,
 } 
 
 
+/* file  token  token true
+                false
+   read token from file */
 static
 int Fnext(Xpost_Context *ctx,
           Xpost_Object *F)
@@ -529,6 +532,9 @@ int Ftoken (Xpost_Context *ctx,
     return 0;
 }
 
+/* string  token  substring token true
+                  false
+   read token from string */
 static
 int Snext(Xpost_Context *ctx,
           Xpost_Object *S)

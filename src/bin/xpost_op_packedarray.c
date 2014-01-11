@@ -78,6 +78,8 @@ void *alloca (size_t);
 #include "xpost_op_array.h"
 #include "xpost_op_packedarray.h"
 
+/* a packed array is just a regular array with readonly */
+
 static
 int packedarray (Xpost_Context *ctx,
                   Xpost_Object n)
