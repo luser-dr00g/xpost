@@ -113,7 +113,12 @@ int xpost_stack_push (Xpost_Memory_File *mem,
         Xpost_Object obj)
 {
     unsigned int newst;
-    Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr); /* load the stack */
+    Xpost_Stack *s;
+
+    if (xpost_object_get_type(obj) == invalidtype) 
+        return 0;
+
+    s = (Xpost_Stack *)(mem->base + stackadr); /* load the stack */
 
     while (s->top == XPOST_STACK_SEGMENT_SIZE)
     {

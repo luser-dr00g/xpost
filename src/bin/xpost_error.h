@@ -49,6 +49,7 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
 
 #define ERRORS(_) \
     _(noerror) \
+    _(unregistered) \
     _(dictfull) \
     _(dictstackoverflow) \
     _(dictstackunderflow) \
@@ -74,7 +75,6 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
     _(undefinedfilename) \
     _(undefinedresult) \
     _(unmatchedmark) /*25*/\
-    _(unregistered) \
     _(VMerror) \
     _(unknownerror)
 enum err { ERRORS(AS_BARE) };

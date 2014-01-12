@@ -310,6 +310,7 @@ int initopar (Xpost_Context *ctx,
     oper *optab;
     Xpost_Object n,op;
     unsigned int optadr;
+    int ret;
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
@@ -318,7 +319,9 @@ int initopar (Xpost_Context *ctx,
 
     op = consoper(ctx, "array", Iarray, 1, 1,
             integertype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "["), mark);
+    ret = bdcput(ctx, sd, consname(ctx, "["), mark);
+    if (ret)
+        return 0;
     op = consoper(ctx, "]", arrtomark, 1, 0); INSTALL;
     op = consoper(ctx, "length", Alength, 1, 1,
             arraytype); INSTALL;

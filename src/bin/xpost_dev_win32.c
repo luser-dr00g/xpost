@@ -114,6 +114,7 @@ static unsigned int _create_cont_opcode;
 static Xpost_Object namePrivate;
 static Xpost_Object namewidth;
 static Xpost_Object nameheight;
+static Xpost_Object namedotcopydict;
 
 static void
 _xpost_dev_gl_win32_viewport_set(int width, int height)
@@ -176,23 +177,24 @@ int _create (Xpost_Context *ctx,
              Xpost_Object height,
              Xpost_Object classdic)
 {
+    int ret;
+
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
-    bdcput(ctx, classdic,
-            //consname(ctx, "width")
-            namewidth
-            , width);
-    bdcput(ctx, classdic,
-            //consname(ctx, "height")
-            nameheight
-            , height);
+    ret = bdcput(ctx, classdic, namewidth, width);
+    if (ret)
+        return ret;
+    ret = bdcput(ctx, classdic, nameheight, height);
+    if (ret)
+        return ret;
 
      /* call device class's ps-level .copydict procedure,
         then call _create_cont, by continuation. */
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_create_cont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict"))))
+    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic,
+                    namedotcopydict)))
         return execstackoverflow;
 
     return 0;
@@ -215,6 +217,7 @@ int _create_cont (Xpost_Context *ctx,
     RECT rect;
     HICON icon = NULL;
     HICON icon_sm = NULL;
+    int ret;
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
@@ -223,10 +226,9 @@ int _create_cont (Xpost_Context *ctx,
         XPOST_LOG_ERR("cannot allocate private data structure");
         return unregistered;
     }
-    bdcput(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            , privatestr);
+    ret = bdcput(ctx, devdic, namePrivate, privatestr);
+    if (ret)
+        return ret;
 
     /* create and map window */
     private.instance = GetModuleHandle(NULL);
@@ -502,15 +504,9 @@ int _putpix (Xpost_Context *ctx,
                      xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     /* check bounds */
-    if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic,
-                //consname(ctx, "width")
-                namewidth
-                ).int_.val)
+    if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic, namewidth).int_.val)
         return 0;
-    if (y.int_.val < 0 || y.int_.val >= bdcget(ctx, devdic,
-                //consname(ctx, "height")
-                nameheight
-                ).int_.val)
+    if (y.int_.val < 0 || y.int_.val >= bdcget(ctx, devdic, nameheight).int_.val)
         return 0;
 
     rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
@@ -839,14 +835,8 @@ int _fillrect (Xpost_Context *ctx,
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
-    w = bdcget(ctx, devdic,
-            //consname(ctx,"width")
-            namewidth
-            ).int_.val;
-    h = bdcget(ctx, devdic,
-            //consname(ctx,"height")
-            nameheight
-            ).int_.val;
+    w = bdcget(ctx, devdic, namewidth).int_.val;
+    h = bdcget(ctx, devdic, nameheight).int_.val;
 
     if (x.int_.val >= w || y.int_.val >= h)
         return 0;
@@ -1002,10 +992,18 @@ int newwin32device (Xpost_Context *ctx,
 
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
+
+    /* note:
+       an invalid name should cause an undefined error to propagate
+       with extra handling here */
+
     ret = Aload(ctx, consname(ctx, "win32DEVICE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+
+    /* xpost_stack_push will also throw an error upon an invalid object
+       return from bdcget */
     if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, "Create"))))
         return execstackoverflow;
 
@@ -1026,13 +1024,14 @@ int loadwin32device (Xpost_Context *ctx)
     Xpost_Object classdic;
     int ret;
 
+    /* see note in newwin32device above */
     ret = Aload(ctx, consname(ctx, "PPMIMAGE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadwin32devicecont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict"))))
+    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, dotcopydict)))
         return execstackoverflow;
 
     return 0;
@@ -1048,53 +1047,76 @@ int loadwin32devicecont (Xpost_Context *ctx,
 {
     Xpost_Object userdict;
     Xpost_Object op;
+    int ret;
 
-    bdcput(ctx, classdic, consname(ctx, "nativecolorspace"), consname(ctx, "DeviceRGB"));
+    ret = bdcput(ctx, classdic, consname(ctx, "nativecolorspace"), consname(ctx, "DeviceRGB"));
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32CreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
     op = consoper(ctx, "win32Create", _create, 1, 3, integertype, integertype, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "Create"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "Create"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32PutPix", _putpix, 0, 6,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             dicttype); /* devdic */
-    bdcput(ctx, classdic, consname(ctx, "PutPix"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "PutPix"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32GetPix", _getpix, 3, 3,
             numbertype, numbertype, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32DrawLine", _drawline, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x1 y1 */
             numbertype, numbertype, /* x2 y2 */
             dicttype); /* devdic */
-    bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32FillRect", _fillrect, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             numbertype, numbertype, /* width height */
             dicttype); /* devdic */
-    bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32Emit", _emit, 0, 1, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "Emit"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "Emit"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32Flush", _flush, 0, 1, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "Flush"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "Flush"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32Destroy", _destroy, 0, 1, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "Destroy"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "Destroy"), op);
+    if (ret)
+        return ret;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
 
-    bdcput(ctx, userdict, consname(ctx, "win32DEVICE"), classdic);
+    ret = bdcput(ctx, userdict, consname(ctx, "win32DEVICE"), classdic);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "newwin32device", newwin32device, 1, 2, integertype, integertype);
-    bdcput(ctx, userdict, consname(ctx, "newwin32device"), op);
+    ret = bdcput(ctx, userdict, consname(ctx, "newwin32device"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "win32EventHandler", _event_handler, 0, 1, dicttype);
     _event_handler_opcode = op.mark_.padw;
@@ -1114,9 +1136,14 @@ int initwin32ops (Xpost_Context *ctx,
     oper *optab;
     Xpost_Object n,op;
 
-    namePrivate = consname(ctx, "Private");
-    namewidth = consname(ctx, "width");
-    nameheight = consname(ctx, "height");
+    if (xpost_object_get_type(namePrivate = consname(ctx, "Private")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namewidth = consname(ctx, "width")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameheight = consname(ctx, "height")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namedotcopydict = consname(ctx, ".copydict")) == invalidtype)
+        return VMerror;
 
     xpost_memory_table_get_addr(ctx->gl,
                                 XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,

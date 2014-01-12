@@ -259,6 +259,7 @@ int initopb(Xpost_Context *ctx,
     oper *optab;
     Xpost_Object n,op;
     unsigned int optadr;
+    int ret;
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
@@ -279,8 +280,12 @@ int initopb(Xpost_Context *ctx,
     op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "xor", Bxor, 1, 2, booleantype, booleantype); INSTALL;
     op = consoper(ctx, "xor", Ixor, 1, 2, integertype, integertype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "true"), xpost_cons_bool(1));
-    bdcput(ctx, sd, consname(ctx, "false"), xpost_cons_bool(0));
+    ret = bdcput(ctx, sd, consname(ctx, "true"), xpost_cons_bool(1));
+    if (ret)
+        return 0;
+    ret = bdcput(ctx, sd, consname(ctx, "false"), xpost_cons_bool(0));
+    if (ret)
+        return 0;
     op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL); */

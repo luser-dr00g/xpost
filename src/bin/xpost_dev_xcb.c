@@ -99,12 +99,12 @@ static int _flush (Xpost_Context *ctx, Xpost_Object devdic);
 static
 unsigned int _event_handler_opcode;
 
-static
-Xpost_Object namePrivate;
-static
-Xpost_Object namewidth;
-static
-Xpost_Object nameheight;
+static Xpost_Object namePrivate;
+static Xpost_Object namewidth;
+static Xpost_Object nameheight;
+static Xpost_Object namedotcopydict;
+static Xpost_Object namenativecolorspace;
+static Xpost_Object nameDeviceRGB;
 
 static
 int _event_handler (Xpost_Context *ctx,
@@ -156,20 +156,17 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
-    bdcput(ctx, classdic,
-            //consname(ctx, "width")
-            namewidth
-            , width);
-    bdcput(ctx, classdic,
-            //consname(ctx, "height")
-            nameheight
-            , height);
+    bdcput(ctx, classdic, namewidth, width);
+    bdcput(ctx, classdic, nameheight, height);
 
     /* call device class's ps-level .copydict procedure,
        then call _create_cont, by continuation. */
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_create_cont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict"))))
+    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic,
+                    //consname(ctx, ".copydict")
+                    namedotcopydict
+                    )))
         return execstackoverflow;
 
     return 0;
@@ -199,10 +196,7 @@ int _create_cont (Xpost_Context *ctx,
         XPOST_LOG_ERR("cannot allocat private data structure");
         return unregistered;
     }
-    bdcput(ctx, devdic,
-            //consname(ctx, "Private")
-            namePrivate
-            , privatestr);
+    bdcput(ctx, devdic, namePrivate, privatestr);
 
     private.width = width;
     private.height = height;
@@ -328,15 +322,9 @@ int _putpix (Xpost_Context *ctx,
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     /* check bounds */
-    if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic,
-                //consname(ctx, "width")
-                namewidth
-                ).int_.val)
+    if (x.int_.val < 0 || x.int_.val >= bdcget(ctx, devdic, namewidth).int_.val)
         return 0;
-    if (y.int_.val < 0 || y.int_.val >= bdcget(ctx, devdic,
-                //consname(ctx, "height")
-                nameheight
-                ).int_.val)
+    if (y.int_.val < 0 || y.int_.val >= bdcget(ctx, devdic, nameheight).int_.val)
         return 0;
 
     {
@@ -525,14 +513,8 @@ int _fillrect (Xpost_Context *ctx,
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
-    w = bdcget(ctx, devdic,
-            //consname(ctx,"width")
-            namewidth
-            ).int_.val;
-    h = bdcget(ctx, devdic,
-            //consname(ctx,"height")
-            nameheight
-            ).int_.val;
+    w = bdcget(ctx, devdic, namewidth).int_.val;
+    h = bdcget(ctx, devdic, nameheight).int_.val;
 
     if (x.int_.val >= w || y.int_.val >= h)
         return 0;
@@ -600,7 +582,7 @@ int _fillpoly (Xpost_Context *ctx,
         blue.int_.val *= 65535;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, consname(ctx, "Private"));
+    privatestr = bdcget(ctx, devdic, namePrivate);
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
@@ -747,7 +729,10 @@ int loadxcbdevice (Xpost_Context *ctx)
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadxcbdevicecont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, ".copydict"))))
+    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic,
+                    //consname(ctx, ".copydict")
+                    namedotcopydict
+                    )))
         return execstackoverflow;
 
     return 0;
@@ -763,58 +748,85 @@ int loadxcbdevicecont (Xpost_Context *ctx,
 {
     Xpost_Object userdict;
     Xpost_Object op;
+    int ret;
 
-    bdcput(ctx, classdic, consname(ctx, "nativecolorspace"),
-            consname(ctx, "DeviceRGB"));
+    ret = bdcput(ctx, classdic,
+            //consname(ctx, "nativecolorspace"),
+            namenativecolorspace,
+            //consname(ctx, "DeviceRGB")
+            nameDeviceRGB
+            );
 
     op = consoper(ctx, "xcbCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
     op = consoper(ctx, "xcbCreate", _create, 1, 3, integertype, integertype, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "Create"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "Create"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbPutPix", _putpix, 0, 6,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             dicttype); /* devdic */
-    bdcput(ctx, classdic, consname(ctx, "PutPix"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "PutPix"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbGetPix", _getpix, 3, 3, numbertype, numbertype, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "GetPix"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbDrawLine", _drawline, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x1 y1 */
             numbertype, numbertype, /* x2 y2 */
             dicttype); /* devdic */
-    bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "DrawLine"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbFillRect", _fillrect, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y */
             numbertype, numbertype, /* width height */
             dicttype); /* devdic */
-    bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "FillRect"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbFillPoly", _fillpoly, 0, 5,
             numbertype, numbertype, numbertype,
             arraytype, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "FillPoly"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "FillPoly"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbEmit", _emit, 0, 1, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "Emit"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "Emit"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbFlush", _flush, 0, 1, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "Flush"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "Flush"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbDestroy", _destroy, 0, 1, dicttype);
-    bdcput(ctx, classdic, consname(ctx, "Destroy"), op);
+    ret = bdcput(ctx, classdic, consname(ctx, "Destroy"), op);
+    if (ret)
+        return ret;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
 
-    bdcput(ctx, userdict, consname(ctx, "xcbDEVICE"), classdic);
+    ret = bdcput(ctx, userdict, consname(ctx, "xcbDEVICE"), classdic);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "newxcbdevice", newxcbdevice, 1, 2, integertype, integertype);
-    bdcput(ctx, userdict, consname(ctx, "newxcbdevice"), op);
+    ret = bdcput(ctx, userdict, consname(ctx, "newxcbdevice"), op);
+    if (ret)
+        return ret;
 
     op = consoper(ctx, "xcbEventHandler", _event_handler, 0, 1, dicttype);
     _event_handler_opcode = op.mark_.padw;
@@ -833,9 +845,18 @@ int initxcbops (Xpost_Context *ctx,
     oper *optab;
     Xpost_Object n,op;
 
-    namePrivate = consname(ctx, "Private");
-    namewidth = consname(ctx, "width");
-    nameheight = consname(ctx, "height");
+    if (xpost_object_get_type(namePrivate = consname(ctx, "Private")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namewidth = consname(ctx, "width")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameheight = consname(ctx, "height")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namedotcopydict = consname(ctx, ".copydict")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namenativecolorspace = consname(ctx, "nativecolorspace")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameDeviceRGB = consname(ctx, "DeviceRGB")) == invalidtype)
+        return VMerror;
 
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
