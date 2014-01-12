@@ -144,6 +144,8 @@ int Rdiv (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
+    if (y.real_.val == 0.0)
+        return undefinedresult;
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(x.real_.val / y.real_.val));
     return 0;
 }
@@ -155,7 +157,9 @@ int Iidiv (Xpost_Context *ctx,
             Xpost_Object x,
             Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val / y.int_.val));
+    if (y.int_.val == 0)
+        return undefinedresult;
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val / y.int_.val));
     return 0;
 }
 
