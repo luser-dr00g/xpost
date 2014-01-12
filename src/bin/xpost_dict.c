@@ -462,6 +462,8 @@ Xpost_Object clean_key (Xpost_Context *ctx,
     || objcmp(ctx, tp[2*i], null) == 0) \
             return tp + (2*i);
 
+static Xpost_Object invalidpair[2] = {0};
+
 /* perform a hash-assisted lookup.
    returns a pointer to the desired pair (if found)), or a null-pair. */
 /*@dependent@*/ /*@null@*/
@@ -479,6 +481,8 @@ Xpost_Object *diclookup(Xpost_Context *ctx,
     unsigned int i;
 
     k = clean_key(ctx, k);
+    if (xpost_object_get_type(k) == invalidtype)
+        return invalidpair;
 
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
@@ -607,6 +611,8 @@ int dicput(Xpost_Context *ctx,
         dp = (void *)(mem->base + ad);
         ++ dp->nused;
         e[0] = clean_key(ctx, k);
+        if (xpost_object_get_type(e[0]) == invalidtype)
+            return VMerror;
     }
     else if (xpost_object_get_type(e[1]) == magictype)
     {
@@ -672,6 +678,8 @@ int dicundef(Xpost_Context *ctx,
     tp = (void *)(mem->base + ad + sizeof(dichead));
 
     k = clean_key(ctx, k);
+    if (xpost_object_get_type(k) == invalidtype)
+        return VMerror;
 
     e = diclookup(ctx, mem, d, k); /*find slot for key */
     if (e == NULL || objcmp(ctx,e[0],null) == 0) {

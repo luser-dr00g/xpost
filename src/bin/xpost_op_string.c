@@ -304,7 +304,6 @@ int initopst(Xpost_Context *ctx,
             stringtype, stringtype); INSTALL;
     op = consoper(ctx, "forall", Sforall, 0, 2,
             stringtype, proctype); INSTALL;
-    //bdcput(ctx, sd, consname(ctx, "mark"), mark);
     return 0;
 }
 

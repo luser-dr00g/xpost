@@ -233,6 +233,8 @@ int Scvn(Xpost_Context *ctx,
     memcpy(t, charstr(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
     name = consname(ctx, t);
+    if (xpost_object_get_type(name) == invalidtype)
+        return VMerror;
     if (xpost_object_is_exe(s))
         name = xpost_object_cvx(name);
     else
@@ -518,7 +520,7 @@ int initopt (Xpost_Context *ctx,
     op = consoper(ctx, "cvs", AScvs, 1, 2, anytype, stringtype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);
-    bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+     */
     return 0;
 }
 

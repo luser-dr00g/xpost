@@ -197,6 +197,8 @@ Xpost_Object consoper(Xpost_Context *ctx,
     vmmode=ctx->vmmode;
     ctx->vmmode = GLOBAL;
     nm = consname(ctx, name);
+    if (xpost_object_get_type(nm) == invalidtype)
+        return invalid;
     ctx->vmmode = vmmode;
 
     optab = (void *)(ctx->gl->base + optadr);

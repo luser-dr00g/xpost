@@ -306,26 +306,14 @@ int _fillpoly (Xpost_Context *ctx,
     real maxy = maxx;
     int width;
 
-    width = bdcget(ctx, devdic,
-            //consname(ctx, "width")
-            namewidth
-            ).int_.val;
-    colorspace = bdcget(ctx, devdic,
-            //consname(ctx, "nativecolorspace")
-            namenativecolorspace
-            );
-    if (objcmp(ctx, colorspace,
-                //consname(ctx, "DeviceGray")
-                nameDeviceGray
-                ) == 0)
+    width = bdcget(ctx, devdic, namewidth).int_.val;
+    colorspace = bdcget(ctx, devdic, namenativecolorspace);
+    if (objcmp(ctx, colorspace, nameDeviceGray) == 0)
     {
         ncomp = 1;
         comp1 = xpost_stack_pop(ctx->lo, ctx->os);
     }
-    else if (objcmp(ctx, colorspace,
-                //consname(ctx, "DeviceRGB")
-                nameDeviceRGB
-                ) == 0)
+    else if (objcmp(ctx, colorspace, nameDeviceRGB) == 0)
     {
         ncomp = 3;
         comp3 = xpost_stack_pop(ctx->lo, ctx->os);
@@ -444,10 +432,7 @@ int _fillpoly (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(3)); /* color components to move */
         break;
     }
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(
-                //consname(ctx, "roll")
-                nameroll
-                ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx( nameroll));
 
       /*at this point we have the desired stack picture:
 
@@ -456,18 +441,12 @@ int _fillpoly (Xpost_Context *ctx,
         just need to push the devdic and DrawLine  */
 
     xpost_stack_push(ctx->lo, ctx->os, devdic);
-    drawline = bdcget(ctx, devdic,
-            //consname(ctx, "DrawLine")
-            nameDrawLine
-            );
+    drawline = bdcget(ctx, devdic, nameDrawLine);
     xpost_stack_push(ctx->lo, ctx->os, drawline);
 
     /*if drawline is a procedure, we also need to call exec */
     if (xpost_object_get_type(drawline) == arraytype)
-        xpost_stack_push(ctx->lo, ctx->os,
-                //consname(ctx, "exec")
-                nameexec
-                );
+        xpost_stack_push(ctx->lo, ctx->os, nameexec);
 
     /*Then construct the loop-body procedure array. */
        //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "]")));
@@ -495,18 +474,9 @@ int _fillpoly (Xpost_Context *ctx,
 
     /*So the sequence in C should be: */
 
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(
-                //consname(ctx, "repeat")
-                namerepeat
-                ));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(
-                //consname(ctx, "cvx")
-                namecvx
-                ));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(
-                //consname(ctx, "]")
-                nameRbracket
-                ));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( namerepeat));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( namecvx));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( nameRbracket));
 
     /*performance could be increased by factoring-out calls to consname()
       or using opcode shortcuts.
@@ -527,16 +497,26 @@ int initdevgenericops (Xpost_Context *ctx,
 
     op = consoper(ctx, ".yxsort", _yxsort, 0, 1, arraytype); INSTALL;
     op = consoper(ctx, ".fillpoly", _fillpoly, 0, 2, arraytype, dicttype); INSTALL;
-    namewidth = consname(ctx, "width");
-    namenativecolorspace = consname(ctx, "nativecolorspace");
-    nameDeviceGray = consname(ctx, "DeviceGray");
-    nameDeviceRGB = consname(ctx, "DeviceRGB");
-    nameroll = consname(ctx, "roll");
-    nameDrawLine = consname(ctx, "DrawLine");
-    nameexec = consname(ctx, "exec");
-    namerepeat = consname(ctx, "repeat");
-    namecvx = consname(ctx, "cvx");
-    nameRbracket = consname(ctx, "]");
+    if (xpost_object_get_type(namewidth = consname(ctx, "width")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namenativecolorspace = consname(ctx, "nativecolorspace")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameDeviceGray = consname(ctx, "DeviceGray")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameDeviceRGB = consname(ctx, "DeviceRGB")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameroll = consname(ctx, "roll")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameDrawLine = consname(ctx, "DrawLine")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameexec = consname(ctx, "exec")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namerepeat = consname(ctx, "repeat")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namecvx = consname(ctx, "cvx")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameRbracket = consname(ctx, "]")) == invalidtype)
+        return VMerror;
 
     return 0;
 }

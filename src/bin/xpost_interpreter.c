@@ -156,10 +156,17 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
         return 0;
     }
 
-    (void)consname(ctx, "maxlength"); /* seed the tree with a word from the middle of the alphabet */
-    (void)consname(ctx, "getinterval"); /* middle of the start */
-    (void)consname(ctx, "setmiterlimit"); /* middle of the end */
-    namedollarerror = consname(ctx, "$error");
+    /* seed the tree with a word from the middle of the alphabet */
+    /* middle of the start */
+    /* middle of the end */
+    if (xpost_object_get_type(consname(ctx, "maxlength")) == invalidtype)
+        return 0;
+    if (xpost_object_get_type(consname(ctx, "getinterval")) == invalidtype)
+        return 0;
+    if (xpost_object_get_type(consname(ctx, "setmiterlimit")) == invalidtype)
+        return 0;
+    if (xpost_object_get_type(namedollarerror = consname(ctx, "$error")) == invalidtype)
+        return 0;
 
     initop(ctx); /* populate the optab (and systemdict) with operators */
 
@@ -171,14 +178,22 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
             XPOST_LOG_ERR("cannot allocate globaldict");
             return 0;
         }
-        bdcput(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
+        ret = bdcput(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
+        if (ret)
+            return 0;
         xpost_stack_push(ctx->lo, ctx->ds, gd);
     }
 
     ctx->vmmode = LOCAL;
-    (void)consname(ctx, "minimal"); /* seed the tree with a word from the middle of the alphabet */
-    (void)consname(ctx, "interest"); /* middle of the start */
-    (void)consname(ctx, "solitaire"); /* middle of the end */
+    /* seed the tree with a word from the middle of the alphabet */
+    /* middle of the start */
+    /* middle of the end */
+    if (xpost_object_get_type(consname(ctx, "minimal")) == invalidtype)
+        return 0;
+    if (xpost_object_get_type(consname(ctx, "interest")) == invalidtype)
+        return 0;
+    if (xpost_object_get_type(consname(ctx, "solitaire")) == invalidtype)
+        return 0;
     {
         Xpost_Object ud; //userdict
         ud = consbdc(ctx, 100);
@@ -187,7 +202,9 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
             XPOST_LOG_ERR("cannot allocate userdict");
             return 0;
         }
-        bdcput(ctx, ud, consname(ctx, "userdict"), ud);
+        ret = bdcput(ctx, ud, consname(ctx, "userdict"), ud);
+        if (ret)
+            return 0;
         xpost_stack_push(ctx->lo, ctx->ds, ud);
     }
 

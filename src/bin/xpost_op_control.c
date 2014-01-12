@@ -416,7 +416,6 @@ int initopc (Xpost_Context *ctx,
     /*
     op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     //dumpdic(ctx->gl, sd); fflush(NULL);
-    bdcput(ctx, sd, consname(ctx, "mark"), mark);
     */
 
     return 0;
