@@ -494,6 +494,41 @@ int idleproc (Xpost_Context *ctx)
     return 0;
 }
 
+static
+int validate_context(Xpost_Context *ctx)
+{
+    //assert(ctx);
+    //assert(ctx->lo);
+    //assert(ctx->lo->base);
+    //assert(ctx->gl);
+    //assert(ctx->gl->base);
+    if (!ctx)
+    {
+        XPOST_LOG_ERR("ctx invalid");
+        return 0;
+    }
+    if (!ctx->lo)
+    {
+        XPOST_LOG_ERR("ctx->lo invalid");
+        return 0;
+    }
+    if (!ctx->lo->base)
+    {
+        XPOST_LOG_ERR("ctx->lo->base invalid");
+        return 0;
+    }
+    if (!ctx->gl)
+    {
+        XPOST_LOG_ERR("ctx->gl invalid");
+        return 0;
+    }
+    if (!ctx->gl->base)
+    {
+        XPOST_LOG_ERR("ctx->gl->base invalid");
+        return 0;
+    }
+    return 1;
+}
 
 /* one iteration of the central loop */
 int eval(Xpost_Context *ctx)
@@ -501,30 +536,24 @@ int eval(Xpost_Context *ctx)
     int ret;
     Xpost_Object t = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
 
-    ctx->currentobject = t;
-    assert(ctx);
-    assert(ctx->lo);
-    assert(ctx->lo->base);
-    assert(ctx->gl);
-    assert(ctx->gl->base);
+    ctx->currentobject = t; /* for _onerror to determine
+                               if hold stack contents are restoreable */
+
+    if (!validate_context(ctx))
+        return unregistered;
 
     if (TRACE) {
-        //XPOST_LOG_DUMP("\neval\n");
         XPOST_LOG_DUMP("eval(): Executing: ");
         xpost_object_dump(t);
-        //XPOST_LOG_DUMP("\n");
         XPOST_LOG_DUMP("Stack: ");
         xpost_stack_dump(ctx->lo, ctx->os);
-        //XPOST_LOG_DUMP("\n");
         XPOST_LOG_DUMP("Dict Stack: ");
         xpost_stack_dump(ctx->lo, ctx->ds);
-        //XPOST_LOG_DUMP("\n");
         XPOST_LOG_DUMP("Exec Stack: ");
         xpost_stack_dump(ctx->lo, ctx->es);
-        //XPOST_LOG_DUMP("\n");
     }
 
-    idleproc(ctx);
+    idleproc(ctx); /* periodically process asynchronous events */
 
     if ( xpost_object_is_exe(t) ) /* if executable */
         ret = evaltype[xpost_object_get_type(t)](ctx);
@@ -544,15 +573,11 @@ void _onerror(Xpost_Context *ctx,
 {
     Xpost_Object sd;
     Xpost_Object dollarerror;
-    char *errmsg="";/*formerly extra data passed by global from error() via longjmp()*/
 
     if (err > unknownerror) err = unknownerror;
 
-    assert(ctx);
-    assert(ctx->gl);
-    assert(ctx->gl->base);
-    assert(ctx->lo);
-    assert(ctx->lo->base);
+    if (!validate_context(ctx))
+        XPOST_LOG_ERR("context not valid");
 
     if (itpdata->in_onerror) {
         fprintf(stderr, "LOOP in error handler\nabort\n");
@@ -578,8 +603,8 @@ void _onerror(Xpost_Context *ctx,
 
     /* printf("1\n"); */
     sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
-    /* printf("2\n"); */
 
+    /* printf("2\n"); */
     dollarerror = bdcget(ctx, sd, namedollarerror);
     if (xpost_object_get_type(dollarerror) == invalidtype)
     {
@@ -587,31 +612,18 @@ void _onerror(Xpost_Context *ctx,
                 errorname[err]);
         return;
     }
-    /* printf("3\n"); */
-    /* FIXME: does errormsg need to be volatile ?? If no, below cast is useless */
-    //errmsg = (char *)errormsg;
-    /* printf("4\n"); */
-    if (err == VMerror) {
-        bdcput(ctx, dollarerror,
-                consname(ctx, "Extra"),
-                null);
-    } else {
-        unsigned mode = ctx->vmmode;
-        ctx->vmmode = GLOBAL;
-        bdcput(ctx, dollarerror,
-                consname(ctx, "Extra"),
-                consbst(ctx, strlen(errmsg), errmsg));
-        ctx->vmmode = mode;
-    }
-    /* printf("5\n"); */
 
+    /* printf("3\n"); */
+    /* printf("4\n"); */
+    /* printf("5\n"); */
     xpost_stack_push(ctx->lo, ctx->os, ctx->currentobject);
+
     /* printf("6\n"); */
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consname(ctx, errorname[err])));
     /* printf("7\n"); */
     xpost_stack_push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
-    /* printf("8\n"); */
 
+    /* printf("8\n"); */
     itpdata->in_onerror = 0;
 }
 
