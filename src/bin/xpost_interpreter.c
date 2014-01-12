@@ -534,7 +534,7 @@ int eval(Xpost_Context *ctx)
     return ret;
 }
 
-/* called by mainloop() after longjmp from error () or propagated error codes.
+/* called by mainloop() after propagated error codes.
    pushes postscript-level error procedures
    and resumes normal execution.
  */
@@ -544,7 +544,7 @@ void _onerror(Xpost_Context *ctx,
 {
     Xpost_Object sd;
     Xpost_Object dollarerror;
-    char *errmsg;
+    char *errmsg="";/*formerly extra data passed by global from error() via longjmp()*/
 
     if (err > unknownerror) err = unknownerror;
 
@@ -589,7 +589,7 @@ void _onerror(Xpost_Context *ctx,
     }
     /* printf("3\n"); */
     /* FIXME: does errormsg need to be volatile ?? If no, below cast is useless */
-    errmsg = (char *)errormsg;
+    //errmsg = (char *)errormsg;
     /* printf("4\n"); */
     if (err == VMerror) {
         bdcput(ctx, dollarerror,
@@ -616,20 +616,10 @@ void _onerror(Xpost_Context *ctx,
 }
 
 
-/* the return point from all calls to error () that do not exit() */
-jmp_buf jbmainloop;
-int jbmainloopset = 0;
-
 /* the big main central interpreter loop. */
 int mainloop(Xpost_Context *ctx)
 {
     int ret;
-    volatile int err;
-
-    if ((err = setjmp(jbmainloop))) {
-        _onerror(ctx, err);
-    }
-    jbmainloopset = 1;
 
     while(!ctx->quit)
     {
@@ -638,7 +628,6 @@ int mainloop(Xpost_Context *ctx)
             _onerror(ctx, ret);
     }
 
-    jbmainloopset = 0;
     return 0;
 }
 

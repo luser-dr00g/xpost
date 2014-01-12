@@ -283,7 +283,7 @@ Xpost_Object consname(Xpost_Context *ctx,
             ret = tstinsert(mem, tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr, s, &t);
             if (ret)
             {
-                //error(ret, ""); //this can only be a VMerror
+                //this can only be a VMerror
                 return invalid;
             }
             tab = (void *)mem->base; //recalc pointer
