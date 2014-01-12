@@ -17,7 +17,6 @@ $error begin
     /command null def
     /errorname null def
     /initializing true def
-    /Extra () def
 end
 ($error installed...)print
 
@@ -65,8 +64,6 @@ errordict begin
                 errorname //=print exec
                 (; OffendingCommand: ) print
                 /command load //=print exec
-                (; Extra: ) print
-                /Extra load //=print exec
                 (]%%\n) print
                 (Stack:\n) print
                 ostack { = } forall
