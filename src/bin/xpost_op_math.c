@@ -159,7 +159,7 @@ int Iidiv (Xpost_Context *ctx,
 {
     if (y.int_.val == 0)
         return undefinedresult;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real((real)x.int_.val / y.int_.val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(x.int_.val / y.int_.val));
     return 0;
 }
 
