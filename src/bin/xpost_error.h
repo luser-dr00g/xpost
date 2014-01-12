@@ -81,8 +81,6 @@ enum err { ERRORS(AS_BARE) };
 extern char *errorname[] /*= { ERRORS(AS_STR) }*/;
 /* puts(errorname[(enum err)limitcheck]); */
 
-extern volatile char *errormsg;
 
-void error(unsigned err, char *msg);
 
 #endif
