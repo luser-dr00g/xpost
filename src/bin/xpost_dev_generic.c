@@ -203,8 +203,8 @@ int _intersect (real ax, real ay,  real bx, real by,
     //        ax, ay,  bx, by,  cx, cy,  dx, dy);
 
     /* reject degenerate line */
-    if ((feq(ax - bx) && feq(ay - by)) ||
-        (feq(cx - dx) && feq(cy - dy)))
+    if ( (feq(ax - bx) && feq(ay - by)) ||
+        (feq(cx - dx) && feq(cy - dy)) )
     {
         return 0;
         /*
@@ -339,6 +339,8 @@ int _fillpoly (Xpost_Context *ctx,
         if (xpost_object_get_type(y) == integertype)
             y = xpost_cons_real(y.int_.val);
 
+        //points[i].x = x.real_.val;
+        //points[i].y = y.real_.val;
         points[i].x = floor(x.real_.val + 0.5);
         points[i].y = floor(y.real_.val + 0.5);
     }

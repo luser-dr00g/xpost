@@ -690,7 +690,12 @@ int initalldata(const char *device)
 }
 
 static
-void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd, const char *device, char *exedir, int is_installed)
+void setlocalconfig(Xpost_Context *ctx,
+                    Xpost_Object sd,
+                    const char *device,
+                    const char *outfile,
+                    char *exedir,
+                    int is_installed)
 {
     char *device_strings[][3] = {
         { "pgm",  "",                "newPGMIMAGEdevice" },
@@ -737,6 +742,13 @@ void setlocalconfig(Xpost_Context *ctx, Xpost_Object sd, const char *device, cha
 
     namenewdev = consname(ctx, "newdefaultdevice");
     bdcput(ctx, sd, namenewdev, xpost_object_cvx(newdevstr));
+
+    if (outfile)
+    {
+        bdcput(ctx, sd,
+                consname(ctx, "OutputFileName"),
+                xpost_object_cvlit(consbst(ctx, strlen(outfile), outfile)));
+    }
 
     ctx->vmmode = LOCAL;
 }
@@ -791,7 +803,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-int xpost_create(const char *device, char *exedir, int is_installed)
+int xpost_create(const char *device, const char *outfile, char *exedir, int is_installed)
 {
     Xpost_Object sd, ud;
     int ret;
@@ -813,7 +825,7 @@ int xpost_create(const char *device, char *exedir, int is_installed)
     sd = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0);
     ud = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 2);
 
-    setlocalconfig(xpost_ctx, sd, device, exedir, is_installed);
+    setlocalconfig(xpost_ctx, sd, device, outfile, exedir, is_installed);
 
     loadinitps(xpost_ctx, exedir, is_installed);
 

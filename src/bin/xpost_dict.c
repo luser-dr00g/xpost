@@ -168,6 +168,7 @@ cont:
         case stringtype: return L.comp_.sz == R.comp_.sz ?
                                 memcmp(charstr(ctx, L), charstr(ctx, R), L.comp_.sz) :
                                 L.comp_.sz - R.comp_.sz;
+        case filetype: return filefile(ctx->lo, L) == filefile(ctx->lo, R);
     }
 }
 

@@ -346,7 +346,7 @@ int main(int argc, char *argv[])
 
     is_installed = xpost_is_installed(filename, &exedir); /* mallocs char* exedir */
 
-    if (!xpost_create(device, exedir, is_installed))
+    if (!xpost_create(device, output_file, exedir, is_installed))
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
