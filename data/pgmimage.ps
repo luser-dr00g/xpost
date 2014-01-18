@@ -392,6 +392,9 @@ DATA_DIR(/qsort.ps)strcat run
             } forall
             f (\n) writestring
         } forall
+        f (%stdout)(w)file ne {
+            f closefile
+        } if
         end
     }
 
@@ -401,7 +404,6 @@ DATA_DIR(/qsort.ps)strcat run
             ImgData
             OutputFileName (w) file
             .writepgm
-            f closefile
         }{
             ImgData
             (%stdout) (w) file

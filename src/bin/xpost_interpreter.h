@@ -79,7 +79,7 @@ void xpost_interpreter_exit(Xpost_Interpreter *itp);
 
 /* 3 simple top-level functions */
 
-int xpost_create(const char *device, char *exedir, int is_installed);
+int xpost_create(const char *device, const char *outfile, char *exedir, int is_installed);
 void xpost_run(const char *ps_file);
 void xpost_destroy(void);
 
