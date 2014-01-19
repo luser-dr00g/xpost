@@ -240,8 +240,8 @@ int main(int argc, char *argv[])
     int is_installed;
     char *exedir;
 
-    printf("EXTRA_BITS_SIZE = %u\n", XPOST_OBJECT_TAG_EXTRA_BITS_SIZE);
-    printf("COMP_MAX_ENT = %u\n", XPOST_OBJECT_COMP_MAX_ENT);
+    printf("EXTRA_BITS_SIZE = %u\n", (unsigned int)XPOST_OBJECT_TAG_EXTRA_BITS_SIZE);
+    printf("COMP_MAX_ENT = %u\n", (unsigned int)XPOST_OBJECT_COMP_MAX_ENT);
 
 #ifdef _WIN32
     device = "gdi";

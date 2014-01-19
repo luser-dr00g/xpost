@@ -304,9 +304,9 @@ int _fillpoly (Xpost_Context *ctx,
     real miny = minx;
     real maxx = -minx;
     real maxy = maxx;
-    int width;
+    //int width;
 
-    width = bdcget(ctx, devdic, namewidth).int_.val;
+    //width = bdcget(ctx, devdic, namewidth).int_.val;
     colorspace = bdcget(ctx, devdic, namenativecolorspace);
     if (objcmp(ctx, colorspace, nameDeviceGray) == 0)
     {
