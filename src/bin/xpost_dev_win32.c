@@ -1031,7 +1031,7 @@ int loadwin32device (Xpost_Context *ctx)
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadwin32devicecont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, dotcopydict)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, namedotcopydict)))
         return execstackoverflow;
 
     return 0;

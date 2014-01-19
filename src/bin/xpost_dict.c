@@ -77,6 +77,7 @@ void *alloca (size_t);
 #include "xpost_error.h"  /* dict functions may throw errors */
 #include "xpost_string.h"  /* may need string functions (convert to name) */
 #include "xpost_name.h"  /* may need name functions (create name) */
+#include "xpost_file.h"
 #include "xpost_dict.h"  /* double-check prototypes */
 
 
@@ -463,7 +464,7 @@ Xpost_Object clean_key (Xpost_Context *ctx,
     || objcmp(ctx, tp[2*i], null) == 0) \
             return tp + (2*i);
 
-static Xpost_Object invalidpair[2] = {0};
+static Xpost_Object invalidpair[2] = {{0},{0}};
 
 /* perform a hash-assisted lookup.
    returns a pointer to the desired pair (if found)), or a null-pair. */
