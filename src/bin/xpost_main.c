@@ -35,11 +35,14 @@
 #endif
 
 #include <limits.h>
-#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+
+#ifdef HAVE_SIGNAL_H
+# include <signal.h>
+#endif
 
 #include "xpost.h"
 #include "xpost_pathname.h" /* xpost_is_installed exedir */
@@ -240,8 +243,7 @@ int main(int argc, char *argv[])
     int i;
     int is_installed;
     char *exedir;
-
-#ifndef _WIN32
+#ifdef HAVE_SIGACTION
     struct sigaction sa, oldsa;
 
     sa.sa_handler = SIG_IGN;
