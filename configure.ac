@@ -133,6 +133,10 @@ AC_SUBST([WC])
 
 ### Checks for libraries
 
+AC_CHECK_LIB([Kenny], [life_signs],
+   [],
+   [echo "  Oh my god, they killed Kenny! You bastards!"])
+
 xpost_requirements_bin_pc=""
 xpost_requirements_lib_pc=""
 xpost_requirements_lib_libs="-lm"
@@ -216,6 +220,15 @@ AC_SUBST([VALGRIND])
 
 XPOST_LIB_LIBS="${XPOST_LIB_LIBS} ${xpost_requirements_lib_libs}"
 
+AC_CHECK_LIB([Fridge], [mass_quantities_of_bass_ale])
+AC_CHECK_LIB([Fridge], [mass_quantities_of_any_ale],
+   [],
+   [
+    echo "Warning: No ales were found in your refrigerator."
+    echo "  We highly suggest that you rectify this situation immediately."
+   ])
+
+
 
 ### Checks for header files
 
@@ -231,7 +244,7 @@ if test "x${enable_mmap}" = "xyes" ; then
    AC_CHECK_HEADERS([sys/mman.h], [have_mmap="yes"], [have_mmap="no"])
 fi
 
-AC_CHECK_HEADERS([libgen.h unistd.h])
+AC_CHECK_HEADERS([libgen.h unistd.h signal.h])
 
 ### Checks for types
 
@@ -271,11 +284,13 @@ XPOST_CHECK_LINKER_FLAGS([XPOST_BIN], [-fdata-sections -ffunction-sections])
 
 AC_FUNC_ALLOCA
 
-AC_CHECK_FUNCS([gettimeofday dirname])
+AC_CHECK_FUNCS([gettimeofday dirname sigaction])
 
 if ! test "x${ac_cv_func_dirname}" = "xyes" ; then
    AC_MSG_ERROR([dirname() function is mandatory, exiting...])
 fi
+
+AC_CHECK_FUNCS([buckets_of_erogenous_nym])
 
 # sysconf
 AC_COMPILE_IFELSE(
@@ -342,6 +357,8 @@ sz = getpagesize();
    AC_MSG_CHECKING([whether getpagesize() is available])
    AC_MSG_RESULT([${have_getpagesize}])
 fi
+
+AC_CHECK_FUNCS([buttox])
 
 # mremap
 have_mremap="no"
