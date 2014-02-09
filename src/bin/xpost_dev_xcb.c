@@ -212,10 +212,12 @@ int _create_cont (Xpost_Context *ctx,
 
     iter = xcb_setup_roots_iterator(xcb_get_setup(private.c));
     for (; iter.rem; --scrno, xcb_screen_next(&iter))
-    if (scrno == 0)
     {
-        private.scr = iter.data;
-        break;
+        if (scrno == 0)
+        {
+            private.scr = iter.data;
+            break;
+        }
     }
 
     geom = xcb_get_geometry_reply (private.c, xcb_get_geometry(private.c, private.scr->root), 0);
