@@ -56,12 +56,9 @@ typedef struct {
 } Xpost_Interpreter;
 
 
-#include <setjmp.h>
 extern Xpost_Interpreter *itpdata;
 extern int initializing;
 extern int ignoreinvalidaccess;
-extern jmp_buf jbmainloop;
-extern int jbmainloopset;
 
 /*@NULL@*/
 Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void);
