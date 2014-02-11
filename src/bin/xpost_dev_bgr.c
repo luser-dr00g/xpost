@@ -32,32 +32,6 @@
 # include <config.h>
 #endif
 
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _AIX
-#  define alloca __alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <stdlib.h> /* abs */
 #include <string.h>
@@ -136,8 +110,6 @@ int _create_cont (Xpost_Context *ctx,
     PrivateData private;
     integer width = w.int_.val;
     integer height = h.int_.val;
-    int scrno;
-    unsigned char  depth;
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
