@@ -444,6 +444,7 @@ call:
 #ifdef HAVE_XCB
 # include "xpost_dev_xcb.h"
 #endif
+#include "xpost_dev_bgr.h"
 
 /* no-op operator useful as a break target.
    put 'breakhere' in the postscript program,
