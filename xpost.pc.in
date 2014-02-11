@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+pkgincludedir=@pkgincludedir@-@VMAJ@
+
+Name: Xpost
+Description: Postscript level 2 interpreter
+Version: @VERSION@
+Requires.private: @xpost_requirements_lib_pc@
+Libs: -L${libdir} -lxpost
+Libs.private: @xpost_requirements_lib_libs@
+Cflags: -I${pkgincludedir}
