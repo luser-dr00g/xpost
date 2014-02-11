@@ -187,7 +187,7 @@ int _create_cont (Xpost_Context *ctx,
     integer width = w.int_.val;
     integer height = h.int_.val;
     int scrno;
-    unsigned char  depth;
+    unsigned char depth;
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
