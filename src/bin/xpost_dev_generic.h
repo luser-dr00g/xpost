@@ -32,9 +32,15 @@
 #define XPOST_DEV_GENERIC_H
 
 /**
- * @brief install operator .yxsort to improve performance of 'fill'
+ * @brief performance and convenience functions for devices
+ *
+ * install operator .yxsort to improve performance of 'fill'
+ * C fillpoly implementation that uses device DrawLine method.
  *
  */
+
+char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic);
+
 int initdevgenericops (Xpost_Context *ctx,
                 Xpost_Object sd);
 
