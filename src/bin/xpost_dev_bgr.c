@@ -32,32 +32,6 @@
 # include <config.h>
 #endif
 
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _AIX
-#  define alloca __alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <stdlib.h> /* abs */
 #include <string.h>
@@ -187,11 +161,9 @@ int _emit (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    Xpost_Object filenamestr;
     Xpost_Object imgdata;
 
-    char *filename;
-    unsigned int *data; 
+    unsigned char *data; 
     int stride;
     int height;
 
@@ -202,29 +174,36 @@ int _emit (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
-    filenamestr = bdcget(ctx, devdic, consname(ctx, "OutputFileName"));
-    filename = alloca(filenamestr.comp_.sz + 1);
-    memcpy(filename, charstr(ctx, filenamestr), filenamestr.comp_.sz);
-    filename[filenamestr.comp_.sz] = '\0';
-
     stride = private.width;
     height = private.height;
 
-    data = alloca(stride * height * sizeof(*data));
+    data = malloc(stride * height * sizeof(*data));
     imgdata = bdcget(ctx, devdic, consname(ctx, "ImgData"));
 
     {
         int i,j;
         Xpost_Object row;
+        Xpost_Object *rowdata;
+        unsigned int rowaddr;
+        Xpost_Memory_File *mem;
+        unsigned char *iter = data;
+
+        mem = xpost_context_select_memory(ctx, imgdata);
+
         for (i=0; i < height; i++) {
-            row = barget(ctx, imgdata, i);
+            row = arrget(mem, imgdata, i);
+            //row = barget(ctx, imgdata, i);
+            xpost_memory_table_get_addr(mem, row.comp_.ent, &rowaddr);
+            rowdata = (Xpost_Object *)(mem->base + rowaddr);
+
             for (j=0; j < stride; j++) {
                 unsigned int val;
-                val = barget(ctx, row, j).int_.val;
+                val = rowdata[j].int_.val;
                 /* 0x00RRGGBB -> 0x00BBGGRR */
-                data[i*stride+j] = ((val & 0xFF) << 16) |
-                             ((val & 0xFF00)) | 
-                             ((val & 0xFF0000) >> 16);
+                *iter++ = (val>>16) & 0xFF;
+                *iter++ = (val>>8) & 0xFF;
+                *iter++ = (val) & 0xFF;
+                *iter++ = 0;
             }
         }
     }

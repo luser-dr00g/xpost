@@ -96,6 +96,19 @@ static Xpost_Object namerepeat;
 static Xpost_Object namecvx;
 static Xpost_Object nameRbracket;
 
+char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
+{
+    Xpost_Object filenamestr;
+    char *filename;
+    filenamestr = bdcget(ctx, devdic, consname(ctx, "OutputFileName"));
+    filename = malloc(filenamestr.comp_.sz + 1);
+    if (filename) {
+        memcpy(filename, charstr(ctx, filenamestr), filenamestr.comp_.sz);
+        filename[filenamestr.comp_.sz] = '\0';
+    }
+    return filename;
+}
+
 static
 int _yxcomp (const void *left, const void *right)
 {
@@ -167,7 +180,7 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
    These values are device-space points derived from user-input,
    so they are ultimately quantized to integers to address the raster,
    but here we consider them quantized to a small fraction of unity,
-   somewhere between 0 and the true floating-point epsilon.
+   somewhere between 1 and the true floating-point epsilon.
  */
 #ifdef _WANT_LARGE_OBJECT
 # define PIXEL_TOLERANCE 0.0001
