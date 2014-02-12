@@ -32,15 +32,17 @@
 #define XPOST_DEV_GENERIC_H
 
 /**
- * @brief performance and convenience functions for devices
+ * @brief convenience function to retrieve filename associated with device
  *
- * install operator .yxsort to improve performance of 'fill'
- * C fillpoly implementation that uses device DrawLine method.
- *
+ * returns malloc'ed string. caller must free.
  */
-
 char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic);
 
+/**
+ * @brief install operator .yxsort to improve performance of 'fill'
+ *
+ * also C fillpoly implementation that uses device DrawLine method.
+ */
 int initdevgenericops (Xpost_Context *ctx,
                 Xpost_Object sd);
 
