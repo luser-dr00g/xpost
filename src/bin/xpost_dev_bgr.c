@@ -86,8 +86,6 @@ typedef struct {
 
 static int _flush (Xpost_Context *ctx, Xpost_Object devdic);
 
-static
-unsigned int _event_handler_opcode;
 
 static Xpost_Object namePrivate;
 static Xpost_Object namewidth;
@@ -136,8 +134,6 @@ int _create_cont (Xpost_Context *ctx,
     PrivateData private;
     integer width = w.int_.val;
     integer height = h.int_.val;
-    int scrno;
-    unsigned char  depth;
 
     /* create a string to contain device data structure */
     privatestr = consbst(ctx, sizeof(PrivateData), NULL);
@@ -191,6 +187,13 @@ int _emit (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
+    Xpost_Object filenamestr;
+    Xpost_Object imgdata;
+
+    char *filename;
+    unsigned int *data; 
+    int stride;
+    int height;
 
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, namePrivate);
@@ -198,6 +201,33 @@ int _emit (Xpost_Context *ctx,
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+
+    filenamestr = bdcget(ctx, devdic, consname(ctx, "OutputFileName"));
+    filename = alloca(filenamestr.comp_.sz + 1);
+    memcpy(filename, charstr(ctx, filenamestr), filenamestr.comp_.sz);
+    filename[filenamestr.comp_.sz] = '\0';
+
+    stride = private.width;
+    height = private.height;
+
+    data = alloca(stride * height * sizeof(*data));
+    imgdata = bdcget(ctx, devdic, consname(ctx, "ImgData"));
+
+    {
+        int i,j;
+        Xpost_Object row;
+        for (i=0; i < height; i++) {
+            row = barget(ctx, imgdata, i);
+            for (j=0; j < stride; j++) {
+                unsigned int val;
+                val = barget(ctx, row, j).int_.val;
+                /* 0x00RRGGBB -> 0x00BBGGRR */
+                data[i*stride+j] = ((val & 0xFF) << 16) |
+                             ((val & 0xFF00)) | 
+                             ((val & 0xFF0000) >> 16);
+            }
+        }
+    }
 
     return 0;
 }
