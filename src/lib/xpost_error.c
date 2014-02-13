@@ -33,26 +33,8 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "xpost_log.h"
-#include "xpost_memory.h"  /* Xpost_Memory_File */
-#include "xpost_object.h"  /* Xpost_Object */
-#include "xpost_stack.h"  /* stack */
-
-#include "xpost_context.h"
-#include "xpost_interpreter.h"  /* access context struct */
-#include "xpost_dict.h"  /* access dict objects */
-#include "xpost_string.h"  /* access string objects */
-#include "xpost_error.h"  /* double-check prototypes */
-#include "xpost_name.h"  /* create names */
-
-/*#define EMITONERROR */
-
+#include "xpost_object.h"
+#include "xpost_error.h"
 
 char *errorname[] = { ERRORS(XPOST_OBJECT_AS_STR) };
 
