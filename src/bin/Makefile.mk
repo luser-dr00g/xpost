@@ -10,7 +10,6 @@ src/bin/xpost_context.c \
 src/bin/xpost_interpreter.c \
 src/bin/xpost_main.c \
 src/bin/xpost_name.c \
-src/bin/xpost_save.c \
 src/bin/xpost_string.c \
 src/bin/xpost_operator.c \
 src/bin/xpost_op_array.c \
@@ -59,8 +58,7 @@ src/bin/xpost_op_font.h \
 src/bin/xpost_dev_generic.h \
 src/bin/xpost_dev_bgr.h \
 src/bin/xpost_pathname.h \
-src/bin/xpost_string.h \
-src/bin/xpost_save.h
+src/bin/xpost_string.h
 
 if HAVE_WIN32
 src_bin_xpost_SOURCES += \

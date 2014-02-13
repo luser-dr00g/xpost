@@ -255,10 +255,10 @@ Xpost_Object consoper(Xpost_Context *ctx,
                 XPOST_LOG_ERR("operator %s NOT installed", name);
                 return null;
             }
+            optab = (void *)(ctx->gl->base + optadr); // recalc
+            sp = (void *)(ctx->gl->base + optab[opcode].sigadr); // recalc
             sp[si].t = ad;
         }
-        optab = (void *)(ctx->gl->base + optadr); // recalc
-        sp = (void *)(ctx->gl->base + optab[opcode].sigadr); // recalc
         {
             va_list args;
             byte *b = (void *)(ctx->gl->base + sp[si].t);
