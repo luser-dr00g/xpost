@@ -6,6 +6,7 @@ includesdir = $(pkgincludedir)-@VMAJ@
 
 src_lib_libxpost_la_SOURCES = \
 src/lib/xpost_compat.c \
+src/lib/xpost_error.c \
 src/lib/xpost_font.c \
 src/lib/xpost_free.c \
 src/lib/xpost_log.c \
@@ -15,6 +16,7 @@ src/lib/xpost_memory.c \
 src/lib/xpost_object.c \
 src/lib/xpost_stack.c \
 src/lib/xpost_compat.h \
+src/lib/xpost_error.h \
 src/lib/xpost_font.h \
 src/lib/xpost_free.h \
 src/lib/xpost_log.h \
