@@ -51,7 +51,8 @@
 #include "xpost_op_dict.h" /* call Aload operator for convenience */
 #include "xpost_dev_bgr.h" /* check prototypes */
 
-typedef struct {
+typedef struct
+{
     int width, height;
     /*
      * add additional members to private struct
@@ -69,8 +70,7 @@ static Xpost_Object namenativecolorspace;
 static Xpost_Object nameDeviceRGB;
 
 
-static
-unsigned int _create_cont_opcode;
+static unsigned int _create_cont_opcode;
 
 /* create an instance of the device
    using the class .copydict procedure */
@@ -163,7 +163,7 @@ int _emit (Xpost_Context *ctx,
     PrivateData private;
     Xpost_Object imgdata;
 
-    unsigned char *data; 
+    unsigned char *data;
     int stride;
     int height;
 
@@ -190,16 +190,18 @@ int _emit (Xpost_Context *ctx,
 
         mem = xpost_context_select_memory(ctx, imgdata);
 
-        for (i=0; i < height; i++) {
+        for (i=0; i < height; i++)
+        {
             row = arrget(mem, imgdata, i);
             //row = barget(ctx, imgdata, i);
             xpost_memory_table_get_addr(mem, row.comp_.ent, &rowaddr);
             rowdata = (Xpost_Object *)(mem->base + rowaddr);
 
-            for (j=0; j < stride; j++) {
+            for (j=0; j < stride; j++)
+            {
                 unsigned int val;
                 val = rowdata[j].int_.val;
-                /* 0x00RRGGBB -> 0x00BBGGRR */
+                /* 0x00RRGGBB */
                 *iter++ = (val>>16) & 0xFF;
                 *iter++ = (val>>8) & 0xFF;
                 *iter++ = (val) & 0xFF;

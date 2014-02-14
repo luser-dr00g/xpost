@@ -106,7 +106,7 @@ Xpost_Object xpost_save_create_snapshot_object (Xpost_Memory_File *mem)
 /* check ent's llev and tlev
    against current save level (save-stack count)
    returns 1 if ent is saved (or not necessary to save),
-   returns 0 if ent needs to be saved before changing. 
+   returns 0 if ent needs to be saved before changing.
  */
 unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
                   unsigned ent)
@@ -263,7 +263,8 @@ void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
     if (xpost_object_get_type(sav) == invalidtype)
         return;
     cnt = xpost_stack_count(mem, sav.save_.stk);
-    while (cnt--) {
+    while (cnt--)
+    {
         Xpost_Object rec;
         unsigned hold;
         rec = xpost_stack_pop(mem, sav.save_.stk);
@@ -324,7 +325,7 @@ int main (void)
     arrput(mem, a, 1, xpost_cons_int(66));
     show("initial", mem, a);
 
-    //object v = 
+    //object v =
     (void)xpost_save_create_snapshot_object(mem);
     arrput(mem, a, 0, xpost_cons_int(77));
     show("save and alter", mem, a);
@@ -337,5 +338,3 @@ int main (void)
 }
 
 #endif
-
-
