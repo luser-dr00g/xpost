@@ -1,0 +1,43 @@
+(loading device.ps...\n)print
+
+DATA_DIR (/image.ps) strcat run  % image.ps implements device base classes
+DATA_DIR (/nulldev.ps) strcat run  % nulldevice
+
+newdefaultdevice % defined in xpost_interpreter.c:setdatadir()
+                 % as similar to one of these:
+%/DEVICE 50 50 newPGMIMAGEdevice def
+%loadxcbdevice /DEVICE 400 300 newxcbdevice def
+%loadwin32device /DEVICE 400 300 newwin32device def
+
+DEVICE begin
+    /defaultmatrix [ 1 0 0 -1 0 height ] def
+
+    % override ps fillpoly with operator
+    %/FillPoly load type /operatortype ne { % unless already overridden.
+        /FillPoly /.fillpoly load def
+    %} if
+end
+
+/flushpage {
+    DEVICE /Flush known {
+        DEVICE dup /Flush get exec
+    } if
+} bind def
+
+/showpage {
+    DEVICE dup /Emit get exec
+    flushpage
+
+    (----showpage----) =print flush
+    [ {(%lineedit)(r)file}stopped cleartomark
+
+    DEVICE /pagenumber
+    2 copy known {
+        2 copy get 1 add put
+    }{
+        1 put
+    } ifelse
+    erasepage
+} bind def
+
+(eof device.ps\n)print
