@@ -28,8 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef XPOST_BIN_ERR_H
-#define XPOST_BIN_ERR_H
+#ifndef XPOST_ERROR_H
+#define XPOST_ERROR_H
 
 /*
    For a commentary on these macros, see my answer to this SO question
@@ -72,7 +72,5 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
 enum err { ERRORS(AS_BARE) };
 extern char *errorname[] /*= { ERRORS(AS_STR) }*/;
 /* puts(errorname[(enum err)limitcheck]); */
-
-
 
 #endif
