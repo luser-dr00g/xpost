@@ -397,7 +397,7 @@ int filestatus(Xpost_Memory_File *mem,
 /* call fstat. */
 int filebytesavailable(Xpost_Memory_File *mem,
                         Xpost_Object f,
-                        long *retval)
+                        int *retval)
 {
     int ret;
     FILE *fp;
@@ -405,7 +405,7 @@ int filebytesavailable(Xpost_Memory_File *mem,
     long sz, pos;
 
     fp = filefile(mem, f);
-    if (!fp) return -1;
+    if (!fp) return ioerror;
     ret = fstat(fileno(fp), &sb);
     if (ret != 0)
     {
@@ -413,12 +413,14 @@ int filebytesavailable(Xpost_Memory_File *mem,
         return ioerror;
     }
     if (sb.st_size > LONG_MAX)
-        return LONG_MAX;
+        return rangecheck;
     sz = (long)sb.st_size;
     
     pos = ftell(fp);
-    //return sz - pos;
-    *retval = sz - pos;
+    if ((sz - pos) > INT_MAX)
+        return rangecheck;
+
+    *retval = (int)(sz - pos);
     return 0;
 }
 

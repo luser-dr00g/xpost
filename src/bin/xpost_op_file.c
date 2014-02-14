@@ -319,7 +319,7 @@ static
 int Fbytesavailable (Xpost_Context *ctx,
                       Xpost_Object F)
 {
-    long bytes;
+    int bytes;
     int ret;
     ret = filebytesavailable(ctx->lo, F, &bytes);
     if (ret)

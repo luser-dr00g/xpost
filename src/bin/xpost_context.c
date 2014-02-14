@@ -48,12 +48,12 @@
 #include "xpost_stack.h"
 #include "xpost_free.h"  //  initializes free list
 #include "xpost_error.h"
+#include "xpost_save.h"  // initializes save/restore stacks
 
 #include "xpost_context.h"
 
 #include "xpost_interpreter.h"
 #include "xpost_garbage.h" // installs garbage collector in memory files
-#include "xpost_save.h"  // initializes save/restore stacks
 
 /* initialize the context list
    special entity in the mfile */
