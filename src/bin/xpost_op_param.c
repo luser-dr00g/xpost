@@ -41,10 +41,10 @@
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
-
-#include "xpost_garbage.h"
 #include "xpost_save.h"
+
 #include "xpost_context.h"
+#include "xpost_garbage.h"
 #include "xpost_interpreter.h"
 #include "xpost_name.h"
 #include "xpost_string.h"

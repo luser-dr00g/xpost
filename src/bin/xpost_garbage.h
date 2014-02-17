@@ -58,5 +58,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall);
 /**
  * @brief perform a short functionality test
  */
-int test_garbage_collect(void);
+int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                         Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                         Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void));
 #endif

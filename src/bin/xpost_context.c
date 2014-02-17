@@ -52,7 +52,6 @@
 
 #include "xpost_context.h"
 
-#include "xpost_interpreter.h"
 #include "xpost_garbage.h" // installs garbage collector in memory files
 
 /* initialize the context list
@@ -109,7 +108,8 @@ unsigned int makestack(Xpost_Memory_File *mem)
 /* set up global vm in the context
  */
 static
-int initglobal(Xpost_Context *ctx)
+int initglobal(Xpost_Context *ctx,
+               Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void))
 {
     char g_filenam[] = "gmemXXXXXX";
     int fd;
@@ -178,7 +178,8 @@ int initglobal(Xpost_Context *ctx)
    allocates all stacks
  */
 static
-int initlocal(Xpost_Context *ctx)
+int initlocal(Xpost_Context *ctx,
+              Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void))
 {
     char l_filenam[] = "lmemXXXXXX";
     int fd;
@@ -256,7 +257,10 @@ int initlocal(Xpost_Context *ctx)
    allocates systemdict
    populates systemdict and optab with operators
  */
-int xpost_context_init(Xpost_Context *ctx)
+int xpost_context_init(Xpost_Context *ctx,
+                       int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                       Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                       Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void))
 {
     int ret;
 
@@ -264,12 +268,12 @@ int xpost_context_init(Xpost_Context *ctx)
     if (!ret)
         return 0;
 
-    ret = initlocal(ctx);
+    ret = initlocal(ctx, xpost_interpreter_alloc_local_memory);
     if (!ret)
     {
         return 0;
     }
-    ret = initglobal(ctx);
+    ret = initglobal(ctx, xpost_interpreter_alloc_global_memory);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->lo);
@@ -320,7 +324,11 @@ int xpost_context_install_event_handler(Xpost_Context *ctx,
    (spawn jobserver)
    */
 static
-unsigned int _fork1(Xpost_Context *ctx)
+unsigned int _fork1(Xpost_Context *ctx,
+                    int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                    Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                    Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                    Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void))
 {
     unsigned int newcid;
     Xpost_Context *newctx;
@@ -329,8 +337,8 @@ unsigned int _fork1(Xpost_Context *ctx)
     (void)ctx;
     ret = xpost_interpreter_cid_init(&newcid);
     newctx = xpost_interpreter_cid_get_context(newcid);
-    initlocal(newctx);
-    initglobal(newctx);
+    initlocal(newctx, xpost_interpreter_alloc_local_memory);
+    initglobal(newctx, xpost_interpreter_alloc_global_memory);
     newctx->vmmode = LOCAL;
     return newcid;
 }
@@ -340,15 +348,20 @@ unsigned int _fork1(Xpost_Context *ctx)
    (new "application"?)
    */
 static
-unsigned int fork2(Xpost_Context *ctx)
+unsigned int fork2(Xpost_Context *ctx,
+                    int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                    Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                    Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                    Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void))
 {
     unsigned int newcid;
     Xpost_Context *newctx;
     int ret;
 
+    (void)xpost_interpreter_alloc_global_memory;
     ret = xpost_interpreter_cid_init(&newcid);
     newctx = xpost_interpreter_cid_get_context(newcid);
-    initlocal(ctx);
+    initlocal(ctx, xpost_interpreter_alloc_local_memory);
     newctx->gl = ctx->gl;
     xpost_context_append_ctxlist(newctx->gl, newcid);
     xpost_stack_push(newctx->lo, newctx->ds,
@@ -361,12 +374,18 @@ unsigned int fork2(Xpost_Context *ctx)
    (lightweight process)
    */
 static
-unsigned int fork3(Xpost_Context *ctx)
+unsigned int fork3(Xpost_Context *ctx,
+                    int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                    Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                    Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                    Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void))
 {
     unsigned int newcid;
     Xpost_Context *newctx;
     int ret;
 
+    (void)xpost_interpreter_alloc_global_memory;
+    (void)xpost_interpreter_alloc_local_memory;
     ret = xpost_interpreter_cid_init(&newcid);
     newctx = xpost_interpreter_cid_get_context(newcid);
     newctx->lo = ctx->lo;
