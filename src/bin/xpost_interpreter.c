@@ -75,7 +75,7 @@ void init(void);
 void xit(void);
 
 /* find the next unused mfile in the global memory table */
-Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
+static Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
 {
     int i;
 
@@ -89,7 +89,7 @@ Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
 }
 
 /* find the next unused mfile in the local memory table */
-Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
+static Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
 {
     int i;
     for (i=0; i < MAXMFILE; i++) {
@@ -104,14 +104,14 @@ Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
 
 /* cursor to next cid number to try to allocate */
 static
-unsigned nextid = 0;
+unsigned int nextid = 0;
 
 /* allocate a context-id and associated context struct
    returns cid;
  */
-int xpost_interpreter_cid_init(unsigned *cid)
+static int xpost_interpreter_cid_init(unsigned int *cid)
 {
-    unsigned startid = nextid;
+    unsigned int startid = nextid;
     while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 ) {
         if (nextid == startid + MAXCONTEXT)
         {
@@ -127,7 +127,7 @@ int xpost_interpreter_cid_init(unsigned *cid)
 /* adapter:
            ctx <- cid
    yield pointer to context struct given cid */
-Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid)
+Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid)
 {
     //TODO reject cid 0
     return &itpdata->ctab[ (cid-1) % MAXCONTEXT ];
@@ -218,7 +218,10 @@ int xpost_interpreter_init(Xpost_Interpreter *itpptr, const char *device)
 {
     int ret;
 
-    ret = xpost_context_init(&itpptr->ctab[0]);
+    ret = xpost_context_init(&itpptr->ctab[0],
+                             xpost_interpreter_cid_init,
+                             xpost_interpreter_alloc_local_memory,
+                             xpost_interpreter_alloc_global_memory);
     if (!ret)
     {
         return 0;
@@ -568,7 +571,7 @@ int eval(Xpost_Context *ctx)
  */
 static
 void _onerror(Xpost_Context *ctx,
-        unsigned err)
+        unsigned int err)
 {
     Xpost_Object sd;
     Xpost_Object dollarerror;
@@ -807,9 +810,13 @@ int xpost_create(const char *device, const char *outfile, char *exedir, int is_i
     Xpost_Object sd, ud;
     int ret;
 
-    //test_memory();
-    //if (!test_garbage_collect())
-        //return 0;
+#if 0
+    test_memory();
+    if (!test_garbage_collect(xpost_interpreter_cid_init,
+                                xpost_interpreter_alloc_local_memory,
+                                xpost_interpreter_alloc_global_memory))
+        return 0;
+#endif
 
     nextid = 0; //reset process counter
 

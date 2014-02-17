@@ -1,6 +1,8 @@
 #ifndef XPOST_CONTEXT_H
 #define XPOST_CONTEXT_H
 
+#define MAXCONTEXT 10
+
 /**
  * @brief valid values for Xpost_Context::vmmode
  */
@@ -51,7 +53,10 @@ int xpost_context_append_ctxlist(Xpost_Memory_File *mem, unsigned cid);
 /**
  * @brief initialize the context structure
  */
-int xpost_context_init(Xpost_Context *ctx);
+int xpost_context_init(Xpost_Context *ctx,
+                       int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                       Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                       Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void));
 
 /**
  * @brief destroy the context structure, and all components

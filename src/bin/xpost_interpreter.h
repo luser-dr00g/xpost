@@ -44,12 +44,12 @@
  * the core interpreter loop,
    */
 
-#define MAXCONTEXT 10
+//#define MAXCONTEXT 10 // moved to xpost_context.h. <- must include first!
 #define MAXMFILE 10
 
 typedef struct {
     Xpost_Context ctab[MAXCONTEXT];
-    unsigned cid;
+    unsigned int cid;
     Xpost_Memory_File gtab[MAXMFILE];
     Xpost_Memory_File ltab[MAXMFILE];
     int in_onerror;
@@ -60,13 +60,11 @@ extern Xpost_Interpreter *itpdata;
 extern int initializing;
 extern int ignoreinvalidaccess;
 
-/*@NULL@*/
-Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void);
-/*@NULL@*/
-Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void);
-int xpost_interpreter_cid_init(unsigned *cid);
-Xpost_Context *xpost_interpreter_cid_get_context(unsigned cid);
+Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid);
 
+/**
+ * The event-handler handler
+ */
 int idleproc (Xpost_Context *ctx);
 
 extern int TRACE;

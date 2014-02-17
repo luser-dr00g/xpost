@@ -628,7 +628,9 @@ static
 Xpost_Context *ctx;
 
 static
-int init_test_garbage()
+int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                      Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
+                      Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void))
 {
     int fd;
     unsigned int cid;
@@ -782,9 +784,13 @@ int _clear_hold(Xpost_Context *_ctx)
     return 1;
 }
 
-int test_garbage_collect(void)
+int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                         Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                         Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void))
 {
-    if (!init_test_garbage())
+    if (!init_test_garbage(xpost_interpreter_cid_init,
+                           xpost_interpreter_alloc_local_memory,
+                           xpost_interpreter_alloc_global_memory))
         return 0;
 
     {
