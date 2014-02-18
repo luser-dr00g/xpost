@@ -51,7 +51,7 @@
 
 #include "xpost_context.h"
 #include "xpost_interpreter.h" // uses: context itp MAXCONTEXT MAXMFILE
-#include "xpost_garbage.h"  //  test garbage collector
+#include "xpost_garbage.h"  //  test gc, install collect() in context's memory files
 #include "xpost_save.h"  // save/restore vm
 #include "xpost_string.h"  // eval functions examine strings
 #include "xpost_array.h"  // eval functions examine arrays
@@ -221,7 +221,8 @@ int xpost_interpreter_init(Xpost_Interpreter *itpptr, const char *device)
     ret = xpost_context_init(&itpptr->ctab[0],
                              xpost_interpreter_cid_init,
                              xpost_interpreter_alloc_local_memory,
-                             xpost_interpreter_alloc_global_memory);
+                             xpost_interpreter_alloc_global_memory,
+                             collect);
     if (!ret)
     {
         return 0;
