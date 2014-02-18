@@ -1,0 +1,429 @@
+XPost Internals (formerly the README)
+
+______________
+XPost is a work-in-progress Level-2 Postscript interpreter. Currently it
+implements the complete Level-1 core (working on Level-1 graphics).
+Level-2 features implemented:
+    growing stacks,
+    growing dicts,
+    << /dictionary/syntax >>,
+    separate local and global memory,
+    design support for multiple execution contexts.
+
+The source should be portable across all gcc targets.
+Please raise an issue at
+    http://code.google.com/p/xpost/issues/list
+if you have difficulty compiling.
+
+[ previous XPost is available in the downloads as a .zip of the source directory.
+It was written and tested with Debian Lenny on an Olpc XO-1 laptop.
+(Well, it's not the /whole/ source directory, but all text files needed
+by the makefile) It is no longer being maintained.
+for using:
+    http://code.google.com/p/xpost/downloads/detail?name=xpost2g.zip
+or, for just reading:
+    http://code.google.com/p/xpost/downloads/detail?name=xpost2.pdf ]
+
+Developer note: for working with the postscript level, ie.
+working with the protoype (primitive) graphics code.
+Xpost has the ability to determine if it is being run from the
+real installation directory or just being from the source directory.
+  cd xpost
+  make
+  alias xpost="$PWD/src/bin/xpost"
+or
+  alias xpost="rlwrap $PWD/src/bin/xpost"   # to use the rlwrap interface
+will create a temporary shell alias for the current session.
+When running run the source directory, xpost considers itself
+"not installed", and looks for the postscript initialization files
+from the /data directory relative to the repository's root.
+Assuming the exec call that launched xpost set the argv[0] string
+appropriately, or a /proc filesystem exists, xpost will locate
+itself and its data.
+This means changes to the postscript files will (obviously)
+change the behavior of the interpreter. This ability has been
+found useful in adjusting the `breakhere` (and now 'break' and 'hook')
+debugging operators in postscript code.
+
+
+
+
+XPost is being designed along different principles from previous versions.
+Transparency (debugability), simplicity (borrowing certain OOP concepts
+like encapsulation), speed (choosing appropriate algorithms), extensibility
+(growing stacks. support for multiple contexts). It is being written and
+tested with cygwin on a Toshiba Satellite L875D.
+
+Thanks to the cross-platform powers of the autotools setup
+(thanks, Vincent), Xpost is also tested on MinGW and Linux.
+
+
+  -- Modules --
+
+The various modules were written and tested separately before being
+coupled together to achieve the necessary basic functionality.
+Each module retains its unit-test, its main() function, guarded
+by #ifdef TESTMODULE_(MODULENAME). These tests are now inactive,
+but may be useful in reading the code. Although not run, they
+are mostly updated to reflect changes in the rest of the code.
+These should now probably be removed and the check tests expanded.
+
+    Module TOC
+    __________
+
+                             structures CONSTANTS
+       ---     ---     ---   --------------------
+       xpost_memory          Xpost_Memory_File Xpost_Memory_Table TABSZ
+       xpost_stack           Xpost_Stack STACKSEGSZ
+       xpost_save            saverec_
+       xpost_file             file
+      xpost_object           Xpost_Object
+      xpost_array             array
+      xpost_string            string
+      xpost_dict             dichead dictionary
+      xpost_name              name
+      xpost_garbage           garbage collector
+xpost xpost_main
+      xpost_interpreter       itpdata
+      xpost_context           Xpost_Context
+          osunix              unix-dependent functions
+          osmswin             windows (mingw) hacks
+                            init.ps  initialization and ps-level procedures
+                            test.ps  postscript operator tests
+                               g.ps  prototype graphics operators
+      xpost_error           err.ps  error mechanism (bridges both langs)
+      xpost_operator          oper optab operator-handler MAXOPS SDSIZE
+      ----    ----    ----
+      xpost_op_stack           stack operators
+      xpost_op_bool            boolean operators
+      xpost_op_control         control operators
+      xpost_op_math            math operators
+      xpost_op_file            file operators
+      xpost_op_type            type conversion operators
+      xpost_op_save            vm operators
+      xpost_op_misc            misc operators
+    xpost_op_token             token operator (scanner)
+      xpost_op_string           string operators
+      xpost_op_array            array operators
+      xpost_op_dict             dictionary operators
+       ~~~~~~~~~~           ~~~~~~~~~~~~~~~~~~~~~~~
+        opdim                magic dictionary (* planned)
+         opdimp               processes (*)
+         opdimc               canvases (*)
+
+The file and operator modules were copied with little modification
+from previuos xpost, and so were not deemed to require separate tests.
+
+        Data-structure
+          Hierarchy
+    (Inter-relation(?))
+        -------------
+                itpdata
+      gc     context
+        mfile       stack
+             mtab     object
+                 array
+                 dict
+                 string
+
+The structures are rather closely "coupled" together.
+Each piece relying upon appropriate facilities from other modules.
+But a hierarchy of a sort does exist. The itpdata structure
+directly contains the context and mfile structures in arrays.
+The garbage collector is only interested in a single mfile at any
+given time. mfiles contain mtabs which contain entities.
+stacks live in mfiles, but the context's stacks (operand stack,
+execution stack, dictionary stack) are accessed via "pointers"
+stored in the context structure. objects live in stacks, but they
+can also live in arrays or dicts. arrays and dicts and strings
+are of course, all objects themselves.
+
+
+      Layers
+      ------
+
+Another way to consider the overall organization of modules is
+by /level/. There are "base" modules which are closer to C, and
+operator modules which are closer to Postscript.
+
+Core           Objects                Operators
+----           -------                ---------
+xpost_memory
+  \- xpost_stack
+  /    \- xpost_save .  .  .- - - - - -/- xpost_op_save - save/restore operators
+xpost_object - object                 /- - - - /- xpost_op_token
+                                                token operator for file and string
+  \- xpost_file - file - - - - - - - -/-  xpost_op_file -/- file operators
+  |    |~ - - osunix   |(file uses one of these)
+  \    \~ - - osmswin  |
+   \- - - - - - - - xpost_string - - - /- - xpost_op_string - string operators
+    \- -  - - - - - xpost_array - - -/ - - xpost_op_array - array operators
+     \- - - - - - - xpost_dict - - /- - - xpost_op_dict - dict operators
+      \- -  - - - - xpost_operator - -
+(all of \- -  - - - xpost_name - -\
+ these                             \- - - xpost_op_bool - boolean operators
+ implement                          \ - - xpost_op_control - control operators
+ objects)                   (all of  \- - xpost_op_math - math operators
+                         these create \ - xpost_op_packedarray - (simulated)
+                     operator objects) \- xpost_op_misc - misc operators
+                                        \ xpost_dev_* - device implementations
+
+            -----------------
+                    | - - xpost_error - error handler (used everywhere
+                    |
+                    xpost_interpreter - interpreter (uses everything)
+
+
+
+Virtual Memory
+--------------
+
+  -- Xpost_Memory_File --
+
+At the heart is the "xpost_memory" module: the memory-file and memory-tables.
+Every Xpost_Memory_File starts with an Xpost_Memory_Table.
+Every Xpost_Memory_Table lives in an Xpost_Memory_File.
+An Xpost_Memory_File is a raw memory space cleverly(?) macro-ized to use
+either malloc/realloc/free or mmap/mremap/munmap.
+This memory space is sub-allocated with a segmented index, the Xpost_Memory_Table.
+
+A datum stored in memory is here alternately called an "entity"
+(when referring to the abstract data type, ie. the object data itself,
+the raw bytes) or an "entry" (when referring to the allocation metadata
+in the table (its allocated size, the address of the data).
+
+An execution context has two Memory Files: one for global VM, one for local VM.
+There will be 3 ways of forking a new context:
+ 1  Create copies of both global and local VM.
+ 2  Share global VM, but create a copy of local VM.
+ 3  Share both global and local VM.
+
+  -- Xpost_Memory_Table --
+
+At address 0 of the Xpost_Memory_File is an Xpost_Memory_Table.
+An Xpost_Memory_Table is one segment of a chain of address tables which hold
+the allocation info (size, flags) and the "pointer" to the data
+itself. All VM "pointers" are integer byte-offsets from the vm
+base pointer.
+
+  -- Xpost_Memory_Table[0] Special Entities --
+
+The first several entries of Xpost_Memory_Table[0] are "special entities".
+All Xpost_Memory_File have (in the Xpost_Memory_Table[0]) a save stack (VS), a
+free-list (FREE) and a context-list (CTXLIST) which contains `cid`s
+of all contexts sharing that particular Xpost_Memory_File. This was devised
+to help encapsulate the context's global state within the Xpost_Memory_File
+construct. Even the operator table OPTAB is a special entity
+and lives in global VM, not "global memory".
+(In case somebody needs custom operators, it is possible).
+
+Both VMs go on to hold NAMES, NAMET and BOGUSNAME.
+NAMES and NAMET are for the Name String stack and Name Tree,
+a ternary search tree. The same old ternary search tree,
+this time updated to live in the memory file.
+
+Bogusname is an allocated name string corresponding to the
+Not-Found result. So zero means No and asking what No means
+is Bogus.
+
+OPTAB is unique to global memories.
+
+        Special Entities
+        ----------------
+           context
+    (Xpost_Memory_File)gl   (Xpost_Memory_File)lo
+      Xpost_Memory_Table        Xpost_Memory_Table
+        FREE        FREE
+        VS          VS
+        CTXLIST     CTXLIST
+        NAMES       NAMES
+        NAMET       NAMET
+        BOGUSNAME   BOGUSNAME
+        OPTAB       ----
+        ----        live-entries (gc) ctx->lo->start
+        live-entries (gc) ctx->gl->start
+
+The special entities in the Xpost_Memory_Table facilitate bookkeeping of the
+Xpost_Memory_Table themselves (FREE, VS), locating associated contexts (CTXLIST),
+and internal context data (possibly shared) (NAMES, NAMET, OPTAB).
+If everything works right, the presence of BOGUSNAME should have
+no visible effect to the user.
+
+
+
+Stacks
+------
+
+Patterned after the model of the memory-table chain is the
+"xpost_stack" module: the segmented stack.
+
+And making use of both of these is the "xpost_save" module:
+the *virtual* part of the virtual-memory, the save/restore stacks
+which live in the memory file.
+
+These three modules (memory, stack, & save) are considered the "core"
+of the whole thing. I wrote these and then sat on them for over a year
+while making revisions to previuos xpost, periodically re-reading the code
+to make sure it still made sense.
+
+
+HOLD is a stack to hold arguments popped from the
+operand stack before being passed to operator functions. This
+facilitates argument passing by cracking the hold stack array
+(since the hold stack should be at most one segment. The desired
+objects from the operand stack may span a segment boundary, but
+in the hold stack, they are rooted (so we can use the stack as an array,
+so we can select (switch) a function call based on the number of
+objects).
+
+At one time HOLD was a special entity, as were all of the stacks.
+But it is now referenced directly in the context struct, as are
+all of the stacks. The stacks cannot be special entities if the
+vm is shared between two contexts, they must be part of the 
+per-context data not per-memory-file data.
+
+
+Composite Objects
+-----------------
+
+Array, String and Dictionary functions come in 2 flavors,
+a "raw" version which expects to have the Xpost_Memory_File specified, and
+a "friendly" version which interprets the BANK field in the tag
+to determine whether to look in the local or global VM.
+
+    Raw array functions begin with "arr".
+    Banked array " " " "bar".
+    Raw dictionary " " " "dic".
+    Banked dictionary " " " "bdc". (not thrilled with this one)
+    Raw string " " " "str".
+    Banked string " " " "bst".
+
+Perhaps the banked ones should have normal names, and the "raw" ones should
+have funky names. (cf. Murphy's Law)
+
+
+Save and Restore
+----------------
+
+The save stack holds save-records with two entities, the source and the
+copy. restore merely has to exchange the addresses of the two entities.
+All array and dictionary write operations ensure that the memory is
+saved at the current level before writing.
+This should be more efficient than any of my previous drafts.
+"True" copy-on-write and no pointer-chasing.
+
+Arrays ("xpost_array") and dictionaries ("xpost_dict") are automatically
+copied before writing if the save-level has risen, giving cheap 'save's.
+'restore' has an easy job of popping the save-stack and exchanging
+the addresses in the memory-tables: cheap 'restore's!!
+
+
+Garbage Collection
+------------------
+
+The garbage collector module ("xpost_garbage") implements a simple (?)
+mark-sweep algorithm. It operates on a per-Xpost_Memory_File basis, so global
+and local VMs are collected separately, but all contexts sharing
+an Xpost_Memory_File must be traversed in the /mark/ phase.
+
+I've tried to keep the algorithm very simple, because the memory
+interface itself is so complicated. Even conceptually simple operations
+like copying a pointer from the free list get pretty involved, eg.
+
+    memcpy(mem->base+z, mem->base+adrent(mem,e), sizeof(unsigned));
+
+This line copies the "pointer" (unsigned) value indicated by the
+entity e into the memory "pointed to" by the "pointer" z.
+
+The free list head is in special entity FREE in Xpost_Memory_Table[0].
+Its size is reported as 0, but the adr points to an unsigned int
+value which holds the ent number of the next element of the
+the free list. An ent number of zero terminates the list.
+
+It appears to be functioning now.
+
+The free list has been updated to sort the list by allocation size.
+The allocator function can now stop searching early if the size found
+exceeds the wastage parameter.
+
+
+Operator Handling
+-----------------
+
+Xpost continues to use the same bizarre twisted loop to check
+the stack contents for a combined typecheck/stackunderflow-error
++ polymorphic variadic dispatch, copying argument from the
+postscript stack to the operator-function's calling frame.
+It's all very perverse and clever.
+
+But profiling previuos xpost showed a big bottleneck with all this trickery.
+So a possible optimization is to replace the operator-signature
+type with a dedicated function pointer to a function that
+implements the desired stack-checking. This would factor-out
+quite a bit of redundant computation, I think. For instance,
+most operators are not defined to accept the `anytype` pattern,
+therefore most operators would check the stack faster by omitting
+this clause. This will likely require some truly heinous name-mangling.
+
+The operator handling has been left alone thus far. 
+
+Output devices implement operator functions in much the same
+way internal operators do, but installing the operator object
+into the device dictionary instead of systemdict.
+
+
+Bringing it all together
+------------------------
+
+New itp structure holds context table ctab, and Xpost_Memory_File tables ltab and gtab.
+New special entry CTXLIST lists all contexts associated with the Xpost_Memory_File.
+
+So the garbage collector's root-set for any given Xpost_Memory_File is the VS
+(the save stack) (only one for each Xpost_Memory_File, shared contexts are blocked
+during save/restore sections), and the stacks from each associated context.
+It has also been made bank-aware. When collecting a global Xpost_Memory_File, it
+only marks global data; likewise for a local sweep, only mark locals.
+
+Context IDs, `cid`s, are generated sequentially, starting from 1.
+They are designed so that `(cid - 1) % MAXCONTEXT` will yield the
+index in the ctab of the context. So the allocator increments
+until this formula yields an empty slot. This lets us re-use slots
+while still maintaining unique IDs for all processes in the history
+(until the `unsigned` wraps TO//DO fix this timebomb -- not a problem,
+see http://programmers.stackexchange.com/questions/199635/ ).
+
+Just learned from the PLRM that names should live in local-vm, not global.
+But I'm thinking I'll keep a global table for the system names. Since the
+optab lives in global-vm, I want operator names to be accessible in the
+same Xpost_Memory_File. But "user" names should be allocated in local vm.
+This means names need to be banked just like composites. ... And they are now.
+
+
+Additional information about xpost
+----------------------------------
+
+The development of Xpost has benefited greatly from the support and
+advice of fellow programmers on usenet in comp.lang.c, comp.lang.postscript,
+comp.unix.programmer. Searching for my email addresses mijoryx@yahoo.com
+or luser.droog@gmail.com should yield many discussions, many of which
+pertain to xpost or to ideas that influence my programming style.
+The classic is "Embarrassing spaghetti code needs stylistic advice".
+I suppose the moral to that one is that I can hack up a loogee, but
+I clean up nice, too. :)
+
+Also, my questions on Stack Overflow should offer additional background.
+http://stackoverflow.com/users/733077/luser-droog?tab=questions
+And the answers I've received have been enormously helpful.
+
+~~~~
+
+Also, Exciting News! Possible integration of xpost and LibreOffice.
+xpost would provide EPS import for LibreOffice.
+LibreOffice would provide graphics support for xpost.
+Win-Win.
+
+https://bugs.freedesktop.org/show_bug.cgi?id=67464
+
+I may need to release under a different license. Still learning
+about that part (who ain't??).
+
