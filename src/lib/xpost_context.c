@@ -398,8 +398,7 @@ unsigned int fork3(Xpost_Context *ctx,
     xpost_context_append_ctxlist(newctx->lo, newcid);
     newctx->gl = ctx->gl;
     xpost_context_append_ctxlist(newctx->gl, newcid);
-    xpost_stack_push(newctx->lo, newctx->ds, 
+    xpost_stack_push(newctx->lo, newctx->ds,
             xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)); // systemdict
     return newcid;
 }
-
