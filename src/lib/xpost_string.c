@@ -85,7 +85,8 @@ Xpost_Object xpost_cons_string(Xpost_Context *ctx,
 {
     Xpost_Object s;
     s = xpost_cons_string_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
-    if (xpost_object_get_type(s) != nulltype) {
+    if (xpost_object_get_type(s) != nulltype)
+    {
         xpost_stack_push(ctx->lo, ctx->hold, s);
         if (ctx->vmmode==GLOBAL)
             s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
@@ -181,7 +182,8 @@ int main (void)
     (void)xpost_memory_table_init(&mem);
 
     s = xpost_cons_string_memory(&mem, CNT_STR("This is a string"));
-    for (i=0; i < s.comp_.sz; i++) {
+    for (i=0; i < s.comp_.sz; i++)
+    {
         putchar(xpost_string_get_memory(&mem, s, i));
     }
     putchar('\n');
