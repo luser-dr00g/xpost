@@ -185,7 +185,7 @@ int Sgetenv (Xpost_Context *ctx,
     char *s;
     char *str;
     char *r;
-    s = charstr(ctx, S);
+    s = xpost_string_get_pointer(ctx, S);
     str = alloca(S.comp_.sz + 1);
     memcpy(str, s, S.comp_.sz);
     str[S.comp_.sz] = '\0';
@@ -193,7 +193,7 @@ int Sgetenv (Xpost_Context *ctx,
     if (r)
     {
         Xpost_Object strobj;
-        strobj = consbst(ctx, strlen(r), r);
+        strobj = xpost_cons_string(ctx, strlen(r), r);
         if (xpost_object_get_type(strobj) == nulltype)
             return VMerror;
         xpost_stack_push(ctx->lo, ctx->os, strobj);
@@ -213,14 +213,14 @@ int SSputenv (Xpost_Context *ctx,
               Xpost_Object S)
 {
     char *n, *s, *r;
-    n = charstr(ctx, N);
+    n = xpost_string_get_pointer(ctx, N);
     if (xpost_object_get_type(S) == nulltype) {
         s = "";
         r = alloca(N.comp_.sz + 1);
         memcpy(r, n, N.comp_.sz);
         r[N.comp_.sz] = '\0';
     } else {
-        s = charstr(ctx, S);
+        s = xpost_string_get_pointer(ctx, S);
         r = alloca(N.comp_.sz + 1 + S.comp_.sz + 1);
         memcpy(r, n, N.comp_.sz);
         r[N.comp_.sz] = '=';
@@ -325,12 +325,12 @@ int initopx(Xpost_Context *ctx,
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "null"), null);
     bdcput(ctx, sd, consname(ctx, "version"),
-            xpost_object_cvlit(consbst(ctx, strlen(versionstr), versionstr)));
+            xpost_object_cvlit(xpost_cons_string(ctx, strlen(versionstr), versionstr)));
     op = consoper(ctx, "realtime", realtime, 1, 0); INSTALL;
     op = consoper(ctx, "usertime", usertime, 1, 0); INSTALL;
     //languagelevel
     bdcput(ctx, sd, consname(ctx, "product"),
-            xpost_object_cvlit(consbst(ctx, strlen(productstr), productstr)));
+            xpost_object_cvlit(xpost_cons_string(ctx, strlen(productstr), productstr)));
     bdcput(ctx, sd, consname(ctx, "revision"), xpost_cons_int(revno));
     bdcput(ctx, sd, consname(ctx, "serialnumber"), xpost_cons_int(serno));
     //executive: see init.ps

@@ -289,7 +289,7 @@ int grok (Xpost_Context *ctx,
                       }
                       else *sp++ = c;
                   }
-                  obj = consbst(ctx, sp-s, s);
+                  obj = xpost_cons_string(ctx, sp-s, s);
                   if (xpost_object_get_type(obj) == nulltype)
                       return VMerror;
                   //return xpost_object_cvlit(obj);
@@ -338,7 +338,7 @@ int grok (Xpost_Context *ctx,
                       }
                       *sp++ = d;
                   }
-                  obj = consbst(ctx, sp-s, s);
+                  obj = xpost_cons_string(ctx, sp-s, s);
                   if (xpost_object_get_type(obj) == nulltype)
                       return VMerror;
                   //return xpost_object_cvlit(obj);
@@ -541,7 +541,7 @@ int Snext(Xpost_Context *ctx,
 {
     int ret;
     if (S->comp_.sz == 0) return EOF;
-    ret = charstr(ctx, *S)[0];
+    ret = xpost_string_get_pointer(ctx, *S)[0];
     ++S->comp_.off;
     --S->comp_.sz;
     return ret;
@@ -553,7 +553,7 @@ void Sback(Xpost_Context *ctx,
 {
     --S->comp_.off;
     ++S->comp_.sz;
-    charstr(ctx, *S)[0] = c;
+    xpost_string_get_pointer(ctx, *S)[0] = c;
 }
 static
 int Stoken (Xpost_Context *ctx,

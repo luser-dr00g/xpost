@@ -798,7 +798,7 @@ int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
         unsigned int pre, post, sz, ret;
 
         pre = ctx->lo->used;
-        str = consbst(ctx, 7, "0123456");
+        str = xpost_cons_string(ctx, 7, "0123456");
         post = ctx->lo->used;
         sz = post-pre;
         /* printf("str sz=%u\n", sz); */
@@ -831,8 +831,8 @@ int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
         barput(ctx, arr, 0, xpost_cons_int(12));
         barput(ctx, arr, 1, xpost_cons_int(13));
         barput(ctx, arr, 2, xpost_cons_int(14));
-        barput(ctx, arr, 3, consbst(ctx, 5, "fubar"));
-        barput(ctx, arr, 4, consbst(ctx, 4, "buzz"));
+        barput(ctx, arr, 3, xpost_cons_string(ctx, 5, "fubar"));
+        barput(ctx, arr, 4, xpost_cons_string(ctx, 4, "buzz"));
         post = ctx->lo->used;
         sz = post-pre;
 
@@ -924,13 +924,13 @@ int main(void)
     /* array not on stack */
 
 #define CNT_STR(x) sizeof(x), x
-    xpost_stack_push(mem, stac, consstr(mem, CNT_STR("string on stack")));
+    xpost_stack_push(mem, stac, xpost_cons_string_memory(mem, CNT_STR("string on stack")));
 
-    xpost_object_dump(consstr(mem, CNT_STR("string not on stack")));
+    xpost_object_dump(xpost_cons_string_memory(mem, CNT_STR("string not on stack")));
 
     collect(mem);
-    xpost_stack_push(mem, stac, consstr(mem, CNT_STR("string on stack")));
-    xpost_object_dump(consstr(mem, CNT_STR("string not on stack")));
+    xpost_stack_push(mem, stac, xpost_cons_string_memory(mem, CNT_STR("string on stack")));
+    xpost_object_dump(xpost_cons_string_memory(mem, CNT_STR("string not on stack")));
 
     collect(mem);
     xpost_memory_file_dump(mem);

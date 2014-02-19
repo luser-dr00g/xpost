@@ -53,7 +53,7 @@ int Istring(Xpost_Context *ctx,
              Xpost_Object I)
 {
     Xpost_Object str;
-    str = consbst(ctx, I.int_.val, NULL);
+    str = xpost_cons_string(ctx, I.int_.val, NULL);
     if (xpost_object_get_type(str) == nulltype)
         return VMerror;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(str));
@@ -79,10 +79,10 @@ int s_copy(Xpost_Context *ctx,
 
     for (i = 0; i < S.comp_.sz; i++)
     {
-        ret = bstget(ctx, S, i, &val);
+        ret = xpost_string_get(ctx, S, i, &val);
         if (ret)
             return ret;
-        ret = bstput(ctx, D, i, val);
+        ret = xpost_string_put(ctx, D, i, val);
         if (ret)
             return ret;
     }
@@ -112,7 +112,7 @@ int Sget(Xpost_Context *ctx,
 {
     integer val;
     int ret;
-    ret = bstget(ctx, S, I.int_.val, &val);
+    ret = xpost_string_get(ctx, S, I.int_.val, &val);
     if (ret)
         return ret;
     xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(val));
@@ -125,7 +125,7 @@ int Sput(Xpost_Context *ctx,
           Xpost_Object I,
           Xpost_Object C)
 {
-    return bstput(ctx, S, I.int_.val, C.int_.val);
+    return xpost_string_put(ctx, S, I.int_.val, C.int_.val);
 }
 
 static
@@ -176,8 +176,8 @@ int Sanchorsearch(Xpost_Context *ctx,
 
     if (seek.comp_.sz > str.comp_.sz)
         return rangecheck;
-    s = charstr(ctx, str);
-    k = charstr(ctx, seek);
+    s = xpost_string_get_pointer(ctx, str);
+    k = xpost_string_get_pointer(ctx, seek);
     if (ancsearch(s, k, seek.comp_.sz)) {
         interval = xpost_object_get_interval(str, seek.comp_.sz, str.comp_.sz - seek.comp_.sz);
         if (xpost_object_get_type(interval) == invalidtype)
@@ -206,8 +206,8 @@ int Ssearch(Xpost_Context *ctx,
 
     if (seek.comp_.sz > str.comp_.sz)
         return rangecheck;
-    s = charstr(ctx, str);
-    k = charstr(ctx, seek);
+    s = xpost_string_get_pointer(ctx, str);
+    k = xpost_string_get_pointer(ctx, seek);
     for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++) {
         if (ancsearch(s+i, k, seek.comp_.sz)) {
             interval = xpost_object_get_interval(str, i + seek.comp_.sz, str.comp_.sz - seek.comp_.sz - i);
@@ -263,7 +263,7 @@ int Sforall(Xpost_Context *ctx,
             return execstackoverflow;
     }
 
-    ret = bstget(ctx, S, 0, &val);
+    ret = xpost_string_get(ctx, S, 0, &val);
     if (ret)
         return ret;
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(val)))

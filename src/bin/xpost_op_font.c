@@ -101,11 +101,11 @@ int _findfont (Xpost_Context *ctx,
     else
         fontstr = fontname;
     fname = alloca(fontstr.comp_.sz + 1);
-    memcpy(fname, charstr(ctx, fontstr), fontstr.comp_.sz);
+    memcpy(fname, xpost_string_get_pointer(ctx, fontstr), fontstr.comp_.sz);
     fname[fontstr.comp_.sz] = '\0';
 
     fontdict = consbdc(ctx, 10);
-    privatestr = consbst(ctx, sizeof data, NULL);
+    privatestr = xpost_cons_string(ctx, sizeof data, NULL);
     bdcput(ctx, fontdict, consname(ctx, "Private"), privatestr);
 
     /* initialize font data, with x-scale and y-scale set to 1 */
@@ -410,7 +410,7 @@ int _show (Xpost_Context *ctx,
 
     /* get a c-style nul-terminated string */
     cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     cstr[str.comp_.sz] = '\0';
     XPOST_LOG_INFO("append nul to string");
 
@@ -517,7 +517,7 @@ int _ashow (Xpost_Context *ctx,
 
     /* get a c-style nul-terminated string */
     cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     cstr[str.comp_.sz] = '\0';
     XPOST_LOG_INFO("append nul to string");
 
@@ -627,7 +627,7 @@ int _widthshow (Xpost_Context *ctx,
 
     /* get a c-style nul-terminated string */
     cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     cstr[str.comp_.sz] = '\0';
     XPOST_LOG_INFO("append nul to string");
 
@@ -742,7 +742,7 @@ int _awidthshow (Xpost_Context *ctx,
 
     /* get a c-style nul-terminated string */
     cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     cstr[str.comp_.sz] = '\0';
     XPOST_LOG_INFO("append nul to string");
 
@@ -842,7 +842,7 @@ int _stringwidth (Xpost_Context *ctx,
 
     /* get a c-style nul-terminated string */
     cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, charstr(ctx, str), str.comp_.sz);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     cstr[str.comp_.sz] = '\0';
     XPOST_LOG_INFO("append nul to string");
 

@@ -103,7 +103,7 @@ char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
     filenamestr = bdcget(ctx, devdic, consname(ctx, "OutputFileName"));
     filename = malloc(filenamestr.comp_.sz + 1);
     if (filename) {
-        memcpy(filename, charstr(ctx, filenamestr), filenamestr.comp_.sz);
+        memcpy(filename, xpost_string_get_pointer(ctx, filenamestr), filenamestr.comp_.sz);
         filename[filenamestr.comp_.sz] = '\0';
     }
     return filename;

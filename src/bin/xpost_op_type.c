@@ -200,7 +200,7 @@ int Scvi(Xpost_Context *ctx,
     double dbl;
     long num;
     char *t = alloca(s.comp_.sz+1);
-    memcpy(t, charstr(ctx, s), s.comp_.sz);
+    memcpy(t, xpost_string_get_pointer(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
 
     dbl = strtod(t, NULL);
@@ -230,7 +230,7 @@ int Scvn(Xpost_Context *ctx,
     Xpost_Object name;
 
     t = alloca(s.comp_.sz+1);
-    memcpy(t, charstr(ctx, s), s.comp_.sz);
+    memcpy(t, xpost_string_get_pointer(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
     name = consname(ctx, t);
     if (xpost_object_get_type(name) == invalidtype)
@@ -263,7 +263,7 @@ int Scvr(Xpost_Context *ctx,
 {
     double num;
     char *s = alloca(str.comp_.sz + 1);
-    memcpy(s, charstr(ctx, str), str.comp_.sz);
+    memcpy(s, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     s[str.comp_.sz] = '\0';
     num = strtod(s, NULL);
     if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
@@ -305,7 +305,7 @@ int NRScvrs (Xpost_Context *ctx,
     r = rad.int_.val;
     if (r < 2 || r > 36)
         return rangecheck;
-    n = conv_rad(num.int_.val, r, charstr(ctx, str), str.comp_.sz);
+    n = conv_rad(num.int_.val, r, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     if (n == -1)
         return rangecheck;
     if (n < str.comp_.sz) str.comp_.sz = n;
@@ -396,21 +396,21 @@ int AScvs (Xpost_Context *ctx,
     default:
         if (str.comp_.sz < sizeof(nostringval)-1)
             return rangecheck;
-        memcpy(charstr(ctx, str), nostringval, sizeof(nostringval)-1);
+        memcpy(xpost_string_get_pointer(ctx, str), nostringval, sizeof(nostringval)-1);
         str.comp_.sz = sizeof(nostringval)-1;
         break;
 
     case savetype:
         if (str.comp_.sz < sizeof(ssave)-1)
             return rangecheck;
-        memcpy(charstr(ctx, str), ssave, sizeof(ssave)-1);
+        memcpy(xpost_string_get_pointer(ctx, str), ssave, sizeof(ssave)-1);
         str.comp_.sz = sizeof(ssave)-1;
         break;
 
     case marktype:
         if (str.comp_.sz < sizeof(smark)-1)
             return rangecheck;
-        memcpy(charstr(ctx, str), smark, sizeof(smark)-1);
+        memcpy(xpost_string_get_pointer(ctx, str), smark, sizeof(smark)-1);
         str.comp_.sz = sizeof(smark)-1;
         break;
 
@@ -419,20 +419,20 @@ int AScvs (Xpost_Context *ctx,
             if (any.int_.val) {
                 if (str.comp_.sz < sizeof(strue)-1)
                     return rangecheck;
-                memcpy(charstr(ctx, str), strue, sizeof(strue)-1);
+                memcpy(xpost_string_get_pointer(ctx, str), strue, sizeof(strue)-1);
                 str.comp_.sz = sizeof(strue)-1;
             } else {
                 if (str.comp_.sz < sizeof(sfalse)-1)
                     return rangecheck;
-                memcpy(charstr(ctx, str), sfalse, sizeof(sfalse)-1);
+                memcpy(xpost_string_get_pointer(ctx, str), sfalse, sizeof(sfalse)-1);
                 str.comp_.sz = sizeof(sfalse)-1;
             }
         }
         break;
     case integertype:
         {
-            //n = conv_rad(any.int_.val, 10, charstr(ctx, str), str.comp_.sz);
-            char *s = charstr(ctx, str);
+            //n = conv_rad(any.int_.val, 10, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+            char *s = xpost_string_get_pointer(ctx, str);
             int sz = str.comp_.sz;
             n = 0;
             if (any.int_.val < 0) {
@@ -447,7 +447,7 @@ int AScvs (Xpost_Context *ctx,
             break;
         }
     case realtype:
-        n = conv_real(any.real_.val, charstr(ctx, str), str.comp_.sz);
+        n = conv_real(any.real_.val, xpost_string_get_pointer(ctx, str), str.comp_.sz);
         if (n == -1)
             return rangecheck;
         if (n < str.comp_.sz) str.comp_.sz = n;
@@ -481,7 +481,7 @@ int AScvs (Xpost_Context *ctx,
         if (any.comp_.sz > str.comp_.sz)
             return rangecheck;
         if (any.comp_.sz < str.comp_.sz) str.comp_.sz = any.comp_.sz;
-        memcpy(charstr(ctx, str), charstr(ctx, any), any.comp_.sz);
+        memcpy(xpost_string_get_pointer(ctx, str), xpost_string_get_pointer(ctx, any), any.comp_.sz);
         break;
     }
 

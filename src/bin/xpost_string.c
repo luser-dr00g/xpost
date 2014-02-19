@@ -36,16 +36,15 @@
 #include "xpost_memory.h"  // strings live in mfile, accessed via mtab
 #include "xpost_object.h"  // strings are objects
 #include "xpost_stack.h"
-
 #include "xpost_context.h"
-#include "xpost_interpreter.h"  // banked strings may live in local or global vm
-#include "xpost_string.h"  // double-check prototypes
 #include "xpost_error.h"
+
+#include "xpost_string.h"  // double-check prototypes
 
 /* construct a stringtype object
    with optional string value
    */
-Xpost_Object consstr(Xpost_Memory_File *mem,
+Xpost_Object xpost_cons_string_memory(Xpost_Memory_File *mem,
                      unsigned sz,
                      /*@NULL@*/ const char *ini)
 {
@@ -80,12 +79,12 @@ Xpost_Object consstr(Xpost_Memory_File *mem,
 /* construct a banked string object
    with optional string value
    */
-Xpost_Object consbst(Xpost_Context *ctx,
+Xpost_Object xpost_cons_string(Xpost_Context *ctx,
                      unsigned sz,
                      /*@NULL@*/ const char *ini)
 {
     Xpost_Object s;
-    s = consstr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
+    s = xpost_cons_string_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
     if (xpost_object_get_type(s) != nulltype) {
         xpost_stack_push(ctx->lo, ctx->hold, s);
         if (ctx->vmmode==GLOBAL)
@@ -100,7 +99,7 @@ Xpost_Object consbst(Xpost_Context *ctx,
     string in a stringtype object
     */
 /*@dependent@*/
-char *charstr(Xpost_Context *ctx,
+char *xpost_string_get_pointer(Xpost_Context *ctx,
               Xpost_Object S)
 {
     Xpost_Memory_File *f;
@@ -113,7 +112,7 @@ char *charstr(Xpost_Context *ctx,
 
 
 /* put a value at index into a string */
-int strput(Xpost_Memory_File *mem,
+int xpost_string_put_memory(Xpost_Memory_File *mem,
             Xpost_Object s,
             integer i,
             integer c)
@@ -130,16 +129,16 @@ int strput(Xpost_Memory_File *mem,
 }
 
 /* put a value at index into a banked string */
-int bstput(Xpost_Context *ctx,
+int xpost_string_put(Xpost_Context *ctx,
             Xpost_Object s,
             integer i,
             integer c)
 {
-    return strput(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
+    return xpost_string_put_memory(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
 }
 
 /* get a value from a string at index */
-int strget(Xpost_Memory_File *mem,
+int xpost_string_get_memory(Xpost_Memory_File *mem,
                Xpost_Object s,
                integer i,
                integer *retval)
@@ -158,12 +157,12 @@ int strget(Xpost_Memory_File *mem,
 }
 
 /* get a value from a banked string at index */
-int bstget(Xpost_Context *ctx,
+int xpost_string_get(Xpost_Context *ctx,
                Xpost_Object s,
                integer i,
                integer *retval)
 {
-    return strget(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, retval);
+    return xpost_string_get_memory(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, retval);
 }
 
 #ifdef TESTMODULE_ST
@@ -181,9 +180,9 @@ int main (void)
     xpost_memory_file_init(&mem, "x.mem");
     (void)xpost_memory_table_init(&mem);
 
-    s = consstr(&mem, CNT_STR("This is a string"));
+    s = xpost_cons_string_memory(&mem, CNT_STR("This is a string"));
     for (i=0; i < s.comp_.sz; i++) {
-        putchar(strget(&mem, s, i));
+        putchar(xpost_string_get_memory(&mem, s, i));
     }
     putchar('\n');
     return 0;
