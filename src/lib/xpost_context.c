@@ -84,8 +84,10 @@ int xpost_context_append_ctxlist(Xpost_Memory_File *mem,
     tab = (void *)mem->base;
     ctxlist = (void *)(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr);
     // find first empty
-    for (i=0; i < MAXCONTEXT; i++) {
-        if (ctxlist[i] == 0) {
+    for (i=0; i < MAXCONTEXT; i++)
+    {
+        if (ctxlist[i] == 0)
+        {
             ctxlist[i] = cid;
             return 1;
         }
