@@ -167,7 +167,7 @@ cont:
                                 && L.comp_.off == R.comp_.off ); /* 0 if all eq */
 
         case stringtype: return L.comp_.sz == R.comp_.sz ?
-                                memcmp(charstr(ctx, L), charstr(ctx, R), L.comp_.sz) :
+                                memcmp(xpost_string_get_pointer(ctx, L), xpost_string_get_pointer(ctx, R), L.comp_.sz) :
                                 L.comp_.sz - R.comp_.sz;
         case filetype: return filefile(ctx->lo, L) == filefile(ctx->lo, R);
     }
@@ -441,7 +441,7 @@ Xpost_Object clean_key (Xpost_Context *ctx,
     default: break;
     case stringtype: {
         char *s = alloca(k.comp_.sz+1);
-        memcpy(s, charstr(ctx, k), k.comp_.sz);
+        memcpy(s, xpost_string_get_pointer(ctx, k), k.comp_.sz);
         s[k.comp_.sz] = '\0';
         k = consname(ctx, s);
     }

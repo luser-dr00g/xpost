@@ -100,10 +100,10 @@ int Sfile (Xpost_Context *ctx,
     int ret;
 
     cfn = alloca(fn.comp_.sz + 1);
-    memcpy(cfn, charstr(ctx, fn), fn.comp_.sz);
+    memcpy(cfn, xpost_string_get_pointer(ctx, fn), fn.comp_.sz);
     cfn[fn.comp_.sz] = '\0';
     cmode = alloca(mode.comp_.sz + 1);
-    memcpy(cmode, charstr(ctx, mode), mode.comp_.sz);
+    memcpy(cmode, xpost_string_get_pointer(ctx, mode), mode.comp_.sz);
     cmode[mode.comp_.sz] = '\0';
 
     ret = fileopen(ctx->lo, cfn, cmode, &f);
@@ -184,7 +184,7 @@ int Freadhexstring (Xpost_Context *ctx,
     if (!xpost_object_is_readable(F))
         return invalidaccess;
     f = filefile(ctx->lo, F);
-    s = charstr(ctx, S);
+    s = xpost_string_get_pointer(ctx, S);
 
     for(n=0; !eof && n < S.comp_.sz; n++) {
         do {
@@ -223,7 +223,7 @@ int Fwritehexstring (Xpost_Context *ctx,
     if (!xpost_object_is_writeable(F))
         return invalidaccess;
     f = filefile(ctx->lo, F);
-    s = charstr(ctx, S);
+    s = xpost_string_get_pointer(ctx, S);
 
     for(n=0; n < S.comp_.sz; n++) {
         if (fputc(hex[s[n] / 16], f) == EOF)
@@ -250,7 +250,7 @@ int Freadstring (Xpost_Context *ctx,
     if (!xpost_object_is_readable(F))
         return invalidaccess;
     f = filefile(ctx->lo, F);
-    s = charstr(ctx, S);
+    s = xpost_string_get_pointer(ctx, S);
     n = fread(s, 1, S.comp_.sz, f);
     if (n == S.comp_.sz) {
         xpost_stack_push(ctx->lo, ctx->os, S);
@@ -277,7 +277,7 @@ int Fwritestring (Xpost_Context *ctx,
     if (!xpost_object_is_writeable(F))
         return invalidaccess;
     f = filefile(ctx->lo, F);
-    s = charstr(ctx, S);
+    s = xpost_string_get_pointer(ctx, S);
     if (fwrite(s, 1, S.comp_.sz, f) != S.comp_.sz)
         return ioerror;
     return 0;
@@ -299,7 +299,7 @@ int Freadline (Xpost_Context *ctx,
     if (!xpost_object_is_readable(F))
         return invalidaccess;
     f = filefile(ctx->lo, F);
-    s = charstr(ctx, S);
+    s = xpost_string_get_pointer(ctx, S);
     for (n=0; n < S.comp_.sz; n++) {
         c = fgetc(f);
         if (c == EOF || c == '\n') break;
@@ -421,7 +421,7 @@ int deletefile (Xpost_Context *ctx,
 {
     char *s;
     int ret;
-    s = charstr(ctx, S);
+    s = xpost_string_get_pointer(ctx, S);
     ret = remove(s);
     if (ret != 0)
         switch (errno) {
@@ -440,8 +440,8 @@ int renamefile (Xpost_Context *ctx,
 {
     char *old, *new;
     int ret;
-    old = charstr(ctx, Old);
-    new = charstr(ctx, New);
+    old = xpost_string_get_pointer(ctx, Old);
+    new = xpost_string_get_pointer(ctx, New);
     ret = rename(old, new);
     if (ret != 0)
         switch(errno) {
@@ -477,7 +477,7 @@ int contfilenameforall (Xpost_Context *ctx,
         ++oglob.glob_.off;
         xpost_stack_push(ctx->lo, ctx->es, oglob);
 
-        str = charstr(ctx, Scr);
+        str = xpost_string_get_pointer(ctx, Scr);
         src = globbuf->gl_pathv[ oglob.glob_.off-1 ];
         len = strlen(src);
         if (len > Scr.comp_.sz)
@@ -508,7 +508,7 @@ int filenameforall (Xpost_Context *ctx,
     Xpost_Object oglob;
     int ret;
 
-    tmp = charstr(ctx, Tmp);
+    tmp = xpost_string_get_pointer(ctx, Tmp);
     globbuf = malloc(sizeof *globbuf);
     if (!globbuf)
         return unregistered;
@@ -565,7 +565,7 @@ int Sprint (Xpost_Context *ctx,
 {
     size_t ret;
     char *s;
-    s = charstr(ctx, S);
+    s = xpost_string_get_pointer(ctx, S);
     ret = fwrite(s, 1, S.comp_.sz, stdout);
     if (ret != S.comp_.sz)
         return ioerror;

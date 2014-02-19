@@ -64,7 +64,7 @@ void dumpnames(Xpost_Context *ctx)
     printf("global names:\n");
     for (i=0; i < cnt; i++){
         str = xpost_stack_bottomup_fetch(ctx->gl, stk, i);
-        s = charstr(ctx, str);
+        s = xpost_string_get_pointer(ctx, str);
         printf("%u: %*s\n", i, str.comp_.sz, s);
     }
     xpost_memory_table_get_addr(ctx->lo,
@@ -73,7 +73,7 @@ void dumpnames(Xpost_Context *ctx)
     printf("local names:\n");
     for (i=0; i < cnt; i++) {
         str = xpost_stack_bottomup_fetch(ctx->lo, stk, i);
-        s = charstr(ctx, str);
+        s = xpost_string_get_pointer(ctx, str);
         printf("%u: %*s\n", i, str.comp_.sz, s);
     }
 }
@@ -113,7 +113,7 @@ int initnames(Xpost_Context *ctx)
     tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = 0;
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &nstk);
-    xpost_stack_push(ctx->gl, nstk, consbst(ctx, CNT_STR("_not_a_name_")));
+    xpost_stack_push(ctx->gl, nstk, xpost_cons_string(ctx, CNT_STR("_not_a_name_")));
     assert (xpost_object_get_ent(xpost_stack_topdown_fetch(ctx->gl, nstk, 0)) == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
 
     ctx->vmmode = LOCAL;
@@ -140,7 +140,7 @@ int initnames(Xpost_Context *ctx)
     tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = 0;
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &nstk);
-    xpost_stack_push(ctx->lo, nstk, consbst(ctx, CNT_STR("_not_a_name_")));
+    xpost_stack_push(ctx->lo, nstk, xpost_cons_string(ctx, CNT_STR("_not_a_name_")));
     //assert (xpost_object_get_ent(xpost_stack_topdown_fetch(ctx->lo, nstk, 0)) == XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME);
     if (xpost_object_get_ent(xpost_stack_topdown_fetch(ctx->lo, nstk, 0)) != XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME)
         XPOST_LOG_ERR("Warning: bogus name not in special position");
@@ -241,7 +241,7 @@ unsigned int addname(Xpost_Context *ctx,
     //dumpmtab(ctx->gl, 0);
     //unsigned int vmmode = ctx->vmmode;
     //ctx->vmmode = GLOBAL;
-    str = consbst(ctx, strlen(s), s);
+    str = xpost_cons_string(ctx, strlen(s), s);
     if (xpost_object_get_type(str) == nulltype)
     {
         XPOST_LOG_ERR("cannot allocate name string");

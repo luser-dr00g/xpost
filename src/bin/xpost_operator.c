@@ -125,7 +125,7 @@ void dumpoper(Xpost_Context *ctx,
     o.mark_.pad0 = 0;
     o.mark_.padw = op.name;
     str = strname(ctx, o);
-    s = charstr(ctx, str);
+    s = xpost_string_get_pointer(ctx, str);
     sig = (void *)(ctx->gl->base + op.sigadr);
     printf("<operator %d %d:%*s %p>",
             opcode,

@@ -285,7 +285,7 @@ int evalload(Xpost_Context *ctx)
     if (TRACE)
     {
         Xpost_Object s = strname(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
-        XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, charstr(ctx, s));
+        XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, xpost_string_get_pointer(ctx, s));
     }
 
     if (!xpost_stack_push(ctx->lo, ctx->os,
@@ -718,14 +718,14 @@ void setlocalconfig(Xpost_Context *ctx,
     ctx->vmmode = GLOBAL;
     if (is_installed) {
         bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
-            xpost_object_cvlit(consbst(ctx,
+            xpost_object_cvlit(xpost_cons_string(ctx,
                     CNT_STR(PACKAGE_DATA_DIR))));
         bdcput(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
-            xpost_object_cvlit(consbst(ctx,
+            xpost_object_cvlit(xpost_cons_string(ctx,
                     CNT_STR(PACKAGE_INSTALL_DIR))));
     }
     bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
-            xpost_object_cvlit(consbst(ctx,
+            xpost_object_cvlit(xpost_cons_string(ctx,
                     strlen(exedir), exedir)));
 
     /* define the /newdefaultdevice name called by /start */
@@ -734,12 +734,12 @@ void setlocalconfig(Xpost_Context *ctx,
             break;
         }
     }
-    newdevstr = consbst(ctx,
+    newdevstr = xpost_cons_string(ctx,
             strlen(strtemplate) - 4
             + strlen(device_strings[i][1])
             + strlen(device_strings[i][2]) + 1,
             NULL);
-    sprintf(charstr(ctx, newdevstr), strtemplate,
+    sprintf(xpost_string_get_pointer(ctx, newdevstr), strtemplate,
             device_strings[i][1], device_strings[i][2]);
     --newdevstr.comp_.sz; /* trim the '\0' */
 
@@ -750,7 +750,7 @@ void setlocalconfig(Xpost_Context *ctx,
     {
         bdcput(ctx, sd,
                 consname(ctx, "OutputFileName"),
-                xpost_object_cvlit(consbst(ctx, strlen(outfile), outfile)));
+                xpost_object_cvlit(xpost_cons_string(ctx, strlen(outfile), outfile)));
     }
 
     ctx->vmmode = LOCAL;
@@ -766,7 +766,7 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
 #ifndef S_SPLINT_S
     if (is_installed)
         xpost_stack_push(ctx->lo, ctx->es,
-            xpost_object_cvx(consbst(ctx,
+            xpost_object_cvx(xpost_cons_string(ctx,
              CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
     else {
         char buf[1024];
@@ -774,7 +774,7 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
                 "(%s/../../data/init.ps) (r) file cvx exec",
                 exedir);
         xpost_stack_push(ctx->lo, ctx->es,
-            xpost_object_cvx(consbst(ctx,
+            xpost_object_cvx(xpost_cons_string(ctx,
                     strlen(buf), buf)));
     }
 #endif
@@ -872,7 +872,7 @@ void xpost_run(const char *ps_file)
                wrapped in a stopped context with handleerror
          */
     if (ps_file) {
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(consbst(xpost_ctx, strlen(ps_file), ps_file)));
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(xpost_cons_string(xpost_ctx, strlen(ps_file), ps_file)));
         xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startfile")));
     } else {
         if (isatty(fileno(stdin)))

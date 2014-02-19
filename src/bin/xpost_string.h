@@ -34,34 +34,34 @@
 /* strings
    */
 
-Xpost_Object consstr(Xpost_Memory_File *mem,
+Xpost_Object xpost_cons_string_memory(Xpost_Memory_File *mem,
                      unsigned sz,
                      /*@NULL@*/ const char *ini);
 
-Xpost_Object consbst(Xpost_Context *ctx,
+Xpost_Object xpost_cons_string(Xpost_Context *ctx,
                      unsigned sz,
                      /*@NULL@*/ const char *ini);
 
 /*@dependent@*/
-char *charstr(Xpost_Context *ctx,
+char *xpost_string_get_pointer(Xpost_Context *ctx,
               Xpost_Object S);
 
-int strput(Xpost_Memory_File *mem,
+int xpost_string_put_memory(Xpost_Memory_File *mem,
            Xpost_Object s,
            integer i,
            integer c);
 
-int bstput(Xpost_Context *ctx,
+int xpost_string_put(Xpost_Context *ctx,
            Xpost_Object s,
            integer i,
            integer c);
 
-int strget(Xpost_Memory_File *mem,
+int xpost_string_get_memory(Xpost_Memory_File *mem,
            Xpost_Object s,
            integer i,
            integer *retval);
 
-int bstget(Xpost_Context *ctx,
+int xpost_string_get(Xpost_Context *ctx,
            Xpost_Object s,
            integer i,
            integer *retval);
