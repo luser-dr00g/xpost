@@ -53,7 +53,7 @@ int Istring(Xpost_Context *ctx,
              Xpost_Object I)
 {
     Xpost_Object str;
-    str = xpost_cons_string(ctx, I.int_.val, NULL);
+    str = xpost_string_cons(ctx, I.int_.val, NULL);
     if (xpost_object_get_type(str) == nulltype)
         return VMerror;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(str));
