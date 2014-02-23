@@ -141,9 +141,9 @@ int Fread (Xpost_Context *ctx,
         return ioerror;
     if (b.int_.val != EOF) {
         xpost_stack_push(ctx->lo, ctx->os, b);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
     } else {
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
     return 0;
 }
@@ -204,7 +204,7 @@ int Freadhexstring (Xpost_Context *ctx,
     }
     S.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, S);
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(!eof));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(!eof));
     return 0;
 }
 
@@ -254,11 +254,11 @@ int Freadstring (Xpost_Context *ctx,
     n = fread(s, 1, S.comp_.sz, f);
     if (n == S.comp_.sz) {
         xpost_stack_push(ctx->lo, ctx->os, S);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
     } else {
         S.comp_.sz = n;
         xpost_stack_push(ctx->lo, ctx->os, S);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
     return 0;
 }
@@ -309,7 +309,7 @@ int Freadline (Xpost_Context *ctx,
         return rangecheck;
     S.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, S);
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(c != EOF));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(c != EOF));
     return 0;
 }
 
@@ -324,7 +324,7 @@ int Fbytesavailable (Xpost_Context *ctx,
     ret = filebytesavailable(ctx->lo, F, &bytes);
     if (ret)
         return ret;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(bytes));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(bytes));
     return 0;
 }
 
@@ -387,7 +387,7 @@ static
 int Fstatus (Xpost_Context *ctx,
               Xpost_Object F)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(filestatus(ctx->lo, F)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(filestatus(ctx->lo, F)));
     return 0;
 }
 
@@ -553,7 +553,7 @@ int fileposition (Xpost_Context *ctx,
     if (pos == -1)
         return ioerror;
     else
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(pos));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(pos));
     return 0;
 }
 

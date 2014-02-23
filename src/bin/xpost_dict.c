@@ -110,11 +110,11 @@ int objcmp(Xpost_Context *ctx,
     /* fold nearly-comparable types to comparable */
     if (xpost_object_get_type(L) != xpost_object_get_type(R)) {
         if (xpost_object_get_type(L) == integertype && xpost_object_get_type(R) == realtype) {
-            L = xpost_cons_real(L.int_.val);
+            L = xpost_real_cons(L.int_.val);
             goto cont;
         }
         if (xpost_object_get_type(R) == integertype && xpost_object_get_type(L) == realtype) {
-            R = xpost_cons_real(R.int_.val);
+            R = xpost_real_cons(R.int_.val);
             goto cont;
         }
         if (xpost_object_get_type(L) == nametype && xpost_object_get_type(R) == stringtype) {
@@ -422,9 +422,9 @@ Xpost_Object unextend (Xpost_Object e)
     double d = doubleextended(e);
 
     if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_INT) {
-        o = xpost_cons_int(d);
+        o = xpost_int_cons(d);
     } else if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_REAL) {
-        o = xpost_cons_real(d);
+        o = xpost_real_cons(d);
     } else {
         XPOST_LOG_ERR("invalid extended number object");
         return null;
@@ -767,15 +767,15 @@ int main(void)
     Xpost_Object d;
     d = consbdc(ctx, 12);
     printf("1 2 def\n");
-    bdcput(ctx, d, xpost_cons_int(1), xpost_cons_int(2));
+    bdcput(ctx, d, xpost_int_cons(1), xpost_int_cons(2));
     printf("3 4 def\n");
-    bdcput(ctx, d, xpost_cons_int(3), xpost_cons_int(4));
+    bdcput(ctx, d, xpost_int_cons(3), xpost_int_cons(4));
 
     printf("1 load =\n");
-    xpost_object_dump(bdcget(ctx, d, xpost_cons_int(1)));
-    /* xpost_object_dump(bdcget(ctx, d, xpost_cons_int(2)));  */
+    xpost_object_dump(bdcget(ctx, d, xpost_int_cons(1)));
+    /* xpost_object_dump(bdcget(ctx, d, xpost_int_cons(2)));  */
     printf("\n3 load =\n");
-    xpost_object_dump(bdcget(ctx, d, xpost_cons_int(3)));
+    xpost_object_dump(bdcget(ctx, d, xpost_int_cons(3)));
 
 
     /*xpost_memory_file_dump(ctx->gl); */

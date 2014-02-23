@@ -828,9 +828,9 @@ int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
 
         pre = ctx->lo->used;
         arr = consbar(ctx, 5);
-        barput(ctx, arr, 0, xpost_cons_int(12));
-        barput(ctx, arr, 1, xpost_cons_int(13));
-        barput(ctx, arr, 2, xpost_cons_int(14));
+        barput(ctx, arr, 0, xpost_int_cons(12));
+        barput(ctx, arr, 1, xpost_int_cons(13));
+        barput(ctx, arr, 2, xpost_int_cons(14));
         barput(ctx, arr, 3, xpost_cons_string(ctx, 5, "fubar"));
         barput(ctx, arr, 4, xpost_cons_string(ctx, 4, "buzz"));
         post = ctx->lo->used;
@@ -904,9 +904,9 @@ int main(void)
     mem = ctx->lo;
     stac = ctx->os;
 
-    xpost_stack_push(mem, stac, xpost_cons_int(5));
-    xpost_stack_push(mem, stac, xpost_cons_int(6));
-    xpost_stack_push(mem, stac, xpost_cons_real(7.0));
+    xpost_stack_push(mem, stac, xpost_int_cons(5));
+    xpost_stack_push(mem, stac, xpost_int_cons(6));
+    xpost_stack_push(mem, stac, xpost_real_cons(7.0));
     Xpost_Object ar;
     ar = consarr(mem, 3);
     int i;
@@ -914,9 +914,9 @@ int main(void)
         arrput(mem, ar, i, xpost_stack_pop(mem, stac));
     xpost_stack_push(mem, stac, ar);                   /* array on stack */
 
-    xpost_stack_push(mem, stac, xpost_cons_int(1));
-    xpost_stack_push(mem, stac, xpost_cons_int(2));
-    xpost_stack_push(mem, stac, xpost_cons_int(3));
+    xpost_stack_push(mem, stac, xpost_int_cons(1));
+    xpost_stack_push(mem, stac, xpost_int_cons(2));
+    xpost_stack_push(mem, stac, xpost_int_cons(3));
     ar = consarr(mem, 3);
     for (i=0; i < 3; i++)
         arrput(mem, ar, i, xpost_stack_pop(mem, stac));

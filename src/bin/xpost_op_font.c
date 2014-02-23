@@ -229,8 +229,8 @@ void _draw_bitmap (Xpost_Context *ctx,
                         xpost_stack_push(ctx->lo, ctx->os, comp3);
                         break;
                 }
-                xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpos+j));
-                xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ypos+i));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpos+j));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(ypos+i));
                 xpost_stack_push(ctx->lo, ctx->os, devdic);
                 if (xpost_object_get_type(putpix) == operatortype)
                     xpost_stack_push(ctx->lo, ctx->es, putpix);
@@ -330,11 +330,11 @@ int _get_current_point (Xpost_Context *ctx,
     /* get the current pen position */
     /*FIXME if any of these calls fail, should return nocurrentpoint; */
     path = bdcget(ctx, gs, consname(ctx, "currpath"));
-    subpath = bdcget(ctx, path, xpost_cons_int(
+    subpath = bdcget(ctx, path, xpost_int_cons(
                 diclength(xpost_context_select_memory(ctx,path), path) - 1));
     if (xpost_object_get_type(subpath) == invalidtype)
         return nocurrentpoint;
-    pathelem = bdcget(ctx, subpath, xpost_cons_int(
+    pathelem = bdcget(ctx, subpath, xpost_int_cons(
                 diclength(xpost_context_select_memory(ctx,subpath), subpath) - 1));
     if (xpost_object_get_type(pathelem) == invalidtype)
         return nocurrentpoint;
@@ -345,9 +345,9 @@ int _get_current_point (Xpost_Context *ctx,
     datax = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 2);
     datay = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 1);
     if (xpost_object_get_type(datax) == integertype)
-        datax = xpost_cons_real(datax.int_.val);
+        datax = xpost_real_cons(datax.int_.val);
     if (xpost_object_get_type(datay) == integertype)
-        datay = xpost_cons_real(datay.int_.val);
+        datay = xpost_real_cons(datay.int_.val);
     *xpos = datax.real_.val;
     *ypos = datay.real_.val;
     XPOST_LOG_INFO("currentpoint: %f %f", *xpos, *ypos);
@@ -438,8 +438,8 @@ int _show (Xpost_Context *ctx,
 
     finalize = xpost_object_cvx(consbar(ctx, 5));
     /* fill-in final pos before return */
-    barput(ctx, finalize, 0, xpost_cons_real(xpos));
-    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 0, xpost_real_cons(xpos));
+    barput(ctx, finalize, 1, xpost_real_cons(ypos));
     barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
     barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
     barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
@@ -454,8 +454,8 @@ int _show (Xpost_Context *ctx,
     }
 
     /* update current position in the graphics state */
-    barput(ctx, finalize, 0, xpost_cons_real(xpos));
-    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 0, xpost_real_cons(xpos));
+    barput(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
 }
@@ -545,8 +545,8 @@ int _ashow (Xpost_Context *ctx,
 
     finalize = xpost_object_cvx(consbar(ctx, 5));
     /* fill-in final pos before return */
-    barput(ctx, finalize, 0, xpost_cons_real(xpos));
-    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 0, xpost_real_cons(xpos));
+    barput(ctx, finalize, 1, xpost_real_cons(ypos));
     barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
     barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
     barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
@@ -563,8 +563,8 @@ int _ashow (Xpost_Context *ctx,
     }
 
     /* update current position in the graphics state */
-    barput(ctx, finalize, 0, xpost_cons_real(xpos));
-    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 0, xpost_real_cons(xpos));
+    barput(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
 }
@@ -655,8 +655,8 @@ int _widthshow (Xpost_Context *ctx,
 
     finalize = xpost_object_cvx(consbar(ctx, 5));
     /* fill-in final pos before return */
-    barput(ctx, finalize, 0, xpost_cons_real(xpos));
-    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 0, xpost_real_cons(xpos));
+    barput(ctx, finalize, 1, xpost_real_cons(ypos));
     barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
     barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
     barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
@@ -676,8 +676,8 @@ int _widthshow (Xpost_Context *ctx,
     }
 
     /* update current position in the graphics state */
-    barput(ctx, finalize, 0, xpost_cons_real(xpos));
-    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 0, xpost_real_cons(xpos));
+    barput(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
 }
@@ -770,8 +770,8 @@ int _awidthshow (Xpost_Context *ctx,
 
     finalize = xpost_object_cvx(consbar(ctx, 5));
     /* fill-in final pos before return */
-    barput(ctx, finalize, 0, xpost_cons_real(xpos));
-    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 0, xpost_real_cons(xpos));
+    barput(ctx, finalize, 1, xpost_real_cons(ypos));
     barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
     barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
     barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
@@ -793,8 +793,8 @@ int _awidthshow (Xpost_Context *ctx,
     }
 
     /* update current position in the graphics state */
-    barput(ctx, finalize, 0, xpost_cons_real(xpos));
-    barput(ctx, finalize, 1, xpost_cons_real(ypos));
+    barput(ctx, finalize, 0, xpost_real_cons(xpos));
+    barput(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
 }
@@ -895,8 +895,8 @@ int _stringwidth (Xpost_Context *ctx,
 
     }
 
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(xpos));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(ypos));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xpos));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(ypos));
 
     return 0;
 }

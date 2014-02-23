@@ -119,7 +119,7 @@ static
 int Axcheck(Xpost_Context *ctx,
              Xpost_Object o)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(xpost_object_is_exe(o)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(xpost_object_is_exe(o)));
     return 0;
 }
 
@@ -165,7 +165,7 @@ static
 int Archeck(Xpost_Context *ctx,
              Xpost_Object o)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
     return 0;
 }
 
@@ -175,7 +175,7 @@ static
 int Awcheck(Xpost_Context *ctx,
              Xpost_Object o)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
     return 0;
 }
 
@@ -186,7 +186,7 @@ int Ncvi(Xpost_Context *ctx,
           Xpost_Object n)
 {
     if (xpost_object_get_type(n) == realtype)
-        n = xpost_cons_int(n.real_.val);
+        n = xpost_int_cons(n.real_.val);
     xpost_stack_push(ctx->lo, ctx->os, n);
     return 0;
 }
@@ -216,7 +216,7 @@ int Scvi(Xpost_Context *ctx,
         return limitcheck;
     */
 
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(num));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(num));
     return 0;
 }
 
@@ -250,7 +250,7 @@ int Ncvr(Xpost_Context *ctx,
           Xpost_Object n)
 {
     if (xpost_object_get_type(n) == integertype)
-        n = xpost_cons_real(n.int_.val);
+        n = xpost_real_cons(n.int_.val);
     xpost_stack_push(ctx->lo, ctx->os, n);
     return 0;
 }
@@ -268,7 +268,7 @@ int Scvr(Xpost_Context *ctx,
     num = strtod(s, NULL);
     if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
         return limitcheck;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(num));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(num));
     return 0;
 }
 
@@ -301,7 +301,7 @@ int NRScvrs (Xpost_Context *ctx,
               Xpost_Object str)
 {
     int r, n;
-    if (xpost_object_get_type(num) == realtype) num = xpost_cons_int(num.real_.val);
+    if (xpost_object_get_type(num) == realtype) num = xpost_int_cons(num.real_.val);
     r = rad.int_.val;
     if (r < 2 || r > 36)
         return rangecheck;

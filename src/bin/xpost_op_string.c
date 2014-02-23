@@ -64,7 +64,7 @@ static
 int Slength(Xpost_Context *ctx,
              Xpost_Object S)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(S.comp_.sz));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(S.comp_.sz));
     return 0;
 }
 
@@ -115,7 +115,7 @@ int Sget(Xpost_Context *ctx,
     ret = xpost_string_get(ctx, S, I.int_.val, &val);
     if (ret)
         return ret;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(val));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(val));
     return 0;
 }
 
@@ -187,10 +187,10 @@ int Sanchorsearch(Xpost_Context *ctx,
         if (xpost_object_get_type(interval) == invalidtype)
             return rangecheck;
         xpost_stack_push(ctx->lo, ctx->os, interval); /* match */
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
     } else {
         xpost_stack_push(ctx->lo, ctx->os, str);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
     return 0;
 }
@@ -222,12 +222,12 @@ int Ssearch(Xpost_Context *ctx,
             if (xpost_object_get_type(interval) == invalidtype)
                 return rangecheck;
             xpost_stack_push(ctx->lo, ctx->os, interval); /* pre */
-            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
             return 0;
         }
     }
     xpost_stack_push(ctx->lo, ctx->os, str);
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     return 0;
 }
 
@@ -266,7 +266,7 @@ int Sforall(Xpost_Context *ctx,
     ret = xpost_string_get(ctx, S, 0, &val);
     if (ret)
         return ret;
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(val)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(val)))
         return stackoverflow;
     return 0;
 }

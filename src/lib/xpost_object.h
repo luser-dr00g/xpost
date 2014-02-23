@@ -415,7 +415,7 @@ char *xpost_object_type_names[]
  * It sets the type to booleantype, sets unlimited access, sets the
  * pad to 0, sets the value to @p b. It returns the object as literal.
  */
-Xpost_Object xpost_cons_bool (int b);
+Xpost_Object xpost_bool_cons (int b);
 
 /**
  * @brief Construct an integertype object with the given value.
@@ -427,7 +427,7 @@ Xpost_Object xpost_cons_bool (int b);
  * It sets the type to integertype, sest unlimited access, sets the
  * pad to 0, set the value to @p i. It returns the object as literal.
  */
-Xpost_Object xpost_cons_int (integer i);
+Xpost_Object xpost_int_cons (integer i);
 
 /**
  * @brief Construct a realtype object with the given value.
@@ -440,7 +440,7 @@ Xpost_Object xpost_cons_int (integer i);
  * sets the pad to 0, sets the value to @p r. It returns the object as
  * literal.
  */
-Xpost_Object xpost_cons_real (real r);
+Xpost_Object xpost_real_cons (real r);
 
 
 /*

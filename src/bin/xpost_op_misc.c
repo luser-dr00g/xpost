@@ -150,7 +150,7 @@ int realtime (Xpost_Context *ctx)
 #endif
     lsec = sec;
     lsec &= 0x00000000ffffffff; /* truncate any large value */
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int((int)lsec)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((int)lsec)))
         return stackoverflow;
     return 0;
 }
@@ -171,7 +171,7 @@ int usertime (Xpost_Context *ctx)
 #endif
     lsec = sec - xpost_start_time_get();
     lsec &= 0x00000000ffffffff; /* truncate any large value */
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int((int)lsec)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((int)lsec)))
         return stackoverflow;
     return 0;
 }
@@ -331,8 +331,8 @@ int initopx(Xpost_Context *ctx,
     //languagelevel
     bdcput(ctx, sd, consname(ctx, "product"),
             xpost_object_cvlit(xpost_cons_string(ctx, strlen(productstr), productstr)));
-    bdcput(ctx, sd, consname(ctx, "revision"), xpost_cons_int(revno));
-    bdcput(ctx, sd, consname(ctx, "serialnumber"), xpost_cons_int(serno));
+    bdcput(ctx, sd, consname(ctx, "revision"), xpost_int_cons(revno));
+    bdcput(ctx, sd, consname(ctx, "serialnumber"), xpost_int_cons(serno));
     //executive: see init.ps
     //echo: see opf.c
     //prompt: see init.ps

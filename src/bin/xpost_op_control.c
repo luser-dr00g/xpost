@@ -158,7 +158,7 @@ int IIIPfor (Xpost_Context *ctx,
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, incr))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(i + j)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_int_cons(i + j)))
         return execstackoverflow;
 
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
@@ -194,7 +194,7 @@ int RRRPfor (Xpost_Context *ctx,
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, incr))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_real(i + j)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_real_cons(i + j)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
@@ -221,7 +221,7 @@ int IPrepeat (Xpost_Context *ctx,
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
 
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_int(n.int_.val - 1)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_int_cons(n.int_.val - 1)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
@@ -306,7 +306,7 @@ int Zexit (Xpost_Context *ctx)
 static
 int Zstop(Xpost_Context *ctx)
 {
-    Xpost_Object f = xpost_cons_bool(0);
+    Xpost_Object f = xpost_bool_cons(0);
     int c = xpost_stack_count(ctx->lo, ctx->es);
     Xpost_Object x;
     while (c--) {
@@ -314,7 +314,7 @@ int Zstop(Xpost_Context *ctx)
         if (xpost_object_get_type(x) == invalidtype)
             return execstackunderflow;
         if(objcmp(ctx, f, x) == 0) {
-            if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1)))
+            if (!xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1)))
                 return stackoverflow;
             return 0;
         }
@@ -329,7 +329,7 @@ static
 int Astopped(Xpost_Context *ctx,
               Xpost_Object o)
 {
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_cons_bool(0)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_bool_cons(0)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, o))
         return execstackoverflow;
@@ -341,7 +341,7 @@ int Astopped(Xpost_Context *ctx,
 static
 int Zcountexecstack(Xpost_Context *ctx)
 {
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->es))))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_stack_count(ctx->lo, ctx->es))))
         return stackoverflow;
     return 0;
 }

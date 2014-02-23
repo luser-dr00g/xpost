@@ -113,7 +113,7 @@ static
 int Dlength(Xpost_Context *ctx,
              Xpost_Object D)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(diclength(
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(diclength(
                     xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
     return 0;
@@ -125,7 +125,7 @@ static
 int Dmaxlength(Xpost_Context *ctx,
                 Xpost_Object D)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(dicmaxlength(
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(dicmaxlength(
                     xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
     return 0;
@@ -284,7 +284,7 @@ int DAknown(Xpost_Context *ctx,
     dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
     xpost_object_dump(K);
 #endif
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)));
     return 0;
 }
 
@@ -300,11 +300,11 @@ int Awhere(Xpost_Context *ctx,
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
         if (dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)) {
             xpost_stack_push(ctx->lo, ctx->os, D);
-            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
             return 0;
         }
     }
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     return 0;
 }
 
@@ -432,7 +432,7 @@ int Zcurrentdict(Xpost_Context *ctx)
 static
 int Zcountdictstack(Xpost_Context *ctx)
 {
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->ds))))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_stack_count(ctx->lo, ctx->ds))))
         return stackoverflow;
     return 0;
 }

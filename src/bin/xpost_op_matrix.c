@@ -86,7 +86,7 @@ void _psmat2xmat (Xpost_Context *ctx,
     for (i=0; i < 6; i++)
     {
         if (xpost_object_get_type(arr[i]) == integertype)
-            arr[i] = xpost_cons_real(arr[i].int_.val);
+            arr[i] = xpost_real_cons(arr[i].int_.val);
     }
     m->xx = arr[0].real_.val;
     m->yx = arr[1].real_.val;
@@ -118,23 +118,23 @@ void _xmat2psmat (Xpost_Context *ctx,
                   Xpost_Object psm)
 {
     Xpost_Object arr[6] = {
-        xpost_cons_real(m->xx),
-        xpost_cons_real(m->yx),
-        xpost_cons_real(m->xy),
-        xpost_cons_real(m->yy),
-        xpost_cons_real(m->xz),
-        xpost_cons_real(m->yz)
+        xpost_real_cons(m->xx),
+        xpost_real_cons(m->yx),
+        xpost_real_cons(m->xy),
+        xpost_real_cons(m->yy),
+        xpost_real_cons(m->xz),
+        xpost_real_cons(m->yz)
     };
     xpost_memory_put(xpost_context_select_memory(ctx, psm),
             xpost_object_get_ent(psm), 0, sizeof arr, arr);
 
     /*
-    barput(ctx, psm, 0, xpost_cons_real(m->xx));
-    barput(ctx, psm, 1, xpost_cons_real(m->yx));
-    barput(ctx, psm, 2, xpost_cons_real(m->xy));
-    barput(ctx, psm, 3, xpost_cons_real(m->yy));
-    barput(ctx, psm, 4, xpost_cons_real(m->xz));
-    barput(ctx, psm, 5, xpost_cons_real(m->yz));
+    barput(ctx, psm, 0, xpost_real_cons(m->xx));
+    barput(ctx, psm, 1, xpost_real_cons(m->yx));
+    barput(ctx, psm, 2, xpost_real_cons(m->xy));
+    barput(ctx, psm, 3, xpost_real_cons(m->yy));
+    barput(ctx, psm, 4, xpost_real_cons(m->xz));
+    barput(ctx, psm, 5, xpost_real_cons(m->yz));
     */
 }
 
@@ -399,8 +399,8 @@ int _mat_transform (Xpost_Context *ctx,
     _psmat2xmat(ctx, psmat, &mat);
     xres = mat.xx * x.real_.val + mat.xy * y.real_.val + mat.xz;
     yres = mat.yx * x.real_.val + mat.yy * y.real_.val + mat.yz;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(xres));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(yres));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xres));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(yres));
     return 0;
 }
 
@@ -429,8 +429,8 @@ int _mat_dtransform (Xpost_Context *ctx,
     _psmat2xmat(ctx, psmat, &mat);
     xres = mat.xx * x.real_.val + mat.xy * y.real_.val;
     yres = mat.yx * x.real_.val + mat.yy * y.real_.val;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(xres));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(yres));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xres));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(yres));
     return 0;
 }
 
@@ -467,8 +467,8 @@ int _mat_itransform (Xpost_Context *ctx,
             + mat.xy * mat.xz - mat.yy * mat.xz) * invdet;
     yres = ( -mat.xy * x.real_.val + mat.xx * y.real_.val
             + mat.yx * mat.xz - mat.xx * mat.yz) * invdet;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(xres));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(yres));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xres));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(yres));
     return 0;
 }
 
@@ -504,8 +504,8 @@ int _mat_idtransform (Xpost_Context *ctx,
     invdet = 1 / disc;
     xres = (mat.yy * x.real_.val - mat.yx * y.real_.val) * invdet;
     yres = ( -mat.xy * x.real_.val + mat.xx * y.real_.val) * invdet;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(xres));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_real(yres));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xres));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(yres));
     return 0;
 }
 

@@ -461,7 +461,7 @@ Xpost_Object fileread(Xpost_Memory_File *mem,
     {
         return invalid;
     }
-    return xpost_cons_int(fgetc(filefile(mem, f)));
+    return xpost_int_cons(fgetc(filefile(mem, f)));
 }
 
 /* if the file is valid,

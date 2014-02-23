@@ -348,9 +348,9 @@ int _fillpoly (Xpost_Context *ctx,
         x = barget(ctx, pair, 0);
         y = barget(ctx, pair, 1);
         if (xpost_object_get_type(x) == integertype)
-            x = xpost_cons_real(x.int_.val);
+            x = xpost_real_cons(x.int_.val);
         if (xpost_object_get_type(y) == integertype)
-            y = xpost_cons_real(y.int_.val);
+            y = xpost_real_cons(y.int_.val);
 
         //points[i].x = x.real_.val;
         //points[i].y = y.real_.val;
@@ -395,10 +395,10 @@ int _fillpoly (Xpost_Context *ctx,
 
     /* arrange ((x1,y1),(x2,y2)) pairs */
     for (i = 0; i < numlines * 2; i += 2) {
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].x)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i].y)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].x)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(floor(intersections[i+1].y)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(floor(intersections[i].x)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(floor(intersections[i].y)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(floor(intersections[i+1].x)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(floor(intersections[i+1].y)));
     }
 
     /*call the device's DrawLine generically with continuations.
@@ -424,7 +424,7 @@ int _fillpoly (Xpost_Context *ctx,
      we're using a repeat loop which looks like:
          count proc  -repeat-
     */
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(numlines));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(numlines));
 
     /*then push a mark object to begin array construction
      this array is our loop body */
@@ -436,15 +436,15 @@ int _fillpoly (Xpost_Context *ctx,
     switch (ncomp) {
     case 1:
         xpost_stack_push(ctx->lo, ctx->os, comp1);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(5)); /* total elements to roll */
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(1)); /* color components to move */
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(5)); /* total elements to roll */
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(1)); /* color components to move */
         break;
     case 3:
         xpost_stack_push(ctx->lo, ctx->os, comp1);
         xpost_stack_push(ctx->lo, ctx->os, comp2);
         xpost_stack_push(ctx->lo, ctx->os, comp3);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(7)); /* total elements to roll */
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(3)); /* color components to move */
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(7)); /* total elements to roll */
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(3)); /* color components to move */
         break;
     }
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx( nameroll));

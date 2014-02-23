@@ -90,11 +90,11 @@ int vmstatus (Xpost_Context *ctx) {
     used = ctx->gl->used + ctx->lo->used;
     max = ctx->gl->max + ctx->lo->max;
 
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(lev)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(lev)))
         return stackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(used)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(used)))
         return stackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(max)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(max)))
         return stackoverflow;
     return 0;
 }
@@ -114,11 +114,11 @@ int globalvmstatus (Xpost_Context *ctx) {
     used = ctx->gl->used + ctx->gl->used;
     max = ctx->gl->max + ctx->gl->max;
 
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(lev)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(lev)))
         return stackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(used)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(used)))
         return stackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(max)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(max)))
         return stackoverflow;
     return 0;
 }

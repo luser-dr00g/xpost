@@ -210,8 +210,8 @@ int grok (Xpost_Context *ctx,
             XPOST_LOG_ERR("integer out of range");
             return limitcheck;
         }
-        //return xpost_cons_int(num);
-        *retval = xpost_cons_int(num);
+        //return xpost_int_cons(num);
+        *retval = xpost_int_cons(num);
         return 0;
     }
 
@@ -230,8 +230,8 @@ int grok (Xpost_Context *ctx,
             XPOST_LOG_ERR("radixnumber out of range");
             return limitcheck;
         }
-        //return xpost_cons_int(num);
-        *retval = xpost_cons_int(num);
+        //return xpost_int_cons(num);
+        *retval = xpost_int_cons(num);
         return 0;
     }
 
@@ -243,8 +243,8 @@ int grok (Xpost_Context *ctx,
             XPOST_LOG_ERR("real out of range");
             return limitcheck;
         }
-        //return xpost_cons_real(num);
-        *retval = xpost_cons_real(num);
+        //return xpost_real_cons(num);
+        *retval = xpost_real_cons(num);
         return 0;
     }
 
@@ -525,9 +525,9 @@ int Ftoken (Xpost_Context *ctx,
         return ret;
     if (xpost_object_get_type(t) != nulltype) {
         xpost_stack_push(ctx->lo, ctx->os, t);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
     } else {
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
     return 0;
 }
@@ -568,9 +568,9 @@ int Stoken (Xpost_Context *ctx,
     if (xpost_object_get_type(t) != nulltype) {
         xpost_stack_push(ctx->lo, ctx->os, S);
         xpost_stack_push(ctx->lo, ctx->os, t);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(1));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
     } else {
-        xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(0));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
     return 0;
 }

@@ -87,7 +87,7 @@ char *xpost_object_type_names[] =
    Constructors for simple types
 */
 
-Xpost_Object xpost_cons_bool (int b)
+Xpost_Object xpost_bool_cons (int b)
 {
     Xpost_Object obj;
 
@@ -100,7 +100,7 @@ Xpost_Object xpost_cons_bool (int b)
     return xpost_object_cvlit(obj);
 }
 
-Xpost_Object xpost_cons_int (integer i)
+Xpost_Object xpost_int_cons (integer i)
 {
     Xpost_Object obj;
 
@@ -113,7 +113,7 @@ Xpost_Object xpost_cons_int (integer i)
     return xpost_object_cvlit(obj);
 }
 
-Xpost_Object xpost_cons_real (real r)
+Xpost_Object xpost_real_cons (real r)
 {
     Xpost_Object obj;
 

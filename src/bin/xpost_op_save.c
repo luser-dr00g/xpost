@@ -130,7 +130,7 @@ int Bsetglobal (Xpost_Context *ctx,
 static
 int Zcurrentglobal (Xpost_Context *ctx)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_bool(ctx->vmmode==GLOBAL));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(ctx->vmmode==GLOBAL));
     return 0;
 }
 
@@ -143,12 +143,12 @@ int Agcheck (Xpost_Context *ctx,
     Xpost_Object r;
     switch(xpost_object_get_type(A)) {
     default:
-            r = xpost_cons_bool(0); break;
+            r = xpost_bool_cons(0); break;
     case stringtype:
     case nametype:
     case dicttype:
     case arraytype:
-            r = xpost_cons_bool((A.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)!=0);
+            r = xpost_bool_cons((A.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)!=0);
     }
     xpost_stack_push(ctx->lo, ctx->os, r);
     return 0;
@@ -164,9 +164,9 @@ int Zvmstatus (Xpost_Context *ctx)
 
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, vs)));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->used));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(ctx->lo->max));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_stack_count(ctx->lo, vs)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(ctx->lo->used));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(ctx->lo->max));
     return 0;
 }
 #endif

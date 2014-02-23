@@ -123,7 +123,7 @@ int initoppa(Xpost_Context *ctx,
     optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "packedarray", packedarray, 1, 1, integertype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "currentpacking"), xpost_cons_bool(0));
+    bdcput(ctx, sd, consname(ctx, "currentpacking"), xpost_bool_cons(0));
     op = consoper(ctx, "setpacking", setpacking, 0, 1, booleantype); INSTALL;
 
     /* dumpdic(ctx->gl, sd); fflush(NULL);

@@ -300,21 +300,21 @@ int _putpix (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
-        red = xpost_cons_int(red.real_.val * 65535.0);
+        red = xpost_int_cons(red.real_.val * 65535.0);
     else
         red.int_.val *= 65535;
     if (xpost_object_get_type(green) == realtype)
-        green = xpost_cons_int(green.real_.val * 65535.0);
+        green = xpost_int_cons(green.real_.val * 65535.0);
     else
         green.int_.val *= 65535;
     if (xpost_object_get_type(blue) == realtype)
-        blue = xpost_cons_int(blue.real_.val * 65535.0);
+        blue = xpost_int_cons(blue.real_.val * 65535.0);
     else
         blue.int_.val *= 65535;
     if (xpost_object_get_type(x) == realtype)
-        x = xpost_cons_int(x.real_.val);
+        x = xpost_int_cons(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
-        y = xpost_cons_int(y.real_.val);
+        y = xpost_int_cons(y.real_.val);
 
     /* load private data struct from string */
     privatestr = bdcget(ctx, devdic, namePrivate);
@@ -397,25 +397,25 @@ int _drawline (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
-        red = xpost_cons_int(red.real_.val * 65535.0);
+        red = xpost_int_cons(red.real_.val * 65535.0);
     else
         red.int_.val *= 65535;
     if (xpost_object_get_type(green) == realtype)
-        green = xpost_cons_int(green.real_.val * 65535.0);
+        green = xpost_int_cons(green.real_.val * 65535.0);
     else
         green.int_.val *= 65535;
     if (xpost_object_get_type(blue) == realtype)
-        blue = xpost_cons_int(blue.real_.val * 65535.0);
+        blue = xpost_int_cons(blue.real_.val * 65535.0);
     else
         blue.int_.val *= 65535;
     if (xpost_object_get_type(x1) == realtype)
-        x1 = xpost_cons_int(x1.real_.val);
+        x1 = xpost_int_cons(x1.real_.val);
     if (xpost_object_get_type(y1) == realtype)
-        y1 = xpost_cons_int(y1.real_.val);
+        y1 = xpost_int_cons(y1.real_.val);
     if (xpost_object_get_type(x2) == realtype)
-        x2 = xpost_cons_int(x2.real_.val);
+        x2 = xpost_int_cons(x2.real_.val);
     if (xpost_object_get_type(y2) == realtype)
-        y2 = xpost_cons_int(y2.real_.val);
+        y2 = xpost_int_cons(y2.real_.val);
 
     XPOST_LOG_INFO("_drawline(%d, %d, %d, %d)",
             x1.int_.val, y1.int_.val, x2.int_.val, y2.int_.val);
@@ -475,25 +475,25 @@ int _fillrect (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
-        red = xpost_cons_int(red.real_.val * 65535.0);
+        red = xpost_int_cons(red.real_.val * 65535.0);
     else
         red.int_.val *= 65535;
     if (xpost_object_get_type(green) == realtype)
-        green = xpost_cons_int(green.real_.val * 65535.0);
+        green = xpost_int_cons(green.real_.val * 65535.0);
     else
         green.int_.val *= 65535;
     if (xpost_object_get_type(blue) == realtype)
-        blue = xpost_cons_int(blue.real_.val * 65535.0);
+        blue = xpost_int_cons(blue.real_.val * 65535.0);
     else
         blue.int_.val *= 65535;
     if (xpost_object_get_type(x) == realtype)
-        x = xpost_cons_int(x.real_.val);
+        x = xpost_int_cons(x.real_.val);
     if (xpost_object_get_type(y) == realtype)
-        y = xpost_cons_int(y.real_.val);
+        y = xpost_int_cons(y.real_.val);
     if (xpost_object_get_type(width) == realtype)
-        width = xpost_cons_int(width.real_.val);
+        width = xpost_int_cons(width.real_.val);
     if (xpost_object_get_type(height) == realtype)
-        height = xpost_cons_int(height.real_.val);
+        height = xpost_int_cons(height.real_.val);
 
     /* adjust ranges */
     if (width.int_.val < 0)
@@ -571,15 +571,15 @@ int _fillpoly (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
-        red = xpost_cons_int(red.real_.val * 65535.0);
+        red = xpost_int_cons(red.real_.val * 65535.0);
     else
         red.int_.val *= 65535;
     if (xpost_object_get_type(green) == realtype)
-        green = xpost_cons_int(green.real_.val * 65535.0);
+        green = xpost_int_cons(green.real_.val * 65535.0);
     else
         green.int_.val *= 65535;
     if (xpost_object_get_type(blue) == realtype)
-        blue = xpost_cons_int(blue.real_.val * 65535.0);
+        blue = xpost_int_cons(blue.real_.val * 65535.0);
     else
         blue.int_.val *= 65535;
 
@@ -616,9 +616,9 @@ int _fillpoly (Xpost_Context *ctx,
             x = barget(ctx, pair, 0);
             y = barget(ctx, pair, 1);
             if (xpost_object_get_type(x) == realtype)
-                x = xpost_cons_int(x.real_.val);
+                x = xpost_int_cons(x.real_.val);
             if (xpost_object_get_type(y) == realtype)
-                y = xpost_cons_int(y.real_.val);
+                y = xpost_int_cons(y.real_.val);
 
             points[i].x = x.int_.val;
             points[i].y = y.int_.val;

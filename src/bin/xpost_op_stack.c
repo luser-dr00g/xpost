@@ -210,7 +210,7 @@ int Zclear (Xpost_Context *ctx)
 static
 int Zcount (Xpost_Context *ctx)
 {
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(xpost_stack_count(ctx->lo, ctx->os))))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_stack_count(ctx->lo, ctx->os))))
         return stackoverflow;
     return 0;
 }
@@ -242,7 +242,7 @@ int Zcounttomark (Xpost_Context *ctx)
     z = xpost_stack_count(ctx->lo, ctx->os);
     for (i = 0; i < z; i++) {
         if (xpost_stack_topdown_fetch(ctx->lo, ctx->os, i).tag == marktype) {
-            xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(i));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(i));
             return 0;
         }
     }

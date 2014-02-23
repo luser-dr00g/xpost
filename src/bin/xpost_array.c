@@ -238,7 +238,7 @@ int main(void)
     int i;
     for (i=0; i < SIZE; i++) {
         printf("%d ", i+1);
-        arrput(mem, a, i, xpost_cons_int( i+1 ));
+        arrput(mem, a, i, xpost_int_cons( i+1 ));
     }
     puts("");
 

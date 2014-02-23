@@ -57,7 +57,7 @@
 static
 Xpost_Object promote(Xpost_Object o)
 {
-    return xpost_cons_real(o.int_.val);
+    return xpost_real_cons(o.int_.val);
 }
 
 /* copied from the header file for reference:

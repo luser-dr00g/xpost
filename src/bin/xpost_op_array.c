@@ -127,7 +127,7 @@ static
 int Alength (Xpost_Context *ctx,
               Xpost_Object A)
 {
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_cons_int(A.comp_.sz)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(A.comp_.sz)))
         return stackoverflow;
 
     return 0;
