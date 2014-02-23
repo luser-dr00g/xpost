@@ -1,0 +1,261 @@
+Xpost Postscript Compliance
+===========================
+
+Notation
+--------
+
+ [ ] : not implemented
+ [/] : partially implemented
+ [X] : implemented
+
+Level 1 operators
+-----------------
+
+ [ ] setdash
+ [ ] currentdash
+ [ ] arcto
+ [ ] fill with complex paths
+ [ ] eofill
+ [ ] clip with complex paths
+ [ ] eoclip
+ [/] setlinejoin (implemented bevel joins and round joins)
+ [X] currentlinejoin (implemented)
+ [ ] setlinecap (stubbed)
+ [X] currentlinecap (stubbed)
+ [/] image (implemented for 8-bit, 4-bit, 2-bit, and 1-bit)
+ [ ] imagemask
+ [X] settransfer (implemented)
+ [X] currenttransfer (implemented)
+ [ ] sethalftone  (low priority)
+ [ ] currenthalftone  (low priority)
+ [ ] makefont
+ [X] ashow (implemented)
+ [X] widthshow (implemented)
+ [X] awidthshow (implemented)
+ [X] kshow (implemented)
+ [X] stringwidth (implemented)
+ [/] Type-3 Fonts (implemented)
+ [ ] font data caching
+ [ ] definefont for modified font properties (matrix, encoding, etc.)
+
+ [X] pop
+ [X] exch
+ [X] dup
+ [X] copy
+ [X] index
+ [X] roll
+ [X] clear
+ [X] count
+ [X] cleartomark
+ [X] counttomark
+ [X] add
+ [X] div
+ [X] idiv
+ [X] mod
+ [X] mul
+ [X] sub
+ [X] abs
+ [X] neg
+ [X] ceiling
+ [X] floor
+ [X] round
+ [X] truncate
+ [X] sqrt
+ [X] atan
+ [X] cos
+ [X] sin
+ [X] exp
+ [X] ln
+ [X] log
+ [X] rand
+ [X] srand
+ [X] rrand
+ [X] array
+ [X] length
+ [X] get
+ [X] put
+ [X] getinterval
+ [X] putinterval
+ [X] aload
+ [X] astore
+ [X] forall
+ [X] dict
+ [X] maxlength
+ [X] begin
+ [X] end
+ [X] def
+ [X] load
+ [X] store
+ [X] known
+ [X] where
+ [X] currentdict
+ [X] countdictstack
+ [X] dictstack
+ [X] string
+ [X] anchorsearch
+ [X] search
+ [X] token
+ [X] eq
+ [X] ne
+ [X] ge
+ [X] gt
+ [X] le
+ [X] lt
+ [X] and
+ [X] not
+ [X] or
+ [X] xor
+ [X] bitshift
+ [X] exec
+ [X] if
+ [X] ifelse
+ [X] for
+ [X] repeat
+ [X] loop
+ [X] exit
+ [X] countexecstack
+ [X] execstack
+ [X] quit
+ [X] stop
+ [X] stopped
+ [X] type
+ [X] cvlit
+ [X] cvx
+ [X] xcheck
+ [X] executeonly
+ [X] noaccess
+ [X] readonly
+ [X] rcheck
+ [X] wcheck
+ [X] cvi
+ [X] cvn
+ [X] cvr
+ [X] cvrs
+ [X] cvs
+ [X] file
+ [X] closefile
+ [X] read
+ [X] write
+ [X] readhexstring
+ [X] writehexstring
+ [X] readstring
+ [X] writestring
+ [X] readline
+ [X] bytesavailable
+ [X] flush
+ [X] flushfile
+ [X] resetfile
+ [X] status
+ [X] currentfile
+ [X] print
+ [X] echo
+ [X] save
+ [X] restore
+ [X] vmstatus
+ [X] bind
+ [X] usertime
+ [X] getenv
+ [X] gsave
+ [X] grestore
+ [X] grestoreall
+ [X] setlinewidth
+ [X] currentlinewidth
+ [X] setlinecap
+ [X] currentlinecap
+ [X] setlinejoin
+ [X] currentlinejoin
+ [X] setmiterlimit
+ [X] currentmiterlimit
+ [X] setflat
+ [X] currentflat
+ [X] setgray
+ [X] currentgray
+ [X] setrgbcolor
+ [X] currentrgbcolor
+ [ ] sethsbcolor
+ [ ] currenthsbcolor
+ [X] settransfer
+ [X] currenttransfer
+ [X] matrix
+ [X] initmatrix
+ [X] identmatrix
+ [X] defaultmatrix
+ [X] currentmatrix
+ [X] setmatrix
+ [X] translate
+ [X] scale
+ [X] rotate
+ [X] concat
+ [X] concatmatrix
+ [X] transform
+ [X] dtransform
+ [X] itransform
+ [X] idtransform
+ [X] invertmatrix
+ [X] newpath
+ [X] currentpoint
+ [X] moveto
+ [X] rmoveto
+ [X] lineto
+ [X] rlineto
+ [X] arc
+ [X] arcn
+ [X] curveto
+ [X] rcurveto
+ [X] closepath
+ [X] flattenpath
+ [ ] charpath
+ [X] clippath
+ [ ] pathbbox
+ [X] initclip
+ [X] clip
+ [ ] eoclip
+ [X] erasepage
+ [X] fill
+ [ ] eofill
+ [X] stroke
+ [/] image
+ [ ] imagemask
+ [X] showpage
+ [ ] copypage
+ [ ] currentrasteropcode
+ [ ] setrasteropcode
+ [X] setfont
+ [X] currentfont
+ [X] show
+ [X] stringwidth
+
+Level 2 operators
+-----------------
+
+ [ ] colorimage
+ [ ] image with dict argument
+ [ ] setcolortransfer
+ [ ] currentcolortransfer
+ [ ] Named Resources
+
+Display Postscript
+------------------
+
+ [ ] multiple contexts/devices
+
+NeWS
+----
+
+ [X] magic dictionaries
+ [ ] classes
+ [ ] canvases
+ [ ] process type objects (magic dictionary controlling a DPS context)
+
+Typical output devices
+----------------------
+
+ [X] pgm
+ [X] ppm
+ [ ] pbm
+ [ ] tiff
+ [ ] jpeg
+ [ ] png
+ [ ] pdf
+ [ ] bounding-box
+ [ ] dsc-compliant distilled ps
