@@ -289,7 +289,7 @@ int grok (Xpost_Context *ctx,
                       }
                       else *sp++ = c;
                   }
-                  obj = xpost_cons_string(ctx, sp-s, s);
+                  obj = xpost_string_cons(ctx, sp-s, s);
                   if (xpost_object_get_type(obj) == nulltype)
                       return VMerror;
                   //return xpost_object_cvlit(obj);
@@ -338,7 +338,7 @@ int grok (Xpost_Context *ctx,
                       }
                       *sp++ = d;
                   }
-                  obj = xpost_cons_string(ctx, sp-s, s);
+                  obj = xpost_string_cons(ctx, sp-s, s);
                   if (xpost_object_get_type(obj) == nulltype)
                       return VMerror;
                   //return xpost_object_cvlit(obj);

@@ -105,7 +105,7 @@ int _findfont (Xpost_Context *ctx,
     fname[fontstr.comp_.sz] = '\0';
 
     fontdict = consbdc(ctx, 10);
-    privatestr = xpost_cons_string(ctx, sizeof data, NULL);
+    privatestr = xpost_string_cons(ctx, sizeof data, NULL);
     bdcput(ctx, fontdict, consname(ctx, "Private"), privatestr);
 
     /* initialize font data, with x-scale and y-scale set to 1 */

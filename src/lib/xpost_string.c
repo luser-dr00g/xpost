@@ -44,7 +44,7 @@
 /* construct a stringtype object
    with optional string value
    */
-Xpost_Object xpost_cons_string_memory(Xpost_Memory_File *mem,
+Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
                      unsigned int sz,
                      /*@NULL@*/ const char *ini)
 {
@@ -79,12 +79,12 @@ Xpost_Object xpost_cons_string_memory(Xpost_Memory_File *mem,
 /* construct a banked string object
    with optional string value
    */
-Xpost_Object xpost_cons_string(Xpost_Context *ctx,
+Xpost_Object xpost_string_cons(Xpost_Context *ctx,
                      unsigned int sz,
                      /*@NULL@*/ const char *ini)
 {
     Xpost_Object s;
-    s = xpost_cons_string_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
+    s = xpost_string_cons_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
     if (xpost_object_get_type(s) != nulltype)
     {
         xpost_stack_push(ctx->lo, ctx->hold, s);
@@ -181,7 +181,7 @@ int main (void)
     xpost_memory_file_init(&mem, "x.mem");
     (void)xpost_memory_table_init(&mem);
 
-    s = xpost_cons_string_memory(&mem, CNT_STR("This is a string"));
+    s = xpost_string_cons_memory(&mem, CNT_STR("This is a string"));
     for (i=0; i < s.comp_.sz; i++)
     {
         putchar(xpost_string_get_memory(&mem, s, i));

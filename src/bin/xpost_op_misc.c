@@ -193,7 +193,7 @@ int Sgetenv (Xpost_Context *ctx,
     if (r)
     {
         Xpost_Object strobj;
-        strobj = xpost_cons_string(ctx, strlen(r), r);
+        strobj = xpost_string_cons(ctx, strlen(r), r);
         if (xpost_object_get_type(strobj) == nulltype)
             return VMerror;
         xpost_stack_push(ctx->lo, ctx->os, strobj);
@@ -325,12 +325,12 @@ int initopx(Xpost_Context *ctx,
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
     bdcput(ctx, sd, consname(ctx, "null"), null);
     bdcput(ctx, sd, consname(ctx, "version"),
-            xpost_object_cvlit(xpost_cons_string(ctx, strlen(versionstr), versionstr)));
+            xpost_object_cvlit(xpost_string_cons(ctx, strlen(versionstr), versionstr)));
     op = consoper(ctx, "realtime", realtime, 1, 0); INSTALL;
     op = consoper(ctx, "usertime", usertime, 1, 0); INSTALL;
     //languagelevel
     bdcput(ctx, sd, consname(ctx, "product"),
-            xpost_object_cvlit(xpost_cons_string(ctx, strlen(productstr), productstr)));
+            xpost_object_cvlit(xpost_string_cons(ctx, strlen(productstr), productstr)));
     bdcput(ctx, sd, consname(ctx, "revision"), xpost_int_cons(revno));
     bdcput(ctx, sd, consname(ctx, "serialnumber"), xpost_int_cons(serno));
     //executive: see init.ps

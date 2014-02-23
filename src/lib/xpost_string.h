@@ -34,11 +34,11 @@
 /* strings
    */
 
-Xpost_Object xpost_cons_string_memory(Xpost_Memory_File *mem,
+Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
                      unsigned sz,
                      /*@NULL@*/ const char *ini);
 
-Xpost_Object xpost_cons_string(Xpost_Context *ctx,
+Xpost_Object xpost_string_cons(Xpost_Context *ctx,
                      unsigned sz,
                      /*@NULL@*/ const char *ini);
 
