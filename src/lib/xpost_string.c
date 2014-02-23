@@ -45,10 +45,10 @@
    with optional string value
    */
 Xpost_Object xpost_cons_string_memory(Xpost_Memory_File *mem,
-                     unsigned sz,
+                     unsigned int sz,
                      /*@NULL@*/ const char *ini)
 {
-    unsigned ent;
+    unsigned int ent;
     Xpost_Object o;
     int ret;
 
@@ -80,12 +80,13 @@ Xpost_Object xpost_cons_string_memory(Xpost_Memory_File *mem,
    with optional string value
    */
 Xpost_Object xpost_cons_string(Xpost_Context *ctx,
-                     unsigned sz,
+                     unsigned int sz,
                      /*@NULL@*/ const char *ini)
 {
     Xpost_Object s;
     s = xpost_cons_string_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
-    if (xpost_object_get_type(s) != nulltype) {
+    if (xpost_object_get_type(s) != nulltype)
+    {
         xpost_stack_push(ctx->lo, ctx->hold, s);
         if (ctx->vmmode==GLOBAL)
             s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
@@ -104,7 +105,7 @@ char *xpost_string_get_pointer(Xpost_Context *ctx,
 {
     Xpost_Memory_File *f;
     Xpost_Memory_Table *tab;
-    unsigned ent = xpost_object_get_ent(S);
+    unsigned int ent = xpost_object_get_ent(S);
     f = xpost_context_select_memory(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
     xpost_memory_table_find_relative(f, &tab, &ent);
     return (void *)(f->base + tab->tab[ent].adr + S.comp_.off);
@@ -181,7 +182,8 @@ int main (void)
     (void)xpost_memory_table_init(&mem);
 
     s = xpost_cons_string_memory(&mem, CNT_STR("This is a string"));
-    for (i=0; i < s.comp_.sz; i++) {
+    for (i=0; i < s.comp_.sz; i++)
+    {
         putchar(xpost_string_get_memory(&mem, s, i));
     }
     putchar('\n');
@@ -189,4 +191,3 @@ int main (void)
 }
 
 #endif
-
