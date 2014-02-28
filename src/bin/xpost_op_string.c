@@ -43,6 +43,7 @@
 #include "xpost_interpreter.h"
 #include "xpost_error.h"
 #include "xpost_string.h"
+#include "xpost_name.h"
 #include "xpost_array.h"
 #include "xpost_dict.h"
 #include "xpost_operator.h"
@@ -65,6 +66,15 @@ int Slength(Xpost_Context *ctx,
              Xpost_Object S)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(S.comp_.sz));
+    return 0;
+}
+
+static
+int Nlength(Xpost_Context *ctx,
+            Xpost_Object N)
+{
+    Xpost_Object str = strname(ctx, N);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(str.comp_.sz));
     return 0;
 }
 
@@ -288,6 +298,8 @@ int initopst(Xpost_Context *ctx,
             integertype); INSTALL;
     op = consoper(ctx, "length", Slength, 1, 1,
             stringtype); INSTALL;
+    op = consoper(ctx, "length", Nlength, 1, 1,
+            nametype); INSTALL;
     op = consoper(ctx, "copy", Scopy, 1, 2,
             stringtype, stringtype); INSTALL;
     op = consoper(ctx, "get", Sget, 1, 2,
