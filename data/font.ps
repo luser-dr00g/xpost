@@ -34,6 +34,7 @@
 /makefont {
     1 index /FontType get 3 ne { //makefont }{
         1 index /FontMatrix get dup concatmatrix pop
+        pstack
     } ifelse
 } def
 
