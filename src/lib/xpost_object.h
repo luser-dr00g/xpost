@@ -120,8 +120,7 @@ typedef enum {
 typedef enum
 {
     XPOST_OBJECT_TAG_DATA_TYPE_MASK          = 0x001F, /**< mask to yield Xpost_Object_Type */
-    XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET = 5, /* first flag, bit offset to a point above the type mask */
-    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET,    /**< bitwise offset of the ACCESS field */
+    XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET = 5,    /**< bitwise offset of the ACCESS field */
     XPOST_OBJECT_TAG_DATA_FLAG_LIT_OFFSET =
         XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET + 2, /* access is a 2-bit field, lit must make room */
     XPOST_OBJECT_TAG_DATA_FLAG_BANK_OFFSET,
@@ -131,9 +130,6 @@ typedef enum
     XPOST_OBJECT_TAG_DATA_EXTRA_BITS,
     XPOST_OBJECT_TAG_DATA_NBITS = XPOST_OBJECT_TAG_DATA_EXTRA_BITS,  /* this MUST be < 16, the size of the tag field */
 
-    XPOST_OBJECT_TAG_DATA_FLAG_VALID =
-        01 << XPOST_OBJECT_TAG_DATA_FLAG_VALID_OFFSET,
-           /**< for 'anytype' operator pattern */
     XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK =
         03 << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET,
             /**< 2-bit mask for the ACCESS field */
