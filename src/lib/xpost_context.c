@@ -68,7 +68,7 @@ int xpost_context_init_ctxlist(Xpost_Memory_File *mem)
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
     tab = (void *)mem->base;
     memset(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr, 0,
-            MAXCONTEXT * sizeof(unsigned int));
+           MAXCONTEXT * sizeof(unsigned int));
 
     return 1;
 }
