@@ -140,9 +140,9 @@ int initopparam(Xpost_Context *ctx,
     op = consoper(ctx, "vmstatus", vmstatus, 3, 0); INSTALL;
     op = consoper(ctx, "globalvmstatus", globalvmstatus, 3, 0); INSTALL;
 
-    /* dumpdic(ctx->gl, sd); fflush(NULL);
+    /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     op = consoper(ctx, "save", Zsave, 1, 0); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
 
     return 0;
 }

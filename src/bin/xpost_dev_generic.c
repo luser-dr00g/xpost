@@ -100,7 +100,7 @@ char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
 {
     Xpost_Object filenamestr;
     char *filename;
-    filenamestr = bdcget(ctx, devdic, consname(ctx, "OutputFileName"));
+    filenamestr = xpost_dict_get(ctx, devdic, consname(ctx, "OutputFileName"));
     filename = malloc(filenamestr.comp_.sz + 1);
     if (filename) {
         memcpy(filename, xpost_string_get_pointer(ctx, filenamestr), filenamestr.comp_.sz);
@@ -319,8 +319,8 @@ int _fillpoly (Xpost_Context *ctx,
     real maxy = maxx;
     //int width;
 
-    //width = bdcget(ctx, devdic, namewidth).int_.val;
-    colorspace = bdcget(ctx, devdic, namenativecolorspace);
+    //width = xpost_dict_get(ctx, devdic, namewidth).int_.val;
+    colorspace = xpost_dict_get(ctx, devdic, namenativecolorspace);
     if (objcmp(ctx, colorspace, nameDeviceGray) == 0)
     {
         ncomp = 1;
@@ -456,7 +456,7 @@ int _fillpoly (Xpost_Context *ctx,
         just need to push the devdic and DrawLine  */
 
     xpost_stack_push(ctx->lo, ctx->os, devdic);
-    drawline = bdcget(ctx, devdic, nameDrawLine);
+    drawline = xpost_dict_get(ctx, devdic, nameDrawLine);
     xpost_stack_push(ctx->lo, ctx->os, drawline);
 
     /*if drawline is a procedure, we also need to call exec */

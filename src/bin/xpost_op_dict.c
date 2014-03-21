@@ -63,7 +63,7 @@ int Idict(Xpost_Context *ctx,
            Xpost_Object I)
 {
     Xpost_Object dic;
-    dic = consbdc(ctx, I.int_.val);
+    dic = xpost_dict_cons (ctx, I.int_.val);
     if (xpost_object_get_type(dic) == nulltype)
         return VMerror;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(dic));
@@ -90,7 +90,7 @@ int dictomark(Xpost_Context *ctx)
     i = t.int_.val;
     if ((i % 2) == 1)
         return rangecheck;
-    d = consbdc(ctx, i);
+    d = xpost_dict_cons (ctx, i);
     if (xpost_object_get_type(d) == nulltype)
         return VMerror;
     for ( ; i > 0; i -= 2){
@@ -100,7 +100,7 @@ int dictomark(Xpost_Context *ctx)
         k = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(k) == invalidtype)
             return stackunderflow;
-        bdcput(ctx, d, k, v);
+        xpost_dict_put(ctx, d, k, v);
     }
     (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
     xpost_stack_push(ctx->lo, ctx->os, d);
@@ -113,7 +113,7 @@ static
 int Dlength(Xpost_Context *ctx,
              Xpost_Object D)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(diclength(
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_dict_length_memory (
                     xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
     return 0;
@@ -125,7 +125,7 @@ static
 int Dmaxlength(Xpost_Context *ctx,
                 Xpost_Object D)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(dicmaxlength(
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_dict_max_length_memory (
                     xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
                     D)));
     return 0;
@@ -162,12 +162,12 @@ int Adef(Xpost_Context *ctx,
 {
     int ret;
     //Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
-    //dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
-    ret = bdcput(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
+    //xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D); puts("");
+    ret = xpost_dict_put(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
     if (ret)
         return ret;
     //puts("!def!");
-    //dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
+    //xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D); puts("");
     return 0;
 }
 
@@ -188,12 +188,12 @@ int Aload(Xpost_Context *ctx,
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo,ctx->ds,i);
 
         if (DEBUGLOAD) {
-            dumpdic(xpost_context_select_memory(ctx, D), D);
+            xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D);
             (void)puts("");
         }
 
-        if (dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)) {
-            xpost_stack_push(ctx->lo, ctx->os, bdcget(ctx, D, K));
+        if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K)) {
+            xpost_stack_push(ctx->lo, ctx->os, xpost_dict_get(ctx, D, K));
             return 0;
         }
     }
@@ -227,7 +227,7 @@ int Astore(Xpost_Context *ctx,
     } else {
         D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
     }
-    bdcput(ctx, D, K, V);
+    xpost_dict_put(ctx, D, K, V);
     return 0;
 }
 
@@ -240,7 +240,7 @@ int DAget(Xpost_Context *ctx,
 {
     Xpost_Object v;
 
-    v = bdcget(ctx, D, K);
+    v = xpost_dict_get(ctx, D, K);
     if (xpost_object_get_type(v) == invalidtype)
         return undefined;
     xpost_stack_push(ctx->lo, ctx->os, v);
@@ -255,7 +255,7 @@ int DAAput(Xpost_Context *ctx,
             Xpost_Object K,
             Xpost_Object V)
 {
-    bdcput(ctx, D, K, V);
+    xpost_dict_put(ctx, D, K, V);
     return 0;
 }
 
@@ -267,7 +267,7 @@ int DAundef(Xpost_Context *ctx,
              Xpost_Object K)
 {
     XPOST_LOG_WARN("FIXME: undef doesn't adequately fix the chain");
-    bdcundef(ctx, D, K);
+    xpost_dict_undef(ctx, D, K);
     return 0;
 }
 
@@ -281,10 +281,10 @@ int DAknown(Xpost_Context *ctx,
 #if 0
     printf("\nknown: ");
     xpost_object_dump(D);
-    dumpdic(xpost_context_select_memory(ctx, D), D); puts("");
+    xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D); puts("");
     xpost_object_dump(K);
 #endif
-    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K)));
     return 0;
 }
 
@@ -298,7 +298,7 @@ int Awhere(Xpost_Context *ctx,
     int z = xpost_stack_count(ctx->lo, ctx->ds);
     for (i = 0; i < z; i++) {
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
-        if (dicknown(ctx, xpost_context_select_memory(ctx, D), D, K)) {
+        if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K)) {
             xpost_stack_push(ctx->lo, ctx->os, D);
             xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
             return 0;
@@ -322,7 +322,7 @@ int Dcopy(Xpost_Context *ctx,
     int ret;
 
     mem = xpost_context_select_memory(ctx, S);
-    sz = dicmaxlength(mem, S);
+    sz = xpost_dict_max_length_memory (mem, S);
     ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(S), &ad);
     if (!ret)
     {
@@ -333,7 +333,7 @@ int Dcopy(Xpost_Context *ctx,
     tp = (void *)(mem->base + ad + sizeof(dichead));
     for (i=0; i < sz+1; i++) {
         if (xpost_object_get_type(tp[2 * i]) != nulltype) {
-            bdcput(ctx, D, tp[2*i], tp[2*i+1]);
+            xpost_dict_put(ctx, D, tp[2*i], tp[2*i+1]);
             tp = (void *)(mem->base + ad + sizeof(dichead)); /* recalc */
         }
     }
@@ -350,7 +350,7 @@ int DPforall (Xpost_Context *ctx,
 {
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, D);
     assert(mem->base);
-    D.comp_.sz = dicmaxlength(mem, D); // cache size locally
+    D.comp_.sz = xpost_dict_max_length_memory (mem, D); // cache size locally
     if (D.comp_.off <= D.comp_.sz) { // not finished?
         unsigned ad;
         Xpost_Object *tp; /* dict Table Pointer, indexed by pairs,
@@ -373,7 +373,7 @@ int DPforall (Xpost_Context *ctx,
 
                 k = tp[2 * D.comp_.off];
                 if (xpost_object_get_type(k) == extendedtype)
-                    k = unextend(k);
+                    k = xpost_dict_convert_extended_to_number(k);
                 v = tp[2 * D.comp_.off + 1];
 
                 if (!xpost_stack_push(ctx->lo, ctx->os, k))
@@ -491,7 +491,7 @@ int initopdi(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
     op = consoper(ctx, "dict", Idict, 1, 1, integertype); INSTALL;
-    ret = bdcput(ctx, sd, consname(ctx, "<<"), mark);
+    ret = xpost_dict_put(ctx, sd, consname(ctx, "<<"), mark);
     if (ret)
         return 0;
     op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;

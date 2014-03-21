@@ -58,12 +58,14 @@ typedef struct {
 
 extern Xpost_Interpreter *itpdata;
 extern int initializing;
-//extern int ignoreinvalidaccess;
 
 Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid);
 
 /**
- * The event-handler handler
+ * The event-handler handler.
+
+ * In a multi-threaded configuration, this may not execute at in every eval()
+ * but by a superior strategy.
  */
 int idleproc (Xpost_Context *ctx);
 

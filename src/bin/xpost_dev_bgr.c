@@ -83,14 +83,14 @@ int _create (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
     xpost_stack_push(ctx->lo, ctx->os, classdic);
-    bdcput(ctx, classdic, namewidth, width);
-    bdcput(ctx, classdic, nameheight, height);
+    xpost_dict_put(ctx, classdic, namewidth, width);
+    xpost_dict_put(ctx, classdic, nameheight, height);
 
     /* call device class's ps-level .copydict procedure,
        then call _create_cont, by continuation. */
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_create_cont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, namedotcopydict)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, namedotcopydict)))
         return execstackoverflow;
 
     return 0;
@@ -116,7 +116,7 @@ int _create_cont (Xpost_Context *ctx,
         XPOST_LOG_ERR("cannot allocat private data structure");
         return unregistered;
     }
-    bdcput(ctx, devdic, namePrivate, privatestr);
+    xpost_dict_put(ctx, devdic, namePrivate, privatestr);
 
     private.width = width;
     private.height = height;
@@ -145,7 +145,7 @@ int _flush (Xpost_Context *ctx,
     PrivateData private;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, namePrivate);
+    privatestr = xpost_dict_get(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
@@ -168,7 +168,7 @@ int _emit (Xpost_Context *ctx,
     int height;
 
     /* load private data struct from string */
-    privatestr = bdcget(ctx, devdic, namePrivate);
+    privatestr = xpost_dict_get(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
@@ -178,7 +178,7 @@ int _emit (Xpost_Context *ctx,
     height = private.height;
 
     data = malloc(stride * height * sizeof(*data));
-    imgdata = bdcget(ctx, devdic, consname(ctx, "ImgData"));
+    imgdata = xpost_dict_get(ctx, devdic, consname(ctx, "ImgData"));
 
     {
         int i,j;
@@ -232,7 +232,7 @@ int newbgrdevice (Xpost_Context *ctx,
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
-    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, consname(ctx, "Create"))))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, consname(ctx, "Create"))))
         return execstackoverflow;
 
     return 0;
@@ -258,7 +258,7 @@ int loadbgrdevice (Xpost_Context *ctx)
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadbgrdevicecont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, bdcget(ctx, classdic, namedotcopydict)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, namedotcopydict)))
         return execstackoverflow;
 
     return 0;
@@ -276,33 +276,33 @@ int loadbgrdevicecont (Xpost_Context *ctx,
     Xpost_Object op;
     int ret;
 
-    ret = bdcput(ctx, classdic, namenativecolorspace, nameDeviceRGB);
+    ret = xpost_dict_put(ctx, classdic, namenativecolorspace, nameDeviceRGB);
 
     op = consoper(ctx, "bgrCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
     op = consoper(ctx, "bgrCreate", _create, 1, 3, integertype, integertype, dicttype);
-    ret = bdcput(ctx, classdic, consname(ctx, "Create"), op);
+    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Create"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "bgrEmit", _emit, 0, 1, dicttype);
-    ret = bdcput(ctx, classdic, consname(ctx, "Emit"), op);
+    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Emit"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "bgrFlush", _flush, 0, 1, dicttype);
-    ret = bdcput(ctx, classdic, consname(ctx, "Flush"), op);
+    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Flush"), op);
     if (ret)
         return ret;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
 
-    ret = bdcput(ctx, userdict, consname(ctx, "bgrDEVICE"), classdic);
+    ret = xpost_dict_put(ctx, userdict, consname(ctx, "bgrDEVICE"), classdic);
     if (ret)
         return ret;
 
     op = consoper(ctx, "newbgrdevice", newbgrdevice, 1, 2, integertype, integertype);
-    ret = bdcput(ctx, userdict, consname(ctx, "newbgrdevice"), op);
+    ret = xpost_dict_put(ctx, userdict, consname(ctx, "newbgrdevice"), op);
     if (ret)
         return ret;
 

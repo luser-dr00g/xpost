@@ -106,7 +106,7 @@ int setpacking (Xpost_Context *ctx,
                  Xpost_Object b)
 {
     Xpost_Object sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
-    bdcput(ctx, sd, consname(ctx, "currentpacking"), b);
+    xpost_dict_put(ctx, sd, consname(ctx, "currentpacking"), b);
     return 0;
 }
 
@@ -123,11 +123,11 @@ int initoppa(Xpost_Context *ctx,
     optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "packedarray", packedarray, 1, 1, integertype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "currentpacking"), xpost_bool_cons(0));
+    xpost_dict_put(ctx, sd, consname(ctx, "currentpacking"), xpost_bool_cons(0));
     op = consoper(ctx, "setpacking", setpacking, 0, 1, booleantype); INSTALL;
 
-    /* dumpdic(ctx->gl, sd); fflush(NULL);
-    bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
+    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
 
     return 0;
 }

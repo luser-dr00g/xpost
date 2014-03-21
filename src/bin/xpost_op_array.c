@@ -319,7 +319,7 @@ int initopar (Xpost_Context *ctx,
 
     op = consoper(ctx, "array", Iarray, 1, 1,
             integertype); INSTALL;
-    ret = bdcput(ctx, sd, consname(ctx, "["), mark);
+    ret = xpost_dict_put(ctx, sd, consname(ctx, "["), mark);
     if (ret)
         return 0;
     op = consoper(ctx, "]", arrtomark, 1, 0); INSTALL;

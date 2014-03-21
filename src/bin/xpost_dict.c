@@ -147,8 +147,8 @@ cont:
                                 L.real_.val - R.real_.val > 0? 1: -1;
         case extendedtype: {
                                double l,r;
-                               l = doubleextended(L);
-                               r = doubleextended(R);
+                               l = xpost_dict_convert_extended_to_double(L);
+                               r = xpost_dict_convert_extended_to_double(R);
                                return (fabs(l - r) < 0.0001)?
                                    0:
                                    l - r > 0? 1: -1;
@@ -198,7 +198,7 @@ unsigned int hash(Xpost_Object k)
    extract the "pointer" from the entity,
    Initialize a dichead in memory,
    just after the head, clear a table of pairs. */
-Xpost_Object consdic(Xpost_Memory_File *mem,
+Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
                unsigned int sz)
 {
     Xpost_Memory_Table *tab;
@@ -247,18 +247,18 @@ Xpost_Object consdic(Xpost_Memory_File *mem,
     for (i=0; i < DICTABN(sz); i++)
         tp[i] = null; /* remember our null object is not all-zero! */
 #ifdef DEBUGDIC
-    printf("consdic: "); dumpdic(mem, d);
+    printf("xpost_dict_cons_memory : "); xpost_dict_dump_memory (mem, d);
 #endif
     return d;
 }
 
 /* select mfile according to vmmode,
-   call consdic,
+   call xpost_dict_cons_memory ,
    set the BANK flag. */
-Xpost_Object consbdc(Xpost_Context *ctx,
+Xpost_Object xpost_dict_cons (Xpost_Context *ctx,
                unsigned int sz)
 {
-    Xpost_Object d = consdic(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
+    Xpost_Object d = xpost_dict_cons_memory (ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (xpost_object_get_type(d) != nulltype)
     {
         xpost_stack_push(ctx->lo, ctx->hold, d);
@@ -269,7 +269,7 @@ Xpost_Object consbdc(Xpost_Context *ctx,
 }
 
 /* get the nused field from the dichead */
-unsigned int diclength(Xpost_Memory_File *mem,
+unsigned int xpost_dict_length_memory (Xpost_Memory_File *mem,
                    Xpost_Object d)
 {
     unsigned int da;
@@ -280,7 +280,7 @@ unsigned int diclength(Xpost_Memory_File *mem,
 }
 
 /* get the sz field from the dichead */
-unsigned int dicmaxlength(Xpost_Memory_File *mem,
+unsigned int xpost_dict_max_length_memory (Xpost_Memory_File *mem,
                       Xpost_Object d)
 {
     unsigned int da;
@@ -309,9 +309,9 @@ int dicgrow(Xpost_Context *ctx,
     mem = xpost_context_select_memory(ctx, d);
 #ifdef DEBUGDIC
     printf("DI growing dict\n");
-    dumpdic(mem, d);
+    xpost_dict_dump_memory (mem, d);
 #endif
-    n = consdic(mem, newsz = 2 * dicmaxlength(mem, d));
+    n = xpost_dict_cons_memory (mem, newsz = 2 * xpost_dict_max_length_memory (mem, d));
 
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
@@ -319,12 +319,12 @@ int dicgrow(Xpost_Context *ctx,
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
     for ( i=0; i < sz; i++) {
         if (xpost_object_get_type(tp[2*i]) != nulltype) {
-            dicput(ctx, mem, n, tp[2*i], tp[2*i+1]);
+            xpost_dict_put_memory(ctx, mem, n, tp[2*i], tp[2*i+1]);
         }
     }
 #ifdef DEBUGDIC
     printf("n: ");
-    dumpdic(mem, n);
+    xpost_dict_dump_memory (mem, n);
 #endif
 
     {   /* exchange entities */
@@ -357,14 +357,14 @@ int dicgrow(Xpost_Context *ctx,
 }
 
 /* is it full? (y/n) */
-int dicfull(Xpost_Memory_File *mem,
+int xpost_dict_is_full_memory (Xpost_Memory_File *mem,
              Xpost_Object d)
 {
-    return diclength(mem, d) == dicmaxlength(mem, d);
+    return xpost_dict_length_memory (mem, d) == xpost_dict_max_length_memory (mem, d);
 }
 
 /* print a dump of the dictionary data */
-void dumpdic(Xpost_Memory_File *mem,
+void xpost_dict_dump_memory (Xpost_Memory_File *mem,
              Xpost_Object d)
 {
     unsigned int ad;
@@ -390,7 +390,7 @@ void dumpdic(Xpost_Memory_File *mem,
 /* construct an extendedtype object
    from a double value */
 /*n.b. Caller Must set EXTENDEDINT or EXTENDEDREAL flag */
-/*     in order to unextend() later. */
+/*     in order to xpost_dict_convert_extended_to_number() later. */
 static
 Xpost_Object consextended (double d)
 {
@@ -406,7 +406,7 @@ Xpost_Object consextended (double d)
 
 /* adapter:
    double <- extendedtype object */
-double doubleextended (Xpost_Object e)
+double xpost_dict_convert_extended_to_double (Xpost_Object e)
 {
     Xpost_Ieee_Double_As_Int r;
     r.bits = ((unsigned long long)e.extended_.sign_exp << 52)
@@ -416,10 +416,10 @@ double doubleextended (Xpost_Object e)
 
 /* convert an extendedtype object to integertype or realtype
    depending upon flag */
-Xpost_Object unextend (Xpost_Object e)
+Xpost_Object xpost_dict_convert_extended_to_number (Xpost_Object e)
 {
     Xpost_Object o;
-    double d = doubleextended(e);
+    double d = xpost_dict_convert_extended_to_double(e);
 
     if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_INT) {
         o = xpost_int_cons(d);
@@ -511,7 +511,7 @@ Xpost_Object *diclookup(Xpost_Context *ctx,
 }
 
 /* see if lookup returns a non-null pair. */
-int dicknown(Xpost_Context *ctx,
+int xpost_dict_known_key(Xpost_Context *ctx,
         /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -526,7 +526,7 @@ int dicknown(Xpost_Context *ctx,
 /* call diclookup,
    return the value if the key is non-null
    or invalid if key is null (interpret as "undefined"). */
-Xpost_Object dicget(Xpost_Context *ctx,
+Xpost_Object xpost_dict_get_memory (Xpost_Context *ctx,
         /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -548,12 +548,12 @@ Xpost_Object dicget(Xpost_Context *ctx,
 }
 
 /* select mfile according to BANK field,
-   call dicget. */
-Xpost_Object bdcget(Xpost_Context *ctx,
+   call xpost_dict_get_memory . */
+Xpost_Object xpost_dict_get(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    return dicget(ctx, xpost_context_select_memory(ctx, d), d, k);
+    return xpost_dict_get_memory (ctx, xpost_context_select_memory(ctx, d), d, k);
 }
 
 /* save data if not save at this level,
@@ -562,7 +562,7 @@ Xpost_Object bdcget(Xpost_Context *ctx,
        increase nused,
        set key,
        update value. */
-int dicput(Xpost_Context *ctx,
+int xpost_dict_put_memory(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k,
@@ -597,7 +597,7 @@ int dicput(Xpost_Context *ctx,
     }
     else if (xpost_object_get_type(e[0]) == nulltype)
     {
-        if (dicfull(mem, d)) {
+        if (xpost_dict_is_full_memory (mem, d)) {
             /* dict full:  grow dict! */
             ret = dicgrow(ctx, d);
             if (!ret)
@@ -626,8 +626,8 @@ int dicput(Xpost_Context *ctx,
 }
 
 /* select mfile according to BANK field,
-   call dicput. */
-int bdcput(Xpost_Context *ctx,
+   call xpost_dict_put_memory. */
+int xpost_dict_put(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k,
         Xpost_Object v)
@@ -651,11 +651,11 @@ int bdcput(Xpost_Context *ctx,
         }
     }
 
-    return dicput(ctx, xpost_context_select_memory(ctx, d), d, k, v);
+    return xpost_dict_put_memory(ctx, xpost_context_select_memory(ctx, d), d, k, v);
 }
 
 /* undefine key from dict */
-int dicundef(Xpost_Context *ctx,
+int xpost_dict_undef_memory(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
@@ -732,11 +732,11 @@ int dicundef(Xpost_Context *ctx,
 }
 
 /* undefine key from banked dict */
-void bdcundef(Xpost_Context *ctx,
+void xpost_dict_undef(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    dicundef(ctx, xpost_context_select_memory(ctx, d), d, k);
+    xpost_dict_undef_memory(ctx, xpost_context_select_memory(ctx, d), d, k);
 }
 
 
@@ -765,17 +765,17 @@ int main(void)
     init();
 
     Xpost_Object d;
-    d = consbdc(ctx, 12);
+    d = xpost_dict_cons (ctx, 12);
     printf("1 2 def\n");
-    bdcput(ctx, d, xpost_int_cons(1), xpost_int_cons(2));
+    xpost_dict_put(ctx, d, xpost_int_cons(1), xpost_int_cons(2));
     printf("3 4 def\n");
-    bdcput(ctx, d, xpost_int_cons(3), xpost_int_cons(4));
+    xpost_dict_put(ctx, d, xpost_int_cons(3), xpost_int_cons(4));
 
     printf("1 load =\n");
-    xpost_object_dump(bdcget(ctx, d, xpost_int_cons(1)));
-    /* xpost_object_dump(bdcget(ctx, d, xpost_int_cons(2)));  */
+    xpost_object_dump(xpost_dict_get(ctx, d, xpost_int_cons(1)));
+    /* xpost_object_dump(xpost_dict_get(ctx, d, xpost_int_cons(2)));  */
     printf("\n3 load =\n");
-    xpost_object_dump(bdcget(ctx, d, xpost_int_cons(3)));
+    xpost_object_dump(xpost_dict_get(ctx, d, xpost_int_cons(3)));
 
 
     /*xpost_memory_file_dump(ctx->gl); */

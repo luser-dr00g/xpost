@@ -91,7 +91,7 @@ int opexec(Xpost_Context *ctx, unsigned opcode);
     n.mark_.tag = nametype|XPOST_OBJECT_TAG_DATA_FLAG_BANK, \
     n.mark_.pad0 = 0, \
     n.mark_.padw = optab[op.mark_.padw].name, \
-    bdcput(ctx, sd, n, op), \
+    xpost_dict_put(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + optadr); // recalc
 
 int breakhere(Xpost_Context *ctx);
