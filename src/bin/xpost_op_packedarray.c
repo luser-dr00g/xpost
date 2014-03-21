@@ -86,7 +86,7 @@ int packedarray (Xpost_Context *ctx,
 {
     int i;
     Xpost_Object a, v;
-    a = consbar(ctx, n.int_.val);
+    a = xpost_array_cons(ctx, n.int_.val);
     if (xpost_object_get_type(a) == nulltype)
         return VMerror;
     
@@ -94,7 +94,7 @@ int packedarray (Xpost_Context *ctx,
         v = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(v) == invalidtype)
             return stackunderflow;
-        barput(ctx, a, i-1, v);
+        xpost_array_put(ctx, a, i-1, v);
     }
     a = xpost_object_set_access(xpost_object_cvlit(a), XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
     xpost_stack_push(ctx->lo, ctx->os, a);

@@ -192,8 +192,8 @@ int _emit (Xpost_Context *ctx,
 
         for (i=0; i < height; i++)
         {
-            row = arrget(mem, imgdata, i);
-            //row = barget(ctx, imgdata, i);
+            row = xpost_array_get_memory(mem, imgdata, i);
+            //row = xpost_array_get(ctx, imgdata, i);
             xpost_memory_table_get_addr(mem, row.comp_.ent, &rowaddr);
             rowdata = (Xpost_Object *)(mem->base + rowaddr);
 

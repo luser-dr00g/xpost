@@ -358,7 +358,7 @@ int Aexecstack(Xpost_Context *ctx,
     for (i=0; i < z; i++)
     {
         int ret;
-        ret = barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
+        ret = xpost_array_put(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
         if (ret)
             return ret;
     }

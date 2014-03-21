@@ -116,10 +116,10 @@ int _yxcomp (const void *left, const void *right)
     const Xpost_Object *rt = right;
     Xpost_Object leftx, lefty, rightx, righty;
     integer ltx, lty, rtx, rty;
-    leftx = barget(localctx, *lt, 0);
-    lefty = barget(localctx, *lt, 1);
-    rightx = barget(localctx, *rt, 0);
-    righty = barget(localctx, *rt, 1);
+    leftx = xpost_array_get(localctx, *lt, 0);
+    lefty = xpost_array_get(localctx, *lt, 1);
+    rightx = xpost_array_get(localctx, *rt, 0);
+    righty = xpost_array_get(localctx, *rt, 1);
     ltx = xpost_object_get_type(leftx) == realtype ?
         leftx.real_.val : leftx.int_.val;
     lty = xpost_object_get_type(lefty) == realtype ?
@@ -344,9 +344,9 @@ int _fillpoly (Xpost_Context *ctx,
     for (i=0; i < poly.comp_.sz; i++)
     {
         Xpost_Object pair, x, y;
-        pair = barget(ctx, poly, i);
-        x = barget(ctx, pair, 0);
-        y = barget(ctx, pair, 1);
+        pair = xpost_array_get(ctx, poly, i);
+        x = xpost_array_get(ctx, pair, 0);
+        y = xpost_array_get(ctx, pair, 1);
         if (xpost_object_get_type(x) == integertype)
             x = xpost_real_cons(x.int_.val);
         if (xpost_object_get_type(y) == integertype)

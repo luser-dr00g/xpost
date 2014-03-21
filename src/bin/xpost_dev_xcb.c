@@ -612,9 +612,9 @@ int _fillpoly (Xpost_Context *ctx,
         for (i=0; i < poly.comp_.sz; i++)
         {
             Xpost_Object pair, x, y;
-            pair = barget(ctx, poly, i);
-            x = barget(ctx, pair, 0);
-            y = barget(ctx, pair, 1);
+            pair = xpost_array_get(ctx, poly, i);
+            x = xpost_array_get(ctx, pair, 0);
+            y = xpost_array_get(ctx, pair, 1);
             if (xpost_object_get_type(x) == realtype)
                 x = xpost_int_cons(x.real_.val);
             if (xpost_object_get_type(y) == realtype)

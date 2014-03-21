@@ -47,35 +47,35 @@
 */
 
 /**
- * @brief consarr - construct an array object
+ * @brief xpost_array_cons_memory - construct an array object
  * in the mtab of specified mfile
 */
-Xpost_Object consarr(Xpost_Memory_File *mem, unsigned sz);
+Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem, unsigned sz);
 
 /**
- * @brief consbar - construct an array object
+ * @brief xpost_array_cons - construct an array object
  * selecting mfile according to ctx->vmmode
 */
-Xpost_Object consbar(Xpost_Context *ctx, unsigned sz);
+Xpost_Object xpost_array_cons(Xpost_Context *ctx, unsigned sz);
 
 /** 
    * @brief store value in an array
 */
-int arrput(Xpost_Memory_File *mem, Xpost_Object a, integer i, Xpost_Object o);
+int xpost_array_put_memory(Xpost_Memory_File *mem, Xpost_Object a, integer i, Xpost_Object o);
 
 /** 
  * @brief store value in a banked array
 */
-int barput(Xpost_Context *ctx, Xpost_Object a, integer i, Xpost_Object o);
+int xpost_array_put(Xpost_Context *ctx, Xpost_Object a, integer i, Xpost_Object o);
 
 /** 
  * @brief extract value from an array
 */
-Xpost_Object arrget(Xpost_Memory_File *mem, Xpost_Object a, integer i);
+Xpost_Object xpost_array_get_memory(Xpost_Memory_File *mem, Xpost_Object a, integer i);
 
 /** 
  * @brief extract value from a banked array
 */
-Xpost_Object barget(Xpost_Context *ctx, Xpost_Object a, integer i);
+Xpost_Object xpost_array_get(Xpost_Context *ctx, Xpost_Object a, integer i);
 
 #endif

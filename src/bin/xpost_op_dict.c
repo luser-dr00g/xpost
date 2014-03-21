@@ -447,7 +447,7 @@ int Adictstack(Xpost_Context *ctx,
     int z = xpost_stack_count(ctx->lo, ctx->ds);
     int i;
     for (i=0; i < z; i++)
-        barput(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, i));
+        xpost_array_put(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, i));
     subarr = xpost_object_get_interval(A, 0, z);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;
