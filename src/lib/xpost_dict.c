@@ -73,7 +73,6 @@ void *alloca (size_t);
 
 #include "xpost_save.h"  /* dicts obey save/restore */
 #include "xpost_context.h"
-#include "xpost_interpreter.h"  /* banked dicts may live in global or local vm */
 #include "xpost_error.h"  /* dict functions may throw errors */
 #include "xpost_string.h"  /* may need string functions (convert to name) */
 #include "xpost_name.h"  /* may need name functions (create name) */
@@ -118,11 +117,11 @@ int objcmp(Xpost_Context *ctx,
             goto cont;
         }
         if (xpost_object_get_type(L) == nametype && xpost_object_get_type(R) == stringtype) {
-            L = strname(ctx, L);
+            L = xpost_name_get_string(ctx, L);
             goto cont;
         }
         if (xpost_object_get_type(R) == nametype && xpost_object_get_type(L) == stringtype) {
-            R = strname(ctx, R);
+            R = xpost_name_get_string(ctx, R);
             goto cont;
         }
         return xpost_object_get_type(L) - xpost_object_get_type(R);
@@ -169,7 +168,7 @@ cont:
         case stringtype: return L.comp_.sz == R.comp_.sz ?
                                 memcmp(xpost_string_get_pointer(ctx, L), xpost_string_get_pointer(ctx, R), L.comp_.sz) :
                                 L.comp_.sz - R.comp_.sz;
-        case filetype: return filefile(ctx->lo, L) == filefile(ctx->lo, R);
+        case filetype: return xpost_file_get_file_pointer(ctx->lo, L) == xpost_file_get_file_pointer(ctx->lo, R);
     }
 }
 
@@ -443,7 +442,7 @@ Xpost_Object clean_key (Xpost_Context *ctx,
         char *s = alloca(k.comp_.sz+1);
         memcpy(s, xpost_string_get_pointer(ctx, k), k.comp_.sz);
         s[k.comp_.sz] = '\0';
-        k = consname(ctx, s);
+        k = xpost_name_cons(ctx, s);
     }
     break;
     case integertype:

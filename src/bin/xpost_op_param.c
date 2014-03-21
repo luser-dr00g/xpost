@@ -142,7 +142,7 @@ int initopparam(Xpost_Context *ctx,
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     op = consoper(ctx, "save", Zsave, 1, 0); INSTALL;
-    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
 
     return 0;
 }

@@ -280,10 +280,10 @@ int initopb(Xpost_Context *ctx,
     op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "xor", Bxor, 1, 2, booleantype, booleantype); INSTALL;
     op = consoper(ctx, "xor", Ixor, 1, 2, integertype, integertype); INSTALL;
-    ret = xpost_dict_put(ctx, sd, consname(ctx, "true"), xpost_bool_cons(1));
+    ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "true"), xpost_bool_cons(1));
     if (ret)
         return 0;
-    ret = xpost_dict_put(ctx, sd, consname(ctx, "false"), xpost_bool_cons(0));
+    ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "false"), xpost_bool_cons(0));
     if (ret)
         return 0;
     op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype); INSTALL;

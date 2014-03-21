@@ -71,7 +71,6 @@ void *alloca (size_t);
 #include "xpost_object.h"  /* files are objects */
 #include "xpost_context.h"
 
-#include "xpost_interpreter.h"  /* interpreter */
 #include "xpost_error.h"  /* file functions may throw errors */
 #include "xpost_file.h"  /* double-check prototypes */
 
@@ -134,9 +133,9 @@ f_tmpfile(void)
    default is writable.
    eg.
     FILE *fp = fopen(...);
-    Xpost_Object f = readonly(consfile(fp)).
+    Xpost_Object f = readonly(xpost_file_cons(fp)).
  */
-Xpost_Object consfile(Xpost_Memory_File *mem,
+Xpost_Object xpost_file_cons(Xpost_Memory_File *mem,
         /*@NULL@*/ FILE *fp)
 {
     Xpost_Object f;
@@ -144,7 +143,7 @@ Xpost_Object consfile(Xpost_Memory_File *mem,
     int ret;
 
 #ifdef DEBUG_FILE
-    printf("consfile %p\n", fp);
+    printf("xpost_file_cons %p\n", fp);
 #endif
     f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
     /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
@@ -276,7 +275,7 @@ done:
 
 /* check for "special" filenames,
    fallback to fopen. */
-int fileopen(Xpost_Memory_File *mem,
+int xpost_file_open(Xpost_Memory_File *mem,
         char *fn,
         char *mode,
         Xpost_Object *retval)
@@ -292,7 +291,7 @@ int fileopen(Xpost_Memory_File *mem,
         {
             return invalidfileaccess;
         }
-        f = consfile(mem, stdin);
+        f = xpost_file_cons(mem, stdin);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stdout")==0) {
@@ -300,7 +299,7 @@ int fileopen(Xpost_Memory_File *mem,
         {
             return invalidfileaccess;
         }
-        f = consfile(mem, stdout);
+        f = xpost_file_cons(mem, stdout);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%stderr")==0) {
@@ -308,14 +307,14 @@ int fileopen(Xpost_Memory_File *mem,
         {
             return invalidfileaccess;
         }
-        f = consfile(mem, stderr);
+        f = xpost_file_cons(mem, stderr);
     } else if (strcmp(fn, "%lineedit")==0) {
         ret = lineedit(stdin, &fp);
         if (ret)
         {
             return ret;
         }
-        f = consfile(mem, fp);
+        f = xpost_file_cons(mem, fp);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else if (strcmp(fn, "%statementedit")==0) {
@@ -324,7 +323,7 @@ int fileopen(Xpost_Memory_File *mem,
         {
             return ret;
         }
-        f = consfile(mem, fp);
+        f = xpost_file_cons(mem, fp);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else {
@@ -345,7 +344,7 @@ int fileopen(Xpost_Memory_File *mem,
                 break;
             }
         }
-        f = consfile(mem, fp);
+        f = xpost_file_cons(mem, fp);
         if (strcmp(mode, "r")==0){
             f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
             f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
@@ -373,7 +372,7 @@ int fileopen(Xpost_Memory_File *mem,
 /* adapter:
            FILE* <- filetype object
    yield the FILE* from a filetype object */
-FILE *filefile(Xpost_Memory_File *mem,
+FILE *xpost_file_get_file_pointer(Xpost_Memory_File *mem,
                Xpost_Object f)
 {
     FILE *fp;
@@ -388,14 +387,14 @@ FILE *filefile(Xpost_Memory_File *mem,
 }
 
 /* make sure the FILE* is not null */
-int filestatus(Xpost_Memory_File *mem,
+int xpost_file_get_status(Xpost_Memory_File *mem,
                 Xpost_Object f)
 {
-    return filefile(mem, f) != NULL;
+    return xpost_file_get_file_pointer(mem, f) != NULL;
 }
 
 /* call fstat. */
-int filebytesavailable(Xpost_Memory_File *mem,
+int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
                         Xpost_Object f,
                         int *retval)
 {
@@ -404,7 +403,7 @@ int filebytesavailable(Xpost_Memory_File *mem,
     struct stat sb;
     long sz, pos;
 
-    fp = filefile(mem, f);
+    fp = xpost_file_get_file_pointer(mem, f);
     if (!fp) return ioerror;
     ret = fstat(fileno(fp), &sb);
     if (ret != 0)
@@ -426,13 +425,13 @@ int filebytesavailable(Xpost_Memory_File *mem,
 
 /* close the file,
    NULL the FILE*. */
-int fileclose(Xpost_Memory_File *mem,
+int xpost_file_close(Xpost_Memory_File *mem,
                Xpost_Object f)
 {
     FILE *fp;
     int ret;
 
-    fp = filefile(mem, f);
+    fp = xpost_file_get_file_pointer(mem, f);
     if (fp) {
 #ifdef DEBUG_FILE
 		printf("fclose");
@@ -454,27 +453,27 @@ int fileclose(Xpost_Memory_File *mem,
 
 /* if the file is valid,
    read a byte. */
-Xpost_Object fileread(Xpost_Memory_File *mem,
+Xpost_Object xpost_file_read_byte(Xpost_Memory_File *mem,
                 Xpost_Object f)
 {
-    if (!filestatus(mem, f))
+    if (!xpost_file_get_status(mem, f))
     {
         return invalid;
     }
-    return xpost_int_cons(fgetc(filefile(mem, f)));
+    return xpost_int_cons(fgetc(xpost_file_get_file_pointer(mem, f)));
 }
 
 /* if the file is valid,
    write a byte. */
-int filewrite(Xpost_Memory_File *mem,
+int xpost_file_write_byte(Xpost_Memory_File *mem,
                Xpost_Object f,
                Xpost_Object b)
 {
-    if (!filestatus(mem, f))
+    if (!xpost_file_get_status(mem, f))
     {
         return ioerror;
     }
-    if (fputc(b.int_.val, filefile(mem, f)) == EOF)
+    if (fputc(b.int_.val, xpost_file_get_file_pointer(mem, f)) == EOF)
     {
         return ioerror;
     }

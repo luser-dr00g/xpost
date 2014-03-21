@@ -200,7 +200,7 @@ int grok (Xpost_Context *ctx,
         XPOST_LOG_ERR("buf maxxed");
         return limitcheck;
     }
-    s[ns] = '\0';  //fsm_check & consname  terminate on \0
+    s[ns] = '\0';  //fsm_check & xpost_name_cons  terminate on \0
 
     if (fsm_check(s, ns, fsm_dec, accept_dec)) {
         long num;
@@ -302,8 +302,8 @@ int grok (Xpost_Context *ctx,
                   char d, *x = "0123456789ABCDEF", *sp = s;
                   c = next(ctx, src);
                   if (c == '<') {
-                      //return xpost_object_cvx(consname(ctx, "<<"));
-                      *retval = xpost_object_cvx(consname(ctx, "<<"));
+                      //return xpost_object_cvx(xpost_name_cons(ctx, "<<"));
+                      *retval = xpost_object_cvx(xpost_name_cons(ctx, "<<"));
                       return 0;
                   }
                   back(ctx, c, src);
@@ -349,8 +349,8 @@ int grok (Xpost_Context *ctx,
     case '>': {
                   int c;
                   if ((c = next(ctx, src)) == '>') {
-                      //return xpost_object_cvx(consname(ctx, ">>"));
-                      *retval = xpost_object_cvx(consname(ctx, ">>"));
+                      //return xpost_object_cvx(xpost_name_cons(ctx, ">>"));
+                      *retval = xpost_object_cvx(xpost_name_cons(ctx, ">>"));
                       return 0;
                   } else
                   {
@@ -362,7 +362,7 @@ int grok (Xpost_Context *ctx,
 
     case '{': { // This is the one part that makes it a recursive-descent parser
                   Xpost_Object tail;
-                  tail = consname(ctx, "}");
+                  tail = xpost_name_cons(ctx, "}");
                   xpost_stack_push(ctx->lo, ctx->os, mark);
                   while (1) {
                       Xpost_Object t;
@@ -392,11 +392,11 @@ int grok (Xpost_Context *ctx,
                           return limitcheck;
                       }
                       s[ns] = '\0';
-                      //xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, s)));
+                      //xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(xpost_name_cons(ctx, s)));
                       //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
                       if (DEBUGLOAD)
                           printf("\ntoken: loading immediate name %s\n", s);
-                      Aload(ctx, xpost_object_cvx(consname(ctx, s)));
+                      Aload(ctx, xpost_object_cvx(xpost_name_cons(ctx, s)));
                       ret = xpost_stack_pop(ctx->lo, ctx->os);
                       if (DEBUGLOAD)
                           xpost_object_dump(ret);
@@ -412,13 +412,13 @@ int grok (Xpost_Context *ctx,
                       return limitcheck;
                   }
                   s[ns] = '\0';
-                  //return xpost_object_cvlit(consname(ctx, s));
-                  *retval = xpost_object_cvlit(consname(ctx, s));
+                  //return xpost_object_cvlit(xpost_name_cons(ctx, s));
+                  *retval = xpost_object_cvlit(xpost_name_cons(ctx, s));
                   return 0;
               }
     default: {
-                 //return xpost_object_cvx(consname(ctx, s));
-                 *retval = xpost_object_cvx(consname(ctx, s));
+                 //return xpost_object_cvx(xpost_name_cons(ctx, s));
+                 *retval = xpost_object_cvx(xpost_name_cons(ctx, s));
                  return 0;
              }
     }
@@ -503,14 +503,14 @@ static
 int Fnext(Xpost_Context *ctx,
           Xpost_Object *F)
 {
-    return fgetc(filefile(ctx->lo, *F));
+    return fgetc(xpost_file_get_file_pointer(ctx->lo, *F));
 }
 static
 void Fback(Xpost_Context *ctx,
            int c,
            Xpost_Object *F)
 {
-    (void)ungetc(c, filefile(ctx->lo, *F));
+    (void)ungetc(c, xpost_file_get_file_pointer(ctx->lo, *F));
 }
 static
 int Ftoken (Xpost_Context *ctx,
@@ -518,7 +518,7 @@ int Ftoken (Xpost_Context *ctx,
 {
     Xpost_Object t;
     int ret;
-    if (!filestatus(ctx->lo, F))
+    if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
     ret = toke(ctx, &F, Fnext, Fback, &t);
     if (ret)

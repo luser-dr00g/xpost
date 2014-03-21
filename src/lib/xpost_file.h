@@ -28,25 +28,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef XPOST_NM_H
-#define XPOST_NM_H
+#ifndef XPOST_F_H
+#define XPOST_F_H
 
-/* names
-   The name mechanism associates strings with integers,
-   using a ternary search tree
-   and a stack of string objects
+/*
+   a filetype object uses .mark_.padw to store the ent
+   for the FILE *
    */
 
-typedef struct tst {
-    unsigned val,
-             lo,
-             eq,
-             hi;
-} tst;
-
-void dumpnames(Xpost_Context *ctx);
-int initnames(Xpost_Context *ctx);
-Xpost_Object consname(Xpost_Context *ctx, char *s);
-Xpost_Object strname(Xpost_Context *ctx, Xpost_Object n);
+Xpost_Object xpost_file_cons(Xpost_Memory_File *mem, /*@NULL@*/ FILE *fp);
+int xpost_file_open(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);
+FILE *xpost_file_get_file_pointer(Xpost_Memory_File *mem, Xpost_Object f);
+int xpost_file_get_status(Xpost_Memory_File *mem, Xpost_Object f);
+int xpost_file_get_bytes_available(Xpost_Memory_File *mem, Xpost_Object f, int *retval);
+int xpost_file_close(Xpost_Memory_File *mem, Xpost_Object f);
+Xpost_Object xpost_file_read_byte(Xpost_Memory_File *mem, Xpost_Object f);
+int xpost_file_write_byte(Xpost_Memory_File *mem, Xpost_Object f, Xpost_Object b);
 
 #endif
