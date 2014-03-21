@@ -73,7 +73,7 @@ static
 int Nlength(Xpost_Context *ctx,
             Xpost_Object N)
 {
-    Xpost_Object str = strname(ctx, N);
+    Xpost_Object str = xpost_name_get_string(ctx, N);
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(str.comp_.sz));
     return 0;
 }

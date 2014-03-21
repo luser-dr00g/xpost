@@ -89,7 +89,7 @@ int Atype(Xpost_Context *ctx,
     if (xpost_object_get_type(o) >= XPOST_OBJECT_NTYPES)
         //return unregistered;
         o = invalid; /* normalize to the all-zero invalid object */
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(consname(ctx, xpost_object_type_names[xpost_object_get_type(o)])));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(xpost_name_cons(ctx, xpost_object_type_names[xpost_object_get_type(o)])));
     return 0;
 }
 
@@ -232,7 +232,7 @@ int Scvn(Xpost_Context *ctx,
     t = alloca(s.comp_.sz+1);
     memcpy(t, xpost_string_get_pointer(ctx, s), s.comp_.sz);
     t[s.comp_.sz] = '\0';
-    name = consname(ctx, t);
+    name = xpost_name_cons(ctx, t);
     if (xpost_object_get_type(name) == invalidtype)
         return VMerror;
     if (xpost_object_is_exe(s))
@@ -475,7 +475,7 @@ int AScvs (Xpost_Context *ctx,
         }
         /*@fallthrough@*/
     case nametype:
-        any = strname(ctx, any);
+        any = xpost_name_get_string(ctx, any);
         /*@fallthrough@*/
     case stringtype:
         if (any.comp_.sz > str.comp_.sz)

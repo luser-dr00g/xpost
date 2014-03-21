@@ -478,7 +478,7 @@ int initopm (Xpost_Context *ctx,
 
     /* op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
     //xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
     return 0;
 }
 

@@ -137,7 +137,7 @@ static
 int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device)
 {
     int ret;
-    ret = initnames(ctx); /* NAMES NAMET */
+    ret = xpost_name_init(ctx); /* NAMES NAMET */
     if (!ret)
     {
         xpost_memory_file_exit(ctx->lo);
@@ -157,13 +157,13 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
     /* seed the tree with a word from the middle of the alphabet */
     /* middle of the start */
     /* middle of the end */
-    if (xpost_object_get_type(consname(ctx, "maxlength")) == invalidtype)
+    if (xpost_object_get_type(xpost_name_cons(ctx, "maxlength")) == invalidtype)
         return 0;
-    if (xpost_object_get_type(consname(ctx, "getinterval")) == invalidtype)
+    if (xpost_object_get_type(xpost_name_cons(ctx, "getinterval")) == invalidtype)
         return 0;
-    if (xpost_object_get_type(consname(ctx, "setmiterlimit")) == invalidtype)
+    if (xpost_object_get_type(xpost_name_cons(ctx, "setmiterlimit")) == invalidtype)
         return 0;
-    if (xpost_object_get_type(namedollarerror = consname(ctx, "$error")) == invalidtype)
+    if (xpost_object_get_type(namedollarerror = xpost_name_cons(ctx, "$error")) == invalidtype)
         return 0;
 
     initop(ctx); /* populate the optab (and systemdict) with operators */
@@ -176,7 +176,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
             XPOST_LOG_ERR("cannot allocate globaldict");
             return 0;
         }
-        ret = xpost_dict_put(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
+        ret = xpost_dict_put(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), xpost_name_cons(ctx, "globaldict"), gd);
         if (ret)
             return 0;
         xpost_stack_push(ctx->lo, ctx->ds, gd);
@@ -186,11 +186,11 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
     /* seed the tree with a word from the middle of the alphabet */
     /* middle of the start */
     /* middle of the end */
-    if (xpost_object_get_type(consname(ctx, "minimal")) == invalidtype)
+    if (xpost_object_get_type(xpost_name_cons(ctx, "minimal")) == invalidtype)
         return 0;
-    if (xpost_object_get_type(consname(ctx, "interest")) == invalidtype)
+    if (xpost_object_get_type(xpost_name_cons(ctx, "interest")) == invalidtype)
         return 0;
-    if (xpost_object_get_type(consname(ctx, "solitaire")) == invalidtype)
+    if (xpost_object_get_type(xpost_name_cons(ctx, "solitaire")) == invalidtype)
         return 0;
     {
         Xpost_Object ud; //userdict
@@ -200,7 +200,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
             XPOST_LOG_ERR("cannot allocate userdict");
             return 0;
         }
-        ret = xpost_dict_put(ctx, ud, consname(ctx, "userdict"), ud);
+        ret = xpost_dict_put(ctx, ud, xpost_name_cons(ctx, "userdict"), ud);
         if (ret)
             return 0;
         xpost_stack_push(ctx->lo, ctx->ds, ud);
@@ -283,7 +283,7 @@ int evalload(Xpost_Context *ctx)
     int ret;
     if (TRACE)
     {
-        Xpost_Object s = strname(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
+        Xpost_Object s = xpost_name_get_string(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
         XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, xpost_string_get_pointer(ctx, s));
     }
 
@@ -433,7 +433,7 @@ int evalfile(Xpost_Context *ctx)
                 return execstackoverflow;
         }
     } else {
-        ret = fileclose(ctx->lo, f);
+        ret = xpost_file_close(ctx->lo, f);
         if (ret)
             XPOST_LOG_ERR("%s error closing file", errorname[ret]);
     }
@@ -621,9 +621,9 @@ void _onerror(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, ctx->currentobject);
 
     /* printf("6\n"); */
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(consname(ctx, errorname[err])));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(xpost_name_cons(ctx, errorname[err])));
     /* printf("7\n"); */
-    xpost_stack_push(ctx->lo, ctx->es, consname(ctx, "signalerror"));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_name_cons(ctx, "signalerror"));
 
     /* printf("8\n"); */
     itpdata->in_onerror = 0;
@@ -716,14 +716,14 @@ void setlocalconfig(Xpost_Context *ctx,
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
     if (is_installed) {
-        xpost_dict_put(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
+        xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "PACKAGE_DATA_DIR"),
             xpost_object_cvlit(xpost_string_cons(ctx,
                     CNT_STR(PACKAGE_DATA_DIR))));
-        xpost_dict_put(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
+        xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "PACKAGE_INSTALL_DIR"),
             xpost_object_cvlit(xpost_string_cons(ctx,
                     CNT_STR(PACKAGE_INSTALL_DIR))));
     }
-    xpost_dict_put(ctx, sd, consname(ctx, "EXE_DIR"),
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "EXE_DIR"),
             xpost_object_cvlit(xpost_string_cons(ctx,
                     strlen(exedir), exedir)));
 
@@ -742,13 +742,13 @@ void setlocalconfig(Xpost_Context *ctx,
             device_strings[i][1], device_strings[i][2]);
     --newdevstr.comp_.sz; /* trim the '\0' */
 
-    namenewdev = consname(ctx, "newdefaultdevice");
+    namenewdev = xpost_name_cons(ctx, "newdefaultdevice");
     xpost_dict_put(ctx, sd, namenewdev, xpost_object_cvx(newdevstr));
 
     if (outfile)
     {
         xpost_dict_put(ctx, sd,
-                consname(ctx, "OutputFileName"),
+                xpost_name_cons(ctx, "OutputFileName"),
                 xpost_object_cvlit(xpost_string_cons(ctx, strlen(outfile), outfile)));
     }
 
@@ -791,15 +791,15 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
     Xpost_Object ed, de;
 
     ctx->ignoreinvalidaccess = 1;
-    xpost_dict_put(ctx, sd, consname(ctx, "userdict"), ud);
-    ed = xpost_dict_get(ctx, ud, consname(ctx, "errordict"));
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "userdict"), ud);
+    ed = xpost_dict_get(ctx, ud, xpost_name_cons(ctx, "errordict"));
     if (xpost_object_get_type(ed) == invalidtype)
         return undefined;
-    xpost_dict_put(ctx, sd, consname(ctx, "errordict"), ed);
-    de = xpost_dict_get(ctx, ud, consname(ctx, "$error"));
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "errordict"), ed);
+    de = xpost_dict_get(ctx, ud, xpost_name_cons(ctx, "$error"));
     if (xpost_object_get_type(de) == invalidtype)
         return undefined;
-    xpost_dict_put(ctx, sd, consname(ctx, "$error"), de);
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "$error"), de);
     ctx->ignoreinvalidaccess = 0;
     return 0;
 }
@@ -843,7 +843,7 @@ int xpost_create(const char *device, const char *outfile, char *exedir, int is_i
     }
 
     /* make systemdict readonly */
-    xpost_dict_put(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    xpost_dict_put(xpost_ctx, sd, xpost_name_cons(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
     if (!xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY)))
     {
         XPOST_LOG_ERR("cannot replace systemdict in dict stack");
@@ -872,12 +872,12 @@ void xpost_run(const char *ps_file)
          */
     if (ps_file) {
         xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(xpost_string_cons(xpost_ctx, strlen(ps_file), ps_file)));
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startfile")));
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startfile")));
     } else {
         if (isatty(fileno(stdin)))
-            xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "start")));
+            xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "start")));
         else
-            xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(consname(xpost_ctx, "startstdin")));
+            xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startstdin")));
     }
 
     (void) xpost_save_create_snapshot_object(xpost_ctx->gl);
@@ -905,7 +905,7 @@ void xpost_destroy(void)
     if (xpost_object_get_type(xpost_ctx->window_device) == dicttype)
     {
         Xpost_Object Destroy;
-        Destroy = xpost_dict_get(xpost_ctx, xpost_ctx->window_device, consname(xpost_ctx, "Destroy"));
+        Destroy = xpost_dict_get(xpost_ctx, xpost_ctx->window_device, xpost_name_cons(xpost_ctx, "Destroy"));
         if (xpost_object_get_type(Destroy) == operatortype) {
             int ret;
             xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_ctx->window_device);

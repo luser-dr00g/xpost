@@ -491,7 +491,7 @@ int initopdi(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
     op = consoper(ctx, "dict", Idict, 1, 1, integertype); INSTALL;
-    ret = xpost_dict_put(ctx, sd, consname(ctx, "<<"), mark);
+    ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "<<"), mark);
     if (ret)
         return 0;
     op = consoper(ctx, ">>", dictomark, 1, 0); INSTALL;

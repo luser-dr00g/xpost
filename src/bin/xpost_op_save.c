@@ -193,7 +193,7 @@ int initopv(Xpost_Context *ctx,
 #endif
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
 
     return 0;
 }

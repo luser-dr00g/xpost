@@ -736,7 +736,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
     ctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME + 1;
 
     /* create names in both mfiles */
-    ret = initnames(ctx);
+    ret = xpost_name_init(ctx);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->gl);

@@ -301,7 +301,7 @@ int initops(Xpost_Context *ctx,
     op = consoper(ctx, "roll", IIroll, 0, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "clear", Zclear, 0, 0); INSTALL;
     op = consoper(ctx, "count", Zcount, 1, 0); INSTALL;
-    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark);
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark);
     op = consoper(ctx, "cleartomark", Zcleartomark, 0, 0); INSTALL;
     op = consoper(ctx, "counttomark", Zcounttomark, 1, 0); INSTALL;
     return 0;

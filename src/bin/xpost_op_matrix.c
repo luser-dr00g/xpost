@@ -67,9 +67,9 @@ Xpost_Object _get_ctm(Xpost_Context *ctx)
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     if (xpost_object_get_type(userdict) != dicttype)
         return invalid;
-    gd = xpost_dict_get(ctx, userdict, consname(ctx, "graphicsdict"));
-    gs = xpost_dict_get(ctx, gd, consname(ctx, "currgstate"));
-    psctm = xpost_dict_get(ctx, gs, consname(ctx, "currmatrix"));
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    psctm = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currmatrix"));
 
     return psctm;
 }
@@ -172,11 +172,11 @@ static
 int _init_matrix (Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->es,
-            xpost_object_cvx(consname(ctx, "setmatrix")));
+            xpost_object_cvx(xpost_name_cons(ctx, "setmatrix")));
     xpost_stack_push(ctx->lo, ctx->es,
-            xpost_object_cvx(consname(ctx, "defaultmatrix")));
+            xpost_object_cvx(xpost_name_cons(ctx, "defaultmatrix")));
     xpost_stack_push(ctx->lo, ctx->es,
-            xpost_object_cvx(consname(ctx, "matrix")));
+            xpost_object_cvx(xpost_name_cons(ctx, "matrix")));
     /*
     _matrix(ctx);
     _default_matrix(ctx, xpost_stack_pop(ctx->lo, ctx->os));
@@ -198,29 +198,29 @@ int _default_matrix(Xpost_Context *ctx,
     Xpost_Object defmat;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    gd = xpost_dict_get(ctx, userdict, consname(ctx, "graphicsdict"));
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
     if (xpost_object_get_type(gd) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded graphicsdict");
 
-    gs = xpost_dict_get(ctx, gd, consname(ctx, "currgstate"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
     if (xpost_object_get_type(gs) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded gstate");
 
-    devdic = xpost_dict_get(ctx, gs, consname(ctx, "device"));
+    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
     if (xpost_object_get_type(devdic) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded device");
 
-    defmat = xpost_dict_get(ctx, devdic, consname(ctx, "defaultmatrix"));
+    defmat = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "defaultmatrix"));
     if (xpost_object_get_type(defmat) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded defaultmatrix");
 
     xpost_stack_push(ctx->lo, ctx->os, defmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "copy")));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "copy")));
     return 0;
 }
 
@@ -234,7 +234,7 @@ int _current_matrix (Xpost_Context *ctx,
     ctm = _get_ctm(ctx);
     xpost_stack_push(ctx->lo, ctx->os, ctm);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "copy")));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "copy")));
     return 0;
 }
 
@@ -248,8 +248,8 @@ int _set_matrix (Xpost_Context *ctx,
     ctm = _get_ctm(ctx);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
     xpost_stack_push(ctx->lo, ctx->os, ctm);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "pop")));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "copy")));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "pop")));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "copy")));
     return 0;
 }
 
@@ -266,7 +266,7 @@ int _translate (Xpost_Context *ctx,
     xpost_matrix_translate(&mat, xt.real_.val, yt.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "concat")));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "concat")));
     return 0;
 }
 
@@ -298,7 +298,7 @@ int _scale (Xpost_Context *ctx,
     xpost_matrix_scale(&mat, xs.real_.val, ys.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "concat")));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "concat")));
     return 0;
 }
 
@@ -329,7 +329,7 @@ int _rotate (Xpost_Context *ctx,
     xpost_matrix_rotate(&mat, RAD_PER_DEG * angle.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "concat")));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "concat")));
     return 0;
 }
 
@@ -616,7 +616,7 @@ int initopmatrix(Xpost_Context *ctx,
             arraytype, arraytype); INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
 
     return 0;
 }

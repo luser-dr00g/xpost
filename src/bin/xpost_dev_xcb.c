@@ -164,7 +164,7 @@ int _create (Xpost_Context *ctx,
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_create_cont_opcode)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic,
-                    //consname(ctx, ".copydict")
+                    //xpost_name_cons(ctx, ".copydict")
                     namedotcopydict
                     )))
         return execstackoverflow;
@@ -701,11 +701,11 @@ int newxcbdevice (Xpost_Context *ctx,
 
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
-    ret = Aload(ctx, consname(ctx, "xcbDEVICE"));
+    ret = Aload(ctx, xpost_name_cons(ctx, "xcbDEVICE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, consname(ctx, "Create"))))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, xpost_name_cons(ctx, "Create"))))
         return execstackoverflow;
 
     return 0;
@@ -725,14 +725,14 @@ int loadxcbdevice (Xpost_Context *ctx)
     Xpost_Object classdic;
     int ret;
 
-    ret = Aload(ctx, consname(ctx, "PPMIMAGE"));
+    ret = Aload(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
     if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadxcbdevicecont_opcode)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic,
-                    //consname(ctx, ".copydict")
+                    //xpost_name_cons(ctx, ".copydict")
                     namedotcopydict
                     )))
         return execstackoverflow;
@@ -753,16 +753,16 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     int ret;
 
     ret = xpost_dict_put(ctx, classdic,
-            //consname(ctx, "nativecolorspace"),
+            //xpost_name_cons(ctx, "nativecolorspace"),
             namenativecolorspace,
-            //consname(ctx, "DeviceRGB")
+            //xpost_name_cons(ctx, "DeviceRGB")
             nameDeviceRGB
             );
 
     op = consoper(ctx, "xcbCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
     op = consoper(ctx, "xcbCreate", _create, 1, 3, integertype, integertype, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Create"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Create"), op);
     if (ret)
         return ret;
 
@@ -770,12 +770,12 @@ int loadxcbdevicecont (Xpost_Context *ctx,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             dicttype); /* devdic */
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "PutPix"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "PutPix"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "xcbGetPix", _getpix, 3, 3, numbertype, numbertype, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "GetPix"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "GetPix"), op);
     if (ret)
         return ret;
 
@@ -784,7 +784,7 @@ int loadxcbdevicecont (Xpost_Context *ctx,
             numbertype, numbertype, /* x1 y1 */
             numbertype, numbertype, /* x2 y2 */
             dicttype); /* devdic */
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "DrawLine"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "DrawLine"), op);
     if (ret)
         return ret;
 
@@ -793,40 +793,40 @@ int loadxcbdevicecont (Xpost_Context *ctx,
             numbertype, numbertype, /* x y */
             numbertype, numbertype, /* width height */
             dicttype); /* devdic */
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "FillRect"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "FillRect"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "xcbFillPoly", _fillpoly, 0, 5,
             numbertype, numbertype, numbertype,
             arraytype, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "FillPoly"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "FillPoly"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "xcbEmit", _emit, 0, 1, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Emit"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Emit"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "xcbFlush", _flush, 0, 1, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Flush"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Flush"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "xcbDestroy", _destroy, 0, 1, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Destroy"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Destroy"), op);
     if (ret)
         return ret;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
 
-    ret = xpost_dict_put(ctx, userdict, consname(ctx, "xcbDEVICE"), classdic);
+    ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "xcbDEVICE"), classdic);
     if (ret)
         return ret;
 
     op = consoper(ctx, "newxcbdevice", newxcbdevice, 1, 2, integertype, integertype);
-    ret = xpost_dict_put(ctx, userdict, consname(ctx, "newxcbdevice"), op);
+    ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newxcbdevice"), op);
     if (ret)
         return ret;
 
@@ -847,17 +847,17 @@ int initxcbops (Xpost_Context *ctx,
     oper *optab;
     Xpost_Object n,op;
 
-    if (xpost_object_get_type(namePrivate = consname(ctx, "Private")) == invalidtype)
+    if (xpost_object_get_type(namePrivate = xpost_name_cons(ctx, "Private")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namewidth = consname(ctx, "width")) == invalidtype)
+    if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameheight = consname(ctx, "height")) == invalidtype)
+    if (xpost_object_get_type(nameheight = xpost_name_cons(ctx, "height")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namedotcopydict = consname(ctx, ".copydict")) == invalidtype)
+    if (xpost_object_get_type(namedotcopydict = xpost_name_cons(ctx, ".copydict")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namenativecolorspace = consname(ctx, "nativecolorspace")) == invalidtype)
+    if (xpost_object_get_type(namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDeviceRGB = consname(ctx, "DeviceRGB")) == invalidtype)
+    if (xpost_object_get_type(nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB")) == invalidtype)
         return VMerror;
 
     xpost_memory_table_get_addr(ctx->gl,

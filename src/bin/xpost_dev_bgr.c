@@ -178,7 +178,7 @@ int _emit (Xpost_Context *ctx,
     height = private.height;
 
     data = malloc(stride * height * sizeof(*data));
-    imgdata = xpost_dict_get(ctx, devdic, consname(ctx, "ImgData"));
+    imgdata = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "ImgData"));
 
     {
         int i,j;
@@ -228,11 +228,11 @@ int newbgrdevice (Xpost_Context *ctx,
 
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
-    ret = Aload(ctx, consname(ctx, "bgrDEVICE"));
+    ret = Aload(ctx, xpost_name_cons(ctx, "bgrDEVICE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, consname(ctx, "Create"))))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, xpost_name_cons(ctx, "Create"))))
         return execstackoverflow;
 
     return 0;
@@ -252,7 +252,7 @@ int loadbgrdevice (Xpost_Context *ctx)
     Xpost_Object classdic;
     int ret;
 
-    ret = Aload(ctx, consname(ctx, "PPMIMAGE"));
+    ret = Aload(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
@@ -281,28 +281,28 @@ int loadbgrdevicecont (Xpost_Context *ctx,
     op = consoper(ctx, "bgrCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
     op = consoper(ctx, "bgrCreate", _create, 1, 3, integertype, integertype, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Create"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Create"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "bgrEmit", _emit, 0, 1, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Emit"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Emit"), op);
     if (ret)
         return ret;
 
     op = consoper(ctx, "bgrFlush", _flush, 0, 1, dicttype);
-    ret = xpost_dict_put(ctx, classdic, consname(ctx, "Flush"), op);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Flush"), op);
     if (ret)
         return ret;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
 
-    ret = xpost_dict_put(ctx, userdict, consname(ctx, "bgrDEVICE"), classdic);
+    ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "bgrDEVICE"), classdic);
     if (ret)
         return ret;
 
     op = consoper(ctx, "newbgrdevice", newbgrdevice, 1, 2, integertype, integertype);
-    ret = xpost_dict_put(ctx, userdict, consname(ctx, "newbgrdevice"), op);
+    ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newbgrdevice"), op);
     if (ret)
         return ret;
 
@@ -320,17 +320,17 @@ int initbgrops (Xpost_Context *ctx,
     oper *optab;
     Xpost_Object n,op;
 
-    if (xpost_object_get_type(namePrivate = consname(ctx, "Private")) == invalidtype)
+    if (xpost_object_get_type(namePrivate = xpost_name_cons(ctx, "Private")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namewidth = consname(ctx, "width")) == invalidtype)
+    if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameheight = consname(ctx, "height")) == invalidtype)
+    if (xpost_object_get_type(nameheight = xpost_name_cons(ctx, "height")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namedotcopydict = consname(ctx, ".copydict")) == invalidtype)
+    if (xpost_object_get_type(namedotcopydict = xpost_name_cons(ctx, ".copydict")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namenativecolorspace = consname(ctx, "nativecolorspace")) == invalidtype)
+    if (xpost_object_get_type(namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDeviceRGB = consname(ctx, "DeviceRGB")) == invalidtype)
+    if (xpost_object_get_type(nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB")) == invalidtype)
         return VMerror;
 
     xpost_memory_table_get_addr(ctx->gl,

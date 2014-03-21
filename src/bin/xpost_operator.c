@@ -124,7 +124,7 @@ void dumpoper(Xpost_Context *ctx,
     o.mark_.tag = nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     o.mark_.pad0 = 0;
     o.mark_.padw = op.name;
-    str = strname(ctx, o);
+    str = xpost_name_get_string(ctx, o);
     s = xpost_string_get_pointer(ctx, str);
     sig = (void *)(ctx->gl->base + op.sigadr);
     printf("<operator %d %d:%*s %p>",
@@ -196,7 +196,7 @@ Xpost_Object consoper(Xpost_Context *ctx,
 
     vmmode=ctx->vmmode;
     ctx->vmmode = GLOBAL;
-    nm = consname(ctx, name);
+    nm = xpost_name_cons(ctx, name);
     if (xpost_object_get_type(nm) == invalidtype)
         return invalid;
     ctx->vmmode = vmmode;
@@ -479,7 +479,7 @@ int initop(Xpost_Context *ctx)
         XPOST_LOG_ERR("cannot allocate systemdict");
         return 0;
     }
-    xpost_dict_put(ctx, sd, consname(ctx, "systemdict"), sd);
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "systemdict"), sd);
     xpost_stack_push(ctx->lo, ctx->ds, sd);
     tab = NULL;
     ent = xpost_object_get_ent(sd);

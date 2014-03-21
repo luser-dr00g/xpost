@@ -106,7 +106,7 @@ int Sfile (Xpost_Context *ctx,
     memcpy(cmode, xpost_string_get_pointer(ctx, mode), mode.comp_.sz);
     cmode[mode.comp_.sz] = '\0';
 
-    ret = fileopen(ctx->lo, cfn, cmode, &f);
+    ret = xpost_file_open(ctx->lo, cfn, cmode, &f);
     if (ret)
         return ret;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
@@ -120,7 +120,7 @@ int Fclosefile (Xpost_Context *ctx,
                  Xpost_Object f)
 {
     int ret;
-    ret = fileclose(ctx->lo, f);
+    ret = xpost_file_close(ctx->lo, f);
     if (ret)
         return ret;
     return 0;
@@ -136,7 +136,7 @@ int Fread (Xpost_Context *ctx,
     Xpost_Object b;
     if (!xpost_object_is_readable(f))
         return invalidaccess;
-    b = fileread(ctx->lo, f);
+    b = xpost_file_read_byte(ctx->lo, f);
     if (xpost_object_get_type(b) == invalidtype)
         return ioerror;
     if (b.int_.val != EOF) {
@@ -158,7 +158,7 @@ int Fwrite (Xpost_Context *ctx,
     int ret;
     if (!xpost_object_is_writeable(f))
         return invalidaccess;
-    ret = filewrite(ctx->lo, f, i);
+    ret = xpost_file_write_byte(ctx->lo, f, i);
     if (ret)
         return ret;
     return 0;
@@ -179,11 +179,11 @@ int Freadhexstring (Xpost_Context *ctx,
     int eof = 0;
     FILE *f;
     char *s;
-    if (!filestatus(ctx->lo, F))
+    if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
     if (!xpost_object_is_readable(F))
         return invalidaccess;
-    f = filefile(ctx->lo, F);
+    f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
 
     for(n=0; !eof && n < S.comp_.sz; n++) {
@@ -218,11 +218,11 @@ int Fwritehexstring (Xpost_Context *ctx,
     int n;
     FILE *f;
     char *s;
-    if (!filestatus(ctx->lo, F))
+    if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
     if (!xpost_object_is_writeable(F))
         return invalidaccess;
-    f = filefile(ctx->lo, F);
+    f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
 
     for(n=0; n < S.comp_.sz; n++) {
@@ -245,11 +245,11 @@ int Freadstring (Xpost_Context *ctx,
     int n;
     FILE *f;
     char *s;
-    if (!filestatus(ctx->lo, F))
+    if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
     if (!xpost_object_is_readable(F))
         return invalidaccess;
-    f = filefile(ctx->lo, F);
+    f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
     n = fread(s, 1, S.comp_.sz, f);
     if (n == S.comp_.sz) {
@@ -272,11 +272,11 @@ int Fwritestring (Xpost_Context *ctx,
 {
     FILE *f;
     char *s;
-    if (!filestatus(ctx->lo, F))
+    if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
     if (!xpost_object_is_writeable(F))
         return invalidaccess;
-    f = filefile(ctx->lo, F);
+    f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
     if (fwrite(s, 1, S.comp_.sz, f) != S.comp_.sz)
         return ioerror;
@@ -294,11 +294,11 @@ int Freadline (Xpost_Context *ctx,
     FILE *f;
     char *s;
     int n, c = ' ';
-    if (!filestatus(ctx->lo, F))
+    if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
     if (!xpost_object_is_readable(F))
         return invalidaccess;
-    f = filefile(ctx->lo, F);
+    f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
     for (n=0; n < S.comp_.sz; n++) {
         c = fgetc(f);
@@ -321,7 +321,7 @@ int Fbytesavailable (Xpost_Context *ctx,
 {
     int bytes;
     int ret;
-    ret = filebytesavailable(ctx->lo, F, &bytes);
+    ret = xpost_file_get_bytes_available(ctx->lo, F, &bytes);
     if (ret)
         return ret;
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(bytes));
@@ -349,8 +349,8 @@ int Fflushfile (Xpost_Context *ctx,
 {
     int ret;
     FILE *f;
-    if (!filestatus(ctx->lo, F)) return 0;
-    f = filefile(ctx->lo, F);
+    if (!xpost_file_get_status(ctx->lo, F)) return 0;
+    f = xpost_file_get_file_pointer(ctx->lo, F);
     if (xpost_object_is_writeable(F))
     {
         ret = fflush(f);
@@ -373,8 +373,8 @@ int Fresetfile (Xpost_Context *ctx,
                  Xpost_Object F)
 {
     FILE *f;
-    if (!filestatus(ctx->lo, F)) return 0;
-    f = filefile(ctx->lo, F);
+    if (!xpost_file_get_status(ctx->lo, F)) return 0;
+    f = xpost_file_get_file_pointer(ctx->lo, F);
     __fpurge(f);
     return 0;
 }
@@ -387,7 +387,7 @@ static
 int Fstatus (Xpost_Context *ctx,
               Xpost_Object F)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(filestatus(ctx->lo, F)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(xpost_file_get_status(ctx->lo, F)));
     return 0;
 }
 
@@ -406,7 +406,7 @@ int Zcurrentfile (Xpost_Context *ctx)
             return 0;
         }
     }
-    o = consfile(ctx->lo, NULL);
+    o = xpost_file_cons(ctx->lo, NULL);
     if (xpost_object_get_type(o) == invalidtype)
         return VMerror;
     xpost_stack_push(ctx->lo, ctx->os, o);
@@ -536,7 +536,7 @@ int setfileposition (Xpost_Context *ctx,
             Xpost_Object F,
             Xpost_Object pos)
 {
-    int ret = fseek(filefile(ctx->lo, F), pos.int_.val, SEEK_SET);
+    int ret = fseek(xpost_file_get_file_pointer(ctx->lo, F), pos.int_.val, SEEK_SET);
     if (ret != 0)
         return ioerror;
     return 0;
@@ -549,7 +549,7 @@ int fileposition (Xpost_Context *ctx,
             Xpost_Object F)
 {
     long pos;
-    pos = ftell(filefile(ctx->lo, F));
+    pos = ftell(xpost_file_get_file_pointer(ctx->lo, F));
     if (pos == -1)
         return ioerror;
     else
@@ -641,7 +641,7 @@ int initopf (Xpost_Context *ctx,
     op = consoper(ctx, "echo", Becho, 0, 1, booleantype); INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
     return 0;
 }
 

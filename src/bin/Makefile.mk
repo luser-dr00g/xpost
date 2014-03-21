@@ -2,12 +2,9 @@
 bin_PROGRAMS = src/bin/xpost
 
 src_bin_xpost_SOURCES = \
-src/bin/xpost_dict.c \
-src/bin/xpost_file.c \
 src/bin/xpost_garbage.c \
 src/bin/xpost_interpreter.c \
 src/bin/xpost_main.c \
-src/bin/xpost_name.c \
 src/bin/xpost_operator.c \
 src/bin/xpost_op_array.c \
 src/bin/xpost_op_boolean.c \
@@ -28,11 +25,8 @@ src/bin/xpost_op_font.c \
 src/bin/xpost_dev_generic.c \
 src/bin/xpost_dev_bgr.c \
 src/bin/xpost_pathname.c \
-src/bin/xpost_dict.h \
-src/bin/xpost_file.h \
 src/bin/xpost_garbage.h \
 src/bin/xpost_interpreter.h \
-src/bin/xpost_name.h \
 src/bin/xpost_op_array.h \
 src/bin/xpost_op_boolean.h \
 src/bin/xpost_op_control.h \

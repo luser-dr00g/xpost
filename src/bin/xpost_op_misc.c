@@ -323,16 +323,16 @@ int initopx(Xpost_Context *ctx,
     optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
-    xpost_dict_put(ctx, sd, consname(ctx, "null"), null);
-    xpost_dict_put(ctx, sd, consname(ctx, "version"),
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "null"), null);
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "version"),
             xpost_object_cvlit(xpost_string_cons(ctx, strlen(versionstr), versionstr)));
     op = consoper(ctx, "realtime", realtime, 1, 0); INSTALL;
     op = consoper(ctx, "usertime", usertime, 1, 0); INSTALL;
     //languagelevel
-    xpost_dict_put(ctx, sd, consname(ctx, "product"),
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "product"),
             xpost_object_cvlit(xpost_string_cons(ctx, strlen(productstr), productstr)));
-    xpost_dict_put(ctx, sd, consname(ctx, "revision"), xpost_int_cons(revno));
-    xpost_dict_put(ctx, sd, consname(ctx, "serialnumber"), xpost_int_cons(serno));
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "revision"), xpost_int_cons(revno));
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "serialnumber"), xpost_int_cons(serno));
     //executive: see init.ps
     //echo: see opf.c
     //prompt: see init.ps
@@ -351,7 +351,7 @@ int initopx(Xpost_Context *ctx,
     op = consoper(ctx, "dumpvm", dumpvm, 0, 0); INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
 
     return 0;
 }

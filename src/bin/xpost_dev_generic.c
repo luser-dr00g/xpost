@@ -100,7 +100,7 @@ char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
 {
     Xpost_Object filenamestr;
     char *filename;
-    filenamestr = xpost_dict_get(ctx, devdic, consname(ctx, "OutputFileName"));
+    filenamestr = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "OutputFileName"));
     filename = malloc(filenamestr.comp_.sz + 1);
     if (filename) {
         memcpy(filename, xpost_string_get_pointer(ctx, filenamestr), filenamestr.comp_.sz);
@@ -464,15 +464,15 @@ int _fillpoly (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, nameexec);
 
     /*Then construct the loop-body procedure array. */
-       //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "]")));
+       //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "]")));
 
     /*Then, after the loop-body array is constructed, we need to call cvx on it. */
-       //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "cvx")));
-    /*"after" means this line, which pushes on the stack, goes *before* the consname("]") line.
+       //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "cvx")));
+    /*"after" means this line, which pushes on the stack, goes *before* the xpost_name_cons("]") line.
      I'll summarize this part again. */
 
     /*After this, we call `repeat` and we're done. */
-        //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(consname(ctx, "repeat")));
+        //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "repeat")));
 
     /*Again since these are scheduled on a stack, we need to push them in reverse order
       from the order in which we desire them to execute.
@@ -493,7 +493,7 @@ int _fillpoly (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( namecvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( nameRbracket));
 
-    /*performance could be increased by factoring-out calls to consname()
+    /*performance could be increased by factoring-out calls to xpost_name_cons()
       or using opcode shortcuts.
      */
     return 0;
@@ -512,25 +512,25 @@ int initdevgenericops (Xpost_Context *ctx,
 
     op = consoper(ctx, ".yxsort", _yxsort, 0, 1, arraytype); INSTALL;
     op = consoper(ctx, ".fillpoly", _fillpoly, 0, 2, arraytype, dicttype); INSTALL;
-    if (xpost_object_get_type(namewidth = consname(ctx, "width")) == invalidtype)
+    if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namenativecolorspace = consname(ctx, "nativecolorspace")) == invalidtype)
+    if (xpost_object_get_type(namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDeviceGray = consname(ctx, "DeviceGray")) == invalidtype)
+    if (xpost_object_get_type(nameDeviceGray = xpost_name_cons(ctx, "DeviceGray")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDeviceRGB = consname(ctx, "DeviceRGB")) == invalidtype)
+    if (xpost_object_get_type(nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameroll = consname(ctx, "roll")) == invalidtype)
+    if (xpost_object_get_type(nameroll = xpost_name_cons(ctx, "roll")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDrawLine = consname(ctx, "DrawLine")) == invalidtype)
+    if (xpost_object_get_type(nameDrawLine = xpost_name_cons(ctx, "DrawLine")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameexec = consname(ctx, "exec")) == invalidtype)
+    if (xpost_object_get_type(nameexec = xpost_name_cons(ctx, "exec")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namerepeat = consname(ctx, "repeat")) == invalidtype)
+    if (xpost_object_get_type(namerepeat = xpost_name_cons(ctx, "repeat")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namecvx = consname(ctx, "cvx")) == invalidtype)
+    if (xpost_object_get_type(namecvx = xpost_name_cons(ctx, "cvx")) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameRbracket = consname(ctx, "]")) == invalidtype)
+    if (xpost_object_get_type(nameRbracket = xpost_name_cons(ctx, "]")) == invalidtype)
         return VMerror;
 
     return 0;
