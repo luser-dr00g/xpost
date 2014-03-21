@@ -342,8 +342,8 @@ int _get_current_point (Xpost_Context *ctx,
     if (xpost_object_get_type(pathelemdata) == invalidtype)
         return nocurrentpoint;
 
-    datax = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 2);
-    datay = barget(ctx, pathelemdata, pathelemdata.comp_.sz - 1);
+    datax = xpost_array_get(ctx, pathelemdata, pathelemdata.comp_.sz - 2);
+    datay = xpost_array_get(ctx, pathelemdata, pathelemdata.comp_.sz - 1);
     if (xpost_object_get_type(datax) == integertype)
         datax = xpost_real_cons(datax.int_.val);
     if (xpost_object_get_type(datay) == integertype)
@@ -436,13 +436,13 @@ int _show (Xpost_Context *ctx,
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
 
-    finalize = xpost_object_cvx(consbar(ctx, 5));
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
     /* fill-in final pos before return */
-    barput(ctx, finalize, 0, xpost_real_cons(xpos));
-    barput(ctx, finalize, 1, xpost_real_cons(ypos));
-    barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
-    barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
-    barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
@@ -454,8 +454,8 @@ int _show (Xpost_Context *ctx,
     }
 
     /* update current position in the graphics state */
-    barput(ctx, finalize, 0, xpost_real_cons(xpos));
-    barput(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
 }
@@ -543,13 +543,13 @@ int _ashow (Xpost_Context *ctx,
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
 
-    finalize = xpost_object_cvx(consbar(ctx, 5));
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
     /* fill-in final pos before return */
-    barput(ctx, finalize, 0, xpost_real_cons(xpos));
-    barput(ctx, finalize, 1, xpost_real_cons(ypos));
-    barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
-    barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
-    barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
@@ -563,8 +563,8 @@ int _ashow (Xpost_Context *ctx,
     }
 
     /* update current position in the graphics state */
-    barput(ctx, finalize, 0, xpost_real_cons(xpos));
-    barput(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
 }
@@ -653,13 +653,13 @@ int _widthshow (Xpost_Context *ctx,
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
 
-    finalize = xpost_object_cvx(consbar(ctx, 5));
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
     /* fill-in final pos before return */
-    barput(ctx, finalize, 0, xpost_real_cons(xpos));
-    barput(ctx, finalize, 1, xpost_real_cons(ypos));
-    barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
-    barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
-    barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
@@ -676,8 +676,8 @@ int _widthshow (Xpost_Context *ctx,
     }
 
     /* update current position in the graphics state */
-    barput(ctx, finalize, 0, xpost_real_cons(xpos));
-    barput(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
 }
@@ -768,13 +768,13 @@ int _awidthshow (Xpost_Context *ctx,
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
 
-    finalize = xpost_object_cvx(consbar(ctx, 5));
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
     /* fill-in final pos before return */
-    barput(ctx, finalize, 0, xpost_real_cons(xpos));
-    barput(ctx, finalize, 1, xpost_real_cons(ypos));
-    barput(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
-    barput(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
-    barput(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(consname(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(consname(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(consname(ctx, "flushpage")));
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
@@ -793,8 +793,8 @@ int _awidthshow (Xpost_Context *ctx,
     }
 
     /* update current position in the graphics state */
-    barput(ctx, finalize, 0, xpost_real_cons(xpos));
-    barput(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
 }

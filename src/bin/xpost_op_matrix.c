@@ -97,17 +97,17 @@ void _psmat2xmat (Xpost_Context *ctx,
 
     /*
     Xpost_Object el;
-    el = barget(ctx, psm, 0);
+    el = xpost_array_get(ctx, psm, 0);
     m->xx = xpost_object_get_type(el) == integertype ?  el.int_.val : el.real_.val;
-    el = barget(ctx, psm, 1);
+    el = xpost_array_get(ctx, psm, 1);
     m->yx = xpost_object_get_type(el) == integertype ?  el.int_.val : el.real_.val;
-    el = barget(ctx, psm, 2);
+    el = xpost_array_get(ctx, psm, 2);
     m->xy = xpost_object_get_type(el) == integertype ?  el.int_.val : el.real_.val;
-    el = barget(ctx, psm, 3);
+    el = xpost_array_get(ctx, psm, 3);
     m->yy = xpost_object_get_type(el) == integertype ?  el.int_.val : el.real_.val;
-    el = barget(ctx, psm, 4);
+    el = xpost_array_get(ctx, psm, 4);
     m->xz = xpost_object_get_type(el) == integertype ?  el.int_.val : el.real_.val;
-    el = barget(ctx, psm, 5);
+    el = xpost_array_get(ctx, psm, 5);
     m->yz = xpost_object_get_type(el) == integertype ?  el.int_.val : el.real_.val;
     */
 }
@@ -129,12 +129,12 @@ void _xmat2psmat (Xpost_Context *ctx,
             xpost_object_get_ent(psm), 0, sizeof arr, arr);
 
     /*
-    barput(ctx, psm, 0, xpost_real_cons(m->xx));
-    barput(ctx, psm, 1, xpost_real_cons(m->yx));
-    barput(ctx, psm, 2, xpost_real_cons(m->xy));
-    barput(ctx, psm, 3, xpost_real_cons(m->yy));
-    barput(ctx, psm, 4, xpost_real_cons(m->xz));
-    barput(ctx, psm, 5, xpost_real_cons(m->yz));
+    xpost_array_put(ctx, psm, 0, xpost_real_cons(m->xx));
+    xpost_array_put(ctx, psm, 1, xpost_real_cons(m->yx));
+    xpost_array_put(ctx, psm, 2, xpost_real_cons(m->xy));
+    xpost_array_put(ctx, psm, 3, xpost_real_cons(m->yy));
+    xpost_array_put(ctx, psm, 4, xpost_real_cons(m->xz));
+    xpost_array_put(ctx, psm, 5, xpost_real_cons(m->yz));
     */
 }
 
@@ -149,7 +149,7 @@ static
 int _matrix (Xpost_Context *ctx)
 {
     Xpost_Object psmat;
-    psmat = xpost_object_cvlit(consbar(ctx, 6));
+    psmat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
     return _ident_matrix(ctx, psmat);
 }
 
@@ -262,7 +262,7 @@ int _translate (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
-    psmat = xpost_object_cvlit(consbar(ctx, 6));
+    psmat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
     xpost_matrix_translate(&mat, xt.real_.val, yt.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -294,7 +294,7 @@ int _scale (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
-    psmat = xpost_object_cvlit(consbar(ctx, 6));
+    psmat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
     xpost_matrix_scale(&mat, xs.real_.val, ys.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
@@ -325,7 +325,7 @@ int _rotate (Xpost_Context *ctx,
 {
     Xpost_Matrix mat;
     Xpost_Object psmat;
-    psmat = xpost_object_cvlit(consbar(ctx, 6));
+    psmat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
     xpost_matrix_rotate(&mat, RAD_PER_DEG * angle.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);

@@ -63,10 +63,10 @@ int a_copy (Xpost_Context *ctx,
 
     for (i = 0; i < S.comp_.sz; i++)
     {
-        t = barget(ctx, S, i);
+        t = xpost_array_get(ctx, S, i);
         if (xpost_object_get_type(t) == invalidtype)
             return rangecheck;
-        barput(ctx, D, i, t);
+        xpost_array_put(ctx, D, i, t);
     }
 
     return 0;
@@ -80,7 +80,7 @@ int Iarray (Xpost_Context *ctx,
 {
     Xpost_Object t;
 
-    t = consbar(ctx, I.int_.val);
+    t = xpost_array_cons(ctx, I.int_.val);
     if (xpost_object_get_type(t) == nulltype)
         return VMerror;
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(t));
@@ -106,14 +106,14 @@ int arrtomark (Xpost_Context *ctx)
     if (xpost_object_get_type(t) == invalidtype)
         return stackunderflow;
     i = t.int_.val;
-    a = consbar(ctx, i);
+    a = xpost_array_cons(ctx, i);
     if (xpost_object_get_type(a) == nulltype)
         return VMerror;
     for ( ; i > 0; i--){
         v = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(v) == invalidtype)
             return stackunderflow;
-        barput(ctx, a, i-1, v);
+        xpost_array_put(ctx, a, i-1, v);
     }
     (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(a));
@@ -143,7 +143,7 @@ int Aget (Xpost_Context *ctx,
     Xpost_Object t;
     if (I.int_.val < 0)
         return rangecheck;
-    t = barget(ctx, A, I.int_.val);
+    t = xpost_array_get(ctx, A, I.int_.val);
     if (xpost_object_get_type(t) == invalidtype)
         return rangecheck;
     if (!xpost_stack_push(ctx->lo, ctx->os, t))
@@ -161,7 +161,7 @@ int Aput(Xpost_Context *ctx,
 {
     if (I.int_.val < 0)
         return rangecheck;
-    return barput(ctx, A, I.int_.val, O);
+    return xpost_array_put(ctx, A, I.int_.val, O);
 }
 
 /* array index count  getinterval  subarray
@@ -211,7 +211,7 @@ int Aaload (Xpost_Context *ctx,
     int i;
 
     for (i = 0; i < A.comp_.sz; i++)
-        if (!xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, i)))
+        if (!xpost_stack_push(ctx->lo, ctx->os, xpost_array_get(ctx, A, i)))
             return stackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->os, A))
         return stackoverflow;
@@ -237,7 +237,7 @@ int Aastore (Xpost_Context *ctx,
         t = xpost_stack_pop(ctx->lo, ctx->os);
         //if (xpost_object_get_type(t) == invalidtype)
             //return stackunderflow;
-        ret = barput(ctx, A, i, t);
+        ret = xpost_array_put(ctx, A, i, t);
         if (ret)
             return ret;
     }
@@ -298,7 +298,7 @@ int Aforall(Xpost_Context *ctx,
                     operfromcode(ctx->opcode_shortcuts.cvx)))
             return execstackoverflow;
     }
-    if (!xpost_stack_push(ctx->lo, ctx->os, barget(ctx, A, 0)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_array_get(ctx, A, 0)))
         return stackoverflow;
 
     return 0;

@@ -345,7 +345,7 @@ int evalarray(Xpost_Context *ctx)
         }
         /*@fallthrough@*/
     case 1:
-        b = barget(ctx, a, 0);
+        b = xpost_array_get(ctx, a, 0);
         if (xpost_object_get_type(b) == arraytype)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os, b))

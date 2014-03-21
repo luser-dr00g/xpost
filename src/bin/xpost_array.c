@@ -58,7 +58,7 @@
    set the current save level in the "mark" field,
    wrap it up in an object.
 */
-Xpost_Object consarr(Xpost_Memory_File *mem,
+Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
                unsigned int sz)
 {
     unsigned int ent;
@@ -116,13 +116,13 @@ Xpost_Object consarr(Xpost_Memory_File *mem,
 } 
 
 /** Select a memory file according to vmmode,
-   call consarr,
+   call xpost_array_cons_memory,
    set BANK flag.
 */
-Xpost_Object consbar(Xpost_Context *ctx,
+Xpost_Object xpost_array_cons(Xpost_Context *ctx,
                unsigned int sz)
 {
-    Xpost_Object a = consarr(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
+    Xpost_Object a = xpost_array_cons_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (xpost_object_get_type(a) != nulltype)
     {
         xpost_stack_push(ctx->lo, ctx->hold, a);
@@ -135,7 +135,7 @@ Xpost_Object consbar(Xpost_Context *ctx,
 /** Copy if necessary,
    call put.
 */
-int arrput(Xpost_Memory_File *mem,
+int xpost_array_put_memory(Xpost_Memory_File *mem,
             Xpost_Object a,
             integer i,
             Xpost_Object o)
@@ -157,9 +157,9 @@ int arrput(Xpost_Memory_File *mem,
 }
 
 /** Select Xpost_Memory_File according to BANK flag,
-   call arrput.
+   call xpost_array_put_memory.
 */
-int barput(Xpost_Context *ctx,
+int xpost_array_put(Xpost_Context *ctx,
             Xpost_Object a,
             integer i,
             Xpost_Object o)
@@ -172,11 +172,11 @@ int barput(Xpost_Context *ctx,
             return invalidaccess;
     }
 
-    return arrput(mem, a, i, o);
+    return xpost_array_put_memory(mem, a, i, o);
 }
 
 /* call get. */
-Xpost_Object arrget(Xpost_Memory_File *mem,
+Xpost_Object xpost_array_get_memory(Xpost_Memory_File *mem,
               Xpost_Object a,
               integer i)
 {
@@ -193,12 +193,12 @@ Xpost_Object arrget(Xpost_Memory_File *mem,
 }
 
 /* Select Xpost_Memory_File according to BANK flag,
-   call arrget. */
-Xpost_Object barget(Xpost_Context *ctx,
+   call xpost_array_get_memory. */
+Xpost_Object xpost_array_get(Xpost_Context *ctx,
               Xpost_Object a,
               integer i)
 {
-    return arrget(xpost_context_select_memory(ctx, a), a, i);
+    return xpost_array_get_memory(xpost_context_select_memory(ctx, a), a, i);
 }
 
 #ifdef TESTMODULE_AR
@@ -230,7 +230,7 @@ int main(void)
     enum { SIZE = 10 };
     printf("\n^test ar.c\n");
     printf("allocating array occupying %zu bytes\n", SIZE*sizeof(Xpost_Object));
-    Xpost_Object a = consarr(mem, SIZE);
+    Xpost_Object a = xpost_array_cons_memory(mem, SIZE);
 
     /* printf("the memory table:\n"); dumpmtab(mem, 0); */
 
@@ -238,14 +238,14 @@ int main(void)
     int i;
     for (i=0; i < SIZE; i++) {
         printf("%d ", i+1);
-        arrput(mem, a, i, xpost_int_cons( i+1 ));
+        xpost_array_put_memory(mem, a, i, xpost_int_cons( i+1 ));
     }
     puts("");
 
     printf("and accessing.\n");
     for (i=0; i < SIZE; i++) {
         Xpost_Object t;
-        t = arrget(mem, a, i);
+        t = xpost_array_get_memory(mem, a, i);
         printf("%d: %d\n", i, t.int_.val);
     }
 

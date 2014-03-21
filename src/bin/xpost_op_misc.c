@@ -98,7 +98,7 @@ Xpost_Object bind (Xpost_Context *ctx,
     Xpost_Object t, d;
     int i, j, z;
     for (i = 0; i < p.comp_.sz; i++) {
-        t = barget(ctx, p, i);
+        t = xpost_array_get(ctx, p, i);
         switch(xpost_object_get_type(t)){
         default: break;
         case nametype:
@@ -108,7 +108,7 @@ Xpost_Object bind (Xpost_Context *ctx,
                 if (dicknown(ctx, xpost_context_select_memory(ctx,d), d, t)) {
                     t = bdcget(ctx, d, t);
                     if (xpost_object_get_type(t) == operatortype) {
-                        barput(ctx, p, i, t);
+                        xpost_array_put(ctx, p, i, t);
                     }
                     break;
                 }
@@ -117,7 +117,7 @@ Xpost_Object bind (Xpost_Context *ctx,
         case arraytype:
             if (xpost_object_is_exe(t)) {
                 t = bind(ctx, t);
-                barput(ctx, p, i, t);
+                xpost_array_put(ctx, p, i, t);
             }
         }
     }
@@ -238,10 +238,10 @@ int _array_swap(Xpost_Context *ctx,
                 Xpost_Object j)
 {
     Xpost_Object a_i, a_j;
-    a_i = barget(ctx, a, i.int_.val);
-    a_j = barget(ctx, a, j.int_.val);
-    barput(ctx, a, i.int_.val, a_j);
-    barput(ctx, a, j.int_.val, a_i);
+    a_i = xpost_array_get(ctx, a, i.int_.val);
+    a_j = xpost_array_get(ctx, a, j.int_.val);
+    xpost_array_put(ctx, a, i.int_.val, a_j);
+    xpost_array_put(ctx, a, j.int_.val, a_i);
     return 0;
 }
 
