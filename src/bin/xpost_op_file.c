@@ -640,8 +640,8 @@ int initopf (Xpost_Context *ctx,
     //currentobjectformat
     op = consoper(ctx, "echo", Becho, 0, 1, booleantype); INSTALL;
 
-    /* dumpdic(ctx->gl, sd); fflush(NULL);
-    bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
+    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
     return 0;
 }
 

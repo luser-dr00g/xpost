@@ -67,9 +67,9 @@ Xpost_Object _get_ctm(Xpost_Context *ctx)
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     if (xpost_object_get_type(userdict) != dicttype)
         return invalid;
-    gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
-    gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
-    psctm = bdcget(ctx, gs, consname(ctx, "currmatrix"));
+    gd = xpost_dict_get(ctx, userdict, consname(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, consname(ctx, "currgstate"));
+    psctm = xpost_dict_get(ctx, gs, consname(ctx, "currmatrix"));
 
     return psctm;
 }
@@ -198,22 +198,22 @@ int _default_matrix(Xpost_Context *ctx,
     Xpost_Object defmat;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    gd = bdcget(ctx, userdict, consname(ctx, "graphicsdict"));
+    gd = xpost_dict_get(ctx, userdict, consname(ctx, "graphicsdict"));
     if (xpost_object_get_type(gd) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded graphicsdict");
 
-    gs = bdcget(ctx, gd, consname(ctx, "currgstate"));
+    gs = xpost_dict_get(ctx, gd, consname(ctx, "currgstate"));
     if (xpost_object_get_type(gs) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded gstate");
 
-    devdic = bdcget(ctx, gs, consname(ctx, "device"));
+    devdic = xpost_dict_get(ctx, gs, consname(ctx, "device"));
     if (xpost_object_get_type(devdic) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded device");
 
-    defmat = bdcget(ctx, devdic, consname(ctx, "defaultmatrix"));
+    defmat = xpost_dict_get(ctx, devdic, consname(ctx, "defaultmatrix"));
     if (xpost_object_get_type(defmat) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded defaultmatrix");
@@ -615,8 +615,8 @@ int initopmatrix(Xpost_Context *ctx,
     op = consoper(ctx, "invertmatrix", _invert_matrix, 1, 2,
             arraytype, arraytype); INSTALL;
 
-    /* dumpdic(ctx->gl, sd); fflush(NULL);
-    bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
+    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
 
     return 0;
 }

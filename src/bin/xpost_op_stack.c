@@ -297,11 +297,11 @@ int initops(Xpost_Context *ctx,
     op = consoper(ctx, "dup", Adup, 2, 1, anytype); INSTALL;
     op = consoper(ctx, "copy", Icopy, 0, 1, integertype); INSTALL;
     op = consoper(ctx, "index", Iindex, 1, 1, integertype); INSTALL;
-    //dumpdic(ctx->gl, sd); fflush(NULL);
+    //xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     op = consoper(ctx, "roll", IIroll, 0, 2, integertype, integertype); INSTALL;
     op = consoper(ctx, "clear", Zclear, 0, 0); INSTALL;
     op = consoper(ctx, "count", Zcount, 1, 0); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "mark"), mark);
+    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark);
     op = consoper(ctx, "cleartomark", Zcleartomark, 0, 0); INSTALL;
     op = consoper(ctx, "counttomark", Zcounttomark, 1, 0); INSTALL;
     return 0;

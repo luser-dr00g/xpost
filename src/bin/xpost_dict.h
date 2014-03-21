@@ -83,81 +83,81 @@ int objcmp(Xpost_Context *ctx, Xpost_Object l, Xpost_Object r);
    construct dictionary
    in mtab of specified mfile
 */
-Xpost_Object consdic(/*@dependent@*/ Xpost_Memory_File *mem, unsigned sz);
+Xpost_Object xpost_dict_cons_memory (/*@dependent@*/ Xpost_Memory_File *mem, unsigned sz);
 
 /*! 
    construct dictionary
    selected mtab with ctx->vmmode
 */
-Xpost_Object consbdc(Xpost_Context *ctx, unsigned sz);
+Xpost_Object xpost_dict_cons (Xpost_Context *ctx, unsigned sz);
 
 /*! 
    investigate current number of entries in dictionary
  */
-unsigned diclength(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
+unsigned xpost_dict_length_memory (/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
 
 /*! 
    investigate current maximum size of dictionary
  */
-unsigned dicmaxlength(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
+unsigned xpost_dict_max_length_memory (/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
 
 /*! 
    investigate if size == maximum size.
  */
-int dicfull(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
+int xpost_dict_is_full_memory (/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
 
 /*! 
    print a dump of the diction contents to stdout
 */
-void dumpdic(Xpost_Memory_File *mem, Xpost_Object d);
+void xpost_dict_dump_memory (Xpost_Memory_File *mem, Xpost_Object d);
 
 /*! 
    return a double value containing the truncated value from 
    an extendedtype object
 */
-double doubleextended (Xpost_Object e);
+double xpost_dict_convert_extended_to_double (Xpost_Object e);
 
 /*! 
    convert an extendedtype object back to its original
    integer- or real-type object.
 */
-Xpost_Object unextend (Xpost_Object e);
+Xpost_Object xpost_dict_convert_extended_to_number (Xpost_Object e);
 
 /*! 
    test dictionary for key
  */
-int dicknown(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
+int xpost_dict_known_key(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    lookup value using key in dictionary
 */
-Xpost_Object dicget(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
+Xpost_Object xpost_dict_get_memory (Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    lookup value using key in banked dictionary
 */
-Xpost_Object bdcget(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k);
+Xpost_Object xpost_dict_get(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k);
 
 /*! 
    store key and value in dictionary
 */
-int dicput(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k, Xpost_Object v);
+int xpost_dict_put_memory(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k, Xpost_Object v);
 
 /*! 
    store key and value in banked dictionary
 */
-int bdcput(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k, Xpost_Object v);
+int xpost_dict_put(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k, Xpost_Object v);
 
 /*! 
    undefine key in dictionary
    NOT IMPLEMENTED
 */
-int dicundef(Xpost_Context *ctx, Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
+int xpost_dict_undef_memory(Xpost_Context *ctx, Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
 
 /*! 
    undefine key in banked dictionary
    NOT IMPLEMENTED
 */
-void bdcundef(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k);
+void xpost_dict_undef(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k);
 
 #endif

@@ -67,7 +67,6 @@ Xpost_Object namedollarerror;
 int TRACE = 0;
 Xpost_Interpreter *itpdata;
 int initializing = 1;
-//int ignoreinvalidaccess = 0;
 
 int eval(Xpost_Context *ctx);
 int mainloop(Xpost_Context *ctx);
@@ -171,13 +170,13 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
 
     {
         Xpost_Object gd; //globaldict
-        gd = consbdc(ctx, 100);
+        gd = xpost_dict_cons (ctx, 100);
         if (xpost_object_get_type(gd) == nulltype)
         {
             XPOST_LOG_ERR("cannot allocate globaldict");
             return 0;
         }
-        ret = bdcput(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
+        ret = xpost_dict_put(ctx, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), consname(ctx, "globaldict"), gd);
         if (ret)
             return 0;
         xpost_stack_push(ctx->lo, ctx->ds, gd);
@@ -195,13 +194,13 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
         return 0;
     {
         Xpost_Object ud; //userdict
-        ud = consbdc(ctx, 100);
+        ud = xpost_dict_cons (ctx, 100);
         if (xpost_object_get_type(ud) == nulltype)
         {
             XPOST_LOG_ERR("cannot allocate userdict");
             return 0;
         }
-        ret = bdcput(ctx, ud, consname(ctx, "userdict"), ud);
+        ret = xpost_dict_put(ctx, ud, consname(ctx, "userdict"), ud);
         if (ret)
             return 0;
         xpost_stack_push(ctx->lo, ctx->ds, ud);
@@ -608,7 +607,7 @@ void _onerror(Xpost_Context *ctx,
     sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
 
     /* printf("2\n"); */
-    dollarerror = bdcget(ctx, sd, namedollarerror);
+    dollarerror = xpost_dict_get(ctx, sd, namedollarerror);
     if (xpost_object_get_type(dollarerror) == invalidtype)
     {
         XPOST_LOG_ERR("cannot load $error dict for error: %s",
@@ -717,14 +716,14 @@ void setlocalconfig(Xpost_Context *ctx,
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
     if (is_installed) {
-        bdcput(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
+        xpost_dict_put(ctx, sd, consname(ctx, "PACKAGE_DATA_DIR"),
             xpost_object_cvlit(xpost_string_cons(ctx,
                     CNT_STR(PACKAGE_DATA_DIR))));
-        bdcput(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
+        xpost_dict_put(ctx, sd, consname(ctx, "PACKAGE_INSTALL_DIR"),
             xpost_object_cvlit(xpost_string_cons(ctx,
                     CNT_STR(PACKAGE_INSTALL_DIR))));
     }
-    bdcput(ctx, sd, consname(ctx, "EXE_DIR"),
+    xpost_dict_put(ctx, sd, consname(ctx, "EXE_DIR"),
             xpost_object_cvlit(xpost_string_cons(ctx,
                     strlen(exedir), exedir)));
 
@@ -744,11 +743,11 @@ void setlocalconfig(Xpost_Context *ctx,
     --newdevstr.comp_.sz; /* trim the '\0' */
 
     namenewdev = consname(ctx, "newdefaultdevice");
-    bdcput(ctx, sd, namenewdev, xpost_object_cvx(newdevstr));
+    xpost_dict_put(ctx, sd, namenewdev, xpost_object_cvx(newdevstr));
 
     if (outfile)
     {
-        bdcput(ctx, sd,
+        xpost_dict_put(ctx, sd,
                 consname(ctx, "OutputFileName"),
                 xpost_object_cvlit(xpost_string_cons(ctx, strlen(outfile), outfile)));
     }
@@ -792,15 +791,15 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
     Xpost_Object ed, de;
 
     ctx->ignoreinvalidaccess = 1;
-    bdcput(ctx, sd, consname(ctx, "userdict"), ud);
-    ed = bdcget(ctx, ud, consname(ctx, "errordict"));
+    xpost_dict_put(ctx, sd, consname(ctx, "userdict"), ud);
+    ed = xpost_dict_get(ctx, ud, consname(ctx, "errordict"));
     if (xpost_object_get_type(ed) == invalidtype)
         return undefined;
-    bdcput(ctx, sd, consname(ctx, "errordict"), ed);
-    de = bdcget(ctx, ud, consname(ctx, "$error"));
+    xpost_dict_put(ctx, sd, consname(ctx, "errordict"), ed);
+    de = xpost_dict_get(ctx, ud, consname(ctx, "$error"));
     if (xpost_object_get_type(de) == invalidtype)
         return undefined;
-    bdcput(ctx, sd, consname(ctx, "$error"), de);
+    xpost_dict_put(ctx, sd, consname(ctx, "$error"), de);
     ctx->ignoreinvalidaccess = 0;
     return 0;
 }
@@ -844,7 +843,7 @@ int xpost_create(const char *device, const char *outfile, char *exedir, int is_i
     }
 
     /* make systemdict readonly */
-    bdcput(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    xpost_dict_put(xpost_ctx, sd, consname(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
     if (!xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY)))
     {
         XPOST_LOG_ERR("cannot replace systemdict in dict stack");
@@ -906,7 +905,7 @@ void xpost_destroy(void)
     if (xpost_object_get_type(xpost_ctx->window_device) == dicttype)
     {
         Xpost_Object Destroy;
-        Destroy = bdcget(xpost_ctx, xpost_ctx->window_device, consname(xpost_ctx, "Destroy"));
+        Destroy = xpost_dict_get(xpost_ctx, xpost_ctx->window_device, consname(xpost_ctx, "Destroy"));
         if (xpost_object_get_type(Destroy) == operatortype) {
             int ret;
             xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_ctx->window_device);

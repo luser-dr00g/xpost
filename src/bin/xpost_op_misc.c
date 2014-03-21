@@ -105,8 +105,8 @@ Xpost_Object bind (Xpost_Context *ctx,
             z = xpost_stack_count(ctx->lo, ctx->ds);
             for (j = 0; j < z; j++) {
                 d = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, j);
-                if (dicknown(ctx, xpost_context_select_memory(ctx,d), d, t)) {
-                    t = bdcget(ctx, d, t);
+                if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx,d), d, t)) {
+                    t = xpost_dict_get(ctx, d, t);
                     if (xpost_object_get_type(t) == operatortype) {
                         xpost_array_put(ctx, p, i, t);
                     }
@@ -323,16 +323,16 @@ int initopx(Xpost_Context *ctx,
     optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
-    bdcput(ctx, sd, consname(ctx, "null"), null);
-    bdcput(ctx, sd, consname(ctx, "version"),
+    xpost_dict_put(ctx, sd, consname(ctx, "null"), null);
+    xpost_dict_put(ctx, sd, consname(ctx, "version"),
             xpost_object_cvlit(xpost_string_cons(ctx, strlen(versionstr), versionstr)));
     op = consoper(ctx, "realtime", realtime, 1, 0); INSTALL;
     op = consoper(ctx, "usertime", usertime, 1, 0); INSTALL;
     //languagelevel
-    bdcput(ctx, sd, consname(ctx, "product"),
+    xpost_dict_put(ctx, sd, consname(ctx, "product"),
             xpost_object_cvlit(xpost_string_cons(ctx, strlen(productstr), productstr)));
-    bdcput(ctx, sd, consname(ctx, "revision"), xpost_int_cons(revno));
-    bdcput(ctx, sd, consname(ctx, "serialnumber"), xpost_int_cons(serno));
+    xpost_dict_put(ctx, sd, consname(ctx, "revision"), xpost_int_cons(revno));
+    xpost_dict_put(ctx, sd, consname(ctx, "serialnumber"), xpost_int_cons(serno));
     //executive: see init.ps
     //echo: see opf.c
     //prompt: see init.ps
@@ -350,8 +350,8 @@ int initopx(Xpost_Context *ctx,
     op = consoper(ctx, "dumpnames", Odumpnames, 0, 0); INSTALL;
     op = consoper(ctx, "dumpvm", dumpvm, 0, 0); INSTALL;
 
-    /* dumpdic(ctx->gl, sd); fflush(NULL);
-    bdcput(ctx, sd, consname(ctx, "mark"), mark); */
+    /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
+    xpost_dict_put(ctx, sd, consname(ctx, "mark"), mark); */
 
     return 0;
 }

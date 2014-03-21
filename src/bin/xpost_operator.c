@@ -473,13 +473,13 @@ int initop(Xpost_Context *ctx)
     oper *optab;
     unsigned int optadr;
 
-    sd = consbdc(ctx, SDSIZE);
+    sd = xpost_dict_cons (ctx, SDSIZE);
     if (xpost_object_get_type(sd) == nulltype)
     {
         XPOST_LOG_ERR("cannot allocate systemdict");
         return 0;
     }
-    bdcput(ctx, sd, consname(ctx, "systemdict"), sd);
+    xpost_dict_put(ctx, sd, consname(ctx, "systemdict"), sd);
     xpost_stack_push(ctx->lo, ctx->ds, sd);
     tab = NULL;
     ent = xpost_object_get_ent(sd);
@@ -490,50 +490,50 @@ int initop(Xpost_Context *ctx)
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 #ifdef DEBUGOP
-    dumpdic(ctx->gl, sd); fflush(NULL);
+    xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     puts("");
 #endif
 
     initops(ctx, sd);
 
 //#ifdef DEBUGOP
-    //printf("\nops:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nops:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 //#endif
 
     op = consoper(ctx, "breakhere", breakhere, 0, 0); INSTALL;
 
     initopst(ctx, sd);
-    //printf("\nopst:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopst:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopar(ctx, sd);
-    //printf("\nopar:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopar:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopdi(ctx, sd);
-    //printf("\nopdi:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopdi:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopb(ctx, sd);
-    //printf("\nopb:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopb:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopc(ctx, sd);
-    //printf("\nopc:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopc:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopt(ctx, sd);
-    //printf("\nopt:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopt:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initoptok(ctx, sd);
-    //printf("\noptok:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\noptok:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopm(ctx, sd);
-    //printf("\nopm:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopm:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopf(ctx, sd);
-    //printf("\nopf:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopf:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopv(ctx, sd);
-    //printf("\nopv:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopv:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopx(ctx, sd);
-    //printf("\nopx:\n"); dumpdic(ctx->gl, sd); fflush(NULL);
+    //printf("\nopx:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initoppa(ctx, sd);
     initopparam(ctx, sd);
@@ -553,7 +553,7 @@ int initop(Xpost_Context *ctx)
 #ifdef DEBUGOP
     printf("final sd:\n");
     xpost_stack_dump(ctx->lo, ctx->ds);
-    dumpdic(ctx->gl, sd); fflush(NULL);
+    xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 #endif
 
     return 1;

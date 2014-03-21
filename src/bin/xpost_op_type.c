@@ -519,7 +519,7 @@ int initopt (Xpost_Context *ctx,
     op = consoper(ctx, "cvrs", NRScvrs, 1, 3, numbertype, integertype, stringtype); INSTALL;
     op = consoper(ctx, "cvs", AScvs, 1, 2, anytype, stringtype); INSTALL;
 
-    /* dumpdic(ctx->gl, sd); fflush(NULL);
+    /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
      */
     return 0;
 }
