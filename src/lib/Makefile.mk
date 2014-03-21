@@ -18,6 +18,7 @@ src/lib/xpost_object.c \
 src/lib/xpost_save.c \
 src/lib/xpost_stack.c \
 src/lib/xpost_string.c \
+src/lib/xpost_array.c \
 src/lib/xpost_compat.h \
 src/lib/xpost_context.h \
 src/lib/xpost_error.h \
@@ -31,6 +32,7 @@ src/lib/xpost_object.h \
 src/lib/xpost_save.h \
 src/lib/xpost_stack.h \
 src/lib/xpost_string.h \
+src/lib/xpost_array.h \
 src/lib/xpost_private.h
 
 src_lib_libxpost_la_CPPFLAGS = \

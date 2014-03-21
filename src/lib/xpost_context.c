@@ -283,6 +283,7 @@ int xpost_context_init(Xpost_Context *ctx,
         return 0;
     }
     ctx->event_handler = null;
+    ctx->ignoreinvalidaccess = 0;
 
     return 1;
 }

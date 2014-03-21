@@ -45,6 +45,7 @@ typedef struct
     Xpost_Object window_device;
     const char *device_str;
 
+    int ignoreinvalidaccess; //briefly allow invalid access to put userdict in systemdict (per PLRM)
 } Xpost_Context;
 
 int xpost_context_init_ctxlist(Xpost_Memory_File *mem);

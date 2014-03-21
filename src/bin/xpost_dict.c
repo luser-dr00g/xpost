@@ -633,7 +633,7 @@ int bdcput(Xpost_Context *ctx,
         Xpost_Object v)
 {
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, d);
-    if (!ignoreinvalidaccess) {
+    if (!ctx->ignoreinvalidaccess) {
         if ( mem == ctx->gl
                 && xpost_object_is_composite(k)
                 && mem != xpost_context_select_memory(ctx, k))

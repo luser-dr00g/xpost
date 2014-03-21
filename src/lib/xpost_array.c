@@ -46,7 +46,7 @@
 
 #include "xpost_save.h"  /* arrays obey save/restore */
 #include "xpost_context.h"
-#include "xpost_interpreter.h"  /* banked arrays may be in global or local mfiles */
+//#include "xpost_interpreter.h"  /* banked arrays may be in global or local mfiles */
 #include "xpost_error.h"  /* array functions may throw errors */
 #include "xpost_array.h"  /* double-check prototypes */
 
@@ -165,7 +165,7 @@ int xpost_array_put(Xpost_Context *ctx,
             Xpost_Object o)
 {
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, a);
-    if (!ignoreinvalidaccess) {
+    if (!ctx->ignoreinvalidaccess) {
         if ( mem == ctx->gl
                 && xpost_object_is_composite(o)
                 && mem != xpost_context_select_memory(ctx, o))

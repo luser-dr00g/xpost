@@ -58,7 +58,7 @@ typedef struct {
 
 extern Xpost_Interpreter *itpdata;
 extern int initializing;
-extern int ignoreinvalidaccess;
+//extern int ignoreinvalidaccess;
 
 Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid);
 
