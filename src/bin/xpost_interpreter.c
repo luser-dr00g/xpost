@@ -67,7 +67,7 @@ Xpost_Object namedollarerror;
 int TRACE = 0;
 Xpost_Interpreter *itpdata;
 int initializing = 1;
-int ignoreinvalidaccess = 0;
+//int ignoreinvalidaccess = 0;
 
 int eval(Xpost_Context *ctx);
 int mainloop(Xpost_Context *ctx);
@@ -791,7 +791,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
      */
     Xpost_Object ed, de;
 
-    ignoreinvalidaccess = 1;
+    ctx->ignoreinvalidaccess = 1;
     bdcput(ctx, sd, consname(ctx, "userdict"), ud);
     ed = bdcget(ctx, ud, consname(ctx, "errordict"));
     if (xpost_object_get_type(ed) == invalidtype)
@@ -801,7 +801,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
     if (xpost_object_get_type(de) == invalidtype)
         return undefined;
     bdcput(ctx, sd, consname(ctx, "$error"), de);
-    ignoreinvalidaccess = 0;
+    ctx->ignoreinvalidaccess = 0;
     return 0;
 }
 
