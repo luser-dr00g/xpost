@@ -38,7 +38,7 @@
    consisting of 4 16bit fields common to composite objects
      tag, type enum and flags
      sz, count of objects in array
-     ent, entity number
+     ent, entity number  --- nb. ents have outgrown their field! use xpost_object_get/set_ent()
      off, offset into allocation
    the entity data is a header structure
    followed by header->sz+1 key/value pairs of objects in a linear array
@@ -81,13 +81,13 @@ int objcmp(Xpost_Context *ctx, Xpost_Object l, Xpost_Object r);
 
 /*! 
    construct dictionary
-   in mtab of specified mfile
+   in the memory table of specified memory file
 */
 Xpost_Object xpost_dict_cons_memory (/*@dependent@*/ Xpost_Memory_File *mem, unsigned sz);
 
 /*! 
    construct dictionary
-   selected mtab with ctx->vmmode
+   selected the memory table with ctx->vmmode
 */
 Xpost_Object xpost_dict_cons (Xpost_Context *ctx, unsigned sz);
 

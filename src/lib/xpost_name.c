@@ -257,7 +257,7 @@ unsigned int addname(Xpost_Context *ctx,
    in ternary search tree,
    adding string to stack if so.
    returns a generic object with
-       nametype tag with BANK field, 
+       nametype tag with FBANK flag, 
        mark_.pad0 set to zero
        mark_.padw contains XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK stack index
  */
@@ -305,9 +305,7 @@ Xpost_Object xpost_name_cons(Xpost_Context *ctx,
     return o;
 }
 
-/* adapter:
-            string <- name
-    yield the string object from the name string stack
+/* yield the string object from the name string stack
     */
 Xpost_Object xpost_name_get_string(Xpost_Context *ctx,
                Xpost_Object n)

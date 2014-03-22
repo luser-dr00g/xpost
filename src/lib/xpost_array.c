@@ -90,6 +90,7 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
                 | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET)
                 | (cnt << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET) );
 
+        /* fill array with the null object */
         for (i = 0; i < sz; i++)
         {
             int ret;
@@ -117,7 +118,7 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
 
 /** Select a memory file according to vmmode,
    call xpost_array_cons_memory,
-   set BANK flag.
+   set BANK flag.   object.tag&BANK?global:local
 */
 Xpost_Object xpost_array_cons(Xpost_Context *ctx,
                unsigned int sz)
