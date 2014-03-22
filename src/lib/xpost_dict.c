@@ -66,7 +66,7 @@ void *alloca (size_t);
 #include <stdio.h>
 
 #include "xpost_log.h"
-#include "xpost_memory.h"  /* dicts live in mfile, accessed via mtab */
+#include "xpost_memory.h"  /* dicts live in the memory file, accessed via memory table */
 #include "xpost_object.h"  /* dict is an object, containing objects */
 #include "xpost_stack.h"  /* may need to count the save stack */
 #include "xpost_free.h"  /* dicts are allocated from the free list */
@@ -251,7 +251,7 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     return d;
 }
 
-/* select mfile according to vmmode,
+/* select the memory file according to vmmode,
    call xpost_dict_cons_memory ,
    set the BANK flag. */
 Xpost_Object xpost_dict_cons (Xpost_Context *ctx,
@@ -546,7 +546,7 @@ Xpost_Object xpost_dict_get_memory (Xpost_Context *ctx,
     return e[1];
 }
 
-/* select mfile according to BANK field,
+/* select the memory file according to BANK field,
    call xpost_dict_get_memory . */
 Xpost_Object xpost_dict_get(Xpost_Context *ctx,
         Xpost_Object d,
@@ -624,7 +624,7 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
     return 0;
 }
 
-/* select mfile according to BANK field,
+/* select the memory file according to BANK field,
    call xpost_dict_put_memory. */
 int xpost_dict_put(Xpost_Context *ctx,
         Xpost_Object d,

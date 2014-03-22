@@ -38,23 +38,24 @@
    consisting of 4 16bit fields common to all composite objects
      tag, type enum and flags
      sz, count of objects in array
-     ent, entity number
+     ent, entity number   --- nb. ents have outgrown their field: use xpost_object_get/set_ent()
      off, offset into allocation
    the entity data is a "C" array of objects
 
-   "arr" functions require an mfile.
-   "bar" functions select the mfile from a context, using the FBANK flag.
+   "memory" functions require a memory file to be specified.
+   functions without "memory" select the memory file from a context, using the FBANK flag.
+   an array object with the FBANK flag properly set, is called a "banked array".
 */
 
 /**
  * @brief xpost_array_cons_memory - construct an array object
- * in the mtab of specified mfile
+ * in the memory table of specified memory file
 */
 Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem, unsigned sz);
 
 /**
  * @brief xpost_array_cons - construct an array object
- * selecting mfile according to ctx->vmmode
+ * selecting memory file according to ctx->vmmode
 */
 Xpost_Object xpost_array_cons(Xpost_Context *ctx, unsigned sz);
 
