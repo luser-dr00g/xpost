@@ -40,13 +40,13 @@
 #include "xpost_memory.h" /* access memory */
 #include "xpost_object.h" /* work with objects */
 #include "xpost_stack.h"  /* push results on stack */
-
 #include "xpost_context.h" /* state */
 #include "xpost_error.h"
 #include "xpost_dict.h" /* get/put values in dicts */
 #include "xpost_string.h" /* get/put values in strings */
 #include "xpost_array.h"
 #include "xpost_name.h" /* create names */
+
 #include "xpost_operator.h" /* create operators */
 #include "xpost_op_dict.h" /* call Aload operator for convenience */
 #include "xpost_dev_bgr.h" /* check prototypes */

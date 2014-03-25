@@ -45,12 +45,13 @@
 #endif
 
 #include "xpost.h"
-#include "xpost_pathname.h" /* xpost_is_installed exedir */
 #include "xpost_memory.h" /* Xpost_Memory_File */
 #include "xpost_object.h" /* Xpost_Object */
 #include "xpost_context.h" /* Xpost_Context */
-#include "xpost_interpreter.h" /* xpost_create */
 #include "xpost_log.h" /* XPOST_LOG_ERR */
+
+#include "xpost_pathname.h" /* xpost_is_installed exedir */
+#include "xpost_interpreter.h" /* xpost_create */
 
 #include "xpost_main.h"
 
