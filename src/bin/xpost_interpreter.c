@@ -48,16 +48,16 @@
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks
 #include "xpost_error.h"  
-
 #include "xpost_context.h"
-#include "xpost_interpreter.h" // uses: context itp MAXCONTEXT MAXMFILE
-#include "xpost_garbage.h"  //  test gc, install collect() in context's memory files
 #include "xpost_save.h"  // save/restore vm
 #include "xpost_string.h"  // eval functions examine strings
 #include "xpost_array.h"  // eval functions examine arrays
 #include "xpost_name.h"  // eval functions examine names
 #include "xpost_dict.h"  // eval functions examine dicts
 #include "xpost_file.h"  // eval functions examine files
+
+#include "xpost_interpreter.h" // uses: context itp MAXCONTEXT MAXMFILE
+#include "xpost_garbage.h"  //  test gc, install collect() in context's memory files
 #include "xpost_operator.h"  // eval functions call operators
 #include "xpost_pathname.h" // determine whether xpost is installed
 

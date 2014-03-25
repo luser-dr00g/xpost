@@ -47,6 +47,7 @@
 #include <string.h>
 
 #include "xpost_main.h"
+
 #include "xpost_pathname.h"
 
 static
