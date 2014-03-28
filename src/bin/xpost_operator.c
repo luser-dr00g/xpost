@@ -187,7 +187,8 @@ Xpost_Object consoper(Xpost_Context *ctx,
     }
     optab = (void *)(ctx->gl->base + optadr);
 
-    if (!(in < XPOST_STACK_SEGMENT_SIZE)) {
+    if (!(in < XPOST_STACK_SEGMENT_SIZE))
+    {
         printf("!(in < XPOST_STACK_SEGMENT_SIZE) in consoper(%s, %d. %d)\n", name, out, in);
         fprintf(stderr, "!(in < XPOST_STACK_SEGMENT_SIZE) in consoper(%s, %d. %d)\n", name, out, in);
         exit(EXIT_FAILURE);
@@ -202,13 +203,16 @@ Xpost_Object consoper(Xpost_Context *ctx,
     ctx->vmmode = vmmode;
 
     optab = (void *)(ctx->gl->base + optadr);
-    for (opcode = 0; optab[opcode].name != nm.mark_.padw; opcode++) {
+    for (opcode = 0; optab[opcode].name != nm.mark_.padw; opcode++)
+    {
         if (opcode == noop) break;
     }
 
     /* install a new signature (prototype) */
-    if (fp) {
-        if (opcode == noop) { /* a new operator */
+    if (fp)
+    {
+        if (opcode == noop)
+        { /* a new operator */
             unsigned adr;
             if (noop == MAXOPS-1)
             {
@@ -229,7 +233,9 @@ Xpost_Object consoper(Xpost_Context *ctx,
             optab[opcode] = op;
             ++noop;
             si = 0;
-        } else { /* increase sig table by 1 */
+        }
+        else
+        { /* increase sig table by 1 */
             t = xpost_free_realloc(ctx->gl,
                     optab[opcode].sigadr,
                     optab[opcode].n * sizeof(signat),
@@ -271,7 +277,9 @@ Xpost_Object consoper(Xpost_Context *ctx,
             sp[si].out = out;
             sp[si].fp = fp;
         }
-    } else if (opcode == noop) {
+    }
+    else if (opcode == noop)
+    {
         XPOST_LOG_ERR("operator not found");
         return null;
     }
@@ -299,11 +307,13 @@ void holdn (Xpost_Context *ctx,
     assert(n < XPOST_MEMORY_TABLE_SIZE);
     hold = (void *)(ctx->lo->base + ctx->hold);
     hold->top = 0;     /* clear HOLD */
-    for (j=n; j--;) {  /* copy */
+    for (j=n; j--;)
+    {  /* copy */
         xpost_stack_push(ctx->lo, ctx->hold,
                 xpost_stack_topdown_fetch(mem, stacadr, j));
     }
-    for (j=n; j--;) {  /* pop */
+    for (j=n; j--;)
+    {  /* pop */
         (void)xpost_stack_pop(mem, stacadr);
     }
 }
@@ -342,33 +352,43 @@ int opexec(Xpost_Context *ctx,
         XPOST_LOG_ERR("operator has no signatures");
         return unregistered;
     }
-    for (i=0; i < op.n; i++) { /* try each signature */
+    for (i=0; i < op.n; i++)
+    { /* try each signature */
         byte *t;
-        if (ct < sp[i].in) {
+        if (ct < sp[i].in)
+        {
             pass = 0;
             err = stackunderflow;
             continue;
         }
         pass = 1;
         t = (void *)(ctx->gl->base + sp[i].t);
-        for (j=0; j < sp[i].in; j++) {
+        for (j=0; j < sp[i].in; j++)
+        {
             Xpost_Object el = xpost_stack_topdown_fetch(ctx->lo, ctx->os, j);
-            if (t[j] == anytype) continue;
-            if (t[j] == xpost_object_get_type(el)) continue;
-            if (t[j] == numbertype
-                    && (xpost_object_get_type(el) == integertype
-                        || xpost_object_get_type(el) == realtype) ) continue;
-            if (t[j] == floattype) {
-                if (xpost_object_get_type(el) == integertype) {
+            if (t[j] == anytype)
+                continue;
+            if (t[j] == xpost_object_get_type(el))
+                continue;
+            if ((t[j] == numbertype) &&
+                (((xpost_object_get_type(el) == integertype) ||
+                  (xpost_object_get_type(el) == realtype))))
+                continue;
+            if (t[j] == floattype)
+            {
+                if (xpost_object_get_type(el) == integertype)
+                {
                     if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, j, el = promote(el)))
                         return unregistered;
                     continue;
                 }
-                if (xpost_object_get_type(el) == realtype) continue;
+                if (xpost_object_get_type(el) == realtype)
+                    continue;
             }
-            if (t[j] == proctype
-                    && xpost_object_get_type(el) == arraytype
-                    && xpost_object_is_exe(el)) continue;
+            if ((t[j] == proctype) &&
+                (xpost_object_get_type(el) == arraytype) &&
+                xpost_object_is_exe(el))
+                continue;
             pass = 0;
             err = typecheck;
             break;
@@ -385,10 +405,13 @@ call:
        (if hold has not been clobbered by another call to opexec).
     */
     if (ctx->currentobject.tag == operatortype
-            && ctx->currentobject.mark_.padw == opcode) {
+            && ctx->currentobject.mark_.padw == opcode)
+    {
         ctx->currentobject.mark_.pad0 = sp[i].in;
         ctx->currentobject.tag |= XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD;
-    } else {
+    }
+    else
+    {
         /* Not executing current op.
            HOLD may *not* be assumed to contain currentobject's arguments.
            clear the flag.
@@ -399,7 +422,8 @@ call:
     holdn(ctx, ctx->lo, ctx->os, sp[i].in);
     hold = (void *)(ctx->lo->base + ctx->hold);
 
-    switch(sp[i].in) {
+    switch(sp[i].in)
+    {
         case 0: ret = sp[i].fp(ctx); break;
         case 1: ret = sp[i].fp(ctx, hold->data[0]); break;
         case 2: ret = sp[i].fp(ctx, hold->data[0], hold->data[1]); break;

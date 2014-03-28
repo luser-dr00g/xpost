@@ -47,7 +47,7 @@
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks
-#include "xpost_error.h"  
+#include "xpost_error.h"
 #include "xpost_context.h"
 #include "xpost_save.h"  // save/restore vm
 #include "xpost_string.h"  // eval functions examine strings
@@ -78,8 +78,10 @@ static Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
 {
     int i;
 
-    for (i=0; i < MAXMFILE; i++) {
-        if (itpdata->gtab[i].base == NULL) {
+    for (i=0; i < MAXMFILE; i++)
+    {
+        if (itpdata->gtab[i].base == NULL)
+        {
             return &itpdata->gtab[i];
         }
     }
@@ -91,8 +93,10 @@ static Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
 static Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
 {
     int i;
-    for (i=0; i < MAXMFILE; i++) {
-        if (itpdata->ltab[i].base == NULL) {
+    for (i=0; i < MAXMFILE; i++)
+    {
+        if (itpdata->ltab[i].base == NULL)
+        {
             return &itpdata->ltab[i];
         }
     }
@@ -111,7 +115,8 @@ unsigned int nextid = 0;
 static int xpost_interpreter_cid_init(unsigned int *cid)
 {
     unsigned int startid = nextid;
-    while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 ) {
+    while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 )
+    {
         if (nextid == startid + MAXCONTEXT)
         {
             XPOST_LOG_ERR("ctab full. cannot create new process");
@@ -271,7 +276,7 @@ static
 int evalpush(Xpost_Context *ctx)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os,
-            xpost_stack_pop(ctx->lo, ctx->es) ))
+            xpost_stack_pop(ctx->lo, ctx->es)))
         return stackoverflow;
     return 0;
 }
@@ -295,7 +300,8 @@ int evalload(Xpost_Context *ctx)
     ret = opexec(ctx, ctx->opcode_shortcuts.load);
     if (ret)
         return ret;
-    if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0))) {
+    if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0)))
+    {
         Xpost_Object q;
         q = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(q) == invalidtype)
@@ -333,7 +339,8 @@ int evalarray(Xpost_Context *ctx)
     if (xpost_object_get_type(a) == invalidtype)
         return stackunderflow;
 
-    switch (a.comp_.sz) {
+    switch (a.comp_.sz)
+    {
     default /* > 1 */:
         {
             Xpost_Object interval;
@@ -379,7 +386,8 @@ int evalstring(Xpost_Context *ctx)
     b = xpost_stack_pop(ctx->lo, ctx->os);
     if (xpost_object_get_type(b) == invalidtype)
         return stackunderflow;
-    if (b.int_.val) {
+    if (b.int_.val)
+    {
         t = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(t) == invalidtype)
             return stackunderflow;
@@ -418,7 +426,8 @@ int evalfile(Xpost_Context *ctx)
     if (ret)
         return ret;
     b = xpost_stack_pop(ctx->lo, ctx->os);
-    if (b.int_.val) {
+    if (b.int_.val)
+    {
         t = xpost_stack_pop(ctx->lo, ctx->os);
         if (!xpost_stack_push(ctx->lo, ctx->es, f))
             return execstackoverflow;
@@ -432,7 +441,9 @@ int evalfile(Xpost_Context *ctx)
             if (!xpost_stack_push(ctx->lo, ctx->es, t))
                 return execstackoverflow;
         }
-    } else {
+    }
+    else
+    {
         ret = xpost_file_close(ctx->lo, f);
         if (ret)
             XPOST_LOG_ERR("%s error closing file", errorname[ret]);
@@ -479,8 +490,9 @@ int idleproc (Xpost_Context *ctx)
        and then return 0.
        it should leave all stacks undisturbed.
      */
-    if (xpost_object_get_type(ctx->event_handler) == operatortype
-            && xpost_object_get_type(ctx->window_device) == dicttype) {
+    if ((xpost_object_get_type(ctx->event_handler) == operatortype) &&
+        (xpost_object_get_type(ctx->window_device) == dicttype))
+    {
         if (!xpost_stack_push(ctx->lo, ctx->os, ctx->window_device))
         {
             return stackoverflow;
@@ -544,7 +556,8 @@ int eval(Xpost_Context *ctx)
     if (!validate_context(ctx))
         return unregistered;
 
-    if (TRACE) {
+    if (TRACE)
+    {
         XPOST_LOG_DUMP("eval(): Executing: ");
         xpost_object_dump(t);
         XPOST_LOG_DUMP("Stack: ");
@@ -594,11 +607,13 @@ void _onerror(Xpost_Context *ctx,
 #endif
 
     /* reset stack */
-    if (xpost_object_get_type(ctx->currentobject) == operatortype
-            && ctx->currentobject.tag & XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD) {
+    if ((xpost_object_get_type(ctx->currentobject) == operatortype) &&
+        (ctx->currentobject.tag & XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD))
+    {
         int n = ctx->currentobject.mark_.pad0;
         int i;
-        for (i=0; i < n; i++) {
+        for (i=0; i < n; i++)
+        {
             xpost_stack_push(ctx->lo, ctx->os, xpost_stack_bottomup_fetch(ctx->lo, ctx->hold, i));
         }
     }
@@ -715,7 +730,8 @@ void setlocalconfig(Xpost_Context *ctx,
 
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
-    if (is_installed) {
+    if (is_installed)
+    {
         xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "PACKAGE_DATA_DIR"),
             xpost_object_cvlit(xpost_string_cons(ctx,
                     CNT_STR(PACKAGE_DATA_DIR))));
@@ -728,8 +744,10 @@ void setlocalconfig(Xpost_Context *ctx,
                     strlen(exedir), exedir)));
 
     /* define the /newdefaultdevice name called by /start */
-    for (i = 0; device_strings[i][0]; i++) {
-        if (strcmp(device, device_strings[i][0]) == 0) {
+    for (i = 0; device_strings[i][0]; i++)
+    {
+        if (strcmp(device, device_strings[i][0]) == 0)
+        {
             break;
         }
     }
@@ -767,11 +785,12 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
         xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(xpost_string_cons(ctx,
              CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
-    else {
+    else
+    {
         char buf[1024];
         snprintf(buf, sizeof buf,
-                "(%s/../../data/init.ps) (r) file cvx exec",
-                exedir);
+                 "(%s/../../data/init.ps) (r) file cvx exec",
+                 exedir);
         xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(xpost_string_cons(ctx,
                     strlen(buf), buf)));
@@ -864,16 +883,19 @@ void xpost_run(const char *ps_file)
        so it starts with 'start',
        and if it ever gets to the bottom, it quits.  */
     xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0));
-        /* `start` proc defined in init.ps runs `executive` which prompts for user input
-           'startstdin' does not prompt
-           
-           'startfile' executes a named file
-               wrapped in a stopped context with handleerror
-         */
-    if (ps_file) {
+    /* `start` proc defined in init.ps runs `executive` which prompts for user input
+       'startstdin' does not prompt
+
+       'startfile' executes a named file
+       wrapped in a stopped context with handleerror
+    */
+    if (ps_file)
+    {
         xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(xpost_string_cons(xpost_ctx, strlen(ps_file), ps_file)));
         xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startfile")));
-    } else {
+    }
+    else
+    {
         if (isatty(fileno(stdin)))
             xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "start")));
         else
@@ -906,7 +928,8 @@ void xpost_destroy(void)
     {
         Xpost_Object Destroy;
         Destroy = xpost_dict_get(xpost_ctx, xpost_ctx->window_device, xpost_name_cons(xpost_ctx, "Destroy"));
-        if (xpost_object_get_type(Destroy) == operatortype) {
+        if (xpost_object_get_type(Destroy) == operatortype)
+        {
             int ret;
             xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_ctx->window_device);
             ret = opexec(xpost_ctx, Destroy.mark_.padw);
