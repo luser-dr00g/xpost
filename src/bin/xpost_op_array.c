@@ -54,7 +54,7 @@
 
 /* helper function */
 static
-int a_copy (Xpost_Context *ctx,
+int _xpost_op_array_copy_aux (Xpost_Context *ctx,
             Xpost_Object S,
             Xpost_Object D)
 {
@@ -75,7 +75,7 @@ int a_copy (Xpost_Context *ctx,
 /* int  array  array
    create array of length int */
 static
-int Iarray (Xpost_Context *ctx,
+int xpost_op_int_array (Xpost_Context *ctx,
             Xpost_Object I)
 {
     Xpost_Object t;
@@ -94,7 +94,7 @@ int Iarray (Xpost_Context *ctx,
 
 /* mark obj0..objN-1  ]  array
    end array construction */
-int arrtomark (Xpost_Context *ctx)
+int xpost_op_array_to_mark (Xpost_Context *ctx)
 {
     int i;
     Xpost_Object a, v;
@@ -124,7 +124,7 @@ int arrtomark (Xpost_Context *ctx)
 /* array  length  int
    number of elements in array */
 static
-int Alength (Xpost_Context *ctx,
+int xpost_op_array_length (Xpost_Context *ctx,
               Xpost_Object A)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(A.comp_.sz)))
@@ -136,7 +136,7 @@ int Alength (Xpost_Context *ctx,
 /* array index  get  any
    get array element indexed by index */
 static
-int Aget (Xpost_Context *ctx,
+int xpost_op_array_int_get (Xpost_Context *ctx,
            Xpost_Object A,
            Xpost_Object I)
 {
@@ -154,7 +154,7 @@ int Aget (Xpost_Context *ctx,
 /* array index any  put  -
    put any into array at index */
 static
-int Aput(Xpost_Context *ctx,
+int xpost_op_array_int_any_put(Xpost_Context *ctx,
           Xpost_Object A,
           Xpost_Object I,
           Xpost_Object O)
@@ -167,7 +167,7 @@ int Aput(Xpost_Context *ctx,
 /* array index count  getinterval  subarray
    subarray of array starting at index for count elements */
 static
-int Agetinterval (Xpost_Context *ctx,
+int xpost_op_array_int_int_getinterval (Xpost_Context *ctx,
                    Xpost_Object A,
                    Xpost_Object I,
                    Xpost_Object L)
@@ -185,7 +185,7 @@ int Agetinterval (Xpost_Context *ctx,
 /* array1 index array2  putinterval  -
    replace subarray of array1 starting at index by array2 */
 static
-int Aputinterval (Xpost_Context *ctx,
+int xpost_op_array_int_array_putinterval (Xpost_Context *ctx,
                    Xpost_Object D,
                    Xpost_Object I,
                    Xpost_Object S)
@@ -198,14 +198,14 @@ int Aputinterval (Xpost_Context *ctx,
     subarr = xpost_object_get_interval(D, I.int_.val, S.comp_.sz);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;
-    a_copy(ctx, S, subarr);
+    _xpost_op_array_copy_aux(ctx, S, subarr);
     return 0;
 }
 
 /* array  aload  a0..aN-1 array
    push all elements of array on stack */
 static
-int Aaload (Xpost_Context *ctx,
+int xpost_op_array_aload (Xpost_Context *ctx,
              Xpost_Object A)
 {
     int i;
@@ -221,7 +221,7 @@ int Aaload (Xpost_Context *ctx,
 /* any0..anyN-1 array  astore  array
    pop elements from stack into array */
 static
-int Aastore (Xpost_Context *ctx,
+int xpost_op_anyn_array_astore (Xpost_Context *ctx,
               Xpost_Object A)
 {
     Xpost_Object t;
@@ -248,14 +248,14 @@ int Aastore (Xpost_Context *ctx,
 /* array1 array2  copy  subarray2
    copy elements of array1 to initial subarray of array2 */
 static
-int Acopy (Xpost_Context *ctx,
+int xpost_op_array_copy (Xpost_Context *ctx,
             Xpost_Object S,
             Xpost_Object D)
 {
     Xpost_Object subarr;
     if (D.comp_.sz < S.comp_.sz)
         return rangecheck;
-    a_copy(ctx, S, D);
+    _xpost_op_array_copy_aux(ctx, S, D);
     subarr = xpost_object_get_interval(D, 0, S.comp_.sz);
     if (xpost_object_get_type(subarr) == invalidtype)
         return rangecheck;
@@ -266,7 +266,7 @@ int Acopy (Xpost_Context *ctx,
 /* array proc  forall  -
    execute proc for each element of array */
 static
-int Aforall(Xpost_Context *ctx,
+int xpost_op_array_proc_forall(Xpost_Context *ctx,
              Xpost_Object A,
              Xpost_Object P)
 {
@@ -304,7 +304,7 @@ int Aforall(Xpost_Context *ctx,
     return 0;
 }
 
-int initopar (Xpost_Context *ctx,
+int xpost_oper_init_array_ops (Xpost_Context *ctx,
                Xpost_Object sd)
 {
     oper *optab;
@@ -317,39 +317,39 @@ int initopar (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "array", Iarray, 1, 1,
+    op = consoper(ctx, "array", xpost_op_int_array, 1, 1,
             integertype);
     INSTALL;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "["), mark);
     if (ret)
         return 0;
-    op = consoper(ctx, "]", arrtomark, 1, 0);
+    op = consoper(ctx, "]", xpost_op_array_to_mark, 1, 0);
     INSTALL;
-    op = consoper(ctx, "length", Alength, 1, 1,
+    op = consoper(ctx, "length", xpost_op_array_length, 1, 1,
             arraytype);
     INSTALL;
-    op = consoper(ctx, "get", Aget, 1, 2,
+    op = consoper(ctx, "get", xpost_op_array_int_get, 1, 2,
             arraytype, integertype);
     INSTALL;
-    op = consoper(ctx, "put", Aput, 0, 3,
+    op = consoper(ctx, "put", xpost_op_array_int_any_put, 0, 3,
             arraytype, integertype, anytype);
     INSTALL;
-    op = consoper(ctx, "getinterval", Agetinterval, 1, 3,
+    op = consoper(ctx, "getinterval", xpost_op_array_int_int_getinterval, 1, 3,
             arraytype, integertype, integertype);
     INSTALL;
-    op = consoper(ctx, "putinterval", Aputinterval, 0, 3,
+    op = consoper(ctx, "putinterval", xpost_op_array_int_array_putinterval, 0, 3,
             arraytype, integertype, arraytype);
     INSTALL;
-    op = consoper(ctx, "aload", Aaload, 1, 1,
+    op = consoper(ctx, "aload", xpost_op_array_aload, 1, 1,
             arraytype);
     INSTALL;
-    op = consoper(ctx, "astore", Aastore, 1, 1,
+    op = consoper(ctx, "astore", xpost_op_anyn_array_astore, 1, 1,
             arraytype);
     INSTALL;
-    op = consoper(ctx, "copy", Acopy, 1, 2,
+    op = consoper(ctx, "copy", xpost_op_array_copy, 1, 2,
             arraytype, arraytype);
     INSTALL;
-    op = consoper(ctx, "forall", Aforall, 0, 2,
+    op = consoper(ctx, "forall", xpost_op_array_proc_forall, 0, 2,
             arraytype, proctype);
     INSTALL;
 

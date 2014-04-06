@@ -33,7 +33,7 @@
 
 /* array operators */
 
-int arrtomark(Xpost_Context *ctx);
-int initopar(Xpost_Context *ctx, Xpost_Object sd);
+int xpost_op_array_to_mark(Xpost_Context *ctx);
+int xpost_oper_init_array_ops(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif
