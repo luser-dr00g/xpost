@@ -1,0 +1,131 @@
+This is a fresh start of the internals document. The older file, while conceptually correct,
+had become tiresome to keep updated as the names and structure keep changing.
+
+But the basic building blocks, the abstractions, have remained quite constant throughout.
+
+
+Memory
+
+The ground layer is the Memory File. It can be configured to use big malloc blocks,
+or to mmap temporary files, and these it suballocates.
+
+Inside the Memory File, at address 0, is the first of chain of memory tables.
+Each segment of the table chain is a Memory Table struct which contains several
+allocation slots and a counter, and an address of the next slot (or zero).
+
+Addresses to memory occur in several definite forms, which represent several
+levels of "crackng the nut". Since the base pointer to memory, in either of the malloc
+or mmap configurations, will be an unsigned char *, a raw memory address is an
+integer which indexes the memory array. Since the memory may move whenever it must
+realloc(), this "relative" pointer is the safest analogue to an "absolute" pointer
+into the memory space.
+
+An index into the slots of the memory tables is called an "ent" for "entity" 
+or "entry" (I never could decide; sometimes one makes more sense than the other
+in a given context). The slot contains the raw address of the allocation, a field
+to hold accounting data (marks for gc, upper+lower save-levels), and the length of the
+allocation, and a type field which may hold an object tag as a hint to the garbage
+collector. This allows the garbage collector to close files.
+
+The postscript object contains 4 fields if it's a composite object which must
+"point" to memory.
+
+    tag
+    size
+    ent
+    offset
+
+In the 32bit configuration, these are 16-bits each. In the untested LARGE_OBJECT
+configuration, these are 32-bits each.
+
+The tag contains a type bitfield which identifies the kind of data (string, array,
+dict, file), and the ent field (+ a few bits from the tag) is the index into
+the memory tables. Having the offset and size fields in the object makes
+getinterval very cheap. Simple objects typically use a combined ent+offset field
+for the payload value.
+
+These objects may live in memory as components of arrays and dicts (stringtype objects
+cannot contain other objects; there is no way to directly access an object's
+representation as a string). Or they may live on stacks, which are also in memory.
+
+By the way, there are 2 memories: global and local. Allocations are made into the
+current memory file selected by a parameter in the context, which may be altered
+with the `bool setglobal` operator. Global allocations may not contain local objects.
+Local may contain global. Remember, local memory is more perishable. It is subject
+save and restore. So this rule prevents dangling links in global memory.
+
+Names are implemented with a ternary search tree that maps strings to integers.
+The integer is stored in the nametype object in a combined ent+offset field.
+It indexes a "name string stack" which contains postscript string objects
+which contain the reverse mappings. One caveat: the search tree algorithm 
+assumes the string is nul-terminated. A nul byte is always added before searching
+(cheaply, on the C stack, don't you worry!) but this does mean that you cannot
+embed nuls in names, even if you manually convert using `string cvn`.
+
+Dictionaries are implemented as an open hash with N+1 slots to enable terminate-on-
+null in the searching.
+
+Names are persistant through the execution lifetime of the interpreter,
+but arrays and dictionaries are subject to garbage collection and to explicit
+discarding by `restore`.
+
+The garbage collect currently runs on a periodic cycle, every so many allocations
+from the memory file. If a useable allocation is found on the free-list, the 
+gc cycle count is not incremented.
+
+
+Tunable parameters.
+
+Many of the interpreter structures were designed as "chains", ie. linked-lists,
+but using "addresses" in the sense described above, rather than C pointers.
+The size of each segment may be changed by adjusting the constants in the 
+header files.
+
+XPOST_MEMORY_TABLE_SIZE  xpost_memory.h
+XPOST_STACK_SEGMENT_SIZE xpost_stack.h
+
+Since allocations retain their size, there is a parameter to control how
+much "wastage" is permissible from a re-used allocation, which is the
+ratio of the two integers:
+
+XPOST_FREE_ACCEPT_OVERSIZE  xpost_free.h
+XPOST_FREE_ACCEPT_DENOM
+
+The garbage collector cycle is controlled by the parameter
+
+XPOST_GARBAGE_COLLECTION_PERIOD
+
+but it ought to be
+
+XPOST_GARBAGE_COLLECTION_THRESHOLD
+
+and measure allocated bytes.
+
+
+Matrices
+
+For ease of implementation, the postscript matrix [a b c d e f]
+is treated internally as the transpose of the diagrams in the PLRM.
+This produces identical results, while permitting the more C-friendly
+syntax of right-multiplying matrices. Whereas Postscript's model of
+left-multiplying is more appropriate for its reverse-polish syntax.
+
+
+The logging system, implemented by Vincent Torri, is controlled by
+the environment variable XPOST_LOG_LEVEL with an integer code,
+meaning:
+
+XPOST_LOG_LEVEL_ERR  0
+XPOST_LOG_LEVEL_WARN 1
+XPOST_LOG_LEVEL_INFO 2
+XPOST_LOG_LEVEL_DBG  3
+
+For debugging, the DBG level, of course is very helpful. But it
+may be necessary to redirect output to an external file, possibly
+with `tee`. There is a lot of output.
+Enabling the TRACE variable, which may be done dynamically in gdb
+with `set var DEBUG=1`, writes the trace statements to the filename
+announced at program startup. This output may be captured in another
+terminal using `tail -F`.
+
+
