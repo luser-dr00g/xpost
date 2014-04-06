@@ -395,26 +395,40 @@ int initopc (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "exec", Aexec, 0, 1, anytype); INSTALL;
-    op = consoper(ctx, "if", BPif, 0, 2, booleantype, proctype); INSTALL;
-    op = consoper(ctx, "ifelse", BPPifelse, 0, 3, booleantype, proctype, proctype); INSTALL;
+    op = consoper(ctx, "exec", Aexec, 0, 1, anytype);
+    INSTALL;
+    op = consoper(ctx, "if", BPif, 0, 2, booleantype, proctype);
+    INSTALL;
+    op = consoper(ctx, "ifelse", BPPifelse, 0, 3, booleantype, proctype, proctype);
+    INSTALL;
     op = consoper(ctx, "for", IIIPfor, 0, 4, \
-            integertype, integertype, integertype, proctype); INSTALL;
+            integertype, integertype, integertype, proctype);
+    INSTALL;
     op = consoper(ctx, "for", RRRPfor, 0, 4, \
-            floattype, floattype, floattype, proctype); INSTALL;
+            floattype, floattype, floattype, proctype);
+    INSTALL;
     ctx->opcode_shortcuts.opfor = op.mark_.padw;
-    op = consoper(ctx, "repeat", IPrepeat, 0, 2, integertype, proctype); INSTALL;
+    op = consoper(ctx, "repeat", IPrepeat, 0, 2, integertype, proctype);
+    INSTALL;
     ctx->opcode_shortcuts.repeat = op.mark_.padw;
-    op = consoper(ctx, "loop", Ploop, 0, 1, proctype); INSTALL;
+    op = consoper(ctx, "loop", Ploop, 0, 1, proctype);
+    INSTALL;
     ctx->opcode_shortcuts.loop = op.mark_.padw;
-    op = consoper(ctx, "exit", Zexit, 0, 0); INSTALL;
-    op = consoper(ctx, "stop", Zstop, 0, 0); INSTALL;
-    op = consoper(ctx, "stopped", Astopped, 0, 1, anytype); INSTALL;
-    op = consoper(ctx, "countexecstack", Zcountexecstack, 1, 0); INSTALL;
-    op = consoper(ctx, "execstack", Aexecstack, 1, 1, arraytype); INSTALL;
-    op = consoper(ctx, "quit", Zquit, 0, 0); INSTALL;
+    op = consoper(ctx, "exit", Zexit, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "stop", Zstop, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "stopped", Astopped, 0, 1, anytype);
+    INSTALL;
+    op = consoper(ctx, "countexecstack", Zcountexecstack, 1, 0);
+    INSTALL;
+    op = consoper(ctx, "execstack", Aexecstack, 1, 1, arraytype);
+    INSTALL;
+    op = consoper(ctx, "quit", Zquit, 0, 0);
+    INSTALL;
     /*
-    op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
+    op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype);
+    INSTALL;
     //xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     */
 

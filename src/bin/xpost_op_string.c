@@ -295,27 +295,38 @@ int initopst(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
     op = consoper(ctx, "string", Istring, 1, 1,
-            integertype); INSTALL;
+            integertype);
+    INSTALL;
     op = consoper(ctx, "length", Slength, 1, 1,
-            stringtype); INSTALL;
+            stringtype);
+    INSTALL;
     op = consoper(ctx, "length", Nlength, 1, 1,
-            nametype); INSTALL;
+            nametype);
+    INSTALL;
     op = consoper(ctx, "copy", Scopy, 1, 2,
-            stringtype, stringtype); INSTALL;
+            stringtype, stringtype);
+    INSTALL;
     op = consoper(ctx, "get", Sget, 1, 2,
-            stringtype, integertype); INSTALL;
+            stringtype, integertype);
+    INSTALL;
     op = consoper(ctx, "put", Sput, 0, 3,
-            stringtype, integertype, integertype); INSTALL;
+            stringtype, integertype, integertype);
+    INSTALL;
     op = consoper(ctx, "getinterval", Sgetinterval, 1, 3,
-            stringtype, integertype, integertype); INSTALL;
+            stringtype, integertype, integertype);
+    INSTALL;
     op = consoper(ctx, "putinterval", Sputinterval, 0, 3,
-            stringtype, integertype, stringtype); INSTALL;
+            stringtype, integertype, stringtype);
+    INSTALL;
     op = consoper(ctx, "anchorsearch", Sanchorsearch, 3, 2,
-            stringtype, stringtype); INSTALL;
+            stringtype, stringtype);
+    INSTALL;
     op = consoper(ctx, "search", Ssearch, 4, 2,
-            stringtype, stringtype); INSTALL;
+            stringtype, stringtype);
+    INSTALL;
     op = consoper(ctx, "forall", Sforall, 0, 2,
-            stringtype, proctype); INSTALL;
+            stringtype, proctype);
+    INSTALL;
     return 0;
 }
 

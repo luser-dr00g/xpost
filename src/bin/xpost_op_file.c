@@ -599,37 +599,58 @@ int initopf (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype); INSTALL;
+    op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype);
+    INSTALL;
     //filter
-    op = consoper(ctx, "closefile", Fclosefile, 0, 1, filetype); INSTALL;
-    op = consoper(ctx, "read", Fread, 1, 1, filetype); INSTALL;
-    op = consoper(ctx, "write", Fwrite, 0, 2, filetype, integertype); INSTALL;
-    op = consoper(ctx, "readhexstring", Freadhexstring, 2, 2, filetype, stringtype); INSTALL;
-    op = consoper(ctx, "writehexstring", Fwritehexstring, 0, 2, filetype, stringtype); INSTALL;
-    op = consoper(ctx, "readstring", Freadstring, 2, 2, filetype, stringtype); INSTALL;
-    op = consoper(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype); INSTALL;
-    op = consoper(ctx, "readline", Freadline, 2, 2, filetype, stringtype); INSTALL;
+    op = consoper(ctx, "closefile", Fclosefile, 0, 1, filetype);
+    INSTALL;
+    op = consoper(ctx, "read", Fread, 1, 1, filetype);
+    INSTALL;
+    op = consoper(ctx, "write", Fwrite, 0, 2, filetype, integertype);
+    INSTALL;
+    op = consoper(ctx, "readhexstring", Freadhexstring, 2, 2, filetype, stringtype);
+    INSTALL;
+    op = consoper(ctx, "writehexstring", Fwritehexstring, 0, 2, filetype, stringtype);
+    INSTALL;
+    op = consoper(ctx, "readstring", Freadstring, 2, 2, filetype, stringtype);
+    INSTALL;
+    op = consoper(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype);
+    INSTALL;
+    op = consoper(ctx, "readline", Freadline, 2, 2, filetype, stringtype);
+    INSTALL;
     //token: see optok.c
-    op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype); INSTALL;
-    op = consoper(ctx, "flush", Zflush, 0, 0); INSTALL;
-    op = consoper(ctx, "flushfile", Fflushfile, 0, 1, filetype); INSTALL;
+    op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype);
+    INSTALL;
+    op = consoper(ctx, "flush", Zflush, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "flushfile", Fflushfile, 0, 1, filetype);
+    INSTALL;
 #ifndef HAVE_WIN32
-    op = consoper(ctx, "resetfile", Fresetfile, 0, 1, filetype); INSTALL;
+    op = consoper(ctx, "resetfile", Fresetfile, 0, 1, filetype);
+    INSTALL;
 #endif
-    op = consoper(ctx, "status", Fstatus, 1, 1, filetype); INSTALL;
+    op = consoper(ctx, "status", Fstatus, 1, 1, filetype);
+    INSTALL;
     //string status
     //run: see init.ps
-    op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0); INSTALL;
-    op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype); INSTALL;
-    op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype); INSTALL;
+    op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0);
+    INSTALL;
+    op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype);
+    INSTALL;
+    op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype);
+    INSTALL;
 //#ifndef HAVE_WIN32
     op = consoper(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
     ctx->opcode_shortcuts.contfilenameforall = op.mark_.padw;
-    op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype); INSTALL;
+    op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype);
+    INSTALL;
 //#endif
-    op = consoper(ctx, "setfileposition", setfileposition, 0, 2, filetype, integertype); INSTALL;
-    op = consoper(ctx, "fileposition", fileposition, 1, 1, filetype); INSTALL;
-    op = consoper(ctx, "print", Sprint, 0, 1, stringtype); INSTALL;
+    op = consoper(ctx, "setfileposition", setfileposition, 0, 2, filetype, integertype);
+    INSTALL;
+    op = consoper(ctx, "fileposition", fileposition, 1, 1, filetype);
+    INSTALL;
+    op = consoper(ctx, "print", Sprint, 0, 1, stringtype);
+    INSTALL;
     //=: see init.ps
     //==: see init.ps
     //stack: see init.ps
@@ -638,7 +659,8 @@ int initopf (Xpost_Context *ctx,
     //writeobject
     //setobjectformat
     //currentobjectformat
-    op = consoper(ctx, "echo", Becho, 0, 1, booleantype); INSTALL;
+    op = consoper(ctx, "echo", Becho, 0, 1, booleantype);
+    INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */

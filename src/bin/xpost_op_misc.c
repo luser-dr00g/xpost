@@ -322,12 +322,15 @@ int initopx(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "bind", Pbind, 1, 1, proctype); INSTALL;
+    op = consoper(ctx, "bind", Pbind, 1, 1, proctype);
+    INSTALL;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "null"), null);
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "version"),
             xpost_object_cvlit(xpost_string_cons(ctx, strlen(versionstr), versionstr)));
-    op = consoper(ctx, "realtime", realtime, 1, 0); INSTALL;
-    op = consoper(ctx, "usertime", usertime, 1, 0); INSTALL;
+    op = consoper(ctx, "realtime", realtime, 1, 0);
+    INSTALL;
+    op = consoper(ctx, "usertime", usertime, 1, 0);
+    INSTALL;
     //languagelevel
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "product"),
             xpost_object_cvlit(xpost_string_cons(ctx, strlen(productstr), productstr)));
@@ -337,18 +340,27 @@ int initopx(Xpost_Context *ctx,
     //echo: see opf.c
     //prompt: see init.ps
 
-    op = consoper(ctx, "getenv", Sgetenv, 1, 1, stringtype); INSTALL;
-    op = consoper(ctx, "putenv", SSputenv, 0, 2, stringtype, stringtype); INSTALL;
+    op = consoper(ctx, "getenv", Sgetenv, 1, 1, stringtype);
+    INSTALL;
+    op = consoper(ctx, "putenv", SSputenv, 0, 2, stringtype, stringtype);
+    INSTALL;
 
     op = consoper(ctx, ".swap", _array_swap, 0, 3,
-            arraytype, integertype, integertype); INSTALL;
+            arraytype, integertype, integertype);
+    INSTALL;
 
-    op = consoper(ctx, "traceon", traceon, 0, 0); INSTALL;
-    op = consoper(ctx, "traceoff", traceoff, 0, 0); INSTALL;
-    op = consoper(ctx, "debugloadon", debugloadon, 0, 0); INSTALL;
-    op = consoper(ctx, "debugloadoff", debugloadoff, 0, 0); INSTALL;
-    op = consoper(ctx, "dumpnames", Odumpnames, 0, 0); INSTALL;
-    op = consoper(ctx, "dumpvm", dumpvm, 0, 0); INSTALL;
+    op = consoper(ctx, "traceon", traceon, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "traceoff", traceoff, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "debugloadon", debugloadon, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "debugloadoff", debugloadoff, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "dumpnames", Odumpnames, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "dumpvm", dumpvm, 0, 0);
+    INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */

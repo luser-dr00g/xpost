@@ -183,13 +183,19 @@ int initopv(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "save", Zsave, 1, 0); INSTALL;
-    op = consoper(ctx, "restore", Vrestore, 0, 1, savetype); INSTALL;
-    op = consoper(ctx, "setglobal", Bsetglobal, 0, 1, booleantype); INSTALL;
-    op = consoper(ctx, "currentglobal", Zcurrentglobal, 1, 0); INSTALL;
-    op = consoper(ctx, "gcheck", Agcheck, 1, 1, anytype); INSTALL;
+    op = consoper(ctx, "save", Zsave, 1, 0);
+    INSTALL;
+    op = consoper(ctx, "restore", Vrestore, 0, 1, savetype);
+    INSTALL;
+    op = consoper(ctx, "setglobal", Bsetglobal, 0, 1, booleantype);
+    INSTALL;
+    op = consoper(ctx, "currentglobal", Zcurrentglobal, 1, 0);
+    INSTALL;
+    op = consoper(ctx, "gcheck", Agcheck, 1, 1, anytype);
+    INSTALL;
 #if 0
-    op = consoper(ctx, "vmstatus", Zvmstatus, 3, 0); INSTALL;
+    op = consoper(ctx, "vmstatus", Zvmstatus, 3, 0);
+    INSTALL;
 #endif
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);

@@ -504,7 +504,7 @@ int initop(Xpost_Context *ctx)
         return 0;
     }
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "systemdict"), sd);
-    xpost_stack_push(ctx->lo, ctx->ds, sd);
+    xpost_stack_push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
     tab = NULL;
     ent = xpost_object_get_ent(sd);
     xpost_memory_table_find_relative(ctx->gl, &tab, &ent);
@@ -524,7 +524,8 @@ int initop(Xpost_Context *ctx)
     //printf("\nops:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 //#endif
 
-    op = consoper(ctx, "breakhere", breakhere, 0, 0); INSTALL;
+    op = consoper(ctx, "breakhere", breakhere, 0, 0);
+    INSTALL;
 
     initopst(ctx, sd);
     //printf("\nopst:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
@@ -572,7 +573,6 @@ int initop(Xpost_Context *ctx)
 #endif
     initbgrops(ctx, sd);
 
-    //xpost_stack_push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
 
 #ifdef DEBUGOP
     printf("final sd:\n");
