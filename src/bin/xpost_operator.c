@@ -530,7 +530,7 @@ int initop(Xpost_Context *ctx)
     initopst(ctx, sd);
     //printf("\nopst:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopar(ctx, sd);
+    xpost_oper_init_array_ops(ctx, sd);
     //printf("\nopar:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopdi(ctx, sd);

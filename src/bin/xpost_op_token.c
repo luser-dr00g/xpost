@@ -374,7 +374,7 @@ int grok (Xpost_Context *ctx,
                           break;
                       xpost_stack_push(ctx->lo, ctx->os, t);
                   }
-                  arrtomark(ctx);  // ie. the /] operator
+                  xpost_op_array_to_mark(ctx);  // ie. the /] operator
                   //return xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
                   *retval = xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
                   return 0;
