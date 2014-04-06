@@ -136,12 +136,16 @@ int initopparam(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "vmreclaim", vmreclaim, 0, 1, integertype); INSTALL;
-    op = consoper(ctx, "vmstatus", vmstatus, 3, 0); INSTALL;
-    op = consoper(ctx, "globalvmstatus", globalvmstatus, 3, 0); INSTALL;
+    op = consoper(ctx, "vmreclaim", vmreclaim, 0, 1, integertype);
+    INSTALL;
+    op = consoper(ctx, "vmstatus", vmstatus, 3, 0);
+    INSTALL;
+    op = consoper(ctx, "globalvmstatus", globalvmstatus, 3, 0);
+    INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    op = consoper(ctx, "save", Zsave, 1, 0); INSTALL;
+    op = consoper(ctx, "save", Zsave, 1, 0);
+    INSTALL;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
 
     return 0;

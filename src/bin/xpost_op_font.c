@@ -913,24 +913,35 @@ int initopfont (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "findfont", _findfont, 1, 1, nametype); INSTALL;
-    op = consoper(ctx, "findfont", _findfont, 1, 1, stringtype); INSTALL;
-    op = consoper(ctx, "scalefont", _scalefont, 1, 2, dicttype, floattype); INSTALL;
-    //op = consoper(ctx, "makefont", _makefont, 1, 2, dicttype, arraytype); INSTALL;
-    op = consoper(ctx, "setfont", _setfont, 1, 1, dicttype); INSTALL;
+    op = consoper(ctx, "findfont", _findfont, 1, 1, nametype);
+    INSTALL;
+    op = consoper(ctx, "findfont", _findfont, 1, 1, stringtype);
+    INSTALL;
+    op = consoper(ctx, "scalefont", _scalefont, 1, 2, dicttype, floattype);
+    INSTALL;
+    //op = consoper(ctx, "makefont", _makefont, 1, 2, dicttype, arraytype);
+    INSTALL;
+    op = consoper(ctx, "setfont", _setfont, 1, 1, dicttype);
+    INSTALL;
 
-    op = consoper(ctx, "show", _show, 0, 1, stringtype); INSTALL;
+    op = consoper(ctx, "show", _show, 0, 1, stringtype);
+    INSTALL;
     op = consoper(ctx, "ashow", _ashow, 0, 3,
-        floattype, floattype, stringtype); INSTALL;
+        floattype, floattype, stringtype);
+    INSTALL;
     op = consoper(ctx, "widthshow", _widthshow, 0, 4,
-        floattype, floattype, integertype, stringtype); INSTALL;
+        floattype, floattype, integertype, stringtype);
+    INSTALL;
     op = consoper(ctx, "awidthshow", _awidthshow, 0, 6,
         floattype, floattype, integertype,
-        floattype, floattype, stringtype); INSTALL;
-    op = consoper(ctx, "stringwidth", _stringwidth, 2, 1, stringtype); INSTALL;
+        floattype, floattype, stringtype);
+    INSTALL;
+    op = consoper(ctx, "stringwidth", _stringwidth, 2, 1, stringtype);
+    INSTALL;
     /*
     op = consoper(ctx, "kshow", _kshow, 0, 2,
-        proctype, stringtype); INSTALL;
+        proctype, stringtype);
+        INSTALL;
     */
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);

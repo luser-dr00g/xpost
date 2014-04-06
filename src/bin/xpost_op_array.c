@@ -318,29 +318,40 @@ int initopar (Xpost_Context *ctx,
     optab = (void *)(ctx->gl->base + optadr);
 
     op = consoper(ctx, "array", Iarray, 1, 1,
-            integertype); INSTALL;
+            integertype);
+    INSTALL;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "["), mark);
     if (ret)
         return 0;
-    op = consoper(ctx, "]", arrtomark, 1, 0); INSTALL;
+    op = consoper(ctx, "]", arrtomark, 1, 0);
+    INSTALL;
     op = consoper(ctx, "length", Alength, 1, 1,
-            arraytype); INSTALL;
+            arraytype);
+    INSTALL;
     op = consoper(ctx, "get", Aget, 1, 2,
-            arraytype, integertype); INSTALL;
+            arraytype, integertype);
+    INSTALL;
     op = consoper(ctx, "put", Aput, 0, 3,
-            arraytype, integertype, anytype); INSTALL;
+            arraytype, integertype, anytype);
+    INSTALL;
     op = consoper(ctx, "getinterval", Agetinterval, 1, 3,
-            arraytype, integertype, integertype); INSTALL;
+            arraytype, integertype, integertype);
+    INSTALL;
     op = consoper(ctx, "putinterval", Aputinterval, 0, 3,
-            arraytype, integertype, arraytype); INSTALL;
+            arraytype, integertype, arraytype);
+    INSTALL;
     op = consoper(ctx, "aload", Aaload, 1, 1,
-            arraytype); INSTALL;
+            arraytype);
+    INSTALL;
     op = consoper(ctx, "astore", Aastore, 1, 1,
-            arraytype); INSTALL;
+            arraytype);
+    INSTALL;
     op = consoper(ctx, "copy", Acopy, 1, 2,
-            arraytype, arraytype); INSTALL;
+            arraytype, arraytype);
+    INSTALL;
     op = consoper(ctx, "forall", Aforall, 0, 2,
-            arraytype, proctype); INSTALL;
+            arraytype, proctype);
+    INSTALL;
 
     return 1;
 }

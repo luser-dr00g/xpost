@@ -266,27 +266,42 @@ int initopb(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype); INSTALL;
-    op = consoper(ctx, "ne", Ane, 1, 2, anytype, anytype); INSTALL;
-    op = consoper(ctx, "ge", Age, 1, 2, anytype, anytype); INSTALL;
-    op = consoper(ctx, "gt", Agt, 1, 2, anytype, anytype); INSTALL;
-    op = consoper(ctx, "le", Ale, 1, 2, anytype, anytype); INSTALL;
-    op = consoper(ctx, "lt", Alt, 1, 2, anytype, anytype); INSTALL;
-    op = consoper(ctx, "and", Band, 1, 2, booleantype, booleantype); INSTALL;
-    op = consoper(ctx, "and", Iand, 1, 2, integertype, integertype); INSTALL;
-    op = consoper(ctx, "not", Bnot, 1, 1, booleantype); INSTALL;
-    op = consoper(ctx, "not", Inot, 1, 1, integertype); INSTALL;
-    op = consoper(ctx, "or", Bor, 1, 2, booleantype, booleantype); INSTALL;
-    op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype); INSTALL;
-    op = consoper(ctx, "xor", Bxor, 1, 2, booleantype, booleantype); INSTALL;
-    op = consoper(ctx, "xor", Ixor, 1, 2, integertype, integertype); INSTALL;
+    op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype);
+    INSTALL;
+    op = consoper(ctx, "ne", Ane, 1, 2, anytype, anytype);
+    INSTALL;
+    op = consoper(ctx, "ge", Age, 1, 2, anytype, anytype);
+    INSTALL;
+    op = consoper(ctx, "gt", Agt, 1, 2, anytype, anytype);
+    INSTALL;
+    op = consoper(ctx, "le", Ale, 1, 2, anytype, anytype);
+    INSTALL;
+    op = consoper(ctx, "lt", Alt, 1, 2, anytype, anytype);
+    INSTALL;
+    op = consoper(ctx, "and", Band, 1, 2, booleantype, booleantype);
+    INSTALL;
+    op = consoper(ctx, "and", Iand, 1, 2, integertype, integertype);
+    INSTALL;
+    op = consoper(ctx, "not", Bnot, 1, 1, booleantype);
+    INSTALL;
+    op = consoper(ctx, "not", Inot, 1, 1, integertype);
+    INSTALL;
+    op = consoper(ctx, "or", Bor, 1, 2, booleantype, booleantype);
+    INSTALL;
+    op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype);
+    INSTALL;
+    op = consoper(ctx, "xor", Bxor, 1, 2, booleantype, booleantype);
+    INSTALL;
+    op = consoper(ctx, "xor", Ixor, 1, 2, integertype, integertype);
+    INSTALL;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "true"), xpost_bool_cons(1));
     if (ret)
         return 0;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "false"), xpost_bool_cons(0));
     if (ret)
         return 0;
-    op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype); INSTALL;
+    op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype);
+    INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL); */
 
