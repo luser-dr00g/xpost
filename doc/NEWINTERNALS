@@ -124,7 +124,7 @@ For debugging, the DBG level, of course is very helpful. But it
 may be necessary to redirect output to an external file, possibly
 with `tee`. There is a lot of output.
 Enabling the TRACE variable, which may be done dynamically in gdb
-with `set var DEBUG=1`, writes the trace statements to the filename
+with `set var TRACE=1`, writes the trace statements to the filename
 announced at program startup. This output may be captured in another
 terminal using `tail -F`.
 
