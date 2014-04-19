@@ -111,6 +111,8 @@ syntax of right-multiplying matrices. Whereas Postscript's model of
 left-multiplying is more appropriate for its reverse-polish syntax.
 
 
+Logging
+
 The logging system, implemented by Vincent Torri, is controlled by
 the environment variable XPOST_LOG_LEVEL with an integer code,
 meaning:
@@ -128,4 +130,116 @@ with `set var TRACE=1`, writes the trace statements to the filename
 announced at program startup. This output may be captured in another
 terminal using `tail -F`.
 
+[I'm learning more about pty's and investigating how to open a 
+dedicated error window. But this won't really work in the library,
+I think. Another option is to set the trace file from the command-line
+options. And a separate mechanism for the api, I suppose.]
+
+Operators
+
+The operator object uses a combined ent+offset field to index
+an operator table, which lives in global vm. The optab is populated
+at init() by `struct oper` objects which contain a an array of
+type signatures and associated function pointers. The signatures
+are matched against the objects on the stack and for the first
+matching signature, the associated function pointer is called.
+The C function receives all of its declared (via signature)
+operands as normal function arguments, thanks to fiendishly-clever
+C hackery abusing the `switch` statement, and unprototyped function
+pointers.
+
+Systemdict Operators.
+
+At the same time the optab is populated with `struct oper`s, 
+the systemdict is populated with the operator's name and 
+a postscript-level operator object. Each xpost_op_*.c file
+implements a different functional group of operators.
+
+Devices
+
+A Device is much like systemdict, it is a dictionary of name->operator
+pairs. There are 2 "base classes", implemented entirely in postscript,
+which can be sub-classed, overriding as many operators as desired,
+in order to capture graphical output or optimize graphical throughput.
+
+Here is the base class for 8bit gray-scale output. RGB differs only 
+in the number `val` objects passed on the stack to each procedure.
+
+From the data/pgmimage.ps file:
+
+% PGMIMAGE device handles 8bit images.
+%
+% It uses the full range 0-255 of values and does not calculate
+% the actual maximum value in the data before transmitting. MaxVal
+% is always 255.
+%
+% In the list of procedures below, PGMIMAGE is the Class dictionary,
+% IMAGE is an instance returned by Create.
+%
+% procedures:
+%           width height PGMIMAGE  Create  ->  IMAGE
+                    creates an internal data structure for a widthXheight image
+
+%                   val x y IMAGE  PutPix  ->  -
+                    set the color value of a single pixel
+
+%                       x y IMAGE  GetPix  ->  val
+                    currently not implemented in window devices
+
+%           val x1 y1 x2 y2 IMAGE  DrawLine  ->  -
+                    calls PutPix in a Bresenham-DDA line including endpoints
+                    used as a special case when drawing 0.0 .. 1.0 pixel lines
+                    used by FillRect and FillPoly for each scanline
+
+%      val x y width height IMAGE  DrawRect  ->  -
+                    not used by postscript graphics
+
+%      val x y width height IMAGE  FillRect  ->  -
+                    calls DrawLine for each scanline
+
+%               val polygon IMAGE  FillPoly  ->  -
+                    calls DrawLine for each scanline
+
+%                           IMAGE  Emit  ->  -
+                    output ascii PGM file
+
+% eg:
+% PS> /dev 40 20 newPGMIMAGEdevice def
+% PS> 55 1 1 38 17 dev dup /DrawLine get exec
+% PS> 77 9 14 3 3 dev dup /FillRect get exec
+% PS> dev dup /Emit get exec
+
+For the minimal work to get the graphics data at the C level,
+you can override the /Emit member of the derived class.
+
+The xcb device is hard-patched into the initialization 
+procedures and installs two operators into systemdict:
+loadxcbdevice() and loadxcbdevicecont(). The loading is
+divided into two C functions, so we can call into postscript
+and then back again. We use postscript to handle invoking
+the base class /Create method, and then modifying the Device
+object and re-using that as a new class, the xcbdevice class.
+
+http://code.google.com/p/xpost/source/browse/src/bin/xpost_dev_xcb.c
+
+loadxcbdevicecont() is responsible for overriding the Postscript
+procedures with new operator functions.
+
+The Create operator is also divided into _create() and _create_cont().
+Again, this is so it may call the base class's create method whether
+it is a postscript procedure or a C function (postscript operator).
+
+The xpost_dev_xcb.c:_create_cont() operator function actually
+creates the window and maps it. Then for speed, it overrides all
+of the drawing methods: PutPix, DrawLine, FillRect, and FillPoly.
+
+A device may (but is not required to) implement a /Flush method
+which should flush any buffered drawing operations and syncronize
+the output with the execution of the postscript program.
+
+Currently only a single running device is supported as it requires
+constant attention by the main loop of the interpreter in the 
+form of the event-handler function. For multiple devices, we
+would need to have a list of active window devices which need
+event-handling.
 
