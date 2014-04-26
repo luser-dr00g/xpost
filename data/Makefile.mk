@@ -28,6 +28,7 @@ data/mat.ps \
 data/teapot \
 data/sin1x.ps \
 data/dancingmen.ps \
+data/teamath.ps \
 data/bitfont.ps
 
 psfilesdir = $(pkgdatadir)
