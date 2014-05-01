@@ -997,7 +997,7 @@ int newwin32device (Xpost_Context *ctx,
        an invalid name should cause an undefined error to propagate
        with extra handling here */
 
-    ret = Aload(ctx, xpost_name_cons(ctx, "win32DEVICE"));
+    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "win32DEVICE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
@@ -1025,7 +1025,7 @@ int loadwin32device (Xpost_Context *ctx)
     int ret;
 
     /* see note in newwin32device above */
-    ret = Aload(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
+    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);

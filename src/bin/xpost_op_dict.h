@@ -35,7 +35,7 @@
 
 extern int DEBUGLOAD;
 
-int Aload(Xpost_Context *ctx, Xpost_Object K);
-int initopdi(Xpost_Context *ctx, Xpost_Object sd);
+int xpost_op_any_load(Xpost_Context *ctx, Xpost_Object K);
+int xpost_oper_init_dict_ops (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

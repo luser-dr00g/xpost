@@ -396,7 +396,7 @@ int grok (Xpost_Context *ctx,
                       //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
                       if (DEBUGLOAD)
                           printf("\ntoken: loading immediate name %s\n", s);
-                      Aload(ctx, xpost_object_cvx(xpost_name_cons(ctx, s)));
+                      xpost_op_any_load(ctx, xpost_object_cvx(xpost_name_cons(ctx, s)));
                       ret = xpost_stack_pop(ctx->lo, ctx->os);
                       if (DEBUGLOAD)
                           xpost_object_dump(ret);

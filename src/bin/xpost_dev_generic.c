@@ -75,7 +75,7 @@ void *alloca (size_t);
 #include "xpost_name.h" /* create names */
 
 #include "xpost_operator.h" /* create operators */
-#include "xpost_op_dict.h" /* call Aload operator for convenience */
+#include "xpost_op_dict.h" /* call xpost_op_any_load operator for convenience */
 #include "xpost_dev_generic.h" /* check prototypes */
 
 struct point {
