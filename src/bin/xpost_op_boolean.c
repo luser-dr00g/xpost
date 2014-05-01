@@ -77,7 +77,7 @@ void *alloca (size_t);
 /* any1 any2  eq  bool
    test equal */
 static
-int Aeq (Xpost_Context *ctx,
+int xpost_op_any_any_eq (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -89,7 +89,7 @@ int Aeq (Xpost_Context *ctx,
 /* any1 any2  ne  bool
    test not equal */
 static
-int Ane (Xpost_Context *ctx,
+int xpost_op_any_any_ne (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -101,7 +101,7 @@ int Ane (Xpost_Context *ctx,
 /* any1 any2  ge  bool
    test greater or equal */
 static
-int Age (Xpost_Context *ctx,
+int xpost_op_any_any_ge (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -113,7 +113,7 @@ int Age (Xpost_Context *ctx,
 /* any1 any2  gt  bool
    test greater than */
 static
-int Agt (Xpost_Context *ctx,
+int xpost_op_any_any_gt (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -125,7 +125,7 @@ int Agt (Xpost_Context *ctx,
 /* any1 any2  le  bool
    test less or equal */
 static
-int Ale (Xpost_Context *ctx,
+int xpost_op_any_any_le (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -137,7 +137,7 @@ int Ale (Xpost_Context *ctx,
 /* any1 any2  lt  bool
    test less than */
 static
-int Alt (Xpost_Context *ctx,
+int xpost_op_any_any_lt (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -149,7 +149,7 @@ int Alt (Xpost_Context *ctx,
 /* bool1|int1 bool2|int2  and  bool3|int3
    logical|bitwise and */
 static
-int Band (Xpost_Context *ctx,
+int xpost_op_bool_bool_and (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -159,7 +159,7 @@ int Band (Xpost_Context *ctx,
 }
 
 static
-int Iand (Xpost_Context *ctx,
+int xpost_op_int_int_and (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -171,7 +171,7 @@ int Iand (Xpost_Context *ctx,
 /* bool1|int1  not  bool2|int2
    logical|bitwise not */
 static
-int Bnot (Xpost_Context *ctx,
+int xpost_op_bool_not (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os,
@@ -180,7 +180,7 @@ int Bnot (Xpost_Context *ctx,
 }
 
 static
-int Inot (Xpost_Context *ctx,
+int xpost_op_int_not (Xpost_Context *ctx,
            Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os,
@@ -191,7 +191,7 @@ int Inot (Xpost_Context *ctx,
 /* bool1|int1 bool2|int2  or  bool3|int3
    logical|bitwise inclusive or */
 static
-int Bor (Xpost_Context *ctx,
+int xpost_op_bool_bool_or (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -201,7 +201,7 @@ int Bor (Xpost_Context *ctx,
 }
 
 static
-int Ior (Xpost_Context *ctx,
+int xpost_op_int_int_or (Xpost_Context *ctx,
           Xpost_Object x,
           Xpost_Object y)
 {
@@ -213,7 +213,7 @@ int Ior (Xpost_Context *ctx,
 /* bool1|int1 bool2|int2  xor  bool3|int3
    exclusive or */
 static
-int Bxor (Xpost_Context *ctx,
+int xpost_op_bool_bool_xor (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -223,7 +223,7 @@ int Bxor (Xpost_Context *ctx,
 }
 
 static
-int Ixor (Xpost_Context *ctx,
+int xpost_op_int_int_xor (Xpost_Context *ctx,
            Xpost_Object x,
            Xpost_Object y)
 {
@@ -240,7 +240,7 @@ int Ixor (Xpost_Context *ctx,
 /* int1 shift  bitshift  int2
    bitwise shift of int1 (positive is left) */
 static
-int Ibitshift (Xpost_Context *ctx,
+int xpost_op_int_int_bitshift (Xpost_Context *ctx,
                 Xpost_Object x,
                 Xpost_Object y)
 {
@@ -253,7 +253,7 @@ int Ibitshift (Xpost_Context *ctx,
     return 0;
 }
 
-int initopb(Xpost_Context *ctx,
+int xpost_oper_init_bool_ops(Xpost_Context *ctx,
              Xpost_Object sd)
 {
     oper *optab;
@@ -266,33 +266,33 @@ int initopb(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype);
+    op = consoper(ctx, "eq", xpost_op_any_any_eq, 1, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "ne", Ane, 1, 2, anytype, anytype);
+    op = consoper(ctx, "ne", xpost_op_any_any_ne, 1, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "ge", Age, 1, 2, anytype, anytype);
+    op = consoper(ctx, "ge", xpost_op_any_any_ge, 1, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "gt", Agt, 1, 2, anytype, anytype);
+    op = consoper(ctx, "gt", xpost_op_any_any_gt, 1, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "le", Ale, 1, 2, anytype, anytype);
+    op = consoper(ctx, "le", xpost_op_any_any_le, 1, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "lt", Alt, 1, 2, anytype, anytype);
+    op = consoper(ctx, "lt", xpost_op_any_any_lt, 1, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "and", Band, 1, 2, booleantype, booleantype);
+    op = consoper(ctx, "and", xpost_op_bool_bool_and, 1, 2, booleantype, booleantype);
     INSTALL;
-    op = consoper(ctx, "and", Iand, 1, 2, integertype, integertype);
+    op = consoper(ctx, "and", xpost_op_int_int_and, 1, 2, integertype, integertype);
     INSTALL;
-    op = consoper(ctx, "not", Bnot, 1, 1, booleantype);
+    op = consoper(ctx, "not", xpost_op_bool_not, 1, 1, booleantype);
     INSTALL;
-    op = consoper(ctx, "not", Inot, 1, 1, integertype);
+    op = consoper(ctx, "not", xpost_op_int_not, 1, 1, integertype);
     INSTALL;
-    op = consoper(ctx, "or", Bor, 1, 2, booleantype, booleantype);
+    op = consoper(ctx, "or", xpost_op_bool_bool_or, 1, 2, booleantype, booleantype);
     INSTALL;
-    op = consoper(ctx, "or", Ior, 1, 2, integertype, integertype);
+    op = consoper(ctx, "or", xpost_op_int_int_or, 1, 2, integertype, integertype);
     INSTALL;
-    op = consoper(ctx, "xor", Bxor, 1, 2, booleantype, booleantype);
+    op = consoper(ctx, "xor", xpost_op_bool_bool_xor, 1, 2, booleantype, booleantype);
     INSTALL;
-    op = consoper(ctx, "xor", Ixor, 1, 2, integertype, integertype);
+    op = consoper(ctx, "xor", xpost_op_int_int_xor, 1, 2, integertype, integertype);
     INSTALL;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "true"), xpost_bool_cons(1));
     if (ret)
@@ -300,7 +300,7 @@ int initopb(Xpost_Context *ctx,
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "false"), xpost_bool_cons(0));
     if (ret)
         return 0;
-    op = consoper(ctx, "bitshift", Ibitshift, 1, 2, integertype, integertype);
+    op = consoper(ctx, "bitshift", xpost_op_int_int_bitshift, 1, 2, integertype, integertype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL); */

@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_BOOLEAN_H
 #define XPOST_OP_BOOLEAN_H
 
-int initopb(Xpost_Context *ctx, Xpost_Object sd);
+int xpost_oper_init_bool_ops(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

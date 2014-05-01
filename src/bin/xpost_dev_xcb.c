@@ -79,7 +79,7 @@ void *alloca (size_t);
 #include "xpost_name.h" /* create names */
 
 #include "xpost_operator.h" /* create operators */
-#include "xpost_op_dict.h" /* call Aload operator for convenience */
+#include "xpost_op_dict.h" /* call xpost_op_any_load operator for convenience */
 #include "xpost_dev_xcb.h" /* check prototypes */
 
 #define XCB_ALL_PLANES ~0
@@ -245,6 +245,14 @@ int _create_cont (Xpost_Context *ctx,
                 &value);
         xcb_icccm_set_wm_name(private.c, private.win, XCB_ATOM_STRING, 8, strlen("Xpost"), "Xpost");
     }
+#if 0
+    {
+        xcb_wm_hints_t hints;
+        hints.flags = XCB_WM_HINT_INPUT;
+        hints.input = 0;
+        xcb_set_wm_hints(private.c, private.win, &hints);
+    }
+#endif
     xcb_map_window(private.c, private.win);
     xcb_flush(private.c);
 
@@ -701,7 +709,7 @@ int newxcbdevice (Xpost_Context *ctx,
 
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
-    ret = Aload(ctx, xpost_name_cons(ctx, "xcbDEVICE"));
+    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "xcbDEVICE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
@@ -725,7 +733,7 @@ int loadxcbdevice (Xpost_Context *ctx)
     Xpost_Object classdic;
     int ret;
 
-    ret = Aload(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
+    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);

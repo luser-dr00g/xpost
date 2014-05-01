@@ -533,13 +533,13 @@ int initop(Xpost_Context *ctx)
     xpost_oper_init_array_ops(ctx, sd);
     //printf("\nopar:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopdi(ctx, sd);
+    xpost_oper_init_dict_ops(ctx, sd);
     //printf("\nopdi:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopb(ctx, sd);
+    xpost_oper_init_bool_ops(ctx, sd);
     //printf("\nopb:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopc(ctx, sd);
+    xpost_oper_init_control_ops(ctx, sd);
     //printf("\nopc:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     initopt(ctx, sd);

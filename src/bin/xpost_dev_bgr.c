@@ -48,7 +48,7 @@
 #include "xpost_name.h" /* create names */
 
 #include "xpost_operator.h" /* create operators */
-#include "xpost_op_dict.h" /* call Aload operator for convenience */
+#include "xpost_op_dict.h" /* call load operator for convenience */
 #include "xpost_dev_bgr.h" /* check prototypes */
 
 typedef struct
@@ -228,7 +228,7 @@ int newbgrdevice (Xpost_Context *ctx,
 
     xpost_stack_push(ctx->lo, ctx->os, width);
     xpost_stack_push(ctx->lo, ctx->os, height);
-    ret = Aload(ctx, xpost_name_cons(ctx, "bgrDEVICE"));
+    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "bgrDEVICE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
@@ -252,7 +252,7 @@ int loadbgrdevice (Xpost_Context *ctx)
     Xpost_Object classdic;
     int ret;
 
-    ret = Aload(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
+    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);

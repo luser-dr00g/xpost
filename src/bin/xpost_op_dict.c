@@ -53,13 +53,13 @@
 #include "xpost_op_dict.h"
 
 int DEBUGLOAD = 0;
-int Awhere(Xpost_Context *ctx, Xpost_Object K); /* forward decl.
+int xpost_op_any_where (Xpost_Context *ctx, Xpost_Object K); /* forward decl.
                                                    store uses where */
 
 /* int  dict  dict
    create dictionary with capacity for int elements */
 static
-int Idict(Xpost_Context *ctx,
+int xpost_op_int_dict(Xpost_Context *ctx,
            Xpost_Object I)
 {
     Xpost_Object dic;
@@ -76,7 +76,7 @@ int Idict(Xpost_Context *ctx,
 /* mark k_1 v_1 ... k_N v_N  >>  dict
    construct dictionary from pairs on stack */
 static
-int dictomark(Xpost_Context *ctx)
+int xpost_op_dict_to_mark(Xpost_Context *ctx)
 {
     int i;
     Xpost_Object d, k, v;
@@ -110,7 +110,7 @@ int dictomark(Xpost_Context *ctx)
 /* dict  length  int
    number of key-value pairs in dict */
 static
-int Dlength(Xpost_Context *ctx,
+int xpost_op_dict_length(Xpost_Context *ctx,
              Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_dict_length_memory (
@@ -122,7 +122,7 @@ int Dlength(Xpost_Context *ctx,
 /* dict  maxlength  int
    capacity of dict */
 static
-int Dmaxlength(Xpost_Context *ctx,
+int xpost_op_dict_maxlength(Xpost_Context *ctx,
                 Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_dict_max_length_memory (
@@ -134,7 +134,7 @@ int Dmaxlength(Xpost_Context *ctx,
 /* dict  begin  -
    push dict on dict stack */
 static
-int Dbegin(Xpost_Context *ctx,
+int xpost_op_dict_begin(Xpost_Context *ctx,
             Xpost_Object D)
 {
     if (!xpost_stack_push(ctx->lo, ctx->ds, D))
@@ -145,7 +145,7 @@ int Dbegin(Xpost_Context *ctx,
 /* -  end  -
    pop dict stack */
 static
-int Zend(Xpost_Context *ctx)
+int xpost_op_end(Xpost_Context *ctx)
 {
     if (xpost_stack_count(ctx->lo, ctx->ds) <= 3)
         return dictstackunderflow;
@@ -156,7 +156,7 @@ int Zend(Xpost_Context *ctx)
 /* key value  def  -
    associate key with value in current dict */
 static
-int Adef(Xpost_Context *ctx,
+int xpost_op_any_any_def(Xpost_Context *ctx,
           Xpost_Object K,
           Xpost_Object V)
 {
@@ -173,7 +173,7 @@ int Adef(Xpost_Context *ctx,
 
 /* key  load  value
    search dict stack for key and return associated value */
-int Aload(Xpost_Context *ctx,
+int xpost_op_any_load(Xpost_Context *ctx,
            Xpost_Object K)
 {
     int i;
@@ -216,12 +216,12 @@ int Aload(Xpost_Context *ctx,
 /* key value  store  -
    replace topmost definition of key */
 static
-int Astore(Xpost_Context *ctx,
+int xpost_op_any_store(Xpost_Context *ctx,
             Xpost_Object K,
             Xpost_Object V)
 {
     Xpost_Object D;
-    Awhere(ctx, K);
+    xpost_op_any_where(ctx, K);
     if (xpost_stack_pop(ctx->lo, ctx->os).int_.val) { /* booleantype */
         D = xpost_stack_pop(ctx->lo, ctx->os);
     } else {
@@ -234,7 +234,7 @@ int Astore(Xpost_Context *ctx,
 /* dict key  get  any
    get value associated with key in dict */
 static
-int DAget(Xpost_Context *ctx,
+int xpost_op_dict_any_get(Xpost_Context *ctx,
            Xpost_Object D,
            Xpost_Object K)
 {
@@ -250,7 +250,7 @@ int DAget(Xpost_Context *ctx,
 /* dict key value  put  -
    associate key with value in dict */
 static
-int DAAput(Xpost_Context *ctx,
+int xpost_op_dict_any_any_put(Xpost_Context *ctx,
             Xpost_Object D,
             Xpost_Object K,
             Xpost_Object V)
@@ -262,7 +262,7 @@ int DAAput(Xpost_Context *ctx,
 /* dict key  undef  -
    remove key and its value in dict */
 static
-int DAundef(Xpost_Context *ctx,
+int xpost_op_dict_any_undef(Xpost_Context *ctx,
              Xpost_Object D,
              Xpost_Object K)
 {
@@ -274,7 +274,7 @@ int DAundef(Xpost_Context *ctx,
 /* dict key  known  bool
    test whether key is in dict */
 static
-int DAknown(Xpost_Context *ctx,
+int xpost_op_dict_any_known(Xpost_Context *ctx,
              Xpost_Object D,
              Xpost_Object K)
 {
@@ -291,7 +291,7 @@ int DAknown(Xpost_Context *ctx,
 
 /* key  where  dict true -or- false
    find dict in which key is defined */
-int Awhere(Xpost_Context *ctx,
+int xpost_op_any_where(Xpost_Context *ctx,
             Xpost_Object K)
 {
     int i;
@@ -311,7 +311,7 @@ int Awhere(Xpost_Context *ctx,
 /* dict1 dict2  copy  dict2
    copy contents of dict1 to dict2 */
 static
-int Dcopy(Xpost_Context *ctx,
+int xpost_op_dict_copy(Xpost_Context *ctx,
            Xpost_Object S,
            Xpost_Object D)
 {
@@ -344,7 +344,7 @@ int Dcopy(Xpost_Context *ctx,
 /* dict proc  forall  -
    execute proc for each key value pair in dict */
 static
-int DPforall (Xpost_Context *ctx,
+int xpost_op_dict_proc_forall (Xpost_Context *ctx,
                Xpost_Object D,
                Xpost_Object P)
 {
@@ -412,7 +412,7 @@ int DPforall (Xpost_Context *ctx,
 /* -  currentdict  dict
    push current dict on operand stack */
 static
-int Zcurrentdict(Xpost_Context *ctx)
+int xpost_op_currentdict(Xpost_Context *ctx)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0)))
         return stackoverflow;
@@ -430,7 +430,7 @@ int Zcurrentdict(Xpost_Context *ctx)
 /* -  countdictstack  int
    count elements on dict stack */
 static
-int Zcountdictstack(Xpost_Context *ctx)
+int xpost_op_countdictstack(Xpost_Context *ctx)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_stack_count(ctx->lo, ctx->ds))))
         return stackoverflow;
@@ -440,7 +440,7 @@ int Zcountdictstack(Xpost_Context *ctx)
 /* array  dictstack  subarray
    copy dict stack into array */
 static
-int Adictstack(Xpost_Context *ctx,
+int xpost_op_array_dictstack(Xpost_Context *ctx,
                 Xpost_Object A)
 {
     Xpost_Object subarr;
@@ -456,7 +456,7 @@ int Adictstack(Xpost_Context *ctx,
 }
 
 static
-int cleardictstack(Xpost_Context *ctx)
+int xpost_op_cleardictstack(Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->ds);
     while (z-- > 3) {
@@ -478,7 +478,7 @@ int cleardictstack(Xpost_Context *ctx)
     return 0;
 }
 
-int initopdi(Xpost_Context *ctx,
+int xpost_oper_init_dict_ops (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -490,51 +490,51 @@ int initopdi(Xpost_Context *ctx,
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
-    op = consoper(ctx, "dict", Idict, 1, 1, integertype);
+    op = consoper(ctx, "dict", xpost_op_int_dict, 1, 1, integertype);
     INSTALL;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "<<"), mark);
     if (ret)
         return 0;
-    op = consoper(ctx, ">>", dictomark, 1, 0);
+    op = consoper(ctx, ">>", xpost_op_dict_to_mark, 1, 0);
     INSTALL;
-    op = consoper(ctx, "length", Dlength, 1, 1, dicttype);
+    op = consoper(ctx, "length", xpost_op_dict_length, 1, 1, dicttype);
     INSTALL;
-    op = consoper(ctx, "maxlength", Dmaxlength, 1, 1, dicttype);
+    op = consoper(ctx, "maxlength", xpost_op_dict_maxlength, 1, 1, dicttype);
     INSTALL;
-    op = consoper(ctx, "begin", Dbegin, 0, 1, dicttype);
+    op = consoper(ctx, "begin", xpost_op_dict_begin, 0, 1, dicttype);
     INSTALL;
-    op = consoper(ctx, "end", Zend, 0, 0);
+    op = consoper(ctx, "end", xpost_op_end, 0, 0);
     INSTALL;
-    op = consoper(ctx, "def", Adef, 0, 2, anytype, anytype);
+    op = consoper(ctx, "def", xpost_op_any_any_def, 0, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "load", Aload, 1, 1, anytype);
+    op = consoper(ctx, "load", xpost_op_any_load, 1, 1, anytype);
     INSTALL;
     ctx->opcode_shortcuts.load = op.mark_.padw;
-    op = consoper(ctx, "store", Astore, 0, 2, anytype, anytype);
+    op = consoper(ctx, "store", xpost_op_any_store, 0, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "get", DAget, 1, 2, dicttype, anytype);
+    op = consoper(ctx, "get", xpost_op_dict_any_get, 1, 2, dicttype, anytype);
     INSTALL;
-    op = consoper(ctx, "put", DAAput, 1, 3,
+    op = consoper(ctx, "put", xpost_op_dict_any_any_put, 1, 3,
             dicttype, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "undef", DAundef, 0, 2, dicttype, anytype);
+    op = consoper(ctx, "undef", xpost_op_dict_any_undef, 0, 2, dicttype, anytype);
     INSTALL;
-    op = consoper(ctx, "known", DAknown, 1, 2, dicttype, anytype);
+    op = consoper(ctx, "known", xpost_op_dict_any_known, 1, 2, dicttype, anytype);
     INSTALL;
-    op = consoper(ctx, "where", Awhere, 2, 1, anytype);
+    op = consoper(ctx, "where", xpost_op_any_where, 2, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "copy", Dcopy, 1, 2, dicttype, dicttype);
+    op = consoper(ctx, "copy", xpost_op_dict_copy, 1, 2, dicttype, dicttype);
     INSTALL;
-    op = consoper(ctx, "forall", DPforall, 0, 2, dicttype, proctype);
+    op = consoper(ctx, "forall", xpost_op_dict_proc_forall, 0, 2, dicttype, proctype);
     INSTALL;
     ctx->opcode_shortcuts.forall = op.mark_.padw;
-    op = consoper(ctx, "currentdict", Zcurrentdict, 1, 0);
+    op = consoper(ctx, "currentdict", xpost_op_currentdict, 1, 0);
     INSTALL;
-    op = consoper(ctx, "countdictstack", Zcountdictstack, 1, 0);
+    op = consoper(ctx, "countdictstack", xpost_op_countdictstack, 1, 0);
     INSTALL;
-    op = consoper(ctx, "dictstack", Adictstack, 1, 1, arraytype);
+    op = consoper(ctx, "dictstack", xpost_op_array_dictstack, 1, 1, arraytype);
     INSTALL;
-    op = consoper(ctx, "cleardictstack", cleardictstack, 0, 0);
+    op = consoper(ctx, "cleardictstack", xpost_op_cleardictstack, 0, 0);
     INSTALL;
     return 0;
 }

@@ -81,7 +81,7 @@ void *alloca (size_t);
 /* any  exec  -
    execute arbitrary object */
 static
-int Aexec (Xpost_Context *ctx,
+int xpost_op_any_exec (Xpost_Context *ctx,
             Xpost_Object O)
 {
     if (!xpost_stack_push(ctx->lo, ctx->es, O))
@@ -92,7 +92,7 @@ int Aexec (Xpost_Context *ctx,
 /* bool proc  if  -
    execute proc if bool is true */
 static
-int BPif (Xpost_Context *ctx,
+int xpost_op_bool_proc_if (Xpost_Context *ctx,
            Xpost_Object B,
            Xpost_Object P)
 {
@@ -106,7 +106,7 @@ int BPif (Xpost_Context *ctx,
    execute proc1 if bool is true,
    proc2 if bool is false */
 static
-int BPPifelse (Xpost_Context *ctx,
+int xpost_op_bool_proc_proc_ifelse (Xpost_Context *ctx,
                 Xpost_Object B,
                 Xpost_Object Then,
                 Xpost_Object Else)
@@ -132,7 +132,7 @@ int BPPifelse (Xpost_Context *ctx,
    execute proc with values from initial by steps
    of increment to limit */
 static
-int IIIPfor (Xpost_Context *ctx,
+int xpost_op_int_int_int_proc_for (Xpost_Context *ctx,
               Xpost_Object init,
               Xpost_Object incr,
               Xpost_Object lim,
@@ -171,7 +171,7 @@ int IIIPfor (Xpost_Context *ctx,
 
 /* same as IIIPfor but for reals */
 static
-int RRRPfor (Xpost_Context *ctx,
+int xpost_op_real_real_real_proc_for (Xpost_Context *ctx,
               Xpost_Object init,
               Xpost_Object incr,
               Xpost_Object lim,
@@ -206,7 +206,7 @@ int RRRPfor (Xpost_Context *ctx,
 /* int proc  repeat  -
    execute proc int times */
 static
-int IPrepeat (Xpost_Context *ctx,
+int xpost_op_int_proc_repeat (Xpost_Context *ctx,
                Xpost_Object n,
                Xpost_Object P)
 {
@@ -232,7 +232,7 @@ int IPrepeat (Xpost_Context *ctx,
 /* proc  loop  -
    execute proc an indefinite number of times */
 static
-int Ploop (Xpost_Context *ctx,
+int xpost_op_proc_loop (Xpost_Context *ctx,
             Xpost_Object P)
 {
     //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "loop", NULL,0,0));
@@ -251,7 +251,7 @@ int Ploop (Xpost_Context *ctx,
 /* -  exit  -
    exit innermost active loop */
 static
-int Zexit (Xpost_Context *ctx)
+int xpost_op_exit (Xpost_Context *ctx)
 {
     //Xpost_Object opfor = consoper(ctx, "for", NULL,0,0);
     Xpost_Object opfor = operfromcode(ctx->opcode_shortcuts.opfor);
@@ -304,7 +304,7 @@ int Zexit (Xpost_Context *ctx)
 /* -  stop  -
    terminate stopped context */
 static
-int Zstop(Xpost_Context *ctx)
+int xpost_op_stop(Xpost_Context *ctx)
 {
     Xpost_Object f = xpost_bool_cons(0);
     int c = xpost_stack_count(ctx->lo, ctx->es);
@@ -326,7 +326,7 @@ int Zstop(Xpost_Context *ctx)
 /* any  stopped  bool
    establish context for catching stop */
 static
-int Astopped(Xpost_Context *ctx,
+int xpost_op_any_stopped(Xpost_Context *ctx,
               Xpost_Object o)
 {
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_bool_cons(0)))
@@ -339,7 +339,7 @@ int Astopped(Xpost_Context *ctx,
 /* -  countexecstack  int
    count elements on execution stack */
 static
-int Zcountexecstack(Xpost_Context *ctx)
+int xpost_op_countexecstack(Xpost_Context *ctx)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_stack_count(ctx->lo, ctx->es))))
         return stackoverflow;
@@ -349,7 +349,7 @@ int Zcountexecstack(Xpost_Context *ctx)
 /* array  execstack  subarray
    copy execution stack into array */
 static
-int Aexecstack(Xpost_Context *ctx,
+int xpost_op_array_execstack(Xpost_Context *ctx,
                 Xpost_Object A)
 {
     Xpost_Object subarr;
@@ -373,7 +373,7 @@ int Aexecstack(Xpost_Context *ctx,
 /* -  quit  -
    terminate interpreter */
 static
-int Zquit(Xpost_Context *ctx)
+int xpost_op_quit(Xpost_Context *ctx)
 {
     ctx->quit = 1;
     return 0;
@@ -383,7 +383,7 @@ int Zquit(Xpost_Context *ctx)
    executed at interpreter startup */
 /* implemented in data/init.ps */
 
-int initopc (Xpost_Context *ctx,
+int xpost_oper_init_control_ops (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     oper *optab;
@@ -395,36 +395,36 @@ int initopc (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "exec", Aexec, 0, 1, anytype);
+    op = consoper(ctx, "exec", xpost_op_any_exec, 0, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "if", BPif, 0, 2, booleantype, proctype);
+    op = consoper(ctx, "if", xpost_op_bool_proc_if, 0, 2, booleantype, proctype);
     INSTALL;
-    op = consoper(ctx, "ifelse", BPPifelse, 0, 3, booleantype, proctype, proctype);
+    op = consoper(ctx, "ifelse", xpost_op_bool_proc_proc_ifelse, 0, 3, booleantype, proctype, proctype);
     INSTALL;
-    op = consoper(ctx, "for", IIIPfor, 0, 4, \
+    op = consoper(ctx, "for", xpost_op_int_int_int_proc_for, 0, 4, \
             integertype, integertype, integertype, proctype);
     INSTALL;
-    op = consoper(ctx, "for", RRRPfor, 0, 4, \
+    op = consoper(ctx, "for", xpost_op_real_real_real_proc_for, 0, 4, \
             floattype, floattype, floattype, proctype);
     INSTALL;
     ctx->opcode_shortcuts.opfor = op.mark_.padw;
-    op = consoper(ctx, "repeat", IPrepeat, 0, 2, integertype, proctype);
+    op = consoper(ctx, "repeat", xpost_op_int_proc_repeat, 0, 2, integertype, proctype);
     INSTALL;
     ctx->opcode_shortcuts.repeat = op.mark_.padw;
-    op = consoper(ctx, "loop", Ploop, 0, 1, proctype);
+    op = consoper(ctx, "loop", xpost_op_proc_loop, 0, 1, proctype);
     INSTALL;
     ctx->opcode_shortcuts.loop = op.mark_.padw;
-    op = consoper(ctx, "exit", Zexit, 0, 0);
+    op = consoper(ctx, "exit", xpost_op_exit, 0, 0);
     INSTALL;
-    op = consoper(ctx, "stop", Zstop, 0, 0);
+    op = consoper(ctx, "stop", xpost_op_stop, 0, 0);
     INSTALL;
-    op = consoper(ctx, "stopped", Astopped, 0, 1, anytype);
+    op = consoper(ctx, "stopped", xpost_op_any_stopped, 0, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "countexecstack", Zcountexecstack, 1, 0);
+    op = consoper(ctx, "countexecstack", xpost_op_countexecstack, 1, 0);
     INSTALL;
-    op = consoper(ctx, "execstack", Aexecstack, 1, 1, arraytype);
+    op = consoper(ctx, "execstack", xpost_op_array_execstack, 1, 1, arraytype);
     INSTALL;
-    op = consoper(ctx, "quit", Zquit, 0, 0);
+    op = consoper(ctx, "quit", xpost_op_quit, 0, 0);
     INSTALL;
     /*
     op = consoper(ctx, "eq", Aeq, 1, 2, anytype, anytype);

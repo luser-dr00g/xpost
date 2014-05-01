@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_CONTROL_H
 #define XPOST_OP_CONTROL_H
 
-int initopc (Xpost_Context *ctx, Xpost_Object sd);
+int xpost_oper_init_control_ops (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif
