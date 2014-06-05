@@ -87,9 +87,9 @@ static
 int addwillover(long x,
                  long y)
 {
+    if (y == LONG_MIN) return 1;
     if (y < 0) return subwillunder(x, -y);
     if (x > LONG_MAX - y) return 1;
-    if (y == LONG_MIN) return 1;
     return 0;
 }
 
@@ -97,9 +97,9 @@ static
 int subwillunder(long x,
                   long y)
 {
+    if (y == LONG_MIN) return 1;
     if (y < 0) return addwillover(x, -y);
     if (x < LONG_MIN + y) return 1;
-    if (y == LONG_MIN) return 1;
     return 0;
 }
 
