@@ -461,6 +461,7 @@ call:
 #include "xpost_op_param.h"
 #include "xpost_op_matrix.h"
 #include "xpost_op_font.h"
+#include "xpost_op_context.h"
 #include "xpost_dev_generic.h"
 #ifdef HAVE_WIN32
 # include "xpost_dev_win32.h"
@@ -572,6 +573,7 @@ int initop(Xpost_Context *ctx)
     initxcbops(ctx, sd);
 #endif
     initbgrops(ctx, sd);
+    xpost_oper_init_context_ops(ctx, sd);
 
 
 #ifdef DEBUGOP

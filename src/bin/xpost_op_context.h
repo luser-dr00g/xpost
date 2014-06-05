@@ -1,7 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
- * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,36 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef XPOST_GC_H
-#define XPOST_GC_H
+#ifndef XPOST_OP_CONTEXT_H
+#define XPOST_OP_CONTEXT_H
 
-/**
- * @file xpost_garbage.h
- * @brief The Garbage Collector
- */
+/* DPS context operators */
 
+int xpost_oper_init_context_ops (Xpost_Context *ctx, Xpost_Object sd);
 
-/**
- * @brief  Perform a garbage collection on mfile.
- *
- * dosweep controls whether a sweep is performed; if not, this
- * is just a marking operation. markall controls whether 
- * collect() should follow links across vm boundaries.
- *
- * For a local vm, dosweep should be 1 and markall should be 0.
- * For a global vm, dosweep should be 1 and markall should be 1.
- *
- * For a global vm, collect() calls itself recursively upon each
- * associated local vm, with dosweep = 0, markall = 1.
- *
- * returns size collected or -1 if error occured.
- */
-int collect(Xpost_Memory_File *mem, int dosweep, int markall);
-
-/**
- * @brief perform a short functionality test
- */
-int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
-                         Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
-                         Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void));
 #endif

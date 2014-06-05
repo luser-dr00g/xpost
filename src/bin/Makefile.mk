@@ -22,6 +22,7 @@ src/bin/xpost_op_misc.c \
 src/bin/xpost_op_param.c \
 src/bin/xpost_op_matrix.c \
 src/bin/xpost_op_font.c \
+src/bin/xpost_op_context.c \
 src/bin/xpost_dev_generic.c \
 src/bin/xpost_dev_bgr.c \
 src/bin/xpost_pathname.c \
@@ -44,6 +45,7 @@ src/bin/xpost_op_misc.h \
 src/bin/xpost_op_param.h \
 src/bin/xpost_op_matrix.h \
 src/bin/xpost_op_font.h \
+src/bin/xpost_op_context.h \
 src/bin/xpost_dev_generic.h \
 src/bin/xpost_dev_bgr.h \
 src/bin/xpost_pathname.h
