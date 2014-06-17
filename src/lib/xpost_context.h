@@ -46,6 +46,11 @@ typedef struct
     const char *device_str;
 
     int ignoreinvalidaccess; //briefly allow invalid access to put userdict in systemdict (per PLRM)
+
+    int (*xpost_interpreter_cid_init)(unsigned int *cid);
+    Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void);
+    Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void);
+    int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall);
 } Xpost_Context;
 
 int xpost_context_init_ctxlist(Xpost_Memory_File *mem);

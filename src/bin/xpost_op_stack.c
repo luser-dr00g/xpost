@@ -221,7 +221,6 @@ int Zcount (Xpost_Context *ctx)
 
 /* mark obj1..objN  cleartomark  -
    discard elements down through mark */
-static
 int Zcleartomark (Xpost_Context *ctx)
 {
     Xpost_Object o;
