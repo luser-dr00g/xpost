@@ -9,9 +9,16 @@ Memory
 The ground layer is the Memory File. It can be configured to use big malloc blocks,
 or to mmap temporary files, and these it suballocates.
 
-Inside the Memory File, at address 0, is the first of chain of memory tables.
+There are 2 memories: global and local. Allocations are made into the
+current memory file selected by a parameter in the context, which may be altered
+with the `bool setglobal` operator. Global allocations may not contain local objects.
+Local may contain global. Remember, local memory is more perishable. It is subject to
+save and restore. So this rule prevents dangling links in global memory.
+
+Inside the Memory File, at address 0, is the first of a chain of memory tables.
 Each segment of the table chain is a Memory Table struct which contains several
-allocation slots and a counter, and an address of the next slot (or zero).
+allocation slots and a counter, and an address of the next slot (or zero, if the
+counter is less than the table size).
 
 Addresses to memory occur in several definite forms, which represent several
 levels of "crackng the nut". Since the base pointer to memory, in either of the malloc
@@ -19,6 +26,21 @@ or mmap configurations, will be an unsigned char *, a raw memory address is an
 integer which indexes the memory array. Since the memory may move whenever it must
 realloc(), this "relative" pointer is the safest analogue to an "absolute" pointer
 into the memory space.
+
+    The practical upshot is this Coding Rule for Xpost source code,
+    including device operator functions:
+
+	Do Not hold a pointer while allocating!
+
+    Don't do it. You can get real `char*`s into memory if you want.
+    It's not that difficult. The xpost_dev_* files do this. But if
+    you want to keep using it, you cannot create new composite objects.
+    No new arrays, strings, dicts, or growing a dict past its maxlength.
+    No pushing onto stacks past their current level. Because stacks are
+    segmented, too, and live in the same malloc() or mmap() block.
+    No new names, because names have associated strings AND live on a stack.
+    There are lines in the source commented "//recalc" that show how
+    to refresh a pointer after allocating, if you really need to do that.
 
 An index into the slots of the memory tables is called an "ent" for "entity" 
 or "entry" (I never could decide; sometimes one makes more sense than the other
@@ -40,27 +62,38 @@ configuration, these are 32-bits each.
 
 The tag contains a type bitfield which identifies the kind of data (string, array,
 dict, file), and the ent field (+ a few bits from the tag) is the index into
-the memory tables. Having the offset and size fields in the object makes
-getinterval very cheap. Simple objects typically use a combined ent+offset field
-for the payload value.
+the memory tables. Another bit in the tag indicates whether this ent refers
+to the global memory or local memory. Having the offset and size fields in the
+object makes getinterval very cheap. Simple objects typically use a combined
+ent+offset field for the payload value. So an integer object has only three
+fields
+
+     16bit tag
+     16bit pad
+     32bit val
+
+Several object types with simple needs use the marktype object struct which has
+three fields
+
+     16bit tag
+     16bit pad0
+     32bit unsigned padw
+
+Operator objects use .mark.padw to hold the opcode. Name objects use .mark.padw
+to hold the Name Stack index.
 
 These objects may live in memory as components of arrays and dicts (stringtype objects
 cannot contain other objects; there is no way to directly access an object's
-representation as a string). Or they may live on stacks, which are also in memory.
-
-By the way, there are 2 memories: global and local. Allocations are made into the
-current memory file selected by a parameter in the context, which may be altered
-with the `bool setglobal` operator. Global allocations may not contain local objects.
-Local may contain global. Remember, local memory is more perishable. It is subject
-save and restore. So this rule prevents dangling links in global memory.
+representation as a string from the Postscript level). Or they may live on stacks,
+which are also in memory.
 
 Names are implemented with a ternary search tree that maps strings to integers.
 The integer is stored in the nametype object in a combined ent+offset field.
 It indexes a "name string stack" which contains postscript string objects
 which contain the reverse mappings. One caveat: the search tree algorithm 
 assumes the string is nul-terminated. A nul byte is always added before searching
-(cheaply, on the C stack, don't you worry!) but this does mean that you cannot
-embed nuls in names, even if you manually convert using `string cvn`.
+(cheaply, with alloca()) but this does mean that you cannot embed nuls in names,
+even if you manually convert using `string cvn`.
 
 Dictionaries are implemented as an open hash with N+1 slots to enable terminate-on-
 null in the searching.
@@ -99,7 +132,7 @@ but it ought to be
 
 XPOST_GARBAGE_COLLECTION_THRESHOLD
 
-and measure allocated bytes.
+and measure allocated bytes, as described in the PLRM 2ed and 3ed.
 
 
 Matrices
@@ -109,6 +142,12 @@ is treated internally as the transpose of the diagrams in the PLRM.
 This produces identical results, while permitting the more C-friendly
 syntax of right-multiplying matrices. Whereas Postscript's model of
 left-multiplying is more appropriate for its reverse-polish syntax.
+
+    PS> currentpoint currentmatrix transform  % --> "device"currentpoint
+    PS> currentmatrix matrix invertmatrix transform  % --> currentpoint 
+
+whereas ... um. bad example. I don't have a C equivalent to illustrate
+how internally it's the reverse, but the same. You had to be there. :)
 
 
 Logging
@@ -143,7 +182,7 @@ at init() by `struct oper` objects which contain a an array of
 type signatures and associated function pointers. The signatures
 are matched against the objects on the stack and for the first
 matching signature, the associated function pointer is called.
-The C function receives all of its declared (via signature)
+The C operator function receives all of its declared (via signature)
 operands as normal function arguments, thanks to fiendishly-clever
 C hackery abusing the `switch` statement, and unprototyped function
 pointers.
@@ -211,6 +250,9 @@ From the data/pgmimage.ps file:
 
 For the minimal work to get the graphics data at the C level,
 you can override the /Emit member of the derived class.
+The device dictionary has an ImgData member which is an
+array of arrays (rows) of integers (columns) containing
+the pixel values of the raster image. 
 
 The xcb device is hard-patched into the initialization 
 procedures and installs two operators into systemdict:
