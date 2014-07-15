@@ -56,7 +56,7 @@
 #include "xpost_name.h"
 
 #include "xpost_interpreter.h"
-#include "xpost_operator.h"
+//#include "xpost_operator.h"
 #include "xpost_garbage.h"
 
 #ifdef DEBUG_GC
@@ -637,6 +637,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
     char fname[] = "xmemXXXXXX";
     unsigned int tadr;
     int ret;
+    unsigned int ent;
 
     /* create interpreter and context */
     itpdata = malloc(sizeof*itpdata);
@@ -746,7 +747,8 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
 
     /* create global OPTAB */
     ctx->vmmode = GLOBAL;
-    ret = initoptab(ctx);
+    //ret = initoptab(ctx);
+    ret = xpost_memory_table_alloc(ctx->gl, 1024, 0, &ent);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->gl);
