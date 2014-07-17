@@ -102,7 +102,8 @@ xpost_memory_init(void)
 
 int xpost_memory_file_init (Xpost_Memory_File *mem,
                             const char *fname,
-                            int fd)
+                            int fd,
+                            struct _Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid))
 {
     struct stat buf;
     size_t sz = xpost_memory_page_size;
@@ -118,6 +119,8 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
     }
     XPOST_LOG_INFO("init memory file%s%s",
                    fname ? " for " : "", fname ? fname : "");
+
+    mem->interpreter_cid_get_context = xpost_interpreter_cid_get_context;
 
     if(fname)
     {

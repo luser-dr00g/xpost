@@ -11,8 +11,8 @@ enum { LOCAL, GLOBAL };
 /** @struct Xpost_Context
  *
  */
-typedef struct
-{
+typedef struct _Xpost_Context Xpost_Context;
+struct _Xpost_Context {
 
     struct
     {
@@ -51,7 +51,7 @@ typedef struct
     Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void);
     Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void);
     int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall);
-} Xpost_Context;
+};
 
 int xpost_context_init_ctxlist(Xpost_Memory_File *mem);
 int xpost_context_append_ctxlist(Xpost_Memory_File *mem, unsigned cid);
@@ -61,6 +61,7 @@ int xpost_context_append_ctxlist(Xpost_Memory_File *mem, unsigned cid);
  */
 int xpost_context_init(Xpost_Context *ctx,
                        int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                       Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
                        Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
                        Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
                        int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall));

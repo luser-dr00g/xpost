@@ -141,6 +141,8 @@ typedef struct Xpost_Memory_File
     int (*garbage_collect)(struct Xpost_Memory_File *mem,
                                     int dosweep,
                                     int markall);
+    int interpreter_cid_get_context_is_installed;
+    struct _Xpost_Context *(*interpreter_cid_get_context)(unsigned int cid);
 } Xpost_Memory_File;
 
 /**
@@ -208,7 +210,8 @@ int xpost_memory_init(void);
 int xpost_memory_file_init (
         Xpost_Memory_File *mem,
         const char *fname,
-        int fd);
+        int fd,
+        struct _Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid));
 
 /**
  * @brief Destroy the given memory file, possibly writing to file.
