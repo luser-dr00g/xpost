@@ -55,7 +55,7 @@
 #include "xpost_save.h"
 #include "xpost_name.h"
 
-#include "xpost_interpreter.h"
+//#include "xpost_interpreter.h"
 #include "xpost_garbage.h"
 
 #ifdef DEBUG_GC
@@ -498,7 +498,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
     unsigned int ad;
     int ret;
 
-    if (xpost_interpreter_get_initializing()) /* do not collect while initializing */
+    if (mem->interpreter_get_initializing()) /* do not collect while initializing */
         return 0;
 
     /* printf("\ncollect:\n"); */
@@ -623,12 +623,16 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
     return sz;
 }
 
+#if 0
+
 static
 Xpost_Context *ctx;
 
 static
 int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
                       Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                      int (*xpost_interpreter_get_initializing)(void),
+                      void (*xpost_interpreter_set_initializing)(int),
                       Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
                       Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void))
 {
@@ -656,7 +660,8 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
         return 0;
     }
     fd = mkstemp(fname);
-    ret = xpost_memory_file_init(ctx->gl, fname, fd, xpost_interpreter_cid_get_context);
+    ret = xpost_memory_file_init(ctx->gl, fname, fd, xpost_interpreter_cid_get_context,
+            xpost_interpreter_get_initializing, xpost_interpreter_set_initializing);
     if (!ret)
     {
         close(fd);
@@ -698,7 +703,8 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
     }
     strcpy(fname, "xmemXXXXXX");
     fd = mkstemp(fname);
-    ret = xpost_memory_file_init(ctx->lo, fname, fd, xpost_interpreter_cid_get_context);
+    ret = xpost_memory_file_init(ctx->lo, fname, fd, xpost_interpreter_cid_get_context,
+            xpost_interpreter_get_initializing, xpost_interpreter_set_initializing);
     if (!ret)
     {
         close(fd);
@@ -762,7 +768,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
     xpost_stack_init(ctx->lo, &ctx->hold);
     ctx->os = ctx->ds = ctx->es = ctx->hold;
 
-    xpost_interpreter_set_initializing(0); /* garbage collector won't run otherwise */
+    ctx->gl->interpreter_set_initializing(0); /* garbage collector won't run otherwise */
 
     return 1;
 }
@@ -775,7 +781,7 @@ void exit_test_garbage(void)
     free(itpdata);
     itpdata = NULL;
 
-    xpost_interpreter_set_initializing(1);
+    ctx->gl->interpreter_set_initializing(1);
 }
 
 static
@@ -788,11 +794,15 @@ int _clear_hold(Xpost_Context *_ctx)
 
 int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
                          Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                         int (*xpost_interpreter_get_initializing)(void),
+                         void (*xpost_interpreter_set_initializing)(int),
                          Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
                          Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void))
 {
     if (!init_test_garbage(xpost_interpreter_cid_init,
                            xpost_interpreter_cid_get_context,
+                           xpost_interpreter_get_initializing,
+                           xpost_interpreter_set_initializing,
                            xpost_interpreter_alloc_local_memory,
                            xpost_interpreter_alloc_global_memory))
         return 0;
@@ -862,6 +872,8 @@ int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
     exit_test_garbage();
     return 1;
 }
+
+#endif
 
 #ifdef TESTMODULE_GC
 

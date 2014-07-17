@@ -143,6 +143,8 @@ typedef struct Xpost_Memory_File
                                     int markall);
     int interpreter_cid_get_context_is_installed;
     struct _Xpost_Context *(*interpreter_cid_get_context)(unsigned int cid);
+    int (*interpreter_get_initializing)(void);
+    void (*interpreter_set_initializing)(int);
 } Xpost_Memory_File;
 
 /**
@@ -211,7 +213,10 @@ int xpost_memory_file_init (
         Xpost_Memory_File *mem,
         const char *fname,
         int fd,
-        struct _Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid));
+        struct _Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+        int (*xpost_interpreter_get_initializing)(void),
+        void (*xpost_interpreter_set_initializing)(int));
+
 
 /**
  * @brief Destroy the given memory file, possibly writing to file.
