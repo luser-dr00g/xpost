@@ -57,7 +57,9 @@ typedef struct {
 
 
 extern Xpost_Interpreter *itpdata;
-extern int initializing;
+//extern int initializing;
+int xpost_interpreter_get_initializing(void);
+void xpost_interpreter_set_initializing(int i);
 
 Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid);
 
