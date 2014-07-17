@@ -498,7 +498,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
     unsigned int ad;
     int ret;
 
-    if (initializing)
+    if (xpost_interpreter_get_initializing()) /* do not collect while initializing */
         return 0;
 
     /* printf("\ncollect:\n"); */
@@ -762,7 +762,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
     xpost_stack_init(ctx->lo, &ctx->hold);
     ctx->os = ctx->ds = ctx->es = ctx->hold;
 
-    initializing = 0; /* garbage collector won't run otherwise */
+    xpost_interpreter_set_initializing(0); /* garbage collector won't run otherwise */
 
     return 1;
 }
@@ -775,7 +775,7 @@ void exit_test_garbage(void)
     free(itpdata);
     itpdata = NULL;
 
-    initializing = 1;
+    xpost_interpreter_set_initializing(1);
 }
 
 static

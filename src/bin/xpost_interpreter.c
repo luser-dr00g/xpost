@@ -66,12 +66,20 @@ Xpost_Object namedollarerror;
 
 int TRACE = 0;
 Xpost_Interpreter *itpdata;
-int initializing = 1;
+static int _initializing = 1;
 
 int eval(Xpost_Context *ctx);
 int mainloop(Xpost_Context *ctx);
 void init(void);
 void xit(void);
+
+int xpost_interpreter_get_initializing(void){
+    return _initializing;
+}
+
+void xpost_interpreter_set_initializing(int i){
+    _initializing = i;
+}
 
 /* find the next unused mfile in the global memory table */
 static Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
@@ -676,7 +684,7 @@ int initalldata(const char *device)
 {
     int ret;
 
-    initializing = 1;
+    _initializing = 1;
     initevaltype();
 
     /* allocate the top-level itpdata data structure. */
@@ -908,7 +916,7 @@ void xpost_run(const char *ps_file)
     lsav = xpost_save_create_snapshot_object(xpost_ctx->lo);
 
     /* Run! */
-    initializing = 0;
+    _initializing = 0;
     xpost_ctx->quit = 0;
     mainloop(xpost_ctx);
 
