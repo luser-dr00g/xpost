@@ -56,7 +56,6 @@
 #include "xpost_name.h"
 
 #include "xpost_interpreter.h"
-//#include "xpost_operator.h"
 #include "xpost_garbage.h"
 
 #ifdef DEBUG_GC
@@ -515,7 +514,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
     }
     cid = (void *)(mem->base + ad);
     for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
-        ctx = xpost_interpreter_cid_get_context(cid[i]);
+        ctx = mem->interpreter_cid_get_context(cid[i]);
         if (mem == ctx->gl) {
             isglobal = 1;
             break;
@@ -549,7 +548,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
             return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
-            ctx = xpost_interpreter_cid_get_context(cid[i]);
+            ctx = mem->interpreter_cid_get_context(cid[i]);
             collect(ctx->lo, 0, markall);
         }
 
@@ -579,7 +578,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
             return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
-            ctx = xpost_interpreter_cid_get_context(cid[i]);
+            ctx = mem->interpreter_cid_get_context(cid[i]);
 
 #ifdef DEBUG_GC
             printf("marking os\n");
@@ -614,7 +613,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
         sz += sweep(mem);
         if (isglobal) {
             for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
-                ctx = xpost_interpreter_cid_get_context(cid[i]);
+                ctx = mem->interpreter_cid_get_context(cid[i]);
                 sz += sweep(ctx->lo);
             }
         }
@@ -629,6 +628,7 @@ Xpost_Context *ctx;
 
 static
 int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                      Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
                       Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
                       Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void))
 {
@@ -656,7 +656,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
         return 0;
     }
     fd = mkstemp(fname);
-    ret = xpost_memory_file_init(ctx->gl, fname, fd);
+    ret = xpost_memory_file_init(ctx->gl, fname, fd, xpost_interpreter_cid_get_context);
     if (!ret)
     {
         close(fd);
@@ -698,7 +698,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
     }
     strcpy(fname, "xmemXXXXXX");
     fd = mkstemp(fname);
-    ret = xpost_memory_file_init(ctx->lo, fname, fd);
+    ret = xpost_memory_file_init(ctx->lo, fname, fd, xpost_interpreter_cid_get_context);
     if (!ret)
     {
         close(fd);
@@ -747,7 +747,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
 
     /* create global OPTAB */
     ctx->vmmode = GLOBAL;
-    //ret = initoptab(ctx);
+    /*ret = initoptab(ctx);*/ /* NO! only need to allocate something in the table slot */
     ret = xpost_memory_table_alloc(ctx->gl, 1024, 0, &ent);
     if (!ret)
     {
@@ -787,10 +787,12 @@ int _clear_hold(Xpost_Context *_ctx)
 }
 
 int test_garbage_collect(int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                         Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
                          Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
                          Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void))
 {
     if (!init_test_garbage(xpost_interpreter_cid_init,
+                           xpost_interpreter_cid_get_context,
                            xpost_interpreter_alloc_local_memory,
                            xpost_interpreter_alloc_global_memory))
         return 0;

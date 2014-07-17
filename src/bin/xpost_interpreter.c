@@ -224,6 +224,7 @@ int xpost_interpreter_init(Xpost_Interpreter *itpptr, const char *device)
 
     ret = xpost_context_init(&itpptr->ctab[0],
                              xpost_interpreter_cid_init,
+                             xpost_interpreter_cid_get_context,
                              xpost_interpreter_alloc_local_memory,
                              xpost_interpreter_alloc_global_memory,
                              collect);
@@ -832,8 +833,9 @@ int xpost_create(const char *device, const char *outfile, char *exedir, int is_i
 #if 0
     test_memory();
     if (!test_garbage_collect(xpost_interpreter_cid_init,
-                                xpost_interpreter_alloc_local_memory,
-                                xpost_interpreter_alloc_global_memory))
+                              xpost_interpreter_cid_get_context,
+                              xpost_interpreter_alloc_local_memory,
+                              xpost_interpreter_alloc_global_memory))
         return 0;
 #endif
 
