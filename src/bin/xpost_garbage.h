@@ -53,7 +53,7 @@
  *
  * returns size collected or -1 if error occured.
  */
-int collect(Xpost_Memory_File *mem, int dosweep, int markall);
+int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall);
 
 #if 0
 /**

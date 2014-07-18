@@ -237,7 +237,7 @@ int xpost_interpreter_init(Xpost_Interpreter *itpptr, const char *device)
                              xpost_interpreter_set_initializing,
                              xpost_interpreter_alloc_local_memory,
                              xpost_interpreter_alloc_global_memory,
-                             collect);
+                             xpost_garbage_collect);
     if (!ret)
     {
         return 0;
@@ -717,6 +717,9 @@ int initalldata(const char *device)
     return 1;
 }
 
+/* FIXME remove duplication of effort here and in xpost_main.c
+         (ie. there should be 1 table, not 2)
+ */
 static
 void setlocalconfig(Xpost_Context *ctx,
                     Xpost_Object sd,
@@ -953,7 +956,7 @@ void xpost_destroy(void)
     }
     printf("bye!\n");
     fflush(NULL);
-    collect(itpdata->ctab->gl, 1, 1);
+    xpost_garbage_collect(itpdata->ctab->gl, 1, 1);
     xpost_interpreter_exit(itpdata);
     free(itpdata);
 }

@@ -64,11 +64,11 @@ int vmreclaim (Xpost_Context *ctx, Xpost_Object I) {
     case 0: /* enable automatic collection */
              break;
     case 1: /* perform immediate collection in local vm */
-             if (collect(ctx->lo, 1, 0) == -1)
+             if (ctx->garbage_collect_function(ctx->lo, 1, 0) == -1)
                  return VMerror;
              break;
     case 2: /* perform immediate collection in local and global vm */
-             if (collect(ctx->gl, 1, 1) == -1)
+             if (ctx->garbage_collect_function(ctx->gl, 1, 1) == -1)
                  return VMerror;
              break;
     }
