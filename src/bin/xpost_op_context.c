@@ -72,6 +72,7 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
 
     (void)Zcounttomark(ctx);
     n = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
+    /* copy n objects to new context's operand stack */
     (void)Zcleartomark(ctx);
 
     cid = xpost_context_fork3(ctx,
@@ -115,7 +116,7 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
    -  condition  condition
    create condition object
 
-   local condition  wait  -
+   lock condition  wait  -
    release lock, wait for condition, reacquire lock
 
    condition  notify  -

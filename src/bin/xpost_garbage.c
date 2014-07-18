@@ -66,7 +66,7 @@
 /* iterate through all tables,
     clear the MARK in the mark. */
 static
-void unmark(Xpost_Memory_File *mem)
+void _xpost_garbage_unmark(Xpost_Memory_File *mem)
 {
     Xpost_Memory_Table *tab = (void *)(mem->base);
     unsigned int i;
@@ -85,7 +85,7 @@ void unmark(Xpost_Memory_File *mem)
 
 /* set the MARK in the mark in the tab[ent] */
 static
-int markent(Xpost_Memory_File *mem,
+int _xpost_garbage_mark_ent(Xpost_Memory_File *mem,
         unsigned int ent)
 {
     Xpost_Memory_Table *tab;
@@ -106,7 +106,7 @@ int markent(Xpost_Memory_File *mem,
 
 /* is it marked? */
 static
-int marked(Xpost_Memory_File *mem,
+int _xpost_garbage_ent_is_marked(Xpost_Memory_File *mem,
         unsigned int ent, int *retval)
 {
     Xpost_Memory_Table *tab = (void *)(mem->base);
@@ -121,11 +121,11 @@ int marked(Xpost_Memory_File *mem,
 
 /* recursively mark an object */
 static
-int markobject(Xpost_Context *ctx, Xpost_Memory_File *mem, Xpost_Object o, int markall);
+int _xpost_garbage_mark_object(Xpost_Context *ctx, Xpost_Memory_File *mem, Xpost_Object o, int markall);
 
 /* recursively mark a dictionary */
 static
-int markdict(Xpost_Context *ctx,
+int _xpost_garbage_mark_dict(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned int adr,
         int markall)
@@ -135,7 +135,7 @@ int markdict(Xpost_Context *ctx,
     int j;
 
     for (j=0; j < DICTABN(dp->sz); j++) {
-        if (!markobject(ctx, mem, tp[j], markall))
+        if (!_xpost_garbage_mark_object(ctx, mem, tp[j], markall))
             return 0;
     }
     return 1;
@@ -143,7 +143,7 @@ int markdict(Xpost_Context *ctx,
 
 /* recursively mark all elements of array */
 static
-int markarray(Xpost_Context *ctx,
+int _xpost_garbage_mark_array(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned int adr,
         unsigned int sz,
@@ -153,7 +153,7 @@ int markarray(Xpost_Context *ctx,
     unsigned int j;
 
     for (j=0; j < sz; j++) {
-        if (!markobject(ctx, mem, op[j], markall))
+        if (!_xpost_garbage_mark_object(ctx, mem, op[j], markall))
             return 0;
     }
     return 1;
@@ -165,7 +165,7 @@ int markarray(Xpost_Context *ctx,
    even if it means switching memory files
  */
 static
-int markobject(Xpost_Context *ctx,
+int _xpost_garbage_mark_object(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object o,
         int markall)
@@ -187,10 +187,10 @@ int markobject(Xpost_Context *ctx,
                 break;
         }
         if (!mem) return 0;
-        if (!marked(mem, xpost_object_get_ent(o), &ret))
+        if (!_xpost_garbage_ent_is_marked(mem, xpost_object_get_ent(o), &ret))
             return 0;
         if (!ret) {
-            ret = markent(mem, xpost_object_get_ent(o));
+            ret = _xpost_garbage_mark_ent(mem, xpost_object_get_ent(o));
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot mark array");
@@ -202,7 +202,7 @@ int markobject(Xpost_Context *ctx,
                 XPOST_LOG_ERR("cannot retrieve address for array ent %u", xpost_object_get_ent(o));
                 return 0;
             }
-            if (!markarray(ctx, mem, ad, o.comp_.sz, markall))
+            if (!_xpost_garbage_mark_array(ctx, mem, ad, o.comp_.sz, markall))
                 return 0;
         }
         break;
@@ -217,10 +217,10 @@ int markobject(Xpost_Context *ctx,
             else
                 break;
         }
-        if (!marked(mem, xpost_object_get_ent(o), &ret))
+        if (!_xpost_garbage_ent_is_marked(mem, xpost_object_get_ent(o), &ret))
             return 0;
         if (!ret) {
-            ret = markent(mem, xpost_object_get_ent(o));
+            ret = _xpost_garbage_mark_ent(mem, xpost_object_get_ent(o));
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot mark array");
@@ -232,7 +232,7 @@ int markobject(Xpost_Context *ctx,
                 XPOST_LOG_ERR("cannot retrieve address for dict ent %u", xpost_object_get_ent(o));
                 return 0;
             }
-            if (!markdict(ctx, mem, ad, markall))
+            if (!_xpost_garbage_mark_dict(ctx, mem, ad, markall))
                 return 0;
         }
         break;
@@ -247,7 +247,7 @@ int markobject(Xpost_Context *ctx,
             else
                 break;
         }
-        ret = markent(mem, xpost_object_get_ent(o));
+        ret = _xpost_garbage_mark_ent(mem, xpost_object_get_ent(o));
         if (!ret)
         {
             XPOST_LOG_ERR("cannot mark array");
@@ -259,7 +259,7 @@ int markobject(Xpost_Context *ctx,
         if (mem == ctx->gl) {
             printf("file found in global vm\n");
         } else {
-            ret = markent(mem, o.mark_.padw);
+            ret = _xpost_garbage_mark_ent(mem, o.mark_.padw);
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot mark array");
@@ -273,7 +273,7 @@ int markobject(Xpost_Context *ctx,
 
 /* mark all allocations referred to by objects in stack */
 static
-int markstack(Xpost_Context *ctx,
+int _xpost_object_mark_stack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned int stackadr,
         int markall)
@@ -287,7 +287,7 @@ int markstack(Xpost_Context *ctx,
 
 next:
     for (i=0; i < s->top; i++) {
-        if (!markobject(ctx, mem, s->data[i], markall))
+        if (!_xpost_garbage_mark_object(ctx, mem, s->data[i], markall))
             return 0;
     }
     if (i==XPOST_STACK_SEGMENT_SIZE) { /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
@@ -306,7 +306,7 @@ next:
 
 /* mark all allocations referred to by objects in save object's stack of saverec_'s */
 static
-int marksavestack(Xpost_Context *ctx,
+int _xpost_garbage_mark_save_stack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned int stackadr)
 {
@@ -322,15 +322,15 @@ int marksavestack(Xpost_Context *ctx,
 
 next:
     for (i=0; i < s->top; i++) {
-        /* markobject(ctx, mem, s->data[i]); */
-        /* marksavestack(ctx, mem, s->data[i].save_.stk); */
-        ret = markent(mem, s->data[i].saverec_.src);
+        /* _xpost_garbage_mark_object(ctx, mem, s->data[i]); */
+        /* _xpost_garbage_mark_save_stack(ctx, mem, s->data[i].save_.stk); */
+        ret = _xpost_garbage_mark_ent(mem, s->data[i].saverec_.src);
         if (!ret)
         {
             XPOST_LOG_ERR("cannot mark array");
             return 0;
         }
-        ret = markent(mem, s->data[i].saverec_.cpy);
+        ret = _xpost_garbage_mark_ent(mem, s->data[i].saverec_.cpy);
         if (!ret)
         {
             XPOST_LOG_ERR("cannot mark array");
@@ -344,7 +344,7 @@ next:
                         s->data[i].saverec_.src);
                 return 0;
             }
-            if (!markdict(ctx, mem, ad, 0))
+            if (!_xpost_garbage_mark_dict(ctx, mem, ad, 0))
                 return 0;
             ret = xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
             if (!ret)
@@ -353,7 +353,7 @@ next:
                         s->data[i].saverec_.cpy);
                 return 0;
             }
-            if (!markdict(ctx, mem, ad, 0))
+            if (!_xpost_garbage_mark_dict(ctx, mem, ad, 0))
                 return 0;
         }
         if (s->data[i].saverec_.tag == arraytype) {
@@ -365,7 +365,7 @@ next:
                         s->data[i].saverec_.src);
                 return 0;
             }
-            if (!markarray(ctx, mem, ad, sz, 0))
+            if (!_xpost_garbage_mark_array(ctx, mem, ad, sz, 0))
                 return 0;
             ret = xpost_memory_table_get_addr(mem, s->data[i].saverec_.cpy, &ad);
             if (!ret)
@@ -374,7 +374,7 @@ next:
                         s->data[i].saverec_.cpy);
                 return 0;
             }
-            if (!markarray(ctx, mem, ad, sz, 0))
+            if (!_xpost_garbage_mark_array(ctx, mem, ad, sz, 0))
                 return 0;
         }
     }
@@ -392,7 +392,7 @@ next:
 
 /* mark all allocations referred to by objects in save stack */
 static
-int marksave(Xpost_Context *ctx,
+int _xpost_garbage_mark_save(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned int stackadr)
 {
@@ -405,8 +405,8 @@ int marksave(Xpost_Context *ctx,
 
 next:
     for (i=0; i < s->top; i++) {
-        /* markobject(ctx, mem, s->data[i]); */
-        if (!marksavestack(ctx, mem, s->data[i].save_.stk))
+        /* _xpost_garbage_mark_object(ctx, mem, s->data[i]); */
+        if (!_xpost_garbage_mark_save_stack(ctx, mem, s->data[i].save_.stk))
             return 0;
     }
     if (i==XPOST_STACK_SEGMENT_SIZE) { /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
@@ -423,7 +423,7 @@ next:
    return reclaimed size
  */
 static
-unsigned int sweep(Xpost_Memory_File *mem)
+unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
 {
     Xpost_Memory_Table *tab;
     int ntab;
@@ -488,7 +488,7 @@ unsigned int sweep(Xpost_Memory_File *mem)
    sweep.
    return reclaimed size or -1 if error occured.
  */
-int collect(Xpost_Memory_File *mem, int dosweep, int markall)
+int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
 {
     unsigned int i;
     unsigned int *cid;
@@ -524,7 +524,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
     if (isglobal) {
         return 0; /* do not perform global collections at this time */
 
-        unmark(mem);
+        _xpost_garbage_unmark(mem);
 
         ret = xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &ad);
@@ -534,7 +534,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
                     mem == ctx->gl? "global" : "local");
             return -1;
         }
-        if (!marksave(ctx, mem, ad))
+        if (!_xpost_garbage_mark_save(ctx, mem, ad))
             return -1;
         ret = xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &ad);
@@ -544,17 +544,17 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
                     mem == ctx->gl? "global" : "local");
             return -1;
         }
-        if (!markstack(ctx, mem, ad, markall))
+        if (!_xpost_object_mark_stack(ctx, mem, ad, markall))
             return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
             ctx = mem->interpreter_cid_get_context(cid[i]);
-            collect(ctx->lo, 0, markall);
+            xpost_garbage_collect(ctx->lo, 0, markall);
         }
 
     } else { /* local */
         printf("collect!\n");
-        unmark(mem);
+        _xpost_garbage_unmark(mem);
 
         ret = xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &ad);
@@ -564,7 +564,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
                     mem == ctx->gl? "global" : "local");
             return -1;
         }
-        if (!marksave(ctx, mem, ad))
+        if (!_xpost_garbage_mark_save(ctx, mem, ad))
             return -1;
         ret = xpost_memory_table_get_addr(mem, 
                 XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &ad);
@@ -574,7 +574,7 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
                     mem == ctx->gl? "global" : "local");
             return -1;
         }
-        if (!markstack(ctx, mem, ad, markall))
+        if (!_xpost_object_mark_stack(ctx, mem, ad, markall))
             return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
@@ -583,25 +583,25 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
 #ifdef DEBUG_GC
             printf("marking os\n");
 #endif
-            if (!markstack(ctx, mem, ctx->os, markall))
+            if (!_xpost_object_mark_stack(ctx, mem, ctx->os, markall))
                 return -1;
 
 #ifdef DEBUG_GC
             printf("marking ds\n");
 #endif
-            if (!markstack(ctx, mem, ctx->ds, markall))
+            if (!_xpost_object_mark_stack(ctx, mem, ctx->ds, markall))
                 return -1;
 
 #ifdef DEBUG_GC
             printf("marking es\n");
 #endif
-            if (!markstack(ctx, mem, ctx->es, markall))
+            if (!_xpost_object_mark_stack(ctx, mem, ctx->es, markall))
                 return -1;
 
 #ifdef DEBUG_GC
             printf("marking hold\n");
 #endif
-            if (!markstack(ctx, mem, ctx->hold, markall))
+            if (!_xpost_object_mark_stack(ctx, mem, ctx->hold, markall))
                 return -1;
         }
     }
@@ -610,11 +610,11 @@ int collect(Xpost_Memory_File *mem, int dosweep, int markall)
 #ifdef DEBUG_GC
         printf("sweep\n");
 #endif
-        sz += sweep(mem);
+        sz += _xpost_garbage_sweep(mem);
         if (isglobal) {
             for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
                 ctx = mem->interpreter_cid_get_context(cid[i]);
-                sz += sweep(ctx->lo);
+                sz += _xpost_garbage_sweep(ctx->lo);
             }
         }
     }
