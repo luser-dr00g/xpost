@@ -273,7 +273,7 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
 
 /* mark all allocations referred to by objects in stack */
 static
-int _xpost_object_mark_stack(Xpost_Context *ctx,
+int _xpost_garbage_mark_stack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned int stackadr,
         int markall)
@@ -544,7 +544,7 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
                     mem == ctx->gl? "global" : "local");
             return -1;
         }
-        if (!_xpost_object_mark_stack(ctx, mem, ad, markall))
+        if (!_xpost_garbage_mark_stack(ctx, mem, ad, markall))
             return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
@@ -574,7 +574,7 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
                     mem == ctx->gl? "global" : "local");
             return -1;
         }
-        if (!_xpost_object_mark_stack(ctx, mem, ad, markall))
+        if (!_xpost_garbage_mark_stack(ctx, mem, ad, markall))
             return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
@@ -583,25 +583,25 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
 #ifdef DEBUG_GC
             printf("marking os\n");
 #endif
-            if (!_xpost_object_mark_stack(ctx, mem, ctx->os, markall))
+            if (!_xpost_garbage_mark_stack(ctx, mem, ctx->os, markall))
                 return -1;
 
 #ifdef DEBUG_GC
             printf("marking ds\n");
 #endif
-            if (!_xpost_object_mark_stack(ctx, mem, ctx->ds, markall))
+            if (!_xpost_garbage_mark_stack(ctx, mem, ctx->ds, markall))
                 return -1;
 
 #ifdef DEBUG_GC
             printf("marking es\n");
 #endif
-            if (!_xpost_object_mark_stack(ctx, mem, ctx->es, markall))
+            if (!_xpost_garbage_mark_stack(ctx, mem, ctx->es, markall))
                 return -1;
 
 #ifdef DEBUG_GC
             printf("marking hold\n");
 #endif
-            if (!_xpost_object_mark_stack(ctx, mem, ctx->hold, markall))
+            if (!_xpost_garbage_mark_stack(ctx, mem, ctx->hold, markall))
                 return -1;
         }
     }
