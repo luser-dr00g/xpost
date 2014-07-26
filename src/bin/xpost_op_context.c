@@ -77,6 +77,7 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
             ctx->xpost_interpreter_alloc_global_memory,
             ctx->garbage_collect_function);
     newctx = xpost_interpreter_cid_get_context(cid);
+    printf("op_fork ctx->id %u, cid %u, newctx->id %u\n", ctx->id, cid, newctx->id);
 
     (void)Zcounttomark(ctx);
     n = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
@@ -86,9 +87,23 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
                 xpost_stack_topdown_fetch(ctx->lo, ctx->os, n));
     (void)Zcleartomark(ctx);
 
+    xpost_stack_push(newctx->lo, newctx->es, consoper(newctx, "_i_am_zombie_", NULL,0,0));
     xpost_stack_push(newctx->lo, newctx->es, proc);
-    xpost_op_currentcontext(newctx);
+    //xpost_op_currentcontext(newctx);
     newctx->state = C_RUN;
+    {
+        Xpost_Object ctxobj;
+        ctxobj.mark_.tag = contexttype;
+        ctxobj.mark_.padw = newctx->id;
+        xpost_stack_push(ctx->lo, ctx->os, ctxobj);
+    }
+    return contextswitch;
+}
+
+static
+int _i_am_zombie_ (Xpost_Context *ctx){
+    ctx->state = C_ZOMB;
+    printf("I AM ZOMBIE\n");
     return contextswitch;
 }
 
@@ -98,9 +113,22 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
 */
 static
 int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
-    xpost_stack_push(ctx->lo, ctx->os, mark);
-    (void)context;
-    return 0;
+    //(void)context;
+    Xpost_Context *child = ctx->gl->interpreter_cid_get_context(context.mark_.padw);
+    if (child->state == C_ZOMB) {
+        printf("found zombie child\n");
+        xpost_stack_push(ctx->lo, ctx->os, mark);
+        // Copy operand stack
+        // Cleanup child
+        return 0;
+    }
+
+    /* continue */
+    printf("waiting for child %u ==%u\n", context.mark_.padw, child->state);
+    xpost_stack_push(ctx->lo, ctx->os, context);
+    xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "join", NULL,0,0));
+    ctx->state = C_WAIT;
+    return contextswitch;
 }
 
 /*
@@ -148,6 +176,8 @@ int xpost_oper_init_context_ops (Xpost_Context *ctx,
     op = consoper(ctx, "currentcontext", xpost_op_currentcontext, 1, 0);
     INSTALL;
     op = consoper(ctx, "fork", xpost_op_fork, 1, 1, proctype);
+    INSTALL;
+    op = consoper(ctx, "_i_am_zombie_", _i_am_zombie_, 0, 0);
     INSTALL;
     op = consoper(ctx, "join", xpost_op_join, 1, 1, contexttype);
     INSTALL;

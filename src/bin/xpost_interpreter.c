@@ -660,12 +660,37 @@ static
 Xpost_Context *_switch_context(Xpost_Context *ctx){
     int i;
     // return next context to execute
-    for (i= (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++)
-        if (itpdata->ctab[i].state == C_RUN)
+    for (i= (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++) {
+        printf("--%d-- %d\n", i, itpdata->ctab[i].state);
+        if (itpdata->ctab[i].state == C_RUN) {
             return &itpdata->ctab[i];
-    for (i=0; i < ctx-itpdata->ctab; i++)
-        if (itpdata->ctab[i].state == C_RUN)
+        }
+        if (itpdata->ctab[i].state == C_WAIT) {
+            itpdata->ctab[i].state = C_RUN;
+        }
+    }
+    for (i=0; i <= ctx-itpdata->ctab; i++) {
+        printf("--%d-- %d\n", i, itpdata->ctab[i].state);
+        if (itpdata->ctab[i].state == C_RUN) {
             return &itpdata->ctab[i];
+        }
+        if (itpdata->ctab[i].state == C_WAIT) {
+            itpdata->ctab[i].state = C_RUN;
+        }
+    }
+    for (i= (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++) {
+        printf("--%d-- %d\n", i, itpdata->ctab[i].state);
+        if (itpdata->ctab[i].state == C_RUN) {
+            return &itpdata->ctab[i];
+        }
+    }
+    for (i=0; i <= ctx-itpdata->ctab; i++) {
+        printf("--%d-- %d\n", i, itpdata->ctab[i].state);
+        if (itpdata->ctab[i].state == C_RUN) {
+            return &itpdata->ctab[i];
+        }
+    }
+
     return ctx;
 }
 

@@ -11,7 +11,7 @@ enum { LOCAL, GLOBAL };
 /**
  * @brief valid values for Xpost_Context::state
  */
-enum { C_FREE, C_IDLE, C_RUN, C_IOWAIT, C_ZOMB };
+enum { C_FREE, C_IDLE, C_RUN, C_WAIT, C_IOBLOCK, C_ZOMB };
 
 /** @struct Xpost_Context
  *
