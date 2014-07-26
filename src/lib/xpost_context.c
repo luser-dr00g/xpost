@@ -278,6 +278,7 @@ int xpost_context_init(Xpost_Context *ctx,
 {
     int ret;
 
+    ctx->state = C_IDLE;
     ret = xpost_interpreter_cid_init(&ctx->id);
     if (!ret)
         return 0;
@@ -307,7 +308,9 @@ int xpost_context_init(Xpost_Context *ctx,
     return 1;
 }
 
-/* destroy context */
+/* destroy context
+FIXME: delete cid from CTXLIST, destroy memory file when empty
+ */
 void xpost_context_exit(Xpost_Context *ctx)
 {
     xpost_memory_file_exit(ctx->gl);
@@ -363,6 +366,8 @@ unsigned int xpost_context_fork1(Xpost_Context *ctx,
     ret = xpost_interpreter_cid_init(&newcid);
     if (!ret) return 0;
     newctx = xpost_interpreter_cid_get_context(newcid);
+    *newctx = *ctx; // struct copy for defaults
+    newctx->state = C_IDLE;
     initlocal(newctx, xpost_interpreter_cid_get_context, 
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing, 
             xpost_interpreter_alloc_local_memory, garbage_collect_function);
@@ -394,6 +399,8 @@ unsigned int xpost_context_fork2(Xpost_Context *ctx,
     ret = xpost_interpreter_cid_init(&newcid);
     if (!ret) return 0;
     newctx = xpost_interpreter_cid_get_context(newcid);
+    *newctx = *ctx; // struct copy for defaults
+    newctx->state = C_IDLE;
     initlocal(ctx, xpost_interpreter_cid_get_context, 
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing, 
             xpost_interpreter_alloc_local_memory, garbage_collect_function);
@@ -425,11 +432,22 @@ unsigned int xpost_context_fork3(Xpost_Context *ctx,
     ret = xpost_interpreter_cid_init(&newcid);
     if (!ret) return 0;
     newctx = xpost_interpreter_cid_get_context(newcid);
+    *newctx = *ctx; // struct copy for defaults
+    newctx->state = C_IDLE;
     newctx->lo = ctx->lo;
     xpost_context_append_ctxlist(newctx->lo, newcid);
     newctx->gl = ctx->gl;
     xpost_context_append_ctxlist(newctx->gl, newcid);
+
+    newctx->os = makestack(newctx->lo);
+    newctx->es = makestack(newctx->lo);
+    newctx->ds = makestack(newctx->lo);
+    newctx->hold = makestack(newctx->lo);
+    newctx->lo->start = XPOST_MEMORY_TABLE_SPECIAL_BOGUS_NAME + 1;
+
     xpost_stack_push(newctx->lo, newctx->ds,
             xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)); // systemdict
     return newcid;
 }
+
+

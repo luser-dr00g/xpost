@@ -70,21 +70,26 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
     int cid, n;
     Xpost_Context *newctx;
 
-    (void)Zcounttomark(ctx);
-    n = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
-    /* copy n objects to new context's operand stack */
-    (void)Zcleartomark(ctx);
-
     cid = xpost_context_fork3(ctx,
             ctx->xpost_interpreter_cid_init,
             xpost_interpreter_cid_get_context,
             ctx->xpost_interpreter_alloc_local_memory,
             ctx->xpost_interpreter_alloc_global_memory,
             ctx->garbage_collect_function);
-
     newctx = xpost_interpreter_cid_get_context(cid);
+
+    (void)Zcounttomark(ctx);
+    n = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
+    /* copy n objects to new context's operand stack */
+    while(n--)
+        xpost_stack_push(newctx->lo, newctx->os,
+                xpost_stack_topdown_fetch(ctx->lo, ctx->os, n));
+    (void)Zcleartomark(ctx);
+
     xpost_stack_push(newctx->lo, newctx->es, proc);
-    return xpost_op_currentcontext(newctx);
+    xpost_op_currentcontext(newctx);
+    newctx->state = C_RUN;
+    return contextswitch;
 }
 
 /*
@@ -102,6 +107,11 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
    -  yield  -
    suspend current context momentarily
 */
+static
+int xpost_op_yield(Xpost_Context *ctx){
+    (void)ctx;
+    return contextswitch;
+}
 
 /*
    context  detach  -
@@ -140,6 +150,9 @@ int xpost_oper_init_context_ops (Xpost_Context *ctx,
     op = consoper(ctx, "fork", xpost_op_fork, 1, 1, proctype);
     INSTALL;
     op = consoper(ctx, "join", xpost_op_join, 1, 1, contexttype);
+    INSTALL;
+    op = consoper(ctx, "yield", xpost_op_yield, 0, 0);
+    INSTALL;
     //xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark);
     //op = consoper(ctx, "counttomark", Zcounttomark, 1, 0); INSTALL;
     return 0;
