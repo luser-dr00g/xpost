@@ -82,7 +82,7 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
     (void)Zcounttomark(ctx);
     n = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
     /* copy n objects to new context's operand stack */
-    while(n--)
+    while (n--)
         xpost_stack_push(newctx->lo, newctx->os,
                 xpost_stack_topdown_fetch(ctx->lo, ctx->os, n));
     (void)Zcleartomark(ctx);
@@ -116,10 +116,16 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
     //(void)context;
     Xpost_Context *child = ctx->gl->interpreter_cid_get_context(context.mark_.padw);
     if (child->state == C_ZOMB) {
+        int i,n;
         printf("found zombie child\n");
         xpost_stack_push(ctx->lo, ctx->os, mark);
         // Copy operand stack
+        n = xpost_stack_count(child->lo, child->os);
+        for (i=0; i < n; i++)
+            xpost_stack_push(ctx->lo, ctx->os,
+                    xpost_stack_bottomup_fetch(child->lo, child->os, i));
         // Cleanup child
+        child->state = C_FREE;
         return 0;
     }
 

@@ -695,13 +695,18 @@ Xpost_Context *_switch_context(Xpost_Context *ctx){
 }
 
 
+/* global shortcut for a single-threaded interpreter */
+Xpost_Context *xpost_ctx;
+
+
 /* the big main central interpreter loop. */
 int mainloop(Xpost_Context *ctx)
 {
     int ret;
 
 ctxswitch:
-    ctx = _switch_context(ctx);
+    xpost_ctx = ctx = _switch_context(ctx);
+    itpdata->cid = ctx->id;
 
     while(!ctx->quit)
     {
@@ -720,9 +725,6 @@ ctxswitch:
 
 
 
-
-/* global shortcut for a single-threaded interpreter */
-Xpost_Context *xpost_ctx;
 
 /* string constructor helper for literals */
 #define CNT_STR(s) sizeof(s)-1, s
@@ -944,14 +946,18 @@ void xpost_run(const char *ps_file)
     unsigned int vs;
 
     /* prime the exec stack
-       so it starts with 'start',
+       so it starts with 'start*',
        and if it ever gets to the bottom, it quits.  */
     xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0));
-    /* `start` proc defined in init.ps runs `executive` which prompts for user input
-       'startstdin' does not prompt
+    /*
+       if ps_file is NULL:
+         if stdin is a tty
+           `start` proc defined in init.ps runs `executive` which prompts for user input
+         else
+           'startstdin' executes stdin but does not prompt
 
-       'startfile' executes a named file
-       wrapped in a stopped context with handleerror
+       if ps_file is not NULL:
+       'startfile' executes a named file wrapped in a stopped context with handleerror
     */
     if (ps_file)
     {
