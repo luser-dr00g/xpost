@@ -367,6 +367,7 @@ unsigned int xpost_context_fork1(Xpost_Context *ctx,
     if (!ret) return 0;
     newctx = xpost_interpreter_cid_get_context(newcid);
     *newctx = *ctx; // struct copy for defaults
+    newctx->id = newcid;
     newctx->state = C_IDLE;
     initlocal(newctx, xpost_interpreter_cid_get_context, 
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing, 
@@ -400,6 +401,7 @@ unsigned int xpost_context_fork2(Xpost_Context *ctx,
     if (!ret) return 0;
     newctx = xpost_interpreter_cid_get_context(newcid);
     *newctx = *ctx; // struct copy for defaults
+    newctx->id = newcid;
     newctx->state = C_IDLE;
     initlocal(ctx, xpost_interpreter_cid_get_context, 
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing, 
@@ -433,6 +435,7 @@ unsigned int xpost_context_fork3(Xpost_Context *ctx,
     if (!ret) return 0;
     newctx = xpost_interpreter_cid_get_context(newcid);
     *newctx = *ctx; // struct copy for defaults
+    newctx->id = newcid;
     newctx->state = C_IDLE;
     newctx->lo = ctx->lo;
     xpost_context_append_ctxlist(newctx->lo, newcid);
@@ -447,6 +450,7 @@ unsigned int xpost_context_fork3(Xpost_Context *ctx,
 
     xpost_stack_push(newctx->lo, newctx->ds,
             xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)); // systemdict
+    printf("fork cid %u, ctx->id %u\n", newcid, newctx->id);
     return newcid;
 }
 
