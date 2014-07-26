@@ -8,6 +8,11 @@
  */
 enum { LOCAL, GLOBAL };
 
+/**
+ * @brief valid values for Xpost_Context::state
+ */
+enum { C_FREE, C_IDLE, C_RUN, C_IOWAIT, C_ZOMB };
+
 /** @struct Xpost_Context
  *
  */
@@ -33,13 +38,13 @@ struct _Xpost_Context {
     /*@dependent@*/
     Xpost_Memory_File *lo; /**< local VM */
 
-    unsigned id; /**< cid for this context */
+    unsigned int id; /**< cid for this context */
 
-    unsigned os, es, ds, hold; /**< stack addresses in local VM */
+    unsigned int os, es, ds, hold; /**< stack addresses in local VM */
     unsigned long rand_next; /**< random number seed */
-    unsigned vmmode; /**< allocating in GLOBAL or LOCAL */
-    unsigned state;  /**< process state: running, blocked, iowait */
-    unsigned quit;  /**< if 1 cause mainloop() to return, if 0 keep looping */
+    unsigned int vmmode; /**< allocating in GLOBAL or LOCAL */
+    unsigned int state;  /**< process state: running, blocked, iowait */
+    unsigned int quit;  /**< if 1 cause mainloop() to return, if 0 keep looping */
 
     Xpost_Object event_handler;
     Xpost_Object window_device;

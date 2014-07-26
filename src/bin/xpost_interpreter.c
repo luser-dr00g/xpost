@@ -656,16 +656,38 @@ void _onerror(Xpost_Context *ctx,
 }
 
 
+static
+Xpost_Context *_switch_context(Xpost_Context *ctx){
+    int i;
+    // return next context to execute
+    for (i= (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++)
+        if (itpdata->ctab[i].state == C_RUN)
+            return &itpdata->ctab[i];
+    for (i=0; i < ctx-itpdata->ctab; i++)
+        if (itpdata->ctab[i].state == C_RUN)
+            return &itpdata->ctab[i];
+    return ctx;
+}
+
+
 /* the big main central interpreter loop. */
 int mainloop(Xpost_Context *ctx)
 {
     int ret;
 
+ctxswitch:
+    ctx = _switch_context(ctx);
+
     while(!ctx->quit)
     {
         ret = eval(ctx);
-        if (ret)
-            _onerror(ctx, ret);
+        if (ret) {
+            if (ret == contextswitch) {
+                goto ctxswitch;
+            } else {
+                _onerror(ctx, ret);
+            }
+        }
     }
 
     return 0;
@@ -925,6 +947,7 @@ void xpost_run(const char *ps_file)
     /* Run! */
     _initializing = 0;
     xpost_ctx->quit = 0;
+    xpost_ctx->state = C_RUN;
     mainloop(xpost_ctx);
 
     xpost_save_restore_snapshot(xpost_ctx->gl);
