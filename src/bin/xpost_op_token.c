@@ -503,7 +503,7 @@ static
 int Fnext(Xpost_Context *ctx,
           Xpost_Object *F)
 {
-    return fgetc(xpost_file_get_file_pointer(ctx->lo, *F));
+    return xpost_file_getc(xpost_file_get_file_pointer(ctx->lo, *F));
 }
 static
 void Fback(Xpost_Context *ctx,
