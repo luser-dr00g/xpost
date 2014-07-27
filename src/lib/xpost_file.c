@@ -115,6 +115,9 @@ f_tmpfile(void)
 # define f_tmpfile tmpfile
 #endif
 
+int xpost_file_getc(FILE *in){
+    return fgetc(in);
+}
 
 /* filetype objects use a slightly different interpretation
    of the access field.
@@ -170,7 +173,7 @@ int lineedit(FILE *in, FILE **out)
     FILE *fp;
     int c;
 
-    c = fgetc(in);
+    c = xpost_file_getc(in);
     if (c == EOF)
     {
         return undefinedfilename;
@@ -185,7 +188,7 @@ int lineedit(FILE *in, FILE **out)
     }
     while (c != EOF && c != '\n') {
         (void)fputc(c, fp);
-        c = fgetc(in);
+        c = xpost_file_getc(in);
     }
     fseek(fp, 0, SEEK_SET);
     //return fp;
@@ -206,7 +209,7 @@ int statementedit(FILE *in, FILE **out)
     int defer = -1; /* defer is a flag (-1 == false)
                        and an index into nest[] */
 
-    c = fgetc(in);
+    c = xpost_file_getc(in);
     if (c == EOF)
     {
         return undefinedfilename;
@@ -238,7 +241,7 @@ int statementedit(FILE *in, FILE **out)
                 case ')': --defer; break;
                 case '(': nest[++defer] = c; break;
                 case '\\': fputc(c, fp);
-                           c = fgetc(in);
+                           c = xpost_file_getc(in);
                            if (c == EOF) goto done;
                            goto next;
                 } break;
@@ -250,7 +253,7 @@ int statementedit(FILE *in, FILE **out)
         case '(':
         case '<': nest[++defer] = c; break;
         case '\\': fputc(c, fp);
-                   c = fgetc(in); break;
+                   c = xpost_file_getc(in); break;
         }
         if (c == '\n') {
             if (defer == -1) goto done;
@@ -264,7 +267,7 @@ int statementedit(FILE *in, FILE **out)
         }
 next:
         fputc(c, fp);
-        c = fgetc(in);
+        c = xpost_file_getc(in);
     } while(c != EOF);
 done:
     fseek(fp, 0, SEEK_SET);
@@ -456,11 +459,13 @@ int xpost_file_close(Xpost_Memory_File *mem,
 Xpost_Object xpost_file_read_byte(Xpost_Memory_File *mem,
                 Xpost_Object f)
 {
+    int c;
     if (!xpost_file_get_status(mem, f))
     {
         return invalid;
     }
-    return xpost_int_cons(fgetc(xpost_file_get_file_pointer(mem, f)));
+    c = xpost_file_getc(xpost_file_get_file_pointer(mem, f));
+    return xpost_int_cons(c);
 }
 
 /* if the file is valid,

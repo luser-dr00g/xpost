@@ -107,6 +107,13 @@ int _i_am_zombie_ (Xpost_Context *ctx){
     return contextswitch;
 }
 
+static
+int _i_am_free_ (Xpost_Context *ctx){
+    ctx->state = C_FREE;
+    printf("I AM FREE\n");
+    return contextswitch;
+}
+
 /*
    context  join  mark obj1..objN
    await context termination and return its results
@@ -137,12 +144,13 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
     return contextswitch;
 }
 
+
 /*
    -  yield  -
    suspend current context momentarily
 */
 static
-int xpost_op_yield(Xpost_Context *ctx){
+int xpost_op_yield (Xpost_Context *ctx){
     (void)ctx;
     return contextswitch;
 }
@@ -150,7 +158,16 @@ int xpost_op_yield(Xpost_Context *ctx){
 /*
    context  detach  -
    enable context to terminate immediately when done
+*/
+static
+int xpost_op_detach (Xpost_Context *ctx, Xpost_Object context){
+    Xpost_Context *child = ctx->gl->interpreter_cid_get_context(context.mark_.padw);
+    xpost_stack_bottomup_replace(child->lo, child->es, 0,
+            consoper(child, "_i_am_free_", NULL,0,0));
+    return contextswitch;
+}
 
+/*
    -  lock  lock
    create lock object
 
@@ -185,9 +202,13 @@ int xpost_oper_init_context_ops (Xpost_Context *ctx,
     INSTALL;
     op = consoper(ctx, "_i_am_zombie_", _i_am_zombie_, 0, 0);
     INSTALL;
+    op = consoper(ctx, "_i_am_free_", _i_am_free_, 0, 0);
+    INSTALL;
     op = consoper(ctx, "join", xpost_op_join, 1, 1, contexttype);
     INSTALL;
     op = consoper(ctx, "yield", xpost_op_yield, 0, 0);
+    INSTALL;
+    op = consoper(ctx, "detach", xpost_op_detach, 0, 1, contexttype);
     INSTALL;
     //xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark);
     //op = consoper(ctx, "counttomark", Zcounttomark, 1, 0); INSTALL;

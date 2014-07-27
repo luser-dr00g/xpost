@@ -188,12 +188,12 @@ int Freadhexstring (Xpost_Context *ctx,
 
     for(n=0; !eof && n < S.comp_.sz; n++) {
         do {
-            c[0] = fgetc(f);
+            c[0] = xpost_file_getc(f);
             if (c[0] == EOF) ++eof;
         } while(!eof && strchr(hex, c[0]) != NULL);
         if (!eof) {
             do {
-                c[1] = fgetc(f);
+                c[1] = xpost_file_getc(f);
                 if (c[1] == EOF) ++eof;
             } while(!eof && strchr(hex, c[1]) != NULL);
         } else {
@@ -301,7 +301,7 @@ int Freadline (Xpost_Context *ctx,
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
     for (n=0; n < S.comp_.sz; n++) {
-        c = fgetc(f);
+        c = xpost_file_getc(f);
         if (c == EOF || c == '\n') break;
         s[n] = c;
     }
@@ -360,7 +360,7 @@ int Fflushfile (Xpost_Context *ctx,
     else if (xpost_object_is_readable(F))
     { /* flush input file. yes yes I know ... but it's in the spec! */
         int c;
-        while ((c = fgetc(f)) != EOF)
+        while ((c = xpost_file_getc(f)) != EOF)
             /**/;
     }
     return 0;
