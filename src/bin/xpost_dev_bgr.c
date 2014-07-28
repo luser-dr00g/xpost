@@ -210,6 +210,8 @@ int _emit (Xpost_Context *ctx,
         }
     }
 
+    /*TODO pass data back to client application */
+
     return 0;
 }
 
@@ -320,6 +322,7 @@ int initbgrops (Xpost_Context *ctx,
     oper *optab;
     Xpost_Object n,op;
 
+    /* factor-out name lookups from the operators (optimization) */
     if (xpost_object_get_type(namePrivate = xpost_name_cons(ctx, "Private")) == invalidtype)
         return VMerror;
     if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
