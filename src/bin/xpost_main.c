@@ -100,6 +100,7 @@ static const char *_xpost_main_devices[] =
 #else
     "xcb",
 #endif
+    "bgr",
     NULL
 };
 
@@ -357,13 +358,13 @@ int main(int argc, char *argv[])
 
     is_installed = xpost_is_installed(filename, &exedir); /* mallocs char* exedir */
 
-    if (!xpost_create(device, output_file, exedir, is_installed))
+    if (!xpost_create(device, XPOST_OUTPUT_FILENAME, output_file, exedir, is_installed))
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
     }
 
-    xpost_run(ps_file);
+    xpost_run(XPOST_INPUT_FILENAME, ps_file);
     xpost_destroy();
     free(exedir);
 

@@ -784,6 +784,7 @@ void setlocalconfig(Xpost_Context *ctx,
         { "xcb",  "loadxcbdevice",   "newxcbdevice"      },
         { "gdi",  "loadwin32device", "newwin32device"    },
         { "gl",   "loadwin32device", "newwin32device"    },
+        { "bgr",  "loadbgrdevice",   "newbgrdevice"      },
         { NULL, NULL, NULL }
     };
     char *strtemplate = "%s /DEVICE 612 792 %s def";
@@ -887,10 +888,19 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-int xpost_create(const char *device, const char *outfile, char *exedir, int is_installed)
+//int xpost_create(const char *device, const char *outfile, char *exedir, int is_installed)
+int xpost_create(const char *device, enum Xpost_Output_Type output_type, const void *outputptr, char *exedir, int is_installed)
 {
     Xpost_Object sd, ud;
     int ret;
+    const char *outfile = NULL;
+    switch (output_type) {
+    case XPOST_OUTPUT_FILENAME:
+        outfile = outputptr;
+        break;
+    case XPOST_OUTPUT_BUFFERPTR:
+        break;
+    }
 
 #if 0
     test_memory();
@@ -939,11 +949,30 @@ int xpost_create(const char *device, const char *outfile, char *exedir, int is_i
 }
 
 
-void xpost_run(const char *ps_file)
+//void xpost_run(const char *ps_file)
+void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
 {
     Xpost_Object lsav;
     int llev;
     unsigned int vs;
+    const char *ps_str = NULL;
+    const char *ps_file = NULL;
+    const FILE *ps_file_ptr = NULL;
+
+    switch(input_type){
+    case XPOST_INPUT_FILENAME:
+        ps_file = inputptr;
+        break;
+    case XPOST_INPUT_STRING:
+        ps_str = inputptr;
+        ps_file_ptr = tmpfile();
+        fwrite(ps_str, 1, strlen(ps_str), (FILE*)ps_file_ptr);
+        rewind((FILE*)ps_file_ptr);
+        break;
+    case XPOST_INPUT_FILEPTR:
+        ps_file_ptr = inputptr;
+        break;
+    }
 
     /* prime the exec stack
        so it starts with 'start*',
@@ -963,6 +992,11 @@ void xpost_run(const char *ps_file)
     {
         xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(xpost_string_cons(xpost_ctx, strlen(ps_file), ps_file)));
         xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startfile")));
+    }
+    else if (ps_file_ptr)
+    {
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_bool_cons(0)); /* boolean false represents a stopped context */
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_file_cons(xpost_ctx->lo, ps_file_ptr)));
     }
     else
     {

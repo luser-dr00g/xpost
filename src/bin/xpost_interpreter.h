@@ -76,10 +76,22 @@ extern int TRACE;
 int xpost_interpreter_init(Xpost_Interpreter *itp, const char *device);
 void xpost_interpreter_exit(Xpost_Interpreter *itp);
 
+enum Xpost_Output_Type {
+    XPOST_OUTPUT_FILENAME,
+    XPOST_OUTPUT_BUFFERPTR
+};
+
+enum Xpost_Input_Type {
+    XPOST_INPUT_STRING,
+    XPOST_INPUT_FILENAME,
+    XPOST_INPUT_FILEPTR
+};
+
 /* 3 simple top-level functions */
 
-int xpost_create(const char *device, const char *outfile, char *exedir, int is_installed);
-void xpost_run(const char *ps_file);
+//int xpost_create(const char *device, const char *outfile, char *exedir, int is_installed);
+int xpost_create(const char *device, enum Xpost_Output_Type output_type, const void *outputptr, char *exedir, int is_installed);
+void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr);
 void xpost_destroy(void);
 
 #endif
