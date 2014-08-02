@@ -68,6 +68,8 @@
 static
 void _xpost_garbage_unmark(Xpost_Memory_File *mem)
 {
+    if (!mem) return;
+    {
     Xpost_Memory_Table *tab = (void *)(mem->base);
     unsigned int i;
 
@@ -81,6 +83,7 @@ void _xpost_garbage_unmark(Xpost_Memory_File *mem)
             tab->tab[i].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
         }
     }
+    }
 }
 
 /* set the MARK in the mark in the tab[ent] */
@@ -89,6 +92,8 @@ int _xpost_garbage_mark_ent(Xpost_Memory_File *mem,
         unsigned int ent)
 {
     Xpost_Memory_Table *tab;
+
+    if (!mem) return 0;
 
     if (ent < mem->start)
         return 1;
@@ -109,6 +114,9 @@ static
 int _xpost_garbage_ent_is_marked(Xpost_Memory_File *mem,
         unsigned int ent, int *retval)
 {
+    if (!mem) return 0;
+
+    {
     Xpost_Memory_Table *tab = (void *)(mem->base);
     if (!xpost_memory_table_find_relative(mem,&tab,&ent))
     {
@@ -116,6 +124,7 @@ int _xpost_garbage_ent_is_marked(Xpost_Memory_File *mem,
         return 0;
     }
     *retval = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) >> XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET;
+    }
     return 1;
 }
 
@@ -130,6 +139,9 @@ int _xpost_garbage_mark_dict(Xpost_Context *ctx,
         unsigned int adr,
         int markall)
 {
+    if (!mem) return 0;
+
+    {
     dichead *dp = (void *)(mem->base + adr);
     Xpost_Object *tp = (void *)(mem->base + adr + sizeof(dichead));
     int j;
@@ -137,6 +149,7 @@ int _xpost_garbage_mark_dict(Xpost_Context *ctx,
     for (j=0; j < DICTABN(dp->sz); j++) {
         if (!_xpost_garbage_mark_object(ctx, mem, tp[j], markall))
             return 0;
+    }
     }
     return 1;
 }
@@ -149,12 +162,16 @@ int _xpost_garbage_mark_array(Xpost_Context *ctx,
         unsigned int sz,
         int markall)
 {
+    if (!mem) return 0;
+
+    {
     Xpost_Object *op = (void *)(mem->base + adr);
     unsigned int j;
 
     for (j=0; j < sz; j++) {
         if (!_xpost_garbage_mark_object(ctx, mem, op[j], markall))
             return 0;
+    }
     }
     return 1;
 }
@@ -172,6 +189,8 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
 {
     unsigned int ad;
     int ret;
+
+    if (!mem) return 0;
 
     switch(xpost_object_get_type(o)) {
     default: break;
@@ -278,6 +297,9 @@ int _xpost_garbage_mark_stack(Xpost_Context *ctx,
         unsigned int stackadr,
         int markall)
 {
+    if (!mem) return 0;
+
+    {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned int i;
 
@@ -301,6 +323,7 @@ next:
     /*     xpost_stack_free(mem, s->nextseg); */
     /*     s->nextseg = 0; */
     /* } */
+    }
     return 1;
 }
 
@@ -310,6 +333,9 @@ int _xpost_garbage_mark_save_stack(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned int stackadr)
 {
+    if (!mem) return 0;
+
+    {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned int i;
     unsigned int ad;
@@ -387,6 +413,7 @@ next:
         xpost_stack_free(mem, s->nextseg);
         s->nextseg = 0;
     }
+    }
     return 1;
 }
 
@@ -396,22 +423,26 @@ int _xpost_garbage_mark_save(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         unsigned int stackadr)
 {
-    Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
-    unsigned int i;
+    if (!mem) return 0;
+    {
+
+        Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
+        unsigned int i;
 
 #ifdef DEBUG_GC
-    printf("marking save stack of size %u\n", s->top);
+        printf("marking save stack of size %u\n", s->top);
 #endif
 
-next:
-    for (i=0; i < s->top; i++) {
-        /* _xpost_garbage_mark_object(ctx, mem, s->data[i]); */
-        if (!_xpost_garbage_mark_save_stack(ctx, mem, s->data[i].save_.stk))
-            return 0;
-    }
-    if (i==XPOST_STACK_SEGMENT_SIZE) { /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
-        s = (void *)(mem->base + s->nextseg);
-        goto next;
+    next:
+        for (i=0; i < s->top; i++) {
+            /* _xpost_garbage_mark_object(ctx, mem, s->data[i]); */
+            if (!_xpost_garbage_mark_save_stack(ctx, mem, s->data[i].save_.stk))
+                return 0;
+        }
+        if (i==XPOST_STACK_SEGMENT_SIZE) { /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
+            s = (void *)(mem->base + s->nextseg);
+            goto next;
+        }
     }
     return 1;
 }
@@ -960,6 +991,7 @@ int main(void)
 
     xpost_quit();
 
+}
     return 0;
 }
 
