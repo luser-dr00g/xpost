@@ -36,7 +36,7 @@
    for the FILE *
    */
 
-Xpost_Object xpost_file_cons(Xpost_Memory_File *mem, /*@NULL@*/ FILE *fp);
+Xpost_Object xpost_file_cons(Xpost_Memory_File *mem, /*@NULL@*/ const FILE *fp);
 int xpost_file_getc(FILE *in);
 int xpost_file_open(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);
 FILE *xpost_file_get_file_pointer(Xpost_Memory_File *mem, Xpost_Object f);

@@ -9,6 +9,8 @@ TODO:
     get raster data
  */
 
+#include <stdio.h>
+
 #include "xpost.h"
 #include "xpost_interpreter.h"
 
@@ -18,8 +20,12 @@ char *prog =
     "showpage\n";
 
 int main() {
-    xpost_create("ppm", NULL, "/usr/local/bin", 1);
-    xpost_run();
+    FILE *f;
+    f = tmpfile();
+    fwrite(prog, 1, sizeof prog, f);
+    rewind(f);
+    xpost_create("bgr", NULL, "/usr/local/bin", 1);
+    xpost_run(XPOST_FILEPTR, f);
     xpost_destroy();
 }
 

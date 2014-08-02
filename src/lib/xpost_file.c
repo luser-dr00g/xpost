@@ -139,7 +139,7 @@ int xpost_file_getc(FILE *in){
     Xpost_Object f = readonly(xpost_file_cons(fp)).
  */
 Xpost_Object xpost_file_cons(Xpost_Memory_File *mem,
-        /*@NULL@*/ FILE *fp)
+        /*@NULL@*/ const FILE *fp)
 {
     Xpost_Object f;
     unsigned int ent;
