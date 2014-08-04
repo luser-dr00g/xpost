@@ -217,7 +217,7 @@ Level 1 operators
  [/] image
  [ ] imagemask
  [X] showpage
- [ ] copypage
+ [X] copypage
  [ ] currentrasteropcode
  [ ] setrasteropcode
  [X] setfont
@@ -237,11 +237,13 @@ Level 2 operators
 Display Postscript
 ------------------
 
- [ ] multiple contexts/devices
+ [X] multiple contexts
+ [ ] multiple devices
 
 NeWS
 ----
 
+ [ ] getenv/putenv
  [X] magic dictionaries
  [ ] classes
  [ ] canvases
@@ -259,3 +261,5 @@ Typical output devices
  [ ] pdf
  [ ] bounding-box
  [ ] dsc-compliant distilled ps
+ [X] xcb
+ [X] ms-windows
