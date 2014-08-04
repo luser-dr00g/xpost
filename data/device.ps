@@ -40,4 +40,13 @@ end
     erasepage
 } bind def
 
+/copypage {
+    DEVICE dup /Emit get exec
+    flushpage 
+
+    (----copypage----) =print flush
+    [ {(%lineedit)(r)file}stopped cleartomark
+
+} bind def
+
 (eof device.ps\n)print
