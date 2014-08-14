@@ -18,7 +18,7 @@ char *prog =
     "showpage\n";
 
 int main() {
-    xpost_create("bgr", NULL, "/usr/local/bin", 1);
+    xpost_create("bgr", XPOST_OUTPUT_DEFAULT, NULL, "/usr/local/bin", 1);
     xpost_run(XPOST_INPUT_STRING, prog);
     xpost_destroy();
 }
