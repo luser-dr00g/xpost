@@ -255,7 +255,7 @@ int _create_cont (Xpost_Context *ctx,
 
     memset (&wc, 0, sizeof (WNDCLASSEX));
     wc.cbSize = sizeof (WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.style = 0;
     wc.lpfnWndProc = _xpost_dev_win32_procedure;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
