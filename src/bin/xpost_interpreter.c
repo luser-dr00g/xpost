@@ -660,32 +660,34 @@ static
 Xpost_Context *_switch_context(Xpost_Context *ctx){
     int i;
     // return next context to execute
+    //printf("--switching contexts--\n");
+    //putchar('.'); fflush(0);
     for (i= (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++) {
-        printf("--%d-- %d\n", i, itpdata->ctab[i].state);
+        //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
         if (itpdata->ctab[i].state == C_RUN) {
             return &itpdata->ctab[i];
         }
-        if (itpdata->ctab[i].state == C_WAIT) {
+        if (itpdata->ctab[i].state == C_WAIT || itpdata->ctab[i].state == C_IOBLOCK) {
             itpdata->ctab[i].state = C_RUN;
         }
     }
     for (i=0; i <= ctx-itpdata->ctab; i++) {
-        printf("--%d-- %d\n", i, itpdata->ctab[i].state);
+        //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
         if (itpdata->ctab[i].state == C_RUN) {
             return &itpdata->ctab[i];
         }
-        if (itpdata->ctab[i].state == C_WAIT) {
+        if (itpdata->ctab[i].state == C_WAIT || itpdata->ctab[i].state == C_IOBLOCK) {
             itpdata->ctab[i].state = C_RUN;
         }
     }
     for (i= (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++) {
-        printf("--%d-- %d\n", i, itpdata->ctab[i].state);
+        //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
         if (itpdata->ctab[i].state == C_RUN) {
             return &itpdata->ctab[i];
         }
     }
     for (i=0; i <= ctx-itpdata->ctab; i++) {
-        printf("--%d-- %d\n", i, itpdata->ctab[i].state);
+        //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
         if (itpdata->ctab[i].state == C_RUN) {
             return &itpdata->ctab[i];
         }
@@ -711,13 +713,15 @@ ctxswitch:
     while(!ctx->quit)
     {
         ret = eval(ctx);
-        if (ret) {
-            if (ret == contextswitch) {
+        if (ret)
+            switch (ret) {
+            case ioblock:
+                ctx->state = C_IOBLOCK; /* fallthrough */
+            case contextswitch:
                 goto ctxswitch;
-            } else {
+            default:
                 _onerror(ctx, ret);
             }
-        }
     }
 
     return 0;
@@ -888,7 +892,6 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-//int xpost_create(const char *device, const char *outfile, char *exedir, int is_installed)
 int xpost_create(const char *device, enum Xpost_Output_Type output_type, const void *outputptr, char *exedir, int is_installed)
 {
     Xpost_Object sd, ud;
@@ -898,7 +901,9 @@ int xpost_create(const char *device, enum Xpost_Output_Type output_type, const v
     case XPOST_OUTPUT_FILENAME:
         outfile = outputptr;
         break;
-    case XPOST_OUTPUT_BUFFERPTR:
+    case XPOST_OUTPUT_BUFFERIN:
+        break;
+    case XPOST_OUTPUT_BUFFEROUT:
         break;
     }
 
@@ -949,7 +954,6 @@ int xpost_create(const char *device, enum Xpost_Output_Type output_type, const v
 }
 
 
-//void xpost_run(const char *ps_file)
 void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
 {
     Xpost_Object lsav;

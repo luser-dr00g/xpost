@@ -77,8 +77,10 @@ int xpost_interpreter_init(Xpost_Interpreter *itp, const char *device);
 void xpost_interpreter_exit(Xpost_Interpreter *itp);
 
 enum Xpost_Output_Type {
+    XPOST_OUTPUT_DEFAULT,
     XPOST_OUTPUT_FILENAME,
-    XPOST_OUTPUT_BUFFERPTR
+    XPOST_OUTPUT_BUFFERIN,
+    XPOST_OUTPUT_BUFFEROUT
 };
 
 enum Xpost_Input_Type {
@@ -89,7 +91,6 @@ enum Xpost_Input_Type {
 
 /* 3 simple top-level functions */
 
-//int xpost_create(const char *device, const char *outfile, char *exedir, int is_installed);
 int xpost_create(const char *device, enum Xpost_Output_Type output_type, const void *outputptr, char *exedir, int is_installed);
 void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr);
 void xpost_destroy(void);

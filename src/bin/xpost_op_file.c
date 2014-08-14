@@ -61,6 +61,7 @@ void *alloca (size_t);
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
+#include <poll.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 #include <string.h>
@@ -136,6 +137,18 @@ int Fread (Xpost_Context *ctx,
     Xpost_Object b;
     if (!xpost_object_is_readable(f))
         return invalidaccess;
+    {
+        struct pollfd pfd;
+        int ret;
+        pfd.fd = fileno(xpost_file_get_file_pointer(ctx->lo, f));
+        pfd.events = POLLIN;
+        ret = poll(&pfd, 1, 1);
+        if (ret <= 0) { // byte not available, push retry, and request eval() to block this thread
+            xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "read", NULL,0,0));
+            xpost_stack_push(ctx->lo, ctx->os, f);
+            return ioblock;
+        }
+    }
     b = xpost_file_read_byte(ctx->lo, f);
     if (xpost_object_get_type(b) == invalidtype)
         return ioerror;
