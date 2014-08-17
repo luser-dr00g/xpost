@@ -61,7 +61,8 @@ void *alloca (size_t);
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
-#include <poll.h>
+//#include <poll.h>
+#include <sys/select.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 #include <string.h>
@@ -138,12 +139,22 @@ int Fread (Xpost_Context *ctx,
     if (!xpost_object_is_readable(f))
         return invalidaccess;
     {
-        struct pollfd pfd;
+        FILE *fp;
+        fd_set reads, writes, excepts;
         int ret;
-        pfd.fd = fileno(xpost_file_get_file_pointer(ctx->lo, f));
-        pfd.events = POLLIN;
-        ret = poll(&pfd, 1, 1);
-        if (ret <= 0) { // byte not available, push retry, and request eval() to block this thread
+        struct timeval tv_timeout;
+        fp = xpost_file_get_file_pointer(ctx->lo, f);
+        FD_ZERO(&reads);
+        FD_ZERO(&writes);
+        FD_ZERO(&excepts);
+        FD_SET(fileno(fp), &reads);
+        tv_timeout.tv_sec = 0;
+        tv_timeout.tv_usec = 0;
+
+        ret = select(fileno(fp)+1, &reads, &writes, &excepts, &tv_timeout);
+
+        if (ret <= 0 || !FD_ISSET(fileno(fp), &reads)) {
+            //byte not available, push retry, and request eval() to block this thread
             xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "read", NULL,0,0));
             xpost_stack_push(ctx->lo, ctx->os, f);
             return ioblock;
