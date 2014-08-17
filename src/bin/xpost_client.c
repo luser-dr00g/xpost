@@ -5,10 +5,10 @@
 
 TODO:
     add to makefile and make compilable
-    pass ps program to xpost
-    get raster data
+    define buffer interchange type
  */
 
+#include <stdlib.h>
 #include "xpost.h"
 #include "xpost_interpreter.h"
 
@@ -18,8 +18,10 @@ char *prog =
     "showpage\n";
 
 int main() {
-    xpost_create("bgr", XPOST_OUTPUT_DEFAULT, NULL, "/usr/local/bin", 1);
+    void *buffer_type_object;
+    xpost_create("bgr", XPOST_OUTPUT_BUFFEROUT, &buffer_type_object, "/usr/local/bin", 1);
     xpost_run(XPOST_INPUT_STRING, prog);
     xpost_destroy();
+    free(buffer_type_object);
 }
 
