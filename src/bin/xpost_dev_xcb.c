@@ -233,7 +233,13 @@ int _create_cont (Xpost_Context *ctx,
 
     private.win = xcb_generate_id(private.c);
     {
-        unsigned int value = private.scr->white_pixel;
+        unsigned int mask = XCB_CW_BACK_PIXMAP |
+                            XCB_CW_BACK_PIXEL |
+                            XCB_CW_EVENT_MASK;
+        unsigned int value[3];
+        value[0] = XCB_NONE;
+        value[1] = private.scr->white_pixel;
+        value[2] = XCB_EVENT_MASK_EXPOSURE;
         xcb_create_window(private.c, XCB_COPY_FROM_PARENT,
                 private.win, private.scr->root,
                 0, 0,
@@ -241,8 +247,8 @@ int _create_cont (Xpost_Context *ctx,
                 5,
                 XCB_WINDOW_CLASS_INPUT_OUTPUT,
                 private.scr->root_visual,
-                XCB_CW_BACK_PIXEL,
-                &value);
+                mask,
+                value);
         xcb_icccm_set_wm_name(private.c, private.win, XCB_ATOM_STRING, 8, strlen("Xpost"), "Xpost");
     }
 #if 0
