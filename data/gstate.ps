@@ -1,0 +1,225 @@
+(loading gstate.ps...)print
+
+/gstatetemplate <<
+    /colorspace /DeviceGray
+    /colorcomp1 0
+    /colorcomp2 0
+    /colorcomp3 0
+    /colorcomp4 0
+    /transfer {}
+    %/currmatrix DEVICE /defaultmatrix get matrix copy
+    %/currmatrix [ 1 0 0 1 0 0 ]
+    %/scratchmatrix [ 1 0 0 1 0 0 ] % ??
+    /currpath 1 dict
+    /clipregion 1 dict
+    /flat 1
+    /linewidth 1
+    /linecap 0
+    /linejoin 2
+    /dasharray []
+    /dashoffset 0
+    /currfont 1 dict
+    /device DEVICE
+>> def
+/gstatetemplate { //gstatetemplate
+    dup /currmatrix [ 1 0 0 1 0 0 ] put
+    dup /scratchmatrix [ 1 0 0 1 0 0 ] put
+} def
+
+
+
+% Graphics State Operators -- Device Independent
+
+/deepcopy { % dict1 dict2 . dict2'
+    begin
+    {
+        dup type /arraytype eq
+        1 index xcheck not and {
+            dup length array
+            copy
+            def
+        }{
+            dup type /dicttype eq {
+                dup maxlength dict gstatecopy
+                def
+            }{
+                def
+            } ifelse
+        } ifelse
+    } forall
+    currentdict end
+} def
+
+/gstatecopy { % dict1 dict2 . dict2'
+    begin
+    { % key val
+        %pstack()= %1 index =
+        dup type /arraytype eq
+        1 index xcheck not and { % key val
+            exch % val key
+            currentdict 1 index known { % val key
+                currentdict exch get % val dict2-val
+                copy % dict2-val
+                pop
+            }{ % val key
+                exch % key val
+                dup length array % key val val2
+                copy % key val2
+                def
+            } ifelse
+        }{
+            def
+        } ifelse
+    } forall
+    currentdict end
+} def
+
+% -  gsave  -
+% push graphics state
+/gsave {
+graphicsdict begin
+    /gptr gptr 1 add def
+    gptr gstackarray length ge { error } if
+    gstackarray gptr gstate currentgstate
+    put
+end
+} def
+
+% -  grestore  -
+% pop graphics state
+/grestore {
+graphicsdict begin
+    gptr -1 gt {
+        gstackarray gptr get
+            %dup {exch = ==} forall
+        currgstate gstatecopy pop
+        gptr 0 gt { %discard all but one element, for grestoreall
+            gstackarray gptr null put % discard stack copy
+        } if
+        /gptr gptr 1 sub def
+    } if
+end
+} def
+
+% -  grestoreall  -
+% pop to bottommost graphics state
+/grestoreall {
+graphicsdict begin
+    /gptr -1 def
+    gstackarray 0 get
+    currgstate gstatecopy pop
+end
+} def
+
+% -  initgraphics  -
+% reset graphics state parameters
+/initgraphics {
+    break
+    gstate setgstate
+    initmatrix
+    matrix currentmatrix ==
+    initclip
+    erasepage
+    0 setgray
+} def
+
+% -  gstate  gstate
+% create graphics state object
+/gstate {
+    gstatetemplate dup length dict copy
+} def
+
+% gstate  setgstate  -
+% set graphics state from gstate
+/setgstate {
+    graphicsdict /currgstate get copy pop
+} def
+
+% gstate  currentgstate  gstate
+% copy current graphics state into gstate
+/currentgstate {
+    graphicsdict /currgstate get exch gstatecopy
+} def
+
+% -  currentfont  dict
+% return current font from the graphics state
+/currentfont {
+    graphicsdict /currgstate get /currfont get
+} def
+
+% proc  settransfer  -
+% install gray-tranfer procedure
+/settransfer {
+    graphicsdict /currgstate get exch /transfer exch put
+} def
+
+% -  currenttransfer  proc
+% return installed gray-transfer procedure
+/currenttransfer {
+    graphicsdict /currgstate get /transfer get
+} def
+
+% num  setlinewidth  -
+% set line width
+/setlinewidth {
+    graphicsdict /currgstate get exch /linewidth exch put
+} def
+
+% -  currentlinewidth  num
+% return current line width
+/currentlinewidth {
+    graphicsdict /currgstate get /linewidth get
+} def
+
+% int  setlinecap  -
+% set shape of the ends for stroke (0=butt, 1=round, 2=square)
+/setlinecap {
+    graphicsdict /currgstate get exch /linecap exch put
+} def
+
+% -  currentlinecap  int
+% return current line cap
+/currentlinecap {
+    graphicsdict /currgstate get /linecap get
+} def
+
+% array offset  setdash  -
+/setdash {
+    graphicsdict /currgstate get exch /dashoffset exch put
+    graphicsdict /currgstate get exch /dasharray exch put
+} def
+
+% -  currentdash  array offset
+/currentdash {
+    graphicsdict /currgstate get /dasharray get
+    graphicsdict /currgstate get /dashoffset get
+} def
+
+% int  setlinejoin  -
+% set shape of corners for stroke (0=miter, 1=round, 2=bevel)
+/setlinejoin {
+    graphicsdict /currgstate get exch /linejoin exch put
+} def
+
+% -  currentlinejoin  int
+% return current line join
+/currentlinejoin {
+    graphicsdict /currgstate get /linejoin get
+} def
+
+
+
+% Graphics State Operators -- Device Dependent
+
+/setflat {
+    /CONSTRAINFLATNESS where{
+        pop dup 100 gt{pop 100}if dup .2 lt{pop .2}if } if
+    graphicsdict /currgstate get exch /flat exch put
+} def
+
+/currentflat {
+    graphicsdict /currgstate get /flat get
+} def
+
+
+(eof gstate.ps\n)print

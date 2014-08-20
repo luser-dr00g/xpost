@@ -1,0 +1,240 @@
+% Type 3 font handling
+
+(loading font.ps...)print
+
+/definefont {
+    dup type /dicttype ne
+    2 index type /nametype ne or {
+        /definefont cvx /typecheck signalerror
+    } if
+    {
+        dup /FontMatrix known not {stopped} if
+        dup /FontType known not {stopped} if
+        dup /FontMatrix known not {stopped} if
+        dup /Encoding known not {stopped} if
+        dup /BuildChar known not {stopped} if
+    } stopped {
+        /definefont cvx /invalidfont signalerror
+    } if
+    dup /FontName 3 index put
+    FontDirectory exch 2 index exch put
+    findfont
+} def
+
+/scalefont {
+    1 index /FontType get 3 ne {
+        0 dtransform
+        dup mul exch dup mul add sqrt
+        //scalefont
+    }{
+        dup matrix scale makefont
+    } ifelse
+} def
+
+/makefont {
+    1 index /FontType get 3 ne { //makefont }{
+        1 index /FontMatrix get dup concatmatrix pop
+        pstack
+    } ifelse
+} def
+
+/setcharwidth {
+    graphicsdict /currgstate get /currfont get
+    dup /xadvance 5 4 roll put
+    /yadvance 3 2 roll put
+} def
+
+/setcachedevice {
+    pop pop pop pop
+    setcharwidth
+} def
+
+/show {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne { pop //show }{
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get concat
+        exch
+        %pstack()=
+        {
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+            %hook
+        } forall
+        pop
+        0 0 transform
+    grestore
+    itransform moveto
+
+    } ifelse
+} def
+
+/widthshow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne {
+        pop
+        4 2 roll dtransform
+        4 2 roll
+        //widthshow
+    }{
+    5 2 roll
+    3 dict begin
+    {charcode cy cx}{exch def}forall
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get
+        dup concat
+        cx cy 3 2 roll dtransform /cy exch def /cx exch def
+        exch
+        %pstack()=
+        {
+            dup /curcode exch def
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+            curcode charcode eq {
+                cx cy translate
+            } if
+            %hook
+        } forall
+        pop
+        0 0 transform
+    grestore
+    end
+    itransform moveto
+
+    } ifelse
+} def
+
+/ashow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne {
+        pop
+        3 1 roll dtransform
+        3 2 roll
+        //ashow
+    }{
+    4 2 roll
+    2 dict begin
+    {dy dx}{exch def}forall
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get
+        dup concat
+        dx dy 3 2 roll dtransform /dy exch def /dx exch def
+        exch
+        %pstack()=
+        {
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+            dx dy translate
+            %hook
+        } forall
+        pop
+        0 0 transform
+    grestore
+    end
+    itransform moveto
+
+    } ifelse
+} def
+
+/awidthshow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne {
+        pop
+        5 1 roll dtransform
+        5 3 roll dtransform
+        5 2 roll
+        //awidthshow
+    }{
+    7 2 roll
+    5 dict begin
+    {charcode cy cx dy dx}{exch def}forall
+    gsave
+        currentpoint translate
+        newpath
+        dup /FontMatrix get
+        dup concat
+        dup dx dy 3 2 roll dtransform /dy exch def /dx exch def
+        cx cy 3 2 roll dtransform /cy exch def /cx exch def
+        exch
+        %pstack()=
+        {
+            dup /curcode exch def
+            gsave
+                1 index /BuildChar get exec
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get 1 index /yadvance get
+            translate
+            dx dy translate
+            curcode charcode eq {
+                cx cy translate
+            } if
+            %hook
+        } forall
+        pop
+        0 0 transform
+    grestore
+    end
+    itransform moveto
+
+    } ifelse
+} def
+
+/kshow {
+    5 dict begin
+        {str proc}{exch def}forall
+        /font graphicsdict /currgstate get /currfont get def
+        str length 0 gt { str length 1 eq {
+            str show
+        }{
+            str 0 1 getinterval % str<0..+1>
+            dup 0 get exch      % str[0] str<0..+1>
+            show
+            1 1 str length 1 sub { % str[N-1] N
+                str exch 1 getinterval
+                dup 0 get exch % str[N-1] str[N] str<N..+1>
+                3 1 roll       % str<N..+1>  str[N-1] str[N]
+                proc
+                dup 0 get exch  % str[N]  str<N..+1>
+                show  % str[N]
+            } for
+        } ifelse } if
+    end
+} def
+
+/stringwidth {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne { pop //stringwidth }{
+    pop
+    gsave
+        nulldevice
+        currentpoint 3 2 roll
+        show
+        currentpoint % x0 y0 x1 y1
+        3 2 roll sub % x0 x1 y1-y0
+        3 1 roll exch sub % y1-y0 x1-x0
+        exch
+    grestore
+    } ifelse
+} def
+
+(eof font.ps\n)print
+
