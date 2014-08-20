@@ -153,8 +153,9 @@ int Fread (Xpost_Context *ctx,
 
         ret = select(fileno(fp)+1, &reads, &writes, &excepts, &tv_timeout);
 
-        if (ret <= 0 || !FD_ISSET(fileno(fp), &reads)) {
-            //byte not available, push retry, and request eval() to block this thread
+        if (ret <= 0 || !FD_ISSET(fileno(fp), &reads))
+        {
+            /* byte not available, push retry, and request eval() to block this thread */
             xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "read", NULL,0,0));
             xpost_stack_push(ctx->lo, ctx->os, f);
             return ioblock;
@@ -163,10 +164,13 @@ int Fread (Xpost_Context *ctx,
     b = xpost_file_read_byte(ctx->lo, f);
     if (xpost_object_get_type(b) == invalidtype)
         return ioerror;
-    if (b.int_.val != EOF) {
+    if (b.int_.val != EOF)
+    {
         xpost_stack_push(ctx->lo, ctx->os, b);
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
-    } else {
+    }
+    else
+    {
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
     return 0;
@@ -210,17 +214,23 @@ int Freadhexstring (Xpost_Context *ctx,
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
 
-    for(n=0; !eof && n < S.comp_.sz; n++) {
-        do {
+    for (n = 0; !eof && n < S.comp_.sz; n++)
+    {
+        do
+        {
             c[0] = xpost_file_getc(f);
             if (c[0] == EOF) ++eof;
         } while(!eof && strchr(hex, c[0]) != NULL);
-        if (!eof) {
-            do {
+        if (!eof)
+        {
+            do
+            {
                 c[1] = xpost_file_getc(f);
                 if (c[1] == EOF) ++eof;
             } while(!eof && strchr(hex, c[1]) != NULL);
-        } else {
+        }
+        else
+        {
             c[1] = '0';
         }
         s[n] = ((strchr(hex, toupper(c[0])) - hex) << 4)
@@ -249,7 +259,8 @@ int Fwritehexstring (Xpost_Context *ctx,
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
 
-    for(n=0; n < S.comp_.sz; n++) {
+    for (n = 0; n < S.comp_.sz; n++)
+    {
         if (fputc(hex[s[n] / 16], f) == EOF)
             return ioerror;
         if (fputc(hex[s[n] % 16], f) == EOF)
@@ -276,10 +287,13 @@ int Freadstring (Xpost_Context *ctx,
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
     n = fread(s, 1, S.comp_.sz, f);
-    if (n == S.comp_.sz) {
+    if (n == S.comp_.sz)
+    {
         xpost_stack_push(ctx->lo, ctx->os, S);
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
-    } else {
+    }
+    else
+    {
         S.comp_.sz = n;
         xpost_stack_push(ctx->lo, ctx->os, S);
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
@@ -324,9 +338,11 @@ int Freadline (Xpost_Context *ctx,
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
-    for (n=0; n < S.comp_.sz; n++) {
+    for (n = 0; n < S.comp_.sz; n++)
+    {
         c = xpost_file_getc(f);
-        if (c == EOF || c == '\n') break;
+        if (c == EOF || c == '\n')
+            break;
         s[n] = c;
     }
     if (n == S.comp_.sz && c != '\n')
@@ -423,9 +439,11 @@ int Zcurrentfile (Xpost_Context *ctx)
     int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
     Xpost_Object o;
-    for (i=0; i<z; i++) {
+    for (i = 0; i<z; i++)
+    {
         o = xpost_stack_topdown_fetch(ctx->lo, ctx->es, i);
-        if (xpost_object_get_type(o) == filetype) {
+        if (xpost_object_get_type(o) == filetype)
+        {
             xpost_stack_push(ctx->lo, ctx->os, o);
             return 0;
         }
@@ -448,7 +466,8 @@ int deletefile (Xpost_Context *ctx,
     s = xpost_string_get_pointer(ctx, S);
     ret = remove(s);
     if (ret != 0)
-        switch (errno) {
+        switch (errno)
+        {
             case ENOENT: return undefinedfilename;
             default: return ioerror;
         }
@@ -468,7 +487,8 @@ int renamefile (Xpost_Context *ctx,
     new = xpost_string_get_pointer(ctx, New);
     ret = rename(old, new);
     if (ret != 0)
-        switch(errno) {
+        switch(errno)
+        {
             case ENOENT: return undefinedfilename;
             default: return ioerror;
         }
@@ -491,11 +511,12 @@ int contfilenameforall (Xpost_Context *ctx,
     Xpost_Object interval;
 
     globbuf = oglob.glob_.ptr;
-    if (oglob.glob_.off < globbuf->gl_pathc) {
-        //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0));
+    if (oglob.glob_.off < globbuf->gl_pathc)
+    {
+        /* xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0)); */
         xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.contfilenameforall));
         xpost_stack_push(ctx->lo, ctx->es, Scr);
-        //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
+        /* xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0)); */
         xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
         xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(Proc));
         ++oglob.glob_.off;
@@ -513,7 +534,9 @@ int contfilenameforall (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, interval);
         xpost_stack_push(ctx->lo, ctx->es, Proc);
 
-    } else {
+    }
+    else
+    {
         globfree(globbuf); /* reference has already been popped */
     }
     return 0;
@@ -625,7 +648,7 @@ int initopf (Xpost_Context *ctx,
 
     op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype);
     INSTALL;
-    //filter
+    /* filter */
     op = consoper(ctx, "closefile", Fclosefile, 0, 1, filetype);
     INSTALL;
     op = consoper(ctx, "read", Fread, 1, 1, filetype);
@@ -642,7 +665,7 @@ int initopf (Xpost_Context *ctx,
     INSTALL;
     op = consoper(ctx, "readline", Freadline, 2, 2, filetype, stringtype);
     INSTALL;
-    //token: see optok.c
+    /* token: see optok.c */
     op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype);
     INSTALL;
     op = consoper(ctx, "flush", Zflush, 0, 0);
@@ -655,8 +678,8 @@ int initopf (Xpost_Context *ctx,
 #endif
     op = consoper(ctx, "status", Fstatus, 1, 1, filetype);
     INSTALL;
-    //string status
-    //run: see init.ps
+    /* string status */
+    /* run: see init.ps */
     op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0);
     INSTALL;
     op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype);
@@ -675,14 +698,14 @@ int initopf (Xpost_Context *ctx,
     INSTALL;
     op = consoper(ctx, "print", Sprint, 0, 1, stringtype);
     INSTALL;
-    //=: see init.ps
-    //==: see init.ps
-    //stack: see init.ps
-    //pstack: see init.ps
-    //printobject
-    //writeobject
-    //setobjectformat
-    //currentobjectformat
+    /* =: see init.ps
+     * ==: see init.ps
+     * stack: see init.ps
+     * pstack: see init.ps
+     * printobject
+     * writeobject
+     * setobjectformat
+     * currentobjectformat */
     op = consoper(ctx, "echo", Becho, 0, 1, booleantype);
     INSTALL;
 

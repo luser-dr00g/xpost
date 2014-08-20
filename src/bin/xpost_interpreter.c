@@ -73,11 +73,13 @@ int mainloop(Xpost_Context *ctx);
 void init(void);
 void xit(void);
 
-int xpost_interpreter_get_initializing(void){
+int xpost_interpreter_get_initializing(void)
+{
     return _initializing;
 }
 
-void xpost_interpreter_set_initializing(int i){
+void xpost_interpreter_set_initializing(int i)
+{
     _initializing = i;
 }
 
@@ -86,7 +88,7 @@ static Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
 {
     int i;
 
-    for (i=0; i < MAXMFILE; i++)
+    for (i = 0; i < MAXMFILE; i++)
     {
         if (itpdata->gtab[i].base == NULL)
         {
@@ -101,7 +103,7 @@ static Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
 static Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
 {
     int i;
-    for (i=0; i < MAXMFILE; i++)
+    for (i = 0; i < MAXMFILE; i++)
     {
         if (itpdata->ltab[i].base == NULL)
         {
@@ -605,7 +607,8 @@ void _onerror(Xpost_Context *ctx,
     if (!validate_context(ctx))
         XPOST_LOG_ERR("context not valid");
 
-    if (itpdata->in_onerror) {
+    if (itpdata->in_onerror)
+    {
         fprintf(stderr, "LOOP in error handler\nabort\n");
         ++ctx->quit;
         //exit(undefinedresult);
@@ -623,7 +626,7 @@ void _onerror(Xpost_Context *ctx,
     {
         int n = ctx->currentobject.mark_.pad0;
         int i;
-        for (i=0; i < n; i++)
+        for (i = 0; i < n; i++)
         {
             xpost_stack_push(ctx->lo, ctx->os, xpost_stack_bottomup_fetch(ctx->lo, ctx->hold, i));
         }
@@ -657,38 +660,49 @@ void _onerror(Xpost_Context *ctx,
 
 
 static
-Xpost_Context *_switch_context(Xpost_Context *ctx){
+Xpost_Context *_switch_context(Xpost_Context *ctx)
+{
     int i;
     // return next context to execute
     //printf("--switching contexts--\n");
     //putchar('.'); fflush(0);
-    for (i= (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++) {
+    for (i = (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++)
+    {
         //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
-        if (itpdata->ctab[i].state == C_RUN) {
+        if (itpdata->ctab[i].state == C_RUN)
+        {
             return &itpdata->ctab[i];
         }
-        if (itpdata->ctab[i].state == C_WAIT || itpdata->ctab[i].state == C_IOBLOCK) {
+        if (itpdata->ctab[i].state == C_WAIT || itpdata->ctab[i].state == C_IOBLOCK)
+        {
             itpdata->ctab[i].state = C_RUN;
         }
     }
-    for (i=0; i <= ctx-itpdata->ctab; i++) {
+    for (i = 0; i <= ctx-itpdata->ctab; i++)
+    {
         //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
-        if (itpdata->ctab[i].state == C_RUN) {
+        if (itpdata->ctab[i].state == C_RUN)
+        {
             return &itpdata->ctab[i];
         }
-        if (itpdata->ctab[i].state == C_WAIT || itpdata->ctab[i].state == C_IOBLOCK) {
+        if (itpdata->ctab[i].state == C_WAIT || itpdata->ctab[i].state == C_IOBLOCK)
+        {
             itpdata->ctab[i].state = C_RUN;
         }
     }
-    for (i= (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++) {
+    for (i = (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++)
+    {
         //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
-        if (itpdata->ctab[i].state == C_RUN) {
+        if (itpdata->ctab[i].state == C_RUN)
+        {
             return &itpdata->ctab[i];
         }
     }
-    for (i=0; i <= ctx-itpdata->ctab; i++) {
+    for (i = 0; i <= ctx-itpdata->ctab; i++)
+    {
         //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
-        if (itpdata->ctab[i].state == C_RUN) {
+        if (itpdata->ctab[i].state == C_RUN)
+        {
             return &itpdata->ctab[i];
         }
     }
@@ -714,7 +728,8 @@ ctxswitch:
     {
         ret = eval(ctx);
         if (ret)
-            switch (ret) {
+            switch (ret)
+            {
             case ioblock:
                 ctx->state = C_IOBLOCK; /* fallthrough */
             case contextswitch:
@@ -781,7 +796,8 @@ void setlocalconfig(Xpost_Context *ctx,
                     char *exedir,
                     int is_installed)
 {
-    char *device_strings[][3] = {
+    char *device_strings[][3] =
+    {
         { "pgm",  "",                "newPGMIMAGEdevice" },
         { "ppm",  "",                "newPPMIMAGEdevice" },
         { "null", "",                "newnulldevice"     },
@@ -897,7 +913,8 @@ int xpost_create(const char *device, enum Xpost_Output_Type output_type, const v
     Xpost_Object sd, ud;
     int ret;
     const char *outfile = NULL;
-    switch (output_type) {
+    switch (output_type)
+    {
     case XPOST_OUTPUT_FILENAME:
         outfile = outputptr;
         break;
@@ -963,7 +980,8 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
     const char *ps_file = NULL;
     const FILE *ps_file_ptr = NULL;
 
-    switch(input_type){
+    switch(input_type)
+    {
     case XPOST_INPUT_FILENAME:
         ps_file = inputptr;
         break;
