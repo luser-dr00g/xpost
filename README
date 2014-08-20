@@ -1,14 +1,14 @@
-[The original README has moved to doc/INTERNALS.]
+[The original README has moved to doc/INTERNALS,
+and has been superceded by doc/NEWINTERNALS.]
 
-Xpost3 is undergoing rapid changes in the direction of portability
+Xpost is undergoing rapid changes in the direction of portability
 under the skillful care and guidance of contributor Vincent Torri.
 
-Xpost3 is currently (10/15/2013, and in the author's opinion) a
+Xpost is currently (10/15/2013, and in the author's opinion) a
 pretty-solid cross-platform scripting-language interpreter.
 
-But it does not currently have any graphical output capability. :(
-        We're working on it. :)
-
+Xpost has rudimentary graphics support. MS Windows or X11 windows.
+PGM or PPM file output.
 
 Quick Installation Instructions.
 ----- ------------ -------------
@@ -16,7 +16,7 @@ Quick Installation Instructions.
 Currently the intepreter source is in src/bin and the commands
   ./autogen.sh (or ./configure if autogen.sh has already been launched)
   make
-will create the interpreter binary itp(.exe)? in src/bin.
+will create the interpreter binary xpost(.exe)? in src/bin.
   make install
 will install the application, so itp can be run as a command.
 
