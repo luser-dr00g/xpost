@@ -62,10 +62,21 @@ void *alloca (size_t);
 #include <ctype.h>
 #include <errno.h>
 //#include <poll.h>
-#include <sys/select.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 #include <string.h>
+
+#ifdef HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
+
+#ifdef _WIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <winsock2.h> /* select */
+# undef WIN32_LEAN_AND_MEAN
+#endif
 
 #include "xpost_compat.h"
 #include "xpost_memory.h"

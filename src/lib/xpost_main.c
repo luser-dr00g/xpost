@@ -44,6 +44,14 @@
 # endif
 #endif
 
+#ifdef _WIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <winsock2.h> /* WSAStartup WSACleanup */
+# undef WIN32_LEAN_AND_MEAN
+#endif
+
 #include "xpost.h"
 #include "xpost_log.h"
 #include "xpost_object.h"
@@ -79,6 +87,9 @@ xpost_init(void)
 #ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;
 #endif
+#ifdef _WIN32
+    WSADATA wsa_data;
+#endif
 
     if (++_xpost_init_count != 1)
         return _xpost_init_count;
@@ -91,6 +102,11 @@ xpost_init(void)
 
     if (!xpost_font_init())
         return --_xpost_init_count;
+
+#ifdef _WIN32
+    if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0)
+        return --_xpost_init_count;
+#endif
 
 #ifdef HAVE_GETTIMEOFDAY
     gettimeofday(&tv, NULL);
@@ -113,6 +129,10 @@ xpost_quit(void)
 
     if (--_xpost_init_count != 0)
         return _xpost_init_count;
+
+#ifdef _WIN32
+    WSACleanup();
+#endif
 
     xpost_font_quit();
     xpost_log_quit();
