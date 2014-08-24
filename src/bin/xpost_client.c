@@ -19,7 +19,7 @@ char *prog =
 
 int main() {
     void *buffer_type_object;
-    xpost_create("bgr", XPOST_OUTPUT_BUFFEROUT, &buffer_type_object, "/usr/local/bin", 1);
+    xpost_create("bgr", XPOST_OUTPUT_BUFFEROUT, &buffer_type_object, 1);
     xpost_run(XPOST_INPUT_STRING, prog);
     xpost_destroy();
     free(buffer_type_object);

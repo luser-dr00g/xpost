@@ -23,17 +23,13 @@ true setglobal
         exch get
     }{
         pop
-		EXE_DIR (/../../data) strcat
+		%EXE_DIR (/../../data) strcat
+        (./data)
     } ifelse
 def
 
-(EXE_DIR =) print
-EXE_DIR print
-(\n) print
-
-(DATA_DIR =) print
-DATA_DIR print
-(\n) print
+%(EXE_DIR =) print EXE_DIR print (\n) print
+(DATA_DIR =) print DATA_DIR print (\n) print
 
 %/product (Xpost) def % now an operator in xpost_op_misc.c
 %/version (0) def % now an operator in xpost_op_misc.c

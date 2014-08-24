@@ -138,11 +138,13 @@ int checkargv0 (const char *argv0, char **pexedir)
         return searchpathforargv0(argv0, pexedir);
 }
 
-int xpost_is_installed (const char *argv0, char **pexedir)
+int xpost_is_installed (const char *argv0)
 {
     char buf[1024];
     ssize_t len;
     char *libsptr;
+    char *exedir;
+    char **pexedir = &exedir;
 
     (void)len; // len and buf are used in some, but not all, compilation paths
     (void)buf;

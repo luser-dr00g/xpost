@@ -873,7 +873,8 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
     {
         char buf[1024];
         snprintf(buf, sizeof buf,
-                 "(%s/../../data/init.ps) (r) file cvx exec",
+                 //"(%s/../../data/init.ps) (r) file cvx exec",
+                 "(%s/data/init.ps) (r) file cvx exec",
                  exedir);
         xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(xpost_string_cons(ctx,
@@ -908,11 +909,16 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-int xpost_create(const char *device, enum Xpost_Output_Type output_type, const void *outputptr, char *exedir, int is_installed)
+int xpost_create(const char *device,
+                 enum Xpost_Output_Type output_type,
+                 const void *outputptr,
+                 int is_installed)
 {
     Xpost_Object sd, ud;
     int ret;
+    char *exedir = ".";
     const char *outfile = NULL;
+
     switch (output_type)
     {
     case XPOST_OUTPUT_FILENAME:
