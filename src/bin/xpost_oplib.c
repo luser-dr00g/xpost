@@ -28,6 +28,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <stdlib.h> /* NULL */
 
 #include "xpost_log.h"
@@ -167,6 +171,7 @@ int initop(Xpost_Context *ctx)
 #endif
 #ifdef HAVE_XCB
     initxcbops(ctx, sd);
+    //printf("xcb:\n");
 #endif
     initbgrops(ctx, sd);
     xpost_oper_init_context_ops(ctx, sd);
