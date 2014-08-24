@@ -3,6 +3,11 @@ had become tiresome to keep updated as the names and structure keep changing.
 
 But the basic building blocks, the abstractions, have remained quite constant throughout.
 
+  Xpost_Memory_File   Xpost_Object
+              Xpost_Stack
+              Xpost_Context
+  Xpost_Array Xpost_Dict Xpost_String Xpost_Name
+
 
 Memory
 
