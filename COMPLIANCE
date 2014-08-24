@@ -206,7 +206,7 @@ Level 1 operators
  [X] flattenpath
  [ ] charpath
  [X] clippath
- [ ] pathbbox
+ [X] pathbbox
  [X] initclip
  [X] clip
  [ ] eoclip
