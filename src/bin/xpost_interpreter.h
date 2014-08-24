@@ -91,8 +91,12 @@ enum Xpost_Input_Type {
 
 /* 3 simple top-level functions */
 
-int xpost_create(const char *device, enum Xpost_Output_Type output_type, const void *outputptr, char *exedir, int is_installed);
-void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr);
+int xpost_create(const char *device,
+                 enum Xpost_Output_Type output_type,
+                 const void *outputptr,
+                 int is_installed);
+void xpost_run(enum Xpost_Input_Type input_type,
+               const void *inputptr);
 void xpost_destroy(void);
 
 #endif

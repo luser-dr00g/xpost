@@ -244,7 +244,7 @@ int main(int argc, char *argv[])
     int have_geometry = 0;
     int i;
     int is_installed;
-    char *exedir;
+    //char *exedir;
 #ifdef HAVE_SIGACTION
     struct sigaction sa, oldsa;
 
@@ -356,9 +356,9 @@ int main(int argc, char *argv[])
         goto quit_xpost;
     }
 
-    is_installed = xpost_is_installed(filename, &exedir); /* mallocs char* exedir */
+    is_installed = xpost_is_installed(filename); ///* mallocs char* exedir */
 
-    if (!xpost_create(device, XPOST_OUTPUT_FILENAME, output_file, exedir, is_installed))
+    if (!xpost_create(device, XPOST_OUTPUT_FILENAME, output_file, is_installed))
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
@@ -366,7 +366,7 @@ int main(int argc, char *argv[])
 
     xpost_run(XPOST_INPUT_FILENAME, ps_file);
     xpost_destroy();
-    free(exedir);
+    //free(exedir);
 
     xpost_quit();
 
