@@ -6,6 +6,7 @@ src/bin/xpost_garbage.c \
 src/bin/xpost_interpreter.c \
 src/bin/xpost_main.c \
 src/bin/xpost_operator.c \
+src/bin/xpost_oplib.c \
 src/bin/xpost_op_array.c \
 src/bin/xpost_op_boolean.c \
 src/bin/xpost_op_control.c \
@@ -28,12 +29,13 @@ src/bin/xpost_dev_bgr.c \
 src/bin/xpost_pathname.c \
 src/bin/xpost_garbage.h \
 src/bin/xpost_interpreter.h \
+src/bin/xpost_operator.h \
+src/bin/xpost_oplib.h \
 src/bin/xpost_op_array.h \
 src/bin/xpost_op_boolean.h \
 src/bin/xpost_op_control.h \
 src/bin/xpost_op_dict.h \
 src/bin/xpost_op_file.h \
-src/bin/xpost_operator.h \
 src/bin/xpost_op_math.h \
 src/bin/xpost_op_packedarray.h \
 src/bin/xpost_op_stack.h \
