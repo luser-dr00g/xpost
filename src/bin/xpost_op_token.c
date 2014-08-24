@@ -194,6 +194,7 @@ int grok (Xpost_Context *ctx,
              Xpost_Object *retval)
 {
     Xpost_Object obj;
+    //printf("grok: %s\n", s);
 
     if (ns == NBUF)
     {
@@ -361,20 +362,23 @@ int grok (Xpost_Context *ctx,
               return unregistered; //not reached
 
     case '{': { // This is the one part that makes it a recursive-descent parser
+                  int ret;
                   Xpost_Object tail;
                   tail = xpost_name_cons(ctx, "}");
                   xpost_stack_push(ctx->lo, ctx->os, mark);
                   while (1) {
                       Xpost_Object t;
-                      int ret;
                       ret = toke(ctx, src, next, back, &t);
+                      //printf("grok: x?%d", xpost_object_is_exe(t));
                       if (ret)
                           return ret;
                       if (objcmp(ctx, t, tail) == 0)
                           break;
                       xpost_stack_push(ctx->lo, ctx->os, t);
                   }
-                  xpost_op_array_to_mark(ctx);  // ie. the /] operator
+                  ret = xpost_op_array_to_mark(ctx);  // ie. the /] operator
+                  if (ret)
+                      return ret;
                   //return xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
                   *retval = xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
                   return 0;
@@ -411,6 +415,7 @@ int grok (Xpost_Context *ctx,
                       XPOST_LOG_ERR("name exceeds buf");
                       return limitcheck;
                   }
+                  //printf("grok:/%s\n", s);
                   s[ns] = '\0';
                   //return xpost_object_cvlit(xpost_name_cons(ctx, s));
                   *retval = xpost_object_cvlit(xpost_name_cons(ctx, s));

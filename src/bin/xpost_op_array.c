@@ -271,6 +271,7 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
              Xpost_Object P)
 {
     Xpost_Object interval;
+    Xpost_Object element;
     if (A.comp_.sz == 0)
         return 0;
 
@@ -293,12 +294,15 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
-    if (xpost_object_is_exe(A)) {
+    element = xpost_array_get(ctx, A, 0);
+    /*
+    if (xpost_object_is_exe(element)) {
         if (!xpost_stack_push(ctx->lo, ctx->es,
                     operfromcode(ctx->opcode_shortcuts.cvx)))
             return execstackoverflow;
     }
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_array_get(ctx, A, 0)))
+    */
+    if (!xpost_stack_push(ctx->lo, ctx->os, element))
         return stackoverflow;
 
     return 0;

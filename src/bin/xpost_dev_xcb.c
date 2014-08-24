@@ -60,6 +60,7 @@ void *alloca (size_t);
 
 #include <assert.h>
 #include <stdlib.h> /* abs */
+#include <stdio.h>
 #include <string.h>
 
 #include <xcb/xcb.h>
@@ -880,6 +881,7 @@ int initxcbops (Xpost_Context *ctx,
     op = consoper(ctx, "loadxcbdevice", loadxcbdevice, 1, 0); INSTALL;
     op = consoper(ctx, "loadxcbdevicecont", loadxcbdevicecont, 1, 1, dicttype);
     _loadxcbdevicecont_opcode = op.mark_.padw;
+    //printf("initxcbops\n");
 
     return 0;
 }

@@ -874,7 +874,7 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
     {
         char buf[1024];
         snprintf(buf, sizeof buf,
-                 //"(%s/../../data/init.ps) (r) file cvx exec",
+                 /*"(%s/../../data/init.ps) (r) file cvx exec",*/
                  "(%s/data/init.ps) (r) file cvx exec",
                  exedir);
         xpost_stack_push(ctx->lo, ctx->es,
