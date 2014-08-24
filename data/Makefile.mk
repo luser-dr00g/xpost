@@ -29,7 +29,8 @@ data/teapot \
 data/sin1x.ps \
 data/dancingmen.ps \
 data/teamath.ps \
-data/bitfont.ps
+data/bitfont.ps \
+data/class.ps
 
 psfilesdir = $(pkgdatadir)
 
@@ -62,5 +63,7 @@ data/mat.ps \
 data/teapot \
 data/sin1x.ps \
 data/dancingmen.ps \
-data/bitfont.ps
+data/teamath.ps \
+data/bitfont.ps \
+data/class.ps
 
