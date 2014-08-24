@@ -516,7 +516,9 @@ int idleproc (Xpost_Context *ctx)
         {
             XPOST_LOG_ERR("event_handler returned %d (%s)",
                     ret, errorname[ret]);
-            //return ret;
+            XPOST_LOG_ERR("disabling event_handler");
+            ctx->event_handler = null;
+            return ret;
         }
     }
     return 0;
@@ -582,7 +584,9 @@ int eval(Xpost_Context *ctx)
         xpost_stack_dump(ctx->lo, ctx->es);
     }
 
-    idleproc(ctx); /* periodically process asynchronous events */
+    ret = idleproc(ctx); /* periodically process asynchronous events */
+    if (ret)
+        return ret;
 
     if ( xpost_object_is_exe(t) ) /* if executable */
         ret = evaltype[xpost_object_get_type(t)](ctx);
@@ -808,7 +812,7 @@ void setlocalconfig(Xpost_Context *ctx,
         { "bgr",  "loadbgrdevice",   "newbgrdevice"      },
         { NULL, NULL, NULL }
     };
-    char *strtemplate = "%s /DEVICE 612 792 %s def";
+    char *strtemplate = "%s userdict /DEVICE 612 792 %s put";
     Xpost_Object namenewdev;
     Xpost_Object newdevstr;
     int i;
