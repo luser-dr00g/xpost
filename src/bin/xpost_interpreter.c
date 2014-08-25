@@ -126,6 +126,7 @@ unsigned int nextid = 0;
 static int xpost_interpreter_cid_init(unsigned int *cid)
 {
     unsigned int startid = nextid;
+    printf("cid_init\n");
     while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 )
     {
         if (nextid == startid + MAXCONTEXT)
@@ -669,7 +670,7 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
 {
     int i;
     // return next context to execute
-    //printf("--switching contexts--\n");
+    printf("--switching contexts--\n");
     //putchar('.'); fflush(0);
     for (i = (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++)
     {
@@ -812,7 +813,9 @@ void setlocalconfig(Xpost_Context *ctx,
         { "bgr",  "loadbgrdevice",   "newbgrdevice"      },
         { NULL, NULL, NULL }
     };
-    char *strtemplate = "%s userdict /DEVICE 612 792 %s put";
+    char *strtemplate = "currentglobal false setglobal "
+                        "%s userdict /DEVICE 612 792 %s put "
+                        "setglobal";
     Xpost_Object namenewdev;
     Xpost_Object newdevstr;
     int i;

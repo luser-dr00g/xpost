@@ -197,7 +197,10 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
 
     case arraytype:
 #ifdef DEBUG_GC
-    printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
+    printf("markobject: %d, %s (size %d)\n",
+            xpost_object_get_ent(o),
+            xpost_object_type_names[xpost_object_get_type(o)],
+            o.comp_.sz);
 #endif
         if (xpost_context_select_memory(ctx, o) != mem) {
             if (markall)
@@ -228,7 +231,10 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
 
     case dicttype:
 #ifdef DEBUG_GC
-    printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
+    printf("markobject: %d, %s (size %d)\n",
+            xpost_object_get_ent(o),
+            xpost_object_type_names[xpost_object_get_type(o)],
+            o.comp_.sz);
 #endif
         if (xpost_context_select_memory(ctx, o) != mem) {
             if (markall)
@@ -258,7 +264,10 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
 
     case stringtype:
 #ifdef DEBUG_GC
-    printf("markobject: %s %d\n", xpost_object_type_names[xpost_object_get_type(o)], o.comp_.sz);
+    printf("markobject: %d, %s (size %d)\n",
+            xpost_object_get_ent(o),
+            xpost_object_type_names[xpost_object_get_type(o)],
+            o.comp_.sz);
 #endif
         if (xpost_context_select_memory(ctx, o) != mem) {
             if (markall)
@@ -304,7 +313,7 @@ int _xpost_garbage_mark_stack(Xpost_Context *ctx,
     unsigned int i;
 
 #ifdef DEBUG_GC
-    printf("marking stack of size %u\n", s->top);
+    printf("marking stack of size %u\n", xpost_stack_count(mem, stackadr));
 #endif
 
 next:
@@ -343,7 +352,7 @@ int _xpost_garbage_mark_save_stack(Xpost_Context *ctx,
     (void)ctx;
 
 #ifdef DEBUG_GC
-    printf("marking save stack of size %u\n", s->top);
+    printf("marking save stack of size %u\n", xpost_stack_count(mem, stackadr));
 #endif
 
 next:
@@ -430,7 +439,7 @@ int _xpost_garbage_mark_save(Xpost_Context *ctx,
         unsigned int i;
 
 #ifdef DEBUG_GC
-        printf("marking save stack of size %u\n", s->top);
+        printf("marking save stack of size %u\n", xpost_stack_count(mem, stackadr));
 #endif
 
     next:
@@ -514,8 +523,10 @@ unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
     return sz;
 }
 
-/* clear all marks,
-   determine GLOBAL/LOCAL and mark all root stacks,
+/*
+   determine GLOBAL/LOCAL
+   clear all marks,
+   mark all root stacks,
    sweep.
    return reclaimed size or -1 if error occured.
  */
@@ -534,7 +545,7 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
 
     /* printf("\ncollect:\n"); */
 
-    /* determine global/glocal */
+    /* determine global/local */
     isglobal = 0;
     ret = xpost_memory_table_get_addr(mem,
             XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST, &ad);
@@ -546,11 +557,16 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
     cid = (void *)(mem->base + ad);
     for (i = 0; i < MAXCONTEXT && cid[i]; i++) {
         ctx = mem->interpreter_cid_get_context(cid[i]);
-        if (mem == ctx->gl) {
-            isglobal = 1;
-            break;
+        if (ctx->state != 0) {
+            if (mem == ctx->gl) {
+                isglobal = 1;
+                break;
+            }
         }
     }
+#ifdef DEBUG_GC
+    printf("using cid=%d\n", ctx->id);
+#endif
 
     if (isglobal) {
         return 0; /* do not perform global collections at this time */
@@ -605,6 +621,9 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
                     mem == ctx->gl? "global" : "local");
             return -1;
         }
+#ifdef DEBUG_GC
+        printf("marking name stack\n");
+#endif
         if (!_xpost_garbage_mark_stack(ctx, mem, ad, markall))
             return -1;
 
@@ -633,6 +652,11 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
             printf("marking hold\n");
 #endif
             if (!_xpost_garbage_mark_stack(ctx, mem, ctx->hold, markall))
+                return -1;
+#ifdef DEBUG_GC
+            printf("marking window device\n");
+#endif
+            if (!_xpost_garbage_mark_object(ctx, mem, ctx->window_device, markall))
                 return -1;
         }
     }
