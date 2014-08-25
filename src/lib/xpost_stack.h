@@ -40,7 +40,7 @@
 #endif
 
 /**
- * @brief Number of object in one segment of the stack.
+ * @brief Number of objects in one segment of the stack.
  *
  * This parameter may be tuned for performance.
  * Most stack operations are performed on the top few entries,
@@ -53,7 +53,7 @@
  *
  * For testing, this parameter should be set very small, 
  * but it must be large enough to hold all parameters in a
- * type-checked postscript operator.
+ * type-checked postscript operator. cf. xpost_operator.c:holdn()
  */
 #define XPOST_STACK_SEGMENT_SIZE 500
 

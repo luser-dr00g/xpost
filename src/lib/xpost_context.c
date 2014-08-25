@@ -278,10 +278,10 @@ int xpost_context_init(Xpost_Context *ctx,
 {
     int ret;
 
-    ctx->state = C_IDLE;
     ret = xpost_interpreter_cid_init(&ctx->id);
     if (!ret)
         return 0;
+    ctx->state = C_IDLE;
 
     ret = initlocal(ctx, xpost_interpreter_cid_get_context, 
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing, 
