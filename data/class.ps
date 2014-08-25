@@ -8,6 +8,20 @@
 %/known { 1 index type /nulltype eq {false}{known} ifelse } bind def
 %/null { null cvlit } bind def
 
+/printf { % () []
+    { % () ?
+        exch % ? ()
+        (%) search { % ? post match pre
+            print pop exch
+            =string cvs print
+        }{ % ? ()
+            exch pop % ()
+            exit
+        } ifelse
+    } forall % ()
+    print
+} def
+
 /append { % a b
     dup type /arraytype eq {
         2 copy length exch length add array 3 1 roll  % z a b
@@ -188,4 +202,4 @@ classend def
 } def
 
 %/smalltalkpage62 cvx traceon stepon debug
-smalltalkpage62
+%smalltalkpage62
