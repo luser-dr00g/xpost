@@ -3,7 +3,7 @@
 /N 17
 /C [ 0 7 4 ]   % Cam
 /E [ 0 0 40 ] % Eye
-/R 0 roty 120 rotx 90 rotz   % Rot: pan tilt twist
+/R 0 roty 120 rotx 93 rotz   % Rot: pan tilt twist
           matmul   matmul
 
 /f(teapot)(r)file
@@ -24,7 +24,7 @@
 
 300 400 translate
 1 14 dup dup scale div currentlinewidth mul setlinewidth  % global scale
-/newline { /line {moveto /line {lineto} store} store } def
+/newline { /line {moveto /line {lineto currentpoint stroke moveto} store} store } def
 newline
 P{
     8 dict begin

@@ -50,12 +50,17 @@
 
 #include "xpost_pathname.h"
 
+/*
+ * check if path-to-executable is where it should be installed
+ */
 static
 int checkexepath (const char *exepath, char **pexedir)
 {
-    char *slash;
     char *exedir;
     int is_installed = 0;
+
+#ifdef HAVE_WIN32
+    char *slash;
 
     /* replace windows's \\  so we can compare paths */
     slash = (char *)exepath;
@@ -63,7 +68,9 @@ int checkexepath (const char *exepath, char **pexedir)
     {
         if (*slash == '\\') *slash = '/';
     }
+#endif
 
+    /*TODO: remove: no longer needed */
     /* global exedir is set in ps systemdict as /EXE_DIR */
     exedir = strdup(exepath);
     dirname(exedir);
@@ -85,6 +92,10 @@ int checkexepath (const char *exepath, char **pexedir)
     return is_installed;
 }
 
+/*
+   append the argument (assumed to be a relative path)
+   to the current working directory
+ */
 static
 char *appendtocwd (const char *relpath)
 {
@@ -99,6 +110,10 @@ char *appendtocwd (const char *relpath)
     return strdup(buf);
 }
 
+/*
+   if all else fails in determining the path to the executable,
+   ... (search $PATH variable, maybe??)
+ */
 static
 int searchpathforargv0(const char *argv0, char **pexedir)
 {
@@ -113,6 +128,9 @@ int searchpathforargv0(const char *argv0, char **pexedir)
     return checkexepath(".", pexedir);
 }
 
+/*
+   inspect argv[0] for a (relative?) path
+ */
 static
 int checkargv0 (const char *argv0, char **pexedir)
 {
@@ -138,30 +156,44 @@ int checkargv0 (const char *argv0, char **pexedir)
         return searchpathforargv0(argv0, pexedir);
 }
 
+/*
+ * Check if xpost is running in "installed" mode 
+ * or "not-installed" mode. 
+ * This is used to determine if xpost can trust the
+ * PACKAGE_INSTALL_DIR string to find its postscript files
+ * or otherwise use a fallback strategy such as an
+ * environment variable.
+ */
 int xpost_is_installed (const char *argv0)
 {
     char buf[1024];
     ssize_t len;
     char *libsptr;
-    char *exedir;
+    char *exedir = NULL;
     char **pexedir = &exedir;
+    int ret;
 
     (void)len; // len and buf are used in some, but not all, compilation paths
     (void)buf;
     printf("argv0: %s\n", argv0);
 
     /* hack for cygwin and mingw.
-       there's this unfortunate ".libs" in there.
+       there's this unfortunate ".libs" in the path.
+       remove it.
     */
     if ((libsptr = strstr(argv0, ".libs/"))) {
         printf("removing '.libs' from pathname\n");
         memmove(libsptr, libsptr+6, strlen(libsptr+6)+1);
         printf("argv0: %s\n", argv0);
-        return checkargv0(argv0, pexedir);
+        ret = checkargv0(argv0, pexedir);
+        if (exedir) free(exedir);
+        return ret;
     }
 
 #ifdef HAVE_WIN32
-    return checkargv0(argv0, pexedir);
+    ret = checkargv0(argv0, pexedir);
+    if (exedir) free(exedir);
+    return ret;
 
     /*
       len = GetModuleFileName(NULL, buf, 1024);
@@ -186,10 +218,15 @@ int xpost_is_installed (const char *argv0)
         if ((len = readlink("/proc/self/path/a.out", buf, sizeof buf)) != -1)
             buf[len] = '\0';
 
-    if (len == -1)
-        return checkargv0(argv0, pexedir);
-    else
-        return checkexepath(buf, pexedir);
+    if (len == -1) {
+        ret = checkargv0(argv0, pexedir);
+        if (exedir) free(exedir);
+        return ret;
+    }
+
+    ret = checkexepath(buf, pexedir);
+    if (exedir) free(exedir);
+    return ret;
 #endif
 }
 
