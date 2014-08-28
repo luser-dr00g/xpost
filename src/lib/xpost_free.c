@@ -42,7 +42,9 @@
 #include "xpost_object.h" /* Xpost_Object */
 #include "xpost_free.h"
 
-/* free list head is in slot zero
+/*
+   initialize the free-list in the memory file.
+   free list head is in slot zero
    sz is 0 so gc will ignore it */
 int xpost_free_init(Xpost_Memory_File *mem)
 {
@@ -326,6 +328,8 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
    "raw" vm addresses (mem->base offsets rather than ents).
 
    Allocate new entry, copy data, steal its adr, stash old adr, free it.
+
+   Currently this is only used to re-size signature blocks in the operator table.
  */
 unsigned int xpost_free_realloc(Xpost_Memory_File *mem,
                                 unsigned int oldadr,

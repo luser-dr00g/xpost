@@ -53,6 +53,8 @@
 
 
 /**
+  Allocate array in specified memory file.
+
   Allocate an entity with xpost_memory_table_alloc,
    find the appropriate mtab,
    set the current save level in the "mark" field,
@@ -116,7 +118,10 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
     return o;
 } 
 
-/** Select a memory file according to vmmode,
+/**
+  Allocate array in context's currently active memory file.
+
+  Select a memory file according to vmmode,
    call xpost_array_cons_memory,
    set BANK flag.   object.tag&BANK?global:local
 */
@@ -133,8 +138,12 @@ Xpost_Object xpost_array_cons(Xpost_Context *ctx,
     return a;
 }
 
-/** Copy if necessary,
-   call put.
+/**
+  Put object into array with given memory file.
+  (Array must be valid for this memory file)
+
+  Copy if necessary for save/restore,
+   call memory_put.
 */
 int xpost_array_put_memory(Xpost_Memory_File *mem,
             Xpost_Object a,
@@ -157,7 +166,10 @@ int xpost_array_put_memory(Xpost_Memory_File *mem,
     return 0;
 }
 
-/** Select Xpost_Memory_File according to BANK flag,
+/**
+  Put object into array.
+
+  Select Xpost_Memory_File according to BANK flag,
    call xpost_array_put_memory.
 */
 int xpost_array_put(Xpost_Context *ctx,
@@ -176,7 +188,12 @@ int xpost_array_put(Xpost_Context *ctx,
     return xpost_array_put_memory(mem, a, i, o);
 }
 
-/* call get. */
+/*
+   Get object from array with specified memory file.
+   (Array must be valid for this memory file)
+
+   call memory_get.
+ */
 Xpost_Object xpost_array_get_memory(Xpost_Memory_File *mem,
               Xpost_Object a,
               integer i)
@@ -193,8 +210,12 @@ Xpost_Object xpost_array_get_memory(Xpost_Memory_File *mem,
     return o;
 }
 
-/* Select Xpost_Memory_File according to BANK flag,
-   call xpost_array_get_memory. */
+/*
+   Get object from array.
+
+   Select Xpost_Memory_File according to BANK flag,
+   call xpost_array_get_memory.
+ */
 Xpost_Object xpost_array_get(Xpost_Context *ctx,
               Xpost_Object a,
               integer i)

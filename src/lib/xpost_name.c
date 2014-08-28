@@ -78,7 +78,7 @@ void xpost_name_dump_names(Xpost_Context *ctx)
     }
 }
 
-/* initialize the name special entities XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, NAMET */
+/* initialize the name special entities XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, NAME_TREE */
 int xpost_name_init(Xpost_Context *ctx)
 {
     Xpost_Memory_Table *tab;

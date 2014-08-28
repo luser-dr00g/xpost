@@ -115,6 +115,11 @@ f_tmpfile(void)
 # define f_tmpfile tmpfile
 #endif
 
+/* interface fgetc
+   in preparation for more elaborate cross-platform non-blocking mechanisms
+cf. http://stackoverflow.com/questions/20428616/how-to-handle-window-events-while-waiting-for-terminal-input
+and http://stackoverflow.com/questions/25506324/how-to-do-pollstdin-or-selectstdin-when-stdin-is-a-windows-console
+   */
 int xpost_file_getc(FILE *in){
     return fgetc(in);
 }
@@ -276,7 +281,8 @@ done:
     return 0;
 }
 
-/* check for "special" filenames,
+/* Open a file object, 
+   check for "special" filenames,
    fallback to fopen. */
 int xpost_file_open(Xpost_Memory_File *mem,
         char *fn,

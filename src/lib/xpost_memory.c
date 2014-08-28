@@ -64,17 +64,19 @@
 
 
 #include "xpost_log.h"
+#include "xpost_error.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 
-/* stubs */
 
 /* FIXME: use xpost_log instead */
 
-enum { rangecheck, VMerror, unregistered };
 
 unsigned int xpost_memory_page_size;
 
+/*
+   initialize the global extern page_size variable
+ */
 int
 xpost_memory_init(void)
 {
@@ -100,6 +102,11 @@ xpost_memory_init(void)
 #endif
 }
 
+/*
+   initialize the memory file structure,
+   possibly using filename or file descriptor.
+   install pointers to interpreter functions (so gc can discover contexts given only a memory file)
+ */
 int xpost_memory_file_init (Xpost_Memory_File *mem,
                             const char *fname,
                             int fd,
@@ -216,7 +223,9 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
     return 1;
 }
 
-
+/*
+   Close, deallocate, and destroy memory file structure
+ */
 int xpost_memory_file_exit (Xpost_Memory_File *mem)
 {
     if (!mem)
@@ -266,6 +275,8 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
     return 1;
 }
 
+/* grow memory file by sz bytes, rounded up to the nearest system page size.
+ */
 int xpost_memory_file_grow (Xpost_Memory_File *mem,
                             unsigned int sz)
 {
@@ -404,6 +415,9 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
 }
 
 
+/*
+   allocate data linearly from the memory file
+   */
 int xpost_memory_file_alloc (Xpost_Memory_File *mem,
                              unsigned int sz,
                              unsigned int *retaddr)
@@ -504,6 +518,9 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem)
 }
 
 
+/*
+   allocate and initialize a memory table data structure
+   */
 int xpost_memory_table_init (Xpost_Memory_File *mem,
                              unsigned int *retaddr)
 {
@@ -531,6 +548,7 @@ int xpost_memory_table_init (Xpost_Memory_File *mem,
 }
 
 
+/* install free-list function into memory file */
 int xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
     int (*free_list_alloc)(struct Xpost_Memory_File *mem, unsigned sz, unsigned tag, unsigned int *entity))
 {
@@ -539,6 +557,7 @@ int xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
     return 1;
 }
 
+/* install garbage-collect function into memory file */
 int xpost_memory_register_garbage_collect_function(Xpost_Memory_File *mem,
     int (*garbage_collect)(struct Xpost_Memory_File *mem, int dosweep, int markall))
 {
@@ -547,7 +566,9 @@ int xpost_memory_register_garbage_collect_function(Xpost_Memory_File *mem,
     return 1;
 }
 
-
+/*
+   allocate sz bytes as an 'ent' in the memory table
+   */
 static
 int _xpost_memory_table_alloc_new (Xpost_Memory_File *mem,
                               unsigned int sz,
@@ -610,6 +631,10 @@ int _xpost_memory_table_alloc_new (Xpost_Memory_File *mem,
     return 1;
 }
 
+/*
+   allocate sz bytes in the memory table, using free-list if installed,
+   possibly calling garbage collector, if installed
+   */
 int xpost_memory_table_alloc (Xpost_Memory_File *mem,
                               unsigned int sz,
                               unsigned int tag,
@@ -651,6 +676,10 @@ int xpost_memory_table_alloc (Xpost_Memory_File *mem,
 }
 
 
+/*
+   find the appropriate memory table segment for the given ent,
+   and replace argument ent with a "relative ent" that indexes the table segment
+   */
 int xpost_memory_table_find_relative (Xpost_Memory_File *mem,
                                       Xpost_Memory_Table **atab,
                                       unsigned int *aent)
@@ -683,6 +712,7 @@ int xpost_memory_table_find_relative (Xpost_Memory_File *mem,
 }
 
 
+/* get the address of an allocation from the memory table */
 int xpost_memory_table_get_addr (Xpost_Memory_File *mem,
                                  unsigned int ent,
                                  unsigned int *retaddr)
@@ -697,7 +727,7 @@ int xpost_memory_table_get_addr (Xpost_Memory_File *mem,
     return 1;
 }
 
-
+/* change the address of an allocation in the memory table */
 int xpost_memory_table_set_addr (Xpost_Memory_File *mem,
                                  unsigned int ent,
                                  unsigned int setaddr)
@@ -713,6 +743,7 @@ int xpost_memory_table_set_addr (Xpost_Memory_File *mem,
 }
 
 
+/* get the size of an allocation from the memory table */
 int xpost_memory_table_get_size (Xpost_Memory_File *mem,
                                  unsigned int ent,
                                  unsigned int *sz)
@@ -727,7 +758,7 @@ int xpost_memory_table_get_size (Xpost_Memory_File *mem,
     return 1;
 }
 
-
+/* set the size of an allocation in the memory table */
 int xpost_memory_table_set_size (Xpost_Memory_File *mem,
                                  unsigned int ent,
                                  unsigned int size)
@@ -742,7 +773,7 @@ int xpost_memory_table_set_size (Xpost_Memory_File *mem,
     return 1;
 }
 
-
+/* get the mark field of an allocation from the memory table */
 int xpost_memory_table_get_mark (Xpost_Memory_File *mem,
                                  unsigned int ent,
                                  unsigned int *retmark)
@@ -758,6 +789,7 @@ int xpost_memory_table_get_mark (Xpost_Memory_File *mem,
 }
 
 
+/* change the mark field of an allocation in the memory table */
 int xpost_memory_table_set_mark (Xpost_Memory_File *mem,
                                  unsigned int ent,
                                  unsigned int setmark)
@@ -773,6 +805,7 @@ int xpost_memory_table_set_mark (Xpost_Memory_File *mem,
 }
 
 
+/* get the tag field of an allocation from the memory table */
 int xpost_memory_table_get_tag (Xpost_Memory_File *mem,
                                 unsigned int ent,
                                 unsigned int *tag)
@@ -787,7 +820,7 @@ int xpost_memory_table_get_tag (Xpost_Memory_File *mem,
     return 1;
 }
 
-
+/* change the tag field of an allocation in the memory table */
 int xpost_memory_table_set_tag (Xpost_Memory_File *mem,
                                 unsigned int ent,
                                 unsigned int tag)
@@ -803,6 +836,7 @@ int xpost_memory_table_set_tag (Xpost_Memory_File *mem,
 }
 
 
+/* get sz bytes at offset*sz from a memory allocation */
 int xpost_memory_get (Xpost_Memory_File *mem,
                       unsigned int ent,
                       unsigned int offset,
@@ -827,6 +861,7 @@ int xpost_memory_get (Xpost_Memory_File *mem,
     return 1;
 }
 
+/* put sz bytes at offset*sz in a memory allocation */
 int xpost_memory_put (Xpost_Memory_File *mem,
                       unsigned int ent,
                       unsigned int offset,
