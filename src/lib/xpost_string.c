@@ -41,8 +41,8 @@
 
 #include "xpost_string.h"  // double-check prototypes
 
-/* construct a stringtype object
-   with optional string value
+/* construct a stringtype object, with optional string value,
+   in specified memory file
    */
 Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
                      unsigned int sz,
@@ -76,8 +76,8 @@ Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
     return o;
 }
 
-/* construct a banked string object
-   with optional string value
+/* construct a banked string object, with optional string value,
+   using currently active memory file
    */
 Xpost_Object xpost_string_cons(Xpost_Context *ctx,
                      unsigned int sz,
@@ -112,7 +112,10 @@ char *xpost_string_get_pointer(Xpost_Context *ctx,
 }
 
 
-/* put a value at index into a string */
+/*
+   put a value at index into a string using specified memory file
+   (string must be valid for this memory file)
+ */
 int xpost_string_put_memory(Xpost_Memory_File *mem,
             Xpost_Object s,
             integer i,
@@ -129,7 +132,7 @@ int xpost_string_put_memory(Xpost_Memory_File *mem,
     return 0;
 }
 
-/* put a value at index into a banked string */
+/* put a value at index into a string */
 int xpost_string_put(Xpost_Context *ctx,
             Xpost_Object s,
             integer i,
@@ -138,7 +141,10 @@ int xpost_string_put(Xpost_Context *ctx,
     return xpost_string_put_memory(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
 }
 
-/* get a value from a string at index */
+/*
+   get a value from a string at index using specified memory file
+   (string must be valid for this memory file)
+ */
 int xpost_string_get_memory(Xpost_Memory_File *mem,
                Xpost_Object s,
                integer i,
@@ -157,7 +163,7 @@ int xpost_string_get_memory(Xpost_Memory_File *mem,
     return 0;
 }
 
-/* get a value from a banked string at index */
+/* get a value from a string at index */
 int xpost_string_get(Xpost_Context *ctx,
                Xpost_Object s,
                integer i,

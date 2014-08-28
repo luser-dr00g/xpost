@@ -56,6 +56,9 @@
 
 #include "xpost_compat.h"
 
+/*
+   Enable keyboard echo on terminal (console) input
+ */
 void echoon(FILE *f)
 {
 #ifdef _WIN32
@@ -82,6 +85,9 @@ void echoon(FILE *f)
 #endif
 }
 
+/*
+   Disable keyboard echoing on terminal (console) input
+ */
 void echooff(FILE *f)
 {
 #ifdef _WIN32

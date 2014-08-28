@@ -42,6 +42,7 @@
 /* stub */
 enum { unregistered };
 
+/* allocate memory for one stack segment */
 int xpost_stack_init (Xpost_Memory_File *mem,
         unsigned int *paddr)
 {
@@ -79,6 +80,7 @@ void xpost_stack_dump (Xpost_Memory_File *mem,
     }
 }
 
+/* deallocate stack segment and any chained segments */
 void xpost_stack_free (Xpost_Memory_File *mem,
         unsigned int stackadr)
 {

@@ -192,7 +192,10 @@ unsigned int hash(Xpost_Object k)
     return h;
 }
 
-/* allocate an entity with xpost_memory_table_alloc,
+/*
+   Allocate a dictionary in the specified memory file.
+
+   allocate an entity with xpost_memory_table_alloc,
    set the save level in the mark,
    extract the "pointer" from the entity,
    Initialize a dichead in memory,
@@ -251,7 +254,10 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     return d;
 }
 
-/* select the memory file according to vmmode,
+/*
+   Allocate a dictionary in the currently active memory.
+
+   select the memory file according to vmmode,
    call xpost_dict_cons_memory ,
    set the BANK flag. */
 Xpost_Object xpost_dict_cons (Xpost_Context *ctx,
@@ -289,7 +295,10 @@ unsigned int xpost_dict_max_length_memory (Xpost_Memory_File *mem,
     return dp->sz;
 }
 
-/* allocate a new dictionary,
+/*
+   grow a dictionary to a larger size.
+
+   allocate a new dictionary,
    copy over all non-null key/value pairs,
    swap adrs in the two table slots. */
 static
@@ -522,7 +531,11 @@ int xpost_dict_known_key(Xpost_Context *ctx,
     return xpost_object_get_type(*r) != nulltype;
 }
 
-/* call diclookup,
+/*
+   Get value from dict+key with specified memory file
+   (dict must be valid for this memory file)
+
+   call diclookup,
    return the value if the key is non-null
    or invalid if key is null (interpret as "undefined"). */
 Xpost_Object xpost_dict_get_memory (Xpost_Context *ctx,
@@ -546,7 +559,10 @@ Xpost_Object xpost_dict_get_memory (Xpost_Context *ctx,
     return e[1];
 }
 
-/* select the memory file according to BANK field,
+/*
+   Get value from dict+key.
+
+   select the memory file according to BANK field,
    call xpost_dict_get_memory . */
 Xpost_Object xpost_dict_get(Xpost_Context *ctx,
         Xpost_Object d,
@@ -555,7 +571,11 @@ Xpost_Object xpost_dict_get(Xpost_Context *ctx,
     return xpost_dict_get_memory (ctx, xpost_context_select_memory(ctx, d), d, k);
 }
 
-/* save data if not save at this level,
+/*
+   Put key+value in dict with specified memory file.
+   (dict must be valid for this memory file)
+
+   save data if not save at this level,
    lookup the key,
    if key is null, check if the dict is full,
        increase nused,
@@ -624,7 +644,10 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
     return 0;
 }
 
-/* select the memory file according to BANK field,
+/*
+   Put key+value in dict.
+
+   select the memory file according to BANK field,
    call xpost_dict_put_memory. */
 int xpost_dict_put(Xpost_Context *ctx,
         Xpost_Object d,

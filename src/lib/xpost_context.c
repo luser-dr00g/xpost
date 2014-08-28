@@ -317,10 +317,10 @@ void xpost_context_exit(Xpost_Context *ctx)
     xpost_memory_file_exit(ctx->lo);
 }
 
-/* return the global or local memory file for the composite object */
+/* return the appropriate global or local memory file for the composite object */
 /*@dependent@*/
 Xpost_Memory_File *xpost_context_select_memory(Xpost_Context *ctx,
-            Xpost_Object o)
+                                               Xpost_Object o)
 {
     return o.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK? ctx->gl : ctx->lo;
 }
@@ -350,13 +350,13 @@ int xpost_context_install_event_handler(Xpost_Context *ctx,
    (spawn jobserver)
    */
 unsigned int xpost_context_fork1(Xpost_Context *ctx,
-                    int (*xpost_interpreter_cid_init)(unsigned int *cid),
-                    Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
-                    int (*xpost_interpreter_get_initializing)(void),
-                    void (*xpost_interpreter_set_initializing)(int),
-                    Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
-                    Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
-                    int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall))
+                                 int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                                 Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                                 int (*xpost_interpreter_get_initializing)(void),
+                                 void (*xpost_interpreter_set_initializing)(int),
+                                 Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                                 Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
+                                 int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall))
 {
     unsigned int newcid;
     Xpost_Context *newctx;
@@ -384,13 +384,13 @@ unsigned int xpost_context_fork1(Xpost_Context *ctx,
    (new "application"?)
    */
 unsigned int xpost_context_fork2(Xpost_Context *ctx,
-                    int (*xpost_interpreter_cid_init)(unsigned int *cid),
-                    Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
-                    int (*xpost_interpreter_get_initializing)(void),
-                    void (*xpost_interpreter_set_initializing)(int),
-                    Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
-                    Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
-                    int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall))
+                                 int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                                 Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                                 int (*xpost_interpreter_get_initializing)(void),
+                                 void (*xpost_interpreter_set_initializing)(int),
+                                 Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                                 Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
+                                 int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall))
 {
     unsigned int newcid;
     Xpost_Context *newctx;
@@ -418,11 +418,11 @@ unsigned int xpost_context_fork2(Xpost_Context *ctx,
    (lightweight process)
    */
 unsigned int xpost_context_fork3(Xpost_Context *ctx,
-                    int (*xpost_interpreter_cid_init)(unsigned int *cid),
-                    Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
-                    Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
-                    Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
-                    int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall))
+                                 int (*xpost_interpreter_cid_init)(unsigned int *cid),
+                                 Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                                 Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
+                                 Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
+                                 int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall))
 {
     unsigned int newcid;
     Xpost_Context *newctx;
