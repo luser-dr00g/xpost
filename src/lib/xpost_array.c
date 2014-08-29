@@ -131,7 +131,7 @@ Xpost_Object xpost_array_cons(Xpost_Context *ctx,
     Xpost_Object a = xpost_array_cons_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (xpost_object_get_type(a) != nulltype)
     {
-        xpost_stack_push(ctx->lo, ctx->hold, a);
+        xpost_stack_push(ctx->lo, ctx->hold, a); /* stash a reference on the hold stack in case of gc in caller */
         if (ctx->vmmode==GLOBAL)
             a.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     }

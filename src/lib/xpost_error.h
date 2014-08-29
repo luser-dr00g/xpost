@@ -39,38 +39,52 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
 #define AS_BARE(a) a ,
 /* #define AS_STR(a) #a , /\* defined in ob.h *\/ */
 
+/*
+   These error codes are (mostly) defined in the PLRM and can be returned by operator 
+   functions and handled at the postscript level. If an operator (including a device
+   function) returns a value outside of this range, the error-name returned to postscript
+   will be /unknownerror. In some circumstances, /unregistered is used also used for this
+   purpose, since it has no documented use in the PLRM.
+
+   An operator function may fail to execute if the operator_exec function cannot match
+   the type signature against the operand stack. It will then return a /typecheck or
+   /stackunderflow error to postscript.
+
+   contextswitch and ioblock represent requests to the interpreter to change the state
+   of the execution-context. They cannot be caught by postscript error code.
+ */
 #define ERRORS(_) \
-    _(noerror) \
-    _(unregistered) \
-    _(dictfull) \
-    _(dictstackoverflow) \
-    _(dictstackunderflow) \
-    _(execstackoverflow) \
-    _(execstackunderflow) /*5*/\
-    _(handleerror) \
-    _(interrupt) \
-    _(invalidaccess) \
-    _(invalidexit) \
-    _(invalidfileaccess) /*10*/\
-    _(invalidfont) \
-    _(invalidrestore) \
-    _(ioerror) \
-    _(limitcheck) \
-    _(nocurrentpoint) /*15*/\
-    _(rangecheck) \
-    _(stackoverflow) \
-    _(stackunderflow) \
-    _(syntaxerror) \
-    _(timeout) /*20*/\
-    _(typecheck) \
-    _(undefined) \
-    _(undefinedfilename) \
-    _(undefinedresult) \
-    _(unmatchedmark) /*25*/\
-    _(VMerror) \
-    _(contextswitch) \
-    _(ioblock) \
-    _(unknownerror) /* nb. unknownerror is the catch-all and must be last */ \
+    _(noerror)            /*0*/\
+    _(unregistered)            \
+    _(dictfull)                \
+    _(dictstackoverflow)       \
+    _(dictstackunderflow)      \
+    _(execstackoverflow)  /*5*/\
+    _(execstackunderflow)      \
+    _(handleerror)             \
+    _(interrupt)               \
+    _(invalidaccess)           \
+    _(invalidexit)       /*10*/\
+    _(invalidfileaccess)       \
+    _(invalidfont)             \
+    _(invalidrestore)          \
+    _(ioerror)                 \
+    _(limitcheck)        /*15*/\
+    _(nocurrentpoint)          \
+    _(rangecheck)              \
+    _(stackoverflow)           \
+    _(stackunderflow)          \
+    _(syntaxerror)       /*20*/\
+    _(timeout)                 \
+    _(typecheck)               \
+    _(undefined)               \
+    _(undefinedfilename)       \
+    _(undefinedresult)   /*25*/\
+    _(unmatchedmark)           \
+    _(VMerror)                 \
+    _(contextswitch)           \
+    _(ioblock)                 \
+    _(unknownerror)     /* 30 nb. unknownerror is the catch-all and must be last */ \
 /* #enddef ERRORS */
 enum err { ERRORS(AS_BARE) };
 extern char *errorname[] /*= { ERRORS(AS_STR) }*/;

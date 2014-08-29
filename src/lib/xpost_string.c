@@ -87,7 +87,7 @@ Xpost_Object xpost_string_cons(Xpost_Context *ctx,
     s = xpost_string_cons_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
     if (xpost_object_get_type(s) != nulltype)
     {
-        xpost_stack_push(ctx->lo, ctx->hold, s);
+        xpost_stack_push(ctx->lo, ctx->hold, s); /* stash a reference on the hold stack in case of gc in caller */
         if (ctx->vmmode==GLOBAL)
             s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     }

@@ -266,7 +266,7 @@ Xpost_Object xpost_dict_cons (Xpost_Context *ctx,
     Xpost_Object d = xpost_dict_cons_memory (ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (xpost_object_get_type(d) != nulltype)
     {
-        xpost_stack_push(ctx->lo, ctx->hold, d);
+        xpost_stack_push(ctx->lo, ctx->hold, d); /* stash a reference on the hold stack in case of gc in caller */
         if (ctx->vmmode == GLOBAL)
             d.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     }
