@@ -1,6 +1,6 @@
 (mat.ps)run[    % load matrix library, begin dictionary construction
 
-/N 17
+/N 13
 /C [ 0 7 4 ]   % Cam
 /E [ 0 0 40 ] % Eye
 /R 0 roty 120 rotx 93 rotz   % Rot: pan tilt twist
@@ -24,6 +24,8 @@
 
 300 400 translate
 1 14 dup dup scale div currentlinewidth mul setlinewidth  % global scale
+currentlinewidth 3 mul setlinewidth
+
 /newline { /line {moveto /line {lineto currentpoint stroke moveto} store} store } def
 newline
 P{

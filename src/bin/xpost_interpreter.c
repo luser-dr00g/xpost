@@ -793,12 +793,16 @@ int initalldata(const char *device)
 
 /* FIXME remove duplication of effort here and in xpost_main.c
          (ie. there should be 1 table, not 2)
+
+    Generates postscript code to initialize the selected device
  */
 static
 void setlocalconfig(Xpost_Context *ctx,
                     Xpost_Object sd,
                     const char *device,
                     const char *outfile,
+                    const char *bufferin,
+                    char **bufferout,
                     char *exedir,
                     int is_installed)
 {
@@ -860,6 +864,23 @@ void setlocalconfig(Xpost_Context *ctx,
         xpost_dict_put(ctx, sd,
                 xpost_name_cons(ctx, "OutputFileName"),
                 xpost_object_cvlit(xpost_string_cons(ctx, strlen(outfile), outfile)));
+    }
+
+    if (bufferin)
+    {
+        Xpost_Object s = xpost_object_cvlit(xpost_string_cons(ctx, sizeof(bufferin), NULL));
+        xpost_object_set_access(s, XPOST_OBJECT_TAG_ACCESS_NONE);
+        memcpy(xpost_string_get_pointer(ctx, s), &bufferin, sizeof(bufferin));
+        xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "OutputBufferIn"), s);
+    }
+
+    if (bufferout)
+    {
+        Xpost_Object s = xpost_object_cvlit(xpost_string_cons(ctx, sizeof(bufferout), NULL));
+        xpost_object_set_access(s, XPOST_OBJECT_TAG_ACCESS_NONE);
+        memcpy(xpost_string_get_pointer(ctx, s), &bufferout, sizeof(bufferout));
+        xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "OutputBufferOut"), s);
+
     }
 
     ctx->vmmode = LOCAL;
@@ -924,8 +945,10 @@ int xpost_create(const char *device,
 {
     Xpost_Object sd, ud;
     int ret;
-    char *exedir = ".";
+    char *exedir = "."; /* fall-back directory to find data/init.ps */
     const char *outfile = NULL;
+    const char *bufferin = NULL;
+    char **bufferout = NULL;
 
     switch (output_type)
     {
@@ -933,8 +956,13 @@ int xpost_create(const char *device,
         outfile = outputptr;
         break;
     case XPOST_OUTPUT_BUFFERIN:
+        bufferin = outputptr;
         break;
     case XPOST_OUTPUT_BUFFEROUT:
+        bufferout = (char **)outputptr;
+        break;
+    case XPOST_OUTPUT_DEFAULT:
+        ;
         break;
     }
 
@@ -962,7 +990,9 @@ int xpost_create(const char *device,
     sd = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0);
     ud = xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 2);
 
-    setlocalconfig(xpost_ctx, sd, device, outfile, exedir, is_installed);
+    setlocalconfig(xpost_ctx, sd,
+                   device, outfile, bufferin, bufferout,
+                   exedir, is_installed);
 
     loadinitps(xpost_ctx, exedir, is_installed);
 
