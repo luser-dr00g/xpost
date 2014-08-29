@@ -44,7 +44,8 @@
  * the core interpreter loop,
    */
 
-//#define MAXCONTEXT 10 // moved to xpost_context.h. <- must include first!
+/*# define MAXCONTEXT 10 // moved to xpost_context.h. <- must include first!
+ */
 #define MAXMFILE 10
 
 typedef struct {
@@ -57,7 +58,8 @@ typedef struct {
 
 
 extern Xpost_Interpreter *itpdata;
-//extern int initializing;
+
+/* garbage collection does not run during initializing */
 int xpost_interpreter_get_initializing(void);
 void xpost_interpreter_set_initializing(int i);
 
