@@ -70,7 +70,7 @@ void *alloca (size_t);
 #include "xpost_name.h"
 #include "xpost_dict.h"
 
-#include "xpost_interpreter.h"
+//#include "xpost_interpreter.h"
 #include "xpost_operator.h"
 #include "xpost_op_stack.h"
 
