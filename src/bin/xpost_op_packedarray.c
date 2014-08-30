@@ -113,7 +113,7 @@ int setpacking (Xpost_Context *ctx,
 int initoppa(Xpost_Context *ctx,
               Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
 
@@ -122,10 +122,10 @@ int initoppa(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "packedarray", packedarray, 1, 1, integertype);
+    op = xpost_operator_cons(ctx, "packedarray", packedarray, 1, 1, integertype);
     INSTALL;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "currentpacking"), xpost_bool_cons(0));
-    op = consoper(ctx, "setpacking", setpacking, 0, 1, booleantype);
+    op = xpost_operator_cons(ctx, "setpacking", setpacking, 0, 1, booleantype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);

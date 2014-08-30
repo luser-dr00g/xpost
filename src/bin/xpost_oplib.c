@@ -95,7 +95,7 @@ int initop(Xpost_Context *ctx)
     Xpost_Object sd;
     Xpost_Memory_Table *tab;
     unsigned ent;
-    oper *optab;
+    Xpost_Operator *optab;
     unsigned int optadr;
 
     sd = xpost_dict_cons (ctx, SDSIZE);
@@ -125,7 +125,7 @@ int initop(Xpost_Context *ctx)
     //printf("\nops:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 //#endif
 
-    op = consoper(ctx, "breakhere", breakhere, 0, 0);
+    op = xpost_operator_cons(ctx, "breakhere", breakhere, 0, 0);
     INSTALL;
 
     initopst(ctx, sd);

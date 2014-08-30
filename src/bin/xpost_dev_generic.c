@@ -503,15 +503,15 @@ int initdevgenericops (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
     unsigned int optadr;
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
 
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (oper *)(ctx->gl->base + optadr);
+    optab = (Xpost_Operator *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, ".yxsort", _yxsort, 0, 1, arraytype); INSTALL;
-    op = consoper(ctx, ".fillpoly", _fillpoly, 0, 2, arraytype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".yxsort", _yxsort, 0, 1, arraytype); INSTALL;
+    op = xpost_operator_cons(ctx, ".fillpoly", _fillpoly, 0, 2, arraytype, dicttype); INSTALL;
     if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
         return VMerror;
     if (xpost_object_get_type(namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace")) == invalidtype)

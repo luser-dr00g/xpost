@@ -252,11 +252,11 @@ int Sforall(Xpost_Context *ctx,
 
     if (S.comp_.sz == 0) return 0;
     assert(ctx->gl->base);
-    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "forall", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.forall)))
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "forall", NULL,0,0));
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
         return execstackoverflow;
-    //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0));
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
@@ -268,8 +268,8 @@ int Sforall(Xpost_Context *ctx,
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
     if (!xpost_object_is_exe(S)) {
-        //xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0));
-        if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx)))
+        //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0));
+        if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
             return execstackoverflow;
     }
 
@@ -286,7 +286,7 @@ int Sforall(Xpost_Context *ctx,
 int initopst(Xpost_Context *ctx,
               Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
 
@@ -294,37 +294,37 @@ int initopst(Xpost_Context *ctx,
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
-    op = consoper(ctx, "string", Istring, 1, 1,
+    op = xpost_operator_cons(ctx, "string", Istring, 1, 1,
             integertype);
     INSTALL;
-    op = consoper(ctx, "length", Slength, 1, 1,
+    op = xpost_operator_cons(ctx, "length", Slength, 1, 1,
             stringtype);
     INSTALL;
-    op = consoper(ctx, "length", Nlength, 1, 1,
+    op = xpost_operator_cons(ctx, "length", Nlength, 1, 1,
             nametype);
     INSTALL;
-    op = consoper(ctx, "copy", Scopy, 1, 2,
+    op = xpost_operator_cons(ctx, "copy", Scopy, 1, 2,
             stringtype, stringtype);
     INSTALL;
-    op = consoper(ctx, "get", Sget, 1, 2,
+    op = xpost_operator_cons(ctx, "get", Sget, 1, 2,
             stringtype, integertype);
     INSTALL;
-    op = consoper(ctx, "put", Sput, 0, 3,
+    op = xpost_operator_cons(ctx, "put", Sput, 0, 3,
             stringtype, integertype, integertype);
     INSTALL;
-    op = consoper(ctx, "getinterval", Sgetinterval, 1, 3,
+    op = xpost_operator_cons(ctx, "getinterval", Sgetinterval, 1, 3,
             stringtype, integertype, integertype);
     INSTALL;
-    op = consoper(ctx, "putinterval", Sputinterval, 0, 3,
+    op = xpost_operator_cons(ctx, "putinterval", Sputinterval, 0, 3,
             stringtype, integertype, stringtype);
     INSTALL;
-    op = consoper(ctx, "anchorsearch", Sanchorsearch, 3, 2,
+    op = xpost_operator_cons(ctx, "anchorsearch", Sanchorsearch, 3, 2,
             stringtype, stringtype);
     INSTALL;
-    op = consoper(ctx, "search", Ssearch, 4, 2,
+    op = xpost_operator_cons(ctx, "search", Ssearch, 4, 2,
             stringtype, stringtype);
     INSTALL;
-    op = consoper(ctx, "forall", Sforall, 0, 2,
+    op = xpost_operator_cons(ctx, "forall", Sforall, 0, 2,
             stringtype, proctype);
     INSTALL;
     return 0;

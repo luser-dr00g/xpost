@@ -283,7 +283,7 @@ int Zcounttomark (Xpost_Context *ctx)
 int initops(Xpost_Context *ctx,
              Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
 
@@ -291,27 +291,27 @@ int initops(Xpost_Context *ctx,
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
-    op = consoper(ctx, "pop", Apop, 0, 1, anytype);
+    op = xpost_operator_cons(ctx, "pop", Apop, 0, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "exch", AAexch, 2, 2, anytype, anytype);
+    op = xpost_operator_cons(ctx, "exch", AAexch, 2, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "dup", Adup, 2, 1, anytype);
+    op = xpost_operator_cons(ctx, "dup", Adup, 2, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "copy", Icopy, 0, 1, integertype);
+    op = xpost_operator_cons(ctx, "copy", Icopy, 0, 1, integertype);
     INSTALL;
-    op = consoper(ctx, "index", Iindex, 1, 1, integertype);
+    op = xpost_operator_cons(ctx, "index", Iindex, 1, 1, integertype);
     INSTALL;
     //xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    op = consoper(ctx, "roll", IIroll, 0, 2, integertype, integertype);
+    op = xpost_operator_cons(ctx, "roll", IIroll, 0, 2, integertype, integertype);
     INSTALL;
-    op = consoper(ctx, "clear", Zclear, 0, 0);
+    op = xpost_operator_cons(ctx, "clear", Zclear, 0, 0);
     INSTALL;
-    op = consoper(ctx, "count", Zcount, 1, 0);
+    op = xpost_operator_cons(ctx, "count", Zcount, 1, 0);
     INSTALL;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark);
-    op = consoper(ctx, "cleartomark", Zcleartomark, 0, 0);
+    op = xpost_operator_cons(ctx, "cleartomark", Zcleartomark, 0, 0);
     INSTALL;
-    op = consoper(ctx, "counttomark", Zcounttomark, 1, 0);
+    op = xpost_operator_cons(ctx, "counttomark", Zcounttomark, 1, 0);
     INSTALL;
     return 0;
 }

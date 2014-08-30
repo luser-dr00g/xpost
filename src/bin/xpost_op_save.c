@@ -174,7 +174,7 @@ int Zvmstatus (Xpost_Context *ctx)
 int initopv(Xpost_Context *ctx,
              Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
 
@@ -183,18 +183,18 @@ int initopv(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "save", Zsave, 1, 0);
+    op = xpost_operator_cons(ctx, "save", Zsave, 1, 0);
     INSTALL;
-    op = consoper(ctx, "restore", Vrestore, 0, 1, savetype);
+    op = xpost_operator_cons(ctx, "restore", Vrestore, 0, 1, savetype);
     INSTALL;
-    op = consoper(ctx, "setglobal", Bsetglobal, 0, 1, booleantype);
+    op = xpost_operator_cons(ctx, "setglobal", Bsetglobal, 0, 1, booleantype);
     INSTALL;
-    op = consoper(ctx, "currentglobal", Zcurrentglobal, 1, 0);
+    op = xpost_operator_cons(ctx, "currentglobal", Zcurrentglobal, 1, 0);
     INSTALL;
-    op = consoper(ctx, "gcheck", Agcheck, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "gcheck", Agcheck, 1, 1, anytype);
     INSTALL;
 #if 0
-    op = consoper(ctx, "vmstatus", Zvmstatus, 3, 0);
+    op = xpost_operator_cons(ctx, "vmstatus", Zvmstatus, 3, 0);
     INSTALL;
 #endif
 

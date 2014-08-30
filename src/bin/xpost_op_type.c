@@ -456,8 +456,8 @@ int AScvs (Xpost_Context *ctx,
     case operatortype:
         {
             unsigned int optadr;
-            oper *optab;
-            oper op;
+            Xpost_Operator *optab;
+            Xpost_Operator op;
             Xpost_Object_Mark nm;
             ret = xpost_memory_table_get_addr(ctx->gl,
                     XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
@@ -492,7 +492,7 @@ int AScvs (Xpost_Context *ctx,
 int initopt (Xpost_Context *ctx,
               Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
 
@@ -501,38 +501,38 @@ int initopt (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "type", Atype, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "type", Atype, 1, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "cvlit", Acvlit, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "cvlit", Acvlit, 1, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "cvx", Acvx, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "cvx", Acvx, 1, 1, anytype);
     INSTALL;
     ctx->opcode_shortcuts.cvx = op.mark_.padw;
-    op = consoper(ctx, "xcheck", Axcheck, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "xcheck", Axcheck, 1, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "executeonly", Aexecuteonly, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "executeonly", Aexecuteonly, 1, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "noaccess", Anoaccess, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "noaccess", Anoaccess, 1, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "readonly", Areadonly, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "readonly", Areadonly, 1, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "rcheck", Archeck, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "rcheck", Archeck, 1, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "wcheck", Awcheck, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "wcheck", Awcheck, 1, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "cvi", Ncvi, 1, 1, numbertype);
+    op = xpost_operator_cons(ctx, "cvi", Ncvi, 1, 1, numbertype);
     INSTALL;
-    op = consoper(ctx, "cvi", Scvi, 1, 1, stringtype);
+    op = xpost_operator_cons(ctx, "cvi", Scvi, 1, 1, stringtype);
     INSTALL;
-    op = consoper(ctx, "cvn", Scvn, 1, 1, stringtype);
+    op = xpost_operator_cons(ctx, "cvn", Scvn, 1, 1, stringtype);
     INSTALL;
-    op = consoper(ctx, "cvr", Ncvr, 1, 1, numbertype);
+    op = xpost_operator_cons(ctx, "cvr", Ncvr, 1, 1, numbertype);
     INSTALL;
-    op = consoper(ctx, "cvr", Scvr, 1, 1, stringtype);
+    op = xpost_operator_cons(ctx, "cvr", Scvr, 1, 1, stringtype);
     INSTALL;
-    op = consoper(ctx, "cvrs", NRScvrs, 1, 3, numbertype, integertype, stringtype);
+    op = xpost_operator_cons(ctx, "cvrs", NRScvrs, 1, 3, numbertype, integertype, stringtype);
     INSTALL;
-    op = consoper(ctx, "cvs", AScvs, 1, 2, anytype, stringtype);
+    op = xpost_operator_cons(ctx, "cvs", AScvs, 1, 2, anytype, stringtype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);

@@ -162,7 +162,7 @@ int _create (Xpost_Context *ctx,
 
     /* call device class's ps-level .copydict procedure,
        then call _create_cont, by continuation. */
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_create_cont_opcode)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_create_cont_opcode)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic,
                     //xpost_name_cons(ctx, ".copydict")
@@ -288,7 +288,7 @@ int _create_cont (Xpost_Context *ctx,
             private.win, private.scr->root_visual);
 
     xpost_context_install_event_handler(ctx,
-            operfromcode(_event_handler_opcode),
+            xpost_operator_cons_opcode(_event_handler_opcode),
             devdic);
 
 
@@ -744,7 +744,7 @@ int loadxcbdevice (Xpost_Context *ctx)
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadxcbdevicecont_opcode)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_loadxcbdevicecont_opcode)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic,
                     //xpost_name_cons(ctx, ".copydict")
@@ -774,14 +774,14 @@ int loadxcbdevicecont (Xpost_Context *ctx,
             nameDeviceRGB
             );
 
-    op = consoper(ctx, "xcbCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "xcbCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
-    op = consoper(ctx, "xcbCreate", _create, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "xcbCreate", _create, 1, 3, integertype, integertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Create"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbPutPix", _putpix, 0, 6,
+    op = xpost_operator_cons(ctx, "xcbPutPix", _putpix, 0, 6,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             dicttype); /* devdic */
@@ -789,12 +789,12 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbGetPix", _getpix, 3, 3, numbertype, numbertype, dicttype);
+    op = xpost_operator_cons(ctx, "xcbGetPix", _getpix, 3, 3, numbertype, numbertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "GetPix"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbDrawLine", _drawline, 0, 8,
+    op = xpost_operator_cons(ctx, "xcbDrawLine", _drawline, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x1 y1 */
             numbertype, numbertype, /* x2 y2 */
@@ -803,7 +803,7 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbFillRect", _fillrect, 0, 8,
+    op = xpost_operator_cons(ctx, "xcbFillRect", _fillrect, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y */
             numbertype, numbertype, /* width height */
@@ -812,24 +812,24 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbFillPoly", _fillpoly, 0, 5,
+    op = xpost_operator_cons(ctx, "xcbFillPoly", _fillpoly, 0, 5,
             numbertype, numbertype, numbertype,
             arraytype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "FillPoly"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbEmit", _emit, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "xcbEmit", _emit, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Emit"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbFlush", _flush, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "xcbFlush", _flush, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Flush"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbDestroy", _destroy, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "xcbDestroy", _destroy, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Destroy"), op);
     if (ret)
         return ret;
@@ -840,12 +840,12 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "newxcbdevice", newxcbdevice, 1, 2, integertype, integertype);
+    op = xpost_operator_cons(ctx, "newxcbdevice", newxcbdevice, 1, 2, integertype, integertype);
     ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newxcbdevice"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "xcbEventHandler", _event_handler, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "xcbEventHandler", _event_handler, 0, 1, dicttype);
     _event_handler_opcode = op.mark_.padw;
 
     return 0;
@@ -859,7 +859,7 @@ int initxcbops (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
     unsigned int optadr;
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
 
     if (xpost_object_get_type(namePrivate = xpost_name_cons(ctx, "Private")) == invalidtype)
@@ -877,9 +877,9 @@ int initxcbops (Xpost_Context *ctx,
 
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (oper *)(ctx->gl->base + optadr);
-    op = consoper(ctx, "loadxcbdevice", loadxcbdevice, 1, 0); INSTALL;
-    op = consoper(ctx, "loadxcbdevicecont", loadxcbdevicecont, 1, 1, dicttype);
+    optab = (Xpost_Operator *)(ctx->gl->base + optadr);
+    op = xpost_operator_cons(ctx, "loadxcbdevice", loadxcbdevice, 1, 0); INSTALL;
+    op = xpost_operator_cons(ctx, "loadxcbdevicecont", loadxcbdevicecont, 1, 1, dicttype);
     _loadxcbdevicecont_opcode = op.mark_.padw;
     //printf("initxcbops\n");
 

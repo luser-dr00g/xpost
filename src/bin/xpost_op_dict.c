@@ -382,10 +382,10 @@ int xpost_op_dict_proc_forall (Xpost_Context *ctx,
                     return stackoverflow;
 
                 if (!xpost_stack_push(ctx->lo, ctx->es,
-                            operfromcode(ctx->opcode_shortcuts.forall)))
+                            xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
                     return execstackoverflow;
                 if (!xpost_stack_push(ctx->lo, ctx->es,
-                            operfromcode(ctx->opcode_shortcuts.cvx)))
+                            xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
                     return execstackoverflow;
                 if (!xpost_stack_push(ctx->lo, ctx->es,
                             xpost_object_cvlit(P)))
@@ -481,7 +481,7 @@ int xpost_op_cleardictstack(Xpost_Context *ctx)
 int xpost_oper_init_dict_ops (Xpost_Context *ctx,
               Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
     int ret;
@@ -490,51 +490,51 @@ int xpost_oper_init_dict_ops (Xpost_Context *ctx,
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
-    op = consoper(ctx, "dict", xpost_op_int_dict, 1, 1, integertype);
+    op = xpost_operator_cons(ctx, "dict", xpost_op_int_dict, 1, 1, integertype);
     INSTALL;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "<<"), mark);
     if (ret)
         return 0;
-    op = consoper(ctx, ">>", xpost_op_dict_to_mark, 1, 0);
+    op = xpost_operator_cons(ctx, ">>", xpost_op_dict_to_mark, 1, 0);
     INSTALL;
-    op = consoper(ctx, "length", xpost_op_dict_length, 1, 1, dicttype);
+    op = xpost_operator_cons(ctx, "length", xpost_op_dict_length, 1, 1, dicttype);
     INSTALL;
-    op = consoper(ctx, "maxlength", xpost_op_dict_maxlength, 1, 1, dicttype);
+    op = xpost_operator_cons(ctx, "maxlength", xpost_op_dict_maxlength, 1, 1, dicttype);
     INSTALL;
-    op = consoper(ctx, "begin", xpost_op_dict_begin, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "begin", xpost_op_dict_begin, 0, 1, dicttype);
     INSTALL;
-    op = consoper(ctx, "end", xpost_op_end, 0, 0);
+    op = xpost_operator_cons(ctx, "end", xpost_op_end, 0, 0);
     INSTALL;
-    op = consoper(ctx, "def", xpost_op_any_any_def, 0, 2, anytype, anytype);
+    op = xpost_operator_cons(ctx, "def", xpost_op_any_any_def, 0, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "load", xpost_op_any_load, 1, 1, anytype);
+    op = xpost_operator_cons(ctx, "load", xpost_op_any_load, 1, 1, anytype);
     INSTALL;
     ctx->opcode_shortcuts.load = op.mark_.padw;
-    op = consoper(ctx, "store", xpost_op_any_store, 0, 2, anytype, anytype);
+    op = xpost_operator_cons(ctx, "store", xpost_op_any_store, 0, 2, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "get", xpost_op_dict_any_get, 1, 2, dicttype, anytype);
+    op = xpost_operator_cons(ctx, "get", xpost_op_dict_any_get, 1, 2, dicttype, anytype);
     INSTALL;
-    op = consoper(ctx, "put", xpost_op_dict_any_any_put, 1, 3,
+    op = xpost_operator_cons(ctx, "put", xpost_op_dict_any_any_put, 1, 3,
             dicttype, anytype, anytype);
     INSTALL;
-    op = consoper(ctx, "undef", xpost_op_dict_any_undef, 0, 2, dicttype, anytype);
+    op = xpost_operator_cons(ctx, "undef", xpost_op_dict_any_undef, 0, 2, dicttype, anytype);
     INSTALL;
-    op = consoper(ctx, "known", xpost_op_dict_any_known, 1, 2, dicttype, anytype);
+    op = xpost_operator_cons(ctx, "known", xpost_op_dict_any_known, 1, 2, dicttype, anytype);
     INSTALL;
-    op = consoper(ctx, "where", xpost_op_any_where, 2, 1, anytype);
+    op = xpost_operator_cons(ctx, "where", xpost_op_any_where, 2, 1, anytype);
     INSTALL;
-    op = consoper(ctx, "copy", xpost_op_dict_copy, 1, 2, dicttype, dicttype);
+    op = xpost_operator_cons(ctx, "copy", xpost_op_dict_copy, 1, 2, dicttype, dicttype);
     INSTALL;
-    op = consoper(ctx, "forall", xpost_op_dict_proc_forall, 0, 2, dicttype, proctype);
+    op = xpost_operator_cons(ctx, "forall", xpost_op_dict_proc_forall, 0, 2, dicttype, proctype);
     INSTALL;
     ctx->opcode_shortcuts.forall = op.mark_.padw;
-    op = consoper(ctx, "currentdict", xpost_op_currentdict, 1, 0);
+    op = xpost_operator_cons(ctx, "currentdict", xpost_op_currentdict, 1, 0);
     INSTALL;
-    op = consoper(ctx, "countdictstack", xpost_op_countdictstack, 1, 0);
+    op = xpost_operator_cons(ctx, "countdictstack", xpost_op_countdictstack, 1, 0);
     INSTALL;
-    op = consoper(ctx, "dictstack", xpost_op_array_dictstack, 1, 1, arraytype);
+    op = xpost_operator_cons(ctx, "dictstack", xpost_op_array_dictstack, 1, 1, arraytype);
     INSTALL;
-    op = consoper(ctx, "cleardictstack", xpost_op_cleardictstack, 0, 0);
+    op = xpost_operator_cons(ctx, "cleardictstack", xpost_op_cleardictstack, 0, 0);
     INSTALL;
     return 0;
 }

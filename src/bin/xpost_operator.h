@@ -33,14 +33,14 @@
 
 /* operators
    This module is the operator interface.
-   It defines the operator constructor consoper,
-   and the operator handler function opexec.
-   initoptab is called to initialize the optab structure itself.
+   It defines the operator constructor xpost_operator_cons,
+   and the operator handler function xpost_operator_exec.
+   xpost_operator_init_optab is called to initialize the optab structure itself.
    initop is called to populate the optab structure.
 
-   nb. Since consoper does a linear search through the optab,
+   nb. Since xpost_operator_cons does a linear search through the optab,
    an obvious optimisation would be to factor-out calls to
-   consoper from main-line code. Pre-initialize an object
+   xpost_operator_cons from main-line code. Pre-initialize an object
    somewhere and re-use it where needed. xpost2 did this with
    a global struct of "opcuts" (operator object shortcuts),
    but here it would need to be "global", either in global-vm
@@ -50,25 +50,25 @@
 
    ----
    An idea to speed-up typechecks, without radical change.
-   Add a `int (*check)()` function pointer to the signat
+   Add a `int (*check)()` function pointer to the signature
    which directly implements the stack-checking performed by
-   opexec (but without the nasty loops).
-   opexec would then call op.sig[i].check() if not null.
+   xpost_operator_exec (but without the nasty loops).
+   xpost_operator_exec would then call op.sig[i].check() if not null.
 
    */
 
-typedef struct signat {
+typedef struct Xpost_Signature {
     int (*fp)();
     int in;
     unsigned t;
     int out;
-} signat;
+} Xpost_Signature;
 
-typedef struct oper {
+typedef struct Xpost_Operator {
     unsigned name;
     int n;
     unsigned sigadr;
-} oper;
+} Xpost_Operator;
 
 enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
     floattype, numbertype, proctype };
@@ -76,13 +76,13 @@ enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
 #define MAXOPS 200
 #define SDSIZE 10
 
-int initoptab(Xpost_Context *ctx);
-void dumpoper(Xpost_Context *ctx, int opcode);
-Xpost_Object operfromcode(int opcode);
+int xpost_operator_init_optab(Xpost_Context *ctx);
+void xpost_operator_dump(Xpost_Context *ctx, int opcode);
+Xpost_Object xpost_operator_cons_opcode(int opcode);
 
-Xpost_Object consoper(Xpost_Context *ctx, char *name, /*@null@*/ int (*fp)(), int out, int in, ...);
+Xpost_Object xpost_operator_cons(Xpost_Context *ctx, char *name, /*@null@*/ int (*fp)(), int out, int in, ...);
 
-int opexec(Xpost_Context *ctx, unsigned opcode);
+int xpost_operator_exec(Xpost_Context *ctx, unsigned opcode);
 
 #define INSTALL \
     xpost_memory_table_get_addr(ctx->gl, \

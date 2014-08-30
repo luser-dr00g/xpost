@@ -397,7 +397,7 @@ int grok (Xpost_Context *ctx,
                       }
                       s[ns] = '\0';
                       //xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(xpost_name_cons(ctx, s)));
-                      //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
+                      //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "load", NULL,0,0).mark_.padw);
                       if (DEBUGLOAD)
                           printf("\ntoken: loading immediate name %s\n", s);
                       xpost_op_any_load(ctx, xpost_object_cvx(xpost_name_cons(ctx, s)));
@@ -583,7 +583,7 @@ int Stoken (Xpost_Context *ctx,
 int initoptok(Xpost_Context *ctx,
                Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
 
@@ -592,9 +592,9 @@ int initoptok(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "token", Ftoken, 2, 1, filetype);
+    op = xpost_operator_cons(ctx, "token", Ftoken, 2, 1, filetype);
     INSTALL;
-    op = consoper(ctx, "token", Stoken, 3, 1, stringtype);
+    op = xpost_operator_cons(ctx, "token", Stoken, 3, 1, stringtype);
     INSTALL;
     ctx->opcode_shortcuts.token = op.mark_.padw;
     return 0;
