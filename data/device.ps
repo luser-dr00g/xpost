@@ -24,9 +24,10 @@ end
     } if
 } bind def
 
-/showpage {
-    ShowpageSemantics 0 eq { % XPOST_SHOWPAGE_DEFAULT
-        DEVICE dup /Emit get exec
+/ShowpageSemanticsDict <<
+
+    % XPOST_SHOWPAGE_DEFAULT
+    0 {
         (----showpage----) =print flush
         [ {(%lineedit)(r)file}stopped cleartomark
         DEVICE /pagenumber
@@ -36,16 +37,22 @@ end
             1 put
         } ifelse
         erasepage
-    } if
+    } 
 
-    ShowpageSemantics 1 eq { % XPOST_SHOWPAGE_NOPAUSE
-        DEVICE dup /Emit get exec
-    } if
+    % XPOST_SHOWPAGE_NOPAUSE
+    1 {
+    } 
 
-    ShowpageSemantics 2 eq { % XPOST_SHOWPAGE_RETURN
-        DEVICE dup /Emit get exec
+    % XPOST_SHOWPAGE_RETURN
+    2 {
         quit
-    } if
+    } 
+>> def
+
+/showpage {
+    DEVICE dup /Emit get exec
+
+    ShowpageSemanticsDict ShowpageSemantics get exec
 } bind def
 
 /copypage {
