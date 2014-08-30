@@ -49,7 +49,7 @@
 #include "xpost_error.h"
 
 #include "xpost_garbage.h"
-#include "xpost_interpreter.h"
+//#include "xpost_interpreter.h"
 #include "xpost_operator.h"
 #include "xpost_op_param.h"
 

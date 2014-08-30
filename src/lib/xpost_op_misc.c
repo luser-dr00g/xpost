@@ -86,7 +86,7 @@ void *alloca (size_t);
 #include "xpost_array.h"
 #include "xpost_dict.h"
 
-#include "xpost_interpreter.h"
+//#include "xpost_interpreter.h"
 #include "xpost_operator.h"
 #include "xpost_op_dict.h"
 #include "xpost_op_misc.h"
@@ -245,6 +245,7 @@ int _array_swap(Xpost_Context *ctx,
     return 0;
 }
 
+#if 0
 static
 int traceon (Xpost_Context *ctx)
 {
@@ -259,6 +260,7 @@ int traceoff (Xpost_Context *ctx)
     TRACE = 0;
     return 0;
 }
+#endif
 
 static
 int debugloadon (Xpost_Context *ctx)
@@ -349,10 +351,12 @@ int xpost_oper_init_misc_ops (Xpost_Context *ctx,
             arraytype, integertype, integertype);
     INSTALL;
 
+#if 0
     op = xpost_operator_cons(ctx, "traceon", traceon, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "traceoff", traceoff, 0, 0);
     INSTALL;
+#endif
     op = xpost_operator_cons(ctx, "debugloadon", debugloadon, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "debugloadoff", debugloadoff, 0, 0);

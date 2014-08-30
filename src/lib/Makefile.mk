@@ -24,6 +24,23 @@ src/lib/xpost_name.c \
 src/lib/xpost_file.c \
 src/lib/xpost_garbage.c \
 src/lib/xpost_operator.c \
+src/lib/xpost_op_array.c \
+src/lib/xpost_op_boolean.c \
+src/lib/xpost_op_control.c \
+src/lib/xpost_op_dict.c \
+src/lib/xpost_op_file.c \
+src/lib/xpost_op_math.c \
+src/lib/xpost_op_packedarray.c \
+src/lib/xpost_op_stack.c \
+src/lib/xpost_op_string.c \
+src/lib/xpost_op_type.c \
+src/lib/xpost_op_token.c \
+src/lib/xpost_op_save.c \
+src/lib/xpost_op_misc.c \
+src/lib/xpost_op_param.c \
+src/lib/xpost_op_matrix.c \
+src/lib/xpost_op_font.c \
+src/lib/xpost_op_context.c \
 src/lib/xpost_compat.h \
 src/lib/xpost_context.h \
 src/lib/xpost_error.h \
@@ -43,6 +60,23 @@ src/lib/xpost_name.h \
 src/lib/xpost_file.h \
 src/lib/xpost_garbage.h \
 src/lib/xpost_operator.h \
+src/lib/xpost_op_array.h \
+src/lib/xpost_op_boolean.h \
+src/lib/xpost_op_control.h \
+src/lib/xpost_op_dict.h \
+src/lib/xpost_op_file.h \
+src/lib/xpost_op_math.h \
+src/lib/xpost_op_packedarray.h \
+src/lib/xpost_op_stack.h \
+src/lib/xpost_op_string.h \
+src/lib/xpost_op_type.h \
+src/lib/xpost_op_token.h \
+src/lib/xpost_op_save.h \
+src/lib/xpost_op_misc.h \
+src/lib/xpost_op_param.h \
+src/lib/xpost_op_matrix.h \
+src/lib/xpost_op_font.h \
+src/lib/xpost_op_context.h \
 src/lib/xpost_private.h
 
 src_lib_libxpost_la_CPPFLAGS = \

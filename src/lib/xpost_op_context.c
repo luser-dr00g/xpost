@@ -44,7 +44,7 @@
 #include "xpost_name.h"
 #include "xpost_dict.h"
 
-#include "xpost_interpreter.h"
+//#include "xpost_interpreter.h"
 #include "xpost_operator.h"
 #include "xpost_op_stack.h"
 #include "xpost_op_context.h"
@@ -72,11 +72,11 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
 
     cid = xpost_context_fork3(ctx,
             ctx->xpost_interpreter_cid_init,
-            xpost_interpreter_cid_get_context,
+            ctx->gl->interpreter_cid_get_context,
             ctx->xpost_interpreter_alloc_local_memory,
             ctx->xpost_interpreter_alloc_global_memory,
             ctx->garbage_collect_function);
-    newctx = xpost_interpreter_cid_get_context(cid);
+    newctx = ctx->gl->interpreter_cid_get_context(cid);
     printf("op_fork ctx->id %u, cid %u, newctx->id %u\n", ctx->id, cid, newctx->id);
 
     (void)xpost_op_counttomark(ctx);

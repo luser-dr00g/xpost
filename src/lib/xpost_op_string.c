@@ -45,7 +45,7 @@
 #include "xpost_array.h"
 #include "xpost_dict.h"
 
-#include "xpost_interpreter.h"
+//#include "xpost_interpreter.h"
 #include "xpost_operator.h"
 #include "xpost_op_string.h"
 
