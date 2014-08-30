@@ -277,10 +277,10 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     if (!xpost_stack_push(ctx->lo, ctx->es,
-                operfromcode(ctx->opcode_shortcuts.forall)))
+                xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es,
-                operfromcode(ctx->opcode_shortcuts.cvx)))
+                xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
@@ -298,7 +298,7 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
     /*
     if (xpost_object_is_exe(element)) {
         if (!xpost_stack_push(ctx->lo, ctx->es,
-                    operfromcode(ctx->opcode_shortcuts.cvx)))
+                    xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
             return execstackoverflow;
     }
     */
@@ -311,7 +311,7 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
 int xpost_oper_init_array_ops (Xpost_Context *ctx,
                Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
     int ret;
@@ -321,39 +321,39 @@ int xpost_oper_init_array_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "array", xpost_op_int_array, 1, 1,
+    op = xpost_operator_cons(ctx, "array", xpost_op_int_array, 1, 1,
             integertype);
     INSTALL;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "["), mark);
     if (ret)
         return 0;
-    op = consoper(ctx, "]", xpost_op_array_to_mark, 1, 0);
+    op = xpost_operator_cons(ctx, "]", xpost_op_array_to_mark, 1, 0);
     INSTALL;
-    op = consoper(ctx, "length", xpost_op_array_length, 1, 1,
+    op = xpost_operator_cons(ctx, "length", xpost_op_array_length, 1, 1,
             arraytype);
     INSTALL;
-    op = consoper(ctx, "get", xpost_op_array_int_get, 1, 2,
+    op = xpost_operator_cons(ctx, "get", xpost_op_array_int_get, 1, 2,
             arraytype, integertype);
     INSTALL;
-    op = consoper(ctx, "put", xpost_op_array_int_any_put, 0, 3,
+    op = xpost_operator_cons(ctx, "put", xpost_op_array_int_any_put, 0, 3,
             arraytype, integertype, anytype);
     INSTALL;
-    op = consoper(ctx, "getinterval", xpost_op_array_int_int_getinterval, 1, 3,
+    op = xpost_operator_cons(ctx, "getinterval", xpost_op_array_int_int_getinterval, 1, 3,
             arraytype, integertype, integertype);
     INSTALL;
-    op = consoper(ctx, "putinterval", xpost_op_array_int_array_putinterval, 0, 3,
+    op = xpost_operator_cons(ctx, "putinterval", xpost_op_array_int_array_putinterval, 0, 3,
             arraytype, integertype, arraytype);
     INSTALL;
-    op = consoper(ctx, "aload", xpost_op_array_aload, 1, 1,
+    op = xpost_operator_cons(ctx, "aload", xpost_op_array_aload, 1, 1,
             arraytype);
     INSTALL;
-    op = consoper(ctx, "astore", xpost_op_anyn_array_astore, 1, 1,
+    op = xpost_operator_cons(ctx, "astore", xpost_op_anyn_array_astore, 1, 1,
             arraytype);
     INSTALL;
-    op = consoper(ctx, "copy", xpost_op_array_copy, 1, 2,
+    op = xpost_operator_cons(ctx, "copy", xpost_op_array_copy, 1, 2,
             arraytype, arraytype);
     INSTALL;
-    op = consoper(ctx, "forall", xpost_op_array_proc_forall, 0, 2,
+    op = xpost_operator_cons(ctx, "forall", xpost_op_array_proc_forall, 0, 2,
             arraytype, proctype);
     INSTALL;
 

@@ -163,7 +163,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
     }
     ctx->vmmode = GLOBAL;
 
-    ret = initoptab(ctx); /* allocate and zero the optab structure */
+    ret = xpost_operator_init_optab(ctx); /* allocate and zero the optab structure */
     if (!ret)
     {
         xpost_memory_file_exit(ctx->lo);
@@ -311,8 +311,8 @@ int evalload(Xpost_Context *ctx)
             xpost_stack_pop(ctx->lo, ctx->es)))
         return stackoverflow;
     assert(ctx->gl->base);
-    //opexec(ctx, consoper(ctx, "load", NULL,0,0).mark_.padw);
-    ret = opexec(ctx, ctx->opcode_shortcuts.load);
+    //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "load", NULL,0,0).mark_.padw);
+    ret = xpost_operator_exec(ctx, ctx->opcode_shortcuts.load);
     if (ret)
         return ret;
     if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0)))
@@ -337,8 +337,8 @@ int evaloperator(Xpost_Context *ctx)
         return stackunderflow;
 
     if (TRACE)
-        dumpoper(ctx, op.mark_.padw);
-    ret = opexec(ctx, op.mark_.padw);
+        xpost_operator_dump(ctx, op.mark_.padw);
+    ret = xpost_operator_exec(ctx, op.mark_.padw);
     if (ret)
         return ret;
     return 0;
@@ -394,8 +394,8 @@ int evalstring(Xpost_Context *ctx)
     if (!xpost_stack_push(ctx->lo, ctx->os, s))
         return stackoverflow;
     assert(ctx->gl->base);
-    //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
-    ret = opexec(ctx, ctx->opcode_shortcuts.token);
+    //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "token",NULL,0,0).mark_.padw);
+    ret = xpost_operator_exec(ctx, ctx->opcode_shortcuts.token);
     if (ret)
         return ret;
     b = xpost_stack_pop(ctx->lo, ctx->os);
@@ -436,8 +436,8 @@ int evalfile(Xpost_Context *ctx)
     if (!xpost_stack_push(ctx->lo, ctx->os, f))
         return stackoverflow;
     assert(ctx->gl->base);
-    //opexec(ctx, consoper(ctx, "token",NULL,0,0).mark_.padw);
-    ret = opexec(ctx, ctx->opcode_shortcuts.token);
+    //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "token",NULL,0,0).mark_.padw);
+    ret = xpost_operator_exec(ctx, ctx->opcode_shortcuts.token);
     if (ret)
         return ret;
     b = xpost_stack_pop(ctx->lo, ctx->os);
@@ -512,7 +512,7 @@ int idleproc (Xpost_Context *ctx)
         {
             return stackoverflow;
         }
-        ret = opexec(ctx, ctx->event_handler.mark_.padw);
+        ret = xpost_operator_exec(ctx, ctx->event_handler.mark_.padw);
         if (ret)
         {
             XPOST_LOG_ERR("event_handler returned %d (%s)",
@@ -894,7 +894,7 @@ static
 void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
 {
     assert(ctx->gl->base);
-    xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "quit", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
 /*splint doesn't like the composed macros*/
 #ifndef S_SPLINT_S
     if (is_installed)
@@ -1048,7 +1048,7 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
     /* prime the exec stack
        so it starts with 'start*',
        and if it ever gets to the bottom, it quits.  */
-    xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, consoper(xpost_ctx, "quit", NULL,0,0));
+    xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_operator_cons(xpost_ctx, "quit", NULL,0,0));
     /*
        if ps_file is NULL:
          if stdin is a tty
@@ -1099,7 +1099,7 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
 
 void xpost_destroy(void)
 {
-    //dumpoper(ctx, 1); // is this pointer value constant?
+    //xpost_operator_dump(ctx, 1); // is this pointer value constant?
     if (xpost_object_get_type(xpost_ctx->window_device) == dicttype)
     {
         Xpost_Object Destroy;
@@ -1108,7 +1108,7 @@ void xpost_destroy(void)
         {
             int ret;
             xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_ctx->window_device);
-            ret = opexec(xpost_ctx, Destroy.mark_.padw);
+            ret = xpost_operator_exec(xpost_ctx, Destroy.mark_.padw);
             if (ret)
                 XPOST_LOG_ERR("%s error destroying window device", errorname[ret]);
         }

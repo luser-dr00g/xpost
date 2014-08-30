@@ -191,7 +191,7 @@ int _create (Xpost_Context *ctx,
 
      /* call device class's ps-level .copydict procedure,
         then call _create_cont, by continuation. */
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_create_cont_opcode)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_create_cont_opcode)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic,
                     namedotcopydict)))
@@ -441,7 +441,7 @@ int _create_cont (Xpost_Context *ctx,
     }
 
     xpost_context_install_event_handler(ctx,
-            operfromcode(_event_handler_opcode),
+            xpost_operator_cons_opcode(_event_handler_opcode),
             devdic);
 
     /* save private data struct in string */
@@ -1029,7 +1029,7 @@ int loadwin32device (Xpost_Context *ctx)
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
-    if (!xpost_stack_push(ctx->lo, ctx->es, operfromcode(_loadwin32devicecont_opcode)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_loadwin32devicecont_opcode)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, namedotcopydict)))
         return execstackoverflow;
@@ -1053,14 +1053,14 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32CreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "win32CreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
-    op = consoper(ctx, "win32Create", _create, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "win32Create", _create, 1, 3, integertype, integertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Create"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32PutPix", _putpix, 0, 6,
+    op = xpost_operator_cons(ctx, "win32PutPix", _putpix, 0, 6,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             dicttype); /* devdic */
@@ -1068,13 +1068,13 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32GetPix", _getpix, 3, 3,
+    op = xpost_operator_cons(ctx, "win32GetPix", _getpix, 3, 3,
             numbertype, numbertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "GetPix"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32DrawLine", _drawline, 0, 8,
+    op = xpost_operator_cons(ctx, "win32DrawLine", _drawline, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x1 y1 */
             numbertype, numbertype, /* x2 y2 */
@@ -1083,7 +1083,7 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32FillRect", _fillrect, 0, 8,
+    op = xpost_operator_cons(ctx, "win32FillRect", _fillrect, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             numbertype, numbertype, /* width height */
@@ -1092,17 +1092,17 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32Emit", _emit, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "win32Emit", _emit, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Emit"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32Flush", _flush, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "win32Flush", _flush, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Flush"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32Destroy", _destroy, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "win32Destroy", _destroy, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Destroy"), op);
     if (ret)
         return ret;
@@ -1113,12 +1113,12 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = consoper(ctx, "newwin32device", newwin32device, 1, 2, integertype, integertype);
+    op = xpost_operator_cons(ctx, "newwin32device", newwin32device, 1, 2, integertype, integertype);
     ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newwin32device"), op);
     if (ret)
         return ret;
 
-    op = consoper(ctx, "win32EventHandler", _event_handler, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "win32EventHandler", _event_handler, 0, 1, dicttype);
     _event_handler_opcode = op.mark_.padw;
 
     return 0;
@@ -1133,7 +1133,7 @@ int initwin32ops (Xpost_Context *ctx,
                   Xpost_Object sd)
 {
     unsigned int optadr;
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
 
     if (xpost_object_get_type(namePrivate = xpost_name_cons(ctx, "Private")) == invalidtype)
@@ -1148,9 +1148,9 @@ int initwin32ops (Xpost_Context *ctx,
     xpost_memory_table_get_addr(ctx->gl,
                                 XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
                                 &optadr);
-    optab = (oper *)(ctx->gl->base + optadr);
-    op = consoper(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
-    op = consoper(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
+    optab = (Xpost_Operator *)(ctx->gl->base + optadr);
+    op = xpost_operator_cons(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
+    op = xpost_operator_cons(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
     _loadwin32devicecont_opcode = op.mark_.padw;
 
     return 0;

@@ -167,7 +167,7 @@ int Fread (Xpost_Context *ctx,
         if (ret <= 0 || !FD_ISSET(fileno(fp), &reads))
         {
             /* byte not available, push retry, and request eval() to block this thread */
-            xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "read", NULL,0,0));
+            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "read", NULL,0,0));
             xpost_stack_push(ctx->lo, ctx->os, f);
             return ioblock;
         }
@@ -524,11 +524,11 @@ int contfilenameforall (Xpost_Context *ctx,
     globbuf = oglob.glob_.ptr;
     if (oglob.glob_.off < globbuf->gl_pathc)
     {
-        /* xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "contfilenameforall", NULL,0,0)); */
-        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.contfilenameforall));
+        /* xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "contfilenameforall", NULL,0,0)); */
+        xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.contfilenameforall));
         xpost_stack_push(ctx->lo, ctx->es, Scr);
-        /* xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "cvx", NULL,0,0)); */
-        xpost_stack_push(ctx->lo, ctx->es, operfromcode(ctx->opcode_shortcuts.cvx));
+        /* xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0)); */
+        xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx));
         xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(Proc));
         ++oglob.glob_.off;
         xpost_stack_push(ctx->lo, ctx->es, oglob);
@@ -647,7 +647,7 @@ int Becho (Xpost_Context *ctx,
 int initopf (Xpost_Context *ctx,
               Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
 
@@ -657,57 +657,57 @@ int initopf (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = consoper(ctx, "file", Sfile, 1, 2, stringtype, stringtype);
+    op = xpost_operator_cons(ctx, "file", Sfile, 1, 2, stringtype, stringtype);
     INSTALL;
     /* filter */
-    op = consoper(ctx, "closefile", Fclosefile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "closefile", Fclosefile, 0, 1, filetype);
     INSTALL;
-    op = consoper(ctx, "read", Fread, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "read", Fread, 1, 1, filetype);
     INSTALL;
-    op = consoper(ctx, "write", Fwrite, 0, 2, filetype, integertype);
+    op = xpost_operator_cons(ctx, "write", Fwrite, 0, 2, filetype, integertype);
     INSTALL;
-    op = consoper(ctx, "readhexstring", Freadhexstring, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readhexstring", Freadhexstring, 2, 2, filetype, stringtype);
     INSTALL;
-    op = consoper(ctx, "writehexstring", Fwritehexstring, 0, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "writehexstring", Fwritehexstring, 0, 2, filetype, stringtype);
     INSTALL;
-    op = consoper(ctx, "readstring", Freadstring, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readstring", Freadstring, 2, 2, filetype, stringtype);
     INSTALL;
-    op = consoper(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype);
     INSTALL;
-    op = consoper(ctx, "readline", Freadline, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readline", Freadline, 2, 2, filetype, stringtype);
     INSTALL;
     /* token: see optok.c */
-    op = consoper(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype);
     INSTALL;
-    op = consoper(ctx, "flush", Zflush, 0, 0);
+    op = xpost_operator_cons(ctx, "flush", Zflush, 0, 0);
     INSTALL;
-    op = consoper(ctx, "flushfile", Fflushfile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "flushfile", Fflushfile, 0, 1, filetype);
     INSTALL;
 #ifndef HAVE_WIN32
-    op = consoper(ctx, "resetfile", Fresetfile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "resetfile", Fresetfile, 0, 1, filetype);
     INSTALL;
 #endif
-    op = consoper(ctx, "status", Fstatus, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "status", Fstatus, 1, 1, filetype);
     INSTALL;
     /* string status */
     /* run: see init.ps */
-    op = consoper(ctx, "currentfile", Zcurrentfile, 1, 0);
+    op = xpost_operator_cons(ctx, "currentfile", Zcurrentfile, 1, 0);
     INSTALL;
-    op = consoper(ctx, "deletefile", deletefile, 0, 1, stringtype);
+    op = xpost_operator_cons(ctx, "deletefile", deletefile, 0, 1, stringtype);
     INSTALL;
-    op = consoper(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype);
+    op = xpost_operator_cons(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype);
     INSTALL;
 //#ifndef HAVE_WIN32
-    op = consoper(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
+    op = xpost_operator_cons(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
     ctx->opcode_shortcuts.contfilenameforall = op.mark_.padw;
-    op = consoper(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype);
+    op = xpost_operator_cons(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype);
     INSTALL;
 //#endif
-    op = consoper(ctx, "setfileposition", setfileposition, 0, 2, filetype, integertype);
+    op = xpost_operator_cons(ctx, "setfileposition", setfileposition, 0, 2, filetype, integertype);
     INSTALL;
-    op = consoper(ctx, "fileposition", fileposition, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "fileposition", fileposition, 1, 1, filetype);
     INSTALL;
-    op = consoper(ctx, "print", Sprint, 0, 1, stringtype);
+    op = xpost_operator_cons(ctx, "print", Sprint, 0, 1, stringtype);
     INSTALL;
     /* =: see init.ps
      * ==: see init.ps
@@ -717,7 +717,7 @@ int initopf (Xpost_Context *ctx,
      * writeobject
      * setobjectformat
      * currentobjectformat */
-    op = consoper(ctx, "echo", Becho, 0, 1, booleantype);
+    op = xpost_operator_cons(ctx, "echo", Becho, 0, 1, booleantype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);

@@ -87,7 +87,7 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
                 xpost_stack_topdown_fetch(ctx->lo, ctx->os, n));
     (void)Zcleartomark(ctx);
 
-    xpost_stack_push(newctx->lo, newctx->es, consoper(newctx, "_i_am_zombie_", NULL,0,0));
+    xpost_stack_push(newctx->lo, newctx->es, xpost_operator_cons(newctx, "_i_am_zombie_", NULL,0,0));
     xpost_stack_push(newctx->lo, newctx->es, proc);
     //xpost_op_currentcontext(newctx);
     newctx->state = C_RUN;
@@ -139,7 +139,7 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
     /* continue */
     printf("waiting for child %u ==%u\n", context.mark_.padw, child->state);
     xpost_stack_push(ctx->lo, ctx->os, context);
-    xpost_stack_push(ctx->lo, ctx->es, consoper(ctx, "join", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "join", NULL,0,0));
     ctx->state = C_WAIT;
     return contextswitch;
 }
@@ -163,7 +163,7 @@ static
 int xpost_op_detach (Xpost_Context *ctx, Xpost_Object context){
     Xpost_Context *child = ctx->gl->interpreter_cid_get_context(context.mark_.padw);
     xpost_stack_bottomup_replace(child->lo, child->es, 0,
-            consoper(child, "_i_am_free_", NULL,0,0));
+            xpost_operator_cons(child, "_i_am_free_", NULL,0,0));
     return contextswitch;
 }
 
@@ -187,7 +187,7 @@ int xpost_op_detach (Xpost_Context *ctx, Xpost_Object context){
 int xpost_oper_init_context_ops (Xpost_Context *ctx,
              Xpost_Object sd)
 {
-    oper *optab;
+    Xpost_Operator *optab;
     Xpost_Object n,op;
     unsigned int optadr;
 
@@ -196,21 +196,21 @@ int xpost_oper_init_context_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
     //xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    op = consoper(ctx, "currentcontext", xpost_op_currentcontext, 1, 0);
+    op = xpost_operator_cons(ctx, "currentcontext", xpost_op_currentcontext, 1, 0);
     INSTALL;
-    op = consoper(ctx, "fork", xpost_op_fork, 1, 1, proctype);
+    op = xpost_operator_cons(ctx, "fork", xpost_op_fork, 1, 1, proctype);
     INSTALL;
-    op = consoper(ctx, "_i_am_zombie_", _i_am_zombie_, 0, 0);
+    op = xpost_operator_cons(ctx, "_i_am_zombie_", _i_am_zombie_, 0, 0);
     INSTALL;
-    op = consoper(ctx, "_i_am_free_", _i_am_free_, 0, 0);
+    op = xpost_operator_cons(ctx, "_i_am_free_", _i_am_free_, 0, 0);
     INSTALL;
-    op = consoper(ctx, "join", xpost_op_join, 1, 1, contexttype);
+    op = xpost_operator_cons(ctx, "join", xpost_op_join, 1, 1, contexttype);
     INSTALL;
-    op = consoper(ctx, "yield", xpost_op_yield, 0, 0);
+    op = xpost_operator_cons(ctx, "yield", xpost_op_yield, 0, 0);
     INSTALL;
-    op = consoper(ctx, "detach", xpost_op_detach, 0, 1, contexttype);
+    op = xpost_operator_cons(ctx, "detach", xpost_op_detach, 0, 1, contexttype);
     INSTALL;
     //xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark);
-    //op = consoper(ctx, "counttomark", Zcounttomark, 1, 0); INSTALL;
+    //op = xpost_operator_cons(ctx, "counttomark", Zcounttomark, 1, 0); INSTALL;
     return 0;
 }

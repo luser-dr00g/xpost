@@ -55,24 +55,24 @@
 
 /* convert an integertype object to a realtype object */
 static
-Xpost_Object promote(Xpost_Object o)
+Xpost_Object _promote_integer_to_real(Xpost_Object o)
 {
     return xpost_real_cons(o.int_.val);
 }
 
 /* copied from the header file for reference:
-typedef struct signat {
+typedef struct Xpost_Signature {
    int (*fp)();
    int in;
    unsigned t;
    int out;
-} signat;
+} Xpost_Signature;
 
-typedef struct oper {
+typedef struct Xpost_Operator {
     unsigned name;
     int n; // number of sigs
     unsigned sigadr;
-} oper;
+} Xpost_Operator;
 
 enum typepat ( anytype = stringtype + 1,
     floattype, numbertype, proctype };
@@ -82,16 +82,16 @@ enum typepat ( anytype = stringtype + 1,
 
 /* the number of ops, at any given time. */
 static
-int noop = 0;
+int _xpost_noops = 0;
 
 /* allocate the OPTAB structure in VM */
-int initoptab (Xpost_Context *ctx)
+int xpost_operator_init_optab (Xpost_Context *ctx)
 {
     unsigned ent;
     Xpost_Memory_Table *tab;
     int ret;
 
-    ret = xpost_memory_table_alloc(ctx->gl, MAXOPS * sizeof(oper), 0, &ent);
+    ret = xpost_memory_table_alloc(ctx->gl, MAXOPS * sizeof(Xpost_Operator), 0, &ent);
     if (!ret)
     {
         return 0;
@@ -106,15 +106,15 @@ int initoptab (Xpost_Context *ctx)
 }
 
 /* print a dump of the operator struct given opcode */
-void dumpoper(Xpost_Context *ctx,
+void xpost_operator_dump(Xpost_Context *ctx,
               int opcode)
 {
-    oper *optab;
-    oper op;
+    Xpost_Operator *optab;
+    Xpost_Operator op;
     Xpost_Object o;
     Xpost_Object str;
     char *s;
-    signat *sig;
+    Xpost_Signature *sig;
     unsigned int adr;
 
     xpost_memory_table_get_addr(ctx->gl,
@@ -134,13 +134,13 @@ void dumpoper(Xpost_Context *ctx,
 }
 
 /* create operator object by opcode number */
-Xpost_Object operfromcode(int opcode)
+Xpost_Object xpost_operator_cons_opcode(int opcode)
 {
     Xpost_Object op;
     op.mark_.tag = operatortype;
     op.mark_.pad0 = 0;
     op.mark_.padw = opcode;
-    if (opcode >= noop)
+    if (opcode >= _xpost_noops)
     {
         XPOST_LOG_ERR("opcode does not index a valid operator");
         return null;
@@ -156,7 +156,7 @@ Xpost_Object operfromcode(int opcode)
    values whose presence and types should be checked,
    there should follow 'in' number of typenames passed after 'in'.
    */
-Xpost_Object consoper(Xpost_Context *ctx,
+Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
                 char *name,
                 /*@null@*/ int (*fp)(),
                 int out,
@@ -169,9 +169,9 @@ Xpost_Object consoper(Xpost_Context *ctx,
     unsigned si;
     unsigned t;
     unsigned vmmode;
-    signat *sp;
-    oper *optab;
-    oper op;
+    Xpost_Signature *sp;
+    Xpost_Operator *optab;
+    Xpost_Operator  op;
     unsigned int optadr;
     int ret;
 
@@ -189,11 +189,11 @@ Xpost_Object consoper(Xpost_Context *ctx,
 
     if (!(in < XPOST_STACK_SEGMENT_SIZE))
     {
-        printf("!(in < XPOST_STACK_SEGMENT_SIZE) in consoper(%s, %d. %d)\n", name, out, in);
-        fprintf(stderr, "!(in < XPOST_STACK_SEGMENT_SIZE) in consoper(%s, %d. %d)\n", name, out, in);
+        printf("!(in < XPOST_STACK_SEGMENT_SIZE) in xpost_operator_cons(%s, %d. %d)\n", name, out, in);
+        fprintf(stderr, "!(in < XPOST_STACK_SEGMENT_SIZE) in xpost_operator_cons(%s, %d. %d)\n", name, out, in);
         exit(EXIT_FAILURE);
     }
-    //assert(in < XPOST_STACK_SEGMENT_SIZE); // or else opexec can't call it using HOLD
+    //assert(in < XPOST_STACK_SEGMENT_SIZE); // or else xpost_operator_exec can't call it using HOLD
 
     vmmode=ctx->vmmode;
     ctx->vmmode = GLOBAL;
@@ -205,22 +205,22 @@ Xpost_Object consoper(Xpost_Context *ctx,
     optab = (void *)(ctx->gl->base + optadr);
     for (opcode = 0; optab[opcode].name != nm.mark_.padw; opcode++)
     {
-        if (opcode == noop) break;
+        if (opcode == _xpost_noops) break;
     }
 
     /* install a new signature (prototype) */
     if (fp)
     {
-        if (opcode == noop)
+        if (opcode == _xpost_noops)
         { /* a new operator */
             unsigned adr;
-            if (noop == MAXOPS-1)
+            if (_xpost_noops == MAXOPS-1)
             {
                 XPOST_LOG_ERR("optab too small in xpost_operator.h");
                 XPOST_LOG_ERR("operator %s NOT installed", name);
                 return null;
             }
-            if (!xpost_memory_file_alloc(ctx->gl, sizeof(signat), &adr))
+            if (!xpost_memory_file_alloc(ctx->gl, sizeof(Xpost_Signature), &adr))
             {
                 XPOST_LOG_ERR("cannot allocate signature block");
                 XPOST_LOG_ERR("operator %s NOT installed", name);
@@ -231,15 +231,15 @@ Xpost_Object consoper(Xpost_Context *ctx,
             op.n = 1;
             op.sigadr = adr;
             optab[opcode] = op;
-            ++noop;
+            ++_xpost_noops;
             si = 0;
         }
         else
         { /* increase sig table by 1 */
             t = xpost_free_realloc(ctx->gl,
                     optab[opcode].sigadr,
-                    optab[opcode].n * sizeof(signat),
-                    (optab[opcode].n + 1) * sizeof(signat));
+                    optab[opcode].n * sizeof(Xpost_Signature),
+                    (optab[opcode].n + 1) * sizeof(Xpost_Signature));
             if (!t)
             {
                 XPOST_LOG_ERR("cannot allocate new sig table");
@@ -278,7 +278,7 @@ Xpost_Object consoper(Xpost_Context *ctx,
             sp[si].fp = fp;
         }
     }
-    else if (opcode == noop)
+    else if (opcode == _xpost_noops)
     {
         XPOST_LOG_ERR("operator not found");
         return null;
@@ -292,11 +292,11 @@ Xpost_Object consoper(Xpost_Context *ctx,
 /* clear hold and pop n objects from opstack to hold stack.
    The hold stack is used as temporary storage to hold the
    arguments for an operator-function call.
-   If the operator-function does not itself call opexec,
+   If the operator-function does not itself call xpost_operator_exec,
    the arguments may be restored by xpost_interpreter.c:_on_error().
  */
 static
-void holdn (Xpost_Context *ctx,
+void _xpost_operator_push_args_to_hold (Xpost_Context *ctx,
             Xpost_Memory_File *mem,
             unsigned stacadr,
             int n)
@@ -321,12 +321,12 @@ void holdn (Xpost_Context *ctx,
 /* execute an operator function by opcode
    the opcode is the payload of an operator object
  */
-int opexec(Xpost_Context *ctx,
+int xpost_operator_exec(Xpost_Context *ctx,
             unsigned opcode)
 {
-    oper *optab;
-    oper op;
-    signat *sp;
+    Xpost_Operator *optab;
+    Xpost_Operator op;
+    Xpost_Signature *sp;
     int i,j;
     int pass;
     int err = unregistered;
@@ -378,7 +378,7 @@ int opexec(Xpost_Context *ctx,
             {
                 if (xpost_object_get_type(el) == integertype)
                 {
-                    if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, j, el = promote(el)))
+                    if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, j, el = _promote_integer_to_real(el)))
                         return unregistered;
                     continue;
                 }
@@ -402,7 +402,7 @@ call:
        set the number of arguments consumed in the pad0 of currentobject,
        and set a flag declaring that this has been done.
        This is so onerror() can reset the stack
-       (if hold has not been clobbered by another call to opexec).
+       (if hold has not been clobbered by another call to xpost_operator_exec).
     */
     if (ctx->currentobject.tag == operatortype
             && ctx->currentobject.mark_.padw == opcode)
@@ -419,7 +419,7 @@ call:
         ctx->currentobject.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_OPARGSINHOLD;
     }
 
-    holdn(ctx, ctx->lo, ctx->os, sp[i].in);
+    _xpost_operator_push_args_to_hold(ctx, ctx->lo, ctx->os, sp[i].in);
     hold = (void *)(ctx->lo->base + ctx->hold);
 
     switch(sp[i].in)
