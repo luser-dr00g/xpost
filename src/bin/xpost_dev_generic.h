@@ -43,7 +43,7 @@ char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic);
  *
  * also C fillpoly implementation that uses device DrawLine method.
  */
-int initdevgenericops (Xpost_Context *ctx,
+int xpost_oper_init_generic_device_ops (Xpost_Context *ctx,
                 Xpost_Object sd);
 
 #endif

@@ -431,7 +431,7 @@ int Zrrand (Xpost_Context *ctx)
     return 0;
 }
 
-int initopm (Xpost_Context *ctx,
+int xpost_oper_init_math_ops (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     Xpost_Operator *optab;

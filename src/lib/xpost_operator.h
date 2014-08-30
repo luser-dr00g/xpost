@@ -36,7 +36,7 @@
    It defines the operator constructor xpost_operator_cons,
    and the operator handler function xpost_operator_exec.
    xpost_operator_init_optab is called to initialize the optab structure itself.
-   initop is called to populate the optab structure.
+   xpost_oplib.c:initop is called to populate the optab structure.
 
    nb. Since xpost_operator_cons does a linear search through the optab,
    an obvious optimisation would be to factor-out calls to
@@ -58,32 +58,69 @@
    */
 
 typedef struct Xpost_Signature {
-    int (*fp)();
-    int in;
-    unsigned t;
-    int out;
+    int (*fp)();  /* function-pointer which implements the operator action */
+    int in;       /* number of argument objects */
+    unsigned t;   /* memory address of array of ints representing argument types */
+    int out;      /* number of output objects */
 } Xpost_Signature;
 
 typedef struct Xpost_Operator {
-    unsigned name;
-    int n;
-    unsigned sigadr;
+    unsigned name;   /* name-stack index of operator's name */
+    int n;           /* number of signatures */
+    unsigned sigadr; /* memory address of array of signatures */
 } Xpost_Operator;
 
+/*
+   extend the type enum with "pattern" types
+   anytype matches any object type
+   floattype matches reals and promotes ints to reals
+   numbertype matches reals and ints
+   proctype matches arrays with executable attribute set
+ */
 enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
     floattype, numbertype, proctype };
 
+/*
+   constant size of optab structure
+ */
 #define MAXOPS 200
+
+/*
+   initial size of systemdict (which then grows, automatically)
+ */
 #define SDSIZE 10
 
+/*
+   allocate the optab structure
+ */
 int xpost_operator_init_optab(Xpost_Context *ctx);
+
 void xpost_operator_dump(Xpost_Context *ctx, int opcode);
+
+/* construct an operator object by opcode */
 Xpost_Object xpost_operator_cons_opcode(int opcode);
 
-Xpost_Object xpost_operator_cons(Xpost_Context *ctx, char *name, /*@null@*/ int (*fp)(), int out, int in, ...);
+/* construct an operator object by name,
+   possibly installing a new operator */
+Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
+                                 char *name,
+                                 /*@null@*/ int (*fp)(),
+                                 int out,
+                                 int in,
+                                 ...);
 
-int xpost_operator_exec(Xpost_Context *ctx, unsigned opcode);
+/* execute an operator */
+int xpost_operator_exec(Xpost_Context *ctx,
+                        unsigned opcode);
 
+/*
+   The INSTALL macro
+   refreshes the optab pointer
+   extracts the name index from the operator referred to by object op
+   constructs a name object n
+   defines the name/operator-object in systemdict
+   refreshes the optab pointer yet again
+ */
 #define INSTALL \
     xpost_memory_table_get_addr(ctx->gl, \
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr), \

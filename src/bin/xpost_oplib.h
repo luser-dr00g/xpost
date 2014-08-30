@@ -31,7 +31,7 @@
 #ifndef XPOST_OPLIB_H
 #define XPOST_OPLIB_H
 
-int breakhere(Xpost_Context *ctx);
-int initop(Xpost_Context *ctx);
+int xpost_op_breakhere(Xpost_Context *ctx);
+int xpost_oplib_init_ops (Xpost_Context *ctx);
 
 #endif

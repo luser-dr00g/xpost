@@ -901,7 +901,7 @@ int _stringwidth (Xpost_Context *ctx,
     return 0;
 }
 
-int initopfont (Xpost_Context *ctx,
+int xpost_oper_init_font_ops (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
     Xpost_Operator *optab;

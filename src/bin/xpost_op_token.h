@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_TOKEN_H
 #define XPOST_OP_TOKEN_H
 
-int initoptok(Xpost_Context *ctx, Xpost_Object sd);
+int xpost_oper_init_token_ops (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

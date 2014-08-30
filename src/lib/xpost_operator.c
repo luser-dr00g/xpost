@@ -49,7 +49,7 @@
 #include "xpost_name.h"  // operator objects have associated names
 #include "xpost_dict.h"  // install operators in systemdict, a dict
 
-#include "xpost_interpreter.h"  // works with context struct
+//#include "xpost_interpreter.h"  // works with context struct
 #include "xpost_operator.h"  // double-check prototypes
 
 
@@ -149,12 +149,12 @@ Xpost_Object xpost_operator_cons_opcode(int opcode)
 }
 
 /* construct an operator object by name
-   if given a function-pointer, attempts to install a new operator
-   in OPTAB, otherwise just perform a lookup
-   if installing a new operator, out and in specify the number of
+   If function-pointer fp is not NULL, attempts to install a new operator
+   in OPTAB, otherwise just perform a lookup.
+   If installing a new operator, out and in specify the number of
    output values the function may yield and the number of input
-   values whose presence and types should be checked,
-   there should follow 'in' number of typenames passed after 'in'.
+   values whose presence and types should be checked.
+   There should follow 'in' number of typenames passed after 'in'.
    */
 Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
                 char *name,

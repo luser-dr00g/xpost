@@ -100,7 +100,7 @@ int xpost_op_array_to_mark (Xpost_Context *ctx)
     Xpost_Object a, v;
     Xpost_Object t;
 
-    if (Zcounttomark(ctx))
+    if (xpost_op_counttomark(ctx))
         return unmatchedmark;
     t = xpost_stack_pop(ctx->lo, ctx->os);
     if (xpost_object_get_type(t) == invalidtype)

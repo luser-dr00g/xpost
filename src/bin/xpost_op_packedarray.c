@@ -110,7 +110,7 @@ int setpacking (Xpost_Context *ctx,
     return 0;
 }
 
-int initoppa(Xpost_Context *ctx,
+int xpost_oper_init_packedarray_ops (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     Xpost_Operator *optab;

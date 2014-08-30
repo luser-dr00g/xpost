@@ -80,7 +80,7 @@
    which you can follow back to the main loop (gdb> next),
    just as it's about to read the next token.
  */
-int breakhere(Xpost_Context *ctx)
+int xpost_op_breakhere(Xpost_Context *ctx)
 {
     (void)ctx;
     return 0;
@@ -88,7 +88,7 @@ int breakhere(Xpost_Context *ctx)
 
 /* create systemdict and call
    all initop?* functions, installing all operators */
-int initop(Xpost_Context *ctx)
+int xpost_oplib_init_ops (Xpost_Context *ctx)
 {
     Xpost_Object op;
     Xpost_Object n;
@@ -119,16 +119,16 @@ int initop(Xpost_Context *ctx)
     puts("");
 #endif
 
-    initops(ctx, sd);
+    xpost_oper_init_stack_ops(ctx, sd);
 
 //#ifdef DEBUGOP
     //printf("\nops:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 //#endif
 
-    op = xpost_operator_cons(ctx, "breakhere", breakhere, 0, 0);
+    op = xpost_operator_cons(ctx, "breakhere", xpost_op_breakhere, 0, 0);
     INSTALL;
 
-    initopst(ctx, sd);
+    xpost_oper_init_string_ops(ctx, sd);
     //printf("\nopst:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
     xpost_oper_init_array_ops(ctx, sd);
@@ -143,37 +143,37 @@ int initop(Xpost_Context *ctx)
     xpost_oper_init_control_ops(ctx, sd);
     //printf("\nopc:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopt(ctx, sd);
+    xpost_oper_init_type_ops(ctx, sd);
     //printf("\nopt:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initoptok(ctx, sd);
+    xpost_oper_init_token_ops(ctx, sd);
     //printf("\noptok:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopm(ctx, sd);
+    xpost_oper_init_math_ops(ctx, sd);
     //printf("\nopm:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopf(ctx, sd);
+    xpost_oper_init_file_ops(ctx, sd);
     //printf("\nopf:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopv(ctx, sd);
+    xpost_oper_init_save_ops(ctx, sd);
     //printf("\nopv:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initopx(ctx, sd);
+    xpost_oper_init_misc_ops(ctx, sd);
     //printf("\nopx:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 
-    initoppa(ctx, sd);
-    initopparam(ctx, sd);
-    initopmatrix(ctx, sd);
-    initopfont(ctx, sd);
-    initdevgenericops(ctx, sd);
+    xpost_oper_init_packedarray_ops(ctx, sd);
+    xpost_oper_init_param_ops(ctx, sd);
+    xpost_oper_init_matrix_ops(ctx, sd);
+    xpost_oper_init_font_ops(ctx, sd);
+    xpost_oper_init_generic_device_ops(ctx, sd);
 #ifdef _WIN32
-    initwin32ops(ctx, sd);
+    xpost_oper_init_win32_device_ops(ctx, sd);
 #endif
 #ifdef HAVE_XCB
-    initxcbops(ctx, sd);
+    xpost_oper_init_xcb_device_ops(ctx, sd);
     //printf("xcb:\n");
 #endif
-    initbgrops(ctx, sd);
+    xpost_oper_init_bgr_device_ops(ctx, sd);
     xpost_oper_init_context_ops(ctx, sd);
 
 
