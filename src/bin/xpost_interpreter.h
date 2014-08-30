@@ -78,6 +78,12 @@ extern int TRACE;
 int xpost_interpreter_init(Xpost_Interpreter *itp, const char *device);
 void xpost_interpreter_exit(Xpost_Interpreter *itp);
 
+enum Xpost_Showpage_Semantics {
+    XPOST_SHOWPAGE_DEFAULT,
+    XPOST_SHOWPAGE_NOPAUSE,
+    XPOST_SHOWPAGE_RETURN
+};
+
 enum Xpost_Output_Type {
     XPOST_OUTPUT_DEFAULT,
     XPOST_OUTPUT_FILENAME,
@@ -96,9 +102,12 @@ enum Xpost_Input_Type {
 int xpost_create(const char *device,
                  enum Xpost_Output_Type output_type,
                  const void *outputptr,
+                 enum Xpost_Showpage_Semantics semantics,
                  int is_installed);
+
 void xpost_run(enum Xpost_Input_Type input_type,
                const void *inputptr);
+
 void xpost_destroy(void);
 
 #endif

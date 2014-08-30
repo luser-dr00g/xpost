@@ -803,6 +803,7 @@ void setlocalconfig(Xpost_Context *ctx,
                     const char *outfile,
                     const char *bufferin,
                     char **bufferout,
+                    enum Xpost_Showpage_Semantics semantics,
                     char *exedir,
                     int is_installed)
 {
@@ -858,6 +859,8 @@ void setlocalconfig(Xpost_Context *ctx,
 
     namenewdev = xpost_name_cons(ctx, "newdefaultdevice");
     xpost_dict_put(ctx, sd, namenewdev, xpost_object_cvx(newdevstr));
+
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "ShowpageSemantics"), xpost_int_cons(semantics));
 
     if (outfile)
     {
@@ -941,6 +944,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 int xpost_create(const char *device,
                  enum Xpost_Output_Type output_type,
                  const void *outputptr,
+                 enum Xpost_Showpage_Semantics semantics,
                  int is_installed)
 {
     Xpost_Object sd, ud;
@@ -992,6 +996,7 @@ int xpost_create(const char *device,
 
     setlocalconfig(xpost_ctx, sd,
                    device, outfile, bufferin, bufferout,
+                   semantics,
                    exedir, is_installed);
 
     loadinitps(xpost_ctx, exedir, is_installed);
