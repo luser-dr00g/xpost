@@ -210,7 +210,17 @@ int _emit (Xpost_Context *ctx,
         }
     }
 
-    /*TODO pass data back to client application */
+    /*pass data back to client application */
+    {
+        Xpost_Object sd, outbufstr;
+        sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
+        outbufstr = xpost_dict_get(ctx, sd, xpost_name_cons(ctx, "OutputBufferOut"));
+        if (xpost_object_get_type(outbufstr) == stringtype){
+            unsigned char **outbuf;
+            memcpy(&outbuf, xpost_string_get_pointer(ctx, outbufstr), sizeof(outbuf));
+            *outbuf = data;
+        }
+    }
 
     return 0;
 }
