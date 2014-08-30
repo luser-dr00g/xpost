@@ -25,19 +25,27 @@ end
 } bind def
 
 /showpage {
-    DEVICE dup /Emit get exec
-    flushpage
+    ShowpageSemantics 0 eq { % XPOST_SHOWPAGE_DEFAULT
+        DEVICE dup /Emit get exec
+        (----showpage----) =print flush
+        [ {(%lineedit)(r)file}stopped cleartomark
+        DEVICE /pagenumber
+        2 copy known {
+            2 copy get 1 add put
+        }{
+            1 put
+        } ifelse
+        erasepage
+    } if
 
-    (----showpage----) =print flush
-    [ {(%lineedit)(r)file}stopped cleartomark
+    ShowpageSemantics 1 eq { % XPOST_SHOWPAGE_NOPAUSE
+        DEVICE dup /Emit get exec
+    } if
 
-    DEVICE /pagenumber
-    2 copy known {
-        2 copy get 1 add put
-    }{
-        1 put
-    } ifelse
-    erasepage
+    ShowpageSemantics 2 eq { % XPOST_SHOWPAGE_RETURN
+        DEVICE dup /Emit get exec
+        quit
+    } if
 } bind def
 
 /copypage {
