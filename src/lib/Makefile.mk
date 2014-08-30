@@ -22,6 +22,7 @@ src/lib/xpost_array.c \
 src/lib/xpost_dict.c \
 src/lib/xpost_name.c \
 src/lib/xpost_file.c \
+src/lib/xpost_garbage.c \
 src/lib/xpost_compat.h \
 src/lib/xpost_context.h \
 src/lib/xpost_error.h \
@@ -39,6 +40,7 @@ src/lib/xpost_array.h \
 src/lib/xpost_dict.h \
 src/lib/xpost_name.h \
 src/lib/xpost_file.h \
+src/lib/xpost_garbage.h \
 src/lib/xpost_private.h
 
 src_lib_libxpost_la_CPPFLAGS = \
