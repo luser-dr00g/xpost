@@ -499,7 +499,7 @@ int _fillpoly (Xpost_Context *ctx,
     return 0;
 }
 
-int initdevgenericops (Xpost_Context *ctx,
+int xpost_oper_init_generic_device_ops (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
     unsigned int optadr;

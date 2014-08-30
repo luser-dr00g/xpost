@@ -79,13 +79,13 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
     newctx = xpost_interpreter_cid_get_context(cid);
     printf("op_fork ctx->id %u, cid %u, newctx->id %u\n", ctx->id, cid, newctx->id);
 
-    (void)Zcounttomark(ctx);
+    (void)xpost_op_counttomark(ctx);
     n = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
     /* copy n objects to new context's operand stack */
     while (n--)
         xpost_stack_push(newctx->lo, newctx->os,
                 xpost_stack_topdown_fetch(ctx->lo, ctx->os, n));
-    (void)Zcleartomark(ctx);
+    (void)xpost_op_cleartomark(ctx);
 
     xpost_stack_push(newctx->lo, newctx->es, xpost_operator_cons(newctx, "_i_am_zombie_", NULL,0,0));
     xpost_stack_push(newctx->lo, newctx->es, proc);
@@ -211,6 +211,6 @@ int xpost_oper_init_context_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "detach", xpost_op_detach, 0, 1, contexttype);
     INSTALL;
     //xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark);
-    //op = xpost_operator_cons(ctx, "counttomark", Zcounttomark, 1, 0); INSTALL;
+    //op = xpost_operator_cons(ctx, "counttomark", xpost_op_counttomark, 1, 0); INSTALL;
     return 0;
 }

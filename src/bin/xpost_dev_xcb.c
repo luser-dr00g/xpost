@@ -855,7 +855,7 @@ int loadxcbdevicecont (Xpost_Context *ctx,
    install the loadXXXdevice which may be called during graphics initialization
    to produce the operator newXXXdevice which instantiates the device dictionary.
 */
-int initxcbops (Xpost_Context *ctx,
+int xpost_oper_init_xcb_device_ops (Xpost_Context *ctx,
                 Xpost_Object sd)
 {
     unsigned int optadr;

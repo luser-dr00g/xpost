@@ -104,7 +104,7 @@ void *alloca (size_t);
 /* filename mode  file  file
    create file object for filename with access mode */
 static
-int Sfile (Xpost_Context *ctx,
+int xpost_op_string_mode_file (Xpost_Context *ctx,
             Xpost_Object fn,
             Xpost_Object mode)
 {
@@ -129,7 +129,7 @@ int Sfile (Xpost_Context *ctx,
 /* file  closefile  -
    close file object */
 static
-int Fclosefile (Xpost_Context *ctx,
+int xpost_op_file_closefile (Xpost_Context *ctx,
                  Xpost_Object f)
 {
     int ret;
@@ -143,7 +143,7 @@ int Fclosefile (Xpost_Context *ctx,
                false
    read a byte from file */
 static
-int Fread (Xpost_Context *ctx,
+int xpost_op_file_read (Xpost_Context *ctx,
             Xpost_Object f)
 {
     Xpost_Object b;
@@ -190,7 +190,7 @@ int Fread (Xpost_Context *ctx,
 /* file int  write  -
    write a byte to file */
 static
-int Fwrite (Xpost_Context *ctx,
+int xpost_op_file_write (Xpost_Context *ctx,
              Xpost_Object f,
              Xpost_Object i)
 {
@@ -209,7 +209,7 @@ char *hex = "0123456789" "ABCDEF" "abcdef";
                                false
    read hex-encoded data from file into string */
 static
-int Freadhexstring (Xpost_Context *ctx,
+int xpost_op_file_readhexstring (Xpost_Context *ctx,
                      Xpost_Object F,
                      Xpost_Object S)
 {
@@ -256,7 +256,7 @@ int Freadhexstring (Xpost_Context *ctx,
 /* file string  writehexstring  -
    write string to file in hex-encoding */
 static
-int Fwritehexstring (Xpost_Context *ctx,
+int xpost_op_file_writehexstring (Xpost_Context *ctx,
                       Xpost_Object F,
                       Xpost_Object S)
 {
@@ -284,7 +284,7 @@ int Fwritehexstring (Xpost_Context *ctx,
                             false
    read from file into string */
 static
-int Freadstring (Xpost_Context *ctx,
+int xpost_op_file_readstring (Xpost_Context *ctx,
                   Xpost_Object F,
                   Xpost_Object S)
 {
@@ -315,7 +315,7 @@ int Freadstring (Xpost_Context *ctx,
 /* file string  writestring  -
    write string to file */
 static
-int Fwritestring (Xpost_Context *ctx,
+int xpost_op_file_writestring (Xpost_Context *ctx,
                    Xpost_Object F,
                    Xpost_Object S)
 {
@@ -336,7 +336,7 @@ int Fwritestring (Xpost_Context *ctx,
                           false
    read a line of text from file */
 static
-int Freadline (Xpost_Context *ctx,
+int xpost_op_file_readline (Xpost_Context *ctx,
                 Xpost_Object F,
                 Xpost_Object S)
 {
@@ -367,7 +367,7 @@ int Freadline (Xpost_Context *ctx,
 /* file  bytesavailable  int
    return number of bytes available to read or -1 if not known */
 static
-int Fbytesavailable (Xpost_Context *ctx,
+int xpost_op_file_bytesavailable (Xpost_Context *ctx,
                       Xpost_Object F)
 {
     int bytes;
@@ -382,7 +382,7 @@ int Fbytesavailable (Xpost_Context *ctx,
 /* -  flush  -
    flush all output buffers */
 static
-int Zflush (Xpost_Context *ctx)
+int xpost_op_flush (Xpost_Context *ctx)
 {
     int ret;
     (void)ctx;
@@ -395,7 +395,7 @@ int Zflush (Xpost_Context *ctx)
 /* file  flushfile  -
    flush output buffer for file */
 static
-int Fflushfile (Xpost_Context *ctx,
+int xpost_op_file_flushfile (Xpost_Context *ctx,
                  Xpost_Object F)
 {
     int ret;
@@ -420,7 +420,7 @@ int Fflushfile (Xpost_Context *ctx,
 #ifndef HAVE_WIN32
 
 static
-int Fresetfile (Xpost_Context *ctx,
+int xpost_op_file_resetfile (Xpost_Context *ctx,
                  Xpost_Object F)
 {
     FILE *f;
@@ -435,7 +435,7 @@ int Fresetfile (Xpost_Context *ctx,
 /* file  status  bool
    return bool indicating whether file object is active or closed */
 static
-int Fstatus (Xpost_Context *ctx,
+int xpost_op_file_status (Xpost_Context *ctx,
               Xpost_Object F)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(xpost_file_get_status(ctx->lo, F)));
@@ -445,7 +445,7 @@ int Fstatus (Xpost_Context *ctx,
 /* -  currentfile  file
    return topmost file from the exec stack */
 static
-int Zcurrentfile (Xpost_Context *ctx)
+int xpost_op_currentfile (Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
@@ -469,7 +469,7 @@ int Zcurrentfile (Xpost_Context *ctx)
 /* string  deletefile  -
    delete named file from filesystem */
 static
-int deletefile (Xpost_Context *ctx,
+int xpost_op_string_deletefile (Xpost_Context *ctx,
                  Xpost_Object S)
 {
     char *s;
@@ -488,7 +488,7 @@ int deletefile (Xpost_Context *ctx,
 /* old new  renamefile  -
    rename old file to new in filesystem */
 static
-int renamefile (Xpost_Context *ctx,
+int xpost_op_string_renamefile (Xpost_Context *ctx,
                  Xpost_Object Old,
                  Xpost_Object New)
 {
@@ -510,7 +510,7 @@ int renamefile (Xpost_Context *ctx,
 
 /* internal continuation operator for filenameforall */
 static
-int contfilenameforall (Xpost_Context *ctx,
+int xpost_op_contfilenameforall (Xpost_Context *ctx,
                          Xpost_Object oglob,
                          Xpost_Object Proc,
                          Xpost_Object Scr)
@@ -556,7 +556,7 @@ int contfilenameforall (Xpost_Context *ctx,
 /* template proc scratch  filenameforall  -
    execute proc for all filenames matching template using scratch string */
 static
-int filenameforall (Xpost_Context *ctx,
+int xpost_op_filenameforall (Xpost_Context *ctx,
                      Xpost_Object Tmp,
                      Xpost_Object Proc,
                      Xpost_Object Scr)
@@ -581,7 +581,7 @@ int filenameforall (Xpost_Context *ctx,
     oglob.glob_.off = 0;
     oglob.glob_.ptr = globbuf;
 
-    contfilenameforall(ctx, oglob, Proc, xpost_object_cvlit(Scr));
+    xpost_op_contfilenameforall(ctx, oglob, Proc, xpost_object_cvlit(Scr));
     return 0;
 }
 
@@ -590,7 +590,7 @@ int filenameforall (Xpost_Context *ctx,
 /* file int  setfileposition  -
    set position of read/write head for file */
 static
-int setfileposition (Xpost_Context *ctx,
+int xpost_op_setfileposition (Xpost_Context *ctx,
             Xpost_Object F,
             Xpost_Object pos)
 {
@@ -603,7 +603,7 @@ int setfileposition (Xpost_Context *ctx,
 /* file  fileposition  int
    return position of read/write head for file */
 static
-int fileposition (Xpost_Context *ctx,
+int xpost_op_fileposition (Xpost_Context *ctx,
             Xpost_Object F)
 {
     long pos;
@@ -618,7 +618,7 @@ int fileposition (Xpost_Context *ctx,
 /* string  print  -
    write string to stdout */
 static
-int Sprint (Xpost_Context *ctx,
+int xpost_op_string_print (Xpost_Context *ctx,
              Xpost_Object S)
 {
     size_t ret;
@@ -633,7 +633,7 @@ int Sprint (Xpost_Context *ctx,
 /* bool  echo  -
    enable/disable terminal echoing of input characters */
 static
-int Becho (Xpost_Context *ctx,
+int xpost_op_bool_echo (Xpost_Context *ctx,
             Xpost_Object b)
 {
     (void)ctx;
@@ -644,7 +644,7 @@ int Becho (Xpost_Context *ctx,
     return 0;
 }
 
-int initopf (Xpost_Context *ctx,
+int xpost_oper_init_file_ops (Xpost_Context *ctx,
               Xpost_Object sd)
 {
     Xpost_Operator *optab;
@@ -657,57 +657,57 @@ int initopf (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = xpost_operator_cons(ctx, "file", Sfile, 1, 2, stringtype, stringtype);
+    op = xpost_operator_cons(ctx, "file", xpost_op_string_mode_file, 1, 2, stringtype, stringtype);
     INSTALL;
     /* filter */
-    op = xpost_operator_cons(ctx, "closefile", Fclosefile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "closefile", xpost_op_file_closefile, 0, 1, filetype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "read", Fread, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "read", xpost_op_file_read, 1, 1, filetype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "write", Fwrite, 0, 2, filetype, integertype);
+    op = xpost_operator_cons(ctx, "write", xpost_op_file_write, 0, 2, filetype, integertype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "readhexstring", Freadhexstring, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readhexstring", xpost_op_file_readhexstring, 2, 2, filetype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "writehexstring", Fwritehexstring, 0, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "writehexstring", xpost_op_file_writehexstring, 0, 2, filetype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "readstring", Freadstring, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readstring", xpost_op_file_readstring, 2, 2, filetype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "writestring", Fwritestring, 0, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "writestring", xpost_op_file_writestring, 0, 2, filetype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "readline", Freadline, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readline", xpost_op_file_readline, 2, 2, filetype, stringtype);
     INSTALL;
     /* token: see optok.c */
-    op = xpost_operator_cons(ctx, "bytesavailable", Fbytesavailable, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "bytesavailable", xpost_op_file_bytesavailable, 1, 1, filetype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "flush", Zflush, 0, 0);
+    op = xpost_operator_cons(ctx, "flush", xpost_op_flush, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "flushfile", Fflushfile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "flushfile", xpost_op_file_flushfile, 0, 1, filetype);
     INSTALL;
 #ifndef HAVE_WIN32
-    op = xpost_operator_cons(ctx, "resetfile", Fresetfile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "resetfile", xpost_op_file_resetfile, 0, 1, filetype);
     INSTALL;
 #endif
-    op = xpost_operator_cons(ctx, "status", Fstatus, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "status", xpost_op_file_status, 1, 1, filetype);
     INSTALL;
     /* string status */
     /* run: see init.ps */
-    op = xpost_operator_cons(ctx, "currentfile", Zcurrentfile, 1, 0);
+    op = xpost_operator_cons(ctx, "currentfile", xpost_op_currentfile, 1, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "deletefile", deletefile, 0, 1, stringtype);
+    op = xpost_operator_cons(ctx, "deletefile", xpost_op_string_deletefile, 0, 1, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "renamefile", renamefile, 0, 2, stringtype, stringtype);
+    op = xpost_operator_cons(ctx, "renamefile", xpost_op_string_renamefile, 0, 2, stringtype, stringtype);
     INSTALL;
 //#ifndef HAVE_WIN32
-    op = xpost_operator_cons(ctx, "contfilenameforall", contfilenameforall, 0, 3, globtype, proctype, stringtype);
+    op = xpost_operator_cons(ctx, "contfilenameforall", xpost_op_contfilenameforall, 0, 3, globtype, proctype, stringtype);
     ctx->opcode_shortcuts.contfilenameforall = op.mark_.padw;
-    op = xpost_operator_cons(ctx, "filenameforall", filenameforall, 0, 3, stringtype, proctype, stringtype);
+    op = xpost_operator_cons(ctx, "filenameforall", xpost_op_filenameforall, 0, 3, stringtype, proctype, stringtype);
     INSTALL;
 //#endif
-    op = xpost_operator_cons(ctx, "setfileposition", setfileposition, 0, 2, filetype, integertype);
+    op = xpost_operator_cons(ctx, "setfileposition", xpost_op_setfileposition, 0, 2, filetype, integertype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "fileposition", fileposition, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "fileposition", xpost_op_fileposition, 1, 1, filetype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "print", Sprint, 0, 1, stringtype);
+    op = xpost_operator_cons(ctx, "print", xpost_op_string_print, 0, 1, stringtype);
     INSTALL;
     /* =: see init.ps
      * ==: see init.ps
@@ -717,7 +717,7 @@ int initopf (Xpost_Context *ctx,
      * writeobject
      * setobjectformat
      * currentobjectformat */
-    op = xpost_operator_cons(ctx, "echo", Becho, 0, 1, booleantype);
+    op = xpost_operator_cons(ctx, "echo", xpost_op_bool_echo, 0, 1, booleantype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);

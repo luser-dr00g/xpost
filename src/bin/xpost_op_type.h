@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_TYPE_H
 #define XPOST_OP_TYPE_H
 
-int initopt(Xpost_Context *ctx, Xpost_Object sd);
+int xpost_oper_init_type_ops (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

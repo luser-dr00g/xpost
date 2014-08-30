@@ -124,7 +124,7 @@ int globalvmstatus (Xpost_Context *ctx) {
 }
 
 
-int initopparam(Xpost_Context *ctx,
+int xpost_oper_init_param_ops (Xpost_Context *ctx,
              Xpost_Object sd)
 {
     Xpost_Operator *optab;

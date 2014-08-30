@@ -171,7 +171,7 @@ int Zvmstatus (Xpost_Context *ctx)
 }
 #endif
 
-int initopv(Xpost_Context *ctx,
+int xpost_oper_init_save_ops (Xpost_Context *ctx,
              Xpost_Object sd)
 {
     Xpost_Operator *optab;

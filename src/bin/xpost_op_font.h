@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_FONT_H
 #define XPOST_OP_FONT_H
 
-int initopfont (Xpost_Context *ctx, Xpost_Object sd);
+int xpost_oper_init_font_ops (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

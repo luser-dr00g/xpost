@@ -82,7 +82,7 @@ int xpost_op_dict_to_mark(Xpost_Context *ctx)
     Xpost_Object d, k, v;
     Xpost_Object t;
 
-    if (Zcounttomark(ctx))
+    if (xpost_op_counttomark(ctx))
         return unmatchedmark;
     t = xpost_stack_pop(ctx->lo, ctx->os);
     if (xpost_object_get_type(t) == invalidtype)

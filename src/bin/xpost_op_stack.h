@@ -33,9 +33,9 @@
 
 /* stack operators */
 
-int Zcleartomark (Xpost_Context *ctx);
-int Zcounttomark (Xpost_Context *ctx);
+int xpost_op_cleartomark (Xpost_Context *ctx);
+int xpost_op_counttomark (Xpost_Context *ctx);
 
-int initops(Xpost_Context *ctx, Xpost_Object sd);
+int xpost_oper_init_stack_ops (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

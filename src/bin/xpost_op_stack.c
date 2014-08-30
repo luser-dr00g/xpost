@@ -221,7 +221,7 @@ int Zcount (Xpost_Context *ctx)
 
 /* mark obj1..objN  cleartomark  -
    discard elements down through mark */
-int Zcleartomark (Xpost_Context *ctx)
+int xpost_op_cleartomark (Xpost_Context *ctx)
 {
     Xpost_Object o;
     do {
@@ -234,7 +234,7 @@ int Zcleartomark (Xpost_Context *ctx)
 
 /* mark obj1..objN  counttomark  N
    count elements down to mark */
-int Zcounttomark (Xpost_Context *ctx)
+int xpost_op_counttomark (Xpost_Context *ctx)
 {
     unsigned i;
     unsigned z;
@@ -248,39 +248,7 @@ int Zcounttomark (Xpost_Context *ctx)
     return unmatchedmark;
 }
 
-/*
-   -  currentcontext  context
-   return current context identifier
-
-   mark obj1..objN proc  fork  context
-   create context executing proc with obj1..objN as operands
-
-   context  join  mark obj1..objN
-   await context termination and return its results
-
-   context  detach  -
-   enable context to terminate immediately when done
-
-   -  lock  lock
-   create lock object
-
-   lock proc  monitor  -
-   execute proc while holding lock
-
-   -  condition  condition
-   create condition object
-
-   local condition  wait  -
-   release lock, wait for condition, reacquire lock
-
-   condition  notify  -
-   resume contexts waiting for condition
-
-   -  yield  -
-   suspend current context momentarily
-   */
-
-int initops(Xpost_Context *ctx,
+int xpost_oper_init_stack_ops (Xpost_Context *ctx,
              Xpost_Object sd)
 {
     Xpost_Operator *optab;
@@ -309,9 +277,9 @@ int initops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "count", Zcount, 1, 0);
     INSTALL;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark);
-    op = xpost_operator_cons(ctx, "cleartomark", Zcleartomark, 0, 0);
+    op = xpost_operator_cons(ctx, "cleartomark", xpost_op_cleartomark, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "counttomark", Zcounttomark, 1, 0);
+    op = xpost_operator_cons(ctx, "counttomark", xpost_op_counttomark, 1, 0);
     INSTALL;
     return 0;
 }

@@ -183,7 +183,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
     if (xpost_object_get_type(namedollarerror = xpost_name_cons(ctx, "$error")) == invalidtype)
         return 0;
 
-    initop(ctx); /* populate the optab (and systemdict) with operators */
+    xpost_oplib_init_ops(ctx); /* populate the optab (and systemdict) with operators */
 
     {
         Xpost_Object gd; //globaldict

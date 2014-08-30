@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_FILE_H
 #define XPOST_OP_FILE_H
 
-int initopf (Xpost_Context *ctx, Xpost_Object sd);
+int xpost_oper_init_file_ops (Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

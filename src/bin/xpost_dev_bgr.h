@@ -41,7 +41,7 @@
  * which, when run, creates an X window and returns the device
  * instance dictionary.
  */
-int initbgrops (Xpost_Context *ctx,
+int xpost_oper_init_bgr_device_ops (Xpost_Context *ctx,
                 Xpost_Object sd);
 
 #endif
