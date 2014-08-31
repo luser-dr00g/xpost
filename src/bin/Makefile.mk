@@ -16,8 +16,6 @@ src/bin/xpost_pathname.h
 
 if HAVE_WIN32
 src_bin_xpost_SOURCES += \
-src/bin/glob.c \
-src/bin/glob.h \
 src/bin/xpost_dev_win32.c \
 src/bin/xpost_dev_win32.h \
 src/bin/xpost.rc
