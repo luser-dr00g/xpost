@@ -20,7 +20,7 @@ START_TEST(xpost_stack)
     int ret;
 
     memset(&mem, 0, sizeof(Xpost_Memory_File));
-    ret = xpost_memory_file_init(&mem, NULL, -1);
+    ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
 
@@ -43,7 +43,7 @@ START_TEST(xpost_stack_push_pop)
     int ret;
 
     memset(&mem, 0, sizeof(Xpost_Memory_File));
-    ret = xpost_memory_file_init(&mem, NULL, -1);
+    ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
 
@@ -52,7 +52,7 @@ START_TEST(xpost_stack_push_pop)
 
     for (i = 0; i < 5 + segsize; i++)
     {
-        ret = xpost_stack_push(&mem, stack, xpost_cons_int(i));
+        ret = xpost_stack_push(&mem, stack, xpost_int_cons(i));
         XPOST_LOG_INFO("test push integer %d", i);
         ck_assert_int_eq (ret, 1);
     }

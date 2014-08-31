@@ -18,7 +18,7 @@ START_TEST(xpost_init)
     int ret;
 
     memset(&mem, 0, sizeof(Xpost_Memory_File));
-    ret = xpost_memory_file_init(&mem, NULL, -1);
+    ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
     ret = xpost_memory_file_exit(&mem);
@@ -33,7 +33,7 @@ START_TEST(xpost_memory_init_)
     int ret;
 
     memset(&mem, 0, sizeof(Xpost_Memory_File));
-    ret = xpost_memory_file_init(&mem, NULL, -1);
+    ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
     ret = xpost_memory_file_alloc(&mem, 64, &addr);
@@ -66,7 +66,7 @@ START_TEST(xpost_memory_grow)
     unsigned int addr;
     int ret;
 
-    ret = xpost_memory_file_init(&mem, NULL, -1);
+    ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
 
@@ -90,7 +90,7 @@ START_TEST(xpost_memory_tab_init)
     unsigned int addr;
     int ret;
 
-    ret = xpost_memory_file_init(&mem, NULL, -1);
+    ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
     ret = xpost_memory_table_init(&mem, &addr);
@@ -112,7 +112,7 @@ START_TEST(xpost_memory_tab_alloc)
     unsigned int i;
     int ret;
 
-    ret = xpost_memory_file_init(&mem, NULL, -1);
+    ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
     ret = xpost_memory_table_init(&mem, &addr);

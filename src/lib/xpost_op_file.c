@@ -149,6 +149,7 @@ int xpost_op_file_read (Xpost_Context *ctx,
     Xpost_Object b;
     if (!xpost_object_is_readable(f))
         return invalidaccess;
+#ifdef HAVE_SYS_SELECT_H
     {
         FILE *fp;
         fd_set reads, writes, excepts;
@@ -172,6 +173,7 @@ int xpost_op_file_read (Xpost_Context *ctx,
             return ioblock;
         }
     }
+#endif
     b = xpost_file_read_byte(ctx->lo, f);
     if (xpost_object_get_type(b) == invalidtype)
         return ioerror;
