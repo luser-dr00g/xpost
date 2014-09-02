@@ -92,8 +92,11 @@ endif
 if HAVE_WIN32
 src_lib_libxpost_la_SOURCES += \
 src/lib/glob.c \
-src/lib/glob.h
+src/lib/glob.h \
+src/lib/xpost_dev_win32.c \
+src/lib/xpost_dev_win32.h
 endif
+
 
 src_lib_libxpost_la_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \

@@ -12,8 +12,6 @@ src/bin/xpost_pathname.h
 
 if HAVE_WIN32
 src_bin_xpost_SOURCES += \
-src/bin/xpost_dev_win32.c \
-src/bin/xpost_dev_win32.h \
 src/bin/xpost.rc
 
 windres_verbose = $(windres_verbose_@AM_V@)
@@ -23,6 +21,7 @@ windres_verbose_0 = $(AM_V_at)echo "  RC      " $@;
 .rc.o:
 	$(wc_verbose)windres -o $@ $<
 endif
+
 
 src_bin_xpost_CPPFLAGS = \
 -I$(top_srcdir)/src/lib \

@@ -187,7 +187,7 @@ fi
 
 # GDI, OpenGL
 if test "x${have_win32}" = "xyes" ; then
-   XPOST_BIN_LIBS="${XPOST_BIN_LIBS} -lopengl32 -lgdi32"
+   XPOST_LIB_LIBS="${XPOST_LIB_LIBS} -lopengl32 -lgdi32"
 fi
 
 # check
