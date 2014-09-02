@@ -307,6 +307,12 @@ int dumpvm (Xpost_Context *ctx)
     return 0;
 }
 
+static
+int returntocaller (Xpost_Context *ctx)
+{
+    return yieldtocaller;
+}
+
 int xpost_oper_init_misc_ops (Xpost_Context *ctx,
              Xpost_Object sd)
 {
@@ -368,6 +374,9 @@ int xpost_oper_init_misc_ops (Xpost_Context *ctx,
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
+
+    op = xpost_operator_cons(ctx, "returntocaller", returntocaller, 0, 0);
+    INSTALL;
 
     return 0;
 }

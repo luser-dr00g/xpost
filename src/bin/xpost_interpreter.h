@@ -94,7 +94,8 @@ enum Xpost_Output_Type {
 enum Xpost_Input_Type {
     XPOST_INPUT_STRING,
     XPOST_INPUT_FILENAME,
-    XPOST_INPUT_FILEPTR
+    XPOST_INPUT_FILEPTR,
+    XPOST_INPUT_RESUME
 };
 
 /* 3 simple top-level functions */
