@@ -84,7 +84,8 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
     _(VMerror)                 \
     _(contextswitch)           \
     _(ioblock)                 \
-    _(unknownerror)     /* 30 nb. unknownerror is the catch-all and must be last */ \
+    _(yieldtocaller)    /* 30*/\
+    _(unknownerror)     /* 31 nb. unknownerror is the catch-all and must be last */ \
 /* #enddef ERRORS */
 enum err { ERRORS(AS_BARE) };
 extern char *errorname[] /*= { ERRORS(AS_STR) }*/;

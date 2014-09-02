@@ -736,6 +736,8 @@ ctxswitch:
         if (ret)
             switch (ret)
             {
+            case yieldtocaller:
+                return 1;
             case ioblock:
                 ctx->state = C_IOBLOCK; /* fallthrough */
             case contextswitch:
@@ -1028,6 +1030,7 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
     const char *ps_str = NULL;
     const char *ps_file = NULL;
     const FILE *ps_file_ptr = NULL;
+    int ret;
 
     switch(input_type)
     {
@@ -1043,6 +1046,8 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
     case XPOST_INPUT_FILEPTR:
         ps_file_ptr = inputptr;
         break;
+    case XPOST_INPUT_RESUME:
+        goto run;
     }
 
     /* prime the exec stack
@@ -1081,10 +1086,19 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
     lsav = xpost_save_create_snapshot_object(xpost_ctx->lo);
 
     /* Run! */
+run:
     _initializing = 0;
     xpost_ctx->quit = 0;
     xpost_ctx->state = C_RUN;
-    mainloop(xpost_ctx);
+    ret = mainloop(xpost_ctx);
+
+    if (ret == 1){
+        Xpost_Object sem = xpost_dict_get(xpost_ctx,
+            xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0),
+            xpost_name_cons(xpost_ctx, "ShowpageSemantics"));
+        if (sem.int_.val == XPOST_SHOWPAGE_RETURN)
+            return;
+    }
 
     xpost_save_restore_snapshot(xpost_ctx->gl);
     xpost_memory_table_get_addr(xpost_ctx->lo,
