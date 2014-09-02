@@ -5,13 +5,9 @@ src_bin_xpost_SOURCES = \
 src/bin/xpost_interpreter.c \
 src/bin/xpost_main.c \
 src/bin/xpost_oplib.c \
-src/bin/xpost_dev_generic.c \
-src/bin/xpost_dev_bgr.c \
 src/bin/xpost_pathname.c \
 src/bin/xpost_interpreter.h \
 src/bin/xpost_oplib.h \
-src/bin/xpost_dev_generic.h \
-src/bin/xpost_dev_bgr.h \
 src/bin/xpost_pathname.h
 
 if HAVE_WIN32
