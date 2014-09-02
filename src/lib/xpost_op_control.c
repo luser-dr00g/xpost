@@ -395,39 +395,39 @@ int xpost_oper_init_control_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = xpost_operator_cons(ctx, "exec", xpost_op_any_exec, 0, 1, anytype);
+    op = xpost_operator_cons(ctx, "exec", (Xpost_Op_Func)xpost_op_any_exec, 0, 1, anytype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "if", xpost_op_bool_proc_if, 0, 2, booleantype, proctype);
+    op = xpost_operator_cons(ctx, "if", (Xpost_Op_Func)xpost_op_bool_proc_if, 0, 2, booleantype, proctype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "ifelse", xpost_op_bool_proc_proc_ifelse, 0, 3, booleantype, proctype, proctype);
+    op = xpost_operator_cons(ctx, "ifelse", (Xpost_Op_Func)xpost_op_bool_proc_proc_ifelse, 0, 3, booleantype, proctype, proctype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "for", xpost_op_int_int_int_proc_for, 0, 4, \
+    op = xpost_operator_cons(ctx, "for", (Xpost_Op_Func)xpost_op_int_int_int_proc_for, 0, 4, \
             integertype, integertype, integertype, proctype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "for", xpost_op_real_real_real_proc_for, 0, 4, \
+    op = xpost_operator_cons(ctx, "for", (Xpost_Op_Func)xpost_op_real_real_real_proc_for, 0, 4, \
             floattype, floattype, floattype, proctype);
     INSTALL;
     ctx->opcode_shortcuts.opfor = op.mark_.padw;
-    op = xpost_operator_cons(ctx, "repeat", xpost_op_int_proc_repeat, 0, 2, integertype, proctype);
+    op = xpost_operator_cons(ctx, "repeat", (Xpost_Op_Func)xpost_op_int_proc_repeat, 0, 2, integertype, proctype);
     INSTALL;
     ctx->opcode_shortcuts.repeat = op.mark_.padw;
-    op = xpost_operator_cons(ctx, "loop", xpost_op_proc_loop, 0, 1, proctype);
+    op = xpost_operator_cons(ctx, "loop", (Xpost_Op_Func)xpost_op_proc_loop, 0, 1, proctype);
     INSTALL;
     ctx->opcode_shortcuts.loop = op.mark_.padw;
-    op = xpost_operator_cons(ctx, "exit", xpost_op_exit, 0, 0);
+    op = xpost_operator_cons(ctx, "exit", (Xpost_Op_Func)xpost_op_exit, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "stop", xpost_op_stop, 0, 0);
+    op = xpost_operator_cons(ctx, "stop", (Xpost_Op_Func)xpost_op_stop, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "stopped", xpost_op_any_stopped, 0, 1, anytype);
+    op = xpost_operator_cons(ctx, "stopped", (Xpost_Op_Func)xpost_op_any_stopped, 0, 1, anytype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "countexecstack", xpost_op_countexecstack, 1, 0);
+    op = xpost_operator_cons(ctx, "countexecstack", (Xpost_Op_Func)xpost_op_countexecstack, 1, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "execstack", xpost_op_array_execstack, 1, 1, arraytype);
+    op = xpost_operator_cons(ctx, "execstack", (Xpost_Op_Func)xpost_op_array_execstack, 1, 1, arraytype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "quit", xpost_op_quit, 0, 0);
+    op = xpost_operator_cons(ctx, "quit", (Xpost_Op_Func)xpost_op_quit, 0, 0);
     INSTALL;
     /*
-    op = xpost_operator_cons(ctx, "eq", Aeq, 1, 2, anytype, anytype);
+    op = xpost_operator_cons(ctx, "eq", (Xpost_Op_Func)Aeq, 1, 2, anytype, anytype);
     INSTALL;
     //xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     */

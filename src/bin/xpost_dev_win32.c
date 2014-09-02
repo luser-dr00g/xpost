@@ -1053,14 +1053,14 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32CreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "win32CreateCont", (Xpost_Op_Func)_create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
-    op = xpost_operator_cons(ctx, "win32Create", _create, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "win32Create", (Xpost_Op_Func)_create, 1, 3, integertype, integertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Create"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32PutPix", _putpix, 0, 6,
+    op = xpost_operator_cons(ctx, "win32PutPix", (Xpost_Op_Func)_putpix, 0, 6,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             dicttype); /* devdic */
@@ -1068,13 +1068,13 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32GetPix", _getpix, 3, 3,
+    op = xpost_operator_cons(ctx, "win32GetPix", (Xpost_Op_Func)_getpix, 3, 3,
             numbertype, numbertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "GetPix"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32DrawLine", _drawline, 0, 8,
+    op = xpost_operator_cons(ctx, "win32DrawLine", (Xpost_Op_Func)_drawline, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x1 y1 */
             numbertype, numbertype, /* x2 y2 */
@@ -1083,7 +1083,7 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32FillRect", _fillrect, 0, 8,
+    op = xpost_operator_cons(ctx, "win32FillRect", (Xpost_Op_Func)_fillrect, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             numbertype, numbertype, /* width height */
@@ -1092,17 +1092,17 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32Emit", _emit, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "win32Emit", (Xpost_Op_Func)_emit, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Emit"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32Flush", _flush, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "win32Flush", (Xpost_Op_Func)_flush, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Flush"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32Destroy", _destroy, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "win32Destroy", (Xpost_Op_Func)_destroy, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Destroy"), op);
     if (ret)
         return ret;
@@ -1113,12 +1113,12 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "newwin32device", newwin32device, 1, 2, integertype, integertype);
+    op = xpost_operator_cons(ctx, "newwin32device", (Xpost_Op_Func)newwin32device, 1, 2, integertype, integertype);
     ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newwin32device"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "win32EventHandler", _event_handler, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "win32EventHandler", (Xpost_Op_Func)_event_handler, 0, 1, dicttype);
     _event_handler_opcode = op.mark_.padw;
 
     return 0;
@@ -1149,8 +1149,8 @@ int xpost_oper_init_win32_device_ops (Xpost_Context *ctx,
                                 XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
                                 &optadr);
     optab = (Xpost_Operator *)(ctx->gl->base + optadr);
-    op = xpost_operator_cons(ctx, "loadwin32device", loadwin32device, 1, 0); INSTALL;
-    op = xpost_operator_cons(ctx, "loadwin32devicecont", loadwin32devicecont, 1, 1, dicttype);
+    op = xpost_operator_cons(ctx, "loadwin32device", (Xpost_Op_Func)loadwin32device, 1, 0); INSTALL;
+    op = xpost_operator_cons(ctx, "loadwin32devicecont", (Xpost_Op_Func)loadwin32devicecont, 1, 1, dicttype);
     _loadwin32devicecont_opcode = op.mark_.padw;
 
     return 0;

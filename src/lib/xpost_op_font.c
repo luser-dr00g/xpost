@@ -913,33 +913,33 @@ int xpost_oper_init_font_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = xpost_operator_cons(ctx, "findfont", _findfont, 1, 1, nametype);
+    op = xpost_operator_cons(ctx, "findfont", (Xpost_Op_Func)_findfont, 1, 1, nametype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "findfont", _findfont, 1, 1, stringtype);
+    op = xpost_operator_cons(ctx, "findfont", (Xpost_Op_Func)_findfont, 1, 1, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "scalefont", _scalefont, 1, 2, dicttype, floattype);
+    op = xpost_operator_cons(ctx, "scalefont", (Xpost_Op_Func)_scalefont, 1, 2, dicttype, floattype);
     INSTALL;
-    //op = xpost_operator_cons(ctx, "makefont", _makefont, 1, 2, dicttype, arraytype);
+    //op = xpost_operator_cons(ctx, "makefont", (Xpost_Op_Func)_makefont, 1, 2, dicttype, arraytype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "setfont", _setfont, 1, 1, dicttype);
+    op = xpost_operator_cons(ctx, "setfont", (Xpost_Op_Func)_setfont, 1, 1, dicttype);
     INSTALL;
 
-    op = xpost_operator_cons(ctx, "show", _show, 0, 1, stringtype);
+    op = xpost_operator_cons(ctx, "show", (Xpost_Op_Func)_show, 0, 1, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "ashow", _ashow, 0, 3,
+    op = xpost_operator_cons(ctx, "ashow", (Xpost_Op_Func)_ashow, 0, 3,
         floattype, floattype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "widthshow", _widthshow, 0, 4,
+    op = xpost_operator_cons(ctx, "widthshow", (Xpost_Op_Func)_widthshow, 0, 4,
         floattype, floattype, integertype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "awidthshow", _awidthshow, 0, 6,
+    op = xpost_operator_cons(ctx, "awidthshow", (Xpost_Op_Func)_awidthshow, 0, 6,
         floattype, floattype, integertype,
         floattype, floattype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "stringwidth", _stringwidth, 2, 1, stringtype);
+    op = xpost_operator_cons(ctx, "stringwidth", (Xpost_Op_Func)_stringwidth, 2, 1, stringtype);
     INSTALL;
     /*
-    op = xpost_operator_cons(ctx, "kshow", _kshow, 0, 2,
+    op = xpost_operator_cons(ctx, "kshow", (Xpost_Op_Func)_kshow, 0, 2,
         proctype, stringtype);
         INSTALL;
     */
