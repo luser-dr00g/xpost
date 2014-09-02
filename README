@@ -8,7 +8,10 @@ Xpost is currently (10/15/2013, and in the author's opinion) a
 pretty-solid cross-platform scripting-language interpreter.
 
 Xpost has rudimentary graphics support. MS Windows or X11 windows.
-PGM or PPM file output.
+PGM or PPM file output. Or a nulldevice, which executes the drawing
+operations and discards the output. A BGR device is in development
+which will yield the image data to a calling program which uses
+xpost as a library component.
 
 Quick Installation Instructions.
 ----- ------------ -------------
