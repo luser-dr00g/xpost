@@ -659,57 +659,57 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = xpost_operator_cons(ctx, "file", xpost_op_string_mode_file, 1, 2, stringtype, stringtype);
+    op = xpost_operator_cons(ctx, "file", (Xpost_Op_Func)xpost_op_string_mode_file, 1, 2, stringtype, stringtype);
     INSTALL;
     /* filter */
-    op = xpost_operator_cons(ctx, "closefile", xpost_op_file_closefile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "closefile", (Xpost_Op_Func)xpost_op_file_closefile, 0, 1, filetype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "read", xpost_op_file_read, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "read", (Xpost_Op_Func)xpost_op_file_read, 1, 1, filetype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "write", xpost_op_file_write, 0, 2, filetype, integertype);
+    op = xpost_operator_cons(ctx, "write", (Xpost_Op_Func)xpost_op_file_write, 0, 2, filetype, integertype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "readhexstring", xpost_op_file_readhexstring, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readhexstring", (Xpost_Op_Func)xpost_op_file_readhexstring, 2, 2, filetype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "writehexstring", xpost_op_file_writehexstring, 0, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "writehexstring", (Xpost_Op_Func)xpost_op_file_writehexstring, 0, 2, filetype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "readstring", xpost_op_file_readstring, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readstring", (Xpost_Op_Func)xpost_op_file_readstring, 2, 2, filetype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "writestring", xpost_op_file_writestring, 0, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "writestring", (Xpost_Op_Func)xpost_op_file_writestring, 0, 2, filetype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "readline", xpost_op_file_readline, 2, 2, filetype, stringtype);
+    op = xpost_operator_cons(ctx, "readline", (Xpost_Op_Func)xpost_op_file_readline, 2, 2, filetype, stringtype);
     INSTALL;
     /* token: see optok.c */
-    op = xpost_operator_cons(ctx, "bytesavailable", xpost_op_file_bytesavailable, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "bytesavailable", (Xpost_Op_Func)xpost_op_file_bytesavailable, 1, 1, filetype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "flush", xpost_op_flush, 0, 0);
+    op = xpost_operator_cons(ctx, "flush", (Xpost_Op_Func)xpost_op_flush, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "flushfile", xpost_op_file_flushfile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "flushfile", (Xpost_Op_Func)xpost_op_file_flushfile, 0, 1, filetype);
     INSTALL;
 #ifndef HAVE_WIN32
-    op = xpost_operator_cons(ctx, "resetfile", xpost_op_file_resetfile, 0, 1, filetype);
+    op = xpost_operator_cons(ctx, "resetfile", (Xpost_Op_Func)xpost_op_file_resetfile, 0, 1, filetype);
     INSTALL;
 #endif
-    op = xpost_operator_cons(ctx, "status", xpost_op_file_status, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "status", (Xpost_Op_Func)xpost_op_file_status, 1, 1, filetype);
     INSTALL;
     /* string status */
     /* run: see init.ps */
-    op = xpost_operator_cons(ctx, "currentfile", xpost_op_currentfile, 1, 0);
+    op = xpost_operator_cons(ctx, "currentfile", (Xpost_Op_Func)xpost_op_currentfile, 1, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "deletefile", xpost_op_string_deletefile, 0, 1, stringtype);
+    op = xpost_operator_cons(ctx, "deletefile", (Xpost_Op_Func)xpost_op_string_deletefile, 0, 1, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "renamefile", xpost_op_string_renamefile, 0, 2, stringtype, stringtype);
+    op = xpost_operator_cons(ctx, "renamefile", (Xpost_Op_Func)xpost_op_string_renamefile, 0, 2, stringtype, stringtype);
     INSTALL;
 //#ifndef HAVE_WIN32
-    op = xpost_operator_cons(ctx, "contfilenameforall", xpost_op_contfilenameforall, 0, 3, globtype, proctype, stringtype);
+    op = xpost_operator_cons(ctx, "contfilenameforall", (Xpost_Op_Func)xpost_op_contfilenameforall, 0, 3, globtype, proctype, stringtype);
     ctx->opcode_shortcuts.contfilenameforall = op.mark_.padw;
-    op = xpost_operator_cons(ctx, "filenameforall", xpost_op_filenameforall, 0, 3, stringtype, proctype, stringtype);
+    op = xpost_operator_cons(ctx, "filenameforall", (Xpost_Op_Func)xpost_op_filenameforall, 0, 3, stringtype, proctype, stringtype);
     INSTALL;
 //#endif
-    op = xpost_operator_cons(ctx, "setfileposition", xpost_op_setfileposition, 0, 2, filetype, integertype);
+    op = xpost_operator_cons(ctx, "setfileposition", (Xpost_Op_Func)xpost_op_setfileposition, 0, 2, filetype, integertype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "fileposition", xpost_op_fileposition, 1, 1, filetype);
+    op = xpost_operator_cons(ctx, "fileposition", (Xpost_Op_Func)xpost_op_fileposition, 1, 1, filetype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "print", xpost_op_string_print, 0, 1, stringtype);
+    op = xpost_operator_cons(ctx, "print", (Xpost_Op_Func)xpost_op_string_print, 0, 1, stringtype);
     INSTALL;
     /* =: see init.ps
      * ==: see init.ps
@@ -719,7 +719,7 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
      * writeobject
      * setobjectformat
      * currentobjectformat */
-    op = xpost_operator_cons(ctx, "echo", xpost_op_bool_echo, 0, 1, booleantype);
+    op = xpost_operator_cons(ctx, "echo", (Xpost_Op_Func)xpost_op_bool_echo, 0, 1, booleantype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);

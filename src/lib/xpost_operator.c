@@ -62,7 +62,7 @@ Xpost_Object _promote_integer_to_real(Xpost_Object o)
 
 /* copied from the header file for reference:
 typedef struct Xpost_Signature {
-   int (*fp)();
+   int (*fp)(Xpost_Context *ctx);
    int in;
    unsigned t;
    int out;
@@ -158,7 +158,7 @@ Xpost_Object xpost_operator_cons_opcode(int opcode)
    */
 Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
                 char *name,
-                /*@null@*/ int (*fp)(),
+                /*@null@*/ Xpost_Op_Func fp,
                 int out,
                 int in, ...)
 {
@@ -275,7 +275,7 @@ Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
             va_end(args);
             sp[si].in = in;
             sp[si].out = out;
-            sp[si].fp = fp;
+            sp[si].fp = (int(*)(Xpost_Context *))fp;
         }
     }
     else if (opcode == _xpost_noops)
@@ -425,18 +425,21 @@ call:
     switch(sp[i].in)
     {
         case 0: ret = sp[i].fp(ctx); break;
-        case 1: ret = sp[i].fp(ctx, hold->data[0]); break;
-        case 2: ret = sp[i].fp(ctx, hold->data[0], hold->data[1]); break;
-        case 3: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2]); break;
-        case 4: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
-                        hold->data[3]); break;
-        case 5: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
-                        hold->data[3], hold->data[4]); break;
-        case 6: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
-                        hold->data[3], hold->data[4], hold->data[5]); break;
-        case 7: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
-                        hold->data[3], hold->data[4], hold->data[5], hold->data[6]); break;
-        case 8: ret = sp[i].fp(ctx, hold->data[0], hold->data[1], hold->data[2],
+        case 1: ret = ((int(*)(Xpost_Context*,Xpost_Object))sp[i].fp) (ctx, hold->data[0]); break;
+        case 2: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object))sp[i].fp) (ctx, hold->data[0], hold->data[1]); break;
+        case 3: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+                (ctx, hold->data[0], hold->data[1], hold->data[2]); break;
+        case 4: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+                (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3]); break;
+        case 5: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+                (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3], hold->data[4]); break;
+        case 6: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+                (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3], hold->data[4], hold->data[5]); break;
+        case 7: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+                (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3], hold->data[4], hold->data[5], hold->data[6]); break;
+        case 8: ret =
+                ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+                (ctx, hold->data[0], hold->data[1], hold->data[2],
                         hold->data[3], hold->data[4], hold->data[5], hold->data[6], hold->data[7]); break;
         default: ret = unregistered;
     }

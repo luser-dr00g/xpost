@@ -290,19 +290,19 @@ int loadbgrdevicecont (Xpost_Context *ctx,
 
     ret = xpost_dict_put(ctx, classdic, namenativecolorspace, nameDeviceRGB);
 
-    op = xpost_operator_cons(ctx, "bgrCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "bgrCreateCont", (Xpost_Op_Func)_create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
-    op = xpost_operator_cons(ctx, "bgrCreate", _create, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "bgrCreate", (Xpost_Op_Func)_create, 1, 3, integertype, integertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Create"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "bgrEmit", _emit, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "bgrEmit", (Xpost_Op_Func)_emit, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Emit"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "bgrFlush", _flush, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "bgrFlush", (Xpost_Op_Func)_flush, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Flush"), op);
     if (ret)
         return ret;
@@ -313,7 +313,7 @@ int loadbgrdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "newbgrdevice", newbgrdevice, 1, 2, integertype, integertype);
+    op = xpost_operator_cons(ctx, "newbgrdevice", (Xpost_Op_Func)newbgrdevice, 1, 2, integertype, integertype);
     ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newbgrdevice"), op);
     if (ret)
         return ret;
@@ -349,8 +349,8 @@ int xpost_oper_init_bgr_device_ops (Xpost_Context *ctx,
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (Xpost_Operator *)(ctx->gl->base + optadr);
-    op = xpost_operator_cons(ctx, "loadbgrdevice", loadbgrdevice, 1, 0); INSTALL;
-    op = xpost_operator_cons(ctx, "loadbgrdevicecont", loadbgrdevicecont, 1, 1, dicttype);
+    op = xpost_operator_cons(ctx, "loadbgrdevice", (Xpost_Op_Func)loadbgrdevice, 1, 0); INSTALL;
+    op = xpost_operator_cons(ctx, "loadbgrdevicecont", (Xpost_Op_Func)loadbgrdevicecont, 1, 1, dicttype);
     _loadbgrdevicecont_opcode = op.mark_.padw;
 
     return 0;

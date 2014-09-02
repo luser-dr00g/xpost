@@ -122,10 +122,10 @@ int xpost_oper_init_packedarray_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = xpost_operator_cons(ctx, "packedarray", packedarray, 1, 1, integertype);
+    op = xpost_operator_cons(ctx, "packedarray", (Xpost_Op_Func)packedarray, 1, 1, integertype);
     INSTALL;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "currentpacking"), xpost_bool_cons(0));
-    op = xpost_operator_cons(ctx, "setpacking", setpacking, 0, 1, booleantype);
+    op = xpost_operator_cons(ctx, "setpacking", (Xpost_Op_Func)setpacking, 0, 1, booleantype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);

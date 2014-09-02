@@ -125,7 +125,7 @@ int xpost_oplib_init_ops (Xpost_Context *ctx)
     //printf("\nops:\n"); xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
 //#endif
 
-    op = xpost_operator_cons(ctx, "breakhere", xpost_op_breakhere, 0, 0);
+    op = xpost_operator_cons(ctx, "breakhere", (Xpost_Op_Func)xpost_op_breakhere, 0, 0);
     INSTALL;
 
     xpost_oper_init_string_ops(ctx, sd);

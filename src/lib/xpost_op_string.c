@@ -294,37 +294,37 @@ int xpost_oper_init_string_ops (Xpost_Context *ctx,
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
-    op = xpost_operator_cons(ctx, "string", Istring, 1, 1,
+    op = xpost_operator_cons(ctx, "string", (Xpost_Op_Func)Istring, 1, 1,
             integertype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "length", Slength, 1, 1,
+    op = xpost_operator_cons(ctx, "length", (Xpost_Op_Func)Slength, 1, 1,
             stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "length", Nlength, 1, 1,
+    op = xpost_operator_cons(ctx, "length", (Xpost_Op_Func)Nlength, 1, 1,
             nametype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "copy", Scopy, 1, 2,
+    op = xpost_operator_cons(ctx, "copy", (Xpost_Op_Func)Scopy, 1, 2,
             stringtype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "get", Sget, 1, 2,
+    op = xpost_operator_cons(ctx, "get", (Xpost_Op_Func)Sget, 1, 2,
             stringtype, integertype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "put", Sput, 0, 3,
+    op = xpost_operator_cons(ctx, "put", (Xpost_Op_Func)Sput, 0, 3,
             stringtype, integertype, integertype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "getinterval", Sgetinterval, 1, 3,
+    op = xpost_operator_cons(ctx, "getinterval", (Xpost_Op_Func)Sgetinterval, 1, 3,
             stringtype, integertype, integertype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "putinterval", Sputinterval, 0, 3,
+    op = xpost_operator_cons(ctx, "putinterval", (Xpost_Op_Func)Sputinterval, 0, 3,
             stringtype, integertype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "anchorsearch", Sanchorsearch, 3, 2,
+    op = xpost_operator_cons(ctx, "anchorsearch", (Xpost_Op_Func)Sanchorsearch, 3, 2,
             stringtype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "search", Ssearch, 4, 2,
+    op = xpost_operator_cons(ctx, "search", (Xpost_Op_Func)Ssearch, 4, 2,
             stringtype, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "forall", Sforall, 0, 2,
+    op = xpost_operator_cons(ctx, "forall", (Xpost_Op_Func)Sforall, 0, 2,
             stringtype, proctype);
     INSTALL;
     return 0;

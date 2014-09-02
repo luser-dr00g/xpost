@@ -57,8 +57,10 @@
 
    */
 
+typedef int (*Xpost_Op_Func)(Xpost_Context *ctx);
+
 typedef struct Xpost_Signature {
-    int (*fp)();  /* function-pointer which implements the operator action */
+    Xpost_Op_Func fp;  /* function-pointer which implements the operator action */
     int in;       /* number of argument objects */
     unsigned t;   /* memory address of array of ints representing argument types */
     int out;      /* number of output objects */
@@ -69,6 +71,7 @@ typedef struct Xpost_Operator {
     int n;           /* number of signatures */
     unsigned sigadr; /* memory address of array of signatures */
 } Xpost_Operator;
+
 
 /*
    extend the type enum with "pattern" types
@@ -104,7 +107,7 @@ Xpost_Object xpost_operator_cons_opcode(int opcode);
    possibly installing a new operator */
 Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
                                  char *name,
-                                 /*@null@*/ int (*fp)(),
+                                 /*@null@*/ Xpost_Op_Func fp,
                                  int out,
                                  int in,
                                  ...);

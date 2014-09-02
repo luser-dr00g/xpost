@@ -330,14 +330,14 @@ int xpost_oper_init_misc_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    op = xpost_operator_cons(ctx, "bind", Pbind, 1, 1, proctype);
+    op = xpost_operator_cons(ctx, "bind", (Xpost_Op_Func)Pbind, 1, 1, proctype);
     INSTALL;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "null"), null);
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "version"),
             xpost_object_cvlit(xpost_string_cons(ctx, strlen(versionstr), versionstr)));
-    op = xpost_operator_cons(ctx, "realtime", realtime, 1, 0);
+    op = xpost_operator_cons(ctx, "realtime", (Xpost_Op_Func)realtime, 1, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "usertime", usertime, 1, 0);
+    op = xpost_operator_cons(ctx, "usertime", (Xpost_Op_Func)usertime, 1, 0);
     INSTALL;
     //languagelevel
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "product"),
@@ -348,34 +348,34 @@ int xpost_oper_init_misc_ops (Xpost_Context *ctx,
     //echo: see opf.c
     //prompt: see init.ps
 
-    op = xpost_operator_cons(ctx, "getenv", Sgetenv, 1, 1, stringtype);
+    op = xpost_operator_cons(ctx, "getenv", (Xpost_Op_Func)Sgetenv, 1, 1, stringtype);
     INSTALL;
-    op = xpost_operator_cons(ctx, "putenv", SSputenv, 0, 2, stringtype, stringtype);
+    op = xpost_operator_cons(ctx, "putenv", (Xpost_Op_Func)SSputenv, 0, 2, stringtype, stringtype);
     INSTALL;
 
-    op = xpost_operator_cons(ctx, ".swap", _array_swap, 0, 3,
+    op = xpost_operator_cons(ctx, ".swap", (Xpost_Op_Func)_array_swap, 0, 3,
             arraytype, integertype, integertype);
     INSTALL;
 
 #if 0
-    op = xpost_operator_cons(ctx, "traceon", traceon, 0, 0);
+    op = xpost_operator_cons(ctx, "traceon", (Xpost_Op_Func)traceon, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "traceoff", traceoff, 0, 0);
+    op = xpost_operator_cons(ctx, "traceoff", (Xpost_Op_Func)traceoff, 0, 0);
     INSTALL;
 #endif
-    op = xpost_operator_cons(ctx, "debugloadon", debugloadon, 0, 0);
+    op = xpost_operator_cons(ctx, "debugloadon", (Xpost_Op_Func)debugloadon, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "debugloadoff", debugloadoff, 0, 0);
+    op = xpost_operator_cons(ctx, "debugloadoff", (Xpost_Op_Func)debugloadoff, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "dumpnames", Odumpnames, 0, 0);
+    op = xpost_operator_cons(ctx, "dumpnames", (Xpost_Op_Func)Odumpnames, 0, 0);
     INSTALL;
-    op = xpost_operator_cons(ctx, "dumpvm", dumpvm, 0, 0);
+    op = xpost_operator_cons(ctx, "dumpvm", (Xpost_Op_Func)dumpvm, 0, 0);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
 
-    op = xpost_operator_cons(ctx, "returntocaller", returntocaller, 0, 0);
+    op = xpost_operator_cons(ctx, "returntocaller", (Xpost_Op_Func)returntocaller, 0, 0);
     INSTALL;
 
     return 0;

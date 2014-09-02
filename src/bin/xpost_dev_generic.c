@@ -510,8 +510,8 @@ int xpost_oper_init_generic_device_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (Xpost_Operator *)(ctx->gl->base + optadr);
 
-    op = xpost_operator_cons(ctx, ".yxsort", _yxsort, 0, 1, arraytype); INSTALL;
-    op = xpost_operator_cons(ctx, ".fillpoly", _fillpoly, 0, 2, arraytype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".yxsort", (Xpost_Op_Func)_yxsort, 0, 1, arraytype); INSTALL;
+    op = xpost_operator_cons(ctx, ".fillpoly", (Xpost_Op_Func)_fillpoly, 0, 2, arraytype, dicttype); INSTALL;
     if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
         return VMerror;
     if (xpost_object_get_type(namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace")) == invalidtype)

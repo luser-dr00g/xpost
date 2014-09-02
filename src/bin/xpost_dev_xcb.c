@@ -774,14 +774,14 @@ int loadxcbdevicecont (Xpost_Context *ctx,
             nameDeviceRGB
             );
 
-    op = xpost_operator_cons(ctx, "xcbCreateCont", _create_cont, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "xcbCreateCont", (Xpost_Op_Func)_create_cont, 1, 3, integertype, integertype, dicttype);
     _create_cont_opcode = op.mark_.padw;
-    op = xpost_operator_cons(ctx, "xcbCreate", _create, 1, 3, integertype, integertype, dicttype);
+    op = xpost_operator_cons(ctx, "xcbCreate", (Xpost_Op_Func)_create, 1, 3, integertype, integertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Create"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbPutPix", _putpix, 0, 6,
+    op = xpost_operator_cons(ctx, "xcbPutPix", (Xpost_Op_Func)_putpix, 0, 6,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y coords */
             dicttype); /* devdic */
@@ -789,12 +789,12 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbGetPix", _getpix, 3, 3, numbertype, numbertype, dicttype);
+    op = xpost_operator_cons(ctx, "xcbGetPix", (Xpost_Op_Func)_getpix, 3, 3, numbertype, numbertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "GetPix"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbDrawLine", _drawline, 0, 8,
+    op = xpost_operator_cons(ctx, "xcbDrawLine", (Xpost_Op_Func)_drawline, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x1 y1 */
             numbertype, numbertype, /* x2 y2 */
@@ -803,7 +803,7 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbFillRect", _fillrect, 0, 8,
+    op = xpost_operator_cons(ctx, "xcbFillRect", (Xpost_Op_Func)_fillrect, 0, 8,
             numbertype, numbertype, numbertype, /* r g b color values */
             numbertype, numbertype, /* x y */
             numbertype, numbertype, /* width height */
@@ -812,24 +812,24 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbFillPoly", _fillpoly, 0, 5,
+    op = xpost_operator_cons(ctx, "xcbFillPoly", (Xpost_Op_Func)_fillpoly, 0, 5,
             numbertype, numbertype, numbertype,
             arraytype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "FillPoly"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbEmit", _emit, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "xcbEmit", (Xpost_Op_Func)_emit, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Emit"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbFlush", _flush, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "xcbFlush", (Xpost_Op_Func)_flush, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Flush"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbDestroy", _destroy, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "xcbDestroy", (Xpost_Op_Func)_destroy, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Destroy"), op);
     if (ret)
         return ret;
@@ -840,12 +840,12 @@ int loadxcbdevicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "newxcbdevice", newxcbdevice, 1, 2, integertype, integertype);
+    op = xpost_operator_cons(ctx, "newxcbdevice", (Xpost_Op_Func)newxcbdevice, 1, 2, integertype, integertype);
     ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newxcbdevice"), op);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "xcbEventHandler", _event_handler, 0, 1, dicttype);
+    op = xpost_operator_cons(ctx, "xcbEventHandler", (Xpost_Op_Func)_event_handler, 0, 1, dicttype);
     _event_handler_opcode = op.mark_.padw;
 
     return 0;
@@ -878,8 +878,8 @@ int xpost_oper_init_xcb_device_ops (Xpost_Context *ctx,
     xpost_memory_table_get_addr(ctx->gl,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (Xpost_Operator *)(ctx->gl->base + optadr);
-    op = xpost_operator_cons(ctx, "loadxcbdevice", loadxcbdevice, 1, 0); INSTALL;
-    op = xpost_operator_cons(ctx, "loadxcbdevicecont", loadxcbdevicecont, 1, 1, dicttype);
+    op = xpost_operator_cons(ctx, "loadxcbdevice", (Xpost_Op_Func)loadxcbdevice, 1, 0); INSTALL;
+    op = xpost_operator_cons(ctx, "loadxcbdevicecont", (Xpost_Op_Func)loadxcbdevicecont, 1, 1, dicttype);
     _loadxcbdevicecont_opcode = op.mark_.padw;
     //printf("initxcbops\n");
 
