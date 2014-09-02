@@ -12,9 +12,12 @@ But the basic building blocks, the abstractions, have remained quite constant th
 Memory
 
 The ground layer is the Memory File. It can be configured to use big malloc blocks,
-or to mmap temporary files, and these it suballocates.
+or to mmap temporary files, and these it suballocates. Xpost_Object describes 
+the tag-union for the simple object structure and is independent of Memory File,
+although specialized object types like Array and Dict /do/ depend on access to 
+Memory, though the Context.
 
-There are 2 memories: global and local. Allocations are made into the
+An Execution Context has 2 memories: global and local. Allocations are made into the
 current memory file selected by a parameter in the context, which may be altered
 with the `bool setglobal` operator. Global allocations may not contain local objects.
 Local may contain global. Remember, local memory is more perishable. It is subject to
@@ -111,6 +114,9 @@ The garbage collect currently runs on a periodic cycle, every so many allocation
 from the memory file. If a useable allocation is found on the free-list, the 
 gc cycle count is not incremented.
 
+Stacks are allocated in local memory, and may grow. Preparations are in place to
+shrink them as well, but this is not currently activated.
+
 
 Tunable parameters.
 
@@ -188,9 +194,8 @@ type signatures and associated function pointers. The signatures
 are matched against the objects on the stack and for the first
 matching signature, the associated function pointer is called.
 The C operator function receives all of its declared (via signature)
-operands as normal function arguments, thanks to fiendishly-clever
-C hackery abusing the `switch` statement, and unprototyped function
-pointers.
+operands as normal function arguments, using C hackery which abuses
+the `switch` statement, and unprototyped function pointers.
 
 Systemdict Operators.
 
@@ -259,13 +264,18 @@ The device dictionary has an ImgData member which is an
 array of arrays (rows) of integers (columns) containing
 the pixel values of the raster image. 
 
-The xcb device is hard-patched into the initialization 
-procedures and installs two operators into systemdict:
-loadxcbdevice() and loadxcbdevicecont(). The loading is
-divided into two C functions, so we can call into postscript
-and then back again. We use postscript to handle invoking
-the base class /Create method, and then modifying the Device
-object and re-using that as a new class, the xcbdevice class.
+Another option to get the graphics data in C, is to override
+the PutPixel method. The C function will receive a call
+with pixel values for each pixel.
+
+The xcb device (and similarly for the win32 device, depending
+on availability detected by `./configure`) is hard-patched
+into the initialization procedures and installs two operators
+into systemdict: loadxcbdevice() and loadxcbdevicecont().
+The loading is divided into two C functions, so we can call
+into postscript and then back again. We use postscript to handle
+invoking the base class /Create method, and then modifying the
+Device object and re-using that as a new class, the xcbdevice class.
 
 http://code.google.com/p/xpost/source/browse/src/bin/xpost_dev_xcb.c
 
@@ -279,6 +289,9 @@ it is a postscript procedure or a C function (postscript operator).
 The xpost_dev_xcb.c:_create_cont() operator function actually
 creates the window and maps it. Then for speed, it overrides all
 of the drawing methods: PutPix, DrawLine, FillRect, and FillPoly.
+(FillPoly is also overrided in the base class with a C function,
+so my previous assertions of "improving throughput" by overriding
+more device member functions are less compelling.)
 
 A device may (but is not required to) implement a /Flush method
 which should flush any buffered drawing operations and syncronize
@@ -287,6 +300,23 @@ the output with the execution of the postscript program.
 Currently only a single running device is supported as it requires
 constant attention by the main loop of the interpreter in the 
 form of the event-handler function. For multiple devices, we
-would need to have a list of active window devices which need
-event-handling.
+will need to have a list of active window devices which need
+event-handling. Composable "NeWS" canvases, I suppose need to be
+implemented internally. Since we can't really depend on fancy
+opacity effects from the environment, I think.
+
+The BGR device
+
+The bgr device is intended for use when xpost is a library component
+of another program. It can make use of configuration options from
+the call to xpost_create() to return the image buffer to the calling
+program, as well as controlling the behavior of the `showpage`
+operator.
+
+For interactive use, showpage flushes the drawing to the window
+and reads a line from the keyboard (waits for the Enter key).
+For library use, it may instruct showpage to `quit` the interpreter
+which will return control back to the caller. If it all works right,
+the caller will then have access to the raster image data.
+
 
