@@ -41,6 +41,8 @@ src/lib/xpost_op_param.c \
 src/lib/xpost_op_matrix.c \
 src/lib/xpost_op_font.c \
 src/lib/xpost_op_context.c \
+src/lib/xpost_dev_bgr.c \
+src/lib/xpost_dev_generic.c \
 src/lib/xpost_compat.h \
 src/lib/xpost_context.h \
 src/lib/xpost_error.h \
@@ -77,6 +79,8 @@ src/lib/xpost_op_param.h \
 src/lib/xpost_op_matrix.h \
 src/lib/xpost_op_font.h \
 src/lib/xpost_op_context.h \
+src/lib/xpost_dev_bgr.h \
+src/lib/xpost_dev_generic.h \
 src/lib/xpost_private.h
 
 if HAVE_WIN32

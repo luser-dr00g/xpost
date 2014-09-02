@@ -310,6 +310,7 @@ int dumpvm (Xpost_Context *ctx)
 static
 int returntocaller (Xpost_Context *ctx)
 {
+    (void)ctx;
     return yieldtocaller;
 }
 
