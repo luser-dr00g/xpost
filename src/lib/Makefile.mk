@@ -83,6 +83,12 @@ src/lib/xpost_dev_bgr.h \
 src/lib/xpost_dev_generic.h \
 src/lib/xpost_private.h
 
+if HAVE_XCB
+src_lib_libxpost_la_SOURCES += \
+src/lib/xpost_dev_xcb.c \
+src/lib/xpost_dev_xcb.h
+endif
+
 if HAVE_WIN32
 src_lib_libxpost_la_SOURCES += \
 src/lib/glob.c \

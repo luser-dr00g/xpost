@@ -24,12 +24,6 @@ windres_verbose_0 = $(AM_V_at)echo "  RC      " $@;
 	$(wc_verbose)windres -o $@ $<
 endif
 
-if HAVE_XCB
-src_bin_xpost_SOURCES += \
-src/bin/xpost_dev_xcb.c \
-src/bin/xpost_dev_xcb.h
-endif
-
 src_bin_xpost_CPPFLAGS = \
 -I$(top_srcdir)/src/lib \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
