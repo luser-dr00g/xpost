@@ -60,7 +60,6 @@
 #include "xpost_garbage.h"  //  test gc, install collect() in context's memory files
 #include "xpost_operator.h"  // eval functions call operators
 #include "xpost_oplib.h"
-#include "xpost_pathname.h" // determine whether xpost is installed
 
 static
 Xpost_Object namedollarerror;

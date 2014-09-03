@@ -44,6 +44,7 @@ src/lib/xpost_op_context.c \
 src/lib/xpost_dev_bgr.c \
 src/lib/xpost_dev_generic.c \
 src/lib/xpost_oplib.c \
+src/lib/xpost_interpreter.c \
 src/lib/xpost_compat.h \
 src/lib/xpost_context.h \
 src/lib/xpost_error.h \
@@ -83,6 +84,7 @@ src/lib/xpost_op_context.h \
 src/lib/xpost_dev_bgr.h \
 src/lib/xpost_dev_generic.h \
 src/lib/xpost_oplib.h \
+src/lib/xpost_interpreter.h \
 src/lib/xpost_private.h
 
 if HAVE_XCB
@@ -102,6 +104,7 @@ endif
 
 src_lib_libxpost_la_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
+-DPACKAGE_INSTALL_DIR=\"$(prefix)/\" \
 -DXPOST_BUILD
 
 src_lib_libxpost_la_CFLAGS = \
