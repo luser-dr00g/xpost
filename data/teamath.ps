@@ -25,6 +25,7 @@
 300 400 translate
 1 14 dup dup scale div currentlinewidth mul setlinewidth  % global scale
 currentlinewidth 3 mul setlinewidth
+0 setlinewidth
 
 /newline { /line {moveto /line {lineto currentpoint stroke moveto} store} store } def
 newline
