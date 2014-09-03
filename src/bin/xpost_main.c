@@ -244,7 +244,6 @@ int main(int argc, char *argv[])
     int have_geometry = 0;
     int i;
     int is_installed;
-    //char *exedir;
 #ifdef HAVE_SIGACTION
     struct sigaction sa, oldsa;
 
@@ -356,7 +355,7 @@ int main(int argc, char *argv[])
         goto quit_xpost;
     }
 
-    is_installed = xpost_is_installed(filename); ///* mallocs char* exedir */
+    is_installed = xpost_is_installed(filename); 
 
     if (!xpost_create(device,
                       XPOST_OUTPUT_FILENAME,
@@ -370,7 +369,6 @@ int main(int argc, char *argv[])
 
     xpost_run(XPOST_INPUT_FILENAME, ps_file);
     xpost_destroy();
-    //free(exedir);
 
     xpost_quit();
 
