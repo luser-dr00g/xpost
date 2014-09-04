@@ -77,7 +77,7 @@ typedef struct Xpost_Magic_Pair {
 /*! 
    compare objects (<,=,>) :: (-(x),0,+(x))
 */
-int objcmp(Xpost_Context *ctx, Xpost_Object l, Xpost_Object r);
+int xpost_dict_compare_objects(Xpost_Context *ctx, Xpost_Object l, Xpost_Object r);
 
 /*! 
    construct dictionary
