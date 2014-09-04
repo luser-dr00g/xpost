@@ -73,6 +73,26 @@
    % Any other element appends to the last subpath
  */
 
+static Xpost_Object namegraphicsdict;
+static Xpost_Object namecurrgstate;
+static Xpost_Object namecurrpath;
+static Xpost_Object namecmd;
+static Xpost_Object namedata;
+static Xpost_Object namemove;
+static Xpost_Object nameline;
+static Xpost_Object namecurve;
+static Xpost_Object nameclose;
+
+static unsigned int _currentpoint_opcode;
+static unsigned int _moveto_cont_opcode;
+static unsigned int _rmoveto_cont_opcode;
+static unsigned int _lineto_cont_opcode;
+static unsigned int _rlineto_cont_opcode;
+static unsigned int _curveto_cont1_opcode;
+static unsigned int _curveto_cont2_opcode;
+static unsigned int _curveto_cont3_opcode;
+static unsigned int _rcurveto_cont_opcode;
+
 static
 int _newpath (Xpost_Context *ctx)
 {
@@ -80,12 +100,12 @@ int _newpath (Xpost_Context *ctx)
     int ret;
 
     /* graphicsdict /currgstate get /currpath 1 dict put */
-    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "graphicsdict"));
+    ret = xpost_op_any_load(ctx, namegraphicsdict /*xpost_name_cons(ctx, "graphicsdict")*/);
     if (ret) return ret;
     gd = xpost_stack_pop(ctx->lo, ctx->os);
-    gstate = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    gstate = xpost_dict_get(ctx, gd, namecurrgstate /*xpost_name_cons(ctx, "currgstate")*/);
     ret = xpost_dict_put(ctx, gstate,
-            xpost_name_cons(ctx, "currpath"),
+            namecurrpath /*xpost_name_cons(ctx, "currpath")*/,
             xpost_dict_cons(ctx, 1));
     if (ret) return ret;
     return 0;
@@ -98,11 +118,11 @@ Xpost_Object _cpath (Xpost_Context *ctx)
     int ret;
 
     /* graphicsdict /currgstate get /currpath get */
-    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "graphicsdict"));
+    ret = xpost_op_any_load(ctx, namegraphicsdict /*xpost_name_cons(ctx, "graphicsdict")*/);
     if (ret) return invalid;
     gd = xpost_stack_pop(ctx->lo, ctx->os);
-    gstate = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
-    path = xpost_dict_get(ctx, gstate, xpost_name_cons(ctx, "currpath"));
+    gstate = xpost_dict_get(ctx, gd, namecurrgstate /*xpost_name_cons(ctx, "currgstate")*/);
+    path = xpost_dict_get(ctx, gstate, namecurrpath /*xpost_name_cons(ctx, "currpath")*/);
     return path;
 }
 
@@ -130,11 +150,12 @@ int _currentpoint (Xpost_Context *ctx)
     subpath = xpost_dict_get(ctx, path, xpost_int_cons(pathlen - 1));
     subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
     elem = xpost_dict_get(ctx, subpath, xpost_int_cons(subpathlen - 1));
-    data = xpost_dict_get(ctx, elem, xpost_name_cons(ctx, "data"));
+    data = xpost_dict_get(ctx, elem, namedata /*xpost_name_cons(ctx, "data")*/);
     datalen = data.comp_.sz;
     xpost_stack_push(ctx->lo, ctx->os, xpost_array_get(ctx, data, datalen - 2));
     xpost_stack_push(ctx->lo, ctx->os, xpost_array_get(ctx, data, datalen - 1));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "itransform", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "itransform", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.itransform));
     
     return 0;
 }
@@ -183,8 +204,8 @@ int _addtopath (Xpost_Context *ctx, Xpost_Object elem, Xpost_Object path)
     pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
     if (pathlen == 0)
     {
-        cmd = xpost_dict_get(ctx, elem, xpost_name_cons(ctx, "cmd"));
-        if (xpost_dict_compare_objects(ctx, cmd, xpost_name_cons(ctx, "move")) == 0)
+        cmd = xpost_dict_get(ctx, elem, namecmd /*xpost_name_cons(ctx, "cmd")*/);
+        if (xpost_dict_compare_objects(ctx, cmd, namemove /*xpost_name_cons(ctx, "move")*/) == 0)
         {
             /* New Path */
             subpath = xpost_dict_cons(ctx, 1);
@@ -198,20 +219,20 @@ int _addtopath (Xpost_Context *ctx, Xpost_Object elem, Xpost_Object path)
     }
     else
     {
-        cmd = xpost_dict_get(ctx, elem, xpost_name_cons(ctx, "cmd"));
-        if (xpost_dict_compare_objects(ctx, cmd, xpost_name_cons(ctx, "move")) == 0)
+        cmd = xpost_dict_get(ctx, elem, namecmd /*xpost_name_cons(ctx, "cmd")*/);
+        if (xpost_dict_compare_objects(ctx, cmd, namemove /*xpost_name_cons(ctx, "move")*/) == 0)
         {
             int subpathlen;
             subpath = xpost_dict_get(ctx, path, xpost_int_cons(pathlen - 1));
             subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
             lastelem = xpost_dict_get(ctx, subpath, xpost_int_cons(subpathlen - 1));
-            cmd = xpost_dict_get(ctx, lastelem, xpost_name_cons(ctx, "cmd"));
-            if (xpost_dict_compare_objects(ctx, cmd, xpost_name_cons(ctx, "move")) == 0)
+            cmd = xpost_dict_get(ctx, lastelem, namecmd /*xpost_name_cons(ctx, "cmd")*/);
+            if (xpost_dict_compare_objects(ctx, cmd, namemove /*xpost_name_cons(ctx, "move")*/) == 0)
             {
                 /* Merge "move" */
                 Xpost_Object data;
-                data = xpost_dict_get(ctx, elem, xpost_name_cons(ctx, "data"));
-                xpost_dict_put(ctx, lastelem, xpost_name_cons(ctx, "data"), data);
+                data = xpost_dict_get(ctx, elem, namedata /*xpost_name_cons(ctx, "data")*/);
+                xpost_dict_put(ctx, lastelem, namedata /*xpost_name_cons(ctx, "data")*/, data);
             }
             else
             {
@@ -238,8 +259,10 @@ int _moveto (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, x);
     xpost_stack_push(ctx->lo, ctx->os, y);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "moveto_cont", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "moveto_cont", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_moveto_cont_opcode));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
     return 0;
 }
 
@@ -251,8 +274,8 @@ int _moveto_cont (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
     xpost_array_put(ctx, data, 0, x);
     xpost_array_put(ctx, data, 1, y);
     elem = xpost_dict_cons(ctx, 2);
-    xpost_dict_put(ctx, elem, xpost_name_cons(ctx, "cmd"), xpost_name_cons(ctx, "move"));
-    xpost_dict_put(ctx, elem, xpost_name_cons(ctx, "data"), data);
+    xpost_dict_put(ctx, elem, namecmd /*xpost_name_cons(ctx, "cmd")*/, namemove /*xpost_name_cons(ctx, "move")*/);
+    xpost_dict_put(ctx, elem, namedata /*xpost_name_cons(ctx, "data")*/, data);
     return _addtopath(ctx, elem, _cpath(ctx));
 }
 
@@ -261,8 +284,10 @@ int _rmoveto (Xpost_Context *ctx, Xpost_Object dx, Xpost_Object dy)
 {
     xpost_stack_push(ctx->lo, ctx->os, dx);
     xpost_stack_push(ctx->lo, ctx->os, dy);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "rmoveto_cont", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "currentpoint", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "rmoveto_cont", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_rmoveto_cont_opcode));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "currentpoint", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_currentpoint_opcode));
     return 0;
 }
 
@@ -281,8 +306,10 @@ int _lineto (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, x);
     xpost_stack_push(ctx->lo, ctx->os, y);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "lineto_cont", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "lineto_cont", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_lineto_cont_opcode));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
     return 0;
 }
 
@@ -294,8 +321,8 @@ int _lineto_cont (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
     xpost_array_put(ctx, data, 0, x);
     xpost_array_put(ctx, data, 1, y);
     elem = xpost_dict_cons(ctx, 2);
-    xpost_dict_put(ctx, elem, xpost_name_cons(ctx, "cmd"), xpost_name_cons(ctx, "line"));
-    xpost_dict_put(ctx, elem, xpost_name_cons(ctx, "data"), data);
+    xpost_dict_put(ctx, elem, namecmd /*xpost_name_cons(ctx, "cmd")*/, nameline /*xpost_name_cons(ctx, "line")*/);
+    xpost_dict_put(ctx, elem, namedata /*xpost_name_cons(ctx, "data")*/, data);
     return _addtopath(ctx, elem, _cpath(ctx));
 }
 
@@ -304,8 +331,10 @@ int _rlineto (Xpost_Context *ctx, Xpost_Object dx, Xpost_Object dy)
 {
     xpost_stack_push(ctx->lo, ctx->os, dx);
     xpost_stack_push(ctx->lo, ctx->os, dy);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "rlineto_cont", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "currentpoint", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "rlineto_cont", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_rlineto_cont_opcode));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "currentpoint", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_currentpoint_opcode));
     return 0;
 }
 
@@ -331,8 +360,10 @@ int _curveto (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, y2);
     xpost_stack_push(ctx->lo, ctx->os, x3);
     xpost_stack_push(ctx->lo, ctx->os, y3);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "curveto_cont1", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "curveto_cont1", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_cont1_opcode));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
     return 0;
 }
 
@@ -348,8 +379,10 @@ int _curveto_cont1 (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, y1);
     xpost_stack_push(ctx->lo, ctx->os, x2);
     xpost_stack_push(ctx->lo, ctx->os, y2);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "curveto_cont2", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "curveto_cont2", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_cont2_opcode));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
     return 0;
 }
 
@@ -365,8 +398,10 @@ int _curveto_cont2 (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, Y3);
     xpost_stack_push(ctx->lo, ctx->os, x1);
     xpost_stack_push(ctx->lo, ctx->os, y1);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "curveto_cont3", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "curveto_cont3", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_cont3_opcode));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "transform", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
     return 0;
 }
 
@@ -385,8 +420,8 @@ int _curveto_cont3 (Xpost_Context *ctx,
     xpost_array_put(ctx, data, 4, X3);
     xpost_array_put(ctx, data, 5, Y3);
     elem = xpost_dict_cons(ctx, 2);
-    xpost_dict_put(ctx, elem, xpost_name_cons(ctx, "cmd"), xpost_name_cons(ctx, "curve"));
-    xpost_dict_put(ctx, elem, xpost_name_cons(ctx, "data"), data);
+    xpost_dict_put(ctx, elem, namecmd /*xpost_name_cons(ctx, "cmd")*/, namecurve /*xpost_name_cons(ctx, "curve")*/);
+    xpost_dict_put(ctx, elem, namedata /*xpost_name_cons(ctx, "data")*/, data);
     return _addtopath(ctx, elem, _cpath(ctx));
 }
 
@@ -402,8 +437,10 @@ int _rcurveto (Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, y2);
     xpost_stack_push(ctx->lo, ctx->os, x3);
     xpost_stack_push(ctx->lo, ctx->os, y3);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "rcurveto_cont", NULL,0,0));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "currentpoint", NULL,0,0));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "rcurveto_cont", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_rcurveto_cont_opcode));
+    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "currentpoint", NULL,0,0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_currentpoint_opcode));
     return 0;
 }
 
@@ -451,14 +488,14 @@ int _closepath (Xpost_Context *ctx)
         subpath = xpost_dict_get(ctx, path, xpost_int_cons(pathlen - 1));
         subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
         lastelem = xpost_dict_get(ctx, subpath, xpost_int_cons(subpathlen - 1));
-        cmd = xpost_dict_get(ctx, lastelem, xpost_name_cons(ctx, "cmd"));
-        if (xpost_dict_compare_objects(ctx, cmd, xpost_name_cons(ctx, "close")) != 0)
+        cmd = xpost_dict_get(ctx, lastelem, namecmd /*xpost_name_cons(ctx, "cmd")*/);
+        if (xpost_dict_compare_objects(ctx, cmd, nameclose /*xpost_name_cons(ctx, "close")*/) != 0)
         {
             firstelem = xpost_dict_get(ctx, subpath, xpost_int_cons(0));
-            data = xpost_dict_get(ctx, firstelem, xpost_name_cons(ctx, "data"));
+            data = xpost_dict_get(ctx, firstelem, namedata /*xpost_name_cons(ctx, "data")*/);
             elem = xpost_dict_cons(ctx, 2);
-            xpost_dict_put(ctx, elem, xpost_name_cons(ctx, "cmd"), xpost_name_cons(ctx, "close"));
-            xpost_dict_put(ctx, elem, xpost_name_cons(ctx, "data"), data);
+            xpost_dict_put(ctx, elem, namecmd /*xpost_name_cons(ctx, "cmd")*/, nameclose /*xpost_name_cons(ctx, "close")*/);
+            xpost_dict_put(ctx, elem, namedata /*xpost_name_cons(ctx, "data")*/, data);
             return _addtopath(ctx, elem, _cpath(ctx));
         }
     }
@@ -477,51 +514,77 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
+    if (xpost_object_get_type(namegraphicsdict = xpost_name_cons(ctx, "graphicsdict")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namecurrgstate = xpost_name_cons(ctx, "currgstate")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namecurrpath = xpost_name_cons(ctx, "currpath")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namecmd = xpost_name_cons(ctx, "cmd")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namedata = xpost_name_cons(ctx, "data")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namemove = xpost_name_cons(ctx, "move")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameline = xpost_name_cons(ctx, "line")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(namecurve = xpost_name_cons(ctx, "curve")) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type(nameclose = xpost_name_cons(ctx, "close")) == invalidtype)
+        return VMerror;
+
     op = xpost_operator_cons(ctx, "newpath", (Xpost_Op_Func)_newpath, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "currentpoint", (Xpost_Op_Func)_currentpoint, 0, 0);
+    _currentpoint_opcode = op.mark_.padw;
     INSTALL;
+
     op = xpost_operator_cons(ctx, "moveto", (Xpost_Op_Func)_moveto, 0, 2, numbertype, numbertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "moveto_cont", (Xpost_Op_Func)_moveto_cont, 0, 2, numbertype, numbertype);
-    INSTALL;
+    _moveto_cont_opcode = op.mark_.padw;
+
     op = xpost_operator_cons(ctx, "rmoveto", (Xpost_Op_Func)_rmoveto, 0, 2, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "rmoveto_cont", (Xpost_Op_Func)_rmoveto_cont, 0, 4,
             floattype, floattype, floattype, floattype);
-    INSTALL;
+    _rmoveto_cont_opcode = op.mark_.padw;
+
     op = xpost_operator_cons(ctx, "lineto", (Xpost_Op_Func)_lineto, 0, 2, numbertype, numbertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "lineto_cont", (Xpost_Op_Func)_lineto_cont, 0, 2, numbertype, numbertype);
-    INSTALL;
+    _lineto_cont_opcode = op.mark_.padw;
+
     op = xpost_operator_cons(ctx, "rlineto", (Xpost_Op_Func)_rlineto, 0, 2, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "rlineto_cont", (Xpost_Op_Func)_rlineto_cont, 0, 4,
             floattype, floattype, floattype, floattype);
-    INSTALL;
+    _rlineto_cont_opcode = op.mark_.padw;
+
     op = xpost_operator_cons(ctx, "curveto", (Xpost_Op_Func)_curveto, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "curveto_cont1", (Xpost_Op_Func)_curveto_cont1, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
-    INSTALL;
+    _curveto_cont1_opcode = op.mark_.padw;
+
     op = xpost_operator_cons(ctx, "curveto_cont2", (Xpost_Op_Func)_curveto_cont2, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
-    INSTALL;
+    _curveto_cont2_opcode = op.mark_.padw;
+
     op = xpost_operator_cons(ctx, "curveto_cont3", (Xpost_Op_Func)_curveto_cont3, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
-    INSTALL;
+    _curveto_cont3_opcode = op.mark_.padw;
+
     op = xpost_operator_cons(ctx, "rcurveto", (Xpost_Op_Func)_rcurveto, 0, 6,
             floattype, floattype, floattype, floattype, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "rcurveto_cont", (Xpost_Op_Func)_rcurveto_cont, 0, 8,
             floattype, floattype, floattype, floattype, floattype, floattype, floattype, floattype);
-    INSTALL;
+    _rcurveto_cont_opcode = op.mark_.padw;
+
     op = xpost_operator_cons(ctx, "closepath", (Xpost_Op_Func)_closepath, 0, 0);
     INSTALL;
-
-    /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
-    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
 
     return 0;
 }
