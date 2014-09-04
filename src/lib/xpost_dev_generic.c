@@ -321,12 +321,12 @@ int _fillpoly (Xpost_Context *ctx,
 
     //width = xpost_dict_get(ctx, devdic, namewidth).int_.val;
     colorspace = xpost_dict_get(ctx, devdic, namenativecolorspace);
-    if (objcmp(ctx, colorspace, nameDeviceGray) == 0)
+    if (xpost_dict_compare_objects(ctx, colorspace, nameDeviceGray) == 0)
     {
         ncomp = 1;
         comp1 = xpost_stack_pop(ctx->lo, ctx->os);
     }
-    else if (objcmp(ctx, colorspace, nameDeviceRGB) == 0)
+    else if (xpost_dict_compare_objects(ctx, colorspace, nameDeviceRGB) == 0)
     {
         ncomp = 3;
         comp3 = xpost_stack_pop(ctx->lo, ctx->os);

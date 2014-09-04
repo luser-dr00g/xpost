@@ -280,10 +280,10 @@ int xpost_op_exit (Xpost_Context *ctx)
         if (xpost_object_get_type(x) == invalidtype)
             return execstackunderflow;
         //xpost_object_dump(x);
-        if ( (objcmp(ctx, x, opfor)    == 0)
-          || (objcmp(ctx, x, oprepeat) == 0)
-          || (objcmp(ctx, x, oploop)   == 0)
-          || (objcmp(ctx, x, opforall) == 0)
+        if ( (xpost_dict_compare_objects(ctx, x, opfor)    == 0)
+          || (xpost_dict_compare_objects(ctx, x, oprepeat) == 0)
+          || (xpost_dict_compare_objects(ctx, x, oploop)   == 0)
+          || (xpost_dict_compare_objects(ctx, x, opforall) == 0)
            ) {
             break;
         }
@@ -313,7 +313,7 @@ int xpost_op_stop(Xpost_Context *ctx)
         x = xpost_stack_pop(ctx->lo, ctx->es);
         if (xpost_object_get_type(x) == invalidtype)
             return execstackunderflow;
-        if(objcmp(ctx, f, x) == 0) {
+        if(xpost_dict_compare_objects(ctx, f, x) == 0) {
             if (!xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1)))
                 return stackoverflow;
             return 0;

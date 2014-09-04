@@ -60,6 +60,7 @@
 #include "xpost_op_packedarray.h"
 #include "xpost_op_param.h"
 #include "xpost_op_matrix.h"
+#include "xpost_op_path.h"
 #include "xpost_op_font.h"
 #include "xpost_op_context.h"
 #include "xpost_dev_generic.h"
@@ -164,6 +165,7 @@ int xpost_oplib_init_ops (Xpost_Context *ctx)
     xpost_oper_init_packedarray_ops(ctx, sd);
     xpost_oper_init_param_ops(ctx, sd);
     xpost_oper_init_matrix_ops(ctx, sd);
+    xpost_oper_init_path_ops (ctx, sd);
     xpost_oper_init_font_ops(ctx, sd);
     xpost_oper_init_generic_device_ops(ctx, sd);
 #ifdef _WIN32

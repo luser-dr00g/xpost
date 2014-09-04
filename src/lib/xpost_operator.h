@@ -86,7 +86,7 @@ enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
 /*
    constant size of optab structure
  */
-#define MAXOPS 200
+#define MAXOPS 250
 
 /*
    initial size of systemdict (which then grows, automatically)

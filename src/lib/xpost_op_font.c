@@ -419,12 +419,12 @@ int _show (Xpost_Context *ctx,
         return ret;
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
-    if (objcmp(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
     {
         ncomp = 1;
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
     }
-    else if (objcmp(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
     {
         ncomp = 3;
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
@@ -526,12 +526,12 @@ int _ashow (Xpost_Context *ctx,
         return ret;
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
-    if (objcmp(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
     {
         ncomp = 1;
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
     }
-    else if (objcmp(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
     {
         ncomp = 3;
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
@@ -636,12 +636,12 @@ int _widthshow (Xpost_Context *ctx,
         return ret;
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
-    if (objcmp(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
     {
         ncomp = 1;
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
     }
-    else if (objcmp(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
     {
         ncomp = 3;
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
@@ -751,12 +751,12 @@ int _awidthshow (Xpost_Context *ctx,
         return ret;
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
-    if (objcmp(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
     {
         ncomp = 1;
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
     }
-    else if (objcmp(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
     {
         ncomp = 3;
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));

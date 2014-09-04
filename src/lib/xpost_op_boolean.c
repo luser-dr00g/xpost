@@ -82,7 +82,7 @@ int xpost_op_any_any_eq (Xpost_Context *ctx,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(objcmp(ctx,x,y) == 0));
+            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) == 0));
     return 0;
 }
 
@@ -94,7 +94,7 @@ int xpost_op_any_any_ne (Xpost_Context *ctx,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(objcmp(ctx,x,y) != 0));
+            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) != 0));
     return 0;
 }
 
@@ -106,7 +106,7 @@ int xpost_op_any_any_ge (Xpost_Context *ctx,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(objcmp(ctx,x,y) >= 0));
+            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) >= 0));
     return 0;
 }
 
@@ -118,7 +118,7 @@ int xpost_op_any_any_gt (Xpost_Context *ctx,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(objcmp(ctx,x,y) > 0));
+            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) > 0));
     return 0;
 }
 
@@ -130,7 +130,7 @@ int xpost_op_any_any_le (Xpost_Context *ctx,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(objcmp(ctx,x,y) <= 0));
+            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) <= 0));
     return 0;
 }
 
@@ -142,7 +142,7 @@ int xpost_op_any_any_lt (Xpost_Context *ctx,
           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(objcmp(ctx,x,y) < 0));
+            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) < 0));
     return 0;
 }
 

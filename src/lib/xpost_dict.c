@@ -102,7 +102,7 @@ typedef union
           +value if L > R
           -value if L < R
  */
-int objcmp(Xpost_Context *ctx,
+int xpost_dict_compare_objects(Xpost_Context *ctx,
            Xpost_Object L,
            Xpost_Object R)
 {
@@ -130,7 +130,7 @@ int objcmp(Xpost_Context *ctx,
 cont:
     switch (xpost_object_get_type(L)) {
         default:
-            XPOST_LOG_ERR("unhandled type (%s) in objcmp",
+            XPOST_LOG_ERR("unhandled type (%s) in xpost_dict_compare_objects",
                     xpost_object_type_names[xpost_object_get_type(L)]);
             return -1;
 
@@ -468,8 +468,8 @@ Xpost_Object clean_key (Xpost_Context *ctx,
 
 /* repeated loop body from the lookup function */
 #define RETURN_TAB_I_IF_EQ_K_OR_NULL    \
-    if (objcmp(ctx, tp[2*i], k) == 0    \
-    || objcmp(ctx, tp[2*i], null) == 0) \
+    if (xpost_dict_compare_objects(ctx, tp[2*i], k) == 0    \
+    || xpost_dict_compare_objects(ctx, tp[2*i], null) == 0) \
             return tp + (2*i);
 
 static Xpost_Object invalidpair[2] = {{0},{0}};
@@ -706,7 +706,7 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         return VMerror;
 
     e = diclookup(ctx, mem, d, k); /*find slot for key */
-    if (e == NULL || objcmp(ctx,e[0],null) == 0) {
+    if (e == NULL || xpost_dict_compare_objects(ctx,e[0],null) == 0) {
         return undefined;
     }
 
@@ -720,7 +720,7 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         if (h == hash(tp[2*i]) % sz) {
             last = i;
             lastisset = 1;
-        } else if (objcmp(ctx, tp[2*i], null) == 0) {
+        } else if (xpost_dict_compare_objects(ctx, tp[2*i], null) == 0) {
             if (lastisset) {
                 found = 1;
                 break;
@@ -732,7 +732,7 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
             if (h == hash(tp[2*i]) % sz) {
                 last = i;
                 lastisset = 1;
-            } else if (objcmp(ctx, tp[2*i], null) == 0) {
+            } else if (xpost_dict_compare_objects(ctx, tp[2*i], null) == 0) {
                 if (lastisset) {
                     found = 1;
                     break;

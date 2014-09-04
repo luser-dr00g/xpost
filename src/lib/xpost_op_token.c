@@ -372,7 +372,7 @@ int grok (Xpost_Context *ctx,
                       //printf("grok: x?%d", xpost_object_is_exe(t));
                       if (ret)
                           return ret;
-                      if (objcmp(ctx, t, tail) == 0)
+                      if (xpost_dict_compare_objects(ctx, t, tail) == 0)
                           break;
                       xpost_stack_push(ctx->lo, ctx->os, t);
                   }

@@ -17,7 +17,8 @@
 /newpath {
     graphicsdict /currgstate get
         /currpath 1 dict put
-} bind def
+}
+pop pop%bind def
 
 % -  currentpoint  x y
 % return current point coordinates
@@ -30,7 +31,8 @@
         /data get dup length 2 sub 2 getinterval % last data pair
         aload pop itransform
     } ifelse
-} bind def
+}
+pop pop%bind def
 
 /cpath { graphicsdict /currgstate get /currpath get } bind def
 
@@ -80,7 +82,8 @@
     transform
     2 array astore
     << /data 3 2 roll /cmd /move >> cpath addtopath
-} bind def
+}
+pop pop%bind def
 
 % dx dy  rmoveto  -
 % relative moveto
@@ -89,7 +92,8 @@
     3 2 roll add
     3 1 roll add exch
     moveto
-} bind def
+}
+pop pop%bind def
 
 % x y  lineto  -
 % append straight line to (x,y)
@@ -97,7 +101,8 @@
     transform
     2 array astore
     << /data 3 2 roll /cmd /line >> cpath addtopath
-} bind def
+}
+pop pop%bind def
 
 % dx dy  rlineto  -
 % relative lineto
@@ -106,7 +111,8 @@
     3 2 roll add
     3 1 roll add exch
     lineto
-} bind def
+}
+pop pop%bind def
 
 % x1 y1 x2 y2 x3 y3  curveto  -
 % append Bezier cubic section
@@ -114,7 +120,8 @@
     3 { 6 2 roll transform } repeat
     6 array astore
     << /data 3 2 roll /cmd /curve >> cpath addtopath
-} bind def
+}
+pop pop%bind def
 
 % dx1 dy1 dx2 dy2 dx3 dy3  rcurveto  -
 % relative curveto
@@ -125,7 +132,24 @@
         3 1 roll add exch
     } repeat
     curveto
-} bind def
+}
+pop pop%bind def
+
+% -  closepath  -
+% connect subpath back to its starting point
+/closepath {
+    cpath length 0 gt {
+        cpath dup length 1 sub get % subpath
+        dup dup length 1 sub get % subpath last-elem
+        /cmd get /close eq { % subpath
+            pop
+        }{                   % subpath
+            0 get /data get % subpath [data]
+            << /data 3 2 roll /cmd /close >> cpath addtopath
+        } ifelse
+    } if
+}
+pop pop%bind def
 
 /tan {
     dup sin exch
@@ -222,21 +246,6 @@ def
 }
 bind
 def
-
-% -  closepath  -
-% connect subpath back to its starting point
-/closepath {
-    cpath length 0 gt {
-        cpath dup length 1 sub get % subpath
-        dup dup length 1 sub get % subpath last-elem
-        /cmd get /close eq { % subpath
-            pop
-        }{                   % subpath
-            0 get /data get % subpath [data]
-            << /data 3 2 roll /cmd /close >> cpath addtopath
-        } ifelse
-    } if
-} bind def
 
 /median { % P0 P3 = x0 y0 x1 y1
     3 -1 roll add .5 mul % x0 x1 y0+y1/2
