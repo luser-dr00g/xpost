@@ -611,6 +611,7 @@ int xpost_oper_init_matrix_ops(Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, "transform", (Xpost_Op_Func)_transform, 2, 2,
             floattype, floattype);
+    ctx->opcode_shortcuts.transform = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "transform", (Xpost_Op_Func)_mat_transform, 2, 3,
             floattype, floattype, arraytype);
@@ -623,6 +624,7 @@ int xpost_oper_init_matrix_ops(Xpost_Context *ctx,
     INSTALL;
     op = xpost_operator_cons(ctx, "itransform", (Xpost_Op_Func)_itransform, 2, 2,
             floattype, floattype);
+    ctx->opcode_shortcuts.itransform = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "itransform", (Xpost_Op_Func)_mat_itransform, 2, 3,
             floattype, floattype, arraytype);

@@ -29,6 +29,8 @@ struct _Xpost_Context {
         int loop;
         int repeat;
         int token;
+        int transform;
+        int itransform;
     } opcode_shortcuts;  /**< opcodes for internal use, to avoid lookups */
 
     Xpost_Object currentobject;  /**< currently-executing object, for error() */
