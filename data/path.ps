@@ -188,8 +188,7 @@ dup 0 10 dict
 	dup /mat matrix put
 	dup /mat1 matrix put
 put
-bind
-def
+pop pop%bind def
 
 % x y r angle1 angle2  arc  -
 % append a counterclockwise circular arc to the current path
@@ -245,6 +244,8 @@ pop pop%bind def
 }
 pop pop%bind def
 
+%%-----------    above this line has be reimplemented in lib/xpost_op_path.c
+
 /median { % P0 P3 = x0 y0 x1 y1
     3 -1 roll add .5 mul % x0 x1 y0+y1/2
     3 1 roll add .5 mul  % (y0+y1)/2 (x0+x1)/2
@@ -257,7 +258,7 @@ pop pop%bind def
     add sqrt % dist
 } bind def
 
-%FIXME: account for device resolution
+%FIX//ME: account for device resolution//We're *in* device coords. So we're gold.
 %calculate the pythagorean distance between the
 % midpoint of the bezier curve and the midpoint of the straight line
 /checkflat { % P0 P1 P2 P3
@@ -440,6 +441,11 @@ pop pop%bind def
         pop
     } if
 } bind def
+
+% apply dash parameters to current path
+% modifies current path
+/dashpath {
+} def
 
 % produce a vector from two points
 /ptdiff { % P0 P1
@@ -682,9 +688,10 @@ pop pop%bind def
 >> def
 
 /strokepath {
-    flattenpath
-    matrix currentmatrix
-    matrix setmatrix
+    flattenpath          % convert all curve segments to line approximations
+    dashpath             % apply dashing effect
+    matrix currentmatrix % stash matrix on stack
+    matrix setmatrix     % use identity matrix
     cpath length 0 gt {
         cpath newpath
         0 1 2 index length 1 sub { % path i
@@ -704,7 +711,7 @@ pop pop%bind def
     %(sp:)= pstack()=
     %dup type /arraytype ne {pop} if
     %dup type /arraytype ne {pop} if
-    setmatrix
+    setmatrix           % restore stashed matrix
 } bind def
 
 /maxmin {
