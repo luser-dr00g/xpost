@@ -126,24 +126,24 @@ doprompt
 {
 (arcs)=
 beginpage
-	10 { randarc randwidth randcolor stroke newpath } repeat
+	20 { randarc randwidth randcolor stroke newpath } repeat
 endpage
 
 (pie-slices)=
 beginpage
-    5 { randcolor randpie newpath } repeat
-    5 { randcolor randpieslice newpath } repeat
+    10 { randcolor randpie newpath } repeat
+    10 { randcolor randpieslice newpath } repeat
 endpage
 
 (single-pixel lines)=
 beginpage
     0 setlinewidth
-    30 { randline randcolor stroke } repeat
+    50 { randline randcolor stroke } repeat
 endpage
 
 (stroked lines)=
 beginpage
-    10 { randline randwidth randcolor stroke } repeat
+    20 { randline randwidth randcolor stroke } repeat
 endpage
 
 
@@ -151,23 +151,13 @@ endpage
 (single-pixel curves)=
 beginpage
     0 setlinewidth
-    10 { randcurve randcolor stroke } repeat
+    20 { randcurve randcolor stroke } repeat
 endpage
 
 {
 (stroked curves)=
 beginpage
-    randcurve randwidth randcolor stroke
-    randcurve randwidth randcolor stroke
-    randcurve randwidth randcolor stroke
-    randcurve randwidth randcolor stroke
-    %break
-    randcurve randwidth randcolor stroke
-    randcurve randwidth randcolor stroke
-    randcurve randwidth randcolor stroke
-    randcurve randwidth randcolor stroke
-    randcurve randwidth randcolor stroke
-    randcurve randwidth randcolor stroke
+    20 { randcurve randwidth randcolor stroke } repeat
 endpage
 } exec %pop
 
@@ -176,9 +166,7 @@ endpage
 (single-pixel boxes)=
 beginpage
     0 setlinewidth
-    3 { randbox randcolor stroke newpath } repeat
-	%break
-    17 { randbox randcolor stroke newpath } repeat
+    20 { randbox randcolor stroke newpath } repeat
 endpage
 } exec %pop
 
