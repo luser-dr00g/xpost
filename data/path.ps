@@ -160,7 +160,7 @@ pop pop%bind def
 % then performs the simpler task of calculating a bezier
 % for the arc that is symmetrical about the x-axis
 % formula derived from http://www.tinaja.com/glib/bezarc1.pdf
-/arcbez { % draw single bezier % x y r angle1 angle2
+/arcbez { % draw single bezier % x y r angle1 angle2  .  x1 y1 x2 y2 x3 y3 x0 y0
 	DICT
     %5 dict
 	begin
@@ -217,8 +217,7 @@ def
         curveto
     } ifelse
 }
-bind
-def
+pop pop%bind def
 
 /arcn {
     dup 0 lt { 360 add exch 360 add exch } if
@@ -244,8 +243,7 @@ def
         curveto
     } ifelse
 }
-bind
-def
+pop pop%bind def
 
 /median { % P0 P3 = x0 y0 x1 y1
     3 -1 roll add .5 mul % x0 x1 y0+y1/2

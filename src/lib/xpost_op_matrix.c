@@ -597,6 +597,7 @@ int xpost_oper_init_matrix_ops(Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, "rotate", (Xpost_Op_Func)_rotate, 0, 1,
             floattype);
+    ctx->opcode_shortcuts.rotate = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "rotate", (Xpost_Op_Func)_mat_rotate, 1, 2,
             floattype, arraytype);
@@ -607,6 +608,7 @@ int xpost_oper_init_matrix_ops(Xpost_Context *ctx,
     INSTALL;
     op = xpost_operator_cons(ctx, "concatmatrix", (Xpost_Op_Func)_concat_matrix, 1, 3,
             arraytype, arraytype, arraytype);
+    ctx->opcode_shortcuts.concatmatrix = op.mark_.padw;
     INSTALL;
 
     op = xpost_operator_cons(ctx, "transform", (Xpost_Op_Func)_transform, 2, 2,

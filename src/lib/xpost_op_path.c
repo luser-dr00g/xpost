@@ -42,6 +42,7 @@
 #endif
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -56,6 +57,7 @@
 #include "xpost_string.h"
 #include "xpost_array.h"
 #include "xpost_dict.h"
+#include "xpost_matrix.h"
 
 #include "xpost_operator.h"
 #include "xpost_op_dict.h"
@@ -73,6 +75,9 @@
    % Any other element appends to the last subpath
  */
 
+#define RAD_PER_DEG (M_PI / 180.0)
+
+/*name objects*/
 static Xpost_Object namegraphicsdict;
 static Xpost_Object namecurrgstate;
 static Xpost_Object namecurrpath;
@@ -83,15 +88,23 @@ static Xpost_Object nameline;
 static Xpost_Object namecurve;
 static Xpost_Object nameclose;
 
+/*opcodes*/
 static unsigned int _currentpoint_opcode;
+static unsigned int _moveto_opcode;
 static unsigned int _moveto_cont_opcode;
 static unsigned int _rmoveto_cont_opcode;
+static unsigned int _lineto_opcode;
 static unsigned int _lineto_cont_opcode;
 static unsigned int _rlineto_cont_opcode;
+static unsigned int _curveto_opcode;
 static unsigned int _curveto_cont1_opcode;
 static unsigned int _curveto_cont2_opcode;
 static unsigned int _curveto_cont3_opcode;
 static unsigned int _rcurveto_cont_opcode;
+
+/*matrices*/
+static Xpost_Object _mat;
+static Xpost_Object _mat1;
 
 static
 int _newpath (Xpost_Context *ctx)
@@ -502,6 +515,197 @@ int _closepath (Xpost_Context *ctx)
     return 0;
 }
 
+/*
+% packs the center-point, radius and center-angle in a matrix
+% then performs the simpler task of calculating a bezier
+% for the arc that is symmetrical about the x-axis
+% formula derived from http://www.tinaja.com/glib/bezarc1.pdf
+/arcbez { % draw single bezier % x y r angle1 angle2  .  x1 y1 x2 y2 x3 y3 x0 y0
+    DICT
+    %5 dict
+    begin
+    %/mat matrix def
+    5 3 roll mat translate pop                         % r angle1 angle2
+    3 2 roll dup mat1 scale mat mat concatmatrix pop % angle1 angle2
+    2 copy exch sub /da exch def                       % da=a2-a1
+    add 2 div mat1 rotate mat mat concatmatrix pop
+    /da_2 da 2 div def
+    /sin_a da_2 sin def
+    /cos_a da_2 cos def
+    4 cos_a sub 3 div % x1
+    1 cos_a sub cos_a 3 sub mul
+    3 sin_a mul div   % x1 y1
+    neg
+    1 index           % x1 y1 x2(==x1)
+    1 index neg       % x1 y1 x2 y2(==-y1)
+    cos_a sin_a neg   % x1 y1 x2 y2 x3 y3
+    cos_a sin_a       %               ... x0 y0
+    4 { 8 2 roll mat transform } repeat
+    %pstack()=
+    end
+}
+dup 0 10 dict
+    dup /mat matrix put
+    dup /mat1 matrix put
+put
+bind
+def
+*/
+
+
+static
+void _transform (Xpost_Matrix mat, real x, real y, real *xres, real *yres)
+{
+    *xres = mat.xx * x + mat.xy * y + mat.xz;
+    *yres = mat.yx * x + mat.yy * y + mat.yz;
+}
+
+static
+int _arcbez (Xpost_Context *ctx,
+        Xpost_Object x, Xpost_Object y, Xpost_Object r,
+        Xpost_Object angle1, Xpost_Object angle2)
+{
+    Xpost_Matrix mat1, mat2, mat3;
+    real da_2, sin_a, cos_a;
+    real x0, y0, x1, y1, x2, y2, x3, y3;
+
+    xpost_matrix_scale(&mat1, r.real_.val, r.real_.val);
+    xpost_matrix_translate(&mat2, x.real_.val, y.real_.val);
+    xpost_matrix_mult(&mat2, &mat1, &mat3);
+    xpost_matrix_rotate(&mat2, ((angle1.real_.val + angle2.real_.val) / 2.0) * RAD_PER_DEG);
+    xpost_matrix_mult(&mat3, &mat2, &mat1);
+
+    da_2 = ((angle2.real_.val - angle1.real_.val) / 2.0) * RAD_PER_DEG;
+    sin_a = sin(da_2);
+    cos_a = cos(da_2);
+    x0 = cos_a;
+    y0 = sin_a;
+    x1 = (4 - cos_a) / 3.0;
+    y1 = - (((1 - cos_a) * (cos_a - 3)) / (3 * sin_a));
+    x2 = x1;
+    y2 = -y1;
+    x3 = cos_a;
+    y3 = -sin_a;
+    _transform(mat1, x0, y0, &x0, &y0);
+    _transform(mat1, x1, y1, &x1, &y1);
+    _transform(mat1, x2, y2, &x2, &y2);
+    _transform(mat1, x3, y3, &x3, &y3);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(x1));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(y1));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(x2));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(y2));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(x3));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(y3));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(x0));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(y0));
+    return 0;
+}
+
+static
+int _arc (Xpost_Context *ctx,
+        Xpost_Object x, Xpost_Object y, Xpost_Object r,
+        Xpost_Object angle1, Xpost_Object angle2)
+{
+    real a1 = angle1.real_.val;
+    real a2 = angle2.real_.val;
+    if (a2 < 0.0)
+    {
+        a1 += 360.0;
+        a2 += 360.0;
+    }
+    if (a1 < 0.0)
+    {
+        a1 += 360.0;
+        a2 += 360.0;
+    }
+    if (a2 > 720.0)
+    {
+        a2 -= 720.0 * trunc(a2 / 720.0);
+    }
+    if (a1 > 720.0)
+    {
+        a1 -= 720.0 * trunc(a1 / 720.0);
+    }
+    if (a1 > a2)
+    {
+        a2 += 360.0;
+    }
+    if (a1 > a2)
+    {
+        a2 += 360.0;
+    }
+    if ((a2 - a1) > 90.0)
+    {
+        _arc(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 - ((a2 - a1)/2.0)));
+        _arc(ctx, x, y, r, xpost_real_cons(a1 + ((a2 - a1)/2.0)), xpost_real_cons(a2));
+    }
+    else
+    {
+        Xpost_Object path = _cpath(ctx);
+        int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
+        _arcbez(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2));
+        xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
+        if (pathlen)
+            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_lineto_opcode));
+        else
+            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_moveto_opcode));
+    }
+    return 0;
+}
+
+static
+int _arcn (Xpost_Context *ctx,
+        Xpost_Object x, Xpost_Object y, Xpost_Object r,
+        Xpost_Object angle1, Xpost_Object angle2)
+{
+    real a1 = angle1.real_.val;
+    real a2 = angle2.real_.val;
+    if (a2 < 0.0)
+    {
+        a1 += 360.0;
+        a2 += 360.0;
+    }
+    if (a1 < 0.0)
+    {
+        a1 += 360.0;
+        a2 += 360.0;
+    }
+    if (a2 > 720.0)
+    {
+        a2 -= 720.0 * trunc(a2 / 720.0);
+    }
+    if (a1 > 720.0)
+    {
+        a1 -= 720.0 * trunc(a1 / 720.0);
+    }
+    if (a1 < a2)
+    {
+        a1 += 360.0;
+    }
+    if (a1 < a2)
+    {
+        a1 += 360.0;
+    }
+    if ((a1 - a2) > 90.0)
+    {
+        _arcn(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 + ((a1 - a2)/2.0)));
+        _arcn(ctx, x, y, r, xpost_real_cons(a1 - ((a1 - a2)/2.0)), xpost_real_cons(a2));
+    }
+    else
+    {
+        Xpost_Object path = _cpath(ctx);
+        int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
+        _arcbez(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2));
+        xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
+        if (pathlen)
+            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_lineto_opcode));
+        else
+            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_moveto_opcode));
+    }
+    return 0;
+}
+
+
 int xpost_oper_init_path_ops (Xpost_Context *ctx,
              Xpost_Object sd)
 {
@@ -533,6 +737,9 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
     if (xpost_object_get_type(nameclose = xpost_name_cons(ctx, "close")) == invalidtype)
         return VMerror;
 
+    _mat = xpost_array_cons(ctx, 6);
+    _mat1 = xpost_array_cons(ctx, 6);
+
     op = xpost_operator_cons(ctx, "newpath", (Xpost_Op_Func)_newpath, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "currentpoint", (Xpost_Op_Func)_currentpoint, 0, 0);
@@ -540,6 +747,7 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
     INSTALL;
 
     op = xpost_operator_cons(ctx, "moveto", (Xpost_Op_Func)_moveto, 0, 2, numbertype, numbertype);
+    _moveto_opcode = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "moveto_cont", (Xpost_Op_Func)_moveto_cont, 0, 2, numbertype, numbertype);
     _moveto_cont_opcode = op.mark_.padw;
@@ -551,6 +759,7 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
     _rmoveto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "lineto", (Xpost_Op_Func)_lineto, 0, 2, numbertype, numbertype);
+    _lineto_opcode = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "lineto_cont", (Xpost_Op_Func)_lineto_cont, 0, 2, numbertype, numbertype);
     _lineto_cont_opcode = op.mark_.padw;
@@ -563,6 +772,7 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, "curveto", (Xpost_Op_Func)_curveto, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
+    _curveto_opcode = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "curveto_cont1", (Xpost_Op_Func)_curveto_cont1, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
@@ -584,6 +794,13 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
     _rcurveto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "closepath", (Xpost_Op_Func)_closepath, 0, 0);
+    INSTALL;
+
+    op = xpost_operator_cons(ctx, "arc", (Xpost_Op_Func)_arc, 0, 5,
+            floattype, floattype, floattype, floattype, floattype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "arcn", (Xpost_Op_Func)_arcn, 0, 5,
+            floattype, floattype, floattype, floattype, floattype);
     INSTALL;
 
     return 0;
