@@ -214,7 +214,8 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     unsigned int vs;
     unsigned int ent;
 
-    if (sz < 5) sz = 5;
+    if (sz < 8) sz = 8;
+    sz = (unsigned int)ceil((double)sz * 1.25);
 
     assert(mem->base);
     d.tag = dicttype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);

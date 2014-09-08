@@ -1,5 +1,12 @@
 (loading path.ps...)print
 
+%/PSOVERRIDE true def
+
+/override { pop pop } def
+/PSOVERRIDE where { pop
+    /override { bind def } def
+} if
+
 % path == <<
 %             0 << subpath0 >>
 %             1 << %subpath1
@@ -18,7 +25,7 @@
     graphicsdict /currgstate get
         /currpath 1 dict put
 }
-pop pop%bind def
+override%pop pop%bind def
 
 % -  currentpoint  x y
 % return current point coordinates
@@ -32,7 +39,7 @@ pop pop%bind def
         aload pop itransform
     } ifelse
 }
-pop pop%bind def
+override%pop pop%bind def
 
 /cpath { graphicsdict /currgstate get /currpath get } bind def
 
@@ -83,7 +90,7 @@ pop pop%bind def
     2 array astore
     << /data 3 2 roll /cmd /move >> cpath addtopath
 }
-pop pop%bind def
+override%pop pop%bind def
 
 % dx dy  rmoveto  -
 % relative moveto
@@ -93,7 +100,7 @@ pop pop%bind def
     3 1 roll add exch
     moveto
 }
-pop pop%bind def
+override%pop pop%bind def
 
 % x y  lineto  -
 % append straight line to (x,y)
@@ -102,7 +109,7 @@ pop pop%bind def
     2 array astore
     << /data 3 2 roll /cmd /line >> cpath addtopath
 }
-pop pop%bind def
+override%pop pop%bind def
 
 % dx dy  rlineto  -
 % relative lineto
@@ -112,7 +119,7 @@ pop pop%bind def
     3 1 roll add exch
     lineto
 }
-pop pop%bind def
+override%pop pop%bind def
 
 % x1 y1 x2 y2 x3 y3  curveto  -
 % append Bezier cubic section
@@ -121,7 +128,7 @@ pop pop%bind def
     6 array astore
     << /data 3 2 roll /cmd /curve >> cpath addtopath
 }
-pop pop%bind def
+override%pop pop%bind def
 
 % dx1 dy1 dx2 dy2 dx3 dy3  rcurveto  -
 % relative curveto
@@ -133,7 +140,7 @@ pop pop%bind def
     } repeat
     curveto
 }
-pop pop%bind def
+override%pop pop%bind def
 
 % -  closepath  -
 % connect subpath back to its starting point
@@ -149,7 +156,7 @@ pop pop%bind def
         } ifelse
     } if
 }
-pop pop%bind def
+override%pop pop%bind def
 
 /tan {
     dup sin exch
@@ -188,7 +195,7 @@ dup 0 10 dict
 	dup /mat matrix put
 	dup /mat1 matrix put
 put
-pop pop%bind def
+override%pop pop%bind def
 
 % x y r angle1 angle2  arc  -
 % append a counterclockwise circular arc to the current path
@@ -216,7 +223,7 @@ pop pop%bind def
         curveto
     } ifelse
 }
-pop pop%bind def
+override%pop pop%bind def
 
 /arcn {
     dup 0 lt { 360 add exch 360 add exch } if
@@ -242,7 +249,7 @@ pop pop%bind def
         curveto
     } ifelse
 }
-pop pop%bind def
+override%pop pop%bind def
 
 %%-----------    above this line has be reimplemented in lib/xpost_op_path.c
 
@@ -372,7 +379,8 @@ pop pop%bind def
         } for
         pop
     } if
-} bind def
+}
+override%pop pop%bind def
 
 /reversedict <<
     /close { % p i sp_i j sp_i_j
