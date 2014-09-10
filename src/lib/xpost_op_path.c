@@ -280,7 +280,7 @@ static
 int _moveto_cont (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
     Xpost_Object data, elem;
-    data = xpost_array_cons(ctx, 2);
+    data = xpost_object_cvlit(xpost_array_cons(ctx, 2));
     xpost_array_put(ctx, data, 0, x);
     xpost_array_put(ctx, data, 1, y);
     elem = xpost_dict_cons(ctx, 2);
@@ -323,7 +323,7 @@ static
 int _lineto_cont (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
     Xpost_Object data, elem;
-    data = xpost_array_cons(ctx, 2);
+    data = xpost_object_cvlit(xpost_array_cons(ctx, 2));
     xpost_array_put(ctx, data, 0, x);
     xpost_array_put(ctx, data, 1, y);
     elem = xpost_dict_cons(ctx, 2);
@@ -410,7 +410,7 @@ int _curveto_cont3 (Xpost_Context *ctx,
         Xpost_Object X1, Xpost_Object Y1)
 {
     Xpost_Object data, elem;
-    data = xpost_array_cons(ctx, 6);
+    data = xpost_object_cvlit(xpost_array_cons(ctx, 6));
     xpost_array_put(ctx, data, 0, X1);
     xpost_array_put(ctx, data, 1, Y1);
     xpost_array_put(ctx, data, 2, X2);
@@ -748,7 +748,7 @@ int _chopcurve (Xpost_Context *ctx,
         Xpost_Object elem, data;
         elem = xpost_dict_cons(ctx, 2);
         xpost_dict_put(ctx, elem, namecmd, nameline);
-        data = xpost_array_cons(ctx, 2);
+        data = xpost_object_cvlit(xpost_array_cons(ctx, 2));
         xpost_array_put(ctx, data, 0, xpost_real_cons(x3));
         xpost_array_put(ctx, data, 1, xpost_real_cons(y3));
         xpost_dict_put(ctx, elem, namedata, data);
@@ -886,8 +886,8 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
     if (xpost_object_get_type(nameclose = xpost_name_cons(ctx, "close")) == invalidtype)
         return VMerror;
 
-    _mat = xpost_array_cons(ctx, 6);
-    _mat1 = xpost_array_cons(ctx, 6);
+    _mat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
+    _mat1 = xpost_object_cvlit(xpost_array_cons(ctx, 6));
 
     op = xpost_operator_cons(ctx, "newpath", (Xpost_Op_Func)_newpath, 0, 0);
     INSTALL;

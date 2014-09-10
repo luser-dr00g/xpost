@@ -1,6 +1,6 @@
 (loading path.ps...)print
 
-%/PSOVERRIDE true def
+%/PSOVERRIDE null def  % define PSOVERRIDE to use full postscript implementation
 
 /override { pop pop } def
 /PSOVERRIDE where { pop
@@ -450,9 +450,128 @@ override%pop pop%bind def
     } if
 } bind def
 
+% PLRM 3ed, 667:
+% The offset operand can be thought of as the "phase" of the dash pattern relative to
+% the start of the path. It is interpreted as the distance into the dash pattern
+% (measured in user space units) at which to start the pattern. Before beginning to
+% stroke a path, the stroke operator cycles through the elements of array, adding up
+% distances and alternating dashes and gaps as usual, but without generating any 
+% output. When the accumulated distance reaches the value specified by offset, it 
+% begins stroking from the starting point of the path, using the dash pattern from
+% the point that has been reached. Each subpath of a path is treated independently;
+% the dash pattern is restarted and the offset reapplied at the beginning of each
+% subpath.
+
+/dashdict << % path i subpath_i j elem
+    /move { 
+        (m)=
+        %pstack()=
+        /data get
+        aload pop itransform 2 array astore
+        %pstack()=
+        /cp exch def
+        parity 0 eq { % initially drawing, create initial move
+            << /cmd /move /data cp aload pop transform 2 array astore >> cpath addtopath
+        } if
+    }
+    /line {
+        (l)=
+        /data get
+        cp aload pop
+        2 index aload pop
+        itransform
+        ptdiff % [] dx dy
+        %idtransform
+        magang % [] rad ang
+        1 index pos add dasharray ipos get lt { % same dash position
+            (.)=
+            1 index pos add /pos exch def
+            parity 0 eq { % if drawing, continue line  % [] rad ang
+                2 index /cp 1 index aload pop itransform 2 array astore def
+                << /cmd /line /data 5 4 roll >> cpath addtopath
+            } if
+        }{ % cross a dash pattern boundary
+            /partial dasharray ipos get pos sub def
+            1 index pos add dasharray ipos get sub /pos exch def
+            /ipos ipos 1 add dasharray length mod def
+            /parity parity 1 add 2 mod def
+            parity 0 eq { % begin new segment
+                (+)=
+                partial exch ravec % [] rad dx dy
+                %dtransform
+                cp aload pop % [] rad dx dy x y
+                3 2 roll add % dx x y+dy
+                3 1 roll add exch % x+dx y+dy
+                2 array astore /cp 1 index def
+                << /cmd /move /data 5 4 roll aload pop transform 2 array astore >> cpath addtopath
+                0
+            }{ % finish partial segment
+                (-)=
+                %pstack()=
+                partial exch ravec % [] rad dx dy
+                %dtransform
+                cp aload pop 
+                3 2 roll add
+                3 1 roll add exch
+                2 array astore /cp 1 index def
+                << /cmd /line /data 5 4 roll aload pop transform 2 array astore >> cpath addtopath
+                0
+            } ifelse
+        } ifelse  % [] rad ang
+        pop pop pop
+    }
+    /close { LINEPROC exec
+        (c)=
+        closepath
+    } dup 0 4 index put
+    /curve { }
+>> def
+
+/update_ipos {
+    {
+        pos dasharray ipos get lt { exit } if
+        /pos pos dasharray ipos get sub def
+        /ipos ipos 1 add dasharray length mod def
+        /parity parity 1 add 2 mod def
+    } loop
+} def
+
 % apply dash parameters to current path
 % modifies current path
 /dashpath {
+    10 dict begin
+    currentdash % [] offset
+    /dashoffset exch def
+    /dasharray exch def
+    /pos dashoffset def
+    /ipos 0 def
+    /parity 0 def
+
+    dasharray length 0 ne {
+        update_ipos
+
+        cpath length 0 gt {
+            cpath newpath
+            0 1 2 index length 1 sub { % path i
+                2 copy get             % path i subpath_i
+                10 dict begin
+                /pos pos def
+                /ipos ipos def
+                /parity parity def
+                0 1 2 index length 1 sub { % path i subpath_i j
+                    2 copy get             % path i subpath_i j elem=subpath_i_j
+                    dashdict 1 index /cmd get get exec % p i sp j
+                    (dp)=
+                    %pstack()=
+                    pop % p i sp
+                } for
+                pop pop % path
+                end
+            } for % path
+            pop
+        } if
+    } if
+    end
 } def
 
 % produce a vector from two points
@@ -733,6 +852,7 @@ override%pop pop%bind def
 /clippath {
     graphicsdict /currgstate get
         dup /clipregion get
+        %1 dict deepcopy
         /currpath exch put
 } bind def
 
