@@ -44,36 +44,32 @@ loadgraphics
 } def
 
 /randarc {
-	randpoint
-	rand 300 mod % r
-	rand 400 mod
-	rand 400 mod
+	randpoint    % x y
+	rand 300 mod % x y r
+	rand 360 mod % x y r a1
+	rand 360 mod % x y r a1 a2
 	rand 2 mod 0 eq {arc}{arcn} ifelse
 } def
 
 /randpieslice {
 	randpoint
-    2 copy moveto
-	rand 300 mod % r
-	rand 400 mod
-	rand 400 mod
+    2 copy moveto % x y
+	rand 300 mod  % x y r
+	rand 360 mod  % x y r a1
+	rand 360 mod  % x y r a1 a2
 	arc
     fill
 } def
 
 /randpie {
-	randpoint
-    2 copy moveto
-	rand 300 mod % r
-	rand 400 mod
-	rand 400 mod
-    5 copy
-	arc
-    fill
-    randcolor
-    5 copy pop pop pop moveto
-    arcn
-    fill
+	randpoint     % x y
+    2 copy moveto % x y
+	rand 300 mod  % x y r
+	rand 360 mod  % x y r a1
+	rand 360 mod  % x y r a1 a2
+    5 copy arc fill randcolor  % x y r a1 a2
+    5 copy pop pop pop moveto  % x y r a1 a2
+    arcn fill
 } def
 
 /drawingtime 0 def
