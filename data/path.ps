@@ -195,17 +195,18 @@ dup 0 10 dict
 	dup /mat matrix put
 	dup /mat1 matrix put
 put
-override%pop pop%bind def
+bind def%override%pop pop%bind def
 
 % x y r angle1 angle2  arc  -
 % append a counterclockwise circular arc to the current path
 /arc {
-    dup 0 lt { 360 add exch 360 add exch } if
-    1 index 0 lt { 360 add exch 360 add exch } if
-    2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
-    2 copy gt { 360 add } if % s.b. angle2 > angle1
-    %2 { dup 0 lt { 360 add } if exch } repeat
-    2 copy gt { 360 add } if % s.b. angle2 > angle1
+    { 2 copy le { exit } if 360 add } loop
+    %dup 0 lt { 360 add exch 360 add exch } if
+    %1 index 0 lt { 360 add exch 360 add exch } if
+    %2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
+    %2 copy gt { 360 add } if % s.b. angle2 > angle1
+    %%2 { dup 0 lt { 360 add } if exch } repeat
+    %2 copy gt { 360 add } if % s.b. angle2 > angle1
     2 copy exch sub dup 90 gt { % recurse
         .5 mul % x y r a1 a2 da/2
         6 copy
@@ -215,23 +216,24 @@ override%pop pop%bind def
         % draw single bezier
         arcbez % x1 y1 x2 y2 x3 y3 x0 y0
         4 2 roll % x1 y1 x2 y2 x0 y0  x3 y3
-        %{ currentpoint pop pop } stopped { moveto }{ lineto } ifelse
-		cpath length 0 eq { moveto }{ lineto } ifelse
+        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+		%cpath length 0 eq { moveto }{ lineto } ifelse
         6 2 roll % x0 y0 x1 y1 x2 y2
         4 2 roll % x0 y0 x2 y2 x1 y1
         6 4 roll % x2 y2 x1 y1 x0 y0
         curveto
     } ifelse
 }
-override%pop pop%bind def
+bind def%override%pop pop%bind def
 
 /arcn {
-    dup 0 lt { 360 add exch 360 add exch } if
-    1 index 0 lt { 360 add exch 360 add exch } if
-    2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
-    2 copy lt { exch 360 add exch } if % s.b. angle1 > angle2
-    %2 { dup 0 lt { 360 add } if exch } repeat
-    2 copy lt { exch 360 add exch } if % s.b. angle1 > angle2
+    { 2 copy ge { exit } if 360 sub } loop
+    %dup 0 lt { 360 add exch 360 add exch } if
+    %1 index 0 lt { 360 add exch 360 add exch } if
+    %2 { dup 720 gt { dup 720 div truncate 720 mul sub } if exch } repeat
+    %2 copy lt { exch 360 add exch } if % s.b. angle1 > angle2
+    %%2 { dup 0 lt { 360 add } if exch } repeat
+    %2 copy lt { exch 360 add exch } if % s.b. angle1 > angle2
     2 copy sub dup 90 gt { % recurse
         .5 mul % x y r a1 a2 da/2
         6 copy
@@ -241,15 +243,15 @@ override%pop pop%bind def
         % draw single bezier
         arcbez % x1 y1 x2 y2 x3 y3  x0 y0
         %4 2 roll
-        %{ currentpoint pop pop } stopped { moveto }{ lineto } ifelse
-		cpath length 0 eq { moveto }{ lineto } ifelse
+        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+		%cpath length 0 eq { moveto }{ lineto } ifelse
         %6 2 roll
         %4 2 roll
         %6 4 roll
         curveto
     } ifelse
 }
-override%pop pop%bind def
+bind def%override%pop pop%bind def
 
 %%-----------    above this line has be reimplemented in lib/xpost_op_path.c
 

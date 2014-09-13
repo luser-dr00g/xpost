@@ -134,7 +134,11 @@ Xpost_Object _cpath (Xpost_Context *ctx)
     ret = xpost_op_any_load(ctx, namegraphicsdict);
     if (ret) return invalid;
     gd = xpost_stack_pop(ctx->lo, ctx->os);
+    if (xpost_object_get_type(gd) == invalidtype)
+        return invalid;
     gstate = xpost_dict_get(ctx, gd, namecurrgstate);
+    if (xpost_object_get_type(gstate) == invalidtype)
+        return invalid;
     path = xpost_dict_get(ctx, gstate, namecurrpath);
     return path;
 }
@@ -156,7 +160,7 @@ int _currentpoint (Xpost_Context *ctx)
     */
     path = _cpath(ctx);
     if (xpost_object_get_type(path) == invalidtype)
-        return undefined;
+        return nocurrentpoint;
     pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
     if (pathlen == 0)
         return nocurrentpoint;
