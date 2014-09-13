@@ -588,6 +588,11 @@ int eval(Xpost_Context *ctx)
     if (ret)
         return ret;
 
+    {
+        Xpost_Object_Type type = xpost_object_get_type(t);
+        if (type == invalidtype || type >= XPOST_OBJECT_NTYPES)
+            return unregistered;
+    }
     if ( xpost_object_is_exe(t) ) /* if executable */
         ret = evaltype[xpost_object_get_type(t)](ctx);
     else
