@@ -595,32 +595,7 @@ int _arc (Xpost_Context *ctx,
 {
     real a1 = angle1.real_.val;
     real a2 = angle2.real_.val;
-    if (a2 < 0.0)
-    {
-        a1 += 360.0;
-        a2 += 360.0;
-    }
-    if (a1 < 0.0)
-    {
-        a1 += 360.0;
-        a2 += 360.0;
-    }
-    if (a2 > 720.0)
-    {
-        a2 -= 720.0 * trunc(a2 / 720.0);
-    }
-    if (a1 > 720.0)
-    {
-        a1 -= 720.0 * trunc(a1 / 720.0);
-    }
-    if (a1 > a2)
-    {
-        a2 += 360.0;
-    }
-    if (a1 > a2)
-    {
-        a2 += 360.0;
-    }
+    while (a2 < a1) a2 += 360.0;
     if ((a2 - a1) > 90.0)
     {
         _arc(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 - ((a2 - a1)/2.0)));
@@ -647,32 +622,7 @@ int _arcn (Xpost_Context *ctx,
 {
     real a1 = angle1.real_.val;
     real a2 = angle2.real_.val;
-    if (a2 < 0.0)
-    {
-        a1 += 360.0;
-        a2 += 360.0;
-    }
-    if (a1 < 0.0)
-    {
-        a1 += 360.0;
-        a2 += 360.0;
-    }
-    if (a2 > 720.0)
-    {
-        a2 -= 720.0 * trunc(a2 / 720.0);
-    }
-    if (a1 > 720.0)
-    {
-        a1 -= 720.0 * trunc(a1 / 720.0);
-    }
-    if (a1 < a2)
-    {
-        a1 += 360.0;
-    }
-    if (a1 < a2)
-    {
-        a1 += 360.0;
-    }
+    while (a2 > a1) a2 -= 360.0;
     if ((a1 - a2) > 90.0)
     {
         _arcn(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 + ((a1 - a2)/2.0)));
