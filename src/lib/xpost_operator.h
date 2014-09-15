@@ -63,6 +63,7 @@ typedef struct Xpost_Signature {
     Xpost_Op_Func fp;  /* function-pointer which implements the operator action */
     int in;       /* number of argument objects */
     unsigned t;   /* memory address of array of ints representing argument types */
+    int (*checkstack)(Xpost_Context *ctx);  /* stack-checking function to bypass generic type-check loop */
     int out;      /* number of output objects */
 } Xpost_Signature;
 
