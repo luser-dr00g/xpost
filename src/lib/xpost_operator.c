@@ -65,6 +65,7 @@ typedef struct Xpost_Signature {
    int (*fp)(Xpost_Context *ctx);
    int in;
    unsigned t;
+   int (*checkstack)(Xpost_Context *ctx);
    int out;
 } Xpost_Signature;
 
@@ -83,6 +84,195 @@ enum typepat ( anytype = stringtype + 1,
 /* the number of ops, at any given time. */
 static
 int _xpost_noops = 0;
+
+static
+int _stack_none (Xpost_Context *ctx)
+{
+    (void)ctx;
+    return 0;
+}
+
+static
+int _stack_int (Xpost_Context *ctx)
+{
+    Xpost_Object s0;
+    s0 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    switch(xpost_object_get_type(s0)){
+    case invalidtype:
+        return stackunderflow;
+    case integertype:
+        return 0;
+    default:
+        return typecheck;
+    }
+}
+
+static
+int _stack_real (Xpost_Context *ctx)
+{
+    Xpost_Object s0;
+    s0 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    switch(xpost_object_get_type(s0)){
+    case invalidtype:
+        return stackunderflow;
+    case realtype:
+        return 0;
+    default:
+        return typecheck;
+    }
+}
+
+static
+int _stack_float (Xpost_Context *ctx)
+{
+    Xpost_Object s0;
+    s0 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    switch(xpost_object_get_type(s0)){
+    case invalidtype:
+        return stackunderflow;
+    case integertype:
+        xpost_stack_topdown_replace(ctx->lo, ctx->os, 0, s0 = _promote_integer_to_real(s0));
+    case realtype:
+        return 0;
+    default:
+        return typecheck;
+    }
+}
+
+static
+int _stack_any (Xpost_Context *ctx)
+{
+    if (xpost_stack_count(ctx->lo, ctx->os) >= 1)
+        return 0;
+    return stackunderflow;
+}
+
+static
+int _stack_bool_bool (Xpost_Context *ctx)
+{
+    Xpost_Object s0, s1;
+    s0 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    switch(xpost_object_get_type(s0)){
+    case invalidtype:
+        return stackunderflow;
+    case booleantype:
+        s1 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 1);
+        switch(xpost_object_get_type(s1)){
+        case invalidtype:
+            return stackunderflow;
+        case booleantype:
+            return 0;
+        default:
+            return typecheck;
+        }
+    default:
+        return typecheck;
+    }
+}
+
+static
+int _stack_int_int (Xpost_Context *ctx)
+{
+    Xpost_Object s0, s1;
+    s0 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    switch(xpost_object_get_type(s0)){
+    case invalidtype:
+        return stackunderflow;
+    case integertype:
+        s1 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 1);
+        switch(xpost_object_get_type(s1)){
+        case invalidtype:
+            return stackunderflow;
+        case integertype:
+            return 0;
+        default:
+            return typecheck;
+        }
+    default:
+        return typecheck;
+    }
+}
+
+static
+int _stack_float_float (Xpost_Context *ctx)
+{
+    Xpost_Object s0, s1;
+    s0 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    switch(xpost_object_get_type(s0)){
+    case invalidtype:
+        return stackunderflow;
+    case integertype:
+        xpost_stack_topdown_replace(ctx->lo, ctx->os, 0, s0 = _promote_integer_to_real(s0));
+    case realtype:
+        s1 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 1);
+        switch(xpost_object_get_type(s1)){
+        case invalidtype:
+            return stackunderflow;
+        case integertype:
+            xpost_stack_topdown_replace(ctx->lo, ctx->os, 1, s1 = _promote_integer_to_real(s1));
+        case realtype:
+            return 0;
+        default:
+            return typecheck;
+        }
+    default:
+        return typecheck;
+    }
+}
+
+static
+int _stack_number_number (Xpost_Context *ctx)
+{
+    Xpost_Object s0, s1;
+    s0 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    switch(xpost_object_get_type(s0)){
+    case invalidtype:
+        return stackunderflow;
+    case integertype: /* fallthrough */
+    case realtype:
+        s1 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 1);
+        switch(xpost_object_get_type(s1)){
+        case invalidtype:
+            return stackunderflow;
+        case integertype: /* fallthrough */
+        case realtype:
+            return 0;
+        default:
+            return typecheck;
+        }
+    default:
+        return typecheck;
+    }
+}
+
+static
+int _stack_any_any (Xpost_Context *ctx)
+{
+    if (xpost_stack_count(ctx->lo, ctx->os) >= 2)
+        return 0;
+    return stackunderflow;
+}
+
+typedef struct {
+    int (*checkstack)(Xpost_Context *ctx);
+    int n;
+    int t[8];
+} Xpost_Check_Stack;
+
+static
+Xpost_Check_Stack _check_stack_funcs[] = {
+    { _stack_none, 0, { } },
+    { _stack_int, 1, { integertype } },
+    { _stack_real, 1, { realtype } },
+    { _stack_float, 1, { floattype } },
+    { _stack_any, 1, { anytype } },
+    { _stack_bool_bool, 2, { booleantype, booleantype } },
+    { _stack_int_int, 2, { integertype, integertype } },
+    { _stack_float_float, 2, { floattype, floattype } },
+    { _stack_number_number, 2, { numbertype, numbertype } },
+    { _stack_any_any, 2, { anytype, anytype } }
+};
+
 
 /* allocate the OPTAB structure in VM */
 int xpost_operator_init_optab (Xpost_Context *ctx)
@@ -276,6 +466,28 @@ Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
             sp[si].in = in;
             sp[si].out = out;
             sp[si].fp = (int(*)(Xpost_Context *))fp;
+            sp[si].checkstack = NULL;
+            {
+                int j;
+                int k;
+                int pass;
+                for (j=0; j < (int)(sizeof _check_stack_funcs/sizeof*_check_stack_funcs); j++){
+                    if (_check_stack_funcs[j].n == sp[si].in){
+                        pass = 1;
+                        for (k=0; k < _check_stack_funcs[j].n; k++){
+                            if (b[k] != _check_stack_funcs[j].t[k]){
+                                pass = 0;
+                                break;
+                            }
+                        }
+                        if (pass){
+                            sp[si].checkstack = _check_stack_funcs[j].checkstack;
+                            break;
+                        }
+                    }
+                }
+            }
+            //sp[si].checkstack = NULL;
         }
     }
     else if (opcode == _xpost_noops)
@@ -294,6 +506,17 @@ Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
    arguments for an operator-function call.
    If the operator-function does not itself call xpost_operator_exec,
    the arguments may be restored by xpost_interpreter.c:_on_error().
+   xpost_operator_exec checks its argument with ctx->currentobject 
+   and sets a flag indicating consistency which is then checked by 
+   on_error()
+   Composite Object constructors also add their objects to the 
+   hold stack, in defense against garbage collection occurring 
+   from a subsequent allocation before the object is returned
+   to the stack.
+   on_error() also uses the number of args from ctx->currentobject.mark_.pad0
+   instead of the stack count so these extra gc-defense stack objects
+   will not be erroneously returned to postscript in response to an
+   operator error.
  */
 static
 void _xpost_operator_push_args_to_hold (Xpost_Context *ctx,
@@ -355,12 +578,25 @@ int xpost_operator_exec(Xpost_Context *ctx,
     for (i=0; i < op.n; i++)
     { /* try each signature */
         byte *t;
+
+        /* call signature's stack-checking proc, if available */
+        if (sp[i].checkstack){
+            if ((ret = sp[i].checkstack(ctx))){
+                err = ret;
+                continue;
+            }
+            goto call;
+        }
+
+        /* check stack size */
         if (ct < sp[i].in)
         {
             pass = 0;
             err = stackunderflow;
             continue;
         }
+
+        /* check type-pattern against stack */
         pass = 1;
         t = (void *)(ctx->gl->base + sp[i].t);
         for (j=0; j < sp[i].in; j++)
@@ -393,6 +629,7 @@ int xpost_operator_exec(Xpost_Context *ctx,
             err = typecheck;
             break;
         }
+
         if (pass) goto call;
     }
     return err;
@@ -424,24 +661,35 @@ call:
 
     switch(sp[i].in)
     {
-        case 0: ret = sp[i].fp(ctx); break;
-        case 1: ret = ((int(*)(Xpost_Context*,Xpost_Object))sp[i].fp) (ctx, hold->data[0]); break;
-        case 2: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object))sp[i].fp) (ctx, hold->data[0], hold->data[1]); break;
-        case 3: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+        case 0:
+            ret = sp[i].fp(ctx); break;
+        case 1:
+            ret = ((int(*)(Xpost_Context*,Xpost_Object))sp[i].fp)
+                (ctx, hold->data[0]); break;
+        case 2:
+            ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object))sp[i].fp)
+                (ctx, hold->data[0], hold->data[1]); break;
+        case 3:
+            ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
                 (ctx, hold->data[0], hold->data[1], hold->data[2]); break;
-        case 4: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+        case 4:
+            ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
                 (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3]); break;
-        case 5: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+        case 5:
+            ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
                 (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3], hold->data[4]); break;
-        case 6: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+        case 6:
+            ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
                 (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3], hold->data[4], hold->data[5]); break;
-        case 7: ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
+        case 7:
+            ret = ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
                 (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3], hold->data[4], hold->data[5], hold->data[6]); break;
-        case 8: ret =
+        case 8:
+            ret =
                 ((int(*)(Xpost_Context*,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object,Xpost_Object))sp[i].fp)
-                (ctx, hold->data[0], hold->data[1], hold->data[2],
-                        hold->data[3], hold->data[4], hold->data[5], hold->data[6], hold->data[7]); break;
-        default: ret = unregistered;
+                (ctx, hold->data[0], hold->data[1], hold->data[2], hold->data[3], hold->data[4], hold->data[5], hold->data[6], hold->data[7]); break;
+        default:
+            ret = unregistered;
     }
     if (ret)
         return ret;
