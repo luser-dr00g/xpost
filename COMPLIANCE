@@ -11,8 +11,8 @@ Notation
 Level 1 operators
 -----------------
 
- [ ] setdash
- [ ] currentdash
+ [X] setdash
+ [X] currentdash
  [ ] arcto
  [ ] fill with complex paths
  [ ] eofill
