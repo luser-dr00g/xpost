@@ -80,6 +80,7 @@
     dup mul exch dup mul exch add sqrt
         1 le {
         flattenpath
+        dashpath
         doclip
         mark
         {          % x0 y0 
@@ -208,7 +209,7 @@
 
 % width height bits/sample matrix datasrc  image  -
 /image {
-    pstack()=
+    %pstack()=
     gsave
         newpath
         10 dict begin
@@ -232,7 +233,7 @@
                 x %vdx mul
                 y %vdy mul %mat itransform
                 1 1 %vdx vdy %mat idtransform
-                pstack()=
+                %pstack()=
                 rectfill
             } for
         } for

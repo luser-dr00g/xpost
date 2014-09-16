@@ -56,16 +56,24 @@
         %pstack()= %1 index =
         dup type /arraytype eq
         1 index xcheck not and { % key val
-            exch % val key
-            currentdict 1 index known { % val key
-                currentdict exch get % val dict2-val
-                copy % dict2-val
-                pop
-            }{ % val key
-                exch % key val
-                dup length array % key val val2
-                copy % key val2
+            1 index % key val key
+            currentdict 1 index known { % key val key
+                currentdict exch get % key val dict2-val
+                2 copy length exch length exch % key val dict2-val n d2-n
+                le {
+                    copy % key dict2-val
+                    pop pop
+                }{
+                    pop dup length array
+                    copy
+                    def
+                } ifelse
+            }{ % key val key
+                exch % key key val
+                dup length array % key key val val2
+                copy % key key val2
                 def
+                pop
             } ifelse
         }{
             def
