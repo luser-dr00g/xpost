@@ -466,6 +466,53 @@ override%pop pop%bind def
 % the dash pattern is restarted and the offset reapplied at the beginning of each
 % subpath.
 
+/initial_ipos {
+    {
+        pos dasharray ipos get lt { exit } if
+        /pos pos dasharray ipos get sub def
+        /ipos ipos 1 add dasharray length mod def
+        /parity parity 1 add 2 mod def
+    } loop
+} def
+
+/crossdashbound {
+    {/ang/rad/data}{exch def}forall
+    /partial dasharray ipos get pos sub def
+    {
+        %partial ang ravec parity 0 eq { rlineto }{ rmoveto } ifelse
+        <</cmd parity 0 eq{ /line
+            (+)=
+        }{ /move
+            (-)=
+        } ifelse /data 
+            cp aload pop
+            partial ang ravec % x y dx dy
+            3 2 roll add % x dx Y
+            3 1 roll add exch % X Y
+            2 copy 2 array astore /cp exch def
+            transform 2 array astore >> cpath addtopath
+        /rad rad partial sub def
+        /ipos ipos 1 add dasharray length mod def
+        /parity parity 1 add 2 mod def
+        /partial dasharray ipos get def
+        rad partial lt { exit } if
+    } loop
+    /pos rad def
+    %rad ang ravec parity 0 eq { rlineto }{ rmoveto } ifelse
+    <</cmd parity 0 eq{ /line
+        (+)=
+    }{ /move
+        (-)=
+    } ifelse /data 
+        cp aload pop
+        rad ang ravec % x y dx dy
+        3 2 roll add % x dx Y
+        3 1 roll add exch % X Y
+        2 copy 2 array astore /cp exch def
+        transform 2 array astore >> cpath addtopath
+    data rad ang % pop pop pop
+} def
+
 /dashdict << % path i subpath_i j elem
     /move { 
         (m)=
@@ -487,7 +534,7 @@ override%pop pop%bind def
         ptdiff % [] dx dy
         %idtransform
         magang % [] rad ang
-        1 index pos add dasharray ipos get lt { % same dash position
+        1 index pos add dasharray ipos get le { % same dash position
             (.)=
             1 index pos add /pos exch def
             parity 0 eq { % if drawing, continue line  % [] rad ang
@@ -495,6 +542,8 @@ override%pop pop%bind def
                 << /cmd /line /data 5 4 roll >> cpath addtopath
             } if
         }{ % cross a dash pattern boundary
+            crossdashbound
+            {
             /partial dasharray ipos get pos sub def
             1 index pos add dasharray ipos get sub /pos exch def
             /ipos ipos 1 add dasharray length mod def
@@ -521,6 +570,7 @@ override%pop pop%bind def
                 << /cmd /line /data 5 4 roll aload pop transform 2 array astore >> cpath addtopath
                 0
             } ifelse
+            } pop
         } ifelse  % [] rad ang
         pop pop pop
     }
@@ -530,15 +580,6 @@ override%pop pop%bind def
     } dup 0 4 index put
     /curve { }
 >> def
-
-/update_ipos {
-    {
-        pos dasharray ipos get lt { exit } if
-        /pos pos dasharray ipos get sub def
-        /ipos ipos 1 add dasharray length mod def
-        /parity parity 1 add 2 mod def
-    } loop
-} def
 
 % apply dash parameters to current path
 % modifies current path
@@ -552,7 +593,7 @@ override%pop pop%bind def
     /parity 0 def
 
     dasharray length 0 ne {
-        update_ipos
+        initial_ipos
 
         cpath length 0 gt {
             cpath newpath

@@ -156,7 +156,7 @@ int xpost_array_put_memory(Xpost_Memory_File *mem,
             return VMerror;
     if (i > a.comp_.sz)
     {
-        XPOST_LOG_ERR("cannot put value in array");
+        XPOST_LOG_ERR("cannot put value in array (rangecheck) %u > [%u]", i, a.comp_.sz);
         /*breakhere((Xpost_Context *)mem);*/
         return rangecheck;
     }
