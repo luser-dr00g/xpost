@@ -481,9 +481,9 @@ override%pop pop%bind def
     {
         %partial ang ravec parity 0 eq { rlineto }{ rmoveto } ifelse
         <</cmd parity 0 eq{ /line
-            (+)=
+            %(+)=
         }{ /move
-            (-)=
+            %(-)=
         } ifelse /data 
             cp aload pop
             partial ang ravec % x y dx dy
@@ -500,9 +500,9 @@ override%pop pop%bind def
     /pos rad def
     %rad ang ravec parity 0 eq { rlineto }{ rmoveto } ifelse
     <</cmd parity 0 eq{ /line
-        (+)=
+        %(+)=
     }{ /move
-        (-)=
+        %(-)=
     } ifelse /data 
         cp aload pop
         rad ang ravec % x y dx dy
@@ -515,7 +515,7 @@ override%pop pop%bind def
 
 /dashdict << % path i subpath_i j elem
     /move { 
-        (m)=
+        %(m)=
         %pstack()=
         /data get
         aload pop itransform 2 array astore
@@ -526,7 +526,7 @@ override%pop pop%bind def
         } if
     }
     /line {
-        (l)=
+        %(l)=
         /data get
         cp aload pop
         2 index aload pop
@@ -535,7 +535,7 @@ override%pop pop%bind def
         %idtransform
         magang % [] rad ang
         1 index pos add dasharray ipos get le { % same dash position
-            (.)=
+            %(.)=
             1 index pos add /pos exch def
             parity 0 eq { % if drawing, continue line  % [] rad ang
                 2 index /cp 1 index aload pop itransform 2 array astore def
@@ -549,7 +549,7 @@ override%pop pop%bind def
             /ipos ipos 1 add dasharray length mod def
             /parity parity 1 add 2 mod def
             parity 0 eq { % begin new segment
-                (+)=
+                %(+)=
                 partial exch ravec % [] rad dx dy
                 %dtransform
                 cp aload pop % [] rad dx dy x y
@@ -559,7 +559,7 @@ override%pop pop%bind def
                 << /cmd /move /data 5 4 roll aload pop transform 2 array astore >> cpath addtopath
                 0
             }{ % finish partial segment
-                (-)=
+                %(-)=
                 %pstack()=
                 partial exch ravec % [] rad dx dy
                 %dtransform
@@ -575,7 +575,7 @@ override%pop pop%bind def
         pop pop pop
     }
     /close { LINEPROC exec
-        (c)=
+        %(c)=
         closepath
     } dup 0 4 index put
     /curve { }
@@ -606,7 +606,7 @@ override%pop pop%bind def
                 0 1 2 index length 1 sub { % path i subpath_i j
                     2 copy get             % path i subpath_i j elem=subpath_i_j
                     dashdict 1 index /cmd get get exec % p i sp j
-                    (dp)=
+                    %(dp)=
                     %pstack()=
                     pop % p i sp
                 } for
