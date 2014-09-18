@@ -2,21 +2,22 @@
 
 (loading font.ps...)print
 
-/definefont {
+/definefont { % /fontname -dict-
     dup type /dicttype ne
     2 index type /nametype ne or {
         /definefont cvx /typecheck signalerror
     } if
     {
-        dup /FontMatrix known not {stopped} if
-        dup /FontType known not {stopped} if
-        dup /FontMatrix known not {stopped} if
-        dup /Encoding known not {stopped} if
-        dup /BuildChar known not {stopped} if
+        dup /FontType known not {stop} if
+        dup /FontMatrix known not {stop} if
+        dup /Encoding known not {stop} if
+        dup /BuildChar known not {stop} if
     } stopped {
         /definefont cvx /invalidfont signalerror
     } if
-    dup /FontName 3 index put
+    dup /FontName known not {
+        dup /FontName 3 index put
+    } if
     FontDirectory exch 2 index exch put
     findfont
 } def

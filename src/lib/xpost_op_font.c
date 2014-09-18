@@ -153,6 +153,17 @@ int _scalefont (Xpost_Context *ctx,
 
 
 static
+int _makefont (Xpost_Context *ctx,
+               Xpost_Object fontdict,
+               Xpost_Object psmat)
+{
+    // scale font with matrix
+    xpost_stack_push(ctx->lo, ctx->os, fontdict);
+    return 0;
+}
+
+
+static
 int _setfont (Xpost_Context *ctx,
               Xpost_Object fontdict)
 {
@@ -919,7 +930,7 @@ int xpost_oper_init_font_ops (Xpost_Context *ctx,
     INSTALL;
     op = xpost_operator_cons(ctx, "scalefont", (Xpost_Op_Func)_scalefont, 1, 2, dicttype, floattype);
     INSTALL;
-    //op = xpost_operator_cons(ctx, "makefont", (Xpost_Op_Func)_makefont, 1, 2, dicttype, arraytype);
+    op = xpost_operator_cons(ctx, "makefont", (Xpost_Op_Func)_makefont, 1, 2, dicttype, arraytype);
     INSTALL;
     op = xpost_operator_cons(ctx, "setfont", (Xpost_Op_Func)_setfont, 1, 1, dicttype);
     INSTALL;

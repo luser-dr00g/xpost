@@ -476,6 +476,9 @@ end % userdict
         {   % try the operator
             //findfont
             dup /FontType 1 put
+            dup /FontMatrix matrix put
+            dup /Encoding 256 array put
+            dup /BuildChar {} put
         } stopped { % operator failed: 
             fontsubstitutions exch 2 copy known { % try substitution
                 get
