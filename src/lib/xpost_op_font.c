@@ -145,8 +145,10 @@ int _scalefont (Xpost_Context *ctx,
     /* scale x and y sizes by @p size */
     xpost_font_face_scale(data.face, size.real_.val);
 
+    /* if face is really a pointer, there's nothing to save back to the string
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+            */
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
     return 0;
 }
@@ -157,7 +159,34 @@ int _makefont (Xpost_Context *ctx,
                Xpost_Object fontdict,
                Xpost_Object psmat)
 {
-    // scale font with matrix
+    Xpost_Object privatestr;
+    struct fontdata data;
+
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+
+    if (data.face == NULL)
+        return invalidfont;
+
+    /* apply linear transform from the matrix */
+    {
+        float mat[6];
+        int i;
+        for (i=0; i < 6; i++){
+            Xpost_Object el;
+            el = xpost_array_get(ctx, psmat, i);
+            switch (xpost_object_get_type(el)){
+            case integertype: mat[i] = el.int_.val; break;
+            case realtype: mat[i] = el.real_.val; break;
+            default: return typecheck;
+            }
+        }
+        xpost_font_face_transform(data.face, mat);
+    }
+
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
     return 0;
 }
@@ -286,6 +315,7 @@ int _show_char(Xpost_Context *ctx,
     long advance_y;
 
     glyph_index = xpost_font_face_glyph_index_get(data.face, ch);
+    //TODO check fontdict's /AutoKern bool
     if (has_kerning && *glyph_previous && (glyph_index > 0))
     {
         long delta_x;

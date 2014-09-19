@@ -118,6 +118,16 @@ void xpost_font_face_free(void *face);
 void xpost_font_face_scale(void *face, real scale);
 
 /**
+ * @brief Transform the given font.
+ * @param[in] face The font face.
+ * @param[in] mat The matrix values.
+ *
+ * This function applies a linear transformation matrix to the font,
+ * which may effect any combination of scaling/rotation/skew.
+ */
+void xpost_font_face_transform(void *face, float *mat);
+
+/**
  * @brief Return the glyph index of the given char  from the given
  * font.
  *

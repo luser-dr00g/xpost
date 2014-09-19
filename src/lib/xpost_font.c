@@ -92,7 +92,7 @@ return 1;
 void
 xpost_font_quit(void)
 {
-# ifdef HAVE_FONTCONFIG
+#ifdef HAVE_FONTCONFIG
     FcConfigDestroy(_xpost_font_fc_config);
     FcFini();
 #endif
@@ -220,6 +220,25 @@ xpost_font_face_scale(void *face, real scale)
 #else
     (void)face;
     (void)scale;
+#endif
+}
+
+void
+xpost_font_face_transform(void *face, float *mat)
+{
+#ifdef HAVE_FREETYPE
+    FT_Matrix matrix;
+    FT_Vector pen;
+    matrix.xx = (FT_Fixed)(mat[0] * 64.0);
+    matrix.xy = (FT_Fixed)(mat[1] * 64.0);
+    matrix.yx = (FT_Fixed)(mat[2] * 64.0);
+    matrix.yy = (FT_Fixed)(mat[3] * 64.0);
+    pen.x = (FT_F26Dot6)(mat[4] * 64.0);
+    pen.y = (FT_F26Dot6)(mat[5] * 64.0);
+    FT_Set_Transform((FT_Face)face, &matrix, &pen);
+#else
+    (void)face;
+    (void)mat;
 #endif
 }
 
