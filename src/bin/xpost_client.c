@@ -10,6 +10,9 @@ TODO:
 
 #include <stdlib.h>
 #include "xpost.h"
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_context.h"
 #include "xpost_interpreter.h"
 
 char *prog =
@@ -20,6 +23,7 @@ char *prog =
 
 int main() {
     void *buffer_type_object;
+    xpost_init();
     xpost_create("bgr",
             XPOST_OUTPUT_BUFFEROUT,
             &buffer_type_object,
@@ -28,5 +32,6 @@ int main() {
     xpost_run(XPOST_INPUT_STRING, prog);
     xpost_destroy();
     free(buffer_type_object);
+    xpost_quit();
 }
 
