@@ -235,7 +235,7 @@ xpost_font_face_transform(void *face, float *mat)
     matrix.yy = (FT_Fixed)(mat[3] * 64.0);
     pen.x = (FT_F26Dot6)(mat[4] * 64.0);
     pen.y = (FT_F26Dot6)(mat[5] * 64.0);
-    FT_Set_Transform((FT_Face)face, &matrix, &pen);
+    FT_Set_Transform((FT_Face)face, &matrix, 0);
 #else
     (void)face;
     (void)mat;

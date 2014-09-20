@@ -44,6 +44,9 @@
 /**
  * @typedef Xpost_Font_Pixel_Mode
  * Describe the format of pixels in a given bitmap.
+ *
+ * corresponds directly to FreeType's FT_Pixel_Mode enum.
+ * http://www.freetype.org/freetype2/docs/reference/ft2-basic_types.html#FT_Pixel_Mode
  */
 typedef enum
 {

@@ -33,7 +33,17 @@
 } def
 
 /makefont {
-    1 index /FontType get 3 ne { //makefont }{
+    1 index /FontType get 3 ne { % font mat
+        dup aload pop % font mat a b c d e f
+        6 dict begin {/e/f/d/c/b/a}{exch def}forall % font mat
+            a a mul b b mul add sqrt % font mat scale
+            3 copy exch pop scalefont pop
+            1 exch div % font mat 1/scale
+            dup matrix scale % font mat invscalemat
+            matrix concatmatrix % font mat-scale
+        end % font mat
+        //makefont
+    }{
         1 index /FontMatrix get dup concatmatrix pop
         %pstack()=
     } ifelse
