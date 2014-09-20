@@ -1,14 +1,14 @@
 /*
    This is a simple example of a client calling xpost as a library
-   with a postscript program, desiring the raster data of the 
+   with a postscript program, desiring the raster data of the
    generated image.
 
 TODO:
-    add to makefile and make compilable
     define buffer interchange type
  */
 
 #include <stdlib.h>
+
 #include "xpost.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
