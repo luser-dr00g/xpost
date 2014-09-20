@@ -673,6 +673,9 @@ static
 Xpost_Context *_switch_context(Xpost_Context *ctx)
 {
     int i;
+
+    return ctx;
+
     // return next context to execute
     printf("--switching contexts--\n");
     //putchar('.'); fflush(0);
@@ -1070,13 +1073,14 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
     */
     if (ps_file)
     {
+        printf("ps_file\n");
         xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(xpost_string_cons(xpost_ctx, strlen(ps_file), ps_file)));
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startfile")));
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startfilename")));
     }
     else if (ps_file_ptr)
     {
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_bool_cons(0)); /* boolean false represents a stopped context */
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_file_cons(xpost_ctx->lo, ps_file_ptr)));
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(xpost_file_cons(xpost_ctx->lo, ps_file_ptr)));
+        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startfile")));
     }
     else
     {

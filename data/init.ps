@@ -202,7 +202,7 @@ end
     quit
 } def
 
-/startfile { % (filename)
+/startfilename { % (filename)
     /inputfilename exch def
     {
         loadgraphics
@@ -219,6 +219,22 @@ end
     quit
 } def
 %currentfile flushfile
+
+/startfile { % file-object
+    /inputfile exch def
+    {
+        loadgraphics
+    } stopped {
+        (unable to load graphics)print
+        quit
+    } if
+    {
+        inputfile cvx exec
+    } stopped {
+        handleerror
+    } if
+    quit
+} def
 
 /prompt {
     (PS) print
