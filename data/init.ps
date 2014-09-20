@@ -1,0 +1,576 @@
+%init.ps is run before systemdict is made readonly
+%
+%systemdict /ud userdict put %trigger backup error handler
+
+%procedures in systemdict
+(loading init.ps...\n) print
+
+%(35\n) print
+%currentfile flushfile
+
+systemdict begin
+true setglobal
+
+/strcat {
+    2 copy
+    length exch length exch 1 index add % a b an bn+an
+    string dup 0 6 -1 roll putinterval % b an str
+    dup 4 2 roll exch putinterval % (ab)
+} bind def
+
+/DATA_DIR 
+    /PACKAGE_DATA_DIR dup where {
+        exch get
+    }{
+        pop
+		%EXE_DIR (/../../data) strcat
+        (./data)
+    } ifelse
+def
+
+%(EXE_DIR =) print EXE_DIR print (\n) print
+(DATA_DIR =) print DATA_DIR print (\n) print
+
+%/product (Xpost) def % now an operator in xpost_op_misc.c
+%/version (0) def % now an operator in xpost_op_misc.c
+%/revision 0 def % now an operator in xpost_op_misc.c
+/run { (r) file cvx exec } def
+/Run { (\() print dup =print (\) run\n) print flush run } def
+/interrupt { stop } def
+
+
+/=string 128 string def
+/=print {
+    dup type /stringtype ne {
+        //=string cvs
+    } if
+    print
+} bind def
+/=only //=print def
+
+
+/= {
+    //=print exec
+    (\n) print
+} bind def
+
+%dumpnames dumpvm
+%debugloadon
+
+%(/err.ps)
+%(.) [ {
+%    (XPOSTDIR) getenv %env
+%    exch pop exch pop
+%} stopped {cleartomark} if
+%exch strcat Run
+%(../../data)
+
+DATA_DIR
+(/err.ps)
+strcat
+run
+
+
+/stack { count dup 1 add copy //= repeat pop } def
+
+
+userdict begin
+% ==
+24 dict begin
+/==dict currentdict def
+    /rmargin 72 def
+    /NL (\n) def
+
+    /cvsprint {
+        =string cvs tprint
+        ( ) tprint
+    } def
+    /tprint {
+        dup length cp add rmargin gt {
+            NL print
+            /cp 0 def
+        } if
+        dup length cp add /cp exch def
+        print
+    } def
+    /typeprint { dup type exec } def
+
+    /arraytype {
+        dup rcheck {
+            dup xcheck {
+                ({ ) tprint { typeprint } forall (} ) tprint
+            }{
+                ([ ) tprint { typeprint } forall (] ) tprint
+            } ifelse
+        }{ pop (-array-) tprint } ifelse
+    } def
+    { cvsprint }
+    dup /booleantype exch def
+    dup /integertype exch def
+    /realtype exch def
+
+    /invalidtype { pop (@INVALID@) tprint } def
+    /nulltype { pop (null ) tprint } def
+    /dicttype { pop (-dict- ) tprint } def
+    /filetype { pop (-file- ) tprint } def
+    /marktype { pop (-mark- ) tprint } def
+    /fonttype { pop (-font- ) tprint } def
+    /contexttype { pop (-context- ) tprint } def
+
+    /nametype {
+        dup xcheck not {
+            (/) tprint
+        } if
+        cvsprint
+    } def
+
+    /operatortype {
+        (--) tprint
+        =string cvs tprint
+        (--) tprint
+    } def
+
+    /savetype {
+        pop (-savelevel- ) tprint
+    } def
+
+    /stringtype {
+        dup rcheck {
+            (\() tprint tprint (\)) tprint
+        }{
+            pop (-string- ) tprint
+        } ifelse
+    } def
+
+/== {
+    %traceon
+    //==dict begin
+        /cp 0 def
+        typeprint
+        NL print
+    end
+} end def % remove ==dict, installing == in userdict
+/pstack { count dup 1 add copy //== repeat pop } def
+end % back to systemdict
+
+
+/execdict 6 dict def
+execdict begin
+    /quitflag false def
+    /checkquit {
+        //execdict /quitflag get
+        { exit } if
+    } def
+    /execdepth 0 def
+end
+
+/start {
+    currentglobal
+    false setglobal
+    {
+        loadgraphics
+    } stopped {
+        (unable to load graphics)print
+        handleerror
+        pstack
+        quit
+    } if
+    userdict /quit {
+        %exit
+        //execdict /quitflag true put
+        $error /newerror false put
+        interrupt
+    } put
+    setglobal
+
+    /executive load stopped
+    pop //quit % the operator
+} def
+
+/startstdin {
+    {
+        loadgraphics
+    } stopped {
+        (unable to load graphics)print
+        quit
+    } if
+    {
+        (%stdin) run
+    } stopped {
+        handleerror
+    } if
+    quit
+} def
+
+/startfile { % (filename)
+    /inputfilename exch def
+    {
+        loadgraphics
+    } stopped {
+        (unable to load graphics)print
+        quit
+    } if
+    {
+        inputfilename (r) file cvx exec
+        executive
+    } stopped {
+        handleerror
+    } if
+    quit
+} def
+%currentfile flushfile
+
+/prompt {
+    (PS) print
+    count dup 0 eq { pop } { (<) print //=print exec } ifelse
+    //execdict /execdepth get {
+        (>) print
+    } repeat
+    flush
+} def
+
+/setdevparams {
+} def
+/currentdevparams {
+} def
+/setuserparams {
+} def
+/currentuserparams {
+} def
+/setsystemparams {
+} def
+/currentsystemparams {
+} def
+
+/setpagedevice {
+    dup type /dicttype ne {
+        /setpagedevice cvx /typecheck signalerror
+    } if
+    pop
+} def
+/currentpagedevice {
+    1 dict
+} def
+
+
+end % systemdict
+
+userdict begin
+false setglobal
+
+/executive {
+    //execdict begin
+
+    /execdepth execdepth 1 add def
+    /QUIET where { pop }{
+        product print
+        ( version ) print version print
+        (.) print revision =print
+        (\n) print
+    } ifelse
+
+    { %loop
+        /quitflag false def
+        //$error /newerror false put
+        /prompt load stopped {
+            (Error during prompt execution\n) print
+            handleerror
+            exit
+        } if
+        {
+            mark
+            /stmtfile (%statementedit) (r) file def
+        } stopped {
+            cleartomark
+            //$error /newerror get {
+                //$error /errorname get 
+                /undefinedfilename ne { % ^d at prompt
+                    handleerror
+                } if
+                //$error /newerror false put
+                exit
+            } if
+        }{
+            pop stmtfile end
+            {
+                cvx exec
+            } stopped //execdict begin {
+                handleerror
+                stmtfile closefile
+            } if
+        } ifelse
+        checkquit
+    } loop
+    /quitflag false def
+    //execdict /execdepth 2 copy get 1 sub put
+
+    end
+    //$error /doclose false put
+    interrupt
+} bind
+def
+
+
+DATA_DIR (/qsort.ps) strcat
+run
+
+% (s1) (s2) (s3) ... (sN) n  ncat  (s1s2s3...sN)
+/ncat {        % s1 s2 s3 .. sN n
+    dup 1 add  % s1 s2 s3 .. sN n n+1 
+    copy       % s1 s2 s3 .. sN n  s1 s2 s3 .. sN n
+    0 exch     % s1 s2 s3 .. sN n  s1 s2 s3 .. sN 0 n 
+    {   
+        exch length add 
+    } repeat             % s1 s2 s3 .. sN  n   len 
+    string exch          % s1 s2 s3 .. sN str   n   
+    0 exch               % s1 s2 s3 .. sN str  off  n
+    -1 1 {               % s1 s2 s3 .. sN str  off  n
+        2 add -1 roll       % s2 s3 .. sN str  off s1
+        3 copy putinterval  % s2 s3 .. sN str' off s1
+        length add          % s2 s3 .. sN str' off+len(s1)
+                            % s2 s3 .. sN str' off'
+    } for                               % str' off'
+    pop  % str'
+} def 
+
+
+% Named Resources
+true setglobal
+globaldict begin
+/globalresourcedict <<
+    /Category <<
+        /Generic <<
+            /DefineResource { % key instance 
+            } % instance
+            /UndefineResource { }
+            /FindResource { }
+            /ResourceStatus { }
+            /ResourceForAll { }
+            %/Category name % <filled-in by DefineResource>
+            %/InstanceType typename % <optional>
+            %/ResourceFileName { } % <optional>
+        >>
+    >>
+    /ProcSet <<
+    >>
+>> def
+end
+
+false setglobal
+userdict begin
+/localresourcedict <<
+    /Encoding <<
+        /StandardEncoding [ ]
+        /ISOLatin1Encoding [ ]
+    >>
+>> def
+end
+true setglobal
+
+% key instance category  defineresource  instance
+/defineresource {
+    %1. obtain catdict, the implementation for the category
+    %2. catdict begin
+    %3.   DefineResource
+    %4. end
+
+    /Category findresource
+    begin
+        DefineResource
+    end
+
+    %userdict /resourcesdict get
+    %exch 2 copy known not {
+    %    2 copy 5 dict put
+    %} if
+    %get
+    %3 1 roll % d k i
+    %readonly 
+    %dup 4 1 roll % i d k i
+    %get
+} def
+
+/DIRSEP (/) def
+
+% key category  findresource  instance
+/findresource {
+    dup /Category eq {
+        globaldict /globalresourcedict get
+    }{
+    } ifelse
+} def
+
+    {
+    /findresource {
+        {   %attempt to load from dictionary
+            currentglobal { % global vm mode: only check globaldict
+                globaldict /globalresourcedict get % k c d
+                1 index 2 copy known % k c d c b
+            }{ % local vm mode: check userdict and globaldict
+                userdict /localresourcedict get % k c d
+                1 index 2 copy known % k c d c b
+            } ifelse
+
+            userdict /resourcedict get % k c d
+            exch % k d c
+            dup 4 1 roll % c k d c
+            2 copy known not { % c k d c
+                2 copy 5 dict put
+            } if
+            get % c k category
+            exch % c cat k
+            2 copy known not {stop} if
+            get % c i
+            exch pop % i
+        } stopped {   %load from disk! % c cat k
+
+            2 index dup length string cvs % c cat k (category)
+            1 index dup length string cvx % c cat k (category) (key)
+            DATA_DIR (/Resources) strcat
+            DIRSEP 4 3 roll % c cat k (key) (Res)(/)(cat)
+            DIRSEP 5 4 roll % c cat k (Res)(/)(cat)(/)(key)
+            (*) 6 ncat % c cat k (Res/cat/key*)
+            [ exch
+            {dup length string copy} 128 string filenameforall
+            ] % [list-of-potential-resources]
+            dup {gt} qsort % [sorted-list]
+            0 get % greatest-sorted-key-match
+            run
+        } if
+    } def
+    } pop
+
+%traceon
+%debugloadon
+
+currentglobal
+false setglobal
+/fontsubstitutions <<
+    /Times-Roman (Nimbus Roman No9 L)
+    dup (URW Bookman L)
+
+    /Courier (Liberation Mono)
+    dup /FreeMono
+    dup (Hershey\\-Plain\\-Triplex)
+    dup (DejaVu Sans Mono)
+
+    /Helvetica (DejaVu Sans)
+    dup (Nimbus Sans L)
+
+    /Palatino-Roman (URW Palladio L)
+>> def
+
+% For the moment, we consider any fonts handled by FreeType to be Type 1.
+% The FontDirectory will merely hold defined Type 3 fonts.
+/FontDirectory
+<<
+>> def
+setglobal
+
+end % userdict
+
+/findfont {
+    FontDirectory 1 index known {
+        FontDirectory exch get
+    }{
+        {   % try the operator
+            //findfont
+            dup /FontType 1 put
+            dup /FontMatrix matrix put
+            dup /Encoding 256 array put
+            dup /BuildChar {} put
+        } stopped { % operator failed: 
+            fontsubstitutions exch 2 copy known { % try substitution
+                get
+                findfont % call proc (tail-)recursively 
+            }{
+                exch pop
+                (no defined substitute for unfound font)=
+                =
+            } ifelse
+        } if
+    } ifelse
+} def
+
+%   /fontname size  selectfont  -
+% /fontname matrix  selectfont  -
+/selectfont {
+    dup type /arraytype eq {
+        exch findfont
+        exch makefont
+        setfont
+    }{
+        exch findfont
+        exch scalefont
+        setfont
+    } ifelse
+} def
+
+% x y w h
+/rect { %ccw in device space
+    dtransform 4 2 roll transform 4 2 roll
+    dup 0 gt { neg 3 2 roll 1 index sub 3 1 roll } if
+    1 index 0 lt { exch neg 4 3 roll 1 index sub 4 1 roll exch } if
+    idtransform 4 2 roll itransform 
+    2 copy 6 2 roll
+    moveto
+    1 index 0 rlineto
+    0 exch rlineto
+    neg 0 rlineto
+    lineto
+} def
+
+/rectfill { rect fill } def
+/rectstroke { rect stroke } def
+/rectclip { rect clip } def
+
+/runtest {
+    DATA_DIR (/test.ps) strcat run
+} def
+
+% load graphics support
+/loadgraphics {
+    /GRAPHICS_LOADED where { pop }{
+        DATA_DIR (/graphics.ps) strcat run
+        userdict /GRAPHICS_LOADED true put
+    } ifelse
+    (graphics loaded, calling initgraphics)=
+	userdict /USEDRAWLINE true put
+	initgraphics
+} def
+
+/testfont {
+    loadgraphics
+    /Courier findfont
+    40 scalefont
+    setfont
+    100 100 moveto
+    (Hello World!) show
+} def
+
+$error/initializing false put % ready to go!
+false setglobal
+
+% debug ps functions
+/break{ /hook /pause load def } def
+/clearhook{ /hook {} store } def
+/doprompt{
+    (\nbreak>)print flush
+    (%lineedit)(r)file
+    cvx {exec}stopped pop } def
+/pause{ doprompt } def
+/hook{ } def
+
+/.dir {
+    (*) { = } 128 string filenameforall
+} def
+
+/xpost {
+    (Xpost is running. Please type a command:\n)print
+    (Would you like to 'runtest' or 'testfont' or '(filename)run'?\n)print
+} def
+
+DATA_DIR (/prepr.ps) strcat run  % use nifty preview prompt!
+
+(eof init.ps\n)print
+%loadgraphics %called by start* procs

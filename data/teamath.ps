@@ -1,0 +1,67 @@
+(mat.ps)run[    % load matrix library, begin dictionary construction
+
+/N 13
+/C [ 0 7 4 ]   % Cam
+/E [ 0 0 40 ] % Eye
+/R 0 roty 120 rotx 93 rotz   % Rot: pan tilt twist
+          matmul   matmul
+
+/f(teapot)(r)file
+/t{token pop exch pop}      % parse a number or other ps token
+/s{(,){search not{t exit}if t 3 1 roll}loop}  % parse a comma-separated list
+/r{token pop{[f 99 string readline pop s]}repeat}>>begin   % parse a count-prefixed paragraph of csv numbers
+[/P[f r]/V[f r]/v{1 sub V exch get}        % Patches and Vertices and vert lookup shortcut
+/B[[-1 3 -3 1][3 -6 3 0][-3 3 0 0][1 0 0 0]]              % Bezier basis matrix
+/A{dup dup mul exch 2 copy mul 3 1 roll 1 4 array astore} % x->[x^3 x^2 x 1]
+/M{[1 index 0 4 getinterval 2 index 4 4 getinterval       % flattened matrix->rowXcolumn matrix
+3 index 8 4 getinterval 4 index 12 4 getinterval]exch pop}
+/J{ C{sub}vop R matmul 0 get                              % perspective proJection  [x y z]->[X Y]
+    aload pop E aload pop
+    4 3 roll div exch neg
+    4 3 roll add 1 index mul 4 1 roll
+    3 1 roll sub mul}
+>>begin
+
+300 400 translate
+1 14 dup dup scale div currentlinewidth mul setlinewidth  % global scale
+currentlinewidth 3 mul setlinewidth
+0 setlinewidth
+
+/newline { /line {moveto /line {lineto currentpoint stroke moveto} store} store } def
+newline
+P{
+    8 dict begin
+        [exch{v J 2 array astore}forall]/p exch def   % load patch vertices and project to 2D
+        /X[p{0 get}forall] M B exch matmul B matmul def  % multiply control points by Bezier basis
+        /Y[p{1 get}forall] M B exch matmul B matmul def
+
+        0 1 N div 1 1 index .2 mul add{A/U exch def   % interpolate the polynomial over (u,v)/(N)
+            /UX U X matmul def
+            /UY U Y matmul def
+            0 1 N div 1 1 index .2 mul add{A/V exch 1 array astore transpose def
+                /UXV UX V matmul def
+                /UYV UY V matmul def
+                UXV 0 get 0 get
+                UYV 0 get 0 get line
+            }for
+            newline
+        }for
+
+        0 1 N div 1 1 index .2 mul add{A/V exch def   % interpolate the polynomial over (u,v)/(N)
+            /V [V] transpose def
+            /XV X V matmul def
+            /YV Y V matmul def
+            0 1 N div 1 1 index .2 mul add{A/U exch 1 array astore transpose def
+                /UXV U XV matmul def
+                /UYV U YV matmul def
+                UXV 0 get 0 get
+                UYV 0 get 0 get line
+            }for
+            newline
+        }for
+
+    end
+
+    %exit
+}forall
+stroke

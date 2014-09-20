@@ -1,0 +1,138 @@
+%!
+%mat.ps
+%Matrix and Vector math routines
+
+/ident { 1 dict begin /n exch def
+    [
+    1 1 n { % [ i
+        [ exch % [ [ i
+        1 1 n { % [ [ i j
+            1 index eq { 1 }{ 0 } ifelse % [ [ i b
+            exch % [ [ b i
+        } for % [ [ b+ i
+        pop ] % [ [ b+ ]
+    } for % [ [b+]+ ]
+    ]
+end } def
+
+/rotx { 1 dict begin /t exch def
+    [ [ 1  0      0         ]
+      [ 0  t cos  t sin neg ]
+      [ 0  t sin  t cos     ] ]
+end } def
+
+/roty { 1 dict begin /t exch def
+    [ [ t cos      0  t sin ]
+      [ 0          1  0     ]
+      [ t sin neg  0  t cos ] ]
+end } def
+
+/rotz { 1 dict begin /t exch def
+    [ [ t cos  t sin neg  0 ]
+      [ t sin  t cos      0 ]
+      [ 0      0          1 ] ]
+end } def
+
+/.error where { pop /signalerror { .error } def } if
+
+/dot { % u v
+    2 copy length exch length ne {
+        /dot cvx /undefinedresult signalerror } if
+    % u v
+    0 % u v sum
+    0 1 3 index length 1 sub { % u v sum i
+        3 index 1 index get exch % u v sum u_i i
+        3 index exch get % u v sum u_i v_i
+        mul add % u v sum
+    } for % u v sum 
+    3 1 roll pop pop % sum
+} bind def
+
+% [ x1 x2 x3 ] [ y1 y2 y3 ]  cross  [ x2*y3-y2*x3 x3*y1-x1*y3 x1*y2-x2*y1 ]
+/cross { % u v
+    dup length 3 ne 2 index length 3 ne or {
+        /cross cvx /undefinedresult signalerror } if
+    % u v
+    exch aload pop 4 3 roll aload pop % x1 x2 x3 y1 y2 y3
+    [
+        5 index 2 index mul % ... [ x2*y3
+        3 index 6 index mul sub % ... [ x2*y3-y2*x3
+        5 index 5 index mul % ... [ x2*y3-y2*x3 x3*y1
+        8 index 4 index mul sub % ... [ x2*y3-y2*x3 x3*y1-x1*y3
+        8 index 5 index mul % ... [ x2*y3-y2*x3 x3*y1-x1*y3 x1*y2
+        8 index 7 index mul sub % ... [ x2*y3-y2*x3 x3*y1-x1*y3 x1*y2-x2*y1
+    ]
+    7 1 roll 6 { pop } repeat
+} bind def
+
+/transpose { STATICDICT begin
+    /A exch def
+    /M A length def
+    /N A 0 get length def
+    [
+    0 1 N 1 sub { /n exch def
+        [
+        0 1 M 1 sub { /m exch def
+            A m get n get
+        } for
+        ]
+    } for
+    ]
+end } dup 0 6 dict put def
+
+/matmul { STATICDICT begin
+    /B exch def
+    B 0 get type /arraytype ne { /B [B] def } if
+    /A exch def
+    A 0 get type /arraytype ne { /A [A] def } if
+    /Q B length def
+    /R B 0 get length def
+    /P A length def
+    Q A 0 get length ne {
+        /A A transpose def
+        /P A length def
+        Q A 0 get length ne {
+            A B end /matmul cvx /undefinedresult signalerror
+        } if
+    } if
+
+    [
+    0 1 P 1 sub { /p exch def % rows of A
+        [
+        0 1 R 1 sub { /r exch def % cols of B
+            0
+            0 1 Q 1 sub { /q exch def % terms of sum
+                A p get q get
+                B q get r get mul
+                add
+            } for
+        } for
+        ]
+    } for
+    ]
+
+end } dup 0 10 dict put def
+
+%u v {operator}  vop  u(op)v
+%apply a binary operator to corresponding elements
+%in two vectors producing a third vector as result
+/vop { 1 dict begin
+    /op exch def
+    2 copy length exch length ne {
+        /op load /vop cvx end /undefinedresult signalerror
+    } if
+
+    [ 3 1 roll % [ u v
+    0 1 2 index length 1 sub { % [ ... u v i
+        3 copy exch pop get % u v i u_i
+        3 copy pop get      % u v i u_i v_i
+        op exch pop         % u v u_i(op)v_i
+        3 1 roll            % u_i(op)v_i u v
+    } for % [ ... u v
+    pop pop ]
+
+end } def
+
+%length of a vector
+/mag { 0 exch { dup mul add } forall } def
+

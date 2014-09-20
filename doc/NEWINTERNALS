@@ -1,0 +1,322 @@
+This is a fresh start of the internals document. The older file, while conceptually correct,
+had become tiresome to keep updated as the names and structure keep changing.
+
+But the basic building blocks, the abstractions, have remained quite constant throughout.
+
+  Xpost_Memory_File   Xpost_Object
+              Xpost_Stack
+              Xpost_Context
+  Xpost_Array Xpost_Dict Xpost_String Xpost_Name
+
+
+Memory
+
+The ground layer is the Memory File. It can be configured to use big malloc blocks,
+or to mmap temporary files, and these it suballocates. Xpost_Object describes 
+the tag-union for the simple object structure and is independent of Memory File,
+although specialized object types like Array and Dict /do/ depend on access to 
+Memory, though the Context.
+
+An Execution Context has 2 memories: global and local. Allocations are made into the
+current memory file selected by a parameter in the context, which may be altered
+with the `bool setglobal` operator. Global allocations may not contain local objects.
+Local may contain global. Remember, local memory is more perishable. It is subject to
+save and restore. So this rule prevents dangling links in global memory.
+
+Inside the Memory File, at address 0, is the first of a chain of memory tables.
+Each segment of the table chain is a Memory Table struct which contains several
+allocation slots and a counter, and an address of the next slot (or zero, if the
+counter is less than the table size).
+
+Addresses to memory occur in several definite forms, which represent several
+levels of "crackng the nut". Since the base pointer to memory, in either of the malloc
+or mmap configurations, will be an unsigned char *, a raw memory address is an
+integer which indexes the memory array. Since the memory may move whenever it must
+realloc(), this "relative" pointer is the safest analogue to an "absolute" pointer
+into the memory space.
+
+    The practical upshot is this Coding Rule for Xpost source code,
+    including device operator functions:
+
+	Do Not hold a pointer while allocating!
+
+    Don't do it. You can get real `char*`s into memory if you want.
+    It's not that difficult. The xpost_dev_* files do this. But if
+    you want to keep using it, you cannot create new composite objects.
+    No new arrays, strings, dicts, or growing a dict past its maxlength.
+    No pushing onto stacks past their current level. Because stacks are
+    segmented, too, and live in the same malloc() or mmap() block.
+    No new names, because names have associated strings AND live on a stack.
+    There are lines in the source commented "//recalc" that show how
+    to refresh a pointer after allocating, if you really need to do that.
+
+An index into the slots of the memory tables is called an "ent" for "entity" 
+or "entry" (I never could decide; sometimes one makes more sense than the other
+in a given context). The slot contains the raw address of the allocation, a field
+to hold accounting data (marks for gc, upper+lower save-levels), and the length of the
+allocation, and a type field which may hold an object tag as a hint to the garbage
+collector. This allows the garbage collector to close files.
+
+The postscript object contains 4 fields if it's a composite object which must
+"point" to memory.
+
+    tag
+    size
+    ent
+    offset
+
+In the 32bit configuration, these are 16-bits each. In the untested LARGE_OBJECT
+configuration, these are 32-bits each.
+
+The tag contains a type bitfield which identifies the kind of data (string, array,
+dict, file), and the ent field (+ a few bits from the tag) is the index into
+the memory tables. Another bit in the tag indicates whether this ent refers
+to the global memory or local memory. Having the offset and size fields in the
+object makes getinterval very cheap. Simple objects typically use a combined
+ent+offset field for the payload value. So an integer object has only three
+fields
+
+     16bit tag
+     16bit pad
+     32bit val
+
+Several object types with simple needs use the marktype object struct which has
+three fields
+
+     16bit tag
+     16bit pad0
+     32bit unsigned padw
+
+Operator objects use .mark.padw to hold the opcode. Name objects use .mark.padw
+to hold the Name Stack index.
+
+These objects may live in memory as components of arrays and dicts (stringtype objects
+cannot contain other objects; there is no way to directly access an object's
+representation as a string from the Postscript level). Or they may live on stacks,
+which are also in memory.
+
+Names are implemented with a ternary search tree that maps strings to integers.
+The integer is stored in the nametype object in a combined ent+offset field.
+It indexes a "name string stack" which contains postscript string objects
+which contain the reverse mappings. One caveat: the search tree algorithm 
+assumes the string is nul-terminated. A nul byte is always added before searching
+(cheaply, with alloca()) but this does mean that you cannot embed nuls in names,
+even if you manually convert using `string cvn`.
+
+Dictionaries are implemented as an open hash with N+1 slots to enable terminate-on-
+null in the searching.
+
+Names are persistant through the execution lifetime of the interpreter,
+but arrays and dictionaries are subject to garbage collection and to explicit
+discarding by `restore`.
+
+The garbage collect currently runs on a periodic cycle, every so many allocations
+from the memory file. If a useable allocation is found on the free-list, the 
+gc cycle count is not incremented.
+
+Stacks are allocated in local memory, and may grow. Preparations are in place to
+shrink them as well, but this is not currently activated.
+
+
+Tunable parameters.
+
+Many of the interpreter structures were designed as "chains", ie. linked-lists,
+but using "addresses" in the sense described above, rather than C pointers.
+The size of each segment may be changed by adjusting the constants in the 
+header files.
+
+XPOST_MEMORY_TABLE_SIZE  xpost_memory.h
+XPOST_STACK_SEGMENT_SIZE xpost_stack.h
+
+Since allocations retain their size, there is a parameter to control how
+much "wastage" is permissible from a re-used allocation, which is the
+ratio of the two integers:
+
+XPOST_FREE_ACCEPT_OVERSIZE  xpost_free.h
+XPOST_FREE_ACCEPT_DENOM
+
+The garbage collector cycle is controlled by the parameter
+
+XPOST_GARBAGE_COLLECTION_PERIOD
+
+but it ought to be
+
+XPOST_GARBAGE_COLLECTION_THRESHOLD
+
+and measure allocated bytes, as described in the PLRM 2ed and 3ed.
+
+
+Matrices
+
+For ease of implementation, the postscript matrix [a b c d e f]
+is treated internally as the transpose of the diagrams in the PLRM.
+This produces identical results, while permitting the more C-friendly
+syntax of right-multiplying matrices. Whereas Postscript's model of
+left-multiplying is more appropriate for its reverse-polish syntax.
+
+    PS> currentpoint currentmatrix transform  % --> "device"currentpoint
+    PS> currentmatrix matrix invertmatrix transform  % --> currentpoint 
+
+whereas ... um. bad example. I don't have a C equivalent to illustrate
+how internally it's the reverse, but the same. You had to be there. :)
+
+
+Logging
+
+The logging system, implemented by Vincent Torri, is controlled by
+the environment variable XPOST_LOG_LEVEL with an integer code,
+meaning:
+
+XPOST_LOG_LEVEL_ERR  0
+XPOST_LOG_LEVEL_WARN 1
+XPOST_LOG_LEVEL_INFO 2
+XPOST_LOG_LEVEL_DBG  3
+
+For debugging, the DBG level, of course is very helpful. But it
+may be necessary to redirect output to an external file, possibly
+with `tee`. There is a lot of output.
+Enabling the TRACE variable, which may be done dynamically in gdb
+with `set var TRACE=1`, writes the trace statements to the filename
+announced at program startup. This output may be captured in another
+terminal using `tail -F`.
+
+[I'm learning more about pty's and investigating how to open a 
+dedicated error window. But this won't really work in the library,
+I think. Another option is to set the trace file from the command-line
+options. And a separate mechanism for the api, I suppose.]
+
+Operators
+
+The operator object uses a combined ent+offset field to index
+an operator table, which lives in global vm. The optab is populated
+at init() by `struct oper` objects which contain a an array of
+type signatures and associated function pointers. The signatures
+are matched against the objects on the stack and for the first
+matching signature, the associated function pointer is called.
+The C operator function receives all of its declared (via signature)
+operands as normal function arguments, using C hackery which abuses
+the `switch` statement, and unprototyped function pointers.
+
+Systemdict Operators.
+
+At the same time the optab is populated with `struct oper`s, 
+the systemdict is populated with the operator's name and 
+a postscript-level operator object. Each xpost_op_*.c file
+implements a different functional group of operators.
+
+Devices
+
+A Device is much like systemdict, it is a dictionary of name->operator
+pairs. There are 2 "base classes", implemented entirely in postscript,
+which can be sub-classed, overriding as many operators as desired,
+in order to capture graphical output or optimize graphical throughput.
+
+Here is the base class for 8bit gray-scale output. RGB differs only 
+in the number `val` objects passed on the stack to each procedure.
+
+From the data/pgmimage.ps file:
+
+% PGMIMAGE device handles 8bit images.
+%
+% It uses the full range 0-255 of values and does not calculate
+% the actual maximum value in the data before transmitting. MaxVal
+% is always 255.
+%
+% In the list of procedures below, PGMIMAGE is the Class dictionary,
+% IMAGE is an instance returned by Create.
+%
+% procedures:
+%           width height PGMIMAGE  Create  ->  IMAGE
+                    creates an internal data structure for a widthXheight image
+
+%                   val x y IMAGE  PutPix  ->  -
+                    set the color value of a single pixel
+
+%                       x y IMAGE  GetPix  ->  val
+                    currently not implemented in window devices
+
+%           val x1 y1 x2 y2 IMAGE  DrawLine  ->  -
+                    calls PutPix in a Bresenham-DDA line including endpoints
+                    used as a special case when drawing 0.0 .. 1.0 pixel lines
+                    used by FillRect and FillPoly for each scanline
+
+%      val x y width height IMAGE  DrawRect  ->  -
+                    not used by postscript graphics
+
+%      val x y width height IMAGE  FillRect  ->  -
+                    calls DrawLine for each scanline
+
+%               val polygon IMAGE  FillPoly  ->  -
+                    calls DrawLine for each scanline
+
+%                           IMAGE  Emit  ->  -
+                    output ascii PGM file
+
+% eg:
+% PS> /dev 40 20 newPGMIMAGEdevice def
+% PS> 55 1 1 38 17 dev dup /DrawLine get exec
+% PS> 77 9 14 3 3 dev dup /FillRect get exec
+% PS> dev dup /Emit get exec
+
+For the minimal work to get the graphics data at the C level,
+you can override the /Emit member of the derived class.
+The device dictionary has an ImgData member which is an
+array of arrays (rows) of integers (columns) containing
+the pixel values of the raster image. 
+
+Another option to get the graphics data in C, is to override
+the PutPixel method. The C function will receive a call
+with pixel values for each pixel.
+
+The xcb device (and similarly for the win32 device, depending
+on availability detected by `./configure`) is hard-patched
+into the initialization procedures and installs two operators
+into systemdict: loadxcbdevice() and loadxcbdevicecont().
+The loading is divided into two C functions, so we can call
+into postscript and then back again. We use postscript to handle
+invoking the base class /Create method, and then modifying the
+Device object and re-using that as a new class, the xcbdevice class.
+
+http://code.google.com/p/xpost/source/browse/src/bin/xpost_dev_xcb.c
+
+loadxcbdevicecont() is responsible for overriding the Postscript
+procedures with new operator functions.
+
+The Create operator is also divided into _create() and _create_cont().
+Again, this is so it may call the base class's create method whether
+it is a postscript procedure or a C function (postscript operator).
+
+The xpost_dev_xcb.c:_create_cont() operator function actually
+creates the window and maps it. Then for speed, it overrides all
+of the drawing methods: PutPix, DrawLine, FillRect, and FillPoly.
+(FillPoly is also overrided in the base class with a C function,
+so my previous assertions of "improving throughput" by overriding
+more device member functions are less compelling.)
+
+A device may (but is not required to) implement a /Flush method
+which should flush any buffered drawing operations and syncronize
+the output with the execution of the postscript program.
+
+Currently only a single running device is supported as it requires
+constant attention by the main loop of the interpreter in the 
+form of the event-handler function. For multiple devices, we
+will need to have a list of active window devices which need
+event-handling. Composable "NeWS" canvases, I suppose need to be
+implemented internally. Since we can't really depend on fancy
+opacity effects from the environment, I think.
+
+The BGR device
+
+The bgr device is intended for use when xpost is a library component
+of another program. It can make use of configuration options from
+the call to xpost_create() to return the image buffer to the calling
+program, as well as controlling the behavior of the `showpage`
+operator.
+
+For interactive use, showpage flushes the drawing to the window
+and reads a line from the keyboard (waits for the Enter key).
+For library use, it may instruct showpage to `quit` the interpreter
+which will return control back to the caller. If it all works right,
+the caller will then have access to the raster image data.
+
+

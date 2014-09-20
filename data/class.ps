@@ -1,0 +1,205 @@
+%
+% PS Class Implementation inspired by
+% http://code.google.com/p/xpost/downloads/detail?name=monterey86.ps
+%
+%(../../debug.ps/db5.ps)run
+
+%/known { pstack()= known } bind def
+%/known { 1 index type /nulltype eq {false}{known} ifelse } bind def
+%/null { null cvlit } bind def
+
+/printf { % () []
+    { % () ?
+        exch % ? ()
+        (%) search { % ? post match pre
+            print pop exch
+            =string cvs print
+        }{ % ? ()
+            exch pop % ()
+            exit
+        } ifelse
+    } forall % ()
+    print
+} def
+
+/append { % a b
+    dup type /arraytype eq {
+        2 copy length exch length add array 3 1 roll  % z a b
+        3 copy pop 0 exch putinterval % z' a b
+        3 copy exch length exch putinterval % z'' a b
+        pop pop
+    }{
+        exch begin
+        {def}forall
+        currentdict end
+    }ifelse
+} def
+
+%[1 2 3] [4] append ==
+
+%
+% Objects 'n stuff.
+%
+
+/ObjectTemplate <<  % All objects have these fields.
+    /parentDict      null  % link to my parent dict; stops at null.
+    /parentDictArray null  % complete parent chain to Object!
+>> def
+/ClassTemplate <<   % Class objects have these fields in addition:
+    /instanceVars     null  % this class's additional inst vars
+    /instanceVarDict  null  % this class' total inst vars
+    /instanceVarExtra 10    % extra space for class var over-rides
+    /className        null  % name of the class (as a keyword)
+    /subClasses       []    % subclass list (for browsing)
+>> def
+
+% Create a sub-class of the given class.
+%    The instance variables may be either an array or a dict.
+%    The advantage of using a dict is that the variables will be
+%    pre-initialized to a value you chose, rather than "null".
+/classbegin {   % classname superclass instvars => - (newclass on dict stack)
+1 dict begin
+    ObjectTemplate {def} forall
+    ClassTemplate {def} forall
+
+    /instanceVars exch def
+    /parentDict exch def
+    /className exch def
+} def
+/classend {   %  - => classname newclass
+    currentdict {
+        dup xcheck {parentDict methodcompile def} {pop pop} ifelse
+    } forall
+
+    /instanceVarDict instanceVars def
+    /parentDictArray [] def
+
+    instanceVarDict type /arraytype eq {
+        /instanceVarDict instanceVarDict length dict dup begin
+            instanceVarDict {null def} forall
+        end def
+    } if
+
+    parentDict null ne {
+        parentDict /subClasses 2 copy get [className] append put
+        /instanceVarDict
+            parentDict /instanceVarDict get instanceVarDict append def
+        /parentDictArray
+            parentDict /parentDictArray get [parentDict] append def
+    } if
+
+    className
+currentdict end
+} def
+% Crack open the methods and fix for "super send" and "self send"
+/methodcompile { % method parentDict => newmethod
+10 dict begin
+    /superpending false def
+    /selfpending false def
+    /parentDict exch def
+    [ exch {
+        dup xcheck {
+            dup /send eq superpending selfpending or and {
+                pop pop
+                superpending
+                    {parentDict /className get cvx /supersend cvx}
+                    {cvx} ifelse
+            } if
+            dup type /arraytype eq {parentDict methodcompile} if
+
+            dup /super eq /superpending exch def
+            dup /self eq /selfpending exch def
+        } if
+    } forall ] cvx
+end
+} def
+
+% Generic Smalltalk-ish Primitives.
+% Send a message to an object.
+/send { % <args> message object => <results>
+    %pstack()=
+    dup /parentDictArray get {begin} forall
+    begin
+        cvx exec
+    parentDictArray length 1 add {end} repeat
+} def
+% Send a message to super without popping myself.
+/supersend { % <args> keywordmessage superclass => <results>
+    %pstack()=
+    exch { 2 copy known {exit} {exch /parentDict get exch} ifelse } loop
+    get exec
+} def
+% Put me on the operand stack.
+/self {/parentDict where pop} def
+
+% Your basic object!
+/Object null [] classbegin
+    /new { % class  =>  instance
+        ObjectTemplate length instanceVarDict length instanceVarExtra
+        add add dict dup begin
+            instanceVarDict {def} forall
+            ObjectTemplate {def} forall
+        end
+        dup /parentDict currentdict put
+        dup /parentDictArray parentDictArray [currentdict] append put
+    } def
+    /doit { % proc ins  =>  - (compile & execute the proc)
+        parentDict /parentDict get methodcompile exec
+    } def
+
+    /set { % {/key value ...}  =>  -  stores the values in the object
+        mark exch cvx exec
+        counttomark 2 idiv {def} repeat pop % store??
+    } def
+classend def
+
+
+
+/smalltalkpage62 {
+    /One Object [] classbegin
+        /test {1} def
+        /result1 { /test self send} def
+    classend def
+
+    /Two One [] classbegin
+        /test {2} def
+    classend def
+
+    /ex1 /new One send def
+    /ex2 /new Two send def
+
+    /test ex1 send =
+    /result1 ex1 send =
+    /test ex2 send =
+    /result1 ex2 send =
+
+    /Three Two [] classbegin
+        /result2 { /result1 self send} def
+        /result3 { /test super send}
+        pstack()=
+        dup {
+            xcheck =
+        } forall
+    def
+    classend def
+    /Four Three [] classbegin
+        /test {4} def
+    classend def
+
+    /ex3 /new Three send def
+    /ex4 /new Four send def
+    Three {exch =only ( )print ==} forall
+    %ex3 {exch =only ( )print ==} forall
+    %Four {exch =only ( )print ==} forall
+    %ex4 {exch =only ( )print ==} forall
+
+    /test ex3 send =
+    /result1 ex4 send =
+    /result2 ex3 send =
+    /result2 ex4 send =
+    /result3 ex3 send =
+    /result3 ex4 send =
+} def
+
+%/smalltalkpage62 cvx traceon stepon debug
+%smalltalkpage62
