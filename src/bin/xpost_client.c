@@ -24,7 +24,7 @@ char *prog =
 int main() {
     void *buffer_type_object;
     xpost_init();
-    xpost_create("pgm",
+    xpost_create("bgr",
             XPOST_OUTPUT_BUFFEROUT,
             &buffer_type_object,
             XPOST_SHOWPAGE_RETURN,
