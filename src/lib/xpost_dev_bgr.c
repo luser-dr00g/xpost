@@ -177,7 +177,7 @@ int _emit (Xpost_Context *ctx,
     stride = private.width;
     height = private.height;
 
-    data = malloc(stride * height * sizeof(*data));
+    data = malloc(stride * height * 4);
     imgdata = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "ImgData"));
 
     {
