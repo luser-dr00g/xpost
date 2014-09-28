@@ -87,11 +87,31 @@ int _create (Xpost_Context *ctx,
     xpost_dict_put(ctx, classdic, nameheight, height);
 
     /* call device class's ps-level .copydict procedure,
+       //call base-class's Create procedure (to initialize ImgData array)
        then call _create_cont, by continuation. */
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_create_cont_opcode)))
         return execstackoverflow;
+
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, namedotcopydict)))
         return execstackoverflow;
+
+    /*
+    {
+        Xpost_Object ppmdevice;
+        int ret;
+
+        ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "PPMDEVICE"));
+        if (ret)
+            return ret;
+        ppmdevice = xpost_stack_pop(ctx->lo, ctx->os);
+        if (xpost_object_get_type(ppmdevice) == invalidtype)
+            return stackunderflow;
+        if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, ppmdevice, xpost_name_cons(ctx, "Create"))))
+            return execstackoverflow;
+    }
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, xpost_name_cons(ctx, "Create"))))
+        return execstackoverflow;
+        */
 
     return 0;
 }
@@ -126,6 +146,33 @@ int _create_cont (Xpost_Context *ctx,
      * initialize additional members of private struct
      *
      */
+
+    {
+        int i, j;
+        Xpost_Object imgdata;
+        Xpost_Object row;
+        Xpost_Object *rowdata;
+
+        rowdata = malloc(width * sizeof(Xpost_Object));
+        for (j = 0; j < width; j++)
+        {
+            rowdata[j] = xpost_int_cons(0);
+        }
+
+        imgdata = xpost_array_cons(ctx, height);
+        for (i = 0; i < height; i++)
+        {
+            row = xpost_array_cons(ctx, width);
+            xpost_memory_put(xpost_context_select_memory(ctx, row), 
+                    xpost_object_get_ent(row),
+                    0,
+                    width * sizeof(Xpost_Object),
+                    rowdata);
+        }
+        xpost_dict_put(ctx, devdic, xpost_name_cons(ctx, "ImgData"), imgdata);
+
+        free(rowdata);
+    }
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
@@ -179,6 +226,8 @@ int _emit (Xpost_Context *ctx,
 
     data = malloc(stride * height * 4);
     imgdata = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "ImgData"));
+    if (xpost_object_get_type(imgdata) == invalidtype)
+        return undefined;
 
     {
         int i,j;
@@ -196,6 +245,7 @@ int _emit (Xpost_Context *ctx,
             //row = xpost_array_get(ctx, imgdata, i);
             xpost_memory_table_get_addr(mem, xpost_object_get_ent(row), &rowaddr);
             rowdata = (Xpost_Object *)(mem->base + rowaddr);
+            printf("%d\n", i);
 
             for (j=0; j < stride; j++)
             {
