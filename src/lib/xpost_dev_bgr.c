@@ -163,6 +163,7 @@ int _create_cont (Xpost_Context *ctx,
         for (i = 0; i < height; i++)
         {
             row = xpost_array_cons(ctx, width);
+            xpost_array_put(ctx, imgdata, i, row);
             xpost_memory_put(xpost_context_select_memory(ctx, row), 
                     xpost_object_get_ent(row),
                     0,
