@@ -70,6 +70,8 @@ DATA_DIR(/qsort.ps)strcat run
 
     /.to-int { floor cvi } bind
     /PutPix { % r g b x y IMAGE  .  -
+        3 copy pop exch =only ( )print =only ( )print
+        (PutPix\n) print
     begin
         {
             .to-int exch .to-int exch
@@ -99,6 +101,7 @@ DATA_DIR(/qsort.ps)strcat run
     /.sign { dup 0 le { 0 lt { -1 }{ 0 } ifelse }{ pop 1 } ifelse } bind
 
     /DrawLine { % r g b x1 y1 x2 y2 IMAGE  .  -
+        (DrawLine\n) print
     begin {y2 x2 y1 x1 b g r}{exch def}forall
         x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect
 			{ {y1 x1}{exch def}forall } if } if
@@ -116,6 +119,7 @@ DATA_DIR(/qsort.ps)strcat run
 			{ {y1 x1}{exch def}forall } if } if
         y2 width ge { x1 y1 x2 y2 0 height width height .intersect
 			{ {y2 x2}{exch def}forall } if } if
+        (intersected\n) print
         /x x1 def
         /y y1 def
         x2 x1 sub  dup abs /dx exch def
@@ -166,7 +170,11 @@ DATA_DIR(/qsort.ps)strcat run
     end } bind
 
     /FillRect { % r g b x y w h IMAGE  .  -
+        (FillRect\n) print
+        %dup /ImgData get length =
+        %dup /ImgData get ==
     begin {h w y x b g r}{exch def}forall
+        %ImgData length =only ( )print ImgData 0 get length =
         %r g b 0 1 h { y add  % r g b y
         %    0 1 w { x add  % r g b y x
         %        5 copy exch % r g b y x r g b x y
@@ -186,7 +194,9 @@ DATA_DIR(/qsort.ps)strcat run
         {
             /USEDRAWLINE where { pop
                 USEDRAWLINE {
+                    (Using DrawLine\n) print
                     y 1 h {
+                        dup =only ( )print
                         r g b 4 3 roll
                         x exch w 1 index
                         currentdict DrawLine

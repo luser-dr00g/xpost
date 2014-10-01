@@ -12,12 +12,17 @@
     %    clippath fill
     %grestore
     gsave
+        (1 setgray\n) print
         1 setgray
-        [ currentcolordict DEVICE /nativecolorspace get get exec
+        [ currentcolordict DEVICE /nativecolorspace get
+        dup =
+        get exec
         counttomark { currenttransfer exec counttomark 1 roll } repeat
+        %(FillRect\n) print
         0 0 DEVICE /dimensions get aload pop
         DEVICE dup /FillRect get exec
         pop
+        (flushpage\n) print
         flushpage
     grestore
 } bind def
