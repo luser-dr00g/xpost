@@ -110,6 +110,21 @@ Names are persistant through the execution lifetime of the interpreter,
 but arrays and dictionaries are subject to garbage collection and to explicit
 discarding by `restore`.
 
+Composite object constructors return objects which are marked 'executable'.
+It would be wise to explicitly specify the executable/literal attribute when
+creating the object. So, instead of this:
+
+    Xpost_Object arr = xpost_array_cons(ctx, 12);
+
+do this:
+
+    Xpost_Object arr = xpost_object_cvx(xpost_array_cons(ctx, 12));
+
+or, to make a non-executable object:
+
+    Xpost_Object arr = xpost_object_cvlit(xpost_array_cons(ctx, 12));
+
+
 The garbage collect currently runs on a periodic cycle, every so many allocations
 from the memory file. If a useable allocation is found on the free-list, the 
 gc cycle count is not incremented.
