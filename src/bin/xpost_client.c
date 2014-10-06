@@ -8,6 +8,7 @@ TODO:
  */
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "xpost.h"
 #include "xpost_memory.h"
@@ -30,6 +31,28 @@ int main() {
             XPOST_SHOWPAGE_RETURN,
             1);
     xpost_run(XPOST_INPUT_STRING, prog);
+    {
+        unsigned char *buffer = buffer_type_object;
+        int i,j;
+        FILE *fp = fopen("xpost_client_out.ppm", "w");
+        fprintf(fp, "P3\n612 792\n255\n");
+        for (i=0; i<792; i++) {
+            for (j=0; j<612; j++) {
+                unsigned int red, green, blue;
+                red = *buffer++;
+                green = *buffer++;
+                blue = *buffer++;
+                ++buffer;
+                fprintf(fp, "%d ", red);
+                fprintf(fp, "%d ", green);
+                fprintf(fp, "%d ", blue);
+                if ((j%20)==0)
+                    fprintf(fp, "\n");
+            }
+            fprintf(fp, "\n");
+        }
+        fclose(fp);
+    }
     xpost_destroy();
     free(buffer_type_object);
     xpost_quit();

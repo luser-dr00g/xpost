@@ -34,7 +34,7 @@
 
 #include <assert.h>
 #include <stdlib.h> /* abs */
-#include <stdio.h>
+//#include <stdio.h>
 #include <string.h>
 
 #include "xpost_log.h"
@@ -87,8 +87,8 @@ int _create (Xpost_Context *ctx,
     xpost_dict_put(ctx, classdic, namewidth, width);
     xpost_dict_put(ctx, classdic, nameheight, height);
 
-    printf("create\n");
-    fflush(0);
+    //printf("create\n");
+    //fflush(0);
     /* call device class's ps-level .copydict procedure,
        //call base-class's Create procedure (to initialize ImgData array)
        then call _create_cont, by continuation. */
@@ -131,7 +131,7 @@ int _create_cont (Xpost_Context *ctx,
     PrivateData private;
     integer width = w.int_.val;
     integer height = h.int_.val;
-    printf("create_cont\n");
+    //printf("create_cont\n");
 
     /* create a string to contain device data structure */
     privatestr = xpost_string_cons(ctx, sizeof(PrivateData), NULL);
@@ -157,14 +157,14 @@ int _create_cont (Xpost_Context *ctx,
         Xpost_Object row;
         Xpost_Object *rowdata;
 
-        printf("creating row of %d integers\n", width);
+        //printf("creating row of %d integers\n", width);
         rowdata = malloc(width * sizeof(Xpost_Object));
         for (j = 0; j < width; j++)
         {
             rowdata[j] = xpost_int_cons(0);
         }
 
-        printf("creating array of %d rows\n", height);
+        //printf("creating array of %d rows\n", height);
         imgdata = xpost_object_cvlit(xpost_array_cons(ctx, height));
         for (i = 0; i < height; i++)
         {
@@ -252,13 +252,12 @@ int _emit (Xpost_Context *ctx,
             //row = xpost_array_get(ctx, imgdata, i);
             xpost_memory_table_get_addr(mem, xpost_object_get_ent(row), &rowaddr);
             rowdata = (Xpost_Object *)(mem->base + rowaddr);
-            printf("%d\n", i);
+            //printf("%d\n", i);
 
             for (j=0; j < stride; j++)
             {
                 unsigned int val;
-                val = rowdata[j].int_.val;
-                /* 0x00RRGGBB */
+                val = rowdata[j].int_.val; /* 0x00RRGGBB */
                 *iter++ = (val>>16) & 0xFF;
                 *iter++ = (val>>8) & 0xFF;
                 *iter++ = (val) & 0xFF;
