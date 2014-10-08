@@ -98,24 +98,6 @@ int _create (Xpost_Context *ctx,
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, namedotcopydict)))
         return execstackoverflow;
 
-    /*
-    {
-        Xpost_Object ppmdevice;
-        int ret;
-
-        ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "PPMDEVICE"));
-        if (ret)
-            return ret;
-        ppmdevice = xpost_stack_pop(ctx->lo, ctx->os);
-        if (xpost_object_get_type(ppmdevice) == invalidtype)
-            return stackunderflow;
-        if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, ppmdevice, xpost_name_cons(ctx, "Create"))))
-            return execstackoverflow;
-    }
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, xpost_name_cons(ctx, "Create"))))
-        return execstackoverflow;
-        */
-
     return 0;
 }
 
@@ -151,7 +133,13 @@ int _create_cont (Xpost_Context *ctx,
      *
      */
 
-    {
+    { /*
+         initialize the PS-level raster buffer, 
+         an array of arrays of ints, each holding a 24-bit rgb value.
+         This allows us to re-use most of the PPM base-class functions,
+         and just grab the buffer in _emit() which overrides the device's
+         /Emit member-function which is called as the action of `showpage`.
+       */
         int i, j;
         Xpost_Object imgdata;
         Xpost_Object row;

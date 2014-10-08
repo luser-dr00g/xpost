@@ -109,6 +109,16 @@ char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
     return filename;
 }
 
+int xpost_device_set_filename(Xpost_Context *ctx, Xpost_Object devdic, char *filename)
+{
+    Xpost_Object filenamestr;
+    int ret;
+    filenamestr = xpost_string_cons(ctx, strlen(filename), filename);
+    if ((ret = xpost_dict_put(ctx, devdic, xpost_name_cons(ctx, "OutputFileName"), filenamestr)))
+        return ret;
+    return 0;
+}
+
 static
 int _yxcomp (const void *left, const void *right)
 {
@@ -421,8 +431,9 @@ int _fillpoly (Xpost_Context *ctx,
      generically, we construct the loop body dynamically. */
 
     /*first push the number of elements
-     we're using a repeat loop which looks like:
+     remember we're using a repeat loop which looks like:
          count proc  -repeat-
+     so this line places the `count` parameter on the stack
     */
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(numlines));
 
@@ -449,11 +460,15 @@ int _fillpoly (Xpost_Context *ctx,
     }
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx( nameroll));
 
-      /*at this point we have the desired stack picture:
+      /*at this point (in constructing the (color-space-generic) loop-body) we have the desired stack picture:
 
              comp1 (comp2 comp3)? x1 y1 x2 y2
 
-        just need to push the devdic and DrawLine  */
+        (with possibly more pairs deeper on the stack, waiting for the next iteration),
+        just need to push the devdic (ie. the DEVICE object, in OO-speak) and DrawLine,
+        then cinch-off the loop-body procedure (array), make it executable, and call
+        the `repeat` operator.
+       */
 
     xpost_stack_push(ctx->lo, ctx->os, devdic);
     drawline = xpost_dict_get(ctx, devdic, nameDrawLine);
@@ -463,7 +478,13 @@ int _fillpoly (Xpost_Context *ctx,
     if (xpost_object_get_type(drawline) == arraytype)
         xpost_stack_push(ctx->lo, ctx->os, nameexec);
 
-    /*Then construct the loop-body procedure array. */
+    /*--the rest of the code here calls-back to postscript (by "continuation")
+        by pushing executable names on the execution-stack, and then returns.
+        The (color-space) generic loop-body is called with the
+        `repeat` looping-operator.-------------------------------------------*/
+
+    /*Then construct the loop-body procedure array. Just showing you line here.
+      The whole story-line of comments for why we're not just executing them here. */
        //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "]")));
 
     /*Then, after the loop-body array is constructed, we need to call cvx on it. */
@@ -485,16 +506,16 @@ int _fillpoly (Xpost_Context *ctx,
                             ^ construct array
                          ^ make executable
                    ^ call the loop operator
-    */
 
-    /*So the sequence in C should be: */
+      So the sequence in C should be, and is:
+     */
 
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( namerepeat));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( namecvx));
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( nameRbracket));
 
-    /*performance could be increased by factoring-out calls to xpost_name_cons()
-      or using opcode shortcuts.
+    /*performance could be increased by factoring-out calls to xpost_name_cons()  ... DONE!
+      or using opcode shortcuts for Rbracket & cvx (or just the arrtomark() function) and repeat.
      */
     return 0;
 }

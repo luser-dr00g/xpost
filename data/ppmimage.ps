@@ -288,6 +288,11 @@ DATA_DIR(/qsort.ps)strcat run
 	dup 0 16 dict put
 	bind
 
+    %nb. this implementation is overridden by device.ps
+    %after calling `newdefaultdevice`
+    %see xpost_dev_generic.c:_fillpoly(ctx,poly,dev) for the 
+    %implementation in current use (10/8/2014)
+    
     /FillPoly { % r g b polygon IMAGE  .  -
     begin {poly b g r}{exch def}forall
 

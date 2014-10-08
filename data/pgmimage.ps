@@ -265,6 +265,11 @@ DATA_DIR(/qsort.ps)strcat run
 
     end }
 
+    %nb. this implementation is overridden by device.ps
+    %after calling `newdefaultdevice`
+    %see xpost_dev_generic.c:_fillpoly(ctx,poly,dev) for the 
+    %implementation in current use (10/8/2014)
+
     /FillPoly { % val polygon IMAGE  .  -
     begin {poly val}{exch def}forall
 

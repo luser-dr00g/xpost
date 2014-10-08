@@ -274,10 +274,11 @@ From the data/pgmimage.ps file:
 % PS> dev dup /Emit get exec
 
 For the minimal work to get the graphics data at the C level,
-you can override the /Emit member of the derived class.
-The device dictionary has an ImgData member which is an
-array of arrays (rows) of integers (columns) containing
-the pixel values of the raster image. 
+you can override the /Emit member of the derived class, but
+you must create an ImgData member for the device dictionary
+which is an array of arrays (rows) of integers (columns)
+for the base-class's procedures to store the pixel values of
+the raster image. 
 
 Another option to get the graphics data in C, is to override
 the PutPixel method. The C function will receive a call
