@@ -724,7 +724,11 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
 }
 
 
-/* global shortcut for a single-threaded interpreter */
+/*
+   global shortcut for a single-threaded interpreter
+FIXME: "static context pointer". s.b. changed to a returned
+   value from xpost_create()
+ */
 Xpost_Context *xpost_ctx;
 
 
