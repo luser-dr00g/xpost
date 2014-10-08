@@ -20,7 +20,6 @@ char *prog =
     "%%BoundingBox: 200 300 400 500\n"
     "300 400 100 0 360 arc\n"
     "fill\n"
-    "fubar\n"
     "showpage\n";
 
 int main() {
