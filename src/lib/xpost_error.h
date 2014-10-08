@@ -43,8 +43,12 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
    These error codes are (mostly) defined in the PLRM and can be returned by operator 
    functions and handled at the postscript level. If an operator (including a device
    function) returns a value outside of this range, the error-name returned to postscript
-   will be /unknownerror. In some circumstances, /unregistered is used also used for this
-   purpose, since it has no documented use in the PLRM.
+   will be /unknownerror.
+   In some circumstances, /unregistered is used also used for this purpose,
+   since it has no documented use in the PLRM.
+   This gives you /unknownerror as a (mostly) freely-available error code for any
+   device-specific testing or such. So `return -1;` in a device function will send this
+   code back to the ps error-handler.
 
    An operator function may fail to execute if the operator_exec function cannot match
    the type signature against the operand stack. It will then return a /typecheck or

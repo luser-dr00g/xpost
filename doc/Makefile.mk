@@ -29,6 +29,6 @@ endif
 
 EXTRA_DIST += \
 doc/INTERNALS \
-doc/NEWINTERNAL \
+doc/NEWINTERNALS \
 doc/MANUAL \
 doc/Doxyfile

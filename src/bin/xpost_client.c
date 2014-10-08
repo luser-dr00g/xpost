@@ -56,5 +56,6 @@ int main() {
     xpost_destroy();
     free(buffer_type_object);
     xpost_quit();
+    return 0;
 }
 

@@ -39,6 +39,13 @@
 char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic);
 
 /**
+ * @brief convenience function to set the output filename associated with device
+ *
+ * returns a postscript error code from xpost_error.h, 0 == noerror
+ */
+int xpost_device_set_filename(Xpost_Context *ctx, Xpost_Object devdic, char *filename);
+
+/**
  * @brief install operator .yxsort to improve performance of 'fill'
  *
  * also C fillpoly implementation that uses device DrawLine method.
