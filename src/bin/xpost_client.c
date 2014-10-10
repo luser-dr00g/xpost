@@ -18,6 +18,7 @@ TODO:
 
 char *prog =
     "%%BoundingBox: 200 300 400 500\n"
+    "0 0 1 setrgbcolor\n"
     "300 400 100 0 360 arc\n"
     "fill\n"
     "showpage\n";
@@ -35,21 +36,19 @@ int main() {
             1)))
         fprintf(stderr, "unable to create interpreter context"), exit(0);
     ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
+    printf("executed program. xpost_run returned %s\n", ret? "yieldtocaller": "zero");
     {
-        unsigned char *buffer = buffer_type_object;
+        typedef struct { unsigned char blue, green, red, zero; } pixel;
+        pixel *buffer = buffer_type_object;
         int i,j;
         FILE *fp = fopen("xpost_client_out.ppm", "w");
         fprintf(fp, "P3\n612 792\n255\n");
         for (i=0; i<792; i++) {
             for (j=0; j<612; j++) {
-                unsigned int red, green, blue;
-                blue = *buffer++;
-                green = *buffer++;
-                red = *buffer++;
-                ++buffer;
-                fprintf(fp, "%d ", red);
-                fprintf(fp, "%d ", green);
-                fprintf(fp, "%d ", blue);
+                pixel pix = *buffer++;
+                fprintf(fp, "%d ", pix.red);
+                fprintf(fp, "%d ", pix.green);
+                fprintf(fp, "%d ", pix.blue);
                 if ((j%20)==0)
                     fprintf(fp, "\n");
             }

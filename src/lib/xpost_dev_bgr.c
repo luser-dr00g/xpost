@@ -245,10 +245,10 @@ int _emit (Xpost_Context *ctx,
             for (j=0; j < stride; j++)
             {
                 unsigned int val;
-                val = rowdata[j].int_.val; /* b|g|r 0x00BBGGGRR */
-                *iter++ = (val>>16) & 0xFF;
-                *iter++ = (val>>8) & 0xFF;
-                *iter++ = (val) & 0xFF;
+                val = rowdata[j].int_.val; /* r|g|b 0x00RRGGGBB */
+                *iter++ = (val) & 0xFF;     /* b */
+                *iter++ = (val>>8) & 0xFF;  /* g */
+                *iter++ = (val>>16) & 0xFF; /* r */
                 *iter++ = 0;
             }
         }

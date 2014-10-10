@@ -252,8 +252,10 @@ int main(int argc, char *argv[])
     sigaction(SIGTRAP, &sa, &oldsa);
 #endif
 
+#ifdef DEBUG_ENTS
     printf("EXTRA_BITS_SIZE = %u\n", (unsigned int)XPOST_OBJECT_TAG_EXTRA_BITS_SIZE);
     printf("COMP_MAX_ENT = %u\n", (unsigned int)XPOST_OBJECT_COMP_MAX_ENT);
+#endif
 
 #ifdef _WIN32
     device = "gdi";

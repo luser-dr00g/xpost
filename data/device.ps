@@ -3,14 +3,14 @@
 DATA_DIR (/image.ps) strcat run  % image.ps implements device base classes
 DATA_DIR (/nulldev.ps) strcat run  % nulldevice
 
-/newdefaultdevice load ==
+%/newdefaultdevice load ==
 newdefaultdevice % defined in xpost_interpreter.c:setlocalconfig()
                  % as similar to one of these:
 %                /DEVICE 50 50 newPGMIMAGEdevice def
 %loadxcbdevice   /DEVICE 400 300 newxcbdevice def
 %loadwin32device /DEVICE 400 300 newwin32device def
 
-DEVICE {pop =} forall
+%DEVICE {pop =} forall
 
 DEVICE begin
     /defaultmatrix [ 1 0 0 -1 0 height ] def
