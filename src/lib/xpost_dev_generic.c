@@ -328,7 +328,7 @@ int _fillpoly (Xpost_Context *ctx,
     real maxy = maxx;
     //int width;
 
-    printf("_fillpoly\n");
+    //printf("_fillpoly\n");
 
     //width = xpost_dict_get(ctx, devdic, namewidth).int_.val;
     colorspace = xpost_dict_get(ctx, devdic, namenativecolorspace);
