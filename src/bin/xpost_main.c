@@ -229,6 +229,7 @@ _xpost_geometry_parse(const char *geometry, int *width, int *height, int *xoffse
 
 int main(int argc, char *argv[])
 {
+    Xpost_Context *ctx;
     const char *geometry = NULL;
     const char *output_file = NULL;
     const char *device = NULL;
@@ -357,18 +358,18 @@ int main(int argc, char *argv[])
 
     is_installed = xpost_is_installed(filename); 
 
-    if (!xpost_create(device,
+    if (!(ctx = xpost_create(device,
                       XPOST_OUTPUT_FILENAME,
                       output_file,
                       XPOST_SHOWPAGE_DEFAULT,
-                      is_installed))
+                      is_installed)))
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
     }
 
-    xpost_run(XPOST_INPUT_FILENAME, ps_file);
-    xpost_destroy();
+    xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file);
+    xpost_destroy(ctx);
 
     xpost_quit();
 

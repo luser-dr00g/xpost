@@ -548,6 +548,9 @@ void _transform (Xpost_Matrix mat, real x, real y, real *xres, real *yres)
 }
 
 static
+Xpost_Object _arc_start_proc;
+
+static
 int _arcbez (Xpost_Context *ctx,
         Xpost_Object x, Xpost_Object y, Xpost_Object r,
         Xpost_Object angle1, Xpost_Object angle2)
@@ -607,10 +610,13 @@ int _arc (Xpost_Context *ctx,
         int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
         _arcbez(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2));
         xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
+        xpost_stack_push(ctx->lo, ctx->es, _arc_start_proc);
+        /*
         if (pathlen)
             xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_lineto_opcode));
         else
             xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_moveto_opcode));
+            */
     }
     return 0;
 }
@@ -634,10 +640,13 @@ int _arcn (Xpost_Context *ctx,
         int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
         _arcbez(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2));
         xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
+        xpost_stack_push(ctx->lo, ctx->es, _arc_start_proc);
+        /*
         if (pathlen)
             xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_lineto_opcode));
         else
             xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_moveto_opcode));
+            */
     }
     return 0;
 }
@@ -908,6 +917,23 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, "flattenpath", (Xpost_Op_Func)_flattenpath, 0, 0);
     INSTALL;
+
+    _arc_start_proc = xpost_array_cons(ctx, 7);
+    xpost_array_put(ctx, _arc_start_proc, 0, xpost_object_cvx(xpost_name_cons(ctx, "cpath")));
+    xpost_array_put(ctx, _arc_start_proc, 1, xpost_object_cvx(xpost_name_cons(ctx, "length")));
+    xpost_array_put(ctx, _arc_start_proc, 2, xpost_int_cons(0));
+    xpost_array_put(ctx, _arc_start_proc, 3, xpost_object_cvx(xpost_name_cons(ctx, "gt")));
+    {
+        Xpost_Object true_clause = xpost_object_cvx(xpost_array_cons(ctx, 1));
+        xpost_array_put(ctx, true_clause, 0, xpost_object_cvx(xpost_name_cons(ctx, "lineto")));
+        xpost_array_put(ctx, _arc_start_proc, 4, true_clause);
+    }
+    {
+        Xpost_Object false_clause = xpost_object_cvx(xpost_array_cons(ctx, 1));
+        xpost_array_put(ctx, false_clause, 0, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
+        xpost_array_put(ctx, _arc_start_proc, 5, false_clause);
+    }
+    xpost_array_put(ctx, _arc_start_proc, 6, xpost_object_cvx(xpost_name_cons(ctx, "ifelse")));
 
     return 0;
 }

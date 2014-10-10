@@ -100,15 +100,15 @@ enum Xpost_Input_Type {
 
 /* 3 simple top-level functions */
 
-int xpost_create(const char *device,
+Xpost_Context *xpost_create(const char *device,
                  enum Xpost_Output_Type output_type,
                  const void *outputptr,
                  enum Xpost_Showpage_Semantics semantics,
                  int is_installed);
 
-void xpost_run(enum Xpost_Input_Type input_type,
+int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type,
                const void *inputptr);
 
-void xpost_destroy(void);
+void xpost_destroy(Xpost_Context *ctx);
 
 #endif

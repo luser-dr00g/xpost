@@ -103,8 +103,8 @@ DATA_DIR(/qsort.ps)strcat run
     /.sign { dup 0 le { 0 lt { -1 }{ 0 } ifelse }{ pop 1 } ifelse } bind
 
     /DrawLine { % r g b x1 y1 x2 y2 IMAGE  .  -
-        %(DrawLine\n) print
-        %5 copy pop 4 3 roll =only ( )print 3 2 roll =only ( )print exch =only ( )print =
+        (DrawLine\n) print flush
+        5 copy pop 4 3 roll =only ( )print 3 2 roll =only ( )print exch =only ( )print =
     begin {y2 x2 y1 x1 b g r}{exch def}forall
         x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect
 			{ {y1 x1}{exch def}forall } if } if
