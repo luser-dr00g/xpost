@@ -8,8 +8,8 @@
 %(35\n) print
 %currentfile flushfile
 
-systemdict begin
-true setglobal
+systemdict begin % make these definitions in systemdict
+true setglobal   % systemdict is global, so these allocations must be global
 
 /strcat {
     2 copy
@@ -19,12 +19,12 @@ true setglobal
 } bind def
 
 /DATA_DIR 
-    /PACKAGE_DATA_DIR dup where {
+    /PACKAGE_DATA_DIR dup where { %PACKAGE_DATA_DIR is passed from the config if is_installed is true
         exch get
     }{
         pop
 		%EXE_DIR (/../../data) strcat
-        (./data)
+        (./data)  % if is_installed is false, and no PACKAGE_DATA_DIR is defined, look for ps data in CWD/data
     } ifelse
 def
 
@@ -164,6 +164,8 @@ execdict begin
     /execdepth 0 def
 end
 
+% initiate an interactive session with prompt
+% a postscript 'executive' session
 /start {
     currentglobal
     false setglobal
@@ -175,6 +177,8 @@ end
         pstack
         quit
     } if
+    % shadow the `quit` operator with this procedure which checks
+    % the depth of 'executive' nesting
     userdict /quit {
         %exit
         //execdict /quitflag true put
@@ -187,6 +191,8 @@ end
     pop //quit % the operator
 } def
 
+% execute postscript program from stdin, and handle errors,
+% but do not assume an interactive session
 /startstdin {
     {
         loadgraphics
@@ -202,6 +208,7 @@ end
     quit
 } def
 
+% execute postscript program from a named file, and handle errors.
 /startfilename { % (filename)
     /inputfilename exch def
     {
@@ -220,6 +227,8 @@ end
 } def
 %currentfile flushfile
 
+% execute a postscript program from a file object, which may represent
+% a stream with no associated "name".
 /startfile { % file-object
     (startfile\n)print
     /inputfile exch def

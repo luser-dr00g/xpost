@@ -259,7 +259,6 @@ int _intersect (real ax, real ay,  real bx, real by,
     cx -= ax;  cy -= ay;
     dx -= ax;  dy -= ay;
 
-    /* length of AB */
     distAB = sqrt(bx * bx + by * by);
 
     /* rotate AB to x-axis */
@@ -328,6 +327,8 @@ int _fillpoly (Xpost_Context *ctx,
     real maxx = -minx;
     real maxy = maxx;
     //int width;
+
+    printf("_fillpoly\n");
 
     //width = xpost_dict_get(ctx, devdic, namewidth).int_.val;
     colorspace = xpost_dict_get(ctx, devdic, namenativecolorspace);
@@ -480,11 +481,11 @@ int _fillpoly (Xpost_Context *ctx,
 
     /*--the rest of the code here calls-back to postscript (by "continuation")
         by pushing executable names on the execution-stack, and then returns.
-        The (color-space) generic loop-body is called with the
+        The (color-space-) generic loop-body is called with the
         `repeat` looping-operator.-------------------------------------------*/
 
-    /*Then construct the loop-body procedure array. Just showing you line here.
-      The whole story-line of comments for why we're not just executing them here. */
+    /*Then construct the loop-body procedure array. Just showing you the line here.
+      Read the whole story-line of comments for why we're not just executing it here. */
        //xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "]")));
 
     /*Then, after the loop-body array is constructed, we need to call cvx on it. */
@@ -507,7 +508,7 @@ int _fillpoly (Xpost_Context *ctx,
                          ^ make executable
                    ^ call the loop operator
 
-      So the sequence in C should be, and is:
+      So the sequence in C is:
      */
 
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( namerepeat));

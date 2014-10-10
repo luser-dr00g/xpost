@@ -804,7 +804,7 @@ int initalldata(const char *device)
     return 1;
 }
 
-/* FIXME remove duplication of effort here and in xpost_main.c
+/* FIXME remove duplication of effort here and in bin/xpost_main.c
          (ie. there should be 1 table, not 2)
 
     Generates postscript code to initialize the selected device
@@ -954,7 +954,7 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
-int xpost_create(const char *device,
+Xpost_Context *xpost_create(const char *device,
                  enum Xpost_Output_Type output_type,
                  const void *outputptr,
                  enum Xpost_Showpage_Semantics semantics,
@@ -991,7 +991,7 @@ int xpost_create(const char *device,
                               xpost_interpreter_set_initializing,
                               xpost_interpreter_alloc_local_memory,
                               xpost_interpreter_alloc_global_memory))
-        return 0;
+        return NULL;
 #endif
 
     nextid = 0; //reset process counter
@@ -1000,7 +1000,7 @@ int xpost_create(const char *device,
     ret = initalldata(device);
     if (!ret)
     {
-        return 0;
+        return NULL;
     }
 
     /* extract systemdict and userdict for additional definitions */
@@ -1018,7 +1018,7 @@ int xpost_create(const char *device,
     if (ret)
     {
         XPOST_LOG_ERR("%s error in copyudtosd", errorname[ret]);
-        return 0;
+        return NULL;
     }
 
     /* make systemdict readonly */
@@ -1026,14 +1026,14 @@ int xpost_create(const char *device,
     if (!xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY)))
     {
         XPOST_LOG_ERR("cannot replace systemdict in dict stack");
-        return 0;
+        return NULL;
     }
 
-    return 1;
+    return xpost_ctx;
 }
 
 
-void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
+int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type, const void *inputptr)
 {
     Xpost_Object lsav;
     int llev;
@@ -1057,14 +1057,16 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
     case XPOST_INPUT_FILEPTR:
         ps_file_ptr = inputptr;
         break;
-    case XPOST_INPUT_RESUME:
+    case XPOST_INPUT_RESUME: /* resuming a returned session, skip startup */
         goto run;
     }
 
     /* prime the exec stack
-       so it starts with 'start*',
-       and if it ever gets to the bottom, it quits.  */
-    xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_operator_cons(xpost_ctx, "quit", NULL,0,0));
+       so it starts with a 'start*' procedure,
+       and if it ever gets to the bottom, it quits.
+       These procedures are all defined in data/init.ps
+     */
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
     /*
        if ps_file is NULL:
          if stdin is a tty
@@ -1078,52 +1080,54 @@ void xpost_run(enum Xpost_Input_Type input_type, const void *inputptr)
     if (ps_file)
     {
         printf("ps_file\n");
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(xpost_string_cons(xpost_ctx, strlen(ps_file), ps_file)));
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startfilename")));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(xpost_string_cons(ctx, strlen(ps_file), ps_file)));
+        xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "startfilename")));
     }
     else if (ps_file_ptr)
     {
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_object_cvlit(xpost_file_cons(xpost_ctx->lo, ps_file_ptr)));
-        xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startfile")));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(xpost_file_cons(ctx->lo, ps_file_ptr)));
+        xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "startfile")));
     }
     else
     {
         if (isatty(fileno(stdin)))
-            xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "start")));
+            xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "start")));
         else
-            xpost_stack_push(xpost_ctx->lo, xpost_ctx->es, xpost_object_cvx(xpost_name_cons(xpost_ctx, "startstdin")));
+            xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "startstdin")));
     }
 
-    (void) xpost_save_create_snapshot_object(xpost_ctx->gl);
-    lsav = xpost_save_create_snapshot_object(xpost_ctx->lo);
+    (void) xpost_save_create_snapshot_object(ctx->gl);
+    lsav = xpost_save_create_snapshot_object(ctx->lo);
 
     /* Run! */
 run:
     _initializing = 0;
-    xpost_ctx->quit = 0;
-    xpost_ctx->state = C_RUN;
-    ret = mainloop(xpost_ctx);
+    ctx->quit = 0;
+    ctx->state = C_RUN;
+    ret = mainloop(ctx);
 
     if (ret == 1){
-        Xpost_Object sem = xpost_dict_get(xpost_ctx,
-            xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 0),
-            xpost_name_cons(xpost_ctx, "ShowpageSemantics"));
+        Xpost_Object sem = xpost_dict_get(ctx,
+            xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
+            xpost_name_cons(ctx, "ShowpageSemantics"));
         if (sem.int_.val == XPOST_SHOWPAGE_RETURN)
-            return;
+            return yieldtocaller;
     }
 
-    xpost_save_restore_snapshot(xpost_ctx->gl);
-    xpost_memory_table_get_addr(xpost_ctx->lo,
+    xpost_save_restore_snapshot(ctx->gl);
+    xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-    for ( llev = xpost_stack_count(xpost_ctx->lo, vs);
+    for ( llev = xpost_stack_count(ctx->lo, vs);
             llev > lsav.save_.lev;
             llev-- )
     {
-        xpost_save_restore_snapshot(xpost_ctx->lo);
+        xpost_save_restore_snapshot(ctx->lo);
     }
+
+    return noerror;
 }
 
-void xpost_destroy(void)
+void xpost_destroy(Xpost_Context *ctx)
 {
     //xpost_operator_dump(ctx, 1); // is this pointer value constant?
     if (xpost_object_get_type(xpost_ctx->window_device) == dicttype)
@@ -1141,7 +1145,12 @@ void xpost_destroy(void)
     }
     printf("bye!\n");
     fflush(NULL);
-    xpost_garbage_collect(itpdata->ctab->gl, 1, 1);
-    xpost_interpreter_exit(itpdata);
-    free(itpdata);
+    //xpost_garbage_collect(itpdata->ctab->gl, 1, 1);
+    //xpost_garbage_collect(itpdata->ctab->lo, 1, 1);
+    xpost_garbage_collect(ctx->gl, 1, 1);
+    xpost_garbage_collect(ctx->lo, 1, 1);
+
+    /* exit if all contexts are destroyed */
+    //xpost_interpreter_exit(itpdata);
+    //free(itpdata);
 }

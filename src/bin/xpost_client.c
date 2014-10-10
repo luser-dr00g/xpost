@@ -23,15 +23,18 @@ char *prog =
     "showpage\n";
 
 int main() {
+    Xpost_Context *ctx;
     void *buffer_type_object;
+    int ret;
+
     xpost_init();
-    if (!xpost_create("bgr",
+    if (!(ctx = xpost_create("bgr",
             XPOST_OUTPUT_BUFFEROUT,
             &buffer_type_object,
             XPOST_SHOWPAGE_RETURN,
-            1))
+            1)))
         fprintf(stderr, "unable to create interpreter context"), exit(0);
-    xpost_run(XPOST_INPUT_STRING, prog);
+    ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
     {
         unsigned char *buffer = buffer_type_object;
         int i,j;
@@ -54,7 +57,7 @@ int main() {
         }
         fclose(fp);
     }
-    xpost_destroy();
+    xpost_destroy(ctx);
     free(buffer_type_object);
     xpost_quit();
     return 0;
