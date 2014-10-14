@@ -1,5 +1,8 @@
 (loading gstate.ps...)print
 
+% gstatetemplate yields a freshly-initialized dictionary
+% with the following values. currmatrix and scratchmatrix
+% are newly-allocated arrays.
 /gstatetemplate <<
     /colorspace /DeviceGray
     /colorcomp1 0
@@ -21,8 +24,8 @@
     /currfont 1 dict
     /device DEVICE
 >> def
-/gstatetemplate { //gstatetemplate
-    dup /currmatrix [ 1 0 0 1 0 0 ] put
+/gstatetemplate { //gstatetemplate % use template
+    dup /currmatrix [ 1 0 0 1 0 0 ] put  % allocate fresh arrays
     dup /scratchmatrix [ 1 0 0 1 0 0 ] put
 } def
 
@@ -40,7 +43,7 @@
             def
         }{
             dup type /dicttype eq {
-                dup maxlength dict gstatecopy
+                dup maxlength dict deepcopy
                 def
             }{
                 def
@@ -57,7 +60,7 @@
         dup type /arraytype eq
         1 index xcheck not and { % key val
             1 index % key val key
-            currentdict 1 index known { % key val key
+            currentdict 1 index known { % key val key  (key known in currentdict)
                 currentdict exch get % key val dict2-val
                 2 copy length exch length exch % key val dict2-val n d2-n
                 le {
@@ -68,15 +71,20 @@
                     copy
                     def
                 } ifelse
-            }{ % key val key
+            }{ % key val key   (key not known in currentdict)
                 exch % key key val
                 dup length array % key key val val2
                 copy % key key val2
                 def
                 pop
             } ifelse
-        }{
-            def
+        }{  % not arraytype
+            1 index /currpath eq {
+                %1 dict deepcopy % perform deep copy on path dict
+                def
+            }{
+                def
+            } ifelse
         } ifelse
     } forall
     currentdict end
@@ -89,6 +97,7 @@ graphicsdict begin
     /gptr gptr 1 add def
     gptr gstackarray length ge { error } if
     gstackarray gptr gstate currentgstate
+    currentgstate dup /currpath get 1 dict deepcopy put % make a new copy of path
     put
 end
 } def
@@ -147,7 +156,7 @@ end
 } def
 
 % gstate  currentgstate  gstate
-% copy current graphics state into gstate
+% copy current graphics state into given gstate object
 /currentgstate {
     graphicsdict /currgstate get exch gstatecopy
 } def
