@@ -78,12 +78,32 @@ extern int TRACE;
 int xpost_interpreter_init(Xpost_Interpreter *itp, const char *device);
 void xpost_interpreter_exit(Xpost_Interpreter *itp);
 
+/*
+   Specify the behavior the interpreter should take when executing `showpage`.
+   DEFAULT is to print "----showpage----\n" to stdout and read and discard a
+   line of text from stdin (ie. wait for return). NOPAUSE bypasses this action
+   but still performs a "flush" of the graphics device. RETURN causes the
+   interpreter to return control to its caller; the suspended context may be
+   resumed by calling xpost_run with an input type of RESUME.
+ */
 enum Xpost_Showpage_Semantics {
     XPOST_SHOWPAGE_DEFAULT,
     XPOST_SHOWPAGE_NOPAUSE,
     XPOST_SHOWPAGE_RETURN
 };
 
+/*
+   Specify the interpretation of the outputptr parameter to xpost_create().
+   DEFAULT ignores outputptr. FILENAME treats outputptr as a char* to a
+   zero-terminated OS path string (@@). BUFFERIN will treat outputptr as an
+   unsigned char * and render directly into this memory (*). BUFFEROUT treats
+   outputptr as an unsigned char ** and malloc()s a new buffer and assigns
+   it to the unsigned char * which outputptr points to.
+
+   (*) not currently implemented.
+   (@@) implemented in pgm and ppm devices.
+   (###)
+ */
 enum Xpost_Output_Type {
     XPOST_OUTPUT_DEFAULT,
     XPOST_OUTPUT_FILENAME,
@@ -91,6 +111,16 @@ enum Xpost_Output_Type {
     XPOST_OUTPUT_BUFFEROUT
 };
 
+/*
+   Specify the interpretation of the inputptr parameter to xpost_run().
+   STRING treats inputptr as a char * to an zero-terminated ascii string,
+   writes the whole string into a temporary file and falls through to the
+   FILEPTR case. FILEPTR treats inputptr as a FILE *, creates a postscript
+   file object and pushes it on the execution stack (scheduling it to 
+   execute). FILENAME treats inputptr as a char * to a zero-terminated OS
+   path string, and pushes the path string itself, scheduling a procedure
+   to execute it. RESUME bypasses any execution scheduling.
+ */
 enum Xpost_Input_Type {
     XPOST_INPUT_STRING,
     XPOST_INPUT_FILENAME,
@@ -100,6 +130,11 @@ enum Xpost_Input_Type {
 
 /* 3 simple top-level functions */
 
+/*
+   The is_installed parameter controls whether the interpreter should look
+   to the standard locations for its postscript initialization files or
+   it should look for these files in "$CWD/data/". 
+ */
 Xpost_Context *xpost_create(const char *device,
                  enum Xpost_Output_Type output_type,
                  const void *outputptr,

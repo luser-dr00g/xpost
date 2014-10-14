@@ -102,12 +102,12 @@ DATA_DIR(/qsort.ps)strcat run
 			{ {y1 x1}{exch def}forall } if } if
         x2 width ge { x1 y1 x2 y2 width 0 width height .intersect
 			{ {y2 x2}{exch def}forall } if } if
-        y1 width ge { x1 y1 x2 y2 0 height width height .intersect
+        y1 height ge { x1 y1 x2 y2 0 height width height .intersect
 			{ {y1 x1}{exch def}forall } if } if
-        y2 width ge { x1 y1 x2 y2 0 height width height .intersect
+        y2 height ge { x1 y1 x2 y2 0 height width height .intersect
 			{ {y2 x2}{exch def}forall } if } if
-        /x x1 def
-        /y y1 def
+        /xx x1 def
+        /yy y1 def
         x2 x1 sub  dup abs /dx exch def
             .sign /s1 exch def
         y2 y1 sub  dup abs /dy exch def
@@ -116,20 +116,20 @@ DATA_DIR(/qsort.ps)strcat run
         interchange { /dx dy /dy dx def def } if
         /e 2 dy mul dx sub def
         1 1 dx { pop
-            val x y currentdict PutPix
+            val xx yy currentdict PutPix
             {
                 e 0 ge not {exit} if
                 interchange {
-                    /x x s1 add def
+                    /xx xx s1 add def
                 }{
-                    /y y s2 add def
+                    /yy yy s2 add def
                 } ifelse
                 /e e 2 dx mul sub def
             } loop
             interchange {
-                /y y s2 add def
+                /yy yy s2 add def
             }{
-                /x x s1 add def
+                /xx xx s1 add def
             } ifelse
             /e e 2 dy mul add def
         } for
