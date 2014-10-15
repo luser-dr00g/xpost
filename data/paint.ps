@@ -1,4 +1,4 @@
-(loading paint.ps...)print
+/QUIET where { pop }{ (loading paint.ps...)print } ifelse
 
 % Painting Operators
 
@@ -254,4 +254,4 @@
     end
 } def
 
-(eof paint.ps\n)print
+/QUIET where { pop }{ (eof paint.ps\n)print } ifelse

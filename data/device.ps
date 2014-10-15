@@ -1,4 +1,4 @@
-(loading device.ps...\n)print
+/QUIET where { pop }{ (loading device.ps...\n)print } ifelse
 
 DATA_DIR (/image.ps) strcat run  % image.ps implements device base classes
 DATA_DIR (/nulldev.ps) strcat run  % nulldevice
@@ -69,4 +69,4 @@ end
 
 } bind def
 
-(eof device.ps\n)print
+/QUIET where { pop }{ (eof device.ps\n)print } ifelse

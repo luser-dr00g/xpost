@@ -1,4 +1,4 @@
-(loading path.ps...)print
+/QUIET where { pop }{ (loading path.ps...)print } ifelse
 
 %/PSOVERRIDE null def  % define PSOVERRIDE to use full postscript implementation
 % various functions have been reimplemented in C and their definitions here deactivated.
@@ -990,4 +990,4 @@ end
 dup 0 10 dict put
 bind def
 
-(eof path.ps\n)print
+/QUIET where { pop }{ (eof path.ps\n)print } ifelse

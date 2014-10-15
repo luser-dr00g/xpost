@@ -1,4 +1,4 @@
-(loading matrix.ps...)print
+/QUIET where { pop }{ (loading matrix.ps...)print } ifelse
 
 % Coordinate System and Matrix Operators
 
@@ -206,4 +206,4 @@ end
 end
 } def
 
-(eof matrix.ps\n)print
+/QUIET where { pop }{ (eof matrix.ps\n)print } ifelse

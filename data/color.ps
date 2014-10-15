@@ -1,4 +1,4 @@
-(loading color.ps...)print
+/QUIET where { pop }{ (loading color.ps...)print } ifelse
 
 
 /setcolorspace {
@@ -159,4 +159,4 @@
         get exec
 } bind def
 
-(eof color\n)print
+/QUIET where { pop }{ (eof color\n)print } ifelse

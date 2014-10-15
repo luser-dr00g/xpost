@@ -1,4 +1,4 @@
-(loading pgmimage.ps...)print
+/QUIET where { pop }{ (loading pgmimage.ps...)print } ifelse
 
 DATA_DIR(/qsort.ps)strcat run
 
@@ -604,4 +604,4 @@ end } def
 } pop
 
 
-(eof pgmimage.ps\n)print
+/QUIET where { pop }{ (eof pgmimage.ps\n)print } ifelse

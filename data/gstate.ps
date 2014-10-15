@@ -1,4 +1,4 @@
-(loading gstate.ps...)print
+/QUIET where { pop }{ (loading gstate.ps...)print } ifelse
 
 % gstatetemplate yields a freshly-initialized dictionary
 % with the following values. currmatrix and scratchmatrix
@@ -96,9 +96,8 @@
 graphicsdict begin
     /gptr gptr 1 add def
     gptr gstackarray length ge { error } if
-    gstackarray gptr gstate currentgstate
-    currentgstate dup /currpath get 1 dict deepcopy put % make a new copy of path
-    put
+    gstackarray gptr gstate currentgstate put % push copy on stack
+    currgstate /currpath 2 copy get 1 dict deepcopy put % make a new working copy of path
 end
 } def
 
@@ -134,7 +133,7 @@ end
     break
     gstate setgstate
     initmatrix
-    matrix currentmatrix ==
+    /QUIET where { pop }{ matrix currentmatrix == } ifelse
     %(initclip)=
     initclip
     %(erasepage)=
@@ -242,4 +241,4 @@ end
 } def
 
 
-(eof gstate.ps\n)print
+/QUIET where { pop }{ (eof gstate.ps\n)print } ifelse

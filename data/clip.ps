@@ -1,4 +1,4 @@
-(loading clip.ps...)print
+/QUIET where { pop }{ (loading clip.ps...)print } ifelse
 
 /initclip {
     %(initclip)=
@@ -316,4 +316,4 @@ end }
 bind
 def
 
-(eof clip.ps\n)print
+/QUIET where { pop }{ (eof clip.ps\n)print } ifelse

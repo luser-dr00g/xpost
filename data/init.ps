@@ -3,7 +3,7 @@
 %systemdict /ud userdict put %trigger backup error handler
 
 %procedures in systemdict
-(loading init.ps...\n) print
+/QUIET where { pop }{ (loading init.ps...\n) print } ifelse
 
 %(35\n) print
 %currentfile flushfile
@@ -29,7 +29,7 @@ true setglobal   % systemdict is global, so these allocations must be global
 def
 
 %(EXE_DIR =) print EXE_DIR print (\n) print
-(DATA_DIR =) print DATA_DIR print (\n) print
+/QUIET where { pop }{ (DATA_DIR =) print DATA_DIR print (\n) print } ifelse
 
 %/product (Xpost) def % now an operator in xpost_op_misc.c
 %/version (0) def % now an operator in xpost_op_misc.c
@@ -560,7 +560,7 @@ end % userdict
         DATA_DIR (/graphics.ps) strcat run
         userdict /GRAPHICS_LOADED true put
     } ifelse
-    (graphics loaded, calling initgraphics)=
+    /QUIET where { pop }{ (graphics loaded, calling initgraphics\n)print } ifelse
 	userdict /USEDRAWLINE true put
 	initgraphics
 } def
@@ -598,5 +598,5 @@ false setglobal
 
 DATA_DIR (/prepr.ps) strcat run  % use nifty preview prompt!
 
-(eof init.ps\n)print
+/QUIET where { pop }{ (eof init.ps\n)print } ifelse
 %loadgraphics %called by start* procs
