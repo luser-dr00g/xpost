@@ -1,6 +1,6 @@
 % Type 3 font handling
 
-(loading font.ps...)print
+/QUIET where { pop }{ (loading font.ps...)print } ifelse
 
 /definefont { % /fontname -dict-
     dup type /dicttype ne
@@ -247,5 +247,5 @@
     } ifelse
 } def
 
-(eof font.ps\n)print
+/QUIET where { pop }{ (eof font.ps\n)print } ifelse
 

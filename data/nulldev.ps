@@ -1,4 +1,4 @@
-(loading nulldev.ps...)print
+/QUIET where { pop }{ (loading nulldev.ps...)print } ifelse
 
 /DEVICE { graphicsdict /currgstate get /device get } def
 /nulldevice {
@@ -84,4 +84,4 @@
     }
 >> def
 
-(eof nulldev.ps\n)print
+/QUIET where { pop }{ (eof nulldev.ps\n)print } ifelse

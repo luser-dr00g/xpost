@@ -125,7 +125,7 @@ unsigned int nextid = 0;
 static int xpost_interpreter_cid_init(unsigned int *cid)
 {
     unsigned int startid = nextid;
-    printf("cid_init\n");
+    //printf("cid_init\n");
     while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 )
     {
         if (nextid == startid + MAXCONTEXT)
@@ -134,7 +134,6 @@ static int xpost_interpreter_cid_init(unsigned int *cid)
             return 0;
         }
     }
-    //return nextid;
     *cid = nextid;
     return 1;
 }

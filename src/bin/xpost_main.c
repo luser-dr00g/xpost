@@ -47,7 +47,10 @@
 #include "xpost.h"
 #include "xpost_memory.h" /* Xpost_Memory_File */
 #include "xpost_object.h" /* Xpost_Object */
+#include "xpost_stack.h"
 #include "xpost_context.h" /* Xpost_Context */
+#include "xpost_dict.h"
+#include "xpost_name.h"
 #include "xpost_log.h" /* XPOST_LOG_ERR */
 
 #include "xpost_pathname.h" /* xpost_is_installed exedir */
@@ -126,6 +129,7 @@ _xpost_main_usage(const char *filename)
     printf("  -D, --device-list             device list\n");
     printf("  -d, --device=[STRING]         device name\n");
     printf("  -g, --geometry=WxH{+-}X{+-}Y  geometry specification\n");
+    printf("  -q, --quiet                   suppress interpreter messages\n");
     printf("  -L, --license                 show program license\n");
     printf("  -V, --version                 show program version\n");
     printf("  -h, --help                    show this message\n");
@@ -235,6 +239,7 @@ int main(int argc, char *argv[])
     const char *device = NULL;
     const char *ps_file = NULL;
     const char *filename = argv[0];
+    int quiet = 0;
     int have_device;
     int width = -1;
     int height = -1;
@@ -309,6 +314,11 @@ int main(int argc, char *argv[])
                 _xpost_main_device_list();
                 return EXIT_SUCCESS;
             }
+            else if ((!strcmp(argv[i], "-q")) ||
+                     (!strcmp(argv[i], "--quiet")))
+            {
+                quiet = 1;
+            }
             else XPOST_MAIN_IF_OPT("-o", "--output=", output_file)
             else XPOST_MAIN_IF_OPT("-d", "--device=", device)
             else XPOST_MAIN_IF_OPT("-g", "--geometry=", geometry)
@@ -368,6 +378,14 @@ int main(int argc, char *argv[])
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
+    }
+    
+    if (quiet)
+    {
+        xpost_dict_put(ctx,
+                xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
+                xpost_name_cons(ctx, "QUIET"),
+                null);
     }
 
     xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file);

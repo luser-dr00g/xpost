@@ -4,7 +4,7 @@
 % run from init.ps
 %
 
-(loading err.ps...\n) print
+/QUIET where { pop }{ (loading err.ps...\n) print } ifelse
 
 currentglobal
 false setglobal
@@ -18,7 +18,7 @@ $error begin
     /errorname null def
     /initializing true def
 end
-($error installed...)print
+/QUIET where { pop }{ ($error installed...)print } ifelse
 
 /.error {
     false setglobal
@@ -50,7 +50,7 @@ end
     interrupt
 } def
 /signalerror /.error load def
-(.error installed...)print
+/QUIET where { pop }{ (.error installed...)print } ifelse
 
 /errordict 28 dict def
 errordict begin
@@ -100,11 +100,11 @@ errordict begin
     /interrupt { stop } def
     /unknownerror { /unknownerror //.error exec} def
 end
-(errordict installed...)print
+/QUIET where { pop }{ (errordict installed...)print } ifelse
 
 /handleerror { errordict /handleerror get exec } def
 /interrupt { stop } def
 
 end
 setglobal
-(\neof err.ps\n)print
+/QUIET where { pop }{ (\neof err.ps\n)print } ifelse

@@ -1,4 +1,4 @@
-(loading graphics.ps...\n)print
+/QUIET where { pop }{ (loading graphics.ps...\n)print } ifelse
 
 % implement xpost-specifics
 % to test on ghostscript
@@ -34,10 +34,9 @@ graphicsdict /currgstate get /device DEVICE put
 
 end %userdict
 
+/QUIET where { pop }{ (eof graphics.ps\n)print } ifelse
 
-/TESTGRAPHICS where {pop}{
-    (eof graphics.ps)=
-    currentfile flushfile} ifelse
+/TESTGRAPHICS where {pop}{ currentfile flushfile} ifelse
 (TESTGRAPHICS graphics)=
 
 
@@ -146,4 +145,3 @@ pathforall
 
 clear
 
-(eof graphics.ps\n)print
