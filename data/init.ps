@@ -230,7 +230,7 @@ end
 % execute a postscript program from a file object, which may represent
 % a stream with no associated "name".
 /startfile { % file-object
-    (startfile\n)print
+    /QUIET where { pop }{ (startfile\n)print } ifelse
     /inputfile exch def
     {
         loadgraphics
