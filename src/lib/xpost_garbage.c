@@ -248,7 +248,7 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
             ret = _xpost_garbage_mark_ent(mem, xpost_object_get_ent(o));
             if (!ret)
             {
-                XPOST_LOG_ERR("cannot mark array");
+                XPOST_LOG_ERR("cannot mark dict");
                 return 0;
             }
             ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(o), &ad);
@@ -278,7 +278,7 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
         ret = _xpost_garbage_mark_ent(mem, xpost_object_get_ent(o));
         if (!ret)
         {
-            XPOST_LOG_ERR("cannot mark array");
+            XPOST_LOG_ERR("cannot mark string");
             return 0;
         }
         break;
@@ -290,7 +290,7 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
             ret = _xpost_garbage_mark_ent(mem, o.mark_.padw);
             if (!ret)
             {
-                XPOST_LOG_ERR("cannot mark array");
+                XPOST_LOG_ERR("cannot mark file");
                 return 0;
             }
         }
@@ -600,7 +600,7 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
         }
 
     } else { /* local */
-        printf("collect!\n");
+        //printf("collect!\n");
         _xpost_garbage_unmark(mem);
 
         ret = xpost_memory_table_get_addr(mem,

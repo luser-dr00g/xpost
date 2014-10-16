@@ -1151,7 +1151,9 @@ void xpost_destroy(Xpost_Context *ctx)
                 XPOST_LOG_ERR("%s error destroying window device", errorname[ret]);
         }
     }
-    printf("bye!\n");
+int xpost_dict_known_key(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
+    if (xpost_dict_known_key(ctx, ctx->gl, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), xpost_name_cons(ctx, "QUIET")))
+        printf("bye!\n");
     fflush(NULL);
     //xpost_garbage_collect(itpdata->ctab->gl, 1, 1);
     //xpost_garbage_collect(itpdata->ctab->lo, 1, 1);
