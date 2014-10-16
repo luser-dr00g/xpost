@@ -139,6 +139,7 @@ Xpost_Context *xpost_create(const char *device,
                  enum Xpost_Output_Type output_type,
                  const void *outputptr,
                  enum Xpost_Showpage_Semantics semantics,
+                 int quiet,
                  int is_installed);
 
 int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type,
