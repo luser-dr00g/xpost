@@ -957,6 +957,7 @@ Xpost_Context *xpost_create(const char *device,
                  enum Xpost_Output_Type output_type,
                  const void *outputptr,
                  enum Xpost_Showpage_Semantics semantics,
+                 int quiet,
                  int is_installed)
 {
     Xpost_Object sd, ud;
@@ -1010,6 +1011,14 @@ Xpost_Context *xpost_create(const char *device,
                    device, outfile, bufferin, bufferout,
                    semantics,
                    exedir, is_installed);
+    
+    if (quiet)
+    {
+        xpost_dict_put(xpost_ctx,
+                sd /*xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)*/ ,
+                xpost_name_cons(xpost_ctx, "QUIET"),
+                null);
+    }
 
     loadinitps(xpost_ctx, exedir, is_installed);
 

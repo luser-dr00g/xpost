@@ -47,10 +47,7 @@
 #include "xpost.h"
 #include "xpost_memory.h" /* Xpost_Memory_File */
 #include "xpost_object.h" /* Xpost_Object */
-#include "xpost_stack.h"
 #include "xpost_context.h" /* Xpost_Context */
-#include "xpost_dict.h"
-#include "xpost_name.h"
 #include "xpost_log.h" /* XPOST_LOG_ERR */
 
 #include "xpost_pathname.h" /* xpost_is_installed exedir */
@@ -130,6 +127,7 @@ _xpost_main_usage(const char *filename)
     printf("  -d, --device=[STRING]         device name\n");
     printf("  -g, --geometry=WxH{+-}X{+-}Y  geometry specification\n");
     printf("  -q, --quiet                   suppress interpreter messages\n");
+    printf("  -v, --verbose                 do not go quiet into that good night\n");
     printf("  -L, --license                 show program license\n");
     printf("  -V, --version                 show program version\n");
     printf("  -h, --help                    show this message\n");
@@ -319,6 +317,11 @@ int main(int argc, char *argv[])
             {
                 quiet = 1;
             }
+            else if ((!strcmp(argv[i], "-v")) ||
+                     (!strcmp(argv[i], "--verbose")))
+            {
+                quiet = 0;
+            }
             else XPOST_MAIN_IF_OPT("-o", "--output=", output_file)
             else XPOST_MAIN_IF_OPT("-d", "--device=", device)
             else XPOST_MAIN_IF_OPT("-g", "--geometry=", geometry)
@@ -336,17 +339,23 @@ int main(int argc, char *argv[])
     }
 
     /* parse geometry if any */
-    printf("geom 1 : %s\n", geometry);
+    if (!quiet)
+    {
+        printf("geom 1 : %s\n", geometry);
+    }
     have_geometry = _xpost_geometry_parse(geometry, &width, &height, &xoffset, &xsign, &yoffset, &ysign);
     if (have_geometry)
     {
         XPOST_LOG_ERR("bad formatted geometry");
         goto quit_xpost;
     }
-    printf("geom 2 : %dx%d%c%d%c%d\n",
-           width, height,
-           (xsign == 1) ? '+' : '-', xoffset,
-           (ysign == 1) ? '+' : '-', yoffset);
+    if (!quiet)
+    {
+        printf("geom 2 : %dx%d%c%d%c%d\n",
+               width, height,
+               (xsign == 1) ? '+' : '-', xoffset,
+               (ysign == 1) ? '+' : '-', yoffset);
+    }
 
     /* check devices */
     have_device = 0;
@@ -374,18 +383,11 @@ int main(int argc, char *argv[])
                       XPOST_OUTPUT_FILENAME,
                       output_file,
                       XPOST_SHOWPAGE_DEFAULT,
+                      quiet,
                       is_installed)))
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
-    }
-    
-    if (quiet)
-    {
-        xpost_dict_put(ctx,
-                xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
-                xpost_name_cons(ctx, "QUIET"),
-                null);
     }
 
     xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file);
