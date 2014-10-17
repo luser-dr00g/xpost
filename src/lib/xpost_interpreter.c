@@ -1043,8 +1043,8 @@ Xpost_Context *xpost_create(const char *device,
 
 int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type, const void *inputptr)
 {
-    Xpost_Object lsav;
-    int llev;
+    Xpost_Object lsav = null;
+    int llev = 0;
     unsigned int vs;
     const char *ps_str = NULL;
     const char *ps_file = NULL;
@@ -1087,7 +1087,7 @@ int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type, const void *
     */
     if (ps_file)
     {
-        printf("ps_file\n");
+        //printf("ps_file\n");
         xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(xpost_string_cons(ctx, strlen(ps_file), ps_file)));
         xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "startfilename")));
     }
@@ -1125,11 +1125,14 @@ run:
     xpost_save_restore_snapshot(ctx->gl);
     xpost_memory_table_get_addr(ctx->lo,
             XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
-    for ( llev = xpost_stack_count(ctx->lo, vs);
-            llev > lsav.save_.lev;
-            llev-- )
+    if (xpost_object_get_type(lsav) == savetype)
     {
-        xpost_save_restore_snapshot(ctx->lo);
+        for ( llev = xpost_stack_count(ctx->lo, vs);
+                llev > lsav.save_.lev;
+                llev-- )
+        {
+            xpost_save_restore_snapshot(ctx->lo);
+        }
     }
 
     return noerror;
@@ -1151,10 +1154,11 @@ void xpost_destroy(Xpost_Context *ctx)
                 XPOST_LOG_ERR("%s error destroying window device", errorname[ret]);
         }
     }
-int xpost_dict_known_key(Xpost_Context *ctx, /*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d, Xpost_Object k);
-    if (xpost_dict_known_key(ctx, ctx->gl, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), xpost_name_cons(ctx, "QUIET")))
+    if (!xpost_dict_known_key(ctx, ctx->gl, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), xpost_name_cons(ctx, "QUIET")))
+    {
         printf("bye!\n");
-    fflush(NULL);
+        fflush(NULL);
+    }
     //xpost_garbage_collect(itpdata->ctab->gl, 1, 1);
     //xpost_garbage_collect(itpdata->ctab->lo, 1, 1);
     xpost_garbage_collect(ctx->gl, 1, 1);
