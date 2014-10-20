@@ -40,7 +40,7 @@ int main() {
     ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
     printf("executed program. xpost_run returned %s\n", ret? "yieldtocaller": "zero");
     {
-        typedef struct { unsigned char blue, green, red, zero; } pixel;
+        typedef struct { unsigned char blue, green, red; } pixel;
         pixel *buffer = buffer_type_object;
         int i,j;
         FILE *fp = fopen("xpost_client_out.ppm", "w");

@@ -62,28 +62,34 @@
 #include "xpost_oplib.h"
 
 static
-Xpost_Object namedollarerror;
+Xpost_Object namedollarerror; /* cached result of xpost_name_cons(ctx, "$error") to reduce time in error handler */
 
-int TRACE = 0;
-Xpost_Interpreter *itpdata;
-static int _initializing = 1;
+int TRACE = 0;             /* output trace log */
+Xpost_Interpreter *itpdata;  /* the global interpreter instance, containing all contexts and memory files */
+static int _initializing = 1;  /* garbage collect does not run while _initializing is true.
+ 				  a getter function is exported in the memory file struct
+				  for the gc to access this global without #include'ing interpreter.h
+				  which would create a circular dependency. */
 
 int eval(Xpost_Context *ctx);
 int mainloop(Xpost_Context *ctx);
 void init(void);
 void xit(void);
 
+/* getter function for _initializing, for export */
 int xpost_interpreter_get_initializing(void)
 {
     return _initializing;
 }
 
+/* setter function for _initializing, for consistency */
 void xpost_interpreter_set_initializing(int i)
 {
     _initializing = i;
 }
 
-/* find the next unused mfile in the global memory table */
+/*  allocate a global memory file
+    find the next unused mfile in the global memory table */
 static Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
 {
     int i;
@@ -99,7 +105,8 @@ static Xpost_Memory_File *xpost_interpreter_alloc_global_memory(void)
     return NULL;
 }
 
-/* find the next unused mfile in the local memory table */
+/* allocate a local memory file
+   find the next unused mfile in the local memory table */
 static Xpost_Memory_File *xpost_interpreter_alloc_local_memory(void)
 {
     int i;
@@ -121,6 +128,8 @@ unsigned int nextid = 0;
 
 /* allocate a context-id and associated context struct
    returns cid;
+   a context in state zero is considered available for allocation,
+   this corresponds to the C_FREE enumeration constant.
  */
 static int xpost_interpreter_cid_init(unsigned int *cid)
 {
@@ -140,7 +149,10 @@ static int xpost_interpreter_cid_init(unsigned int *cid)
 
 /* adapter:
            ctx <- cid
-   yield pointer to context struct given cid */
+   yield pointer to context struct given cid
+   this function is exported via function-pointer in the memory file struct
+   so the garbage collector can discover relevant contexts given only a memory file.
+ */
 Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid)
 {
     //TODO reject cid 0
@@ -148,6 +160,14 @@ Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid)
 }
 
 
+/* initialize the name string stacks and name search trees (per memory file).
+   seed the search trees.
+   initialize and populate the optab and systemdict (global memory file).
+   push systemdict on dict stack.
+   allocate and push globaldict on dict stack.
+   allocate and push userdict on dict stack.
+   return 1 on success, 0 on failure
+ */
 static
 int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device)
 {
@@ -227,7 +247,9 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
 }
 
 
-/* initialize itpdata */
+/* initialize itpdata.
+   create and initialize a single context in ctab[0]
+ */
 int xpost_interpreter_init(Xpost_Interpreter *itpptr, const char *device)
 {
     int ret;
@@ -255,13 +277,17 @@ int xpost_interpreter_init(Xpost_Interpreter *itpptr, const char *device)
     return 1;
 }
 
-/* destroy itpdata */
+/* destroy context in ctab[0] */
 void xpost_interpreter_exit(Xpost_Interpreter *itpptr)
 {
     xpost_context_exit(&itpptr->ctab[0]);
 }
 
 
+/*
+ *  Interpreter eval##type() actions.
+ *
+ */
 
 /* function type for interpreter action pointers */
 typedef
@@ -493,16 +519,18 @@ void initevaltype(void)
     XPOST_OBJECT_TYPES(AS_EVALINIT)
 }
 
+
+/*
+   call window device's event_handler function
+   which should check for Events or Messages from the
+   underlying Window System, process one or more of them,
+   and then return 0.
+   it should leave all stacks undisturbed.
+ */
 int idleproc (Xpost_Context *ctx)
 {
     int ret;
-    /*
-       call window device's event_handler function
-       which should check for Events or Messages from the
-       underlying Window System, process one or more of them,
-       and then return 0.
-       it should leave all stacks undisturbed.
-     */
+
     if ((xpost_object_get_type(ctx->event_handler) == operatortype) &&
         (xpost_object_get_type(ctx->window_device) == dicttype))
     {
@@ -523,6 +551,9 @@ int idleproc (Xpost_Context *ctx)
     return 0;
 }
 
+/*
+   check basic pointers and addresses for sanity
+ */
 static
 int validate_context(Xpost_Context *ctx)
 {
@@ -559,14 +590,22 @@ int validate_context(Xpost_Context *ctx)
     return 1;
 }
 
-/* one iteration of the central loop */
+/*
+   one iteration of the central loop
+   called repeatedly by mainloop()
+ */
 int eval(Xpost_Context *ctx)
 {
     int ret;
     Xpost_Object t = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
 
-    ctx->currentobject = t; /* for _onerror to determine
-                               if hold stack contents are restoreable */
+    ctx->currentobject = t; /* for _onerror to determine if hold stack contents are restoreable.
+                               if opexec(opcode) discovers opcode != ctx->currentobject.mark_.padw
+                               it sets a flag indicating the hold stack does not contain
+                               ctx->currentobject's arguments.
+                               if an error is encountered, currentobject is reported as the 
+                               errant object since it is the "entry point" to the interpreter.
+                             */
 
     if (!validate_context(ctx))
         return unregistered;
@@ -587,7 +626,7 @@ int eval(Xpost_Context *ctx)
     if (ret)
         return ret;
 
-    {
+    { /* check object for sanity before using jump table */
         Xpost_Object_Type type = xpost_object_get_type(t);
         if (type == invalidtype || type >= XPOST_OBJECT_NTYPES)
             return unregistered;
@@ -668,6 +707,12 @@ void _onerror(Xpost_Context *ctx,
 }
 
 
+/*
+   select a new context to execute and return it
+   scan for the next context in the C_RUN state
+   along the way, change C_WAIT contexts to C_RUN
+   to retry wait conditions.
+ */
 static
 Xpost_Context *_switch_context(Xpost_Context *ctx)
 {
@@ -727,11 +772,20 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
    global shortcut for a single-threaded interpreter
 FIXME: "static context pointer". s.b. changed to a returned
    value from xpost_create()
+   // value now returned. this variable should be removed
  */
 Xpost_Context *xpost_ctx;
 
 
-/* the big main central interpreter loop. */
+/*
+   the big main central interpreter loop.
+   processes return codes from eval().
+   0 indicate noerror
+   yieldtocaller indicates `showpage` has been called using SHOWPAGE_RETURN semantics.
+   ioblock indicates a blocked io operation.
+   contextswitch indicates the `yield` operator has been called.
+   all other values indicate an error condition to be returned to postscript.
+ */
 int mainloop(Xpost_Context *ctx)
 {
     int ret;
@@ -763,10 +817,21 @@ ctxswitch:
 
 
 
-/* string constructor helper for literals */
+/*
+   string constructor helper for literals
+   sizeof("") is 1, ie. it includes the terminating \0 byte.
+   our ps strings are counted and do not need (and should not have)
+   a nul byte, or this byte may produce garbage output when printed.
+ */
 #define CNT_STR(s) sizeof(s)-1, s
 
-/* set global pagesize, initialize eval's jump-table */
+/*
+   set global pagesize,
+   initialize eval's jump-tabl
+   allocate global itpdata interpreter instance
+   call xpost_interpreter_init
+        which initializes the first context
+ */
 static
 int initalldata(const char *device)
 {
@@ -797,7 +862,9 @@ int initalldata(const char *device)
     }
 
     /* set global shortcut to context_0
-       (the only context in a single-threaded interpreter) */
+       (the only context in a single-threaded interpreter)
+       TODO remove this variable
+     */
     xpost_ctx = &itpdata->ctab[0];
 
     return 1;
@@ -807,6 +874,18 @@ int initalldata(const char *device)
          (ie. there should be 1 table, not 2)
 
     Generates postscript code to initialize the selected device
+
+    currentglobal false setglobal              % allocate in local memory
+    device_requires_loading? { loadXXXdevice } if  % load if necessary
+    userdict /DEVICE 612 792 newXXXdevice put  % instantiate the device
+    setglobal                                  % reset previous allocation mode
+
+    initialization of the device is deferred until the start procedure has
+    initialized graphics (importantly, the ppmimage base class).
+    the loadXXXdevice operators all specialize the ppmimage base class
+    and so must wait until it is available.
+
+    also creates the definitions PACKAGE_DATA_DIR PACKAGE_INSTALL_DIR and EXE_DIR
  */
 static
 void setlocalconfig(Xpost_Context *ctx,
@@ -901,7 +980,9 @@ void setlocalconfig(Xpost_Context *ctx,
     ctx->vmmode = LOCAL;
 }
 
-/* load init.ps and err.ps while systemdict is writeable */
+/*
+   load init.ps (which also loads err.ps) while systemdict is writeable
+ */
 static
 void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
 {
@@ -929,13 +1010,15 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
     mainloop(ctx);
 }
 
+
+/* copy userdict names to systemdict
+    Problem: This is clearly an invalidaccess,
+    and yet is required by the PLRM. Discussion:
+https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
+    The ignoreinvalidaccess exception has been isolated to this one case.
+ */
 static int copyudtosd(Xpost_Context *ctx, Xpost_Object ud, Xpost_Object sd)
 {
-    /* copy userdict names to systemdict
-        Problem: This is clearly an invalidaccess,
-        and yet is required by the PLRM. Discussion:
-https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
-     */
     Xpost_Object ed, de;
 
     ctx->ignoreinvalidaccess = 1;
@@ -953,6 +1036,10 @@ https://groups.google.com/d/msg/comp.lang.postscript/VjCI0qxkGY4/y0urjqRA1IoJ
 }
 
 
+/*
+   create an executable context using the given device,
+   output configuration, and semantics.
+ */
 Xpost_Context *xpost_create(const char *device,
                  enum Xpost_Output_Type output_type,
                  const void *outputptr,
@@ -1040,7 +1127,10 @@ Xpost_Context *xpost_create(const char *device,
     return xpost_ctx;
 }
 
-
+/*
+   execute ps program until quit, fall-through to quit,
+   SHOWPAGE_RETURN semantic, or error (default action: message, purge and quit).
+ */
 int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type, const void *inputptr)
 {
     Xpost_Object lsav = null;
@@ -1138,6 +1228,10 @@ run:
     return noerror;
 }
 
+/*
+   destroy the given context and associated memory files (if not in use by a shared context)
+   exit interpreter if all contexts are destroyed.
+ */
 void xpost_destroy(Xpost_Context *ctx)
 {
     //xpost_operator_dump(ctx, 1); // is this pointer value constant?
