@@ -249,7 +249,6 @@ int _emit (Xpost_Context *ctx,
                 *iter++ = (val) & 0xFF;     /* b */
                 *iter++ = (val>>8) & 0xFF;  /* g */
                 *iter++ = (val>>16) & 0xFF; /* r */
-                *iter++ = 0;
             }
         }
     }
