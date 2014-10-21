@@ -15,6 +15,7 @@ TODO:
 #include "xpost_object.h"
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
+#include "xpost_dev_bgr.h"
 
 char *prog =
     "%%BoundingBox: 200 300 400 500\n"
@@ -59,7 +60,7 @@ int main() {
         fclose(fp);
     }
     xpost_destroy(ctx);
-    free(buffer_type_object);
+    //free(buffer_type_object);
     xpost_quit();
     return 0;
 }

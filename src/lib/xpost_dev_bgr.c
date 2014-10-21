@@ -52,12 +52,17 @@
 #include "xpost_op_dict.h" /* call load operator for convenience */
 #include "xpost_dev_bgr.h" /* check prototypes */
 
+#define FAST_C_BUFFER
+
 typedef struct
 {
     int width, height;
     /*
      * add additional members to private struct
      */
+#ifdef FAST_C_BUFFER
+    Xpost_Bgr_Buffer *buf;
+#endif
 } PrivateData;
 
 static int _flush (Xpost_Context *ctx, Xpost_Object devdic);
@@ -133,6 +138,12 @@ int _create_cont (Xpost_Context *ctx,
      *
      */
 
+#ifdef FAST_C_BUFFER
+    {
+        /* allocate buffer header and array */
+        private.buf = malloc(sizeof(Xpost_Bgr_Buffer) + sizeof(Xpost_Bgr_Pixel)*width*height);
+    }
+#else
     { /*
          initialize the PS-level raster buffer, 
          an array of arrays of ints, each holding a 24-bit rgb value.
@@ -168,6 +179,7 @@ int _create_cont (Xpost_Context *ctx,
 
         free(rowdata);
     }
+#endif
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
@@ -178,6 +190,67 @@ int _create_cont (Xpost_Context *ctx,
     return 0;
 }
 
+#ifdef FAST_C_BUFFER
+
+static
+int _putpix (Xpost_Context *ctx,
+             Xpost_Object red,
+             Xpost_Object green,
+             Xpost_Object blue,
+             Xpost_Object x,
+             Xpost_Object y,
+             Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+
+    /* fold numbers to integertype */
+    if (xpost_object_get_type(red) == realtype)
+        red = xpost_int_cons(red.real_.val * 255.0);
+    else
+        red.int_.val *= 255;
+    if (xpost_object_get_type(green) == realtype)
+        green = xpost_int_cons(green.real_.val * 255.0);
+    else
+        green.int_.val *= 255;
+    if (xpost_object_get_type(blue) == realtype)
+        blue = xpost_int_cons(blue.real_.val * 255.0);
+    else
+        blue.int_.val *= 255;
+    if (xpost_object_get_type(x) == realtype)
+        x = xpost_int_cons(x.real_.val);
+    if (xpost_object_get_type(y) == realtype)
+        y = xpost_int_cons(y.real_.val);
+
+    /* load private data struct from string */
+    privatestr = xpost_dict_get(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+
+    /* check bounds */
+    if (x.int_.val < 0 || x.int_.val >= xpost_dict_get(ctx, devdic, namewidth).int_.val)
+        return 0;
+    if (y.int_.val < 0 || y.int_.val >= xpost_dict_get(ctx, devdic, nameheight).int_.val)
+        return 0;
+
+    {
+        Xpost_Bgr_Pixel pixel;
+        pixel.blue = blue.int_.val;
+        pixel.green = green.int_.val;
+        pixel.red = red.int_.val;
+        private.buf->data[y.int_.val * private.buf->width + x.int_.val] = pixel;
+    }
+
+    /* save private data struct in string */
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+
+    return 0;
+}
+
+#endif
 
 static
 int _flush (Xpost_Context *ctx,
@@ -219,6 +292,10 @@ int _emit (Xpost_Context *ctx,
     stride = private.width;
     height = private.height;
 
+#ifdef FAST_C_BUFFER
+    data = (unsigned char *)private.buf->data;
+#else
+
     data = malloc(stride * height * 3); 
     imgdata = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "ImgData"));
     if (xpost_object_get_type(imgdata) == invalidtype)
@@ -252,6 +329,7 @@ int _emit (Xpost_Context *ctx,
             }
         }
     }
+#endif
 
     /*pass data back to client application */
     {
@@ -339,6 +417,16 @@ int loadbgrdevicecont (Xpost_Context *ctx,
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Create"), op);
     if (ret)
         return ret;
+
+#ifdef FAST_C_BUFFER
+    op = xpost_operator_cons(ctx, "bgrPutPix", (Xpost_Op_Func)_putpix, 0, 6,
+            numbertype, numbertype, numbertype,
+            numbertype, numbertype,
+            dicttype);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "PutPix"), op);
+    if (ret)
+        return ret;
+#endif
 
     op = xpost_operator_cons(ctx, "bgrEmit", (Xpost_Op_Func)_emit, 0, 1, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Emit"), op);

@@ -31,6 +31,17 @@
 #ifndef XPOST_DEV_BGR_H
 #define XPOST_DEV_BGR_H
 
+typedef
+struct Xpost_Bgr_Pixel {
+    unsigned char blue, green, red;
+} Xpost_Bgr_Pixel;
+
+typedef
+struct Xpost_Bgr_Buffer {
+    int width, height, byte_stride;
+    Xpost_Bgr_Pixel data[1];
+} Xpost_Bgr_Buffer;
+
 /**
  * @brief install operator loadxcbdevice in systemdict
  *
