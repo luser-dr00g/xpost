@@ -43,6 +43,7 @@ src/lib/xpost_op_path.c \
 src/lib/xpost_op_font.c \
 src/lib/xpost_op_context.c \
 src/lib/xpost_dev_bgr.c \
+src/lib/xpost_dev_raster.c \
 src/lib/xpost_dev_generic.c \
 src/lib/xpost_oplib.c \
 src/lib/xpost_interpreter.c \
@@ -84,6 +85,7 @@ src/lib/xpost_op_path.h \
 src/lib/xpost_op_font.h \
 src/lib/xpost_op_context.h \
 src/lib/xpost_dev_bgr.h \
+src/lib/xpost_dev_raster.h \
 src/lib/xpost_dev_generic.h \
 src/lib/xpost_oplib.h \
 src/lib/xpost_interpreter.h \
