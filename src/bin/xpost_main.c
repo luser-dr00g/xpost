@@ -101,6 +101,7 @@ static const char *_xpost_main_devices[] =
     "xcb",
 #endif
     "bgr",
+    "raster",
     NULL
 };
 
@@ -357,17 +358,24 @@ int main(int argc, char *argv[])
                (ysign == 1) ? '+' : '-', yoffset);
     }
 
-    /* check devices */
-    have_device = 0;
-    i = 0;
-    while (_xpost_main_devices[i])
     {
-        if (strcmp(_xpost_main_devices[i], device) == 0)
+        char *devstr = strdup(device);
+        char *subdevice;
+        if ((subdevice=strchr(devstr,':')))
+            *subdevice++='\0';
+        /* check devices */
+        have_device = 0;
+        i = 0;
+        while (_xpost_main_devices[i])
         {
-            have_device = 1;
-            break;
+            if (strcmp(_xpost_main_devices[i], devstr) == 0)
+            {
+                have_device = 1;
+                break;
+            }
+            i++;
         }
-        i++;
+        free(devstr);
     }
 
     if (!have_device)

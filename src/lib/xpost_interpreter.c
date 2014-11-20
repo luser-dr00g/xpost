@@ -907,6 +907,7 @@ void setlocalconfig(Xpost_Context *ctx,
         { "gdi",  "loadwin32device", "newwin32device"    },
         { "gl",   "loadwin32device", "newwin32device"    },
         { "bgr",  "loadbgrdevice",   "newbgrdevice"      },
+        { "raster", "loadrasterdevice", "newrasterdevice" },
         { NULL, NULL, NULL }
     };
     char *strtemplate = "currentglobal false setglobal "
@@ -915,6 +916,8 @@ void setlocalconfig(Xpost_Context *ctx,
     Xpost_Object namenewdev;
     Xpost_Object newdevstr;
     int i;
+    char *devstr;
+    char *subdevice;
 
     /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
@@ -931,10 +934,17 @@ void setlocalconfig(Xpost_Context *ctx,
             xpost_object_cvlit(xpost_string_cons(ctx,
                     strlen(exedir), exedir)));
 
+    devstr = strdup(device); /*  Parse device string for mode selector "dev:mode" */
+    if ((subdevice=strchr(devstr, ':'))) {
+        *subdevice++ = '\0';
+        xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "SUBDEVICE"),
+                xpost_object_cvlit(xpost_string_cons(ctx, strlen(subdevice), subdevice)));
+    }
+
     /* define the /newdefaultdevice name called by /start */
     for (i = 0; device_strings[i][0]; i++)
     {
-        if (strcmp(device, device_strings[i][0]) == 0)
+        if (strcmp(devstr, device_strings[i][0]) == 0)
         {
             break;
         }
@@ -978,6 +988,7 @@ void setlocalconfig(Xpost_Context *ctx,
     }
 
     ctx->vmmode = LOCAL;
+    free(devstr);
 }
 
 /*

@@ -71,6 +71,7 @@
 # include "xpost_dev_xcb.h"
 #endif
 #include "xpost_dev_bgr.h"
+#include "xpost_dev_raster.h"
 
 /* no-op operator useful as a break target.
    put 'breakhere' in the postscript program,
@@ -176,6 +177,7 @@ int xpost_oplib_init_ops (Xpost_Context *ctx)
     //printf("xcb:\n");
 #endif
     xpost_oper_init_bgr_device_ops(ctx, sd);
+    xpost_oper_init_raster_device_ops(ctx, sd);
     xpost_oper_init_context_ops(ctx, sd);
 
 
