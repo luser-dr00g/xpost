@@ -128,6 +128,11 @@ enum Xpost_Input_Type {
     XPOST_INPUT_RESUME
 };
 
+enum Xpost_Set_Size {
+    XPOST_IGNORE_SIZE,
+    XPOST_USE_SIZE
+};
+
 /* 3 simple top-level functions */
 
 /*
@@ -140,7 +145,10 @@ Xpost_Context *xpost_create(const char *device,
                  const void *outputptr,
                  enum Xpost_Showpage_Semantics semantics,
                  int quiet,
-                 int is_installed);
+                 int is_installed,
+                 enum Xpost_Set_Size set_size,
+                 int width,
+                 int height);
 
 int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type,
                const void *inputptr);

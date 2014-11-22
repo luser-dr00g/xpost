@@ -114,6 +114,11 @@ XPAPI int xpost_quit(void);
  */
 XPAPI void xpost_version_get(int *maj, int *min, int *mic);
 
+#include "xpost_memory.h"
+#include "xpost_object.h"
+#include "xpost_context.h"
+#include "xpost_interpreter.h"
+
 /**
  * @}
  */
