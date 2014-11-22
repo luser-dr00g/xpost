@@ -1,7 +1,12 @@
 
 lib_LTLIBRARIES = src/lib/libxpost.la
 
-includes_HEADERS = src/lib/xpost.h
+includes_HEADERS = \
+src/lib/xpost.h \
+src/lib/xpost_memory.h \
+src/lib/xpost_object.h \
+src/lib/xpost_context.h \
+src/lib/xpost_interpreter.h
 includesdir = $(pkgincludedir)-@VMAJ@
 
 src_lib_libxpost_la_SOURCES = \
@@ -48,15 +53,12 @@ src/lib/xpost_dev_generic.c \
 src/lib/xpost_oplib.c \
 src/lib/xpost_interpreter.c \
 src/lib/xpost_compat.h \
-src/lib/xpost_context.h \
 src/lib/xpost_error.h \
 src/lib/xpost_font.h \
 src/lib/xpost_free.h \
 src/lib/xpost_log.h \
 src/lib/xpost_main.h \
 src/lib/xpost_matrix.h \
-src/lib/xpost_memory.h \
-src/lib/xpost_object.h \
 src/lib/xpost_save.h \
 src/lib/xpost_stack.h \
 src/lib/xpost_string.h \
@@ -88,7 +90,6 @@ src/lib/xpost_dev_bgr.h \
 src/lib/xpost_dev_raster.h \
 src/lib/xpost_dev_generic.h \
 src/lib/xpost_oplib.h \
-src/lib/xpost_interpreter.h \
 src/lib/xpost_private.h
 
 if HAVE_XCB
