@@ -3,8 +3,16 @@
    with a postscript program, desiring the raster data of the
    generated image.
 
-TODO:
-    define buffer interchange type
+   The "raster" device can operate in different modes specified with a colon.
+   "raster:rgb" (default) 24bit rgb
+   "raster:argb" 32big argb
+   "raster:bgr" 24bit bgr
+   "raster:bgra" 32bit bgra
+
+   The BUFFEROUT output type is currently the only practical output of the buffer.
+   The pointer supplied (by reference) is updated by calls to the `showpage` operator.
+   The buffer size is currently hardcoded to US Letter dimensions in Postscript units
+   1 unit = 1/72 inch.
  */
 
 #include <stdlib.h>
@@ -30,7 +38,7 @@ int main() {
     int ret;
 
     xpost_init();
-    if (!(ctx = xpost_create("bgr",
+    if (!(ctx = xpost_create("raster:bgra",
             XPOST_OUTPUT_BUFFEROUT,
             &buffer_type_object,
             XPOST_SHOWPAGE_RETURN,
