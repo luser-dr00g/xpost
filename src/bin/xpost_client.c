@@ -43,7 +43,8 @@ int main() {
             &buffer_type_object,
             XPOST_SHOWPAGE_RETURN,
             1,
-            1)))
+            1,
+            XPOST_IGNORE_SIZE, 0, 0)))
         fprintf(stderr, "unable to create interpreter context"), exit(0);
     printf("created interpreter context. executing program...\n");
     ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);

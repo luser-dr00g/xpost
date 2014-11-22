@@ -1056,7 +1056,10 @@ Xpost_Context *xpost_create(const char *device,
                  const void *outputptr,
                  enum Xpost_Showpage_Semantics semantics,
                  int quiet,
-                 int is_installed)
+                 int is_installed,
+                 enum Xpost_Set_Size set_size,
+                 int width,
+                 int height)
 {
     Xpost_Object sd, ud;
     int ret;
