@@ -114,11 +114,21 @@ int _create_cont (Xpost_Context *ctx,
                   Xpost_Object h,
                   Xpost_Object devdic)
 {
+    Xpost_Object sd;
+    Xpost_Object subdevice;
     Xpost_Object privatestr;
     PrivateData private;
     integer width = w.int_.val;
     integer height = h.int_.val;
     //printf("create_cont\n");
+
+    sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
+    subdevice = xpost_dict_get(ctx, sd, xpost_name_cons(ctx, "SUBDEVICE"));
+    if (xpost_object_get_type(subdevice) == invalidtype)
+    {
+        subdevice = xpost_string_cons(ctx, sizeof("rgb")-1, "rgb");
+    }
+    printf("</SUBDEVICE %*s>\n", subdevice.comp_.sz, xpost_string_get_pointer(ctx, subdevice));
 
     /* create a string to contain device data structure */
     privatestr = xpost_string_cons(ctx, sizeof(PrivateData), NULL);
