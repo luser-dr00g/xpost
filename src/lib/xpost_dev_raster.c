@@ -52,11 +52,14 @@
 #include "xpost_op_dict.h" /* call load operator for convenience */
 #include "xpost_dev_raster.h" /* check prototypes */
 
+enum Xpost_PixelFormat { RGB, ARGB, BGR, BGRA };
+
 #define FAST_C_BUFFER
 
 typedef struct
 {
     int width, height;
+    enum Xpost_PixelFormat pixelformat;
     /*
      * add additional members to private struct
      */
@@ -129,6 +132,22 @@ int _create_cont (Xpost_Context *ctx,
         subdevice = xpost_string_cons(ctx, sizeof("rgb")-1, "rgb");
     }
     printf("</SUBDEVICE %*s>\n", subdevice.comp_.sz, xpost_string_get_pointer(ctx, subdevice));
+    if (memcmp(xpost_string_get_pointer(ctx, subdevice), "argb", 4) == 0)
+    {
+        private.pixelformat = ARGB;
+    }
+    else if (memcmp(xpost_string_get_pointer(ctx, subdevice), "rgb", 3) == 0)
+    {
+        private.pixelformat = RGB;
+    }
+    else if (memcmp(xpost_string_get_pointer(ctx, subdevice), "bgra", 4) == 0)
+    {
+        private.pixelformat = BGRA;
+    }
+    else if (memcmp(xpost_string_get_pointer(ctx, subdevice), "bgr", 3) == 0)
+    {
+        private.pixelformat = BGR;
+    }
 
     /* create a string to contain device data structure */
     privatestr = xpost_string_cons(ctx, sizeof(PrivateData), NULL);
@@ -151,7 +170,22 @@ int _create_cont (Xpost_Context *ctx,
 #ifdef FAST_C_BUFFER
     {
         /* allocate buffer header and array */
-        private.buf = malloc(sizeof(Xpost_Raster_Buffer) + sizeof(Xpost_Raster_Pixel)*width*height);
+        switch(private.pixelformat){
+        default:
+            return unregistered;
+        case ARGB:
+            private.buf = malloc(sizeof(Xpost_Raster_Buffer) + sizeof(Xpost_Raster_ARGB_Pixel)*width*height);
+            break;
+        case RGB:
+            private.buf = malloc(sizeof(Xpost_Raster_Buffer) + sizeof(Xpost_Raster_RGB_Pixel)*width*height);
+            break;
+        case BGRA:
+            private.buf = malloc(sizeof(Xpost_Raster_Buffer) + sizeof(Xpost_Raster_BGRA_Pixel)*width*height);
+            break;
+        case BGR:
+            private.buf = malloc(sizeof(Xpost_Raster_Buffer) + sizeof(Xpost_Raster_BGR_Pixel)*width*height);
+            break;
+        }
     }
 #else
     { /*
@@ -245,12 +279,42 @@ int _putpix (Xpost_Context *ctx,
     if (y.int_.val < 0 || y.int_.val >= xpost_dict_get(ctx, devdic, nameheight).int_.val)
         return 0;
 
-    {
-        Xpost_Raster_Pixel pixel;
-        pixel.blue = blue.int_.val;
-        pixel.green = green.int_.val;
-        pixel.red = red.int_.val;
-        private.buf->data[y.int_.val * private.buf->width + x.int_.val] = pixel;
+    switch(private.pixelformat) {
+    case BGRA:
+        {
+            Xpost_Raster_BGRA_Pixel pixel;
+            pixel.blue = blue.int_.val;
+            pixel.green = green.int_.val;
+            pixel.red = red.int_.val;
+            pixel.alpha = 255;
+            ((Xpost_Raster_BGRA_Pixel*)private.buf->data)[y.int_.val * private.buf->width + x.int_.val] = pixel;
+        } break;
+    case BGR:
+        {
+            Xpost_Raster_BGR_Pixel pixel;
+            pixel.blue = blue.int_.val;
+            pixel.green = green.int_.val;
+            pixel.red = red.int_.val;
+            ((Xpost_Raster_BGR_Pixel*)private.buf->data)[y.int_.val * private.buf->width + x.int_.val] = pixel;
+        } break;
+    case ARGB:
+        {
+            Xpost_Raster_ARGB_Pixel pixel;
+            pixel.blue = blue.int_.val;
+            pixel.green = green.int_.val;
+            pixel.red = red.int_.val;
+            pixel.alpha = 255;
+            ((Xpost_Raster_ARGB_Pixel*)private.buf->data)[y.int_.val * private.buf->width + x.int_.val] = pixel;
+        } break;
+    case RGB:
+        {
+            Xpost_Raster_RGB_Pixel pixel;
+            pixel.blue = blue.int_.val;
+            pixel.green = green.int_.val;
+            pixel.red = red.int_.val;
+            ((Xpost_Raster_RGB_Pixel*)private.buf->data)[y.int_.val * private.buf->width + x.int_.val] = pixel;
+        } break;
+
     }
 
     /* save private data struct in string */
