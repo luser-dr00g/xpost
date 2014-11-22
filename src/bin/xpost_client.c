@@ -19,11 +19,7 @@
 #include <stdio.h>
 
 #include "xpost.h"
-#include "xpost_memory.h"
-#include "xpost_object.h"
-#include "xpost_context.h"
-#include "xpost_interpreter.h"
-#include "xpost_dev_bgr.h"
+#include "xpost_dev_raster.h"
 
 char *prog =
     "%%BoundingBox: 200 300 400 500\n"
@@ -38,7 +34,7 @@ int main() {
     int ret;
 
     xpost_init();
-    if (!(ctx = xpost_create("raster:bgra",
+    if (!(ctx = xpost_create("raster:bgr",
             XPOST_OUTPUT_BUFFEROUT,
             &buffer_type_object,
             XPOST_SHOWPAGE_RETURN,
