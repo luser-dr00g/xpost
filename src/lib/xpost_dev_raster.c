@@ -54,7 +54,7 @@
 
 enum Xpost_PixelFormat { RGB, ARGB, BGR, BGRA };
 
-#define FAST_C_BUFFER
+//#define FAST_C_BUFFER
 
 typedef struct
 {
@@ -397,9 +397,30 @@ int _emit (Xpost_Context *ctx,
             {
                 unsigned int val;
                 val = rowdata[j].int_.val; /* r|g|b 0x00RRGGGBB */
-                *iter++ = (val) & 0xFF;     /* b */
-                *iter++ = (val>>8) & 0xFF;  /* g */
-                *iter++ = (val>>16) & 0xFF; /* r */
+                switch(private.pixelformat){
+                case ARGB:
+                    *iter++ = 255;              /* a */
+                    *iter++ = (val>>16) & 0xFF; /* r */
+                    *iter++ = (val>>8) & 0xFF;  /* g */
+                    *iter++ = (val) & 0xFF;     /* b */
+                    break;
+                case RGB:
+                    *iter++ = (val>>16) & 0xFF; /* r */
+                    *iter++ = (val>>8) & 0xFF;  /* g */
+                    *iter++ = (val) & 0xFF;     /* b */
+                    break;
+                case BGRA:
+                    *iter++ = (val) & 0xFF;     /* b */
+                    *iter++ = (val>>8) & 0xFF;  /* g */
+                    *iter++ = (val>>16) & 0xFF; /* r */
+                    *iter++ = 255;              /* a */
+                    break;
+                case BGR:
+                    *iter++ = (val) & 0xFF;     /* b */
+                    *iter++ = (val>>8) & 0xFF;  /* g */
+                    *iter++ = (val>>16) & 0xFF; /* r */
+                    break;
+                }
             }
         }
     }
