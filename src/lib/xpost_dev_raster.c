@@ -54,7 +54,7 @@
 
 enum Xpost_PixelFormat { RGB, ARGB, BGR, BGRA };
 
-//#define FAST_C_BUFFER
+#define FAST_C_BUFFER
 
 typedef struct
 {
@@ -186,6 +186,8 @@ int _create_cont (Xpost_Context *ctx,
             private.buf = malloc(sizeof(Xpost_Raster_Buffer) + sizeof(Xpost_Raster_BGR_Pixel)*width*height);
             break;
         }
+        private.buf->height = height;
+        private.buf->width = width;
     }
 #else
     { /*
@@ -300,18 +302,18 @@ int _putpix (Xpost_Context *ctx,
     case ARGB:
         {
             Xpost_Raster_ARGB_Pixel pixel;
-            pixel.blue = blue.int_.val;
-            pixel.green = green.int_.val;
-            pixel.red = red.int_.val;
             pixel.alpha = 255;
+            pixel.red = red.int_.val;
+            pixel.green = green.int_.val;
+            pixel.blue = blue.int_.val;
             ((Xpost_Raster_ARGB_Pixel*)private.buf->data)[y.int_.val * private.buf->width + x.int_.val] = pixel;
         } break;
     case RGB:
         {
             Xpost_Raster_RGB_Pixel pixel;
-            pixel.blue = blue.int_.val;
-            pixel.green = green.int_.val;
             pixel.red = red.int_.val;
+            pixel.green = green.int_.val;
+            pixel.blue = blue.int_.val;
             ((Xpost_Raster_RGB_Pixel*)private.buf->data)[y.int_.val * private.buf->width + x.int_.val] = pixel;
         } break;
 
