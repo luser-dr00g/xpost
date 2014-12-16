@@ -142,14 +142,14 @@ userdict begin
         } ifelse
     } def
 
-/== {
+/==only {
     %traceon
     //==dict begin
         /cp 0 def
         typeprint
-        NL print
     end
 } end def % remove ==dict, installing == in userdict
+/== { ==only (\n) print } def
 /pstack { count dup 1 add copy //== repeat pop } def
 end % back to systemdict
 

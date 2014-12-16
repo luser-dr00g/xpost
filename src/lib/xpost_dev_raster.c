@@ -123,6 +123,7 @@ int _create_cont (Xpost_Context *ctx,
     PrivateData private;
     integer width = w.int_.val;
     integer height = h.int_.val;
+    Xpost_Object inbufstr;
     //printf("create_cont\n");
 
     sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
@@ -168,6 +169,14 @@ int _create_cont (Xpost_Context *ctx,
      */
 
 #ifdef FAST_C_BUFFER
+    inbufstr = xpost_dict_get(ctx, sd, xpost_name_cons(ctx, "OutputBufferIn"));
+    if (xpost_object_get_type(inbufstr) == stringtype)
+    {
+        unsigned char *inbuf;
+        memcpy(&inbuf, xpost_string_get_pointer(ctx, inbufstr), sizeof(inbuf));
+        private.buf = inbuf;
+    }
+    else
     {
         /* allocate buffer header and array */
         switch(private.pixelformat){
@@ -372,7 +381,17 @@ int _emit (Xpost_Context *ctx,
     data = (unsigned char *)private.buf->data;
 #else
 
-    data = malloc(stride * height * 3); 
+    inbufstr = xpost_dict_get(ctx, sd, xpost_name_cons(ctx, "OutputBufferIn"));
+    if (xpost_object_get_type(inbufstr) == stringtype)
+    {
+        Xpost_Raster_Buffer *inbuf;
+        memcpy(&inbuf, xpost_string_get_pointer(ctx, inbufstr), sizeof(inbuf));
+        data = inbuf->data;
+    }
+    else
+    {
+        data = malloc(stride * height * (private.pixelformat==ARGB || private.pixelformat==BGRA ? 4 : 3); 
+    }
     imgdata = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "ImgData"));
     if (xpost_object_get_type(imgdata) == invalidtype)
         return undefined;
@@ -437,6 +456,7 @@ int _emit (Xpost_Context *ctx,
             unsigned char **outbuf;
             memcpy(&outbuf, xpost_string_get_pointer(ctx, outbufstr), sizeof(outbuf));
             *outbuf = data;
+            return 0;
         }
     }
 

@@ -19,7 +19,6 @@
 #include <stdio.h>
 
 #include "xpost.h"
-#include "xpost_dev_raster.h"
 
 char *prog =
     "%%BoundingBox: 200 300 400 500\n"
