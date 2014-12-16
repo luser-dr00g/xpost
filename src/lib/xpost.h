@@ -118,6 +118,7 @@ XPAPI void xpost_version_get(int *maj, int *min, int *mic);
 #include "xpost_object.h"
 #include "xpost_context.h"
 #include "xpost_interpreter.h"
+#include "xpost_dev_raster.h"
 
 /**
  * @}
