@@ -90,7 +90,7 @@ int xpost_op_dict_to_mark(Xpost_Context *ctx)
     i = t.int_.val;
     if ((i % 2) == 1)
         return rangecheck;
-    d = xpost_dict_cons (ctx, i);
+    d = xpost_object_cvlit(xpost_dict_cons (ctx, i));
     if (xpost_object_get_type(d) == nulltype)
         return VMerror;
     for ( ; i > 0; i -= 2){
