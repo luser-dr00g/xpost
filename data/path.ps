@@ -467,6 +467,17 @@ override%pop pop%bind def
 % the dash pattern is restarted and the offset reapplied at the beginning of each
 % subpath.
 
+% The dashing routine maintains several variables relating to position in
+% the dash sequence. It attempts to maintain the following 
+% pos: relative user-space distance from start of current dash sequence element
+% ipos: index to dash array designating current dash sequence element
+% parity: drawing/not-drawing status
+
+% initial_pos divides the user-space offset into the dash sequence
+% and discovers whether we're initially drawing or not (parity)
+% on start: pos is an "absolute" user-space distance
+% on exit: pos is relative to current sequence element,
+% and ipos and parity are set appropriately
 /initial_ipos {
     {
         pos dasharray ipos get lt { exit } if
@@ -476,6 +487,12 @@ override%pop pop%bind def
     } loop
 } def
 
+% when crossing a dash sequence boundary
+% if we're drawing, we need to draw a line to
+% pos units along the trajectory defined by the (source) subpath line
+% and update pos=0 ++ipos parity=!parity
+% if we're not drawing, we need to update variables
+% and move to `current-sequence-element pos sub` units along the trajectory
 /crossdashbound {
     {/ang/rad/data}{exch def}forall
     /partial dasharray ipos get pos sub def
@@ -514,6 +531,7 @@ override%pop pop%bind def
     data rad ang % pop pop pop
 } def
 
+% "switch" actions for iterating through the (source) subpath
 /dashdict << % path i subpath_i j elem
     /move { 
         %(m)=
@@ -584,6 +602,8 @@ override%pop pop%bind def
 
 % apply dash parameters to current path
 % modifies current path
+% FIXME: manually iterates through the path structure.
+%        encapsulate using .devpathforall
 /dashpath {
     10 dict begin
     currentdash % [] offset
@@ -639,6 +659,7 @@ override%pop pop%bind def
     3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
 } bind def
 
+% return currentlinewidth unless too small, otherwise 1
 /minlinewidth {
     currentlinewidth
     dup 1 lt { pop 1 } if
