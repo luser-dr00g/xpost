@@ -64,7 +64,7 @@
 #include "xpost_op_font.h"
 #include "xpost_op_context.h"
 #include "xpost_dev_generic.h"
-#ifdef HAVE_WIN32
+#ifdef _WIN32
 # include "xpost_dev_win32.h"
 #endif
 #ifdef HAVE_XCB

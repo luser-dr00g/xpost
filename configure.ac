@@ -94,10 +94,6 @@ case "$host_os" in
    ;;
 esac
 
-if test "x${have_win32}" = "xyes" ; then
-   AC_DEFINE([HAVE_WIN32], [1], [Define to 1 on Windows OS])
-fi
-
 AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
 
 
