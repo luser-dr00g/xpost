@@ -111,32 +111,6 @@ typedef void (*Xpost_Log_Print_Cb)(Xpost_Log_Level level,
                                    va_list args);
 
 /**
- * @brief Initialize the log module.
- *
- * @return 1 on success, 0 otherwise.
- *
- * This function initializes the log module. Currently, it only gets
- * the value of the environment variable XPOST_LOG_LEVEL if it
- * exists and create a file stream for dumping errors in the
- * interpreter. It is called by xpost_init().
- *
- * @see xpost_log_quit()
- * @see xpost_init()
- */
-int xpost_log_init(void);
-
-/**
- * @brief Shut down the log module.
- *
- * This function shuts down the log module. It is called by
- * xpost_quit().
- *
- * @see xpost_log_init()
- * @see xpost_quit()
- */
-void xpost_log_quit(void);
-
-/**
  * @brief Sets logging method to use.
  *
  * @param cb The callback to call when printing a log.
@@ -146,7 +120,7 @@ void xpost_log_quit(void);
  * xpost_log_print(). By default, xpost_log_print_cb_stderr() is
  * used.
  */
-void xpost_log_print_cb_set(Xpost_Log_Print_Cb cb, void *data);
+XPAPI void xpost_log_print_cb_set(Xpost_Log_Print_Cb cb, void *data);
 
 /**
  * @brief Default logging method, this will output to standard error stream.
@@ -162,13 +136,13 @@ void xpost_log_print_cb_set(Xpost_Log_Print_Cb cb, void *data);
  * This method will colorize output provided the message logging
  * @p level. The output is sent to standard error stream.
  */
-void xpost_log_print_cb_stderr(Xpost_Log_Level level,
-                               const char *file,
-                               const char *fct,
-                               int line,
-                               const char *fmt,
-                               void *data,
-                               va_list args);
+XPAPI void xpost_log_print_cb_stderr(Xpost_Log_Level level,
+                                     const char *file,
+                                     const char *fct,
+                                     int line,
+                                     const char *fmt,
+                                     void *data,
+                                     va_list args);
 
 /**
  * @brief Default logging method, this will output to standard output stream.
@@ -184,13 +158,13 @@ void xpost_log_print_cb_stderr(Xpost_Log_Level level,
  * This method will colorize output provided the message logging
  * @p level. The output is sent to standard output stream.
  */
-void xpost_log_print_cb_stdout(Xpost_Log_Level level,
-                               const char *file,
-                               const char *fct,
-                               int line,
-                               const char *fmt,
-                               void *data,
-                               va_list args);
+XPAPI void xpost_log_print_cb_stdout(Xpost_Log_Level level,
+                                     const char *file,
+                                     const char *fct,
+                                     int line,
+                                     const char *fmt,
+                                     void *data,
+                                     va_list args);
 
 /**
  * @brief Print out log message using given level.
@@ -207,16 +181,16 @@ void xpost_log_print_cb_stdout(Xpost_Log_Level level,
  * EINA_LOG_LEVEL will be ignored. By default,
  * xpost_log_print_cb_stderr() is used.
  */
-void xpost_log_print(Xpost_Log_Level level,
-                     const char *file,
-                     const char *fct,
-                     int line,
-                     const char *fmt, ...);
+XPAPI void xpost_log_print(Xpost_Log_Level level,
+                           const char *file,
+                           const char *fct,
+                           int line,
+                           const char *fmt, ...);
 
-void xpost_log_print_dump(Xpost_Log_Level level,
-                          const char *file,
-                          const char *fct,
-                          int line,
-                          const char *fmt, ...);
+XPAPI void xpost_log_print_dump(Xpost_Log_Level level,
+                                const char *file,
+                                const char *fct,
+                                int line,
+                                const char *fmt, ...);
 
 #endif
