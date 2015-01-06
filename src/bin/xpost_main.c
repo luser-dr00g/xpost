@@ -45,14 +45,11 @@
 #endif
 
 #include "xpost.h"
-#include "xpost_memory.h" /* Xpost_Memory_File */
-#include "xpost_object.h" /* Xpost_Object */
-#include "xpost_context.h" /* Xpost_Context */
-#include "xpost_log.h" /* XPOST_LOG_ERR */
+#ifdef _MSC_VER
+# include "xpost_compat.h"
+#endif
 
 #include "xpost_pathname.h" /* xpost_is_installed exedir */
-#include "xpost_interpreter.h" /* xpost_create */
-
 #include "xpost_main.h"
 
 
@@ -114,7 +111,12 @@ _xpost_main_license(void)
 static void
 _xpost_main_version(const char *filename)
 {
-    printf("%s " PACKAGE_VERSION "\n", filename);
+    int maj;
+    int min;
+    int mic;
+
+    xpost_version_get(&maj, &min, &mic);
+    printf("%s %d.%d.%d\n", filename, maj, min, mic);
 }
 
 static void

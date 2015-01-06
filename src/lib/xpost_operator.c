@@ -38,7 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 
-#include "xpost_log.h"
+#include "xpost.h"
 #include "xpost_memory.h"  // accesses mfile
 #include "xpost_object.h"  // operators are objects
 #include "xpost_stack.h"  // uses a stack for argument passing
@@ -261,7 +261,7 @@ typedef struct {
 
 static
 Xpost_Check_Stack _check_stack_funcs[] = {
-    { _stack_none, 0, { } },
+    { _stack_none, 0, { 0, 0, 0, 0, 0, 0, 0, 0} },
     { _stack_int, 1, { integertype } },
     { _stack_real, 1, { realtype } },
     { _stack_float, 1, { floattype } },

@@ -66,7 +66,8 @@ void *alloca (size_t);
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#include "xpost_log.h"
+#include "xpost.h"
+#include "xpost_compat.h"
 #include "xpost_memory.h"  /* files store FILE*s in (local) mfile */
 #include "xpost_object.h"  /* files are objects */
 #include "xpost_context.h"

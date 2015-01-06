@@ -140,19 +140,19 @@ enum Xpost_Set_Size {
    to the standard locations for its postscript initialization files or
    it should look for these files in "$CWD/data/". 
  */
-Xpost_Context *xpost_create(const char *device,
-                 enum Xpost_Output_Type output_type,
-                 const void *outputptr,
-                 enum Xpost_Showpage_Semantics semantics,
-                 int quiet,
-                 int is_installed,
-                 enum Xpost_Set_Size set_size,
-                 int width,
-                 int height);
+XPAPI Xpost_Context *xpost_create(const char *device,
+                                  enum Xpost_Output_Type output_type,
+                                  const void *outputptr,
+                                  enum Xpost_Showpage_Semantics semantics,
+                                  int quiet,
+                                  int is_installed,
+                                  enum Xpost_Set_Size set_size,
+                                  int width,
+                                  int height);
 
-int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type,
+XPAPI int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type,
                const void *inputptr);
 
-void xpost_destroy(Xpost_Context *ctx);
+XPAPI void xpost_destroy(Xpost_Context *ctx);
 
 #endif

@@ -33,6 +33,7 @@
 # include <config.h>
 #endif
 
+#define _USE_MATH_DEFINES /* needed for M_PI with Visual Studio */
 #include <math.h>
 
 #include "xpost_object.h"

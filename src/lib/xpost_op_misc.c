@@ -75,6 +75,7 @@ void *alloca (size_t);
 #endif
 
 
+#include "xpost_compat.h"
 #include "xpost_main.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
@@ -146,7 +147,7 @@ int realtime (Xpost_Context *ctx)
     gettimeofday(&tv, NULL);
     sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
 #else
-    sec = time(NULL) * 1000;
+    sec = time(NULL) * 1000.0;
 #endif
     lsec = sec;
     lsec &= 0x00000000ffffffff; /* truncate any large value */
@@ -167,7 +168,7 @@ int usertime (Xpost_Context *ctx)
     gettimeofday(&tv, NULL);
     sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
 #else
-    sec = time(NULL) * 1000;
+    sec = time(NULL) * 1000.0;
 #endif
     lsec = sec - xpost_start_time_get();
     lsec &= 0x00000000ffffffff; /* truncate any large value */

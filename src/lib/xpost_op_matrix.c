@@ -32,13 +32,14 @@
 # include <config.h>
 #endif
 
+#define _USE_MATH_DEFINES /* needed for M_PI with Visual Studio */
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
-#include "xpost_log.h"
+#include "xpost.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -117,14 +118,14 @@ void _xmat2psmat (Xpost_Context *ctx,
                   Xpost_Matrix *m,
                   Xpost_Object psm)
 {
-    Xpost_Object arr[6] = {
-        xpost_real_cons(m->xx),
-        xpost_real_cons(m->yx),
-        xpost_real_cons(m->xy),
-        xpost_real_cons(m->yy),
-        xpost_real_cons(m->xz),
-        xpost_real_cons(m->yz)
-    };
+    Xpost_Object arr[6];
+
+    arr[0] = xpost_real_cons(m->xx);
+    arr[1] = xpost_real_cons(m->yx);
+    arr[2] = xpost_real_cons(m->xy);
+    arr[3] = xpost_real_cons(m->yy);
+    arr[4] = xpost_real_cons(m->xz);
+    arr[5] = xpost_real_cons(m->yz);
     xpost_memory_put(xpost_context_select_memory(ctx, psm),
             xpost_object_get_ent(psm), 0, sizeof arr, arr);
 

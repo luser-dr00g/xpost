@@ -39,7 +39,11 @@
 #include <string.h> /* memset */
 
 #ifdef HAVE_UNISTD_H
-# include <unistd.h> /* isattty close */
+# include <unistd.h> /* close */
+#endif
+
+#ifdef _MSC_VER
+# include <io.h> /* close */
 #endif
 
 #include "xpost_compat.h" /* mkstemp */
