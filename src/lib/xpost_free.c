@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "xpost_log.h"
+#include "xpost.h"
 #include "xpost_memory.h" /* Xpost_Memory_File */
 #include "xpost_object.h" /* Xpost_Object */
 #include "xpost_free.h"

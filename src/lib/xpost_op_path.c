@@ -41,6 +41,7 @@
 # endif
 #endif
 
+#define _USE_MATH_DEFINES /* needed for M_PI with Visual Studio */
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>

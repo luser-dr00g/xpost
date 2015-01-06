@@ -45,7 +45,7 @@
 
 #include <GL/gl.h>
 
-#include "xpost_log.h"
+#include "xpost.h"
 #include "xpost_memory.h"  /* save/restore works with mtabs */
 #include "xpost_object.h"  /* save/restore examines objects */
 #include "xpost_stack.h"  /* save/restore manipulates (internal) stacks */

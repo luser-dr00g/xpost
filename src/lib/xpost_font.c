@@ -44,8 +44,7 @@
 # include FT_FREETYPE_H
 #endif
 
-#include "xpost_log.h"
-#include "xpost_object.h"
+#include "xpost.h"
 #include "xpost_font.h"
 
 #ifdef HAVE_FONTCONFIG

@@ -37,7 +37,7 @@
 //#include <stdio.h>
 #include <string.h>
 
-#include "xpost_log.h"
+#include "xpost.h"
 #include "xpost_memory.h" /* access memory */
 #include "xpost_object.h" /* work with objects */
 #include "xpost_stack.h"  /* push results on stack */
@@ -276,7 +276,9 @@ int _emit (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
+#ifndef FAST_C_BUFFER
     Xpost_Object imgdata;
+#endif
 
     unsigned char *data;
     int stride;

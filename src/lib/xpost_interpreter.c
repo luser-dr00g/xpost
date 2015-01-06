@@ -38,12 +38,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef HAVE_UNISTD_H
-# include <unistd.h> /* isattty */
-#endif
-
-#include "xpost_compat.h" /* mkstemp */
-#include "xpost_log.h"
+#include "xpost.h"
+#include "xpost_compat.h" /* mkstemp, xpost_isatty */
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
 #include "xpost_stack.h"  // eval functions manipulate stacks
@@ -1051,15 +1047,15 @@ static int copyudtosd(Xpost_Context *ctx, Xpost_Object ud, Xpost_Object sd)
    create an executable context using the given device,
    output configuration, and semantics.
  */
-Xpost_Context *xpost_create(const char *device,
-                 enum Xpost_Output_Type output_type,
-                 const void *outputptr,
-                 enum Xpost_Showpage_Semantics semantics,
-                 int quiet,
-                 int is_installed,
-                 enum Xpost_Set_Size set_size,
-                 int width,
-                 int height)
+XPAPI Xpost_Context *xpost_create(const char *device,
+                                  enum Xpost_Output_Type output_type,
+                                  const void *outputptr,
+                                  enum Xpost_Showpage_Semantics semantics,
+                                  int quiet,
+                                  int is_installed,
+                                  enum Xpost_Set_Size set_size,
+                                  int width,
+                                  int height)
 {
     Xpost_Object sd, ud;
     int ret;
@@ -1112,7 +1108,7 @@ Xpost_Context *xpost_create(const char *device,
                    device, outfile, bufferin, bufferout,
                    semantics,
                    exedir, is_installed);
-    
+
     if (quiet)
     {
         xpost_dict_put(xpost_ctx,
@@ -1145,7 +1141,7 @@ Xpost_Context *xpost_create(const char *device,
    execute ps program until quit, fall-through to quit,
    SHOWPAGE_RETURN semantic, or error (default action: message, purge and quit).
  */
-int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type, const void *inputptr)
+XPAPI int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type, const void *inputptr)
 {
     Xpost_Object lsav = null;
     int llev = 0;
@@ -1202,7 +1198,7 @@ int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type, const void *
     }
     else
     {
-        if (isatty(fileno(stdin)))
+        if (xpost_isatty(fileno(stdin)))
             xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "start")));
         else
             xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "startstdin")));
@@ -1246,7 +1242,7 @@ run:
    destroy the given context and associated memory files (if not in use by a shared context)
    exit interpreter if all contexts are destroyed.
  */
-void xpost_destroy(Xpost_Context *ctx)
+XPAPI void xpost_destroy(Xpost_Context *ctx)
 {
     //xpost_operator_dump(ctx, 1); // is this pointer value constant?
     if (xpost_object_get_type(xpost_ctx->window_device) == dicttype)

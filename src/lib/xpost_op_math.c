@@ -58,6 +58,7 @@ void *alloca (size_t);
 # endif
 #endif
 
+#define _USE_MATH_DEFINES /* needed for M_PI with Visual Studio */
 #include <assert.h>
 #include <limits.h>
 #include <math.h>
@@ -68,6 +69,7 @@ void *alloca (size_t);
 //double RAD_PER_DEG /* = PI / 180.0 */;
 #define RAD_PER_DEG (M_PI / 180.0)
 
+#include "xpost_compat.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"

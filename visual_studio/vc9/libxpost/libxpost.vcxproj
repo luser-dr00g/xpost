@@ -1,0 +1,178 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{36AEC1A6-0EF6-4925-A51A-C8B4CE6FF99E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>libxpost</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;LIBXPOST_EXPORTS;HAVE_CONFIG_H;XPOST_BUILD;DLL_EXPORT;inline=__inline;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ws2_32.lib;opengl32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImportLibrary>
+      </ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;LIBXPOST_EXPORTS;HAVE_CONFIG_H;XPOST_BUILD;DLL_EXPORT;inline=__inline;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../..</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>ws2_32.lib;opengl32.lib;gdi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\src\lib\xpost_array.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_compat.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_context.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_dev_bgr.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_dev_generic.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_dev_raster.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_dev_win32.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_dict.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_error.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_file.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_font.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_free.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_garbage.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_interpreter.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_log.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_main.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_matrix.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_memory.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_name.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_object.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_operator.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_oplib.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_array.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_boolean.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_context.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_control.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_dict.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_file.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_font.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_math.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_matrix.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_misc.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_packedarray.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_param.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_path.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_save.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_stack.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_string.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_token.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_op_type.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_save.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_stack.c" />
+    <ClCompile Include="..\..\..\src\lib\xpost_string.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\src\lib\xpost.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_array.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_compat.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_context.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_dev_bgr.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_dev_generic.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_dev_raster.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_dev_win32.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_dict.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_error.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_file.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_font.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_free.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_garbage.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_interpreter.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_log.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_main.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_matrix.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_memory.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_name.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_object.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_operator.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_oplib.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_array.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_boolean.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_context.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_control.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_dict.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_file.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_font.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_math.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_matrix.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_misc.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_packedarray.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_param.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_path.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_save.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_stack.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_string.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_token.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_op_type.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_private.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_save.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_stack.h" />
+    <ClInclude Include="..\..\..\src\lib\xpost_string.h" />
+    <ClInclude Include="..\..\config.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -91,13 +91,11 @@ void *alloca (size_t);
 #include "xpost_file.h"
 
 //#include "xpost_interpreter.h"
+#include "xpost_compat.h"
 #include "xpost_operator.h"
 #include "xpost_op_file.h"
 
-#ifdef _WIN32
-# include "glob.h"
-#else
-# include <glob.h>
+#ifndef _WIN32
 # include <stdio_ext.h> /* __fpurge */
 #endif
 
@@ -550,7 +548,7 @@ int xpost_op_contfilenameforall (Xpost_Context *ctx,
     }
     else
     {
-        globfree(globbuf); /* reference has already been popped */
+        xpost_glob_free(globbuf); /* reference has already been popped */
     }
     return 0;
 }
@@ -572,7 +570,7 @@ int xpost_op_filenameforall (Xpost_Context *ctx,
     globbuf = malloc(sizeof *globbuf);
     if (!globbuf)
         return unregistered;
-    ret = glob(tmp, 0, NULL, globbuf);
+    ret = xpost_glob(tmp, globbuf);
     if (ret != 0)
     {
         free(globbuf);

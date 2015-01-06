@@ -68,7 +68,7 @@ void *alloca (size_t);
 #include <xcb/xcb_aux.h>
 #include <xcb/xcb_icccm.h>
 
-#include "xpost_log.h"
+#include "xpost.h"
 #include "xpost_memory.h" /* access memory */
 #include "xpost_object.h" /* work with objects */
 #include "xpost_stack.h"  /* push results on stack */

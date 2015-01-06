@@ -34,7 +34,7 @@
 
 #include <stdio.h>
 
-#include "xpost_log.h"
+#include "xpost.h"
 #include "xpost_object.h"
 
 /**

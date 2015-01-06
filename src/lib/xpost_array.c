@@ -38,7 +38,7 @@
 
 #include <assert.h>
 
-#include "xpost_log.h"
+#include "xpost.h"
 #include "xpost_memory.h"  /* arrays live in mfile, accessed via mtab */
 #include "xpost_object.h"  /* array is an object, containing objects */
 #include "xpost_stack.h"  /* may count the save stack */

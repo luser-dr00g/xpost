@@ -41,13 +41,24 @@
 # include <libgen.h>
 #endif
 
+#ifdef _WIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h>
+# include <direct.h>
+# undef WIN32_LEAN_AND_MEAN
+#endif
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef _MSC_VER
+# include "xpost_compat.h"
+#endif
 #include "xpost_main.h"
-
 #include "xpost_pathname.h"
 
 /*
