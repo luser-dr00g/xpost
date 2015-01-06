@@ -1,7 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
- * Copyright (C) 2013, Vincent Torri
+ * Copyright (C) 2013-2015, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
