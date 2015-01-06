@@ -1,7 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
- * Copyright (C) 2013, Vincent Torri
+ * Copyright (C) 2013-2015, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@
 #endif
 
 #ifdef _WIN32
-# ifdef EFL_EET_BUILD
+# ifdef XPOST_BUILD
 #  ifdef DLL_EXPORT
 #   define XPAPI __declspec(dllexport)
 #  else
@@ -114,6 +114,7 @@ XPAPI int xpost_quit(void);
  */
 XPAPI void xpost_version_get(int *maj, int *min, int *mic);
 
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_context.h"
