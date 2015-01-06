@@ -82,7 +82,16 @@ autogen.sh \
 xpost.pc.in \
 m4/xpost.m4 \
 valgrind_wrapper.sh \
-glibc.supp
+glibc.supp \
+visual_studio/vc9/xpost.sln \
+visual_studio/vc9/libxpost/libxpost.vcxproj \
+visual_studio/vc9/libxpost/libxpost.vcxproj.filters \
+visual_studio/vc9/xpost/xpost.vcxproj \
+visual_studio/vc9/xpost/xpost.vcxproj.filters \
+visual_studio/vc9/xpost_client/xpost_client.vcxproj \
+visual_studio/vc9/xpost_client/xpost_client.vcxproj.filters \
+visual_studio/vc9/xpost_suite/xpost_suite.vcxproj \
+visual_studio/vc9/xpost_suite/xpost_suite.vcxproj.filters
 
 clean-local:
 	rm -rf $(XPOST_CLEANFILES)
