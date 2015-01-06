@@ -58,6 +58,7 @@
 #include "xpost_memory.h"
 #include "xpost_font.h"
 #include "xpost_main.h"
+#include "xpost_private.h"
 
 
 /*============================================================================*
@@ -112,7 +113,7 @@ xpost_init(void)
     gettimeofday(&tv, NULL);
     _xpost_start_time = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
 #else
-    _xpost_start_time = time(NULL) * 1000;
+    _xpost_start_time = time(NULL) * 1000.0;
 #endif
 
     return _xpost_init_count;

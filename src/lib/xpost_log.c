@@ -35,15 +35,20 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
 #include <errno.h>
 #include <limits.h>
 
 #ifdef _WIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
 # include <windows.h>
+# undef WIN32_LEAN_AND_MEAN
 #endif
 
-#include "xpost_compat.h" /* mkstemp */
-#include "xpost_log.h"
+#include "xpost.h"
+#include "xpost_compat.h" /* mkstemp, snprintf */
 
 
 /*============================================================================*
@@ -283,6 +288,7 @@ _xpost_log_fprint_cb(FILE *stream,
  *                                 Global                                     *
  *============================================================================*/
 
+
 int
 xpost_log_init(void)
 {
@@ -323,14 +329,20 @@ xpost_log_quit(void)
         fclose(_xpost_log_dump_file);
 }
 
-void
+
+/*============================================================================*
+ *                                   API                                      *
+ *============================================================================*/
+
+
+XPAPI void
 xpost_log_print_cb_set(Xpost_Log_Print_Cb cb, void *data)
 {
     _xpost_log_print_cb = cb;
     _xpost_log_print_cb_data = data;
 }
 
-void
+XPAPI void
 xpost_log_print_cb_stderr(Xpost_Log_Level level,
                           const char *file,
                           const char *fct,
@@ -342,7 +354,7 @@ xpost_log_print_cb_stderr(Xpost_Log_Level level,
     _xpost_log_fprint_cb(stderr, level, file, fct, line, fmt, data, args);
 }
 
-void
+XPAPI void
 xpost_log_print_cb_stdout(Xpost_Log_Level level,
                           const char *file,
                           const char *fct,
@@ -354,7 +366,7 @@ xpost_log_print_cb_stdout(Xpost_Log_Level level,
     _xpost_log_fprint_cb(stdout, level, file, fct, line, fmt, data, args);
 }
 
-void
+XPAPI void
 xpost_log_print(Xpost_Log_Level level,
                 const char *file,
                 const char *fct,
@@ -377,7 +389,7 @@ xpost_log_print(Xpost_Log_Level level,
     va_end(args);
 }
 
-void
+XPAPI void
 xpost_log_print_dump(Xpost_Log_Level level,
                      const char *file,
                      const char *fct,
