@@ -127,7 +127,7 @@ _xpost_dev_gl_win32_viewport_set(int width, int height)
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     glScalef(1, -1, 1);
-    glTranslatef(0, -height, 0);
+    glTranslatef(0, (GLfloat)-height, 0);
 }
 
 static
@@ -480,21 +480,21 @@ int _putpix (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
-        red = xpost_int_cons(red.real_.val * 255.0);
+        red = xpost_int_cons((integer)(red.real_.val * 255.0));
     else
         red.int_.val *= 255;
     if (xpost_object_get_type(green) == realtype)
-        green = xpost_int_cons(green.real_.val * 255.0);
+        green = xpost_int_cons((integer)(green.real_.val * 255.0));
     else
         green.int_.val *= 255;
     if (xpost_object_get_type(blue) == realtype)
-        blue = xpost_int_cons(blue.real_.val * 255.0);
+        blue = xpost_int_cons((integer)(blue.real_.val * 255.0));
     else
         blue.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
-        x = xpost_int_cons(x.real_.val);
+        x = xpost_int_cons((integer)x.real_.val);
     if (xpost_object_get_type(y) == realtype)
-        y = xpost_int_cons(y.real_.val);
+        y = xpost_int_cons((integer)y.real_.val);
 
     /* load private data struct from string */
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);
@@ -532,7 +532,7 @@ int _putpix (Xpost_Context *ctx,
         case RENDER_BACKEND_GL:
             glBegin(GL_POINTS);
             glColor4f(red.int_.val / 255.0f, green.int_.val / 255.0f, blue.int_.val / 255.0f, 1.0f);
-            glVertex2f(x.int_.val, y.int_.val);
+            glVertex2f((GLfloat)x.int_.val, (GLfloat)y.int_.val);
             glEnd();
             rd->backend.gl.changed = 1;
             break;
@@ -612,25 +612,25 @@ int _drawline (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
-        red = xpost_int_cons(red.real_.val * 255.0);
+        red = xpost_int_cons((integer)(red.real_.val * 255.0));
     else
         red.int_.val *= 255;
     if (xpost_object_get_type(green) == realtype)
-        green = xpost_int_cons(green.real_.val * 255.0);
+        green = xpost_int_cons((integer)(green.real_.val * 255.0));
     else
         green.int_.val *= 255;
     if (xpost_object_get_type(blue) == realtype)
-        blue = xpost_int_cons(blue.real_.val * 255.0);
+        blue = xpost_int_cons((integer)(blue.real_.val * 255.0));
     else
         blue.int_.val *= 255;
     if (xpost_object_get_type(x1) == realtype)
-        x1 = xpost_int_cons(x1.real_.val);
+        x1 = xpost_int_cons((integer)x1.real_.val);
     if (xpost_object_get_type(y1) == realtype)
-        y1 = xpost_int_cons(y1.real_.val);
+        y1 = xpost_int_cons((integer)y1.real_.val);
     if (xpost_object_get_type(x2) == realtype)
-        x2 = xpost_int_cons(x2.real_.val);
+        x2 = xpost_int_cons((integer)x2.real_.val);
     if (xpost_object_get_type(y2) == realtype)
-        y2 = xpost_int_cons(y2.real_.val);
+        y2 = xpost_int_cons((integer)y2.real_.val);
 
     /* load private data struct from string */
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);
@@ -766,8 +766,8 @@ int _drawline (Xpost_Context *ctx,
         case RENDER_BACKEND_GL:
             glBegin(GL_LINES);
             glColor4f(red.int_.val / 255.0f, green.int_.val / 255.0f, blue.int_.val / 255.0f, 1.0f);
-            glVertex2f(_x1, _y1);
-            glVertex2f(_x2, _y2);
+            glVertex2f((GLfloat)_x1, (GLfloat)_y1);
+            glVertex2f((GLfloat)_x2, (GLfloat)_y2);
             glEnd();
             rd->backend.gl.changed = 1;
             break;
@@ -795,25 +795,25 @@ int _fillrect (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
-        red = xpost_int_cons(red.real_.val * 255.0);
+        red = xpost_int_cons((integer)(red.real_.val * 255.0));
     else
         red.int_.val *= 255;
     if (xpost_object_get_type(green) == realtype)
-        green = xpost_int_cons(green.real_.val * 255.0);
+        green = xpost_int_cons((integer)(green.real_.val * 255.0));
     else
         green.int_.val *= 255;
     if (xpost_object_get_type(blue) == realtype)
-        blue = xpost_int_cons(blue.real_.val * 255.0);
+        blue = xpost_int_cons((integer)(blue.real_.val * 255.0));
     else
         blue.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
-        x = xpost_int_cons(x.real_.val);
+        x = xpost_int_cons((integer)x.real_.val);
     if (xpost_object_get_type(y) == realtype)
-        y = xpost_int_cons(y.real_.val);
+        y = xpost_int_cons((integer)y.real_.val);
     if (xpost_object_get_type(width) == realtype)
-        width = xpost_int_cons(width.real_.val);
+        width = xpost_int_cons((integer)width.real_.val);
     if (xpost_object_get_type(height) == realtype)
-        height = xpost_int_cons(height.real_.val);
+        height = xpost_int_cons((integer)height.real_.val);
 
     /* adjust ranges */
     if (width.int_.val < 0)
@@ -876,10 +876,10 @@ int _fillrect (Xpost_Context *ctx,
         case RENDER_BACKEND_GL:
             glBegin(GL_QUADS);
             glColor4f(red.int_.val / 255.0f, green.int_.val / 255.0f, blue.int_.val / 255.0f, 1.0f);
-            glVertex2f(x.int_.val, y.int_.val);
-            glVertex2f(x.int_.val + width.int_.val, y.int_.val);
-            glVertex2f(x.int_.val + width.int_.val, y.int_.val + height.int_.val);
-            glVertex2f(x.int_.val, y.int_.val + height.int_.val);
+            glVertex2f((GLfloat)x.int_.val, (GLfloat)y.int_.val);
+            glVertex2f((GLfloat)(x.int_.val + width.int_.val), (GLfloat)(y.int_.val));
+            glVertex2f((GLfloat)(x.int_.val + width.int_.val), (GLfloat)(y.int_.val + height.int_.val));
+            glVertex2f((GLfloat)x.int_.val, (GLfloat)(y.int_.val + height.int_.val));
             glEnd();
             rd->backend.gl.changed = 1;
             break;

@@ -187,7 +187,7 @@ int Ncvi(Xpost_Context *ctx,
           Xpost_Object n)
 {
     if (xpost_object_get_type(n) == realtype)
-        n = xpost_int_cons(n.real_.val);
+        n = xpost_int_cons((integer)n.real_.val);
     xpost_stack_push(ctx->lo, ctx->os, n);
     return 0;
 }
@@ -209,7 +209,7 @@ int Scvi(Xpost_Context *ctx,
         return limitcheck;
     if (dbl >= LONG_MAX || dbl <= LONG_MIN)
         return limitcheck;
-    num = dbl;
+    num = (long)dbl;
 
     /*
     num = strtol(t, NULL, 10);
@@ -251,7 +251,7 @@ int Ncvr(Xpost_Context *ctx,
           Xpost_Object n)
 {
     if (xpost_object_get_type(n) == integertype)
-        n = xpost_real_cons(n.int_.val);
+        n = xpost_real_cons((real)n.int_.val);
     xpost_stack_push(ctx->lo, ctx->os, n);
     return 0;
 }
@@ -269,7 +269,7 @@ int Scvr(Xpost_Context *ctx,
     num = strtod(s, NULL);
     if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
         return limitcheck;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(num));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)num));
     return 0;
 }
 
@@ -302,7 +302,7 @@ int NRScvrs (Xpost_Context *ctx,
               Xpost_Object str)
 {
     int r, n;
-    if (xpost_object_get_type(num) == realtype) num = xpost_int_cons(num.real_.val);
+    if (xpost_object_get_type(num) == realtype) num = xpost_int_cons((integer)num.real_.val);
     r = rad.int_.val;
     if (r < 2 || r > 36)
         return rangecheck;
@@ -325,7 +325,7 @@ int conv_integ(real num,
         *s = ((int)num) + '0';
         return 1;
     }
-    off = conv_integ(num/10.0, s, n);
+    off = conv_integ((real)(num/10.0), s, n);
     if ((off == n) || (off == -1)) return -1;
     s[off] = (((int)num)%10) + '0';
     return off + 1;
@@ -339,7 +339,7 @@ int conv_frac (real num,
 {
     real integ, frac;
     num *= 10.0;
-    integ = floor(num);
+    integ = (real)floor(num);
     frac = num - integ;
     *s = (int)integ + '0';
     //if (num == 0.0) return 1;
@@ -367,10 +367,10 @@ int conv_real (real num,
         return 3;
     }
     if (num < 0) {
-        num = fabs(num);
+        num = (real)fabs(num);
         s[off++] = '-';
     }
-    integ = floor(num);
+    integ = (real)floor(num);
     frac = num - integ;
     off += conv_integ(integ, s+off, n);
     s[off++] = '.';
@@ -441,7 +441,7 @@ int AScvs (Xpost_Context *ctx,
                 any.int_.val = abs(any.int_.val);
                 --sz;
             }
-            n += conv_integ(any.int_.val, s + n, sz);
+            n += conv_integ((real)any.int_.val, s + n, sz);
             if (n == -1)
                 return rangecheck;
             if (n < str.comp_.sz) str.comp_.sz = n;

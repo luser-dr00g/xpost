@@ -149,7 +149,7 @@ int realtime (Xpost_Context *ctx)
 #else
     sec = time(NULL) * 1000.0;
 #endif
-    lsec = sec;
+    lsec = (long long)sec;
     lsec &= 0x00000000ffffffff; /* truncate any large value */
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((int)lsec)))
         return stackoverflow;
@@ -170,7 +170,7 @@ int usertime (Xpost_Context *ctx)
 #else
     sec = time(NULL) * 1000.0;
 #endif
-    lsec = sec - xpost_start_time_get();
+    lsec = (long long)(sec - xpost_start_time_get());
     lsec &= 0x00000000ffffffff; /* truncate any large value */
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((int)lsec)))
         return stackoverflow;

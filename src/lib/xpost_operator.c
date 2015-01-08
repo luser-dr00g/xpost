@@ -57,7 +57,7 @@
 static
 Xpost_Object _promote_integer_to_real(Xpost_Object o)
 {
-    return xpost_real_cons(o.int_.val);
+    return xpost_real_cons((real)o.int_.val);
 }
 
 /* copied from the header file for reference:

@@ -131,13 +131,13 @@ int _yxcomp (const void *left, const void *right)
     rightx = xpost_array_get(localctx, *rt, 0);
     righty = xpost_array_get(localctx, *rt, 1);
     ltx = xpost_object_get_type(leftx) == realtype ?
-        leftx.real_.val : leftx.int_.val;
+        (integer)leftx.real_.val : leftx.int_.val;
     lty = xpost_object_get_type(lefty) == realtype ?
-        lefty.real_.val : lefty.int_.val;
+        (integer)lefty.real_.val : lefty.int_.val;
     rtx = xpost_object_get_type(rightx) == realtype ?
-        rightx.real_.val : rightx.int_.val;
+        (integer)rightx.real_.val : rightx.int_.val;
     rty = xpost_object_get_type(righty) == realtype ?
-        righty.real_.val : righty.int_.val;
+        (integer)righty.real_.val : righty.int_.val;
     if (lty == rty) {
         if (ltx < rtx) {
             return 1;
@@ -214,7 +214,7 @@ int feq (real dif) {
 static
 int _intersect (real ax, real ay,  real bx, real by,
                 real cx, real cy,  real dx, real dy,
-                int *rx, int *ry)
+                real *rx, real *ry)
 {
     real distAB;
     real theCos;
@@ -259,7 +259,7 @@ int _intersect (real ax, real ay,  real bx, real by,
     cx -= ax;  cy -= ay;
     dx -= ax;  dy -= ay;
 
-    distAB = sqrt(bx * bx + by * by);
+    distAB = (real)sqrt(bx * bx + by * by);
 
     /* rotate AB to x-axis */
     theCos = bx / distAB;
@@ -322,7 +322,7 @@ int _fillpoly (Xpost_Context *ctx,
     struct point *points, *intersections;
     int i, j;
     real yscan;
-    real minx = 0x7ffffff;
+    real minx = (real)0x7ffffff;
     real miny = minx;
     real maxx = -minx;
     real maxy = maxx;
@@ -359,14 +359,14 @@ int _fillpoly (Xpost_Context *ctx,
         x = xpost_array_get(ctx, pair, 0);
         y = xpost_array_get(ctx, pair, 1);
         if (xpost_object_get_type(x) == integertype)
-            x = xpost_real_cons(x.int_.val);
+            x = xpost_real_cons((real)x.int_.val);
         if (xpost_object_get_type(y) == integertype)
-            y = xpost_real_cons(y.int_.val);
+            y = xpost_real_cons((real)y.int_.val);
 
         //points[i].x = x.real_.val;
         //points[i].y = y.real_.val;
-        points[i].x = floor(x.real_.val + 0.5);
-        points[i].y = floor(y.real_.val + 0.5);
+        points[i].x = (real)floor(x.real_.val + 0.5);
+        points[i].y = (real)floor(y.real_.val + 0.5);
     }
 
     /* find bounding box */
@@ -381,16 +381,16 @@ int _fillpoly (Xpost_Context *ctx,
             maxy = points[i].y;
     }
 
-    intersections = alloca((maxy - miny) * 2 * 2 * sizeof *intersections);
+    intersections = alloca((int)(maxy - miny) * 2 * 2 * sizeof *intersections);
 
     /* intersect polygon edges with scanlines */
     for (i = 0, j = 0; i < poly.comp_.sz - 1; i++){
-        int rx, ry;
-        for (yscan = miny + 0.5; yscan < maxy; yscan += 1.0){
+        real rx, ry;
+        for (yscan = (real)miny + 0.5; yscan < maxy; yscan += 1.0){
             if (_intersect(points[i].x, points[i].y,
                         points[i+1].x, points[i+1].y,
-                        minx - 0.5, yscan,
-                        maxx + 0.5, yscan,
+                        (real)(minx - 0.5), yscan,
+                        (real)(maxx + 0.5), yscan,
                         &rx, &ry))
             {
                 intersections[j].x = rx;
@@ -406,10 +406,10 @@ int _fillpoly (Xpost_Context *ctx,
 
     /* arrange ((x1,y1),(x2,y2)) pairs */
     for (i = 0; i < numlines * 2; i += 2) {
-        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(floor(intersections[i].x)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(floor(intersections[i].y)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(floor(intersections[i+1].x)));
-        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(floor(intersections[i+1].y)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i].x)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i].y)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i+1].x)));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i+1].y)));
     }
 
     /*call the device's DrawLine generically with continuations.

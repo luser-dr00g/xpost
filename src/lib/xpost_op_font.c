@@ -153,7 +153,7 @@ int _makefont (Xpost_Context *ctx,
             Xpost_Object el;
             el = xpost_array_get(ctx, psmat, i);
             switch (xpost_object_get_type(el)){
-            case integertype: mat[i] = el.int_.val; break;
+            case integertype: mat[i] = (float)el.int_.val; break;
             case realtype: mat[i] = el.real_.val; break;
             default: return typecheck;
             }
@@ -402,9 +402,9 @@ int _get_current_point (Xpost_Context *ctx,
     datax = xpost_array_get(ctx, pathelemdata, pathelemdata.comp_.sz - 2);
     datay = xpost_array_get(ctx, pathelemdata, pathelemdata.comp_.sz - 1);
     if (xpost_object_get_type(datax) == integertype)
-        datax = xpost_real_cons(datax.int_.val);
+        datax = xpost_real_cons((real)datax.int_.val);
     if (xpost_object_get_type(datay) == integertype)
-        datay = xpost_real_cons(datay.int_.val);
+        datay = xpost_real_cons((real)datay.int_.val);
     *xpos = datax.real_.val;
     *ypos = datay.real_.val;
     XPOST_LOG_INFO("currentpoint: %f %f", *xpos, *ypos);

@@ -417,7 +417,7 @@ int xpost_op_file_flushfile (Xpost_Context *ctx,
     return 0;
 }
 
-#ifndef _WIN32
+#ifndef HAVE_WIN32
 
 static
 int xpost_op_file_resetfile (Xpost_Context *ctx,
@@ -506,7 +506,7 @@ int xpost_op_string_renamefile (Xpost_Context *ctx,
     return 0;
 }
 
-//#ifndef _WIN32
+//#ifndef HAVE_WIN32
 
 /* internal continuation operator for filenameforall */
 static
@@ -683,7 +683,7 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     INSTALL;
     op = xpost_operator_cons(ctx, "flushfile", (Xpost_Op_Func)xpost_op_file_flushfile, 0, 1, filetype);
     INSTALL;
-#ifndef _WIN32
+#ifndef HAVE_WIN32
     op = xpost_operator_cons(ctx, "resetfile", (Xpost_Op_Func)xpost_op_file_resetfile, 0, 1, filetype);
     INSTALL;
 #endif
@@ -697,7 +697,7 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     INSTALL;
     op = xpost_operator_cons(ctx, "renamefile", (Xpost_Op_Func)xpost_op_string_renamefile, 0, 2, stringtype, stringtype);
     INSTALL;
-//#ifndef _WIN32
+//#ifndef HAVE_WIN32
     op = xpost_operator_cons(ctx, "contfilenameforall", (Xpost_Op_Func)xpost_op_contfilenameforall, 0, 3, globtype, proctype, stringtype);
     ctx->opcode_shortcuts.contfilenameforall = op.mark_.padw;
     op = xpost_operator_cons(ctx, "filenameforall", (Xpost_Op_Func)xpost_op_filenameforall, 0, 3, stringtype, proctype, stringtype);
