@@ -56,7 +56,7 @@
 #include <string.h>
 
 #ifdef _MSC_VER
-# include "xpost_compat.h"
+# include "../lib/xpost_compat.h"
 #endif
 #include "xpost_main.h"
 #include "xpost_pathname.h"

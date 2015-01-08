@@ -386,7 +386,7 @@ int _fillpoly (Xpost_Context *ctx,
     /* intersect polygon edges with scanlines */
     for (i = 0, j = 0; i < poly.comp_.sz - 1; i++){
         real rx, ry;
-        for (yscan = (real)miny + 0.5; yscan < maxy; yscan += 1.0){
+        for (yscan = (real)(miny + 0.5); yscan < maxy; yscan += 1.0){
             if (_intersect(points[i].x, points[i].y,
                         points[i+1].x, points[i+1].y,
                         (real)(minx - 0.5), yscan,
