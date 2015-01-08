@@ -80,6 +80,8 @@ typedef struct
     int gl_offs;
 } glob_t;
 
+#else
+# include <glob.h>  /* for the glob_t type */
 #endif /* _WIN32 */
 
 int xpost_glob(const char *pattern, glob_t *pglob);
