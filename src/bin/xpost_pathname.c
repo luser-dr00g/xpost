@@ -67,7 +67,7 @@
 static
 int checkexepath (const char *exepath, char **pexedir)
 {
-    char *exedir;
+    char *exedir, *orig;
     int is_installed = 0;
 
 #ifdef _WIN32
@@ -83,8 +83,8 @@ int checkexepath (const char *exepath, char **pexedir)
 
     /*TODO: remove: no longer needed */
     /* global exedir is set in ps systemdict as /EXE_DIR */
-    exedir = strdup(exepath);
-    dirname(exedir);
+    exedir = orig = strdup(exepath);
+    exedir = dirname(exedir);
 
 #ifdef DEBUG_PATHNAME
     printf("exepath: %s\n", exepath);
@@ -100,6 +100,8 @@ int checkexepath (const char *exepath, char **pexedir)
 #endif
 
     *pexedir = exedir;
+    if (exedir != orig)
+        free(orig);
     return is_installed;
 }
 
