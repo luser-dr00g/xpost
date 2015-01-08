@@ -55,14 +55,14 @@
 #define XPOST_EXTRA_PRECISION
 static real _sinus(real x)
 {
-    const real B = 2.0 * M_2_PI;
-    const real C = -M_2_PI * M_2_PI;
+    const real B = (real)(2.0 * M_2_PI);
+    const real C = (real)(-M_2_PI * M_2_PI);
 
     real y = B * x + C * x * XPOST_ABS(x);
 
 #ifdef XPOST_EXTRA_PRECISION
     /* const real Q = 0.775; */
-    const real P = 0.225;
+    const real P = 0.225f;
 
     y = P * (y * XPOST_ABS(y) - y) + y;   /* Q * y + P * y * fabs(y) */
 #endif
@@ -72,11 +72,11 @@ static real _sinus(real x)
 
 static real _cosinus(real x)
 {
-    x += M_PI_2;
+    x += (real)M_PI_2;
 
     if (x > M_PI)   /* Original x > pi/2 */
     {
-        x -= 2.0 * M_PI;   /* Wrap: cos(x) = cos(x - 2 pi) */
+        x -= (real)(2.0 * M_PI);   /* Wrap: cos(x) = cos(x - 2 pi) */
     }
 
     return _sinus(x);
@@ -120,7 +120,7 @@ void xpost_matrix_rotate(Xpost_Matrix *m, real rad)
     real c;
     real s;
 
-    rad = XPOST_MOD(rad + M_PI, 2.0 * M_PI) - M_PI;
+    rad = (real)XPOST_MOD(rad + M_PI, 2.0 * M_PI) - M_PI;
     c = _cosinus(rad);
     s = _sinus(rad);
 

@@ -174,7 +174,7 @@ int _create_cont (Xpost_Context *ctx,
     {
         unsigned char *inbuf;
         memcpy(&inbuf, xpost_string_get_pointer(ctx, inbufstr), sizeof(inbuf));
-        private.buf = inbuf;
+        private.buf = (Xpost_Raster_Buffer *)inbuf;
     }
     else
     {
@@ -261,21 +261,21 @@ int _putpix (Xpost_Context *ctx,
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
-        red = xpost_int_cons(red.real_.val * 255.0);
+        red = xpost_int_cons((integer)(red.real_.val * 255.0));
     else
         red.int_.val *= 255;
     if (xpost_object_get_type(green) == realtype)
-        green = xpost_int_cons(green.real_.val * 255.0);
+        green = xpost_int_cons((integer)(green.real_.val * 255.0));
     else
         green.int_.val *= 255;
     if (xpost_object_get_type(blue) == realtype)
-        blue = xpost_int_cons(blue.real_.val * 255.0);
+        blue = xpost_int_cons((integer)(blue.real_.val * 255.0));
     else
         blue.int_.val *= 255;
     if (xpost_object_get_type(x) == realtype)
-        x = xpost_int_cons(x.real_.val);
+        x = xpost_int_cons((integer)x.real_.val);
     if (xpost_object_get_type(y) == realtype)
-        y = xpost_int_cons(y.real_.val);
+        y = xpost_int_cons((integer)y.real_.val);
 
     /* load private data struct from string */
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);

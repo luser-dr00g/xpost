@@ -245,7 +245,7 @@ int grok (Xpost_Context *ctx,
             return limitcheck;
         }
         //return xpost_real_cons(num);
-        *retval = xpost_real_cons(num);
+        *retval = xpost_real_cons((real)num);
         return 0;
     }
 

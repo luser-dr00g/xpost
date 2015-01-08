@@ -87,7 +87,7 @@ void _psmat2xmat (Xpost_Context *ctx,
     for (i=0; i < 6; i++)
     {
         if (xpost_object_get_type(arr[i]) == integertype)
-            arr[i] = xpost_real_cons(arr[i].int_.val);
+            arr[i] = xpost_real_cons((real)arr[i].int_.val);
     }
     m->xx = arr[0].real_.val;
     m->yx = arr[1].real_.val;
@@ -327,7 +327,7 @@ int _rotate (Xpost_Context *ctx,
     Xpost_Matrix mat;
     Xpost_Object psmat;
     psmat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
-    xpost_matrix_rotate(&mat, RAD_PER_DEG * angle.real_.val);
+    xpost_matrix_rotate(&mat, (real)(RAD_PER_DEG * angle.real_.val));
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "concat")));
@@ -342,7 +342,7 @@ int _mat_rotate (Xpost_Context *ctx,
                  Xpost_Object psmat)
 {
     Xpost_Matrix mat;
-    xpost_matrix_rotate(&mat, RAD_PER_DEG * angle.real_.val);
+    xpost_matrix_rotate(&mat, (real)(RAD_PER_DEG * angle.real_.val));
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
     return 0;

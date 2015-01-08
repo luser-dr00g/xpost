@@ -563,15 +563,15 @@ int _arcbez (Xpost_Context *ctx,
     xpost_matrix_scale(&mat1, r.real_.val, r.real_.val);
     xpost_matrix_translate(&mat2, x.real_.val, y.real_.val);
     xpost_matrix_mult(&mat2, &mat1, &mat3);
-    xpost_matrix_rotate(&mat2, ((angle1.real_.val + angle2.real_.val) / 2.0) * RAD_PER_DEG);
+    xpost_matrix_rotate(&mat2, (real)(((angle1.real_.val + angle2.real_.val) / 2.0) * RAD_PER_DEG));
     xpost_matrix_mult(&mat3, &mat2, &mat1);
 
-    da_2 = ((angle2.real_.val - angle1.real_.val) / 2.0) * RAD_PER_DEG;
-    sin_a = sin(da_2);
-    cos_a = cos(da_2);
+    da_2 = (real)(((angle2.real_.val - angle1.real_.val) / 2.0) * RAD_PER_DEG);
+    sin_a = (real)sin(da_2);
+    cos_a = (real)cos(da_2);
     x0 = cos_a;
     y0 = sin_a;
-    x1 = (4 - cos_a) / 3.0;
+    x1 = (real)((4 - cos_a) / 3.0);
     y1 = - (((1 - cos_a) * (cos_a - 3)) / (3 * sin_a));
     x2 = x1;
     y2 = -y1;
@@ -602,8 +602,8 @@ int _arc (Xpost_Context *ctx,
     while (a2 < a1) a2 += 360.0;
     if ((a2 - a1) > 90.0)
     {
-        _arc(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 - ((a2 - a1)/2.0)));
-        _arc(ctx, x, y, r, xpost_real_cons(a1 + ((a2 - a1)/2.0)), xpost_real_cons(a2));
+        _arc(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons((real)(a2 - ((a2 - a1)/2.0))));
+        _arc(ctx, x, y, r, xpost_real_cons((real)(a1 + ((a2 - a1)/2.0))), xpost_real_cons(a2));
     }
     else
     {
@@ -632,8 +632,8 @@ int _arcn (Xpost_Context *ctx,
     while (a2 > a1) a2 -= 360.0;
     if ((a1 - a2) > 90.0)
     {
-        _arcn(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 + ((a1 - a2)/2.0)));
-        _arcn(ctx, x, y, r, xpost_real_cons(a1 - ((a1 - a2)/2.0)), xpost_real_cons(a2));
+        _arcn(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 + (real)((a1 - a2)/2.0)));
+        _arcn(ctx, x, y, r, xpost_real_cons(a1 - (real)((a1 - a2)/2.0)), xpost_real_cons(a2));
     }
     else
     {
@@ -673,8 +673,8 @@ int _chopcurve (Xpost_Context *ctx,
 #ifdef UGLY
 
 #define MEDIAN(x, y, xA, yA, xB, yB) \
-    x = ((xA)+(xB))/2.0; \
-    y = ((yA)+(yB))/2.0;
+    x = (real)(((xA)+(xB))/2.0); \
+    y = (real)(((yA)+(yB))/2.0);
 
     MEDIAN(x01, y01, x0, y0, x1, y1)
     MEDIAN(x12, y12, x1, y1, x2, y2)
@@ -757,14 +757,14 @@ int _flattenpath (Xpost_Context *ctx)
         int subpathlen;
         int j;
 
-        subpath = xpost_dict_get(ctx, path, xpost_real_cons(i));
+        subpath = xpost_dict_get(ctx, path, xpost_int_cons(i));
         subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
         for (j = 0; j < subpathlen; j++)
         {
             Xpost_Object elem;
             Xpost_Object cmd;
 
-            elem = xpost_dict_get(ctx, subpath, xpost_real_cons(j));
+            elem = xpost_dict_get(ctx, subpath, xpost_int_cons(j));
             cmd = xpost_dict_get(ctx, elem, namecmd);
             if (cmd.mark_.padw == namemove.mark_.padw)
             {

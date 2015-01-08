@@ -109,11 +109,11 @@ int xpost_dict_compare_objects(Xpost_Context *ctx,
     /* fold nearly-comparable types to comparable */
     if (xpost_object_get_type(L) != xpost_object_get_type(R)) {
         if (xpost_object_get_type(L) == integertype && xpost_object_get_type(R) == realtype) {
-            L = xpost_real_cons(L.int_.val);
+            L = xpost_real_cons((real)L.int_.val);
             goto cont;
         }
         if (xpost_object_get_type(R) == integertype && xpost_object_get_type(L) == realtype) {
-            R = xpost_real_cons(R.int_.val);
+            R = xpost_real_cons((real)R.int_.val);
             goto cont;
         }
         if (xpost_object_get_type(L) == nametype && xpost_object_get_type(R) == stringtype) {
@@ -431,9 +431,9 @@ Xpost_Object xpost_dict_convert_extended_to_number (Xpost_Object e)
     double d = xpost_dict_convert_extended_to_double(e);
 
     if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_INT) {
-        o = xpost_int_cons(d);
+        o = xpost_int_cons((integer)d);
     } else if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_REAL) {
-        o = xpost_real_cons(d);
+        o = xpost_real_cons((real)d);
     } else {
         XPOST_LOG_ERR("invalid extended number object");
         return null;
