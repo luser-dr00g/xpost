@@ -70,7 +70,7 @@ int checkexepath (const char *exepath, char **pexedir)
     char *exedir, *orig;
     int is_installed = 0;
 
-#ifdef HAVE_WIN32
+#ifdef _WIN32
     char *slash;
 
     /* replace windows's \\  so we can compare paths */
@@ -147,7 +147,7 @@ int searchpathforargv0(const char *argv0, char **pexedir)
 static
 int checkargv0 (const char *argv0, char **pexedir)
 {
-#ifdef HAVE_WIN32
+#ifdef _WIN32
     if (argv0[1] == ':' &&
         (argv0[2] == '/' || argv0[2] == '\\'))
 #else
@@ -203,7 +203,7 @@ int xpost_is_installed (const char *argv0)
         return ret;
     }
 
-#ifdef HAVE_WIN32
+#ifdef _WIN32
     ret = checkargv0(argv0, pexedir);
     if (exedir) free(exedir);
     return ret;
