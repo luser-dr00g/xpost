@@ -4,6 +4,7 @@ syntax: glob
 .deps
 .dirstamp
 .libs
+Debug
 Makefile
 Makefile.in
 aclocal.m4
@@ -33,6 +34,8 @@ stamp-h1
 xpost.pc
 src/bin/xpost
 src/tests/xpost_suite
+visual_studio/vc9/xpost.sdf
+visual_studio/vc9/xpost.suo
 *.Po
 *.o
 *.exe
@@ -40,3 +43,4 @@ src/tests/xpost_suite
 *.lo
 itp
 *~
+*.user
