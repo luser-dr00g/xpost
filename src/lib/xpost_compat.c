@@ -53,8 +53,6 @@
 # include <io.h>
 #include <stdlib.h>
 # undef WIN32_LEAN_AND_MEAN
-#else
-# include <glob.h>
 #endif
 
 #include "xpost_compat.h"
