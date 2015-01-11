@@ -43,13 +43,19 @@
 # define fileno(st) _fileno(st)
 # define ftruncate(fd, sz) _chsize(fd, sz)
 # define getcwd(buf, len) _getcwd(buf, len)
-# define isnan(x) _isnan(x)
-# define isinf(x) (!_finite(x))
+# ifndef isnan
+#  define isnan(x) _isnan(x)
+# endif
+# ifndef isinf
+#  define isinf(x) (!_finite(x))
+# endif
 # define putenv(s) _putenv(s)
 # define snprintf _snprintf
 # define strdup(s) _strdup(s)
 # define trunc(x) ((x) > 0) ? floor(x) : ceil(x)
-# define va_copy(dst, src) ((dst) = (src))
+# ifndef va_copy
+#  define va_copy(dst, src) ((dst) = (src))
+# endif
 
 #endif /* _MSC_VER */
 
