@@ -5,6 +5,7 @@ syntax: glob
 .dirstamp
 .libs
 Debug
+Release
 Makefile
 Makefile.in
 aclocal.m4
@@ -34,6 +35,7 @@ stamp-h1
 xpost.pc
 src/bin/xpost
 src/tests/xpost_suite
+visual_studio/vc9/xpost.opensdf
 visual_studio/vc9/xpost.sdf
 visual_studio/vc9/xpost.suo
 *.Po
