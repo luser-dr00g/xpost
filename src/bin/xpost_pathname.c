@@ -67,6 +67,11 @@
 static
 int checkexepath (const char *exepath, char **pexedir)
 {
+#ifdef _MSC_VER
+    char buf[MAX_PATH];
+    char drive[_MAX_DRIVE];
+    char dir[_MAX_DIR];
+#endif
     char *exedir, *orig;
     int is_installed = 0;
 
@@ -84,7 +89,14 @@ int checkexepath (const char *exepath, char **pexedir)
     /*TODO: remove: no longer needed */
     /* global exedir is set in ps systemdict as /EXE_DIR */
     exedir = orig = strdup(exepath);
+#ifdef _MSC_VER
+    _splitpath(exedir, drive, dir, NULL, NULL);
+    snprintf(buf, sizeof(buf), "%s/%s", drive, dir);
+    buf[sizeof(buf) - 1] = '\0';
+    memcpy(exedir, buf, strlen(buf));
+#else
     exedir = dirname(exedir);
+#endif
 
 #ifdef DEBUG_PATHNAME
     printf("exepath: %s\n", exepath);
