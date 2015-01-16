@@ -472,10 +472,13 @@ static
 int xpost_op_string_deletefile (Xpost_Context *ctx,
                  Xpost_Object S)
 {
-    char *s;
+    char *s, *sbuf;
     int ret;
     s = xpost_string_get_pointer(ctx, S);
-    ret = remove(s);
+    sbuf = alloca(S.comp_.sz + 1);
+    memcpy(sbuf, xpost_string_get_pointer(ctx, S), S.comp_.sz);
+    sbuf[S.comp_.sz] = '\0';
+    ret = remove(sbuf);
     if (ret != 0)
         switch (errno)
         {
@@ -492,11 +495,17 @@ int xpost_op_string_renamefile (Xpost_Context *ctx,
                  Xpost_Object Old,
                  Xpost_Object New)
 {
-    char *old, *new;
+    char *old, *new, *oldbuf, *newbuf;
     int ret;
     old = xpost_string_get_pointer(ctx, Old);
+    oldbuf = alloca(Old.comp_.sz + 1);
+    memcpy(oldbuf, xpost_string_get_pointer(ctx, Old), Old.comp_.sz);
+    oldbuf[Old.comp_.sz] = '\0';
     new = xpost_string_get_pointer(ctx, New);
-    ret = rename(old, new);
+    newbuf = alloca(New.comp_.sz + 1);
+    memcpy(newbuf, xpost_string_get_pointer(ctx, New), New.comp_.sz);
+    newbuf[New.comp_.sz] = '\0';
+    ret = rename(oldbuf, newbuf);
     if (ret != 0)
         switch(errno)
         {
@@ -561,16 +570,19 @@ int xpost_op_filenameforall (Xpost_Context *ctx,
                      Xpost_Object Proc,
                      Xpost_Object Scr)
 {
-    char *tmp;
+    char *tmp, *tmpbuf;
     glob_t *globbuf;
     Xpost_Object oglob;
     int ret;
 
     tmp = xpost_string_get_pointer(ctx, Tmp);
+    tmpbuf = alloca(Tmp.comp_.sz + 1);
+    memcpy(tmpbuf, xpost_string_get_pointer(ctx, Tmp), Tmp.comp_.sz);
+    tmpbuf[Tmp.comp_.sz] = '\0';
     globbuf = malloc(sizeof *globbuf);
     if (!globbuf)
         return unregistered;
-    ret = xpost_glob(tmp, globbuf);
+    ret = xpost_glob(tmpbuf, globbuf);
     if (ret != 0)
     {
         free(globbuf);
