@@ -28,6 +28,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file xpost_dev_xcb.h
+ * @brief This file provides the Xpost xcb device functions.
+ *
+ * This header provides the Xpost xcb device functions.
+ * @defgroup xpost_library Library functions
+ *
+ * @{
+ */
+
 #ifndef XPOST_DEV_X_H
 #define XPOST_DEV_X_H
 
@@ -43,5 +53,9 @@
  */
 int xpost_oper_init_xcb_device_ops (Xpost_Context *ctx,
                 Xpost_Object sd);
+
+/**
+ * @}
+ */
 
 #endif

@@ -28,14 +28,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file xpost_dev_bgr.h
+ * @brief This file provides the BGR device operator functions.
+ *
+ * This header provides the BGR device operator functions.
+ * @defgroup xpost_library Library functions
+ *
+ * @{
+ */
+
 #ifndef XPOST_DEV_BGR_H
 #define XPOST_DEV_BGR_H
 
+/**
+ * @brief A single Blue-Green-Red pixel
+ */
 typedef
 struct Xpost_Bgr_Pixel {
     unsigned char blue, green, red;
 } Xpost_Bgr_Pixel;
 
+/**
+ * @brief A Blue-Green-Red raster buffer
+ */
 typedef
 struct Xpost_Bgr_Buffer {
     int width, height, byte_stride;
@@ -43,16 +59,20 @@ struct Xpost_Bgr_Buffer {
 } Xpost_Bgr_Buffer;
 
 /**
- * @brief install operator loadxcbdevice in systemdict
+ * @brief install operator loadbgrdevice in systemdict
  *
  * When run, creates a new operator
  *
- *       width height  newxcbdevice  device
+ *       width height  newbgrdevice  device
  *
- * which, when run, creates an X window and returns the device
+ * which, when run, creates and returns the device
  * instance dictionary.
  */
 int xpost_oper_init_bgr_device_ops (Xpost_Context *ctx,
                 Xpost_Object sd);
+
+/**
+ * @}
+ */
 
 #endif

@@ -28,10 +28,21 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file xpost_error.h
+ * @brief This file provides the Xpost error functions.
+ *
+ * This header provides the Xpost error functions.
+ * @defgroup xpost_library Library functions
+ *
+ * @{
+ */
+
 #ifndef XPOST_ERROR_H
 #define XPOST_ERROR_H
 
 /*
+   X-Macro utilities
    For a commentary on these macros, see my answer to this SO question
 http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#6636596
 */
@@ -39,23 +50,24 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
 #define AS_BARE(a) a ,
 /* #define AS_STR(a) #a , /\* defined in ob.h *\/ */
 
-/*
-   These error codes are (mostly) defined in the PLRM and can be returned by operator 
-   functions and handled at the postscript level. If an operator (including a device
-   function) returns a value outside of this range, the error-name returned to postscript
-   will be /unknownerror.
-   In some circumstances, /unregistered is used also used for this purpose,
-   since it has no documented use in the PLRM.
-   This gives you /unknownerror as a (mostly) freely-available error code for any
-   device-specific testing or such. So `return -1;` in a device function will send this
-   code back to the ps error-handler.
-
-   An operator function may fail to execute if the operator_exec function cannot match
-   the type signature against the operand stack. It will then return a /typecheck or
-   /stackunderflow error to postscript.
-
-   contextswitch and ioblock represent requests to the interpreter to change the state
-   of the execution-context. They cannot be caught by postscript error code.
+/**
+ * @brief Macro to generate error identifiers.
+ * These error codes are (mostly) defined in the PLRM and can be returned by operator 
+ * functions and handled at the postscript level. If an operator (including a device
+ * function) returns a value outside of this range, the error-name returned to postscript
+ * will be /unknownerror.
+ * In some circumstances, /unregistered is used also used for this purpose,
+ * since it has no documented use in the PLRM.
+ * This gives you /unknownerror as a (mostly) freely-available error code for any
+ * device-specific testing or such. So `return -1;` in a device function will send this
+ * code back to the ps error-handler.
+ *
+ * An operator function may fail to execute if the operator_exec function cannot match
+ * the type signature against the operand stack. It will then return a /typecheck or
+ * /stackunderflow error to postscript.
+ *
+ * contextswitch and ioblock represent requests to the interpreter to change the state
+ * of the execution-context. They cannot be caught by postscript error code.
  */
 #define ERRORS(_) \
     _(noerror)            /*0*/\
@@ -91,8 +103,20 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
     _(yieldtocaller)    /* 30*/\
     _(unknownerror)     /* 31 nb. unknownerror is the catch-all and must be last */ \
 /* #enddef ERRORS */
+
+/**
+ * @brief Error codes for operator return.
+ */
 enum err { ERRORS(AS_BARE) };
+
+/**
+ * @brief Printable string representations of Error codes.
+ */
 extern char *errorname[] /*= { ERRORS(AS_STR) }*/;
 /* puts(errorname[(enum err)limitcheck]); */
+
+/**
+ * @}
+ */
 
 #endif

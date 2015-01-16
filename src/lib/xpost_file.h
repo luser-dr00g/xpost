@@ -28,6 +28,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file xpost_file.h
+ * @brief This file provides the Xpost functions.
+ *
+ * This header provides the Xpost management functions.
+ * @defgroup xpost_library Library functions
+ *
+ * @{
+ */
+
 #ifndef XPOST_F_H
 #define XPOST_F_H
 
@@ -36,14 +46,53 @@
    for the FILE *
    */
 
+/**
+ * @brief Construct a file object given a FILE*.
+ */
 Xpost_Object xpost_file_cons(Xpost_Memory_File *mem, /*@NULL@*/ const FILE *fp);
+
+/**
+ * @brief Read a byte from FILE*.
+ */
 int xpost_file_getc(FILE *in);
+
+/**
+ * @brief Open and construct a file object given filename and mode.
+ */
 int xpost_file_open(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);
+
+/**
+ * @brief Return the FILE* from the file object.
+ */
 FILE *xpost_file_get_file_pointer(Xpost_Memory_File *mem, Xpost_Object f);
+
+/**
+ * @brief Get the status of the file object.
+ */
 int xpost_file_get_status(Xpost_Memory_File *mem, Xpost_Object f);
+
+/**
+ * @brief Return number of bytes available to read.
+ */
 int xpost_file_get_bytes_available(Xpost_Memory_File *mem, Xpost_Object f, int *retval);
+
+/**
+ * @brief Close the file and deallocate the descriptor in VM.
+ */
 int xpost_file_close(Xpost_Memory_File *mem, Xpost_Object f);
+
+/**
+ * @brief Read a byte from file object.
+ */
 Xpost_Object xpost_file_read_byte(Xpost_Memory_File *mem, Xpost_Object f);
+
+/**
+ * @brief Write a byte to a file object.
+ */
 int xpost_file_write_byte(Xpost_Memory_File *mem, Xpost_Object f, Xpost_Object b);
+
+/**
+ * @}
+ */
 
 #endif

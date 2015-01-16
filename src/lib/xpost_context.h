@@ -1,6 +1,16 @@
 #ifndef XPOST_CONTEXT_H
 #define XPOST_CONTEXT_H
 
+/**
+ * @file xpost_context.h
+ * @brief This file provides the context functions.
+ *
+ * This header provides the Xpost context functions.
+ * @defgroup xpost_library Library functions
+ *
+ * @{
+ */
+
 #define MAXCONTEXT 10
 
 /**
@@ -14,7 +24,7 @@ enum { LOCAL, GLOBAL };
 enum { C_FREE, C_IDLE, C_RUN, C_WAIT, C_IOBLOCK, C_ZOMB };
 
 /** @struct Xpost_Context
- *
+ * @brief The context structure for a thread of execution of ps code
  */
 typedef struct _Xpost_Context Xpost_Context;
 struct _Xpost_Context {
@@ -134,5 +144,9 @@ unsigned int xpost_context_fork3(Xpost_Context *ctx,
                     Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
                     Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
                     int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall));
+
+/**
+ * @}
+ */
 
 #endif

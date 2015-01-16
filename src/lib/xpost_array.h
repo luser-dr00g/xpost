@@ -34,7 +34,7 @@
 /** \file xpost_array.h
    \brief array functions
 
-   an array object is 8 bytes,
+   An array object is 8 bytes,
    consisting of 4 16bit fields common to all composite objects
      tag, type enum and flags
      sz, count of objects in array
@@ -42,7 +42,7 @@
      off, offset into allocation
    the entity data is a "C" array of objects
 
-   "memory" functions require a memory file to be specified.
+   "_memory" functions require a memory file to be specified.
    functions without "memory" select the memory file from a context, using the FBANK flag.
    an array object with the FBANK flag properly set, is called a "banked array".
 */
