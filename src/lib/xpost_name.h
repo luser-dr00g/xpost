@@ -31,11 +31,16 @@
 #ifndef XPOST_NM_H
 #define XPOST_NM_H
 
-/* names
-   The name mechanism associates strings with integers,
-   using a ternary search tree
-   and a stack of string objects
-   */
+/**
+ * @file xpost_name.h
+ * @brief array functions
+ *
+ * The name mechanism associates strings with integers
+ * using a ternary search tree
+ * and a stack of string objects.
+ *
+ * @{
+ */
 
 typedef struct tst {
     unsigned val,
@@ -48,5 +53,9 @@ void xpost_name_dump_names(Xpost_Context *ctx);
 int xpost_name_init(Xpost_Context *ctx);
 Xpost_Object xpost_name_cons(Xpost_Context *ctx, char *s);
 Xpost_Object xpost_name_get_string(Xpost_Context *ctx, Xpost_Object n);
+
+/**
+ * @}
+ */
 
 #endif

@@ -29,6 +29,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file xpost_compat.h
+ * @brief This file provides the Xpost compatibility functions.
+ *
+ * This file is mostly for emulating unixisms on windows.
+ *
+ * @defgroup xpost_library Library functions
+ *
+ * @{
+ */
+
 #ifndef XPOST_COMPAT_H
 #define XPOST_COMPAT_H
 
@@ -92,5 +103,9 @@ typedef struct
 
 int xpost_glob(const char *pattern, glob_t *pglob);
 void xpost_glob_free(glob_t *pglob);
+
+/**
+ * @}
+ */
 
 #endif
