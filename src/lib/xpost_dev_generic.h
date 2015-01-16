@@ -28,6 +28,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file xpost_dev_generic.h
+ * @brief This file provides utilify functions for all devices.
+ *
+ * This header provides utility functions for all devices.
+ * It allows a device to specify a filename after creation.
+ * And implements lower-level sorting and polygon filling
+ * routines for speed.
+ * @defgroup xpost_library Library functions
+ *
+ * @{
+ */
+
 #ifndef XPOST_DEV_GENERIC_H
 #define XPOST_DEV_GENERIC_H
 
@@ -52,5 +65,9 @@ int xpost_device_set_filename(Xpost_Context *ctx, Xpost_Object devdic, char *fil
  */
 int xpost_oper_init_generic_device_ops (Xpost_Context *ctx,
                 Xpost_Object sd);
+
+/**
+ * @}
+ */
 
 #endif
