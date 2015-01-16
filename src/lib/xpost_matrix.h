@@ -29,6 +29,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file xpost_matrix.h
+ * @brief matrix functions
+ *
+ * @{
+ */
+
 #ifndef XPOST_MATRIX_H
 #define XPOST_MATRIX_H
 
@@ -111,5 +118,9 @@ void xpost_matrix_rotate(Xpost_Matrix *m, real rad);
  * @p m1 and @p m2.
  */
 void xpost_matrix_mult(const Xpost_Matrix *m1, const Xpost_Matrix *m2, Xpost_Matrix *m);
+
+/**
+ * @}
+ */
 
 #endif

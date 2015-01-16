@@ -33,8 +33,9 @@
 #define XPOST_ITP_H
 
 /**
- * @brief the interpreter
-
+ * @file xpost_interpreter.h
+ * @brief the interpreter functions
+ *
  * The interpreter module manages the itpdata structure, allocating
  * contexts from a table, and allocating memory files to the contexts
  * also from tables. The itpdata structure thus encapsulates the entire
@@ -42,7 +43,9 @@
  *
  * The interpreter module also contains functions for eval actions,
  * the core interpreter loop,
-   */
+ *
+ * @{
+ */
 
 /*# define MAXCONTEXT 10 // moved to xpost_context.h. <- must include first!
  */
@@ -154,5 +157,9 @@ XPAPI int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type,
                const void *inputptr);
 
 XPAPI void xpost_destroy(Xpost_Context *ctx);
+
+/**
+ * @}
+ */
 
 #endif

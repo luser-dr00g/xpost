@@ -65,9 +65,11 @@ extern "C" {
 
 /**
  * @file xpost.h
- * @brief This file provides the Xpost functions.
+ * @brief This file provides the Xpost API functions.
  *
- * This header provides the Xpost management functions.
+ * This is the master "include" file which includes
+ * all headers in the proper order needed to control
+ * xpost features at the top level.
  * @defgroup xpost_library Library functions
  *
  * @{
