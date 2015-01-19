@@ -178,7 +178,12 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
         }
     }
 
-    fm = CreateFileMapping(h, NULL, PAGE_READWRITE, sz >> 32, sz & 0xffffffff, NULL);
+#ifdef _WIN32
+    fm = CreateFileMapping(h, NULL, PAGE_READWRITE,
+                           (DWORD)(sz >> 32), (DWORD)(sz & 0x00000000ffffffffULL), NULL);
+#else
+    fm = CreateFileMapping(h, NULL, PAGE_READWRITE, 0, sz & 0xffffffff, NULL);
+#endif
     if (!fm)
     {
         XPOST_LOG_ERR("CreateFileMapping failed (%ld)", GetLastError());
