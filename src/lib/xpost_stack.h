@@ -40,6 +40,15 @@
 #endif
 
 /**
+ * @file xpost_stack.h
+ * @brief stack functions
+ *
+ * Stacks are built from a chain of tables, a hybrid
+ * array/linked-list data structure.
+ * @{
+ */
+
+/**
  * @brief Number of objects in one segment of the stack.
  *
  * This parameter may be tuned for performance.
@@ -128,5 +137,9 @@ int xpost_stack_bottomup_replace (Xpost_Memory_File *mem,
  */
 Xpost_Object xpost_stack_pop (Xpost_Memory_File *mem,
         unsigned stackadr);
+
+/**
+ * @}
+ */
 
 #endif

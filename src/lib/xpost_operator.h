@@ -31,34 +31,48 @@
 #ifndef XPOST_OPERATOR_H
 #define XPOST_OPERATOR_H
 
-/* operators
-   This module is the operator interface.
-   It defines the operator constructor xpost_operator_cons,
-   and the operator handler function xpost_operator_exec.
-   xpost_operator_init_optab is called to initialize the optab structure itself.
-   xpost_oplib.c:initop is called to populate the optab structure.
+/**
+ * @file xpost_operator.h
+ * @brief operator functions
+ *
+ * This module is the operator interface.
+ * It defines the operator constructor xpost_operator_cons,
+ * and the operator handler function xpost_operator_exec.
+ * xpost_operator_init_optab is called to initialize the optab structure itself.
+ * xpost_oplib.c:initop is called to populate the optab structure.
+ *
+ * nb. Since xpost_operator_cons does a linear search through the optab,
+ * an obvious optimisation would be to factor-out calls to
+ * xpost_operator_cons from main-line code. Pre-initialize an object
+ * somewhere and re-use it where needed. xpost2 did this with
+ * a global struct of "opcuts" (operator object shortcuts),
+ * but here it would need to be "global", either in global-vm
+ * or in the context struct.
+ * One goal of the planned "quick-launch" option is to remove
+ * these lookups from the initialization, too. One requirement
+ * for the quick-launch is removing all function-pointers from vm.
+ *
+ * ----
+ * To speed-up typechecks, 
+ * a `int (*check)()` function pointer is added to the signature
+ * which directly implements the stack-checking performed by
+ * xpost_operator_exec (but without the nasty loops).
+ * xpost_operator_exec would then call op.sig[i].check() if not null.
+ *
+ * @{
+ */
 
-   nb. Since xpost_operator_cons does a linear search through the optab,
-   an obvious optimisation would be to factor-out calls to
-   xpost_operator_cons from main-line code. Pre-initialize an object
-   somewhere and re-use it where needed. xpost2 did this with
-   a global struct of "opcuts" (operator object shortcuts),
-   but here it would need to be "global", either in global-vm
-   or in the context struct.
-   One goal of the planned "quick-launch" option is to remove
-   these lookups from the initialization, too.
-
-   ----
-   An idea to speed-up typechecks, without radical change.
-   Add a `int (*check)()` function pointer to the signature
-   which directly implements the stack-checking performed by
-   xpost_operator_exec (but without the nasty loops).
-   xpost_operator_exec would then call op.sig[i].check() if not null.
-
-   */
-
+/**
+ * @brief a "generic" function pointer for operator functions
+ */ 
 typedef int (*Xpost_Op_Func)(Xpost_Context *ctx);
 
+/**
+ * @brief operator signature structure
+ *
+ * A signature contains a stack-pattern, an optional stack-checking
+ * function, and an operator function.
+ */
 typedef struct Xpost_Signature {
     Xpost_Op_Func fp;  /* function-pointer which implements the operator action */
     int in;       /* number of argument objects */
@@ -67,6 +81,13 @@ typedef struct Xpost_Signature {
     int out;      /* number of output objects */
 } Xpost_Signature;
 
+/**
+ * @brief operator structure
+ *
+ * An operator structure, which inhabits the operator table,
+ * contains a "pointer" to an array of signatures
+ * and the length of that array.
+ */
 typedef struct Xpost_Operator {
     unsigned name;   /* name-stack index of operator's name */
     int n;           /* number of signatures */
@@ -74,38 +95,47 @@ typedef struct Xpost_Operator {
 } Xpost_Operator;
 
 
-/*
-   extend the type enum with "pattern" types
-   anytype matches any object type
-   floattype matches reals and promotes ints to reals
-   numbertype matches reals and ints
-   proctype matches arrays with executable attribute set
+/**
+ * @brief the type pattern enum
+ *
+ * extend the type enum with "pattern" types
+ * anytype matches any object type
+ * floattype matches reals and promotes ints to reals
+ * numbertype matches reals and ints
+ * proctype matches arrays with executable attribute set
  */
 enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
     floattype, numbertype, proctype };
 
-/*
-   constant size of optab structure
+/**
+ * @brief constant size of optab structure
  */
 #define MAXOPS 250
 
-/*
-   initial size of systemdict (which then grows, automatically)
+/**
+ * @brief initial size of systemdict (which then grows, automatically)
  */
 #define SDSIZE 10
 
-/*
-   allocate the optab structure
+/**
+ * @brief allocate the optab structure
  */
 int xpost_operator_init_optab(Xpost_Context *ctx);
 
+/**
+ * @brief output a text dump of the operator contents
+ */
 void xpost_operator_dump(Xpost_Context *ctx, int opcode);
 
-/* construct an operator object by opcode */
+/**
+ * @brief construct an operator object by opcode
+ */
 Xpost_Object xpost_operator_cons_opcode(int opcode);
 
-/* construct an operator object by name,
-   possibly installing a new operator */
+/**
+ * @brief construct an operator object by name,
+ *        possibly installing a new operator
+ */
 Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
                                  char *name,
                                  /*@null@*/ Xpost_Op_Func fp,
@@ -113,17 +143,21 @@ Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
                                  int in,
                                  ...);
 
-/* execute an operator */
+/**
+ * @brief execute an operator
+ */
 int xpost_operator_exec(Xpost_Context *ctx,
                         unsigned opcode);
 
-/*
-   The INSTALL macro
-   refreshes the optab pointer
-   extracts the name index from the operator referred to by object op
-   constructs a name object n
-   defines the name/operator-object in systemdict
-   refreshes the optab pointer yet again
+/**
+ * @brief helper macro for installing an operator
+ *
+ * The INSTALL macro
+ * 1. refreshes the optab pointer
+ * 2. extracts the name index from the operator referred to by object op
+ * 3. constructs a name object n
+ * 4. defines the name/operator-object pair in systemdict
+ * 5. refreshes the optab pointer yet again
  */
 #define INSTALL \
     xpost_memory_table_get_addr(ctx->gl, \
@@ -134,5 +168,9 @@ int xpost_operator_exec(Xpost_Context *ctx,
     n.mark_.padw = optab[op.mark_.padw].name, \
     xpost_dict_put(ctx, sd, n, op), \
     optab = (void *)(ctx->gl->base + optadr); // recalc
+
+/**
+ * @}
+ */
 
 #endif
