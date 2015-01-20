@@ -65,7 +65,7 @@
  * check if path-to-executable is where it should be installed
  */
 static
-int checkexepath (const char *exepath, char **pexedir)
+int checkexepath (const char *exepath)
 {
 #ifdef _MSC_VER
     char buf[MAX_PATH];
@@ -111,7 +111,6 @@ int checkexepath (const char *exepath, char **pexedir)
     printf("is_installed: %d\n", is_installed);
 #endif
 
-    *pexedir = exedir;
     if (exedir != orig)
         free(orig);
     return is_installed;
@@ -140,7 +139,7 @@ char *appendtocwd (const char *relpath)
    ... (search $PATH variable, maybe??)
  */
 static
-int searchpathforargv0(const char *argv0, char **pexedir)
+int searchpathforargv0(const char *argv0)
 {
     (void)argv0;
     /*
@@ -150,14 +149,14 @@ int searchpathforargv0(const char *argv0, char **pexedir)
        ie. argv[0] is a bare name,
        and no /proc/???/exe links are present
     */
-    return checkexepath(".", pexedir);
+    return checkexepath(".");
 }
 
 /*
    inspect argv[0] for a (relative?) path
  */
 static
-int checkargv0 (const char *argv0, char **pexedir)
+int checkargv0 (const char *argv0)
 {
 #ifdef _WIN32
     if (argv0[1] == ':' &&
@@ -166,19 +165,19 @@ int checkargv0 (const char *argv0, char **pexedir)
     if (argv0[0] == '/') /* absolute path */
 #endif
     {
-        return checkexepath(argv0, pexedir);
+        return checkexepath(argv0);
     }
     else if (strchr(argv0, '/') != 0) /* relative path */
     {
         char *tmp;
         int ret;
         tmp = appendtocwd(argv0);
-        ret = checkexepath(tmp, pexedir);
+        ret = checkexepath(tmp);
         free(tmp);
         return ret;
     }
     else /* no path info: search $PATH */
-        return searchpathforargv0(argv0, pexedir);
+        return searchpathforargv0(argv0);
 }
 
 /*
@@ -195,7 +194,6 @@ int xpost_is_installed (const char *argv0)
     ssize_t len;
     char *libsptr;
     char *exedir = NULL;
-    char **pexedir = &exedir;
     int ret;
 
     (void)len; // len and buf are used in some, but not all, compilation paths
@@ -210,13 +208,13 @@ int xpost_is_installed (const char *argv0)
         printf("removing '.libs' from pathname\n");
         memmove(libsptr, libsptr+6, strlen(libsptr+6)+1);
         printf("argv0: %s\n", argv0);
-        ret = checkargv0(argv0, pexedir);
+        ret = checkargv0(argv0);
         if (exedir) free(exedir);
         return ret;
     }
 
 #ifdef _WIN32
-    ret = checkargv0(argv0, pexedir);
+    ret = checkargv0(argv0);
     if (exedir) free(exedir);
     return ret;
 
@@ -226,7 +224,7 @@ int xpost_is_installed (const char *argv0)
       if (len == 0)
       return -1;
       else
-      return checkexepath(buf, pexedir);
+      return checkexepath(buf);
     */
 #else
 
@@ -244,12 +242,12 @@ int xpost_is_installed (const char *argv0)
             buf[len] = '\0';
 
     if (len == -1) {
-        ret = checkargv0(argv0, pexedir);
+        ret = checkargv0(argv0);
         if (exedir) free(exedir);
         return ret;
     }
 
-    ret = checkexepath(buf, pexedir);
+    ret = checkexepath(buf);
     if (exedir) free(exedir);
     return ret;
 #endif
