@@ -24,7 +24,23 @@ true setglobal   % systemdict is global, so these allocations must be global
     }{
         pop
 		%EXE_DIR (/../../data) strcat
-        (./data)  % if is_installed is false, and no PACKAGE_DATA_DIR is defined, look for ps data in CWD/data
+        %(./data)  % if is_installed is false, and no PACKAGE_DATA_DIR is defined, look for ps data in CWD/data
+        false mark [
+            /WIN32 where { pop
+                (../../../data) %visual_studio/vc10/Debug
+            } if
+            (data) %repo root
+            (../../data) %src/bin
+            (../../../data) %visual_studio/vc10/Debug
+        ]
+        {
+            {
+                dup (/err.ps) strcat (r) file % false mark ... (DIR) file
+                pop counttomark 2 add 1 roll cleartomark pop true mark % (DIR) true mark
+            } stopped not { exit } if
+        } forall
+        cleartomark
+        not { () } if % none of the above, try CWD
     } ifelse
 def
 
