@@ -49,7 +49,7 @@
 # include "xpost_compat.h"
 #endif
 
-#include "xpost_pathname.h" /* xpost_is_installed exedir */
+#include "xpost_pathname.h" /* xpost_is_installed */
 #include "xpost_main.h"
 
 
