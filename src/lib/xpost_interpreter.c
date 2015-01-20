@@ -929,6 +929,9 @@ void setlocalconfig(Xpost_Context *ctx,
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "EXE_DIR"),
             xpost_object_cvlit(xpost_string_cons(ctx,
                     strlen(exedir), exedir)));
+#ifdef _WIN32
+    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "WIN32"), xpost_bool_cons(1));
+#endif
 
     devstr = strdup(device); /*  Parse device string for mode selector "dev:mode" */
     if ((subdevice=strchr(devstr, ':'))) {
@@ -1006,8 +1009,21 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
         char buf[1024];
         snprintf(buf, sizeof buf,
                  /*"(%s/../../data/init.ps) (r) file cvx exec",*/
-                 "(%s/data/init.ps) (r) file cvx exec",
-                 exedir);
+                 /*"(%s/data/init.ps) (r) file cvx exec",*/
+                 " false mark {\n"
+#ifdef _WIN32
+                 "   (%s/../../../data/init.ps) %%visual_studio/vc10/Debug/\n"
+                 "   (%s/data/init.ps) %%repo root\n"
+                 "   (%s/../../data/init.ps) %%src/bin\n"
+#else
+                 "   (%s/data/init.ps) %%repo root\n"
+                 "   (%s/../../data/init.ps) %%src/bin\n"
+                 "   (%s/../../../data/init.ps) %%visual_studio/vc10/Debug/\n"
+#endif
+                 " }\n"
+                 " { {(r)file cvx exec cleartomark true mark} stopped not {exit} if} forall\n"
+                 " cleartomark not { load_init_ps_fail } if ",
+                 exedir, exedir, exedir);
         xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(xpost_string_cons(ctx,
                     strlen(buf), buf)));
