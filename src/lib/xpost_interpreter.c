@@ -651,14 +651,14 @@ void _onerror(Xpost_Context *ctx,
     if (!validate_context(ctx))
         XPOST_LOG_ERR("context not valid");
 
-    if (itpdata->in_onerror)
+    if (itpdata->in_onerror > 5)
     {
         fprintf(stderr, "LOOP in error handler\nabort\n");
         ++ctx->quit;
         //exit(undefinedresult);
     }
 
-    itpdata->in_onerror = 1;
+    ++itpdata->in_onerror;
 
 #ifdef EMITONERROR
     fprintf(stderr, "err: %s\n", errorname[err]);
@@ -685,6 +685,8 @@ void _onerror(Xpost_Context *ctx,
     {
         XPOST_LOG_ERR("cannot load $error dict for error: %s",
                 errorname[err]);
+        xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "stop")));
+        //itpdata->in_onerror = 0;
         return;
     }
 
@@ -696,7 +698,7 @@ void _onerror(Xpost_Context *ctx,
     /* printf("6\n"); */
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(xpost_name_cons(ctx, errorname[err])));
     /* printf("7\n"); */
-    xpost_stack_push(ctx->lo, ctx->es, xpost_name_cons(ctx, "signalerror"));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "signalerror")));
 
     /* printf("8\n"); */
     itpdata->in_onerror = 0;
@@ -1003,27 +1005,23 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
     if (is_installed)
         xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(xpost_string_cons(ctx,
-             CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx exec"))));
+             CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx  /DATA_DIR (" PACKAGE_DATA_DIR ") def  exec"))));
     else
     {
         char buf[1024];
         snprintf(buf, sizeof buf,
                  /*"(%s/../../data/init.ps) (r) file cvx exec",*/
                  /*"(%s/data/init.ps) (r) file cvx exec",*/
-                 " false mark {\n"
-#ifdef _WIN32
-                 "   (%s/../../../data/init.ps) %%visual_studio/vc10/Debug/\n"
-                 "   (%s/data/init.ps) %%repo root\n"
-                 "   (%s/../../data/init.ps) %%src/bin\n"
-#else
-                 "   (%s/data/init.ps) %%repo root\n"
-                 "   (%s/../../data/init.ps) %%src/bin\n"
-                 "   (%s/../../../data/init.ps) %%visual_studio/vc10/Debug/\n"
-#endif
-                 " }\n"
-                 " { {(r)file cvx exec cleartomark true mark} stopped not {exit} if} forall\n"
+                 " false mark [\n"
+                 "   [ (%s/data/)          (%s/data/init.ps)          ] \n"  /* repo root */
+                 "   [ (%s/../../data/)    (%s/../../data/init.ps)    ] \n"  /* src/bin */
+                 "   [ (%s/../../../data/) (%s/../../../data/init.ps) ] \n"  /* visual_studio/vc10/Debug/ */
+                 " ]\n"
+                 " { aload pop { (r)file cvx "
+                 "     exch /DATA_DIR exch def "
+                 "     exec cleartomark pop true mark } stopped {cleartomark mark}{exit} ifelse} forall\n"
                  " cleartomark not { load_init_ps_fail } if ",
-                 exedir, exedir, exedir);
+                 exedir, exedir, exedir, exedir, exedir, exedir);
         xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(xpost_string_cons(ctx,
                     strlen(buf), buf)));
