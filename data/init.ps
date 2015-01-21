@@ -18,35 +18,38 @@ true setglobal   % systemdict is global, so these allocations must be global
     dup 4 2 roll exch putinterval % (ab)
 } bind def
 
-/DATA_DIR 
-    /PACKAGE_DATA_DIR dup where { %PACKAGE_DATA_DIR is passed from the config if is_installed is true
-        exch get
-    }{
-        pop
-		%EXE_DIR (/../../data) strcat
-        %(./data)  % if is_installed is false, and no PACKAGE_DATA_DIR is defined, look for ps data in CWD/data
-        false mark [
-            /WIN32 where { pop
-                (../../../data) %visual_studio/vc10/Debug
-            } if
-            (data) %repo root
-            (../../data) %src/bin
-            (../../../data) %visual_studio/vc10/Debug
-        ]
-        {
-            {
-                dup (/err.ps) strcat (r) file % false mark ... (DIR) file
-                pop counttomark 2 add 1 roll cleartomark pop true mark % (DIR) true mark
-            } stopped not { exit } if
-        } forall
-        cleartomark
-        not { () } if % none of the above, try CWD
-    } ifelse
-def
+%% predefined in xpost_interpreter.c:setlocalconfig()
+%%
+%/DATA_DIR 
+%    /PACKAGE_DATA_DIR dup where { %PACKAGE_DATA_DIR is passed from the config if is_installed is true
+%        exch get
+%    }{
+%        pop
+%        %EXE_DIR (/../../data) strcat
+%        %(./data)  % if is_installed is false, and no PACKAGE_DATA_DIR is defined, look for ps data in CWD/data
+%        false mark [
+%            /WIN32 where { pop
+%                (../../../data) %visual_studio/vc10/Debug
+%            } if
+%            (data) %repo root
+%            (../../data) %src/bin
+%            (../../../data) %visual_studio/vc10/Debug
+%        ]
+%        {
+%            {
+%                dup (/err.ps) strcat (r) file % false mark ... (DIR) file
+%                pop counttomark 2 add 1 roll cleartomark pop true mark % (DIR) true mark
+%            } stopped not { exit } if
+%        } forall
+%        cleartomark
+%        not { () } if % none of the above, try CWD
+%    } ifelse
+%def
 
 %(EXE_DIR =) print EXE_DIR print (\n) print
 /QUIET where { pop }{ (DATA_DIR =) print DATA_DIR print (\n) print } ifelse
 
+%(1\n)print
 %/product (Xpost) def % now an operator in xpost_op_misc.c
 %/version (0) def % now an operator in xpost_op_misc.c
 %/revision 0 def % now an operator in xpost_op_misc.c
@@ -54,7 +57,7 @@ def
 /Run { (\() print dup =print (\) run\n) print flush run } def
 /interrupt { stop } def
 
-
+%(2\n)print
 /=string 128 string def
 /=print {
     dup type /stringtype ne {
@@ -64,7 +67,7 @@ def
 } bind def
 /=only //=print def
 
-
+%(3\n)print
 /= {
     //=print exec
     (\n) print
@@ -81,15 +84,16 @@ def
 %exch strcat Run
 %(../../data)
 
+%(4\n)print
 DATA_DIR
 (/err.ps)
 strcat
 run
 
-
+%(5\n)print
 /stack { count dup 1 add copy //= repeat pop } def
 
-
+%(6\n)print
 userdict begin
 % ==
 24 dict begin
