@@ -46,6 +46,7 @@
 # include <io.h> /* close */
 #endif
 
+#include "xpost.h"
 #include "xpost_compat.h" /* mkstemp */
 #include "xpost_object.h"
 #include "xpost_memory.h"

@@ -48,7 +48,9 @@
 #endif
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_compat.h" /* mkstemp, snprintf */
+#include "xpost_private.h"
 
 
 /*============================================================================*

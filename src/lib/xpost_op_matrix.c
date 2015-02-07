@@ -40,6 +40,7 @@
 #include <string.h>
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"

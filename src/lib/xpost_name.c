@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_memory.h"  // name structures live in mfiles
 #include "xpost_object.h"  // names are objects, with associated hidden string objects
 #include "xpost_stack.h"  // name strings live on a stack

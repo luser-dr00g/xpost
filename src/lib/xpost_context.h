@@ -26,7 +26,6 @@ enum { C_FREE, C_IDLE, C_RUN, C_WAIT, C_IOBLOCK, C_ZOMB };
 /** @struct Xpost_Context
  * @brief The context structure for a thread of execution of ps code
  */
-typedef struct _Xpost_Context Xpost_Context;
 struct _Xpost_Context {
 
     struct

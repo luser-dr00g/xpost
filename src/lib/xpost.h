@@ -116,12 +116,144 @@ XPAPI int xpost_quit(void);
  */
 XPAPI void xpost_version_get(int *maj, int *min, int *mic);
 
-#include "xpost_log.h"
-#include "xpost_memory.h"
-#include "xpost_object.h"
-#include "xpost_context.h"
-#include "xpost_interpreter.h"
-#include "xpost_dev_raster.h"
+/**
+ * @typedef Xpost_Context
+ * @brief The context abstract structure for a thread of execution of ps code.
+ */
+typedef struct _Xpost_Context Xpost_Context;
+
+/**
+ * @typedef Xpost_Showpage_Semantics
+ * @brief Specify the behavior the interpreter should take when executing `showpage`.
+ */
+typedef enum {
+    XPOST_SHOWPAGE_DEFAULT, /**< Print "----showpage----\n" to stdout
+                                 and read and discard a line of text
+                                 from stdin (ie. wait for return). */
+    XPOST_SHOWPAGE_NOPAUSE, /**< Bypasses this action but still
+                                 performs a "flush" of the graphics
+                                 device. */
+    XPOST_SHOWPAGE_RETURN /**< Causes the interpreter to return
+                               control to its caller; the suspended
+                               context may be resumed by calling
+                               xpost_run with the #XPOST_INPUT_RESUME
+                               input type. */
+} Xpost_Showpage_Semantics;
+
+/**
+ * @typedef Xpost_Output_Type
+ * @brief Specify the interpretation of the outputptr parameter to xpost_create().
+ */
+typedef enum {
+    XPOST_OUTPUT_DEFAULT, /**< Ignores outputptr. */
+    XPOST_OUTPUT_FILENAME, /**< Treats outputptr as a char* to a
+                                zero-terminated OS path string
+                                (implemented in pgm and ppm devices). */  
+    XPOST_OUTPUT_BUFFERIN, /**< Treats outputptr as an unsigned char *
+                                and render directly into this memory
+                                (not currently implemented). */
+    XPOST_OUTPUT_BUFFEROUT /**< Ttreats outputptr as an unsigned char **
+                                and malloc()s a new buffer and assigns 
+                                it to the unsigned char * which
+                                outputptr points to. */
+} Xpost_Output_Type;
+
+/**
+ * @typedef Xpost_Input_Type
+ * @brief Specify the interpretation of the inputptr parameter to xpost_run().
+ */
+typedef enum {
+    XPOST_INPUT_STRING, /**< Treats inputptr as a char * to an
+                             zero-terminated ascii string, writes the
+                             whole string into a temporary file and 
+                             falls through to the #XPOST_INPUT_FILEPTR
+                             case. */
+    XPOST_INPUT_FILENAME, /**< Treats inputptr as a FILE *, creates a
+                               postscript file object and pushes it on
+                               the execution stack (scheduling it to
+                               execute). */
+    XPOST_INPUT_FILEPTR, /**< Treats inputptr as a char * to a
+                              zero-terminated OS path string, and
+                              pushes the path string itself,
+                              scheduling a procedure to execute it. */
+    XPOST_INPUT_RESUME /**< Bypasses any execution scheduling. */
+} Xpost_Input_Type;
+
+/**
+ * @typedef Xpost_Set_Size
+ * @brief FIXME: to fill...
+ */
+typedef enum {
+    XPOST_IGNORE_SIZE,
+    XPOST_USE_SIZE
+} Xpost_Set_Size;
+
+/*
+   The is_installed parameter controls whether the interpreter should look
+   to the standard locations for its postscript initialization files or
+   it should look for these files in "$CWD/data/".
+ */
+
+/**
+ * @brief Create a newly allocated context.
+ *
+ * @param device
+ * @param output_type
+ * @param outputptr
+ * @param semantics
+ * @param quiet
+ * @param is_installed
+ * @param set_size
+ * @param width The height of the context page.
+ * @param height The height of the context page.
+ *
+ * This function creates a #Xpost_Context with the given
+ * parameters. FIXME: give a more detailed explanation...
+ *
+ * When not needed the context must be freed with xpost_destroy().
+ *
+ * @see xpost_destroy()
+ */
+XPAPI Xpost_Context *xpost_create(const char *device,
+                                  Xpost_Output_Type output_type,
+                                  const void *outputptr,
+                                  Xpost_Showpage_Semantics semantics,
+                                  int quiet,
+                                  int is_installed,
+                                  Xpost_Set_Size set_size,
+                                  int width,
+                                  int height);
+
+/**
+ * @brief Execute ps program.
+ *
+ * @param ctx The context to run.
+ * @param input_type The input type to use.
+ * @param inputptr
+ * @return 
+ *
+ * This function executes a ps program until quit, fall-through to quit,
+ * #XPOST_SHOWPAGE_RETURN semantic, or error (default action: message,
+ * purge and quit).
+ *
+ * FIXME: give a more detailed explanation...
+ */
+XPAPI int xpost_run(Xpost_Context *ctx,
+                    Xpost_Input_Type input_type,
+                    const void *inputptr);
+
+/**
+ * @brief Destroy the given context.
+ *
+ * @param ctx The context to destroy.
+ *
+ * This function destroy the context @p ctx which has been created
+ * with xpost_create(). No test is done on @p ctx, so it must be non
+ * @c NULL.
+ *
+ * @see xpost_create()
+ */
+XPAPI void xpost_destroy(Xpost_Context *ctx);
 
 /**
  * @}

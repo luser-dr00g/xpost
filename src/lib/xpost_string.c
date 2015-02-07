@@ -33,6 +33,7 @@
 #endif
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_memory.h"  // strings live in mfile, accessed via mtab
 #include "xpost_object.h"  // strings are objects
 #include "xpost_stack.h"

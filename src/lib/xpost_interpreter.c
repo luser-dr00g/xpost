@@ -39,6 +39,7 @@
 #include <string.h>
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_compat.h" /* mkstemp, xpost_isatty */
 #include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
 #include "xpost_object.h"  // eval functions examine objects
@@ -892,7 +893,7 @@ void setlocalconfig(Xpost_Context *ctx,
                     const char *outfile,
                     const char *bufferin,
                     char **bufferout,
-                    enum Xpost_Showpage_Semantics semantics,
+                    Xpost_Showpage_Semantics semantics,
                     char *exedir,
                     int is_installed)
 {
@@ -1062,12 +1063,12 @@ static int copyudtosd(Xpost_Context *ctx, Xpost_Object ud, Xpost_Object sd)
    output configuration, and semantics.
  */
 XPAPI Xpost_Context *xpost_create(const char *device,
-                                  enum Xpost_Output_Type output_type,
+                                  Xpost_Output_Type output_type,
                                   const void *outputptr,
-                                  enum Xpost_Showpage_Semantics semantics,
+                                  Xpost_Showpage_Semantics semantics,
                                   int quiet,
                                   int is_installed,
-                                  enum Xpost_Set_Size set_size,
+                                  Xpost_Set_Size set_size,
                                   int width,
                                   int height)
 {
@@ -1155,7 +1156,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
    execute ps program until quit, fall-through to quit,
    SHOWPAGE_RETURN semantic, or error (default action: message, purge and quit).
  */
-XPAPI int xpost_run(Xpost_Context *ctx, enum Xpost_Input_Type input_type, const void *inputptr)
+XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void *inputptr)
 {
     Xpost_Object lsav = null;
     int llev = 0;

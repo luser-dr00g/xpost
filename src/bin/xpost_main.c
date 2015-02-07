@@ -45,6 +45,7 @@
 #endif
 
 #include "xpost.h"
+#include "xpost_log.h"
 #ifdef _MSC_VER
 # include "xpost_compat.h"
 #endif

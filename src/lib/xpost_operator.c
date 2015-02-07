@@ -39,6 +39,7 @@
 #include <stdlib.h> /* NULL */
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_memory.h"  // accesses mfile
 #include "xpost_object.h"  // operators are objects
 #include "xpost_stack.h"  // uses a stack for argument passing
