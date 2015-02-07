@@ -78,6 +78,7 @@ void *alloca (size_t);
 # undef WIN32_LEAN_AND_MEAN
 #endif
 
+#include "xpost.h"
 #include "xpost_compat.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
@@ -91,7 +92,6 @@ void *alloca (size_t);
 #include "xpost_file.h"
 
 //#include "xpost_interpreter.h"
-#include "xpost_compat.h"
 #include "xpost_operator.h"
 #include "xpost_op_file.h"
 

@@ -66,6 +66,7 @@ void *alloca (size_t);
 #include <stdio.h>
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_memory.h"  /* dicts live in the memory file, accessed via memory table */
 #include "xpost_object.h"  /* dict is an object, containing objects */
 #include "xpost_stack.h"  /* may need to count the save stack */

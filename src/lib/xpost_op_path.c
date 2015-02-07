@@ -47,7 +47,7 @@
 #include <stdio.h>
 #include <string.h>
 
-
+#include "xpost.h"
 #include "xpost_main.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"

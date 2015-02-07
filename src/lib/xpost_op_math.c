@@ -69,6 +69,7 @@ void *alloca (size_t);
 //double RAD_PER_DEG /* = PI / 180.0 */;
 #define RAD_PER_DEG (M_PI / 180.0)
 
+#include "xpost.h"
 #include "xpost_compat.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"

@@ -64,6 +64,7 @@
 
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_compat.h"
 #include "xpost_error.h"
 #include "xpost_memory.h"

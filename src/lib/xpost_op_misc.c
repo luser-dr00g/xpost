@@ -74,7 +74,7 @@ void *alloca (size_t);
 # endif
 #endif
 
-
+#include "xpost.h"
 #include "xpost_compat.h"
 #include "xpost_main.h"
 #include "xpost_memory.h"
