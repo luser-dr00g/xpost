@@ -152,7 +152,7 @@ typedef enum {
     XPOST_OUTPUT_BUFFERIN, /**< Treats outputptr as an unsigned char *
                                 and render directly into this memory
                                 (not currently implemented). */
-    XPOST_OUTPUT_BUFFEROUT /**< Ttreats outputptr as an unsigned char **
+    XPOST_OUTPUT_BUFFEROUT /**< Treats outputptr as an unsigned char **
                                 and malloc()s a new buffer and assigns 
                                 it to the unsigned char * which
                                 outputptr points to. */
@@ -182,6 +182,8 @@ typedef enum {
 /**
  * @typedef Xpost_Set_Size
  * @brief FIXME: to fill...
+ * 
+ * Currently, only "ignore size" is implemented.
  */
 typedef enum {
     XPOST_IGNORE_SIZE,
@@ -236,7 +238,29 @@ XPAPI Xpost_Context *xpost_create(const char *device,
  * #XPOST_SHOWPAGE_RETURN semantic, or error (default action: message,
  * purge and quit).
  *
- * FIXME: give a more detailed explanation...
+ * Depending upon the input type, this function will package the input
+ * into an appropriate postscript object and schedule it for execution
+ * by marking it executable and pushing to the exec stack, or by 
+ * pushing to the operand stack and pushing to the exec stack a small
+ * program to execute it.
+ *
+ * For a filename, push a proc to open and execute it.
+ *
+ * For a string, write to a temp file and fall-through to FILE * case.
+ *
+ * For a FILE *, mark executable and push to exec stack.
+ *
+ * As a special-case, if executing a FILE *, and that file is a 
+ * console or tty, it pushes a proc which launches the postscript
+ * `executive` which offers PS> prompts.
+ *
+ * If an output device (such as a window) has been specified in the
+ * call to xpost_create(), it is here in the startup code, where
+ * the device is initialized. The device is specified in xpost_create,
+ * not because it is needed at that point, but because it is considered
+ * a constant for the context, whereas it is intended that a context
+ * may be re-used by calling xpost_run upon it again, presumably with 
+ * differing arguments.
  */
 XPAPI int xpost_run(Xpost_Context *ctx,
                     Xpost_Input_Type input_type,
