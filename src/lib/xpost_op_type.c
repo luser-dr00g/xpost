@@ -226,7 +226,7 @@ int Scvi(Xpost_Context *ctx,
    convert string to name */
 static
 int Scvn(Xpost_Context *ctx,
-          Xpost_Object s)
+         Xpost_Object s)
 {
     char *t;
     Xpost_Object name;
@@ -245,11 +245,19 @@ int Scvn(Xpost_Context *ctx,
     return 0;
 }
 
+static
+int Ncvn(Xpost_Context *ctx,
+         Xpost_Object n)
+{
+    xpost_stack_push(ctx->lo, ctx->os, n);
+    return 0;
+}
+
 /* number  cvr  real
    convert number to real */
 static
 int Ncvr(Xpost_Context *ctx,
-          Xpost_Object n)
+         Xpost_Object n)
 {
     if (xpost_object_get_type(n) == integertype)
         n = xpost_real_cons((real)n.int_.val);
@@ -527,6 +535,8 @@ int xpost_oper_init_type_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "cvi", (Xpost_Op_Func)Scvi, 1, 1, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "cvn", (Xpost_Op_Func)Scvn, 1, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "cvn", (Xpost_Op_Func)Ncvn, 1, 1, nametype);
     INSTALL;
     op = xpost_operator_cons(ctx, "cvr", (Xpost_Op_Func)Ncvr, 1, 1, numbertype);
     INSTALL;
