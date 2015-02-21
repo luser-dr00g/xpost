@@ -409,7 +409,14 @@ int grok (Xpost_Context *ctx,
                       *retval = ret;
                       return 0;
                   } else {
-                      ns = 1 + puff(ctx, s+1, NBUF-1, src, next, back);
+                      if (isspace(*s)) {
+                          ns = 0;
+                      } else if (isdel(*s)) {
+                          back(ctx, *s, src);
+                          ns = 0;
+                      } else {
+                          ns += puff(ctx, s+1, NBUF-1, src, next, back);
+                      }
                   }
                   if (ns == NBUF)
                   {

@@ -69,6 +69,7 @@
 typedef struct
 {
     unsigned int nextseg;
+    unsigned int prevseg;
     unsigned int top;
     Xpost_Object data[XPOST_STACK_SEGMENT_SIZE];
 } Xpost_Stack;

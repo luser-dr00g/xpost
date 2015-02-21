@@ -283,6 +283,7 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
 }
 
 /* grow memory file by sz bytes, rounded up to the nearest system page size.
+   return 1 on success, 0 on failure.
  */
 int xpost_memory_file_grow (Xpost_Memory_File *mem,
                             unsigned int sz)
@@ -355,7 +356,7 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
         UnmapViewOfFile(mem->base);
     }
     else
-    {
+    { /* hanging error case */
 #elif defined (HAVE_MMAP)
     if (mem->fd != -1)
     {
@@ -393,27 +394,17 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
     }
 # endif
     if (tmp == MAP_FAILED)
-    {
+    { /* hanging error case */
 #else
     /* initialize mem (valgrind) */
     memset(mem->base + mem->used, 0, mem->max - mem->used);
     tmp = realloc(mem->base, sz);
     if (tmp == NULL)
-    {
+    { /* hanging error case */
 #endif
+        /* common error case closes the three possible hanging error cases */
         XPOST_LOG_ERR("%d unable to grow memory", VMerror);
         ret = 0;
-    /* FIXME: this should really be there ? */
-#ifdef HAVE_MMAP
-# ifndef HAVE_MREMAP
-        tmp = mmap(NULL, mem->max,
-                   PROT_READ | PROT_WRITE,
-                   mem->fd == -1 ? MAP_ANONYMOUS | MAP_PRIVATE : MAP_SHARED,
-                   mem->fd, 0);
-# else
-        munmap(mem->base, mem->max);
-# endif
-#endif
     }
     mem->base = (unsigned char *)tmp;
     mem->max = sz;

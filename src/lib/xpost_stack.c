@@ -38,10 +38,8 @@
 #include "xpost_log.h"
 #include "xpost_object.h"
 #include "xpost_memory.h"
+#include "xpost_error.h"
 #include "xpost_stack.h"
-
-/* stub */
-enum { unregistered };
 
 /* allocate memory for one stack segment */
 int xpost_stack_init (Xpost_Memory_File *mem,
