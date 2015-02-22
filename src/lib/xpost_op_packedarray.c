@@ -97,7 +97,7 @@ int packedarray (Xpost_Context *ctx,
             return stackunderflow;
         xpost_array_put(ctx, a, i-1, v);
     }
-    a = xpost_object_set_access(xpost_object_cvlit(a), XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
+    a = xpost_object_set_access(ctx, xpost_object_cvlit(a), XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
     xpost_stack_push(ctx->lo, ctx->os, a);
     return 0;
 }

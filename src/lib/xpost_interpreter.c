@@ -838,6 +838,8 @@ int initalldata(const char *device)
 
     _initializing = 1;
     initevaltype();
+    xpost_object_install_dict_get_access(xpost_dict_get_access);
+    xpost_object_install_dict_set_access(xpost_dict_set_access);
 
     /* allocate the top-level itpdata data structure. */
     null = xpost_object_cvlit(null);
@@ -975,7 +977,7 @@ void setlocalconfig(Xpost_Context *ctx,
     if (bufferin)
     {
         Xpost_Object s = xpost_object_cvlit(xpost_string_cons(ctx, sizeof(bufferin), NULL));
-        xpost_object_set_access(s, XPOST_OBJECT_TAG_ACCESS_NONE);
+        xpost_object_set_access(ctx, s, XPOST_OBJECT_TAG_ACCESS_NONE);
         memcpy(xpost_string_get_pointer(ctx, s), &bufferin, sizeof(bufferin));
         xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "OutputBufferIn"), s);
     }
@@ -983,7 +985,7 @@ void setlocalconfig(Xpost_Context *ctx,
     if (bufferout)
     {
         Xpost_Object s = xpost_object_cvlit(xpost_string_cons(ctx, sizeof(bufferout), NULL));
-        xpost_object_set_access(s, XPOST_OBJECT_TAG_ACCESS_NONE);
+        xpost_object_set_access(ctx, s, XPOST_OBJECT_TAG_ACCESS_NONE);
         memcpy(xpost_string_get_pointer(ctx, s), &bufferout, sizeof(bufferout));
         xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "OutputBufferOut"), s);
 
@@ -1141,9 +1143,9 @@ XPAPI Xpost_Context *xpost_create(const char *device,
         return NULL;
     }
 
-    /* make systemdict readonly */
-    xpost_dict_put(xpost_ctx, sd, xpost_name_cons(xpost_ctx, "systemdict"), xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
-    if (!xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY)))
+    /* make systemdict readonly FIXME: use new access semantics */
+    xpost_dict_put(xpost_ctx, sd, xpost_name_cons(xpost_ctx, "systemdict"), xpost_object_set_access(xpost_ctx, sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    if (!xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(xpost_ctx, sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY)))
     {
         XPOST_LOG_ERR("cannot replace systemdict in dict stack");
         return NULL;

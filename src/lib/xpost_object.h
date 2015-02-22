@@ -32,6 +32,8 @@
 #define XPOST_OBJECT_H
 
 
+typedef struct _Xpost_Context Xpost_Context;
+
 /**
  * @file xpost_object.h
  * @brief The file defines the basic object structure, typically 8-bytes.
@@ -519,6 +521,15 @@ int xpost_object_is_exe (Xpost_Object obj);
  */
 int xpost_object_is_lit (Xpost_Object obj);
 
+/**
+ * @brief install specialized access getter functions 
+ *
+ * Dict and file objects share the same access across all duplicates
+ * of the object. These functions allow file and dict objects to
+ * override the normal access field retrieval method.
+ */
+void xpost_object_install_dict_get_access(Xpost_Object_Tag_Access (*access_func)(Xpost_Context *, Xpost_Object));
+void xpost_object_install_file_get_access(Xpost_Object_Tag_Access (*access_func)(Xpost_Context *, Xpost_Object));
 
 /**
  * @brief Yield the access-field from the object's tag.
@@ -536,7 +547,13 @@ int xpost_object_is_lit (Xpost_Object obj);
  * A general description of the access flag behavior is at
  * https://groups.google.com/d/topic/comp.lang.postscript/ENxhFBqwgq4/discussion
  */
-Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj);
+Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Context *ctx, Xpost_Object obj);
+
+/**
+ * @brief install specialized access setter functions
+ */
+void xpost_object_install_dict_set_access(Xpost_Object (*set_access_func)(Xpost_Context *, Xpost_Object, Xpost_Object_Tag_Access));
+void xpost_object_install_file_set_access(Xpost_Object (*set_access_func)(Xpost_Context *, Xpost_Object, Xpost_Object_Tag_Access));
 
 /**
  * @brief Return object with access-field set to access.
@@ -551,6 +568,7 @@ Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj);
  * #XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET.
  */
 Xpost_Object xpost_object_set_access (
+        Xpost_Context *ctx,
         Xpost_Object obj,
         Xpost_Object_Tag_Access access);
 
@@ -568,7 +586,7 @@ Xpost_Object xpost_object_set_access (
  * Filetype objects use the access field as 2 independent flags.
  * A file is readable if the FILE_READ flag is set.
  */
-int xpost_object_is_readable (Xpost_Object obj);
+int xpost_object_is_readable (Xpost_Context *ctx, Xpost_Object obj);
 
 /**
  * @brief Determine whether the object is writable or not.
@@ -583,7 +601,7 @@ int xpost_object_is_readable (Xpost_Object obj);
  * Filetype objects use the access field as 2 independent flags.
  * A file is writeable if the FILE_WRITE flag is set.
  */
-int xpost_object_is_writeable (Xpost_Object obj);
+int xpost_object_is_writeable (Xpost_Context *ctx, Xpost_Object obj);
 
 
 /**

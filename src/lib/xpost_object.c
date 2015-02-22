@@ -197,43 +197,86 @@ int xpost_object_is_lit(Xpost_Object obj)
     return !!(obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_LIT);
 }
 
-Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Object obj)
+static
+Xpost_Object_Tag_Access (*xpost_object_dict_get_access)(Xpost_Context *, Xpost_Object) = NULL;
+
+static
+Xpost_Object_Tag_Access (*xpost_object_file_get_access)(Xpost_Context *, Xpost_Object) = NULL;
+
+void xpost_object_install_dict_get_access(Xpost_Object_Tag_Access (*access_func)(Xpost_Context *, Xpost_Object)){
+    xpost_object_dict_get_access = access_func;
+}
+
+void xpost_object_install_file_get_access(Xpost_Object_Tag_Access (*access_func)(Xpost_Context *, Xpost_Object)){
+    xpost_object_file_get_access = access_func;
+}
+
+Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Context *ctx, Xpost_Object obj)
 {
-    return (Xpost_Object_Tag_Access)((obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >>
+    word type = xpost_object_get_type(obj);
+    if (type == dicttype && xpost_object_dict_get_access)
+        return xpost_object_dict_get_access(ctx, obj);
+    else if (type == filetype && xpost_object_file_get_access)
+        return xpost_object_file_get_access(ctx, obj);
+    else
+        return (Xpost_Object_Tag_Access)((obj.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >>
                                      XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
 }
 
-Xpost_Object xpost_object_set_access (Xpost_Object obj, Xpost_Object_Tag_Access access)
+static
+Xpost_Object (*xpost_object_dict_set_access)(Xpost_Context *, Xpost_Object, Xpost_Object_Tag_Access) = NULL;
+
+static
+Xpost_Object (*xpost_object_file_set_access)(Xpost_Context *, Xpost_Object, Xpost_Object_Tag_Access) = NULL;
+
+void xpost_object_install_dict_set_access(Xpost_Object (*set_access_func)(Xpost_Context *, Xpost_Object, Xpost_Object_Tag_Access))
 {
-    obj.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-    obj.tag |= (access << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-    return obj;
+    xpost_object_dict_set_access = set_access_func;
 }
 
-int xpost_object_is_readable(Xpost_Object obj)
+void xpost_object_install_file_set_access(Xpost_Object (*set_access_func)(Xpost_Context *, Xpost_Object, Xpost_Object_Tag_Access))
+{
+    xpost_object_file_set_access = set_access_func;
+}
+
+Xpost_Object xpost_object_set_access (Xpost_Context *ctx, Xpost_Object obj, Xpost_Object_Tag_Access access)
+{
+    word type = xpost_object_get_type(obj);
+    if (type == dicttype && xpost_object_dict_set_access)
+        return xpost_object_dict_set_access(ctx, obj, access);
+    else if (type == filetype && xpost_object_file_set_access)
+        return xpost_object_file_set_access(ctx, obj, access);
+    else {
+        obj.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        obj.tag |= (access << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        return obj;
+    }
+}
+
+int xpost_object_is_readable(Xpost_Context *ctx, Xpost_Object obj)
 {
     if (xpost_object_get_type(obj) == filetype)
     {
-        return xpost_object_get_access(obj)
+        return xpost_object_get_access(ctx, obj)
             & XPOST_OBJECT_TAG_ACCESS_FILE_READ;
     }
     else
     {
-        return xpost_object_get_access(obj)
+        return xpost_object_get_access(ctx, obj)
             >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY;
     }
 }
 
-int xpost_object_is_writeable (Xpost_Object obj)
+int xpost_object_is_writeable (Xpost_Context *ctx, Xpost_Object obj)
 {
     if (xpost_object_get_type(obj) == filetype)
     {
-        return xpost_object_get_access(obj)
+        return xpost_object_get_access(ctx, obj)
             & XPOST_OBJECT_TAG_ACCESS_FILE_WRITE;
     }
     else
     {
-        return xpost_object_get_access(obj)
+        return xpost_object_get_access(ctx, obj)
             == XPOST_OBJECT_TAG_ACCESS_UNLIMITED;
     }
 }

@@ -98,6 +98,31 @@ typedef union
     double             number;
 } Xpost_Ieee_Double_As_Int;
 
+Xpost_Object_Tag_Access xpost_dict_get_access(Xpost_Context *ctx, Xpost_Object d)
+{
+    Xpost_Memory_File *mem;
+    unsigned int ad;
+    dichead *dp;
+    mem = xpost_context_select_memory(ctx, d);
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
+    dp = (void *)(mem->base + ad);
+    return (Xpost_Object_Tag_Access)((dp->tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >>
+                                     XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+}
+
+Xpost_Object xpost_dict_set_access(Xpost_Context *ctx, Xpost_Object d, Xpost_Object_Tag_Access access)
+{
+    Xpost_Memory_File *mem;
+    unsigned int ad;
+    dichead *dp;
+    mem = xpost_context_select_memory(ctx, d);
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
+    dp = (dichead *)(mem->base + ad);
+    dp->tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    dp->tag |= access << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET;
+    return d;
+}
+
 /* Compare two objects for "equality".
    return 0 if "equal"
           +value if L > R
@@ -242,7 +267,7 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
 
     xpost_memory_table_get_addr(mem, ent, &ad);
     dp = (void *)(mem->base + ad); /* clear header */
-    dp->tag = dicttype;
+    dp->tag = d.tag;
     dp->sz = sz;
     dp->nused = 0;
     dp->pad = 0;
@@ -593,6 +618,12 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
     dichead *dp;
     unsigned int ad;
     int ret;
+
+#if 0
+    /* it should do this. but then xpost fails to load */
+    if (!xpost_object_is_writeable(ctx, d))
+        return invalidaccess;
+#endif
 
     if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
