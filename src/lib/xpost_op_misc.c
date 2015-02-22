@@ -122,7 +122,7 @@ Xpost_Object bind (Xpost_Context *ctx,
             }
         }
     }
-    return xpost_object_set_access(p, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
+    return xpost_object_set_access(ctx, p, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
 }
 
 /* proc  bind  proc

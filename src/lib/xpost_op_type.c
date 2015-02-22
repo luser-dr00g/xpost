@@ -131,8 +131,9 @@ static
 int Aexecuteonly(Xpost_Context *ctx,
                   Xpost_Object o)
 {
-    o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-    o.tag |= (XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    //o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    //o.tag |= (XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    o = xpost_object_set_access(ctx, o, XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY);
     xpost_stack_push(ctx->lo, ctx->os, o);
     return 0;
 }
@@ -143,8 +144,9 @@ static
 int Anoaccess(Xpost_Context *ctx,
                Xpost_Object o)
 {
-    o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-    o.tag |= (XPOST_OBJECT_TAG_ACCESS_NONE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    //o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    //o.tag |= (XPOST_OBJECT_TAG_ACCESS_NONE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    o = xpost_object_set_access(ctx, o, XPOST_OBJECT_TAG_ACCESS_NONE);
     xpost_stack_push(ctx->lo, ctx->os, o);
     return 0;
 }
@@ -155,8 +157,9 @@ static
 int Areadonly(Xpost_Context *ctx,
                Xpost_Object o)
 {
-    o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-    o.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    //o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    //o.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    o = xpost_object_set_access(ctx, o, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
     xpost_stack_push(ctx->lo, ctx->os, o);
     return 0;
 }
@@ -167,7 +170,8 @@ static
 int Archeck(Xpost_Context *ctx,
              Xpost_Object o)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
+    //xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(xpost_object_get_access(ctx, o) >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
     return 0;
 }
 
@@ -177,7 +181,8 @@ static
 int Awcheck(Xpost_Context *ctx,
              Xpost_Object o)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
+    //xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( xpost_object_get_access(ctx, o) == XPOST_OBJECT_TAG_ACCESS_UNLIMITED));
     return 0;
 }
 

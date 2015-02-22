@@ -145,7 +145,7 @@ int xpost_op_file_read (Xpost_Context *ctx,
             Xpost_Object f)
 {
     Xpost_Object b;
-    if (!xpost_object_is_readable(f))
+    if (!xpost_object_is_readable(ctx,f))
         return invalidaccess;
 #ifdef HAVE_SYS_SELECT_H
     {
@@ -195,7 +195,7 @@ int xpost_op_file_write (Xpost_Context *ctx,
              Xpost_Object i)
 {
     int ret;
-    if (!xpost_object_is_writeable(f))
+    if (!xpost_object_is_writeable(ctx, f))
         return invalidaccess;
     ret = xpost_file_write_byte(ctx->lo, f, i);
     if (ret)
@@ -220,7 +220,7 @@ int xpost_op_file_readhexstring (Xpost_Context *ctx,
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
-    if (!xpost_object_is_readable(F))
+    if (!xpost_object_is_readable(ctx,F))
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
@@ -265,7 +265,7 @@ int xpost_op_file_writehexstring (Xpost_Context *ctx,
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
-    if (!xpost_object_is_writeable(F))
+    if (!xpost_object_is_writeable(ctx, F))
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
@@ -293,7 +293,7 @@ int xpost_op_file_readstring (Xpost_Context *ctx,
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
-    if (!xpost_object_is_readable(F))
+    if (!xpost_object_is_readable(ctx,F))
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
@@ -323,7 +323,7 @@ int xpost_op_file_writestring (Xpost_Context *ctx,
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
-    if (!xpost_object_is_writeable(F))
+    if (!xpost_object_is_writeable(ctx, F))
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
@@ -345,7 +345,7 @@ int xpost_op_file_readline (Xpost_Context *ctx,
     int n, c = ' ';
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
-    if (!xpost_object_is_readable(F))
+    if (!xpost_object_is_readable(ctx,F))
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
@@ -402,13 +402,13 @@ int xpost_op_file_flushfile (Xpost_Context *ctx,
     FILE *f;
     if (!xpost_file_get_status(ctx->lo, F)) return 0;
     f = xpost_file_get_file_pointer(ctx->lo, F);
-    if (xpost_object_is_writeable(F))
+    if (xpost_object_is_writeable(ctx, F))
     {
         ret = fflush(f);
         if (ret != 0)
             return ioerror;
     }
-    else if (xpost_object_is_readable(F))
+    else if (xpost_object_is_readable(ctx,F))
     { /* flush input file. yes yes I know ... but it's in the spec! */
         int c;
         while ((c = xpost_file_getc(f)) != EOF)

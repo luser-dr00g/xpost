@@ -65,17 +65,25 @@ typedef struct Xpost_Magic_Pair {
     int (*put)(Xpost_Context *ctx, Xpost_Object dict, Xpost_Object key, Xpost_Object val);
 } Xpost_Magic_Pair;
 
-/** @def DICTABN
-   DICTABN yields the number of real entries in the table
-   for a dict of size n
-*/
+/**
+ * @brief yields the number of real entries in the table for a dict of size n
+ */
 #define DICTABN(n) (2 * ((n)+1))
 
-/** @def DICTABSZ
-   DICTABSZ yields the size in bytes of the table
-   for a dict of size n
-*/
+/**
+ * @brief yields the size in bytes of the table for a dict of size n
+ */
 #define DICTABSZ(n) (DICTABN(n) * sizeof(Xpost_Object))
+
+/**
+ * @brief yield the access field from the dichead in vm
+ */
+Xpost_Object_Tag_Access xpost_dict_get_access(Xpost_Context *ctx, Xpost_Object d);
+
+/**
+ * @brief set the access field in the dichead in vm
+ */
+Xpost_Object xpost_dict_set_access(Xpost_Context *ctx, Xpost_Object d, Xpost_Object_Tag_Access access);
 
 /** 
    compare objects (<,=,>) :: (-(x),0,+(x))
