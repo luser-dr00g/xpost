@@ -997,12 +997,14 @@ void setlocalconfig(Xpost_Context *ctx,
 
 /*
    load init.ps (which also loads err.ps) while systemdict is writeable
+   ignore invalidaccess errors.
  */
 static
 void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
 {
     assert(ctx->gl->base);
     xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
+    ctx->ignoreinvalidaccess = 1;
 /*splint doesn't like the composed macros*/
 #ifndef S_SPLINT_S
     if (is_installed)
@@ -1032,6 +1034,7 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
 #endif
     ctx->quit = 0;
     mainloop(ctx);
+    ctx->ignoreinvalidaccess = 0;
 }
 
 
@@ -1144,12 +1147,15 @@ XPAPI Xpost_Context *xpost_create(const char *device,
     }
 
     /* make systemdict readonly FIXME: use new access semantics */
-    xpost_dict_put(xpost_ctx, sd, xpost_name_cons(xpost_ctx, "systemdict"), xpost_object_set_access(xpost_ctx, sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
+    xpost_dict_put(xpost_ctx, sd, xpost_name_cons(xpost_ctx, "systemdict"), sd);
+    xpost_object_set_access(xpost_ctx, sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
+#if 0
     if (!xpost_stack_bottomup_replace(xpost_ctx->lo, xpost_ctx->ds, 0, xpost_object_set_access(xpost_ctx, sd, XPOST_OBJECT_TAG_ACCESS_READ_ONLY)))
     {
         XPOST_LOG_ERR("cannot replace systemdict in dict stack");
         return NULL;
     }
+#endif
 
     return xpost_ctx;
 }
