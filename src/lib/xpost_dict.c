@@ -619,11 +619,9 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
     unsigned int ad;
     int ret;
 
-#if 0
-    /* it should do this. but then xpost fails to load */
-    if (!xpost_object_is_writeable(ctx, d))
-        return invalidaccess;
-#endif
+    if (!ctx->gl->interpreter_get_initializing())
+        if (!xpost_object_is_writeable(ctx, d))
+            return invalidaccess;
 
     if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
