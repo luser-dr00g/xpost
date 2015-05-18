@@ -77,7 +77,7 @@
 /* no-op operator useful as a break target.
    put 'breakhere' in the postscript program,
    run interpreter under gdb,
-   gdb> b breakhere
+   gdb> b xpost_op_breakhere
    gdb> run
    will break in the breakhere function (of course),
    which you can follow back to the main loop (gdb> next),

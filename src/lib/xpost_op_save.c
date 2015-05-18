@@ -136,7 +136,7 @@ int Zcurrentglobal (Xpost_Context *ctx)
 }
 
 /* any  gcheck  bool
-   check whether value is a legal element of a global compound object */
+   check whether value is a legal element of a global composite object */
 static
 int Agcheck (Xpost_Context *ctx,
               Xpost_Object A)

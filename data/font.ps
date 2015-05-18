@@ -1,5 +1,13 @@
 % Type 3 font handling
 
+% Many font operators are implemented as C functions and
+% these use fontconfig and freetype to access host OS  fonts.
+% see src/lib/xpost_font.[ch] and src/lib/xpost_op_font.[ch]
+
+% These procedures interface with the built-in operators,
+% performing special handling for Type 3 (postscript) fonts,
+% and calling the C operators for all other types.
+
 /QUIET where { pop }{ (loading font.ps...)print } ifelse
 
 /definefont { % /fontname -dict-

@@ -492,7 +492,7 @@ override%pop pop%bind def
 % pos units along the trajectory defined by the (source) subpath line
 % and update pos=0 ++ipos parity=!parity
 % if we're not drawing, we need to update variables
-% and move to `current-sequence-element pos sub` units along the trajectory
+% and move to `current-sequence-element-length pos sub` units along the trajectory
 /crossdashbound {
     {/ang/rad/data}{exch def}forall
     /partial dasharray ipos get pos sub def

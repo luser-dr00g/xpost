@@ -76,7 +76,7 @@ struct Xpost_Raster_ARGB_Pixel {
 } Xpost_Raster_ARGB_Pixel;
 
 /**
- * @brief a red green blue pixel
+ * @brief a generic buffer
  */
 typedef
 struct Xpost_Raster_Buffer {

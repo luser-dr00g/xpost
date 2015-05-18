@@ -168,14 +168,14 @@ typedef enum {
                              whole string into a temporary file and 
                              falls through to the #XPOST_INPUT_FILEPTR
                              case. */
-    XPOST_INPUT_FILENAME, /**< Treats inputptr as a FILE *, creates a
-                               postscript file object and pushes it on
-                               the execution stack (scheduling it to
-                               execute). */
-    XPOST_INPUT_FILEPTR, /**< Treats inputptr as a char * to a
+    XPOST_INPUT_FILENAME, /**< Treats inputptr as a char * to a
                               zero-terminated OS path string, and
                               pushes the path string itself,
                               scheduling a procedure to execute it. */
+    XPOST_INPUT_FILEPTR, /**< Treats inputptr as a FILE *, creates a
+                               postscript file object and pushes it on
+                               the execution stack (scheduling it to
+                               execute). */
     XPOST_INPUT_RESUME /**< Bypasses any execution scheduling. */
 } Xpost_Input_Type;
 

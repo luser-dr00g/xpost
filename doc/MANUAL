@@ -65,8 +65,15 @@ as an array of strings before you `(tab340.ps)run` or whatever.
 Check the source to see if it uses ARGUMENTS to know if you need
 to set this variable before running.
 
-Other examples have been added to the /data directory which is 
-also installed with `make install`. 
+For example, to run ex/binshape.ps which is a silly little program
+attempting to display vertical streams of 0 and 1 reminiscent of
+'The Matrix'. Launch xpost from the /ex directory.
+
+  PS> /ARGUMENTS [ 80 ] def
+  PS> (binshape.ps) run
+
+Other examples with graphics have been added to the /data directory which is
+also installed with `make install`.
 
   cd data
   xpost dancingmen.ps  (some figures from a Sherlock Holmes episode)
@@ -218,7 +225,7 @@ indicates how many elements to move and in which direction.
 
     "Positive J to roll away", "Negative to bring 'em back".
 
-So the next step in revising our function is to remove the /x name
+So the next step in revising/optimizing our function is to remove the /x name
 as well.
 
   % a b c x  quadratic  ax^2+bx+c

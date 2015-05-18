@@ -120,6 +120,8 @@ Xpost_Object xpost_dict_set_access(Xpost_Context *ctx, Xpost_Object d, Xpost_Obj
     dp = (dichead *)(mem->base + ad);
     dp->tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     dp->tag |= access << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET;
+    d.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    d.tag |= access << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET;
     return d;
 }
 

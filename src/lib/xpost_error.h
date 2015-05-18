@@ -68,6 +68,9 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
  *
  * contextswitch and ioblock represent requests to the interpreter to change the state
  * of the execution-context. They cannot be caught by postscript error code.
+ *
+ * yieldtocaller is used to implement the Showpage-Return semantic where xpost
+ * returns from xpost_run() after rendering the buffer.
  */
 #define ERRORS(_) \
     _(noerror)            /*0*/\

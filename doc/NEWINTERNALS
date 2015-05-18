@@ -25,7 +25,7 @@ save and restore. So this rule prevents dangling links in global memory.
 
 Inside the Memory File, at address 0, is the first of a chain of memory tables.
 Each segment of the table chain is a Memory Table struct which contains several
-allocation slots and a counter, and an address of the next slot (or zero, if the
+allocation slots and a counter, and an address of the next table (or zero, if the
 counter is less than the table size).
 
 Addresses to memory occur in several definite forms, which represent several
@@ -125,7 +125,7 @@ or, to make a non-executable object:
     Xpost_Object arr = xpost_object_cvlit(xpost_array_cons(ctx, 12));
 
 
-The garbage collect currently runs on a periodic cycle, every so many allocations
+The garbage collector currently runs on a periodic cycle, every so many allocations
 from the memory file. If a useable allocation is found on the free-list, the 
 gc cycle count is not incremented.
 
@@ -227,7 +227,7 @@ which can be sub-classed, overriding as many operators as desired,
 in order to capture graphical output or optimize graphical throughput.
 
 Here is the base class for 8bit gray-scale output. RGB differs only 
-in the number `val` objects passed on the stack to each procedure.
+in the number of `val` objects passed on the stack to each procedure.
 
 From the data/pgmimage.ps file:
 

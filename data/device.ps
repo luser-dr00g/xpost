@@ -1,3 +1,8 @@
+% This file implements "device-level" operators
+% which are independent of the actual device implementation.
+% It also implements the Showpage Semantics behavior
+% specified in the call to xpost_create().
+
 /QUIET where { pop }{ (loading device.ps...\n)print } ifelse
 
 DATA_DIR (/image.ps) strcat run  % image.ps implements device base classes
