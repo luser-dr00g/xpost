@@ -1,7 +1,11 @@
 [The original README has moved to doc/INTERNALS,
 and has been superceded by doc/NEWINTERNALS.]
 
-Xpost is cross-platform interpreter for the PostScript Language.
+Xpost is a cross-platform interpreter for the PostScript Language
+written in C. It has autotools for building on unix systems, and
+Visual C solutions for building on Windows. Currently, a windows
+build cannot run because there's no installer to coordinate the 
+location for the postscript-language data files that are needed.
 
 The core of the interpreter was writtern by M Joshua Ryan (luser droog).
 The autotools build system, logging system, and win32 device were 
