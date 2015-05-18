@@ -1,17 +1,26 @@
 [The original README has moved to doc/INTERNALS,
 and has been superceded by doc/NEWINTERNALS.]
 
-Xpost is undergoing rapid changes in the direction of portability
-under the skillful care and guidance of contributor Vincent Torri.
+Xpost is cross-platform interpreter for the PostScript Language.
 
-Xpost is currently (10/15/2013, and in the author's opinion) a
-pretty-solid cross-platform scripting-language interpreter.
+The core of the interpreter was writtern by M Joshua Ryan (luser droog).
+The autotools build system, logging system, and win32 device were 
+written by Vincent Torri. Individual files bear the copyright of their
+respective contributors.
 
 Xpost has rudimentary graphics support. MS Windows or X11 windows.
 PGM or PPM file output. Or a nulldevice, which executes the drawing
-operations and discards the output. A BGR device is in development
-which will yield the image data to a calling program which uses
-xpost as a library component.
+operations and discards the output. A Raster device is in development
+which will yield the image data in BGR, BGRA, ARGB, or RGB byte orders
+to a calling program which uses xpost as a library component.
+
+Xpost is currently distributed with a BSD-3-Clause licence which may
+allow its use in projects where Ghostscript is not available.
+
+The entire interpreter is implemented as a library which is used
+by a relatively small application file /src/bin/xpost.c. An simpler
+example of using the libary is in /src/bin/xpost_client.c.
+
 
 Quick Installation Instructions.
 ----- ------------ -------------
