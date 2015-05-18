@@ -7,7 +7,7 @@ Visual C solutions for building on Windows. Currently, a windows
 build cannot run because there's no installer to coordinate the 
 location for the postscript-language data files that are needed.
 
-The core of the interpreter was writtern by M Joshua Ryan (luser droog).
+The core of the interpreter was written by M Joshua Ryan (luser droog).
 The autotools build system, logging system, and win32 device were 
 written by Vincent Torri. Individual files bear the copyright of their
 respective contributors.
@@ -22,7 +22,7 @@ Xpost is currently distributed with a BSD-3-Clause licence which may
 allow its use in projects where Ghostscript is not available.
 
 The entire interpreter is implemented as a library which is used
-by a relatively small application file /src/bin/xpost.c. An simpler
+by a relatively small application file /src/bin/xpost.c. A simpler
 example of using the libary is in /src/bin/xpost_client.c.
 
 
