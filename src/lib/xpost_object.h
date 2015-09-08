@@ -31,8 +31,7 @@
 #ifndef XPOST_OBJECT_H
 #define XPOST_OBJECT_H
 
-
-typedef struct _Xpost_Context Xpost_Context;
+#include "xpost.h"
 
 /**
  * @file xpost_object.h
