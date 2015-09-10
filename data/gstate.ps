@@ -19,6 +19,7 @@
     /linewidth 1
     /linecap 0
     /linejoin 2
+    /miterlimit 0.0
     /dasharray []
     /dashoffset 0
     /currfont 1 dict
@@ -226,6 +227,15 @@ end
     graphicsdict /currgstate get /linejoin get
 } def
 
+% num  setmiterlimit  -
+/setmiterlimit {
+    graphicsdict /currgstate get exch /miterlimit exch put
+} def
+
+% -  currentmiterlimit  num
+/currentmiterlimit {
+    graphicsdict /currgstate get /miterlimit get
+} def
 
 
 % Graphics State Operators -- Device Dependent
