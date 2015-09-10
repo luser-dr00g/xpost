@@ -34,7 +34,7 @@ Currently the intepreter source is in src/bin and the commands
   make
 will create the interpreter binary xpost(.exe)? in src/bin.
   make install
-will install the application, so itp can be run as a command.
+will install the application, so xpost can be run as a command.
 
 
 
