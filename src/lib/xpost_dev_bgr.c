@@ -146,7 +146,7 @@ int _create_cont (Xpost_Context *ctx,
     }
 #else
     { /*
-         initialize the PS-level raster buffer, 
+         initialize the PS-level raster buffer,
          an array of arrays of ints, each holding a 24-bit rgb value.
          This allows us to re-use most of the PPM base-class functions,
          and just grab the buffer in _emit() which overrides the device's
@@ -170,7 +170,7 @@ int _create_cont (Xpost_Context *ctx,
         {
             row = xpost_object_cvlit(xpost_array_cons(ctx, width));
             xpost_array_put(ctx, imgdata, i, row);
-            xpost_memory_put(xpost_context_select_memory(ctx, row), 
+            xpost_memory_put(xpost_context_select_memory(ctx, row),
                     xpost_object_get_ent(row),
                     0,
                     width * sizeof(Xpost_Object),
@@ -299,7 +299,7 @@ int _emit (Xpost_Context *ctx,
     data = (unsigned char *)private.buf->data;
 #else
 
-    data = malloc(stride * height * 3); 
+    data = malloc(stride * height * 3);
     imgdata = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "ImgData"));
     if (xpost_object_get_type(imgdata) == invalidtype)
         return undefined;
