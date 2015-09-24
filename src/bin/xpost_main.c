@@ -95,7 +95,8 @@ static const char *_xpost_main_devices[] =
 #ifdef _WIN32
     "gdi",
     "gl",
-#else
+#endif
+#ifdef HAVE_XCB
     "xcb",
 #endif
     "bgr",
