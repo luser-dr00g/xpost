@@ -74,7 +74,7 @@
 /* FIXME: use xpost_log instead */
 
 
-unsigned int xpost_memory_page_size;
+size_t xpost_memory_page_size;
 
 /*
    initialize the global extern page_size variable
@@ -87,16 +87,16 @@ xpost_memory_init(void)
 
     GetSystemInfo(&si);
 
-    xpost_memory_page_size = (int)si.dwPageSize;
+    xpost_memory_page_size = (size_t)si.dwPageSize;
     return 1;
 #elif defined HAVE_SYSCONF_PAGESIZE
-    xpost_memory_page_size = (int)sysconf(_SC_PAGESIZE);
+    xpost_memory_page_size = (size_t)sysconf(_SC_PAGESIZE);
     return 1;
 #elif defined HAVE_SYSCONF_PAGE_SIZE
-    xpost_memory_page_size = (int)sysconf(_SC_PAGE_SIZE);
+    xpost_memory_page_size = (size_t)sysconf(_SC_PAGE_SIZE);
     return 1;
 #elif defined HAVE_GETPAGESIZE
-    xpost_memory_page_size = getpagesize();
+    xpost_memory_page_size = (size_t)getpagesize();
     return 1;
 #else
     XPOST_LOG_ERR("Could not find a way to retrieve the page size");
@@ -179,7 +179,7 @@ int xpost_memory_file_init (Xpost_Memory_File *mem,
         }
     }
 
-#ifdef _WIN32
+#ifdef _WIN64
     fm = CreateFileMapping(h, NULL, PAGE_READWRITE,
                            (DWORD)(sz >> 32), (DWORD)(sz & 0x00000000ffffffffULL), NULL);
 #else
@@ -286,7 +286,7 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem)
    return 1 on success, 0 on failure.
  */
 int xpost_memory_file_grow (Xpost_Memory_File *mem,
-                            unsigned int sz)
+                            size_t sz)
 {
 #ifdef _WIN32
     HANDLE h;
@@ -340,7 +340,12 @@ int xpost_memory_file_grow (Xpost_Memory_File *mem,
         }
     }
 
-    fm = CreateFileMapping(h, NULL, PAGE_READWRITE, (size_t)sz >> 32, sz & 0xffffffff, NULL);
+#ifdef _WIN64
+    fm = CreateFileMapping(h, NULL, PAGE_READWRITE,
+                           (DWORD)(sz >> 32), (DWORD)(sz & 0x00000000ffffffffULL), NULL);
+#else
+    fm = CreateFileMapping(h, NULL, PAGE_READWRITE, 0, sz & 0xffffffff, NULL);
+#endif
     if (!fm)
     {
         XPOST_LOG_ERR("CreateFileMapping failed (%ld)", GetLastError());
