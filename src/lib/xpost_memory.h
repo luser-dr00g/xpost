@@ -175,7 +175,7 @@ typedef struct
  * @var xpost_memory_page_size
  * @brief The 'grain' of the memory-file size.
  */
-extern unsigned int xpost_memory_page_size;
+extern size_t xpost_memory_page_size;
 
 
 /*
@@ -241,7 +241,7 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem);
  */
 int xpost_memory_file_grow (
         Xpost_Memory_File *mem,
-        unsigned int sz);
+        size_t sz);
 
 /**
  * @brief Allocate memory in the given memory file and return offset.

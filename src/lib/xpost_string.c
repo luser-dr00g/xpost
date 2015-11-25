@@ -32,6 +32,8 @@
 # include <config.h>
 #endif
 
+#include <stdlib.h> /* size_t */
+
 #include "xpost.h"
 #include "xpost_log.h"
 #include "xpost_memory.h"  // strings live in mfile, accessed via mtab

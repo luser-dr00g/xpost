@@ -111,7 +111,7 @@ xpost_init(void)
 
 #ifdef HAVE_GETTIMEOFDAY
     gettimeofday(&tv, NULL);
-    _xpost_start_time = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
+    _xpost_start_time = (((long)tv.tv_sec) * 1000) + ((long)tv.tv_usec / 1000);
 #else
     _xpost_start_time = time(NULL) * 1000.0;
 #endif

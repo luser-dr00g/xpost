@@ -37,6 +37,7 @@
 #endif
 
 #include <assert.h>
+#include <stdlib.h> /* size_t */
 
 #include "xpost.h"
 #include "xpost_log.h"
