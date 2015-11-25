@@ -67,7 +67,9 @@ void *alloca (size_t);
 
 //#define PI (4.0 * atan(1.0))
 //double RAD_PER_DEG /* = PI / 180.0 */;
-#define RAD_PER_DEG (M_PI / 180.0)
+//#define RAD_PER_DEG (M_PI / 180.0)
+//#define RAD_PER_DEG (3.14159 / 180.0)
+#define RAD_PER_DEG (0.0174533)
 
 #include "xpost.h"
 #include "xpost_compat.h"
@@ -337,9 +339,18 @@ int Ratan (Xpost_Context *ctx,
             Xpost_Object num,
             Xpost_Object den)
 {
-    real ang = atan2((real)(num.real_.val * RAD_PER_DEG), (real)(den.real_.val * RAD_PER_DEG)) / RAD_PER_DEG;
-    if (ang < 0.0) ang += 360.0;
-    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(ang));
+    double ang;
+    ang = atan2(((double)num.real_.val * RAD_PER_DEG),
+                ((double)den.real_.val * RAD_PER_DEG))
+          / RAD_PER_DEG;
+#if 0
+    if (ang < 0.0) {
+        double t;
+        t = ang + 360.0;
+        ang = t;
+    }
+#endif
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)ang));
     return 0;
 }
 

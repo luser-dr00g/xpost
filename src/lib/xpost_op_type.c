@@ -335,11 +335,11 @@ int conv_integ(real num,
                int n)
 {
     int off;
-    if (num < 10.0) {
+    if (num < 10) {
         *s = ((int)num) + '0';
         return 1;
     }
-    off = conv_integ((real)(num/10.0), s, n);
+    off = conv_integ((real)(num/10), s, n);
     if ((off == n) || (off == -1)) return -1;
     s[off] = (((int)num)%10) + '0';
     return off + 1;
@@ -352,7 +352,7 @@ int conv_frac (real num,
                int n)
 {
     real integ, frac;
-    num *= 10.0;
+    num *= 10;
     integ = (real)floor(num);
     frac = num - integ;
     *s = (int)integ + '0';

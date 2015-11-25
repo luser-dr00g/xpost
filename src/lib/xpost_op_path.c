@@ -76,7 +76,8 @@
    % Any other element appends to the last subpath
  */
 
-#define RAD_PER_DEG (M_PI / 180.0)
+//#define RAD_PER_DEG (M_PI / 180.0)
+#define RAD_PER_DEG (0.0174533)
 
 /*name objects*/
 static Xpost_Object namegraphicsdict;
@@ -597,10 +598,14 @@ int _arc (Xpost_Context *ctx,
         Xpost_Object x, Xpost_Object y, Xpost_Object r,
         Xpost_Object angle1, Xpost_Object angle2)
 {
-    real a1 = angle1.real_.val;
-    real a2 = angle2.real_.val;
-    while (a2 < a1) a2 += 360.0;
-    if ((a2 - a1) > 90.0)
+    double a1 = angle1.real_.val;
+    double a2 = angle2.real_.val;
+    while (a2 < a1) {
+        double t;
+        t = a2 + 360;
+        a2 = t;
+    }
+    if ((a2 - a1) > 90)
     {
         _arc(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons((real)(a2 - ((a2 - a1)/2.0))));
         _arc(ctx, x, y, r, xpost_real_cons((real)(a1 + ((a2 - a1)/2.0))), xpost_real_cons(a2));
@@ -629,8 +634,12 @@ int _arcn (Xpost_Context *ctx,
 {
     real a1 = angle1.real_.val;
     real a2 = angle2.real_.val;
-    while (a2 > a1) a2 -= 360.0;
-    if ((a1 - a2) > 90.0)
+    while (a2 > a1) {
+        double t;
+        t = a2 - 360;
+        a2 = t;
+    }
+    if ((a1 - a2) > 90)
     {
         _arcn(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 + (real)((a1 - a2)/2.0)));
         _arcn(ctx, x, y, r, xpost_real_cons(a1 - (real)((a1 - a2)/2.0)), xpost_real_cons(a2));

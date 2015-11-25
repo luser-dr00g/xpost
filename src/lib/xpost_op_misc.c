@@ -145,7 +145,7 @@ int realtime (Xpost_Context *ctx)
 #ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
+    sec = (long)tv.tv_sec * 1000 + (long)tv.tv_usec / 1000;
 #else
     sec = time(NULL) * 1000.0;
 #endif
@@ -166,7 +166,7 @@ int usertime (Xpost_Context *ctx)
 #ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;
     gettimeofday(&tv, NULL);
-    sec = tv.tv_sec * 1000 + tv.tv_usec / 1000.0;
+    sec = ((long)tv.tv_sec * 1000) + ((long)tv.tv_usec / 1000);
 #else
     sec = time(NULL) * 1000.0;
 #endif

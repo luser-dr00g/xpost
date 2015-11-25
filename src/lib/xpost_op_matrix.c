@@ -56,7 +56,8 @@
 #include "xpost_operator.h"
 #include "xpost_op_matrix.h"
 
-#define RAD_PER_DEG (M_PI / 180.0)
+//#define RAD_PER_DEG (M_PI / 180.0)
+#define RAD_PER_DEG (0.0174533)
 
 static
 Xpost_Object _get_ctm(Xpost_Context *ctx)
@@ -328,7 +329,7 @@ int _rotate (Xpost_Context *ctx,
     Xpost_Matrix mat;
     Xpost_Object psmat;
     psmat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
-    xpost_matrix_rotate(&mat, (real)(RAD_PER_DEG * angle.real_.val));
+    xpost_matrix_rotate(&mat, angle.real_.val * RAD_PER_DEG);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "concat")));
