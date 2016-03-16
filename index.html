@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-dark.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
+
+    <title>Xpost by luser-dr00g</title>
+  </head>
+
+  <body>
+
+    <header>
+      <div class="container">
+        <h1>Xpost</h1>
+        <h2>A PostScript interpreter in C</h2>
+
+        <section id="downloads">
+          <a href="https://github.com/luser-dr00g/xpost/zipball/master" class="btn">Download as .zip</a>
+          <a href="https://github.com/luser-dr00g/xpost/tarball/master" class="btn">Download as .tar.gz</a>
+          <a href="https://github.com/luser-dr00g/xpost" class="btn btn-github"><span class="icon"></span>View on GitHub</a>
+        </section>
+      </div>
+    </header>
+
+    <div class="container">
+      <section id="main_content">
+        <h2>
+<a id="xpost" class="anchor" href="#xpost" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Xpost</h2>
+
+<p>Xpost is a cross-platform interpreter for the PostScript Language
+written in C. It has autotools for building on unix systems, and
+Visual C solutions for building on Windows. Currently, a windows
+build cannot run because there's no installer to coordinate the 
+location for the postscript-language data files that are needed.</p>
+
+<p>We have determined that the interpreter runs "too slow". So we've 
+switched gears (from stalled-out on adding features) to
+Optimizing! It's no longer premature.</p>
+
+<p>The core of the interpreter was written by M Joshua Ryan (luser droog).
+The autotools build system, logging system, and win32 device were 
+written by Vincent Torri. Individual files bear the copyright of their
+respective contributors.</p>
+
+<p>Xpost has rudimentary graphics support. MS Windows or X11 windows.
+PGM or PPM file output. Or a nulldevice, which executes the drawing
+operations and discards the output. A Raster device is in development
+which will yield the image data in BGR, BGRA, ARGB, or RGB byte orders
+to a calling program which uses xpost as a library component.</p>
+
+<p>Xpost is currently distributed with a BSD-3-Clause licence which may
+allow its use in projects where Ghostscript is not available.</p>
+
+<p>The entire interpreter is implemented as a library which is used
+by a relatively small application file /src/bin/xpost.c. A simpler
+example of using the libary is in /src/bin/xpost_client.c.</p>
+
+<p>Quick Installation Instructions.</p>
+
+<hr>
+
+<p>Currently the intepreter source is in src/bin and the commands</p>
+
+<pre><code>./autogen.sh   # (or ./configure if autogen.sh has already been launched)
+make
+</code></pre>
+
+<p>will create the interpreter binary xpost(.exe)? in src/bin.</p>
+
+<pre><code>make install
+</code></pre>
+
+<p>will install the application, so xpost can be run as a command.</p>
+
+<p>Many more installation and configuration options desribed in ./INSTALL.</p>
+      </section>
+    </div>
+
+    
+  </body>
+</html>
