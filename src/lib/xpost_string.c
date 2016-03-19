@@ -48,15 +48,15 @@
    in specified memory file
    */
 Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
-                     unsigned int sz,
-                     /*@NULL@*/ const char *ini)
+                                      unsigned int sz,
+                                      /*@NULL@*/ const char *ini)
 {
     unsigned int ent;
     Xpost_Object o;
     int ret;
 
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
-    if (!xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), stringtype, &ent))
+    if (!xpost_memory_table_alloc(mem, (sz / sizeof(int) + 1) * sizeof(int), stringtype, &ent))
     {
         XPOST_LOG_ERR("cannot allocate string");
         return null;
@@ -83,15 +83,15 @@ Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
    using currently active memory file
    */
 Xpost_Object xpost_string_cons(Xpost_Context *ctx,
-                     unsigned int sz,
-                     /*@NULL@*/ const char *ini)
+                               unsigned int sz,
+                               /*@NULL@*/ const char *ini)
 {
     Xpost_Object s;
-    s = xpost_string_cons_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz, ini);
+    s = xpost_string_cons_memory((ctx->vmmode == GLOBAL) ? ctx->gl : ctx->lo, sz, ini);
     if (xpost_object_get_type(s) != nulltype)
     {
         xpost_stack_push(ctx->lo, ctx->hold, s); /* stash a reference on the hold stack in case of gc in caller */
-        if (ctx->vmmode==GLOBAL)
+        if (ctx->vmmode == GLOBAL)
             s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
     }
     return s;
@@ -104,7 +104,7 @@ Xpost_Object xpost_string_cons(Xpost_Context *ctx,
     */
 /*@dependent@*/
 char *xpost_string_get_pointer(Xpost_Context *ctx,
-              Xpost_Object S)
+                               Xpost_Object S)
 {
     Xpost_Memory_File *f;
     Xpost_Memory_Table *tab;
@@ -120,9 +120,9 @@ char *xpost_string_get_pointer(Xpost_Context *ctx,
    (string must be valid for this memory file)
  */
 int xpost_string_put_memory(Xpost_Memory_File *mem,
-            Xpost_Object s,
-            integer i,
-            integer c)
+                            Xpost_Object s,
+                            integer i,
+                            integer c)
 {
     byte b = c;
     int ret;
@@ -137,9 +137,9 @@ int xpost_string_put_memory(Xpost_Memory_File *mem,
 
 /* put a value at index into a string */
 int xpost_string_put(Xpost_Context *ctx,
-            Xpost_Object s,
-            integer i,
-            integer c)
+                     Xpost_Object s,
+                     integer i,
+                     integer c)
 {
     return xpost_string_put_memory(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, c);
 }
@@ -149,9 +149,9 @@ int xpost_string_put(Xpost_Context *ctx,
    (string must be valid for this memory file)
  */
 int xpost_string_get_memory(Xpost_Memory_File *mem,
-               Xpost_Object s,
-               integer i,
-               integer *retval)
+                            Xpost_Object s,
+                            integer i,
+                            integer *retval)
 {
     byte b;
     int ret;
@@ -168,9 +168,9 @@ int xpost_string_get_memory(Xpost_Memory_File *mem,
 
 /* get a value from a string at index */
 int xpost_string_get(Xpost_Context *ctx,
-               Xpost_Object s,
-               integer i,
-               integer *retval)
+                     Xpost_Object s,
+                     integer i,
+                     integer *retval)
 {
     return xpost_string_get_memory(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, retval);
 }
@@ -186,6 +186,7 @@ int main (void)
 {
     Xpost_Object s;
     int i;
+
     printf("\n^ st.c\n");
     xpost_memory_file_init(&mem, "x.mem");
     (void)xpost_memory_table_init(&mem);
