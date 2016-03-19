@@ -134,7 +134,7 @@ int xpost_stack_push (Xpost_Memory_File *mem,
     {
         if (s->nextseg == 0)
         {
-            unsigned int stadr;
+            size_t stadr;
             int ret;
 
             stadr = (unsigned char *)s - mem->base;
