@@ -507,7 +507,7 @@ int toke (Xpost_Context *ctx,
         return ret;
     *retval = o;
     return 0;
-} 
+}
 
 
 /* file  token  token true
@@ -608,4 +608,3 @@ int xpost_oper_init_token_ops (Xpost_Context *ctx,
     ctx->opcode_shortcuts.token = op.mark_.padw;
     return 0;
 }
-
