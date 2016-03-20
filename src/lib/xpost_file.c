@@ -76,7 +76,7 @@ void *alloca (size_t);
 #include "xpost_error.h"  /* file functions may throw errors */
 #include "xpost_file.h"  /* double-check prototypes */
 
-#ifdef __MINGW32__
+#ifdef _WIN32
 /*
  * Note:
  * this hack is needed as tmpfile in the Windows CRT opens

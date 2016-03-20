@@ -174,7 +174,7 @@ int fsm_check (char *s,
     int sta = 0;
     char *sp = s;
     while (sta != -1 && *sp) {
-        if (sp-s > ns) break;
+        if (sp - s > ns) break;
         if (fsm[sta].pred(*sp)) {
             sta = fsm[sta].y;
             ++sp;
@@ -226,7 +226,7 @@ int grok (Xpost_Context *ctx,
             return limitcheck;
         }
         errno = 0;
-        num = strtol(s+1, NULL, base);
+        num = strtol(s + 1, NULL, base);
         if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
         {
             XPOST_LOG_ERR("radixnumber out of range");
@@ -284,14 +284,14 @@ int grok (Xpost_Context *ctx,
                           }
                       }
                       if (!defer) break;
-                      if (sp-s > NBUF)
+                      if (sp - s > NBUF)
                       {
                           XPOST_LOG_ERR("string exceeds buf");
                           return limitcheck;
                       }
                       else *sp++ = c;
                   }
-                  obj = xpost_string_cons(ctx, sp-s, s);
+                  obj = xpost_string_cons(ctx, sp - s, s);
                   if (xpost_object_get_type(obj) == nulltype)
                       return VMerror;
                   //return xpost_object_cvlit(obj);
@@ -333,14 +333,14 @@ int grok (Xpost_Context *ctx,
                           return syntaxerror;
                       }
                       d |= c;
-                      if (sp-s > NBUF)
+                      if (sp - s > NBUF)
                       {
                           XPOST_LOG_ERR("hexstring exceeds buf");
                           return limitcheck;
                       }
                       *sp++ = d;
                   }
-                  obj = xpost_string_cons(ctx, sp-s, s);
+                  obj = xpost_string_cons(ctx, sp - s, s);
                   if (xpost_object_get_type(obj) == nulltype)
                       return VMerror;
                   //return xpost_object_cvlit(obj);
@@ -416,7 +416,7 @@ int grok (Xpost_Context *ctx,
                           back(ctx, *s, src);
                           ns = 0;
                       } else {
-                          ns += puff(ctx, s+1, NBUF-1, src, next, back);
+                          ns += puff(ctx, s + 1, NBUF - 1, src, next, back);
                       }
                   }
                   if (ns == NBUF)
@@ -474,11 +474,11 @@ int puff (Xpost_Context *ctx,
     int c;
     char *s = buf;
     while (isreg(c = next(ctx, src))) {
-        if (s-buf >= nbuf) return 0;
+        if (s - buf >= nbuf) return 0;
         *s++ = c;
     }
     if (!isspace(c) && c != EOF) back(ctx, c, src);
-    return s-buf;
+    return s - buf;
 }
 
 
@@ -501,13 +501,13 @@ int toke (Xpost_Context *ctx,
         return 0;
     }
     if (!isdel(*buf))
-        sta += puff(ctx, buf+1, NBUF-1, src, next, back);
+        sta += puff(ctx, buf + 1, NBUF - 1, src, next, back);
     ret = grok(ctx, buf, sta, src, next, back, &o);
     if (ret)
         return ret;
     *retval = o;
     return 0;
-} 
+}
 
 
 /* file  token  token true
@@ -608,4 +608,3 @@ int xpost_oper_init_token_ops (Xpost_Context *ctx,
     ctx->opcode_shortcuts.token = op.mark_.padw;
     return 0;
 }
-

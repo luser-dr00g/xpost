@@ -156,7 +156,7 @@ static int xpost_interpreter_cid_init(unsigned int *cid)
 Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid)
 {
     //TODO reject cid 0
-    return &itpdata->ctab[ (cid-1) % MAXCONTEXT ];
+    return &itpdata->ctab[ (cid - 1) % MAXCONTEXT ];
 }
 
 
@@ -725,7 +725,7 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
     // return next context to execute
     printf("--switching contexts--\n");
     //putchar('.'); fflush(0);
-    for (i = (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++)
+    for (i = (ctx - itpdata->ctab) + 1; i < MAXCONTEXT; i++)
     {
         //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
         if (itpdata->ctab[i].state == C_RUN)
@@ -749,7 +749,7 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
             itpdata->ctab[i].state = C_RUN;
         }
     }
-    for (i = (ctx-itpdata->ctab) + 1; i < MAXCONTEXT; i++)
+    for (i = (ctx - itpdata->ctab) + 1; i < MAXCONTEXT; i++)
     {
         //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
         if (itpdata->ctab[i].state == C_RUN)
@@ -825,7 +825,7 @@ ctxswitch:
    our ps strings are counted and do not need (and should not have)
    a nul byte, or this byte may produce garbage output when printed.
  */
-#define CNT_STR(s) sizeof(s)-1, s
+#define CNT_STR(s) sizeof(s) - 1, s
 
 /*
    set global pagesize,

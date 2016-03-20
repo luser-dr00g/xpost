@@ -45,6 +45,7 @@
 # endif
 # include <windows.h>
 # undef WIN32_LEAN_AND_MEAN
+# include <io.h>
 #endif
 
 #include "xpost.h"
@@ -76,6 +77,37 @@ static void *_xpost_log_print_cb_data = NULL;
 static FILE *_xpost_log_dump_file = NULL;
 
 #ifdef _WIN32
+
+static HANDLE _xpost_log_handle_stdout = NULL;
+static HANDLE _xpost_log_handle_stderr = NULL;
+
+static WORD
+_xpost_log_print_level_color_get(int level, WORD original_background)
+{
+    WORD foreground;
+
+    switch (level)
+    {
+        case XPOST_LOG_LEVEL_ERR:
+            foreground = FOREGROUND_INTENSITY | FOREGROUND_RED;
+            break;
+        case XPOST_LOG_LEVEL_WARN:
+            foreground = FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN;
+            break;
+        case XPOST_LOG_LEVEL_INFO:
+            foreground = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+            break;
+        case XPOST_LOG_LEVEL_DBG:
+          foreground = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
+          break;
+        default:
+            foreground = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
+            break;
+    }
+
+    return original_background | foreground;
+}
+
 static void
 _xpost_log_print_prefix_func(FILE *stream,
                              Xpost_Log_Level level,
@@ -83,127 +115,47 @@ _xpost_log_print_prefix_func(FILE *stream,
                              const char *fct,
                              int line)
 {
-    CONSOLE_SCREEN_BUFFER_INFO scbi;
-    HANDLE std_handle;
-    DWORD console;
+    CONSOLE_SCREEN_BUFFER_INFO scbi_stdout;
+    CONSOLE_SCREEN_BUFFER_INFO scbi_stderr;
+    CONSOLE_SCREEN_BUFFER_INFO *scbi;
+    HANDLE handle;
     WORD color;
-    char *str;
-    DWORD res;
-    int s;
+    BOOL use_color;
 
-    console = (stream == stderr) ? STD_ERROR_HANDLE : STD_OUTPUT_HANDLE;
-    std_handle = GetStdHandle(console);
-    if (std_handle == INVALID_HANDLE_VALUE)
-        return;
-
-    if (!GetConsoleScreenBufferInfo(std_handle, &scbi))
-        return;
-
-    s = snprintf(NULL, 0, "%s", _xpost_log_level_names[level]);
-    if (s == -1)
-        return;
-
-    str = (char *)malloc((s + 1) * sizeof(char));
-    if (!str)
-        return;
-
-    s = snprintf(str, s + 1, "%s", _xpost_log_level_names[level]);
-    if (s == -1)
-        goto free_str;
-
-    str[s] = '\0';
-
-    switch (level)
+    if (_xpost_log_handle_stdout != INVALID_HANDLE_VALUE)
     {
-        case XPOST_LOG_LEVEL_ERR:
-            color = FOREGROUND_INTENSITY | FOREGROUND_RED;
-            break;
-        case XPOST_LOG_LEVEL_WARN:
-            color = FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN;
-            break;
-        case XPOST_LOG_LEVEL_INFO:
-            color = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
-            break;
-        case XPOST_LOG_LEVEL_DBG:
-            color = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
-            break;
-        default:
-            color = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
-            break;
+        if (!GetConsoleScreenBufferInfo(_xpost_log_handle_stdout, &scbi_stdout))
+            return;
     }
 
-    SetConsoleTextAttribute(std_handle, color);
-    if (!WriteConsole(std_handle, str, s, &res, NULL))
+    if (_xpost_log_handle_stderr != INVALID_HANDLE_VALUE)
     {
-        SetConsoleTextAttribute(std_handle, scbi.wAttributes);
-        goto free_str;
+        if (!GetConsoleScreenBufferInfo(_xpost_log_handle_stderr, &scbi_stderr))
+            return;
     }
 
-    free(str);
-
-    if ((int)res != s)
-        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %lu written\n", __FUNCTION__, s, res);
-
-    SetConsoleTextAttribute(std_handle, scbi.wAttributes);
-
-    s = snprintf(NULL, 0, ": %s:%d ", file, line);
-    if (s == -1)
-        return;
-
-    str = (char *)malloc((s + 1) * sizeof(char));
-    if (!str)
-        return;
-
-    s = snprintf(str, s + 1, ": %s:%d ", file, line);
-    if (s == -1)
-        goto free_str;
-
-    str[s] = '\0';
-
-    if (!WriteConsole(std_handle, str, s, &res, NULL))
+    handle  = (stream == stdout) ? _xpost_log_handle_stdout : _xpost_log_handle_stderr;
+    scbi = (stream == stdout) ? &scbi_stdout : &scbi_stderr;
+    use_color = (_isatty(_fileno(stream)) != 1) && (handle != INVALID_HANDLE_VALUE);
+    color = use_color ? _xpost_log_print_level_color_get(level, scbi->wAttributes & ~7) : 0;
+    if (use_color)
     {
-        goto free_str;
+        fflush(stream);
+        SetConsoleTextAttribute(handle, color);
     }
 
-    free(str);
-
-    if ((int)res != s)
-        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %lu written\n", __FUNCTION__, s, res);
-
-    s = snprintf(NULL, 0, "%s() ", fct);
-    if (s == -1)
-        return;
-
-    str = (char *)malloc((s + 1) * sizeof(char));
-    if (!str)
-        return;
-
-    s = snprintf(str, s + 1, "%s() ", fct);
-    if (s == -1)
-        goto free_str;
-
-    str[s] = '\0';
-
-    SetConsoleTextAttribute(std_handle, FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
-    if (!WriteConsole(std_handle, str, s, &res, NULL))
+    fprintf(stream, "%s", _xpost_log_level_names[level]);
+    if (use_color)
     {
-        SetConsoleTextAttribute(std_handle, scbi.wAttributes);
-        goto free_str;
+        fflush(stream);
+        SetConsoleTextAttribute(handle, scbi->wAttributes);
     }
 
-    free(str);
-
-    SetConsoleTextAttribute(std_handle, scbi.wAttributes);
-
-    if ((int)res != s)
-        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %lu written\n", __FUNCTION__, s, res);
-
-    return;
-
-  free_str:
-    free(str);
+    fprintf(stream, ": %s:%d %s()", file, line, fct);
 }
+
 #else
+
 static void
 _xpost_log_print_prefix_func(FILE *stream,
                              Xpost_Log_Level level,
@@ -298,6 +250,11 @@ xpost_log_init(void)
     int fd;
     char *endptr;
     const char *level;
+
+#ifdef _WIN32
+    _xpost_log_handle_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
+    _xpost_log_handle_stderr = GetStdHandle(STD_ERROR_HANDLE);
+#endif
 
     level = getenv("XPOST_LOG_LEVEL");
     if (level)
