@@ -37,6 +37,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 
 #include "xpost.h"
 #include "xpost_log.h"
@@ -1002,9 +1005,52 @@ void setlocalconfig(Xpost_Context *ctx,
 static
 void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
 {
+    char *path;
     assert(ctx->gl->base);
     xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
     ctx->ignoreinvalidaccess = 1;
+
+    do {
+
+        if (path=getenv("XPOST_DATA_DIR"))
+            break;
+
+        //if (path=xpost_module_symbol_path_get()) break;
+
+        if (path=PACKAGE_DATA_DIR)
+            break;
+
+        fprintf(stderr, "Unable to locate /init.ps and related files.\n"
+                "Define XPOST_DATA_DIR to the path to these files\n");
+        return;
+    } while(0);
+    {
+        char buf[1024];
+        int fildes;
+        struct stat buffer;
+        int status;
+        snprintf(buf, sizeof buf, "%s/init.ps", path);
+        fildes = open(buf, O_RDWR);
+        if (status = fstat(fildes, &buffer)) {
+            perror("fstat");
+            fprintf(stderr, "/init.ps not present in indicated directory.\n"
+                            "Define XPOST_DATA_DIR to the path to /init.ps and related files\n");
+            return;
+        }
+    }
+
+    {
+        char buf[1024];
+        int n;
+        n = snprintf(buf, sizeof buf,
+                "(%s/init.ps) (r) file cvx "
+                "/DATA_DIR (%s) def exec ", path, path);
+        xpost_stack_push(ctx->lo, ctx->es,
+            xpost_object_cvx(xpost_string_cons(ctx, n, buf)));
+    }
+                   
+
+#if 0
 /*splint doesn't like the composed macros*/
 #ifndef S_SPLINT_S
     if (is_installed)
@@ -1031,6 +1077,7 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
             xpost_object_cvx(xpost_string_cons(ctx,
                     strlen(buf), buf)));
     }
+#endif
 #endif
     ctx->quit = 0;
     mainloop(ctx);
