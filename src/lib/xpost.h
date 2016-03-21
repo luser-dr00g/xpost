@@ -1,7 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
- * Copyright (C) 2013-2015, Vincent Torri
+ * Copyright (C) 2013-2016, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -117,6 +117,15 @@ XPAPI int xpost_quit(void);
 XPAPI void xpost_version_get(int *maj, int *min, int *mic);
 
 /**
+ * @brief Return the path of the shared library.
+ *
+ * @return The path of the shared library.
+ *
+ * This function returns the path of the shared library.
+ */
+XPAPI const char *xpost_lib_path_get(void);
+
+/**
  * @typedef Xpost_Context
  * @brief The context abstract structure for a thread of execution of ps code.
  */
@@ -148,12 +157,12 @@ typedef enum {
     XPOST_OUTPUT_DEFAULT, /**< Ignores outputptr. */
     XPOST_OUTPUT_FILENAME, /**< Treats outputptr as a char* to a
                                 zero-terminated OS path string
-                                (implemented in pgm and ppm devices). */  
+                                (implemented in pgm and ppm devices). */
     XPOST_OUTPUT_BUFFERIN, /**< Treats outputptr as an unsigned char *
                                 and render directly into this memory
                                 (not currently implemented). */
     XPOST_OUTPUT_BUFFEROUT /**< Treats outputptr as an unsigned char **
-                                and malloc()s a new buffer and assigns 
+                                and malloc()s a new buffer and assigns
                                 it to the unsigned char * which
                                 outputptr points to. */
 } Xpost_Output_Type;
@@ -165,7 +174,7 @@ typedef enum {
 typedef enum {
     XPOST_INPUT_STRING, /**< Treats inputptr as a char * to an
                              zero-terminated ascii string, writes the
-                             whole string into a temporary file and 
+                             whole string into a temporary file and
                              falls through to the #XPOST_INPUT_FILEPTR
                              case. */
     XPOST_INPUT_FILENAME, /**< Treats inputptr as a char * to a
@@ -182,7 +191,7 @@ typedef enum {
 /**
  * @typedef Xpost_Set_Size
  * @brief FIXME: to fill...
- * 
+ *
  * Currently, only "ignore size" is implemented.
  */
 typedef enum {
@@ -232,7 +241,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
  * @param ctx The context to run.
  * @param input_type The input type to use.
  * @param inputptr
- * @return 
+ * @return
  *
  * This function executes a ps program until quit, fall-through to quit,
  * #XPOST_SHOWPAGE_RETURN semantic, or error (default action: message,
@@ -240,7 +249,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
  *
  * Depending upon the input type, this function will package the input
  * into an appropriate postscript object and schedule it for execution
- * by marking it executable and pushing to the exec stack, or by 
+ * by marking it executable and pushing to the exec stack, or by
  * pushing to the operand stack and pushing to the exec stack a small
  * program to execute it.
  *
@@ -250,7 +259,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
  *
  * For a FILE *, mark executable and push to exec stack.
  *
- * As a special-case, if executing a FILE *, and that file is a 
+ * As a special-case, if executing a FILE *, and that file is a
  * console or tty, it pushes a proc which launches the postscript
  * `executive` which offers PS> prompts.
  *
@@ -259,7 +268,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
  * the device is initialized. The device is specified in xpost_create,
  * not because it is needed at that point, but because it is considered
  * a constant for the context, whereas it is intended that a context
- * may be re-used by calling xpost_run upon it again, presumably with 
+ * may be re-used by calling xpost_run upon it again, presumably with
  * differing arguments.
  */
 XPAPI int xpost_run(Xpost_Context *ctx,
