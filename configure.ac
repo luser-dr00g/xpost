@@ -200,6 +200,17 @@ AC_MSG_RESULT([${have_tests}])
 
 AM_CONDITIONAL(XPOST_ENABLE_TESTS, test "x${have_tests}" = "xyes")
 
+# dladdr
+have_dl="no"
+if test "x${have_win32}" = "xno" ; then
+   AC_CHECK_HEADERS([dlfcn.h],
+      [have_dl="yes"],
+      [AC_MSG_ERROR([dlfcn.h header file is mandatory, exiting...])])
+   AC_CHECK_LIB([dl], [dladdr],
+      [xpost_requirements_lib_libs="${xpost_requirements_lib_libs} -ldl"],
+      [AC_MSG_ERROR([dladdr() function is mandatory, exiting...])])
+fi
+
 # valgrind
 if test "x${have_tests}" = "xno" ; then
    enable_valgrind="no"

@@ -1,7 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
- * Copyright (C) 2013-2015, Vincent Torri
+ * Copyright (C) 2013-2016, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,7 +33,9 @@
 # include <config.h>
 #endif
 
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 
@@ -45,13 +47,16 @@
 # include <unistd.h>
 #endif
 
+#ifdef HAVE_DLFCN_H
+# include <dlfcn.h>
+#endif
+
 #ifdef _WIN32
 # ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN
 # endif
 # include <windows.h>
 # include <io.h>
-#include <stdlib.h>
 # undef WIN32_LEAN_AND_MEAN
 #endif
 
@@ -328,4 +333,82 @@ xpost_glob_free(glob_t *pglob)
 #else
     globfree(pglob);
 #endif
+}
+
+unsigned char
+xpost_module_path_get(const void *addr, char *buf, unsigned int size)
+{
+#ifdef _WIN32
+    MEMORY_BASIC_INFORMATION mbi;
+
+    if (VirtualQuery(addr, &mbi, sizeof(mbi)) &&
+        (mbi.State == MEM_COMMIT) &&
+        (mbi.AllocationBase))
+    {
+# define XPOST_UNICODE_PATH_MAX 32768
+        TCHAR tpath[XPOST_UNICODE_PATH_MAX];
+
+        if (GetModuleFileName((HMODULE)mbi.AllocationBase,
+                              (LPTSTR)&tpath, XPOST_UNICODE_PATH_MAX))
+        {
+            char *path;
+            char *pos;
+
+# ifdef UNICODE
+            int asize;
+
+            asize = WideCharToMultiByte(CP_ACP, 0, tpath, -1,
+                                        NULL, 0, NULL, NULL);
+            if (asize != 0)
+            {
+                path = alloca(asize * sizeof(char));
+                asize = WideCharToMultiByte(CP_ACP, 0, tpath, -1,
+                                            path, asize, NULL, NULL);
+                if (!asize) /* we should never get there */
+                    return 0;
+            }
+# else
+            path = tpath;
+# endif
+# undef XPOST_UNICODE_PATH_MAX
+
+            pos = strrchr(path, '\\');
+            if (pos)
+            {
+                size_t length;
+
+                *pos = '\0';
+                length = strlen(path) + 1;
+                if (length <= size)
+                {
+                    memcpy(buf, path, length);
+                    return 1;
+                }
+            }
+        }
+    }
+#else
+    Dl_info xpost_info;
+
+    if (dladdr(addr, &xpost_info))
+    {
+        char *pos;
+
+        pos = strrchr(xpost_info.dli_fname, '/');
+        if (pos)
+        {
+            size_t length;
+
+            length = pos - xpost_info.dli_fname;
+            if (length <= size)
+            {
+                memcpy(buf, xpost_info.dli_fname, length);
+                buf[length] = '\0';
+                return 1;
+            }
+        }
+    }
+#endif
+
+    return 0;
 }

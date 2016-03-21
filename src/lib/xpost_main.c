@@ -1,7 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
- * Copyright (C) 2013-2015, Vincent Torri
+ * Copyright (C) 2013-2016, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,7 @@
 
 #include "xpost.h"
 #include "xpost_log.h"
+#include "xpost_compat.h"
 #include "xpost_object.h"
 #include "xpost_memory.h"
 #include "xpost_font.h"
@@ -67,6 +68,7 @@
 
 static int _xpost_init_count = 0;
 static double _xpost_start_time = 0.0;
+static char _xpost_lib_path[XPOST_PATH_MAX];
 
 /*============================================================================*
  *                                 Global                                     *
@@ -96,6 +98,9 @@ xpost_init(void)
         return _xpost_init_count;
 
     if (!xpost_log_init())
+        return --_xpost_init_count;
+
+    if (!xpost_module_path_get(xpost_init, _xpost_lib_path, XPOST_PATH_MAX))
         return --_xpost_init_count;
 
     if (!xpost_memory_init())
@@ -147,4 +152,10 @@ xpost_version_get(int *maj, int *min, int *mic)
     if (maj) *maj = XPOST_VERSION_MAJ;
     if (min) *min = XPOST_VERSION_MIN;
     if (mic) *mic = XPOST_VERSION_MIC;
+}
+
+XPAPI const char *
+xpost_lib_path_get(void)
+{
+    return _xpost_lib_path;
 }

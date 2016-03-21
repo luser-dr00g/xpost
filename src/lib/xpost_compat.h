@@ -1,7 +1,7 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013, Michael Joshua Ryan
- * Copyright (C) 2013-2015, Vincent Torri
+ * Copyright (C) 2013-2016, Vincent Torri
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +43,8 @@
 #ifndef XPOST_COMPAT_H
 #define XPOST_COMPAT_H
 
+#include <stdio.h> /* FILE */
+
 #ifdef _MSC_VER
 
 # include <float.h>
@@ -69,6 +71,17 @@
 # endif
 
 #endif /* _MSC_VER */
+
+#ifdef _WIN32
+# ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+# endif
+# include <windows.h> /* MAX_PATH */
+# undef WIN32_LEAN_AND_MEAN
+# define XPOST_PATH_MAX MAX_PATH
+#else
+# define XPOST_PATH_MAX PATH_MAX
+#endif
 
 /**
  * @brief control the ECHO parameter of the terminal or console associated with file.
@@ -103,6 +116,8 @@ typedef struct
 
 int xpost_glob(const char *pattern, glob_t *pglob);
 void xpost_glob_free(glob_t *pglob);
+
+unsigned char xpost_module_path_get(const void *addr, char *buf, unsigned int size);
 
 /**
  * @}
