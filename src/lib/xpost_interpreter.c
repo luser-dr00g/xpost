@@ -67,9 +67,9 @@ Xpost_Object namedollarerror; /* cached result of xpost_name_cons(ctx, "$error")
 int TRACE = 0;             /* output trace log */
 Xpost_Interpreter *itpdata;  /* the global interpreter instance, containing all contexts and memory files */
 static int _initializing = 1;  /* garbage collect does not run while _initializing is true.
- 				  a getter function is exported in the memory file struct
-				  for the gc to access this global without #include'ing interpreter.h
-				  which would create a circular dependency. */
+                                  a getter function is exported in the memory file struct
+                                  for the gc to access this global without #include'ing interpreter.h
+                                  which would create a circular dependency. */
 
 int eval(Xpost_Context *ctx);
 int mainloop(Xpost_Context *ctx);
@@ -603,7 +603,7 @@ int eval(Xpost_Context *ctx)
                                if opexec(opcode) discovers opcode != ctx->currentobject.mark_.padw
                                it sets a flag indicating the hold stack does not contain
                                ctx->currentobject's arguments.
-                               if an error is encountered, currentobject is reported as the 
+                               if an error is encountered, currentobject is reported as the
                                errant object since it is the "entry point" to the interpreter.
                              */
 
@@ -1048,7 +1048,7 @@ void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
         xpost_stack_push(ctx->lo, ctx->es,
             xpost_object_cvx(xpost_string_cons(ctx, n, buf)));
     }
-                   
+
 
 #if 0
 /*splint doesn't like the composed macros*/
