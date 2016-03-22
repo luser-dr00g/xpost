@@ -68,7 +68,8 @@
 
 static int _xpost_init_count = 0;
 static double _xpost_start_time = 0.0;
-static char _xpost_lib_path[XPOST_PATH_MAX];
+static char _xpost_lib_dir[XPOST_PATH_MAX];
+static char _xpost_data_dir[XPOST_PATH_MAX];
 
 /*============================================================================*
  *                                 Global                                     *
@@ -87,12 +88,15 @@ xpost_start_time_get(void)
 XPAPI int
 xpost_init(void)
 {
+    char tmp1[XPOST_PATH_MAX];
+    char tmp2[XPOST_PATH_MAX];
 #ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;
 #endif
 #ifdef _WIN32
     WSADATA wsa_data;
 #endif
+    size_t l;
 
     if (++_xpost_init_count != 1)
         return _xpost_init_count;
@@ -100,8 +104,13 @@ xpost_init(void)
     if (!xpost_log_init())
         return --_xpost_init_count;
 
-    if (!xpost_module_path_get(xpost_init, _xpost_lib_path, XPOST_PATH_MAX))
+    if (!xpost_module_path_get(xpost_init, _xpost_lib_dir, XPOST_PATH_MAX))
         return --_xpost_init_count;
+
+    snprintf(tmp1, sizeof(tmp1), "%s/../share/xpost", _xpost_lib_dir);
+    xpost_realpath(tmp1, tmp2);
+    l = strlen(tmp2) + 1;
+    memcpy(_xpost_data_dir, tmp2, l);
 
     if (!xpost_memory_init())
         return --_xpost_init_count;
@@ -155,7 +164,13 @@ xpost_version_get(int *maj, int *min, int *mic)
 }
 
 XPAPI const char *
-xpost_lib_path_get(void)
+xpost_lib_dir_get(void)
 {
-    return _xpost_lib_path;
+    return _xpost_lib_dir;
+}
+
+XPAPI const char *
+xpost_data_dir_get(void)
+{
+    return _xpost_data_dir;
 }

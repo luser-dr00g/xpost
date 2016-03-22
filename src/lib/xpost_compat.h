@@ -79,8 +79,11 @@
 # include <windows.h> /* MAX_PATH */
 # undef WIN32_LEAN_AND_MEAN
 # define XPOST_PATH_MAX MAX_PATH
+# define xpost_realpath(op, np) _fullpath(np, op, XPOST_PATH_MAX)
 #else
+# include <limits.h>
 # define XPOST_PATH_MAX PATH_MAX
+# define xpost_realpath(op, np) realpath(op, np)
 #endif
 
 /**

@@ -123,7 +123,17 @@ XPAPI void xpost_version_get(int *maj, int *min, int *mic);
  *
  * This function returns the path of the shared library.
  */
-XPAPI const char *xpost_lib_path_get(void);
+XPAPI const char *xpost_lib_dir_get(void);
+
+/**
+ * @brief Return the path of the data directory, based on the path of the
+ * shared library.
+ *
+ * @return The path of the data directory.
+ *
+ * This function returns the path of the data directory, based on the shared library. More precisely, it is xpost_lib_path_get()../share/xpost.
+ */
+XPAPI const char *xpost_data_dir_get(void);
 
 /**
  * @typedef Xpost_Context

@@ -973,8 +973,8 @@ void setlocalconfig(Xpost_Context *ctx,
     if (outfile)
     {
         xpost_dict_put(ctx, sd,
-                xpost_name_cons(ctx, "OutputFileName"),
-                xpost_object_cvlit(xpost_string_cons(ctx, strlen(outfile), outfile)));
+                       xpost_name_cons(ctx, "OutputFileName"),
+                       xpost_object_cvlit(xpost_string_cons(ctx, strlen(outfile), outfile)));
     }
 
     if (bufferin)
@@ -991,7 +991,6 @@ void setlocalconfig(Xpost_Context *ctx,
         xpost_object_set_access(ctx, s, XPOST_OBJECT_TAG_ACCESS_NONE);
         memcpy(xpost_string_get_pointer(ctx, s), &bufferout, sizeof(bufferout));
         xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "OutputBufferOut"), s);
-
     }
 
     ctx->vmmode = LOCAL;
@@ -1003,51 +1002,63 @@ void setlocalconfig(Xpost_Context *ctx,
    ignore invalidaccess errors.
  */
 static
-void loadinitps(Xpost_Context *ctx, char *exedir, int is_installed)
+void loadinitps(Xpost_Context *ctx)
 {
+    char buf[1024];
+    char path_init_ps[XPOST_PATH_MAX];
+    struct stat statbuf;
+    char *path_init;
     char *path;
+    int n;
+
     assert(ctx->gl->base);
     xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
     ctx->ignoreinvalidaccess = 1;
 
-    do {
+#define XPOST_PATH_INIT \
+    do \
+    { \
+        snprintf(path_init_ps, sizeof(path_init_ps), "%s/init.ps", path); \
+        if (stat(path_init_ps, &statbuf) == 0) \
+        { \
+            path_init = path; \
+            goto load_init_ps; \
+        } \
+        else \
+            XPOST_LOG_DBG("init.ps not present in", path_init_ps); \
+    } while (0)
 
-        if (path=getenv("XPOST_DATA_DIR"))
-            break;
+    /* environment variable XPOST_DATA_DIR */
+    if ((path = getenv("XPOST_DATA_DIR")))
+        XPOST_PATH_INIT;
 
-        //if (path=xpost_module_symbol_path_get()) break;
+    /* directory of the shared library */
+    path = (char *)xpost_data_dir_get(); /* always well-defined */
+    XPOST_PATH_INIT;
 
-        if (path=PACKAGE_DATA_DIR)
-            break;
+#ifdef PACKAGE_DATA_DIR
+    path = PACKAGE_DATA_DIR;
+    XPOST_PATH_INIT;
+#endif
 
-        fprintf(stderr, "Unable to locate /init.ps and related files.\n"
-                "Define XPOST_DATA_DIR to the path to these files\n");
-        return;
-    } while(0);
-    {
-        char buf[1024];
-        int fildes;
-        struct stat buffer;
-        int status;
-        snprintf(buf, sizeof buf, "%s/init.ps", path);
-        fildes = open(buf, O_RDWR);
-        if (status = fstat(fildes, &buffer)) {
-            perror("fstat");
-            fprintf(stderr, "/init.ps not present in indicated directory.\n"
-                            "Define XPOST_DATA_DIR to the path to /init.ps and related files\n");
-            return;
-        }
-    }
+    XPOST_LOG_ERR("init.ps can not be found");
 
-    {
-        char buf[1024];
-        int n;
-        n = snprintf(buf, sizeof buf,
-                "(%s/init.ps) (r) file cvx "
-                "/DATA_DIR (%s) def exec ", path, path);
-        xpost_stack_push(ctx->lo, ctx->es,
-            xpost_object_cvx(xpost_string_cons(ctx, n, buf)));
-    }
+    return;
+
+  load_init_ps:
+    /* backslashes are not supported in path because they are inserted in
+    * PostScript files, and PostScript */
+#ifdef _WIN32
+    path = path_init_ps;
+    while (*path++) if (*path == '\\') *path = '/';
+    path = path_init;
+    while (*path++) if (*path == '\\') *path = '/';
+#endif
+    n = snprintf(buf, sizeof(buf),
+                 "(%s) (r) file cvx "
+                 "/DATA_DIR (%s) def exec ", path_init_ps, path_init);
+    xpost_stack_push(ctx->lo, ctx->es,
+                     xpost_object_cvx(xpost_string_cons(ctx, n, buf)));
 
 
 #if 0
@@ -1184,7 +1195,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
                 null);
     }
 
-    loadinitps(xpost_ctx, exedir, is_installed);
+    loadinitps(xpost_ctx);
 
     ret = copyudtosd(xpost_ctx, ud, sd);
     if (ret)
