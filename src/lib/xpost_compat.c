@@ -51,6 +51,10 @@
 # include <dlfcn.h>
 #endif
 
+#ifdef __CYGWIN__
+# include <sys/cygwin.h>
+#endif
+
 #ifdef _WIN32
 # ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN
@@ -338,7 +342,7 @@ xpost_glob_free(glob_t *pglob)
 unsigned char
 xpost_module_path_get(const void *addr, char *buf, unsigned int size)
 {
-#ifdef _WIN32
+#if defined (_WIN32) || defined (__CYGWIN__)
     MEMORY_BASIC_INFORMATION mbi;
 
     if (VirtualQuery(addr, &mbi, sizeof(mbi)) &&
