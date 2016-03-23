@@ -217,7 +217,7 @@ dladdr(NULL, NULL);
           ]])],
       [
        have_dl="yes"
-       requirements_libs="${xpost_requirements_lib_libs} -ldl"
+       xpost_requirements_lib_libs="${xpost_requirements_lib_libs} -ldl"
       ],
       [have_dl="no"])
    LIBS="${LIBS_save}"
