@@ -88,9 +88,13 @@ AC_ARG_ENABLE([valgrind],
 AC_CANONICAL_HOST
 
 have_win32="no"
+have_cygwin="no"
 case "$host_os" in
    mingw*)
       have_win32="yes"
+   ;;
+   cygwin*)
+      have_cygwin="yes"
    ;;
 esac
 
@@ -202,7 +206,7 @@ AM_CONDITIONAL(XPOST_ENABLE_TESTS, test "x${have_tests}" = "xyes")
 
 # dladdr
 have_dl="no"
-if test "x${have_win32}" = "xno" ; then
+if test "x${have_win32}" = "xno" && test "x${have_cygwin}" = "xno" ; then
    AC_MSG_CHECKING([for dladdr() in -ldl])
    LIBS_save="${LIBS}"
    LIBS="${LIBS} -ldl"
