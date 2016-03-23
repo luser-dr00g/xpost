@@ -55,7 +55,7 @@
 # include <sys/cygwin.h>
 #endif
 
-#ifdef _WIN32
+#if defined _WIN32 || __CYGWIN__
 # ifndef WIN32_LEAN_AND_MEAN
 #  define WIN32_LEAN_AND_MEAN
 # endif
