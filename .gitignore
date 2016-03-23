@@ -31,3 +31,5 @@ m4/lt~obsolete.m4
 missing
 stamp-h1
 xpost.pc
+src/bin/xpost
+src/bin/xpost_client
