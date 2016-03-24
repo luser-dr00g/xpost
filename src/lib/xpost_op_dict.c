@@ -186,6 +186,7 @@ int xpost_op_any_load(Xpost_Context *ctx,
     }
 
     for (i = 0; i < z; i++) {
+        Xpost_Object x;
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo,ctx->ds,i);
 
         if (DEBUGLOAD) {
@@ -193,8 +194,9 @@ int xpost_op_any_load(Xpost_Context *ctx,
             (void)puts("");
         }
 
-        if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K)) {
-            xpost_stack_push(ctx->lo, ctx->os, xpost_dict_get(ctx, D, K));
+        x = xpost_dict_get(ctx, D, K);
+        if (xpost_object_get_type(x) != invalidtype) {
+            xpost_stack_push(ctx->lo, ctx->os, x);
             return 0;
         }
     }
