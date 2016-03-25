@@ -209,12 +209,6 @@ typedef enum {
     XPOST_USE_SIZE
 } Xpost_Set_Size;
 
-/*
-   The is_installed parameter controls whether the interpreter should look
-   to the standard locations for its postscript initialization files or
-   it should look for these files in "$CWD/data/".
- */
-
 /**
  * @brief Create a newly allocated context.
  *
@@ -223,7 +217,6 @@ typedef enum {
  * @param outputptr
  * @param semantics
  * @param quiet
- * @param is_installed
  * @param set_size
  * @param width The height of the context page.
  * @param height The height of the context page.
@@ -240,7 +233,6 @@ XPAPI Xpost_Context *xpost_create(const char *device,
                                   const void *outputptr,
                                   Xpost_Showpage_Semantics semantics,
                                   int quiet,
-                                  int is_installed,
                                   Xpost_Set_Size set_size,
                                   int width,
                                   int height);

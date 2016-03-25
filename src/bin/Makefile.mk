@@ -11,9 +11,7 @@ src_bin_xpost_client_LDADD = \
 src/lib/libxpost.la
 
 src_bin_xpost_SOURCES = \
-src/bin/xpost_main.c \
-src/bin/xpost_pathname.c \
-src/bin/xpost_pathname.h
+src/bin/xpost_main.c
 
 if HAVE_WIN32
 src_bin_xpost_SOURCES += \

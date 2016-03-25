@@ -50,7 +50,6 @@
 # include "xpost_compat.h"
 #endif
 
-#include "xpost_pathname.h" /* xpost_is_installed */
 #include "xpost_main.h"
 
 
@@ -252,7 +251,6 @@ int main(int argc, char *argv[])
     int ysign = 1;
     int have_geometry = 0;
     int i;
-    int is_installed;
 #ifdef HAVE_SIGACTION
     struct sigaction sa, oldsa;
 
@@ -389,14 +387,11 @@ int main(int argc, char *argv[])
         goto quit_xpost;
     }
 
-    is_installed = xpost_is_installed(filename); 
-
     if (!(ctx = xpost_create(device,
                       XPOST_OUTPUT_FILENAME,
                       output_file,
                       XPOST_SHOWPAGE_DEFAULT,
                       quiet,
-                      is_installed,
                       XPOST_IGNORE_SIZE, 0, 0)))
     {
         XPOST_LOG_ERR("Failed to initialize.");

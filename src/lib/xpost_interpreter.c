@@ -898,9 +898,7 @@ void setlocalconfig(Xpost_Context *ctx,
                     const char *outfile,
                     const char *bufferin,
                     char **bufferout,
-                    Xpost_Showpage_Semantics semantics,
-                    char *exedir,
-                    int is_installed)
+                    Xpost_Showpage_Semantics semantics)
 {
     char *device_strings[][3] =
     {
@@ -923,20 +921,8 @@ void setlocalconfig(Xpost_Context *ctx,
     char *devstr;
     char *subdevice;
 
-    /* create a symbol to locate /data files */
     ctx->vmmode = GLOBAL;
-    if (is_installed)
-    {
-        xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "PACKAGE_DATA_DIR"),
-            xpost_object_cvlit(xpost_string_cons(ctx,
-                    CNT_STR(PACKAGE_DATA_DIR))));
-        xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "PACKAGE_INSTALL_DIR"),
-            xpost_object_cvlit(xpost_string_cons(ctx,
-                    CNT_STR(PACKAGE_INSTALL_DIR))));
-    }
-    xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "EXE_DIR"),
-            xpost_object_cvlit(xpost_string_cons(ctx,
-                    strlen(exedir), exedir)));
+    
 #ifdef _WIN32
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "WIN32"), xpost_bool_cons(1));
 #endif
@@ -1061,35 +1047,6 @@ void loadinitps(Xpost_Context *ctx)
                      xpost_object_cvx(xpost_string_cons(ctx, n, buf)));
 
 
-#if 0
-/*splint doesn't like the composed macros*/
-#ifndef S_SPLINT_S
-    if (is_installed)
-        xpost_stack_push(ctx->lo, ctx->es,
-            xpost_object_cvx(xpost_string_cons(ctx,
-             CNT_STR("(" PACKAGE_DATA_DIR "/init.ps) (r) file cvx  /DATA_DIR (" PACKAGE_DATA_DIR ") def  exec"))));
-    else
-    {
-        char buf[1024];
-        snprintf(buf, sizeof buf,
-                 /*"(%s/../../data/init.ps) (r) file cvx exec",*/
-                 /*"(%s/data/init.ps) (r) file cvx exec",*/
-                 " false mark [\n"
-                 "   [ (%s/data/)          (%s/data/init.ps)          ] \n"  /* repo root */
-                 "   [ (%s/../../data/)    (%s/../../data/init.ps)    ] \n"  /* src/bin */
-                 "   [ (%s/../../../data/) (%s/../../../data/init.ps) ] \n"  /* visual_studio/vc10/Debug/ */
-                 " ]\n"
-                 " { aload pop { (r)file cvx "
-                 "     exch /DATA_DIR exch def "
-                 "     exec cleartomark pop true mark } stopped {cleartomark mark}{exit} ifelse} forall\n"
-                 " cleartomark not { load_init_ps_fail } if ",
-                 exedir, exedir, exedir, exedir, exedir, exedir);
-        xpost_stack_push(ctx->lo, ctx->es,
-            xpost_object_cvx(xpost_string_cons(ctx,
-                    strlen(buf), buf)));
-    }
-#endif
-#endif
     ctx->quit = 0;
     mainloop(ctx);
     ctx->ignoreinvalidaccess = 0;
@@ -1130,14 +1087,12 @@ XPAPI Xpost_Context *xpost_create(const char *device,
                                   const void *outputptr,
                                   Xpost_Showpage_Semantics semantics,
                                   int quiet,
-                                  int is_installed,
                                   Xpost_Set_Size set_size,
                                   int width,
                                   int height)
 {
     Xpost_Object sd, ud;
     int ret;
-    char *exedir = "."; /* fall-back directory to find data/init.ps */
     const char *outfile = NULL;
     const char *bufferin = NULL;
     char **bufferout = NULL;
@@ -1184,8 +1139,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
 
     setlocalconfig(xpost_ctx, sd,
                    device, outfile, bufferin, bufferout,
-                   semantics,
-                   exedir, is_installed);
+                   semantics);
 
     if (quiet)
     {
