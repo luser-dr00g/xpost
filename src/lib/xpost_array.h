@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,22 +62,22 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem, unsigned sz);
 */
 Xpost_Object xpost_array_cons(Xpost_Context *ctx, unsigned sz);
 
-/** 
+/**
  * @brief store value in an array
 */
 int xpost_array_put_memory(Xpost_Memory_File *mem, Xpost_Object a, integer i, Xpost_Object o);
 
-/** 
+/**
  * @brief store value in a banked array
 */
 int xpost_array_put(Xpost_Context *ctx, Xpost_Object a, integer i, Xpost_Object o);
 
-/** 
+/**
  * @brief extract value from an array
 */
 Xpost_Object xpost_array_get_memory(Xpost_Memory_File *mem, Xpost_Object a, integer i);
 
-/** 
+/**
  * @brief extract value from a banked array
 */
 Xpost_Object xpost_array_get(Xpost_Context *ctx, Xpost_Object a, integer i);

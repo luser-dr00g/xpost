@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * Copyright (C) 2013, Vincent Torri
  * All rights reserved.
  *
@@ -52,8 +52,8 @@
  * which when run creates a window and returns the device
  * instance dictionary
  */
-int xpost_oper_init_win32_device_ops (Xpost_Context *ctx,
-                  Xpost_Object sd);
+int xpost_oper_init_win32_device_ops(Xpost_Context *ctx,
+                                     Xpost_Object sd);
 
 /**
  * @}

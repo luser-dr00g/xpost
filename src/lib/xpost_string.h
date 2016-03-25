@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,54 +54,54 @@
  * @brief construct a string object (possibly initialized) in the specified memory
  */
 Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
-                     unsigned sz,
-                     /*@NULL@*/ const char *ini);
+                                      unsigned sz,
+                                      /*@NULL@*/ const char *ini);
 
 /**
  * @brief construct a string object in currectly selected memory
  */
 Xpost_Object xpost_string_cons(Xpost_Context *ctx,
-                     unsigned sz,
-                     /*@NULL@*/ const char *ini);
+                               unsigned sz,
+                               /*@NULL@*/ const char *ini);
 
 /**
  * @brief yield a "C" pointer to the char array of the string contents
  */
 /*@dependent@*/
 char *xpost_string_get_pointer(Xpost_Context *ctx,
-              Xpost_Object S);
+                               Xpost_Object S);
 
 /**
  * @brief put a value into a string with specified memory
  */
 int xpost_string_put_memory(Xpost_Memory_File *mem,
-           Xpost_Object s,
-           integer i,
-           integer c);
+                            Xpost_Object s,
+                            integer i,
+                            integer c);
 
 /**
  * @brief put a value into a string
  */
 int xpost_string_put(Xpost_Context *ctx,
-           Xpost_Object s,
-           integer i,
-           integer c);
+                     Xpost_Object s,
+                     integer i,
+                     integer c);
 
 /**
  * @brief get a value from a string with specified memory
  */
 int xpost_string_get_memory(Xpost_Memory_File *mem,
-           Xpost_Object s,
-           integer i,
-           integer *retval);
+                            Xpost_Object s,
+                            integer i,
+                            integer *retval);
 
 /**
  * @brief get a value from a string
  */
 int xpost_string_get(Xpost_Context *ctx,
-           Xpost_Object s,
-           integer i,
-           integer *retval);
+                     Xpost_Object s,
+                     integer i,
+                     integer *retval);
 
 /**
  * @}

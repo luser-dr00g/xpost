@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,7 +42,8 @@
  * @{
  */
 
-typedef struct tst {
+typedef struct tst
+{
     unsigned val,
              lo,
              eq,

@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -76,67 +76,65 @@ typedef struct
 /**
  * @brief Create a stack data structure, returns vm address in addr.
  */
-int xpost_stack_init (Xpost_Memory_File *mem, unsigned int *addr);
+int xpost_stack_init(Xpost_Memory_File *mem, unsigned int *addr);
 
 /**
  * @brief Dump the contents of a stack to stdout using xpost_object_dump.
  */
-void xpost_stack_dump (Xpost_Memory_File *mem, unsigned int stackadr);
+void xpost_stack_dump(Xpost_Memory_File *mem, unsigned int stackadr);
 
 /**
  * @brief Free a stack, and all succeeding segments.
  */
-void xpost_stack_free (Xpost_Memory_File *mem,
-        unsigned int stackadr);
+void xpost_stack_free(Xpost_Memory_File *mem, unsigned int stackadr);
 
 /**
  * @brief Count elements in stack.
  */
-int xpost_stack_count (Xpost_Memory_File *mem,
-        unsigned int stackadr);
+int xpost_stack_count(Xpost_Memory_File *mem, unsigned int stackadr);
 
 /**
  * @brief Put an object on top of the stack.
  */
-int xpost_stack_push (Xpost_Memory_File *mem,
-        unsigned int stackadr,
-        Xpost_Object obj);
+int xpost_stack_push(Xpost_Memory_File *mem,
+                     unsigned int stackadr,
+                     Xpost_Object obj);
 
 /**
  * @brief Index the stack from the top down, fetching object.
  */
-Xpost_Object xpost_stack_topdown_fetch (Xpost_Memory_File *mem,
-        unsigned stackadr,
-        int i);
+Xpost_Object xpost_stack_topdown_fetch(Xpost_Memory_File *mem,
+                                       unsigned stackadr,
+                                       int i);
 
 /**
  * @brief Index the stack from the top down, replacing object.
  */
-int xpost_stack_topdown_replace (Xpost_Memory_File *mem,
-        unsigned stackadr,
-        int i,
-        Xpost_Object obj);
+int xpost_stack_topdown_replace(Xpost_Memory_File *mem,
+                                unsigned stackadr,
+                                int i,
+                                Xpost_Object obj);
 
 /**
  * @brief Index the stack from the bottom up, fetching object.
  */
-Xpost_Object xpost_stack_bottomup_fetch (Xpost_Memory_File *mem,
-        unsigned stackadr,
-        int i);
+Xpost_Object xpost_stack_bottomup_fetch(Xpost_Memory_File *mem,
+                                        unsigned stackadr,
+                                        int i);
 
 /**
  * @brief Index the stack from the bottom up, replacing object.
  */
-int xpost_stack_bottomup_replace (Xpost_Memory_File *mem,
-        unsigned stackadr,
-        int i,
-        Xpost_Object obj);
+int xpost_stack_bottomup_replace(Xpost_Memory_File *mem,
+                                 unsigned stackadr,
+                                 int i,
+                                 Xpost_Object obj);
 
 /**
  * @brief Pop the stack, remove and return top object.
  */
-Xpost_Object xpost_stack_pop (Xpost_Memory_File *mem,
-        unsigned stackadr);
+Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
+                             unsigned stackadr);
 
 /**
  * @}

@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
@@ -51,7 +51,8 @@
  */
 #define MAXMFILE 10
 
-typedef struct {
+typedef struct
+{
     Xpost_Context ctab[MAXCONTEXT];
     unsigned int cid;
     Xpost_Memory_File gtab[MAXMFILE];
@@ -74,7 +75,7 @@ Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid);
  * In a multi-threaded configuration, this may not execute at in every eval()
  * but by a superior strategy.
  */
-int idleproc (Xpost_Context *ctx);
+int idleproc(Xpost_Context *ctx);
 
 extern int TRACE;
 

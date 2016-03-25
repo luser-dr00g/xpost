@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@
  * for the quick-launch is removing all function-pointers from vm.
  *
  * ----
- * To speed-up typechecks, 
+ * To speed-up typechecks,
  * a `int (*check)()` function pointer is added to the signature
  * which directly implements the stack-checking performed by
  * xpost_operator_exec (but without the nasty loops).
@@ -64,7 +64,7 @@
 
 /**
  * @brief a "generic" function pointer for operator functions
- */ 
+ */
 typedef int (*Xpost_Op_Func)(Xpost_Context *ctx);
 
 /**
@@ -73,7 +73,8 @@ typedef int (*Xpost_Op_Func)(Xpost_Context *ctx);
  * A signature contains a stack-pattern, an optional stack-checking
  * function, and an operator function.
  */
-typedef struct Xpost_Signature {
+typedef struct Xpost_Signature
+{
     Xpost_Op_Func fp;  /* function-pointer which implements the operator action */
     int in;       /* number of argument objects */
     unsigned t;   /* memory address of array of ints representing argument types */
@@ -88,7 +89,8 @@ typedef struct Xpost_Signature {
  * contains a "pointer" to an array of signatures
  * and the length of that array.
  */
-typedef struct Xpost_Operator {
+typedef struct Xpost_Operator
+{
     unsigned name;   /* name-stack index of operator's name */
     int n;           /* number of signatures */
     unsigned sigadr; /* memory address of array of signatures */
@@ -104,8 +106,12 @@ typedef struct Xpost_Operator {
  * numbertype matches reals and ints
  * proctype matches arrays with executable attribute set
  */
-enum typepat { anytype = XPOST_OBJECT_NTYPES /*stringtype + 1*/,
-    floattype, numbertype, proctype };
+enum typepat
+{
+    anytype = XPOST_OBJECT_NTYPES /* stringtype + 1 */,
+    floattype,
+    numbertype,
+    proctype };
 
 /**
  * @brief constant size of optab structure

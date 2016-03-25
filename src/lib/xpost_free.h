@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
@@ -72,7 +72,8 @@
  *                           which is triggered whenever this many bytes have
  *                           been allocated since the previous collection.
  */
-typedef enum {
+typedef enum
+{
     XPOST_GARBAGE_COLLECTION_PERIOD = 20000,  /**< number of times to grow before collecting */
     XPOST_GARBAGE_COLLECTION_THRESHOLD = 10000  /**< number of bytes to allocate before collecting */
 } Xpost_Garbage_Params;

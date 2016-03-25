@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,6 @@
 #ifndef XPOST_OP_MATH_H
 #define XPOST_OP_MATH_H
 
-int xpost_oper_init_math_ops (Xpost_Context *ctx, Xpost_Object sd);
+int xpost_oper_init_math_ops(Xpost_Context *ctx, Xpost_Object sd);
 
 #endif

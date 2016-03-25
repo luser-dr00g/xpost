@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -109,7 +109,8 @@
  * @brief A value to track the type of object,
  *        and select the correct union member for manipulation.
  */
-typedef enum {
+typedef enum
+{
     XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE)
     XPOST_OBJECT_NTYPES
 } Xpost_Object_Type;
@@ -412,7 +413,7 @@ char *xpost_object_type_names[]
  * It sets the type to booleantype, sets unlimited access, sets the
  * pad to 0, sets the value to @p b. It returns the object as literal.
  */
-Xpost_Object xpost_bool_cons (int b);
+Xpost_Object xpost_bool_cons(int b);
 
 /**
  * @brief Construct an integertype object with the given value.
@@ -424,7 +425,7 @@ Xpost_Object xpost_bool_cons (int b);
  * It sets the type to integertype, sest unlimited access, sets the
  * pad to 0, set the value to @p i. It returns the object as literal.
  */
-Xpost_Object xpost_int_cons (integer i);
+Xpost_Object xpost_int_cons(integer i);
 
 /**
  * @brief Construct a realtype object with the given value.
@@ -437,7 +438,7 @@ Xpost_Object xpost_int_cons (integer i);
  * sets the pad to 0, sets the value to @p r. It returns the object as
  * literal.
  */
-Xpost_Object xpost_real_cons (real r);
+Xpost_Object xpost_real_cons(real r);
 
 
 /*
@@ -456,7 +457,7 @@ Xpost_Object xpost_real_cons (real r);
  * This function returns the type of the object @p obj, that is the tag
  * with flags masked-off : obj.tag & #XPOST_OBJECT_TAG_DATA_TYPEMASK
  */
-Xpost_Object_Type xpost_object_get_type (Xpost_Object obj);
+Xpost_Object_Type xpost_object_get_type(Xpost_Object obj);
 
 /**
  * @brief Determine whether the object is composite or not (ie. simple).
@@ -467,7 +468,7 @@ Xpost_Object_Type xpost_object_get_type (Xpost_Object obj);
  * This function returns 1 if the object @p obj is one of the composite
  * types (arraytype, stringtype, or dicttype), 0 otherwise.
  */
-int xpost_object_is_composite (Xpost_Object obj);
+int xpost_object_is_composite(Xpost_Object obj);
 
 /**
  * @brief Yield the ent number (memory table index)
@@ -484,7 +485,7 @@ int xpost_object_get_ent(Xpost_Object obj);
 Xpost_Object xpost_object_set_ent(Xpost_Object obj,
                                   unsigned int ent);
 
-/** 
+/**
  * @brief adjust the size and offset fields in the object
 */
 Xpost_Object xpost_object_get_interval(Xpost_Object a,
@@ -504,7 +505,7 @@ Xpost_Object xpost_object_get_interval(Xpost_Object a,
  * a logical NOT. Ie. executable means NOT having the
  * #XPOST_OBJECT_TAG_DATA_FLAG_LIT flag set.
  */
-int xpost_object_is_exe (Xpost_Object obj);
+int xpost_object_is_exe(Xpost_Object obj);
 
 /**
  * @brief Determine whether the object is literal or not.
@@ -518,10 +519,10 @@ int xpost_object_is_exe (Xpost_Object obj);
  * Masks the #XPOST_OBJECT_TAG_DATA_FLAG_LIT with the tag and performs
  * a double-NOT to normalize the value to the range [0..1].
  */
-int xpost_object_is_lit (Xpost_Object obj);
+int xpost_object_is_lit(Xpost_Object obj);
 
 /**
- * @brief install specialized access getter functions 
+ * @brief install specialized access getter functions
  *
  * Dict and file objects share the same access across all duplicates
  * of the object. These functions allow file and dict objects to
@@ -546,7 +547,7 @@ void xpost_object_install_file_get_access(Xpost_Object_Tag_Access (*access_func)
  * A general description of the access flag behavior is at
  * https://groups.google.com/d/topic/comp.lang.postscript/ENxhFBqwgq4/discussion
  */
-Xpost_Object_Tag_Access xpost_object_get_access (Xpost_Context *ctx, Xpost_Object obj);
+Xpost_Object_Tag_Access xpost_object_get_access(Xpost_Context *ctx, Xpost_Object obj);
 
 /**
  * @brief install specialized access setter functions
@@ -566,10 +567,9 @@ void xpost_object_install_file_set_access(Xpost_Object (*set_access_func)(Xpost_
  * an inverse mask. OR-in the new access field, shifted up by
  * #XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET.
  */
-Xpost_Object xpost_object_set_access (
-        Xpost_Context *ctx,
-        Xpost_Object obj,
-        Xpost_Object_Tag_Access access);
+Xpost_Object xpost_object_set_access(Xpost_Context *ctx,
+                                     Xpost_Object obj,
+                                     Xpost_Object_Tag_Access access);
 
 
 /**
@@ -585,7 +585,7 @@ Xpost_Object xpost_object_set_access (
  * Filetype objects use the access field as 2 independent flags.
  * A file is readable if the FILE_READ flag is set.
  */
-int xpost_object_is_readable (Xpost_Context *ctx, Xpost_Object obj);
+int xpost_object_is_readable(Xpost_Context *ctx, Xpost_Object obj);
 
 /**
  * @brief Determine whether the object is writable or not.
@@ -600,7 +600,7 @@ int xpost_object_is_readable (Xpost_Context *ctx, Xpost_Object obj);
  * Filetype objects use the access field as 2 independent flags.
  * A file is writeable if the FILE_WRITE flag is set.
  */
-int xpost_object_is_writeable (Xpost_Context *ctx, Xpost_Object obj);
+int xpost_object_is_writeable(Xpost_Context *ctx, Xpost_Object obj);
 
 
 /**
@@ -613,7 +613,7 @@ int xpost_object_is_writeable (Xpost_Context *ctx, Xpost_Object obj);
  * cvx is the name of the Postscript operator which performs
  * this function.
  */
-Xpost_Object xpost_object_cvx (Xpost_Object obj);
+Xpost_Object xpost_object_cvx(Xpost_Object obj);
 
 /**
  * @brief Convert object to literal.
@@ -625,7 +625,7 @@ Xpost_Object xpost_object_cvx (Xpost_Object obj);
  * cvlit is the name of the Postscript operator which performs
  * this function.
  */
-Xpost_Object xpost_object_cvlit (Xpost_Object obj);
+Xpost_Object xpost_object_cvlit(Xpost_Object obj);
 
 
 /*
@@ -651,7 +651,7 @@ Xpost_Object xpost_object_cvlit (Xpost_Object obj);
  * of the memory-file and memory-tables where the ent
  * may be located.
  */
-void xpost_object_dump (Xpost_Object obj);
+void xpost_object_dump(Xpost_Object obj);
 
 /**
  * @}

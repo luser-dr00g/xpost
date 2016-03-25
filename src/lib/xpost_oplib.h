@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@ int xpost_op_breakhere(Xpost_Context *ctx);
 /**
  * @brief initialize the operator library
  */
-int xpost_oplib_init_ops (Xpost_Context *ctx);
+int xpost_oplib_init_ops(Xpost_Context *ctx);
 
 /**
  * @}

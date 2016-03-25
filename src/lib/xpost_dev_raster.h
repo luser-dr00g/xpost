@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,8 @@
  * @brief A blue green red alpha pixel
  */
 typedef
-struct Xpost_Raster_BGRA_Pixel {
+struct Xpost_Raster_BGRA_Pixel
+{
     unsigned char blue, green, red, alpha;
 } Xpost_Raster_BGRA_Pixel;
 
@@ -55,7 +56,8 @@ struct Xpost_Raster_BGRA_Pixel {
  * @brief a blue green red pixel
  */
 typedef
-struct Xpost_Raster_BGR_Pixel {
+struct Xpost_Raster_BGR_Pixel
+{
     unsigned char blue, green, red;
 } Xpost_Raster_BGR_Pixel;
 
@@ -63,7 +65,8 @@ struct Xpost_Raster_BGR_Pixel {
  * @brief a red green blue pixel
  */
 typedef
-struct Xpost_Raster_RGB_Pixel {
+struct Xpost_Raster_RGB_Pixel
+{
     unsigned char red, green, blue;
 } Xpost_Raster_RGB_Pixel;
 
@@ -71,7 +74,8 @@ struct Xpost_Raster_RGB_Pixel {
  * @brief a alpha red green blue pixel
  */
 typedef
-struct Xpost_Raster_ARGB_Pixel {
+struct Xpost_Raster_ARGB_Pixel
+{
     unsigned char alpha, red, green, blue;
 } Xpost_Raster_ARGB_Pixel;
 
@@ -79,7 +83,8 @@ struct Xpost_Raster_ARGB_Pixel {
  * @brief a generic buffer
  */
 typedef
-struct Xpost_Raster_Buffer {
+struct Xpost_Raster_Buffer
+{
     int width, height, byte_stride;
     /*(Xpost_Raster_*_Pixel)*/ char *data[1];
 } Xpost_Raster_Buffer;
@@ -94,8 +99,8 @@ struct Xpost_Raster_Buffer {
  * which, when run, creates and returns the device
  * instance dictionary.
  */
-int xpost_oper_init_raster_device_ops (Xpost_Context *ctx,
-                Xpost_Object sd);
+int xpost_oper_init_raster_device_ops(Xpost_Context *ctx,
+                                      Xpost_Object sd);
 
 /**
  * @}

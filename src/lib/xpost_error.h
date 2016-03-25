@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@ http://stackoverflow.com/questions/6635851/real-world-use-of-x-macros/6636596#66
 
 /**
  * @brief Macro to generate error identifiers.
- * These error codes are (mostly) defined in the PLRM and can be returned by operator 
+ * These error codes are (mostly) defined in the PLRM and can be returned by operator
  * functions and handled at the postscript level. If an operator (including a device
  * function) returns a value outside of this range, the error-name returned to postscript
  * will be /unknownerror.
