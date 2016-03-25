@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -86,7 +86,7 @@ void *alloca (size_t);
    return type of any as a nametype object */
 static
 int Atype(Xpost_Context *ctx,
-           Xpost_Object o)
+          Xpost_Object o)
 {
     if (xpost_object_get_type(o) >= XPOST_OBJECT_NTYPES)
         //return unregistered;
@@ -99,7 +99,7 @@ int Atype(Xpost_Context *ctx,
    set executable attribute in obj to literal (quoted) */
 static
 int Acvlit(Xpost_Context *ctx,
-            Xpost_Object o)
+           Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(o));
     return 0;
@@ -109,7 +109,7 @@ int Acvlit(Xpost_Context *ctx,
    set executable attribute in obj to executable */
 static
 int Acvx(Xpost_Context *ctx,
-          Xpost_Object o)
+         Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(o));
     return 0;
@@ -119,7 +119,7 @@ int Acvx(Xpost_Context *ctx,
    test executable attribute in obj */
 static
 int Axcheck(Xpost_Context *ctx,
-             Xpost_Object o)
+            Xpost_Object o)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(xpost_object_is_exe(o)));
     return 0;
@@ -129,7 +129,7 @@ int Axcheck(Xpost_Context *ctx,
    reduce access attribute for obj to execute-only */
 static
 int Aexecuteonly(Xpost_Context *ctx,
-                  Xpost_Object o)
+                 Xpost_Object o)
 {
     //o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     //o.tag |= (XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
@@ -142,7 +142,7 @@ int Aexecuteonly(Xpost_Context *ctx,
    reduce access attribute for obj to no-access */
 static
 int Anoaccess(Xpost_Context *ctx,
-               Xpost_Object o)
+              Xpost_Object o)
 {
     //o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     //o.tag |= (XPOST_OBJECT_TAG_ACCESS_NONE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
@@ -155,7 +155,7 @@ int Anoaccess(Xpost_Context *ctx,
    reduce access attribute for obj to read-only */
 static
 int Areadonly(Xpost_Context *ctx,
-               Xpost_Object o)
+              Xpost_Object o)
 {
     //o.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
     //o.tag |= (XPOST_OBJECT_TAG_ACCESS_READ_ONLY << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
@@ -168,7 +168,7 @@ int Areadonly(Xpost_Context *ctx,
    test obj for read-access */
 static
 int Archeck(Xpost_Context *ctx,
-             Xpost_Object o)
+            Xpost_Object o)
 {
     //xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY ));
     xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(xpost_object_get_access(ctx, o) >= XPOST_OBJECT_TAG_ACCESS_READ_ONLY));
@@ -179,7 +179,7 @@ int Archeck(Xpost_Context *ctx,
    test obj for write-access */
 static
 int Awcheck(Xpost_Context *ctx,
-             Xpost_Object o)
+            Xpost_Object o)
 {
     //xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK) >> XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET == XPOST_OBJECT_TAG_ACCESS_UNLIMITED ));
     xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons( xpost_object_get_access(ctx, o) == XPOST_OBJECT_TAG_ACCESS_UNLIMITED));
@@ -190,7 +190,7 @@ int Awcheck(Xpost_Context *ctx,
    convert number to integer */
 static
 int Ncvi(Xpost_Context *ctx,
-          Xpost_Object n)
+         Xpost_Object n)
 {
     if (xpost_object_get_type(n) == realtype)
         n = xpost_int_cons((integer)n.real_.val);
@@ -202,7 +202,7 @@ int Ncvi(Xpost_Context *ctx,
    convert initial portion of string to integer */
 static
 int Scvi(Xpost_Context *ctx,
-          Xpost_Object s)
+         Xpost_Object s)
 {
     double dbl;
     long num;
@@ -218,9 +218,9 @@ int Scvi(Xpost_Context *ctx,
     num = (long)dbl;
 
     /*
-    num = strtol(t, NULL, 10);
-    if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
-        return limitcheck;
+      num = strtol(t, NULL, 10);
+      if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
+      return limitcheck;
     */
 
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(num));
@@ -274,14 +274,14 @@ int Ncvr(Xpost_Context *ctx,
    convert initial portion of string to real */
 static
 int Scvr(Xpost_Context *ctx,
-          Xpost_Object str)
+         Xpost_Object str)
 {
     double num;
     char *s = alloca(str.comp_.sz + 1);
     memcpy(s, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     s[str.comp_.sz] = '\0';
     num = strtod(s, NULL);
-    if ((num == HUGE_VAL || num -HUGE_VAL) && errno==ERANGE)
+    if ((num == HUGE_VAL || num -HUGE_VAL) && errno == ERANGE)
         return limitcheck;
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)num));
     return 0;
@@ -297,7 +297,8 @@ int conv_rad(int num,
     char *vec = "0123456789" "ABCDEFGHIJKLM" "NOPQRSTUVWXYZ";
     int off;
     if (n == 0) return 0;
-    if (num < rad) {
+    if (num < rad)
+    {
         *s = vec[num];
         return 1;
     }
@@ -310,20 +311,22 @@ int conv_rad(int num,
 /* number radix string  cvrs  string
    convert number to a radix representation in string */
 static
-int NRScvrs (Xpost_Context *ctx,
-              Xpost_Object num,
-              Xpost_Object rad,
-              Xpost_Object str)
+int NRScvrs(Xpost_Context *ctx,
+            Xpost_Object num,
+            Xpost_Object rad,
+            Xpost_Object str)
 {
     int r, n;
-    if (xpost_object_get_type(num) == realtype) num = xpost_int_cons((integer)num.real_.val);
+    if (xpost_object_get_type(num) == realtype)
+        num = xpost_int_cons((integer)num.real_.val);
     r = rad.int_.val;
     if (r < 2 || r > 36)
         return rangecheck;
     n = conv_rad(num.int_.val, r, xpost_string_get_pointer(ctx, str), str.comp_.sz);
     if (n == -1)
         return rangecheck;
-    if (n < str.comp_.sz) str.comp_.sz = n;
+    if (n < str.comp_.sz)
+        str.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, str);
     return 0;
 }
@@ -335,7 +338,8 @@ int conv_integ(real num,
                int n)
 {
     int off;
-    if (num < 10) {
+    if (num < 10)
+    {
         *s = ((int)num) + '0';
         return 1;
     }
@@ -370,17 +374,20 @@ int conv_real (real num,
     int off = 0;
     real integ, frac;
     if (n == 0) return -1;
-    if (isinf(num)){
+    if (isinf(num))
+    {
         if (n < 3) return -1;
         memcpy(s, "inf", 3);
         return 3;
     }
-    if (isnan(num)){
+    if (isnan(num))
+    {
         if (n < 3) return -1;
         memcpy(s, "nan", 3);
         return 3;
     }
-    if (num < 0) {
+    if (num < 0)
+    {
         num = (real)fabs(num);
         s[off++] = '-';
     }
@@ -396,8 +403,8 @@ int conv_real (real num,
    convert any object to string representation */
 static
 int AScvs (Xpost_Context *ctx,
-            Xpost_Object any,
-            Xpost_Object str)
+           Xpost_Object any,
+           Xpost_Object str)
 {
     char nostringval[] = "-nostringval-";
     char strue[] = "true";
@@ -407,36 +414,40 @@ int AScvs (Xpost_Context *ctx,
     int n;
     int ret;
 
-    switch(xpost_object_get_type(any)) {
-    default:
-        if (str.comp_.sz < sizeof(nostringval)-1)
-            return rangecheck;
-        memcpy(xpost_string_get_pointer(ctx, str), nostringval, sizeof(nostringval)-1);
-        str.comp_.sz = sizeof(nostringval)-1;
-        break;
+    switch(xpost_object_get_type(any))
+    {
+        default:
+            if (str.comp_.sz < sizeof(nostringval)-1)
+                return rangecheck;
+            memcpy(xpost_string_get_pointer(ctx, str), nostringval, sizeof(nostringval)-1);
+            str.comp_.sz = sizeof(nostringval)-1;
+            break;
 
-    case savetype:
-        if (str.comp_.sz < sizeof(ssave)-1)
-            return rangecheck;
-        memcpy(xpost_string_get_pointer(ctx, str), ssave, sizeof(ssave)-1);
-        str.comp_.sz = sizeof(ssave)-1;
-        break;
+        case savetype:
+            if (str.comp_.sz < sizeof(ssave)-1)
+                return rangecheck;
+            memcpy(xpost_string_get_pointer(ctx, str), ssave, sizeof(ssave)-1);
+            str.comp_.sz = sizeof(ssave)-1;
+            break;
 
-    case marktype:
-        if (str.comp_.sz < sizeof(smark)-1)
-            return rangecheck;
-        memcpy(xpost_string_get_pointer(ctx, str), smark, sizeof(smark)-1);
-        str.comp_.sz = sizeof(smark)-1;
-        break;
+        case marktype:
+            if (str.comp_.sz < sizeof(smark)-1)
+                return rangecheck;
+            memcpy(xpost_string_get_pointer(ctx, str), smark, sizeof(smark)-1);
+            str.comp_.sz = sizeof(smark)-1;
+            break;
 
-    case booleantype:
+        case booleantype:
         {
-            if (any.int_.val) {
+            if (any.int_.val)
+            {
                 if (str.comp_.sz < sizeof(strue)-1)
                     return rangecheck;
                 memcpy(xpost_string_get_pointer(ctx, str), strue, sizeof(strue)-1);
                 str.comp_.sz = sizeof(strue)-1;
-            } else {
+            }
+            else
+            {
                 if (str.comp_.sz < sizeof(sfalse)-1)
                     return rangecheck;
                 memcpy(xpost_string_get_pointer(ctx, str), sfalse, sizeof(sfalse)-1);
@@ -444,13 +455,14 @@ int AScvs (Xpost_Context *ctx,
             }
         }
         break;
-    case integertype:
+        case integertype:
         {
             //n = conv_rad(any.int_.val, 10, xpost_string_get_pointer(ctx, str), str.comp_.sz);
             char *s = xpost_string_get_pointer(ctx, str);
             int sz = str.comp_.sz;
             n = 0;
-            if (any.int_.val < 0) {
+            if (any.int_.val < 0)
+            {
                 s[n++] = '-';
                 any.int_.val = abs(any.int_.val);
                 --sz;
@@ -461,21 +473,21 @@ int AScvs (Xpost_Context *ctx,
             if (n < str.comp_.sz) str.comp_.sz = n;
             break;
         }
-    case realtype:
-        n = conv_real(any.real_.val, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-        if (n == -1)
-            return rangecheck;
-        if (n < str.comp_.sz) str.comp_.sz = n;
-        break;
+        case realtype:
+            n = conv_real(any.real_.val, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+            if (n == -1)
+                return rangecheck;
+            if (n < str.comp_.sz) str.comp_.sz = n;
+            break;
 
-    case operatortype:
+        case operatortype:
         {
             unsigned int optadr;
             Xpost_Operator *optab;
             Xpost_Operator op;
             Xpost_Object_Mark nm;
             ret = xpost_memory_table_get_addr(ctx->gl,
-                    XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                              XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot load optab!");
@@ -489,23 +501,23 @@ int AScvs (Xpost_Context *ctx,
             any.mark_ = nm;
         }
         /*@fallthrough@*/
-    case nametype:
-        any = xpost_name_get_string(ctx, any);
-        /*@fallthrough@*/
-    case stringtype:
-        if (any.comp_.sz > str.comp_.sz)
-            return rangecheck;
-        if (any.comp_.sz < str.comp_.sz) str.comp_.sz = any.comp_.sz;
-        memcpy(xpost_string_get_pointer(ctx, str), xpost_string_get_pointer(ctx, any), any.comp_.sz);
-        break;
+        case nametype:
+            any = xpost_name_get_string(ctx, any);
+            /*@fallthrough@*/
+        case stringtype:
+            if (any.comp_.sz > str.comp_.sz)
+                return rangecheck;
+            if (any.comp_.sz < str.comp_.sz) str.comp_.sz = any.comp_.sz;
+            memcpy(xpost_string_get_pointer(ctx, str), xpost_string_get_pointer(ctx, any), any.comp_.sz);
+            break;
     }
 
     xpost_stack_push(ctx->lo, ctx->os, str);
     return 0;
 }
 
-int xpost_oper_init_type_ops (Xpost_Context *ctx,
-              Xpost_Object sd)
+int xpost_oper_init_type_ops(Xpost_Context *ctx,
+                             Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -513,7 +525,7 @@ int xpost_oper_init_type_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "type", (Xpost_Op_Func)Atype, 1, 1, anytype);
@@ -556,5 +568,3 @@ int xpost_oper_init_type_ops (Xpost_Context *ctx,
      */
     return 0;
 }
-
-

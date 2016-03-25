@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,7 +63,7 @@
 #include "xpost_operator.h"
 #include "xpost_op_dict.h"
 #include "xpost_op_path.h"
-    
+
 /*
    % path == <<
    %             0 << subpath0 >>
@@ -109,7 +109,7 @@ static Xpost_Object _mat;
 static Xpost_Object _mat1;
 
 static
-int _newpath (Xpost_Context *ctx)
+int _newpath(Xpost_Context *ctx)
 {
     Xpost_Object gd, gstate;
     int ret;
@@ -120,14 +120,14 @@ int _newpath (Xpost_Context *ctx)
     gd = xpost_stack_pop(ctx->lo, ctx->os);
     gstate = xpost_dict_get(ctx, gd, namecurrgstate);
     ret = xpost_dict_put(ctx, gstate,
-            namecurrpath,
-            xpost_dict_cons(ctx, 1));
+                         namecurrpath,
+                         xpost_dict_cons(ctx, 1));
     if (ret) return ret;
     return 0;
 }
 
 static
-Xpost_Object _cpath (Xpost_Context *ctx)
+Xpost_Object _cpath(Xpost_Context *ctx)
 {
     Xpost_Object gd, gstate, path;
     int ret;
@@ -145,7 +145,7 @@ Xpost_Object _cpath (Xpost_Context *ctx)
     return path;
 }
 
-int _currentpoint (Xpost_Context *ctx)
+int _currentpoint(Xpost_Context *ctx)
 {
     Xpost_Object path, subpath, elem, data;
     int pathlen, subpathlen, datalen;
@@ -174,12 +174,12 @@ int _currentpoint (Xpost_Context *ctx)
     xpost_stack_push(ctx->lo, ctx->os, xpost_array_get(ctx, data, datalen - 2));
     xpost_stack_push(ctx->lo, ctx->os, xpost_array_get(ctx, data, datalen - 1));
     xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.itransform));
-    
+
     return 0;
 }
 
 static
-int _addtopath (Xpost_Context *ctx, Xpost_Object elem, Xpost_Object path)
+int _addtopath(Xpost_Context *ctx, Xpost_Object elem, Xpost_Object path)
 {
     Xpost_Object subpath, cmd, lastelem;
     int pathlen;
@@ -273,7 +273,7 @@ int _addtopath (Xpost_Context *ctx, Xpost_Object elem, Xpost_Object path)
 }
 
 static
-int _moveto (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
+int _moveto(Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, x);
     xpost_stack_push(ctx->lo, ctx->os, y);
@@ -283,7 +283,7 @@ int _moveto (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 }
 
 static
-int _moveto_cont (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
+int _moveto_cont(Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
     Xpost_Object data, elem;
     data = xpost_object_cvlit(xpost_array_cons(ctx, 2));
@@ -296,7 +296,7 @@ int _moveto_cont (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 }
 
 static
-int _rmoveto (Xpost_Context *ctx, Xpost_Object dx, Xpost_Object dy)
+int _rmoveto(Xpost_Context *ctx, Xpost_Object dx, Xpost_Object dy)
 {
     xpost_stack_push(ctx->lo, ctx->os, dx);
     xpost_stack_push(ctx->lo, ctx->os, dy);
@@ -316,7 +316,7 @@ int _rmoveto_cont(Xpost_Context *ctx,
 }
 
 static
-int _lineto (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
+int _lineto(Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, x);
     xpost_stack_push(ctx->lo, ctx->os, y);
@@ -326,7 +326,7 @@ int _lineto (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 }
 
 static
-int _lineto_cont (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
+int _lineto_cont(Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
     Xpost_Object data, elem;
     data = xpost_object_cvlit(xpost_array_cons(ctx, 2));
@@ -339,7 +339,7 @@ int _lineto_cont (Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 }
 
 static
-int _rlineto (Xpost_Context *ctx, Xpost_Object dx, Xpost_Object dy)
+int _rlineto(Xpost_Context *ctx, Xpost_Object dx, Xpost_Object dy)
 {
     xpost_stack_push(ctx->lo, ctx->os, dx);
     xpost_stack_push(ctx->lo, ctx->os, dy);
@@ -349,9 +349,9 @@ int _rlineto (Xpost_Context *ctx, Xpost_Object dx, Xpost_Object dy)
 }
 
 static
-int _rlineto_cont (Xpost_Context *ctx,
-                   Xpost_Object dx, Xpost_Object dy,
-                   Xpost_Object x, Xpost_Object y)
+int _rlineto_cont(Xpost_Context *ctx,
+                  Xpost_Object dx, Xpost_Object dy,
+                  Xpost_Object x, Xpost_Object y)
 {
     x.real_.val += dx.real_.val;
     y.real_.val += dy.real_.val;
@@ -359,10 +359,10 @@ int _rlineto_cont (Xpost_Context *ctx,
 }
 
 static
-int _curveto (Xpost_Context *ctx,
-        Xpost_Object x1, Xpost_Object y1,
-        Xpost_Object x2, Xpost_Object y2,
-        Xpost_Object x3, Xpost_Object y3)
+int _curveto(Xpost_Context *ctx,
+             Xpost_Object x1, Xpost_Object y1,
+             Xpost_Object x2, Xpost_Object y2,
+             Xpost_Object x3, Xpost_Object y3)
 {
     xpost_stack_push(ctx->lo, ctx->os, x1);
     xpost_stack_push(ctx->lo, ctx->os, y1);
@@ -376,10 +376,10 @@ int _curveto (Xpost_Context *ctx,
 }
 
 static
-int _curveto_cont1 (Xpost_Context *ctx,
-        Xpost_Object x1, Xpost_Object y1,
-        Xpost_Object x2, Xpost_Object y2,
-        Xpost_Object X3, Xpost_Object Y3)
+int _curveto_cont1(Xpost_Context *ctx,
+                   Xpost_Object x1, Xpost_Object y1,
+                   Xpost_Object x2, Xpost_Object y2,
+                   Xpost_Object X3, Xpost_Object Y3)
 {
     xpost_stack_push(ctx->lo, ctx->os, X3);
     xpost_stack_push(ctx->lo, ctx->os, Y3);
@@ -393,10 +393,10 @@ int _curveto_cont1 (Xpost_Context *ctx,
 }
 
 static
-int _curveto_cont2 (Xpost_Context *ctx,
-        Xpost_Object X3, Xpost_Object Y3,
-        Xpost_Object x1, Xpost_Object y1,
-        Xpost_Object X2, Xpost_Object Y2)
+int _curveto_cont2(Xpost_Context *ctx,
+                   Xpost_Object X3, Xpost_Object Y3,
+                   Xpost_Object x1, Xpost_Object y1,
+                   Xpost_Object X2, Xpost_Object Y2)
 {
     xpost_stack_push(ctx->lo, ctx->os, X2);
     xpost_stack_push(ctx->lo, ctx->os, Y2);
@@ -410,10 +410,10 @@ int _curveto_cont2 (Xpost_Context *ctx,
 }
 
 static
-int _curveto_cont3 (Xpost_Context *ctx,
-        Xpost_Object X2, Xpost_Object Y2,
-        Xpost_Object X3, Xpost_Object Y3,
-        Xpost_Object X1, Xpost_Object Y1)
+int _curveto_cont3(Xpost_Context *ctx,
+                   Xpost_Object X2, Xpost_Object Y2,
+                   Xpost_Object X3, Xpost_Object Y3,
+                   Xpost_Object X1, Xpost_Object Y1)
 {
     Xpost_Object data, elem;
     data = xpost_object_cvlit(xpost_array_cons(ctx, 6));
@@ -430,10 +430,10 @@ int _curveto_cont3 (Xpost_Context *ctx,
 }
 
 static
-int _rcurveto (Xpost_Context *ctx,
-        Xpost_Object x1, Xpost_Object y1,
-        Xpost_Object x2, Xpost_Object y2,
-        Xpost_Object x3, Xpost_Object y3)
+int _rcurveto(Xpost_Context *ctx,
+              Xpost_Object x1, Xpost_Object y1,
+              Xpost_Object x2, Xpost_Object y2,
+              Xpost_Object x3, Xpost_Object y3)
 {
     xpost_stack_push(ctx->lo, ctx->os, x1);
     xpost_stack_push(ctx->lo, ctx->os, y1);
@@ -447,11 +447,11 @@ int _rcurveto (Xpost_Context *ctx,
 }
 
 static
-int _rcurveto_cont (Xpost_Context *ctx,
-        Xpost_Object x1, Xpost_Object y1,
-        Xpost_Object x2, Xpost_Object y2,
-        Xpost_Object x3, Xpost_Object y3,
-        Xpost_Object x, Xpost_Object y)
+int _rcurveto_cont(Xpost_Context *ctx,
+                   Xpost_Object x1, Xpost_Object y1,
+                   Xpost_Object x2, Xpost_Object y2,
+                   Xpost_Object x3, Xpost_Object y3,
+                   Xpost_Object x, Xpost_Object y)
 {
     x1.real_.val += x.real_.val;
     y1.real_.val += y.real_.val;
@@ -463,7 +463,7 @@ int _rcurveto_cont (Xpost_Context *ctx,
 }
 
 static
-int _closepath (Xpost_Context *ctx)
+int _closepath(Xpost_Context *ctx)
 {
     Xpost_Object path;
     int pathlen;
@@ -473,7 +473,7 @@ int _closepath (Xpost_Context *ctx)
         cpath dup length 1 sub get % subpath
         dup dup length 1 sub get % subpath last-elem
         /cmd get /close eq { % subpath
-            pop 
+            pop
         }{                   % subpath
             0 get /data get % subpath [data]
             << /data 3 2 roll /cmd /close >> cpath addtopath
@@ -543,7 +543,7 @@ def
 
 
 static
-void _transform (Xpost_Matrix mat, real x, real y, real *xres, real *yres)
+void _transform(Xpost_Matrix mat, real x, real y, real *xres, real *yres)
 {
     *xres = mat.xx * x + mat.xy * y + mat.xz;
     *yres = mat.yx * x + mat.yy * y + mat.yz;
@@ -553,9 +553,9 @@ static
 Xpost_Object _arc_start_proc;
 
 static
-int _arcbez (Xpost_Context *ctx,
-        Xpost_Object x, Xpost_Object y, Xpost_Object r,
-        Xpost_Object angle1, Xpost_Object angle2)
+int _arcbez(Xpost_Context *ctx,
+            Xpost_Object x, Xpost_Object y, Xpost_Object r,
+            Xpost_Object angle1, Xpost_Object angle2)
 {
     Xpost_Matrix mat1, mat2, mat3;
     real da_2, sin_a, cos_a;
@@ -594,13 +594,14 @@ int _arcbez (Xpost_Context *ctx,
 }
 
 static
-int _arc (Xpost_Context *ctx,
-        Xpost_Object x, Xpost_Object y, Xpost_Object r,
-        Xpost_Object angle1, Xpost_Object angle2)
+int _arc(Xpost_Context *ctx,
+         Xpost_Object x, Xpost_Object y, Xpost_Object r,
+         Xpost_Object angle1, Xpost_Object angle2)
 {
     double a1 = angle1.real_.val;
     double a2 = angle2.real_.val;
-    while (a2 < a1) {
+    while (a2 < a1)
+    {
         double t;
         t = a2 + 360;
         a2 = t;
@@ -628,13 +629,14 @@ int _arc (Xpost_Context *ctx,
 }
 
 static
-int _arcn (Xpost_Context *ctx,
-        Xpost_Object x, Xpost_Object y, Xpost_Object r,
-        Xpost_Object angle1, Xpost_Object angle2)
+int _arcn(Xpost_Context *ctx,
+          Xpost_Object x, Xpost_Object y, Xpost_Object r,
+          Xpost_Object angle1, Xpost_Object angle2)
 {
     real a1 = angle1.real_.val;
     real a2 = angle2.real_.val;
-    while (a2 > a1) {
+    while (a2 > a1)
+    {
         double t;
         t = a2 - 360;
         a2 = t;
@@ -664,12 +666,12 @@ int _arcn (Xpost_Context *ctx,
 #define NUM(x) (xpost_object_get_type(x)==realtype?x.real_.val:(real)x.int_.val)
 
 static
-int _chopcurve (Xpost_Context *ctx,
-                real x0, real y0,
-                real x1, real y1,
-                real x2, real y2,
-                real x3, real y3,
-                Xpost_Object flat)
+int _chopcurve(Xpost_Context *ctx,
+               real x0, real y0,
+               real x1, real y1,
+               real x2, real y2,
+               real x3, real y3,
+               Xpost_Object flat)
 {
     real x01, y01, x12, y12, x23, y23,
          x012, y012, x123, y123,
@@ -691,7 +693,7 @@ int _chopcurve (Xpost_Context *ctx,
     MEDIAN(x012, y012, x01, y01, x12, y12)
     MEDIAN(x123, y123, x12, y12, x23, y23)
     MEDIAN(x0123, y0123, x012, y012, x123, y123)
-    
+
     MEDIAN(x03, y03, x0, y0, x3, y3)
 
 #elif defined UNREADABLE
@@ -828,8 +830,8 @@ int _flattenpath (Xpost_Context *ctx)
 }
 
 
-int xpost_oper_init_path_ops (Xpost_Context *ctx,
-             Xpost_Object sd)
+int xpost_oper_init_path_ops(Xpost_Context *ctx,
+                             Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -877,7 +879,7 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "rmoveto", (Xpost_Op_Func)_rmoveto, 0, 2, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "rmoveto_cont", (Xpost_Op_Func)_rmoveto_cont, 0, 4,
-            floattype, floattype, floattype, floattype);
+                             floattype, floattype, floattype, floattype);
     _rmoveto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "lineto", (Xpost_Op_Func)_lineto, 0, 2, numbertype, numbertype);
@@ -889,40 +891,40 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "rlineto", (Xpost_Op_Func)_rlineto, 0, 2, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "rlineto_cont", (Xpost_Op_Func)_rlineto_cont, 0, 4,
-            floattype, floattype, floattype, floattype);
+                             floattype, floattype, floattype, floattype);
     _rlineto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "curveto", (Xpost_Op_Func)_curveto, 0, 6,
-            numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
+                             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
     _curveto_opcode = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "curveto_cont1", (Xpost_Op_Func)_curveto_cont1, 0, 6,
-            numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
+                             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
     _curveto_cont1_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "curveto_cont2", (Xpost_Op_Func)_curveto_cont2, 0, 6,
-            numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
+                             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
     _curveto_cont2_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "curveto_cont3", (Xpost_Op_Func)_curveto_cont3, 0, 6,
-            numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
+                             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
     _curveto_cont3_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "rcurveto", (Xpost_Op_Func)_rcurveto, 0, 6,
-            floattype, floattype, floattype, floattype, floattype, floattype);
+                             floattype, floattype, floattype, floattype, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "rcurveto_cont", (Xpost_Op_Func)_rcurveto_cont, 0, 8,
-            floattype, floattype, floattype, floattype, floattype, floattype, floattype, floattype);
+                             floattype, floattype, floattype, floattype, floattype, floattype, floattype, floattype);
     _rcurveto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "closepath", (Xpost_Op_Func)_closepath, 0, 0);
     INSTALL;
 
     op = xpost_operator_cons(ctx, "arc", (Xpost_Op_Func)_arc, 0, 5,
-            floattype, floattype, floattype, floattype, floattype);
+                             floattype, floattype, floattype, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "arcn", (Xpost_Op_Func)_arcn, 0, 5,
-            floattype, floattype, floattype, floattype, floattype);
+                             floattype, floattype, floattype, floattype, floattype);
     INSTALL;
 
     op = xpost_operator_cons(ctx, "flattenpath", (Xpost_Op_Func)_flattenpath, 0, 0);
@@ -947,5 +949,3 @@ int xpost_oper_init_path_ops (Xpost_Context *ctx,
 
     return 0;
 }
-
-

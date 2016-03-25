@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,8 +42,8 @@
 #include "xpost_stack.h"
 
 /* allocate memory for one stack segment */
-int xpost_stack_init (Xpost_Memory_File *mem,
-        unsigned int *paddr)
+int xpost_stack_init(Xpost_Memory_File *mem,
+                     unsigned int *paddr)
 {
     unsigned int adr;
     Xpost_Stack *s;
@@ -56,8 +56,8 @@ int xpost_stack_init (Xpost_Memory_File *mem,
     return 1;
 }
 
-void xpost_stack_dump (Xpost_Memory_File *mem,
-        unsigned int stackadr)
+void xpost_stack_dump(Xpost_Memory_File *mem,
+                      unsigned int stackadr)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned int i;
@@ -80,8 +80,8 @@ void xpost_stack_dump (Xpost_Memory_File *mem,
 }
 
 /* deallocate stack segment and any chained segments */
-void xpost_stack_free (Xpost_Memory_File *mem,
-        unsigned int stackadr)
+void xpost_stack_free(Xpost_Memory_File *mem,
+                      unsigned int stackadr)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     Xpost_Memory_Table *tab;
@@ -96,8 +96,8 @@ void xpost_stack_free (Xpost_Memory_File *mem,
     /* discard */
 }
 
-int xpost_stack_count (Xpost_Memory_File *mem,
-        unsigned int stackadr)
+int xpost_stack_count(Xpost_Memory_File *mem,
+                      unsigned int stackadr)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     unsigned int ct = 0;
@@ -109,14 +109,14 @@ int xpost_stack_count (Xpost_Memory_File *mem,
     return ct + s->top;
 }
 
-int xpost_stack_push (Xpost_Memory_File *mem,
-        unsigned int stackadr,
-        Xpost_Object obj)
+int xpost_stack_push(Xpost_Memory_File *mem,
+                     unsigned int stackadr,
+                     Xpost_Object obj)
 {
     unsigned int newst;
     Xpost_Stack *s;
 
-    if (xpost_object_get_type(obj) == invalidtype) 
+    if (xpost_object_get_type(obj) == invalidtype)
         return 0;
 
     s = (Xpost_Stack *)(mem->base + stackadr); /* load the stack */
@@ -154,26 +154,26 @@ int xpost_stack_push (Xpost_Memory_File *mem,
     return 1;
 }
 
-Xpost_Object xpost_stack_topdown_fetch (Xpost_Memory_File *mem,
-        unsigned int stackadr,
-        int i)
+Xpost_Object xpost_stack_topdown_fetch(Xpost_Memory_File *mem,
+                                       unsigned int stackadr,
+                                       int i)
 {
     int cnt = xpost_stack_count(mem, stackadr);
     return xpost_stack_bottomup_fetch(mem, stackadr, cnt - 1 - i);
 }
 
-int xpost_stack_topdown_replace (Xpost_Memory_File *mem,
-        unsigned int stackadr,
-        int i,
-        Xpost_Object obj)
+int xpost_stack_topdown_replace(Xpost_Memory_File *mem,
+                                unsigned int stackadr,
+                                int i,
+                                Xpost_Object obj)
 {
     int cnt = xpost_stack_count(mem, stackadr);
     return xpost_stack_bottomup_replace(mem, stackadr, cnt - 1 - i, obj);
 }
 
-Xpost_Object xpost_stack_bottomup_fetch (Xpost_Memory_File *mem,
-        unsigned int stackadr,
-        int i)
+Xpost_Object xpost_stack_bottomup_fetch(Xpost_Memory_File *mem,
+                                        unsigned int stackadr,
+                                        int i)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
 
@@ -186,10 +186,10 @@ Xpost_Object xpost_stack_bottomup_fetch (Xpost_Memory_File *mem,
     return s->data[i];
 }
 
-int xpost_stack_bottomup_replace (Xpost_Memory_File *mem,
-        unsigned int stackadr,
-        int idx,
-        Xpost_Object obj)
+int xpost_stack_bottomup_replace(Xpost_Memory_File *mem,
+                                 unsigned int stackadr,
+                                 int idx,
+                                 Xpost_Object obj)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     int i = idx;
@@ -201,8 +201,8 @@ int xpost_stack_bottomup_replace (Xpost_Memory_File *mem,
         if (s->nextseg == 0)
         {
             XPOST_LOG_ERR("%d can't find stack segment for index %d in stack of size %u",
-                    unregistered, idx,
-                    xpost_stack_count(mem, stackadr));
+                          unregistered, idx,
+                          xpost_stack_count(mem, stackadr));
             return 0;
         }
         s = (Xpost_Stack *)(mem->base + s->nextseg);
@@ -211,8 +211,8 @@ int xpost_stack_bottomup_replace (Xpost_Memory_File *mem,
     return 1;
 }
 
-Xpost_Object xpost_stack_pop (Xpost_Memory_File *mem,
-        unsigned int stackadr)
+Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
+                             unsigned int stackadr)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     Xpost_Stack *p = NULL;
@@ -233,7 +233,7 @@ Xpost_Object xpost_stack_pop (Xpost_Memory_File *mem,
             p = (Xpost_Stack *)(mem->base + poff); /* recalc */
             s = p;
             p->nextseg = 0;
-#endif 
+#endif
             s = p;
         }
         else /* can't back up if stack is empty */

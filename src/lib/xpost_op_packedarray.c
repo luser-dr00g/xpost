@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,16 +82,17 @@ void *alloca (size_t);
 /* a packed array is just a regular array with readonly */
 
 static
-int packedarray (Xpost_Context *ctx,
-                  Xpost_Object n)
+int packedarray(Xpost_Context *ctx,
+                Xpost_Object n)
 {
     int i;
     Xpost_Object a, v;
     a = xpost_array_cons(ctx, n.int_.val);
     if (xpost_object_get_type(a) == nulltype)
         return VMerror;
-    
-    for (i=n.int_.val; i > 0; i--) {
+
+    for (i = n.int_.val; i > 0; i--)
+    {
         v = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(v) == invalidtype)
             return stackunderflow;
@@ -103,16 +104,16 @@ int packedarray (Xpost_Context *ctx,
 }
 
 static
-int setpacking (Xpost_Context *ctx,
-                 Xpost_Object b)
+int setpacking(Xpost_Context *ctx,
+               Xpost_Object b)
 {
     Xpost_Object sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "currentpacking"), b);
     return 0;
 }
 
-int xpost_oper_init_packedarray_ops (Xpost_Context *ctx,
-              Xpost_Object sd)
+int xpost_oper_init_packedarray_ops(Xpost_Context *ctx,
+                                    Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -120,7 +121,7 @@ int xpost_oper_init_packedarray_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "packedarray", (Xpost_Op_Func)packedarray, 1, 1, integertype);
@@ -134,5 +135,3 @@ int xpost_oper_init_packedarray_ops (Xpost_Context *ctx,
 
     return 0;
 }
-
-

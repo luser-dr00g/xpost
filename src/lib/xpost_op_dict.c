@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,7 @@ int xpost_op_any_where (Xpost_Context *ctx, Xpost_Object K); /* forward decl.
    create dictionary with capacity for int elements */
 static
 int xpost_op_int_dict(Xpost_Context *ctx,
-           Xpost_Object I)
+                      Xpost_Object I)
 {
     Xpost_Object dic;
     dic = xpost_dict_cons (ctx, I.int_.val);
@@ -112,11 +112,11 @@ int xpost_op_dict_to_mark(Xpost_Context *ctx)
    number of key-value pairs in dict */
 static
 int xpost_op_dict_length(Xpost_Context *ctx,
-             Xpost_Object D)
+                         Xpost_Object D)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_dict_length_memory (
-                    xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
-                    D)));
+    xpost_stack_push(ctx->lo, ctx->os,
+                     xpost_int_cons(xpost_dict_length_memory(xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
+                                                             D)));
     return 0;
 }
 
@@ -124,11 +124,11 @@ int xpost_op_dict_length(Xpost_Context *ctx,
    capacity of dict */
 static
 int xpost_op_dict_maxlength(Xpost_Context *ctx,
-                Xpost_Object D)
+                            Xpost_Object D)
 {
-    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_dict_max_length_memory (
-                    xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
-                    D)));
+    xpost_stack_push(ctx->lo, ctx->os,
+                     xpost_int_cons(xpost_dict_max_length_memory(xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
+                                                                 D)));
     return 0;
 }
 
@@ -136,7 +136,7 @@ int xpost_op_dict_maxlength(Xpost_Context *ctx,
    push dict on dict stack */
 static
 int xpost_op_dict_begin(Xpost_Context *ctx,
-            Xpost_Object D)
+                        Xpost_Object D)
 {
     if (!xpost_stack_push(ctx->lo, ctx->ds, D))
         return dictstackoverflow;
@@ -158,8 +158,8 @@ int xpost_op_end(Xpost_Context *ctx)
    associate key with value in current dict */
 static
 int xpost_op_any_any_def(Xpost_Context *ctx,
-          Xpost_Object K,
-          Xpost_Object V)
+                         Xpost_Object K,
+                         Xpost_Object V)
 {
     int ret;
     //Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
@@ -175,7 +175,7 @@ int xpost_op_any_any_def(Xpost_Context *ctx,
 /* key  load  value
    search dict stack for key and return associated value */
 int xpost_op_any_load(Xpost_Context *ctx,
-           Xpost_Object K)
+                      Xpost_Object K)
 {
     int i;
     int z = xpost_stack_count(ctx->lo, ctx->ds);
@@ -185,30 +185,34 @@ int xpost_op_any_load(Xpost_Context *ctx,
         xpost_stack_dump(ctx->lo, ctx->ds);
     }
 
-    for (i = 0; i < z; i++) {
+    for (i = 0; i < z; i++)
+    {
         Xpost_Object x;
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo,ctx->ds,i);
 
-        if (DEBUGLOAD) {
+        if (DEBUGLOAD)
+        {
             xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D);
             (void)puts("");
         }
 
         x = xpost_dict_get(ctx, D, K);
-        if (xpost_object_get_type(x) != invalidtype) {
+        if (xpost_object_get_type(x) != invalidtype)
+        {
             xpost_stack_push(ctx->lo, ctx->os, x);
             return 0;
         }
     }
 
-    if (DEBUGLOAD) {
+    if (DEBUGLOAD)
+    {
         unsigned int names;
         xpost_memory_file_dump(ctx->lo);
         xpost_memory_table_dump(ctx->lo);
         xpost_memory_file_dump(ctx->gl);
         xpost_memory_table_dump(ctx->gl);
         xpost_memory_table_get_addr(ctx->gl,
-                XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
+                                    XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
         xpost_stack_dump(ctx->gl, names);
         xpost_object_dump(K);
     }
@@ -220,14 +224,17 @@ int xpost_op_any_load(Xpost_Context *ctx,
    replace topmost definition of key */
 static
 int xpost_op_any_store(Xpost_Context *ctx,
-            Xpost_Object K,
-            Xpost_Object V)
+                       Xpost_Object K,
+                       Xpost_Object V)
 {
     Xpost_Object D;
     xpost_op_any_where(ctx, K);
-    if (xpost_stack_pop(ctx->lo, ctx->os).int_.val) { /* booleantype */
+    if (xpost_stack_pop(ctx->lo, ctx->os).int_.val) /* booleantype */
+    {
         D = xpost_stack_pop(ctx->lo, ctx->os);
-    } else {
+    }
+    else
+    {
         D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
     }
     xpost_dict_put(ctx, D, K, V);
@@ -238,8 +245,8 @@ int xpost_op_any_store(Xpost_Context *ctx,
    get value associated with key in dict */
 static
 int xpost_op_dict_any_get(Xpost_Context *ctx,
-           Xpost_Object D,
-           Xpost_Object K)
+                          Xpost_Object D,
+                          Xpost_Object K)
 {
     Xpost_Object v;
 
@@ -254,9 +261,9 @@ int xpost_op_dict_any_get(Xpost_Context *ctx,
    associate key with value in dict */
 static
 int xpost_op_dict_any_any_put(Xpost_Context *ctx,
-            Xpost_Object D,
-            Xpost_Object K,
-            Xpost_Object V)
+                              Xpost_Object D,
+                              Xpost_Object K,
+                              Xpost_Object V)
 {
     xpost_dict_put(ctx, D, K, V);
     return 0;
@@ -266,8 +273,8 @@ int xpost_op_dict_any_any_put(Xpost_Context *ctx,
    remove key and its value in dict */
 static
 int xpost_op_dict_any_undef(Xpost_Context *ctx,
-             Xpost_Object D,
-             Xpost_Object K)
+                            Xpost_Object D,
+                            Xpost_Object K)
 {
     XPOST_LOG_WARN("FIXME: undef doesn't adequately fix the chain");
     xpost_dict_undef(ctx, D, K);
@@ -278,8 +285,8 @@ int xpost_op_dict_any_undef(Xpost_Context *ctx,
    test whether key is in dict */
 static
 int xpost_op_dict_any_known(Xpost_Context *ctx,
-             Xpost_Object D,
-             Xpost_Object K)
+                            Xpost_Object D,
+                            Xpost_Object K)
 {
 #if 0
     printf("\nknown: ");
@@ -295,13 +302,15 @@ int xpost_op_dict_any_known(Xpost_Context *ctx,
 /* key  where  dict true -or- false
    find dict in which key is defined */
 int xpost_op_any_where(Xpost_Context *ctx,
-            Xpost_Object K)
+                       Xpost_Object K)
 {
     int i;
     int z = xpost_stack_count(ctx->lo, ctx->ds);
-    for (i = 0; i < z; i++) {
+    for (i = 0; i < z; i++)
+    {
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
-        if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K)) {
+        if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K))
+        {
             xpost_stack_push(ctx->lo, ctx->os, D);
             xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
             return 0;
@@ -315,8 +324,8 @@ int xpost_op_any_where(Xpost_Context *ctx,
    copy contents of dict1 to dict2 */
 static
 int xpost_op_dict_copy(Xpost_Context *ctx,
-           Xpost_Object S,
-           Xpost_Object D)
+                       Xpost_Object S,
+                       Xpost_Object D)
 {
     int i, sz;
     Xpost_Memory_File *mem;
@@ -334,9 +343,11 @@ int xpost_op_dict_copy(Xpost_Context *ctx,
         return VMerror;
     }
     tp = (void *)(mem->base + ad + sizeof(dichead));
-    for (i=0; i < sz+1; i++) {
-        if (xpost_object_get_type(tp[2 * i]) != nulltype) {
-            xpost_dict_put(ctx, D, tp[2*i], tp[2*i+1]);
+    for (i = 0; i < sz + 1; i++)
+    {
+        if (xpost_object_get_type(tp[2 * i]) != nulltype)
+        {
+            xpost_dict_put(ctx, D, tp[2 * i], tp[2 * i + 1]);
             tp = (void *)(mem->base + ad + sizeof(dichead)); /* recalc */
         }
     }
@@ -348,13 +359,14 @@ int xpost_op_dict_copy(Xpost_Context *ctx,
    execute proc for each key value pair in dict */
 static
 int xpost_op_dict_proc_forall (Xpost_Context *ctx,
-               Xpost_Object D,
-               Xpost_Object P)
+                               Xpost_Object D,
+                               Xpost_Object P)
 {
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, D);
     assert(mem->base);
     D.comp_.sz = xpost_dict_max_length_memory (mem, D); // cache size locally
-    if (D.comp_.off <= D.comp_.sz) { // not finished?
+    if (D.comp_.off <= D.comp_.sz) // FIXME: not finished?
+    {
         unsigned ad;
         Xpost_Object *tp; /* dict Table Pointer, indexed by pairs,
                              tp[2 * i] for a key and tp[2 * i + 1]
@@ -365,13 +377,15 @@ int xpost_op_dict_proc_forall (Xpost_Context *ctx,
         if (!ret)
         {
             XPOST_LOG_ERR("cannot retrieve address for dict ent %u",
-                    xpost_object_get_ent(D));
+                          xpost_object_get_ent(D));
             return VMerror;
         }
-        tp = (void *)(mem->base + ad + sizeof(dichead)); 
+        tp = (void *)(mem->base + ad + sizeof(dichead));
 
-        for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) { // find next pair
-            if (xpost_object_get_type(tp[2 * D.comp_.off]) != nulltype) { // found
+        for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) // find next pair
+        {
+            if (xpost_object_get_type(tp[2 * D.comp_.off]) != nulltype) // found
+            {
                 Xpost_Object k,v;
 
                 k = tp[2 * D.comp_.off];
@@ -385,13 +399,13 @@ int xpost_op_dict_proc_forall (Xpost_Context *ctx,
                     return stackoverflow;
 
                 if (!xpost_stack_push(ctx->lo, ctx->es,
-                            xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
+                                      xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
                     return execstackoverflow;
                 if (!xpost_stack_push(ctx->lo, ctx->es,
-                            xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
+                                      xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
                     return execstackoverflow;
                 if (!xpost_stack_push(ctx->lo, ctx->es,
-                            xpost_object_cvlit(P)))
+                                      xpost_object_cvlit(P)))
                     return execstackoverflow;
 
                 ++D.comp_.off; /* update offset in dict
@@ -444,12 +458,12 @@ int xpost_op_countdictstack(Xpost_Context *ctx)
    copy dict stack into array */
 static
 int xpost_op_array_dictstack(Xpost_Context *ctx,
-                Xpost_Object A)
+                             Xpost_Object A)
 {
     Xpost_Object subarr;
     int z = xpost_stack_count(ctx->lo, ctx->ds);
     int i;
-    for (i=0; i < z; i++)
+    for (i = 0; i < z; i++)
         xpost_array_put(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, i));
     subarr = xpost_object_get_interval(A, 0, z);
     if (xpost_object_get_type(subarr) == invalidtype)
@@ -482,7 +496,7 @@ int xpost_op_cleardictstack(Xpost_Context *ctx)
 }
 
 int xpost_oper_init_dict_ops (Xpost_Context *ctx,
-              Xpost_Object sd)
+                              Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -491,7 +505,7 @@ int xpost_oper_init_dict_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
     op = xpost_operator_cons(ctx, "dict", (Xpost_Op_Func)xpost_op_int_dict, 1, 1, integertype);
     INSTALL;
@@ -541,4 +555,3 @@ int xpost_oper_init_dict_ops (Xpost_Context *ctx,
     INSTALL;
     return 0;
 }
-

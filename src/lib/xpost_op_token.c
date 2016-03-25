@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -63,59 +63,63 @@
 enum { NBUF = 2 * BUFSIZ };
 
 static
-int puff (Xpost_Context *ctx,
-          char *buf,
-          int nbuf,
-          Xpost_Object *src,
-          int (*next)(Xpost_Context *ctx, Xpost_Object *src),
-          void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src));
+int puff(Xpost_Context *ctx,
+         char *buf,
+         int nbuf,
+         Xpost_Object *src,
+         int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+         void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src));
 static
-int toke (Xpost_Context *ctx,
-             Xpost_Object *src,
-             int (*next)(Xpost_Context *ctx, Xpost_Object *src),
-             void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src),
-             Xpost_Object *retval);
+int toke(Xpost_Context *ctx,
+         Xpost_Object *src,
+         int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+         void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src),
+         Xpost_Object *retval);
 
 static
-int ishash (int c)
+int ishash(int c)
 {
     return c == '#';
 }
 
 static
-int isdot (int c)
+int isdot(int c)
 {
     return c == '.';
 }
 
+/* FIXME: return (c == 'e') || (c = 'E') faster ? */
 static
-int ise (int c)
+int ise(int c)
 {
     return strchr("eE", c) != NULL;
 }
 
+/* FIXME: see FIXME above */
 static
-int issign (int c)
+int issign(int c)
 {
     return strchr("+-", c) != NULL;
 }
 
+/* FIXME: see FIXME above */
 static
-int isdel (int c)
+int isdel(int c)
 {
     return strchr("()[]<>{}/%", c) != NULL;
 }
 
 static
-int isreg (int c)
+int isreg(int c)
 {
-    return (c!=EOF) && (!isspace(c)) && (!isdel(c));
+    return (c != EOF) && (!isspace(c)) && (!isdel(c));
 }
 
 //int isxdigit (int c) { return strchr("0123456789ABCDEFabcdef", c) != NULL; }
 
 typedef
-struct {
+struct
+{
     int (*pred)(int);
     int y;
     int n;
@@ -166,19 +170,23 @@ int accept_real(int i)
 }
 
 static
-int fsm_check (char *s,
-               int ns,
-               test *fsm,
-               int (*accept)(int final))
+int fsm_check(char *s,
+              int ns,
+              test *fsm,
+              int (*accept)(int final))
 {
     int sta = 0;
     char *sp = s;
-    while (sta != -1 && *sp) {
+    while (sta != -1 && *sp)
+    {
         if (sp - s > ns) break;
-        if (fsm[sta].pred(*sp)) {
+        if (fsm[sta].pred(*sp))
+        {
             sta = fsm[sta].y;
             ++sp;
-        } else {
+        }
+        else
+        {
             sta = fsm[sta].n;
         }
     }
@@ -186,13 +194,13 @@ int fsm_check (char *s,
 }
 
 static
-int grok (Xpost_Context *ctx,
-             char *s,
-             int ns,
-             Xpost_Object *src,
-             int (*next)(Xpost_Context *ctx, Xpost_Object *src),
-             void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src),
-             Xpost_Object *retval)
+int grok(Xpost_Context *ctx,
+         char *s,
+         int ns,
+         Xpost_Object *src,
+         int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+         void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src),
+         Xpost_Object *retval)
 {
     Xpost_Object obj;
     //printf("grok: %s\n", s);
@@ -204,7 +212,8 @@ int grok (Xpost_Context *ctx,
     }
     s[ns] = '\0';  //fsm_check & xpost_name_cons  terminate on \0
 
-    if (fsm_check(s, ns, fsm_dec, accept_dec)) {
+    if (fsm_check(s, ns, fsm_dec, accept_dec))
+    {
         long num;
         num = strtol(s, NULL, 10);
         if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
@@ -217,17 +226,18 @@ int grok (Xpost_Context *ctx,
         return 0;
     }
 
-    else if (fsm_check(s, ns, fsm_rad, accept_rad)) {
+    else if (fsm_check(s, ns, fsm_rad, accept_rad))
+    {
         long base, num;
         base = strtol(s, &s, 10);
-        if (base > 36 || base < 2)
+        if ((base > 36) || (base < 2))
         {
             XPOST_LOG_ERR("bad radix");
             return limitcheck;
         }
         errno = 0;
         num = strtol(s + 1, NULL, base);
-        if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
+        if ((num == LONG_MAX || num == LONG_MIN) && errno == ERANGE)
         {
             XPOST_LOG_ERR("radixnumber out of range");
             return limitcheck;
@@ -237,10 +247,11 @@ int grok (Xpost_Context *ctx,
         return 0;
     }
 
-    else if (fsm_check(s, ns, fsm_real, accept_real)) {
+    else if (fsm_check(s, ns, fsm_real, accept_real))
+    {
         double num;
         num = strtod(s, NULL);
-        if ((num == HUGE_VAL || num == -HUGE_VAL) && errno==ERANGE)
+        if ((num == HUGE_VAL || num == -HUGE_VAL) && errno == ERANGE)
         {
             XPOST_LOG_ERR("real out of range");
             return limitcheck;
@@ -250,206 +261,233 @@ int grok (Xpost_Context *ctx,
         return 0;
     }
 
-    else switch(*s) {
+    else
+        switch(*s)
+        {
+            case '(':
+            {
+                int c, defer = 1;
+                char *sp = s;
+                while (defer && (c = next(ctx, src)) != EOF)
+                {
+                    switch(c)
+                    {
+                        case '(': ++defer; break;
+                        case ')': --defer; break;
+                        case '\\':
+                            switch(c = next(ctx, src))
+                            {
+                                case '\n': continue;
+                                case 'a': c = '\a'; break;
+                                case 'b': c = '\b'; break;
+                                case 'f': c = '\f'; break;
+                                case 'n': c = '\n'; break;
+                                case 'r': c = '\r'; break;
+                                case 't': c = '\t'; break;
+                                case 'v': c = '\v'; break;
+                                default:
+                                    if (isdigit(c))
+                                    {
+                                        int t = 0, n = 0;
+                                        do {
+                                            t *= 8;
+                                            t += c - '0';
+                                            ++n;
+                                            c = next(ctx, src);
+                                        } while (isdigit(c) && n < 3);
+                                        if (!isdigit(c)) back(ctx, c, src);
+                                        c = t;
+                                    }
+                            }
+                    }
+                    if (!defer) break;
+                    if (sp - s > NBUF)
+                    {
+                        XPOST_LOG_ERR("string exceeds buf");
+                        return limitcheck;
+                    }
+                    else *sp++ = c;
+                }
+                obj = xpost_string_cons(ctx, sp - s, s);
+                if (xpost_object_get_type(obj) == nulltype)
+                    return VMerror;
+                //return xpost_object_cvlit(obj);
+                *retval = xpost_object_cvlit(obj);
+                return 0;
+            }
 
-    case '(': {
-                  int c, defer = 1;
-                  char *sp = s;
-                  while (defer && (c = next(ctx, src)) != EOF) {
-                      switch(c) {
-                      case '(': ++defer; break;
-                      case ')': --defer; break;
-                      case '\\':
-                          switch(c = next(ctx, src)) {
-                          case '\n': continue;
-                          case 'a': c = '\a'; break;
-                          case 'b': c = '\b'; break;
-                          case 'f': c = '\f'; break;
-                          case 'n': c = '\n'; break;
-                          case 'r': c = '\r'; break;
-                          case 't': c = '\t'; break;
-                          case 'v': c = '\v'; break;
-                          default:
-                              if (isdigit(c)) {
-                                  int t = 0, n = 0;
-                                  do {
-                                      t *= 8;
-                                      t += c - '0';
-                                      ++n;
-                                      c = next(ctx, src);
-                                  } while (isdigit(c) && n < 3);
-                                  if (!isdigit(c)) back(ctx, c, src);
-                                  c = t;
-                              }
-                          }
-                      }
-                      if (!defer) break;
-                      if (sp - s > NBUF)
-                      {
-                          XPOST_LOG_ERR("string exceeds buf");
-                          return limitcheck;
-                      }
-                      else *sp++ = c;
-                  }
-                  obj = xpost_string_cons(ctx, sp - s, s);
-                  if (xpost_object_get_type(obj) == nulltype)
-                      return VMerror;
-                  //return xpost_object_cvlit(obj);
-                  *retval = xpost_object_cvlit(obj);
-                  return 0;
-              }
+            case '<':
+            {
+                int c;
+                char d, *x = "0123456789ABCDEF", *sp = s;
+                c = next(ctx, src);
+                if (c == '<')
+                {
+                    //return xpost_object_cvx(xpost_name_cons(ctx, "<<"));
+                    *retval = xpost_object_cvx(xpost_name_cons(ctx, "<<"));
+                    return 0;
+                }
+                back(ctx, c, src);
+                while (c = next(ctx, src), c != '>' && c != EOF)
+                {
+                    if (isspace(c))
+                        continue;
+                    if (isxdigit(c))
+                        c = strchr(x, toupper(c)) - x;
+                    else
+                    {
+                        XPOST_LOG_ERR("non-hex digit in hex string");
+                        return syntaxerror;
+                    }
+                    d = c << 4; // hi nib
+                    while (isspace(c = next(ctx, src)))
+                        /**/;
+                    if (isxdigit(c))
+                        c = strchr(x, toupper(c)) - x;
+                    else if (c == '>')
+                    {
+                        back(ctx, c, src); // pushback for next iter
+                        c = 0;             // pretend it got a 0
+                    }
+                    else
+                    {
+                        XPOST_LOG_ERR("non-hex digit in hex string");
+                        return syntaxerror;
+                    }
+                    d |= c;
+                    if (sp - s > NBUF)
+                    {
+                        XPOST_LOG_ERR("hexstring exceeds buf");
+                        return limitcheck;
+                    }
+                    *sp++ = d;
+                }
+                obj = xpost_string_cons(ctx, sp - s, s);
+                if (xpost_object_get_type(obj) == nulltype)
+                    return VMerror;
+                //return xpost_object_cvlit(obj);
+                *retval = xpost_object_cvlit(obj);
+                return 0;
+            }
 
-    case '<': {
-                  int c;
-                  char d, *x = "0123456789ABCDEF", *sp = s;
-                  c = next(ctx, src);
-                  if (c == '<') {
-                      //return xpost_object_cvx(xpost_name_cons(ctx, "<<"));
-                      *retval = xpost_object_cvx(xpost_name_cons(ctx, "<<"));
-                      return 0;
-                  }
-                  back(ctx, c, src);
-                  while (c = next(ctx, src), c != '>' && c != EOF) {
-                      if (isspace(c))
-                          continue;
-                      if (isxdigit(c))
-                          c = strchr(x, toupper(c)) - x;
-                      else
-                      {
-                          XPOST_LOG_ERR("non-hex digit in hex string");
-                          return syntaxerror;
-                      }
-                      d = c << 4; // hi nib
-                      while (isspace(c = next(ctx, src)))
-                          /**/;
-                      if (isxdigit(c))
-                          c = strchr(x, toupper(c)) - x;
-                      else if (c == '>') {
-                          back(ctx, c, src); // pushback for next iter
-                          c = 0;             // pretend it got a 0
-                      } else
-                      {
-                          XPOST_LOG_ERR("non-hex digit in hex string");
-                          return syntaxerror;
-                      }
-                      d |= c;
-                      if (sp - s > NBUF)
-                      {
-                          XPOST_LOG_ERR("hexstring exceeds buf");
-                          return limitcheck;
-                      }
-                      *sp++ = d;
-                  }
-                  obj = xpost_string_cons(ctx, sp - s, s);
-                  if (xpost_object_get_type(obj) == nulltype)
-                      return VMerror;
-                  //return xpost_object_cvlit(obj);
-                  *retval = xpost_object_cvlit(obj);
-                  return 0;
-              }
+            case '>':
+            {
+                int c;
+                if ((c = next(ctx, src)) == '>')
+                {
+                    //return xpost_object_cvx(xpost_name_cons(ctx, ">>"));
+                    *retval = xpost_object_cvx(xpost_name_cons(ctx, ">>"));
+                    return 0;
+                }
+                else
+                {
+                    XPOST_LOG_ERR("bare angle bracket");
+                    return syntaxerror;
+                }
+            }
+            return unregistered; //not reached
 
-    case '>': {
-                  int c;
-                  if ((c = next(ctx, src)) == '>') {
-                      //return xpost_object_cvx(xpost_name_cons(ctx, ">>"));
-                      *retval = xpost_object_cvx(xpost_name_cons(ctx, ">>"));
-                      return 0;
-                  } else
-                  {
-                      XPOST_LOG_ERR("bare angle bracket");
-                      return syntaxerror;
-                  }
-              }
-              return unregistered; //not reached
+            case '{':
+            { // This is the one part that makes it a recursive-descent parser
+                int ret;
+                Xpost_Object tail;
+                tail = xpost_name_cons(ctx, "}");
+                xpost_stack_push(ctx->lo, ctx->os, mark);
+                while (1)
+                {
+                    Xpost_Object t;
+                    ret = toke(ctx, src, next, back, &t);
+                    //printf("grok: x?%d", xpost_object_is_exe(t));
+                    if (ret)
+                        return ret;
+                    if ((xpost_object_get_type(t) == nametype) &&
+                        (xpost_dict_compare_objects(ctx, t, tail) == 0))
+                        break;
+                    xpost_stack_push(ctx->lo, ctx->os, t);
+                }
+                ret = xpost_op_array_to_mark(ctx);  // ie. the /] operator
+                if (ret)
+                    return ret;
+                //return xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
+                *retval = xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
+                return 0;
+            }
 
-    case '{': { // This is the one part that makes it a recursive-descent parser
-                  int ret;
-                  Xpost_Object tail;
-                  tail = xpost_name_cons(ctx, "}");
-                  xpost_stack_push(ctx->lo, ctx->os, mark);
-                  while (1) {
-                      Xpost_Object t;
-                      ret = toke(ctx, src, next, back, &t);
-                      //printf("grok: x?%d", xpost_object_is_exe(t));
-                      if (ret)
-                          return ret;
-                      if ((xpost_object_get_type(t) == nametype)
-                              && (xpost_dict_compare_objects(ctx, t, tail) == 0))
-                          break;
-                      xpost_stack_push(ctx->lo, ctx->os, t);
-                  }
-                  ret = xpost_op_array_to_mark(ctx);  // ie. the /] operator
-                  if (ret)
-                      return ret;
-                  //return xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
-                  *retval = xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
-                  return 0;
-              }
-
-    case '/': {
-                  *s = next(ctx, src);
-                  //ns = puff(ctx, s, NBUF, src, next, back);
-                  if (ns && *s == '/') {
-                      Xpost_Object ret;
-                      ns = puff(ctx, s, NBUF, src, next, back);
-                      if (ns == NBUF)
-                      {
-                          XPOST_LOG_ERR("immediate name exceeds buf");
-                          return limitcheck;
-                      }
-                      s[ns] = '\0';
-                      //xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(xpost_name_cons(ctx, s)));
-                      //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "load", NULL,0,0).mark_.padw);
-                      if (DEBUGLOAD)
-                          printf("\ntoken: loading immediate name %s\n", s);
-                      xpost_op_any_load(ctx, xpost_object_cvx(xpost_name_cons(ctx, s)));
-                      ret = xpost_stack_pop(ctx->lo, ctx->os);
-                      if (DEBUGLOAD)
-                          xpost_object_dump(ret);
-                      //return ret;
-                      *retval = ret;
-                      return 0;
-                  } else {
-                      if (isspace(*s)) {
-                          ns = 0;
-                      } else if (isdel(*s)) {
-                          back(ctx, *s, src);
-                          ns = 0;
-                      } else {
-                          ns += puff(ctx, s + 1, NBUF - 1, src, next, back);
-                      }
-                  }
-                  if (ns == NBUF)
-                  {
-                      XPOST_LOG_ERR("name exceeds buf");
-                      return limitcheck;
-                  }
-                  //printf("grok:/%s\n", s);
-                  s[ns] = '\0';
-                  //return xpost_object_cvlit(xpost_name_cons(ctx, s));
-                  *retval = xpost_object_cvlit(xpost_name_cons(ctx, s));
-                  return 0;
-              }
-    default: {
-                 //return xpost_object_cvx(xpost_name_cons(ctx, s));
-                 *retval = xpost_object_cvx(xpost_name_cons(ctx, s));
-                 return 0;
-             }
-    }
+            case '/':
+            {
+                *s = next(ctx, src);
+                //ns = puff(ctx, s, NBUF, src, next, back);
+                if (ns && *s == '/')
+                {
+                    Xpost_Object ret;
+                    ns = puff(ctx, s, NBUF, src, next, back);
+                    if (ns == NBUF)
+                    {
+                        XPOST_LOG_ERR("immediate name exceeds buf");
+                        return limitcheck;
+                    }
+                    s[ns] = '\0';
+                    //xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx(xpost_name_cons(ctx, s)));
+                    //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "load", NULL,0,0).mark_.padw);
+                    if (DEBUGLOAD)
+                        printf("\ntoken: loading immediate name %s\n", s);
+                    xpost_op_any_load(ctx, xpost_object_cvx(xpost_name_cons(ctx, s)));
+                    ret = xpost_stack_pop(ctx->lo, ctx->os);
+                    if (DEBUGLOAD)
+                        xpost_object_dump(ret);
+                    //return ret;
+                    *retval = ret;
+                    return 0;
+                }
+                else
+                {
+                    if (isspace(*s))
+                    {
+                        ns = 0;
+                    }
+                    else if (isdel(*s))
+                    {
+                        back(ctx, *s, src);
+                        ns = 0;
+                    }
+                    else
+                    {
+                        ns += puff(ctx, s + 1, NBUF - 1, src, next, back);
+                    }
+                }
+                if (ns == NBUF)
+                {
+                    XPOST_LOG_ERR("name exceeds buf");
+                    return limitcheck;
+                }
+                //printf("grok:/%s\n", s);
+                s[ns] = '\0';
+                //return xpost_object_cvlit(xpost_name_cons(ctx, s));
+                *retval = xpost_object_cvlit(xpost_name_cons(ctx, s));
+                return 0;
+            }
+            default:
+            {
+                //return xpost_object_cvx(xpost_name_cons(ctx, s));
+                *retval = xpost_object_cvx(xpost_name_cons(ctx, s));
+                return 0;
+            }
+        }
 }
 
 /* read until a non-whitespace, non-comment char.
    "prime" the buffer.  */
 static
-int snip (Xpost_Context *ctx,
-          char *buf,
-          Xpost_Object *src,
-          int (*next)(Xpost_Context *ctx, Xpost_Object *src))
+int snip(Xpost_Context *ctx,
+         char *buf,
+         Xpost_Object *src,
+         int (*next)(Xpost_Context *ctx, Xpost_Object *src))
 {
     int c;
     do {
         c = next(ctx, src);
-        if (c == '%') {
+        if (c == '%')
+        {
             do {
                 c = next(ctx, src);
             } while(c != '\n' && c != '\f' && c != EOF);
@@ -464,16 +502,17 @@ int snip (Xpost_Context *ctx,
    read into buf any regular characters,
    if we read one too many, put it back, unless whitespace. */
 static
-int puff (Xpost_Context *ctx,
-          char *buf,
-          int nbuf,
-          Xpost_Object *src,
-          int (*next)(Xpost_Context *ctx, Xpost_Object *src),
-          void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src))
+int puff(Xpost_Context *ctx,
+         char *buf,
+         int nbuf,
+         Xpost_Object *src,
+         int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+         void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src))
 {
     int c;
     char *s = buf;
-    while (isreg(c = next(ctx, src))) {
+    while (isreg(c = next(ctx, src)))
+    {
         if (s - buf >= nbuf) return 0;
         *s++ = c;
     }
@@ -483,11 +522,11 @@ int puff (Xpost_Context *ctx,
 
 
 static
-int toke (Xpost_Context *ctx,
-             Xpost_Object *src,
-             int (*next)(Xpost_Context *ctx, Xpost_Object *src),
-             void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src),
-             Xpost_Object *retval)
+int toke(Xpost_Context *ctx,
+         Xpost_Object *src,
+         int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+         void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src),
+         Xpost_Object *retval)
 {
     char buf[NBUF] = "";
     int sta;  // status, and size
@@ -511,7 +550,7 @@ int toke (Xpost_Context *ctx,
 
 
 /* file  token  token true
-                false
+   false
    read token from file */
 static
 int Fnext(Xpost_Context *ctx,
@@ -527,8 +566,8 @@ void Fback(Xpost_Context *ctx,
     (void)ungetc(c, xpost_file_get_file_pointer(ctx->lo, *F));
 }
 static
-int Ftoken (Xpost_Context *ctx,
-             Xpost_Object F)
+int Ftoken(Xpost_Context *ctx,
+           Xpost_Object F)
 {
     Xpost_Object t;
     int ret;
@@ -537,17 +576,20 @@ int Ftoken (Xpost_Context *ctx,
     ret = toke(ctx, &F, Fnext, Fback, &t);
     if (ret)
         return ret;
-    if (xpost_object_get_type(t) != nulltype) {
+    if (xpost_object_get_type(t) != nulltype)
+    {
         xpost_stack_push(ctx->lo, ctx->os, t);
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
-    } else {
+    }
+    else
+    {
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
     return 0;
 }
 
 /* string  token  substring token true
-                  false
+   false
    read token from string */
 static
 int Snext(Xpost_Context *ctx,
@@ -570,8 +612,8 @@ void Sback(Xpost_Context *ctx,
     xpost_string_get_pointer(ctx, *S)[0] = c;
 }
 static
-int Stoken (Xpost_Context *ctx,
-             Xpost_Object S)
+int Stoken(Xpost_Context *ctx,
+           Xpost_Object S)
 {
     Xpost_Object t;
     int ret;
@@ -579,18 +621,21 @@ int Stoken (Xpost_Context *ctx,
     ret = toke(ctx, &S, Snext, Sback, &t);
     if (ret)
         return ret;
-    if (xpost_object_get_type(t) != nulltype) {
+    if (xpost_object_get_type(t) != nulltype)
+    {
         xpost_stack_push(ctx->lo, ctx->os, S);
         xpost_stack_push(ctx->lo, ctx->os, t);
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
-    } else {
+    }
+    else
+    {
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
     return 0;
 }
 
-int xpost_oper_init_token_ops (Xpost_Context *ctx,
-               Xpost_Object sd)
+int xpost_oper_init_token_ops(Xpost_Context *ctx,
+                              Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -598,7 +643,7 @@ int xpost_oper_init_token_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "token", (Xpost_Op_Func)Ftoken, 2, 1, filetype);

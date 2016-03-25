@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,34 +55,37 @@
 #include "xpost_op_param.h"
 
 static
-int vmreclaim (Xpost_Context *ctx, Xpost_Object I) {
-    switch (I.int_.val) {
-    default: return rangecheck;
-    case -2: /* disable automatic collection in local and global vm */
-             break;
-    case -1: /* disable automatic collection in local vm */
-             break;
-    case 0: /* enable automatic collection */
-             break;
-    case 1: /* perform immediate collection in local vm */
-             if (ctx->garbage_collect_function(ctx->lo, 1, 0) == -1)
-                 return VMerror;
-             break;
-    case 2: /* perform immediate collection in local and global vm */
-             if (ctx->garbage_collect_function(ctx->gl, 1, 1) == -1)
-                 return VMerror;
-             break;
+int vmreclaim (Xpost_Context *ctx, Xpost_Object I)
+{
+    switch (I.int_.val)
+    {
+        default: return rangecheck;
+        case -2: /* disable automatic collection in local and global vm */
+            break;
+        case -1: /* disable automatic collection in local vm */
+            break;
+        case 0: /* enable automatic collection */
+            break;
+        case 1: /* perform immediate collection in local vm */
+            if (ctx->garbage_collect_function(ctx->lo, 1, 0) == -1)
+                return VMerror;
+            break;
+        case 2: /* perform immediate collection in local and global vm */
+            if (ctx->garbage_collect_function(ctx->gl, 1, 1) == -1)
+                return VMerror;
+            break;
     }
     return 0;
 }
 
 static
-int vmstatus (Xpost_Context *ctx) {
+int vmstatus (Xpost_Context *ctx)
+{
     int lev, used, max;
     unsigned int vstk;
 
     if (!xpost_memory_table_get_addr(ctx->lo,
-            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk))
+                                     XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk))
     {
         XPOST_LOG_ERR("cannot load save stack");
         return VMerror;
@@ -101,12 +104,13 @@ int vmstatus (Xpost_Context *ctx) {
 }
 
 static
-int globalvmstatus (Xpost_Context *ctx) {
+int globalvmstatus (Xpost_Context *ctx)
+{
     int lev, used, max;
     unsigned int vstk;
 
     if (!xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk))
+                                     XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vstk))
     {
         XPOST_LOG_ERR("cannot load save stack");
         return VMerror;
@@ -125,8 +129,8 @@ int globalvmstatus (Xpost_Context *ctx) {
 }
 
 
-int xpost_oper_init_param_ops (Xpost_Context *ctx,
-             Xpost_Object sd)
+int xpost_oper_init_param_ops(Xpost_Context *ctx,
+                              Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -134,7 +138,7 @@ int xpost_oper_init_param_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "vmreclaim", (Xpost_Op_Func)vmreclaim, 0, 1, integertype);
@@ -151,5 +155,3 @@ int xpost_oper_init_param_ops (Xpost_Context *ctx,
 
     return 0;
 }
-
-

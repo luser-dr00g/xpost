@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +52,7 @@
 
 static
 int Istring(Xpost_Context *ctx,
-             Xpost_Object I)
+            Xpost_Object I)
 {
     Xpost_Object str;
     str = xpost_string_cons(ctx, I.int_.val, NULL);
@@ -64,7 +64,7 @@ int Istring(Xpost_Context *ctx,
 
 static
 int Slength(Xpost_Context *ctx,
-             Xpost_Object S)
+            Xpost_Object S)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(S.comp_.sz));
     return 0;
@@ -81,8 +81,8 @@ int Nlength(Xpost_Context *ctx,
 
 static
 int s_copy(Xpost_Context *ctx,
-            Xpost_Object S,
-            Xpost_Object D)
+           Xpost_Object S,
+           Xpost_Object D)
 {
     unsigned i;
     int ret;
@@ -102,8 +102,8 @@ int s_copy(Xpost_Context *ctx,
 
 static
 int Scopy(Xpost_Context *ctx,
-           Xpost_Object S,
-           Xpost_Object D)
+          Xpost_Object S,
+          Xpost_Object D)
 {
     Xpost_Object subs;
     if (D.comp_.sz < S.comp_.sz)
@@ -118,8 +118,8 @@ int Scopy(Xpost_Context *ctx,
 
 static
 int Sget(Xpost_Context *ctx,
-          Xpost_Object S,
-          Xpost_Object I)
+         Xpost_Object S,
+         Xpost_Object I)
 {
     integer val;
     int ret;
@@ -132,18 +132,18 @@ int Sget(Xpost_Context *ctx,
 
 static
 int Sput(Xpost_Context *ctx,
-          Xpost_Object S,
-          Xpost_Object I,
-          Xpost_Object C)
+         Xpost_Object S,
+         Xpost_Object I,
+         Xpost_Object C)
 {
     return xpost_string_put(ctx, S, I.int_.val, C.int_.val);
 }
 
 static
 int Sgetinterval(Xpost_Context *ctx,
-                  Xpost_Object S,
-                  Xpost_Object I,
-                  Xpost_Object L)
+                 Xpost_Object S,
+                 Xpost_Object I,
+                 Xpost_Object L)
 {
     Xpost_Object subs = xpost_object_get_interval(S, I.int_.val, L.int_.val);
     if (xpost_object_get_type(subs) == invalidtype)
@@ -154,9 +154,9 @@ int Sgetinterval(Xpost_Context *ctx,
 
 static
 int Sputinterval(Xpost_Context *ctx,
-                  Xpost_Object D,
-                  Xpost_Object I,
-                  Xpost_Object S)
+                 Xpost_Object D,
+                 Xpost_Object I,
+                 Xpost_Object S)
 {
     Xpost_Object subs = xpost_object_get_interval(D, I.int_.val, S.comp_.sz);
     if (xpost_object_get_type(subs) == invalidtype)
@@ -179,8 +179,8 @@ int ancsearch(char *str,
 
 static
 int Sanchorsearch(Xpost_Context *ctx,
-                   Xpost_Object str,
-                   Xpost_Object seek)
+                  Xpost_Object str,
+                  Xpost_Object seek)
 {
     char *s, *k;
     Xpost_Object interval;
@@ -189,7 +189,8 @@ int Sanchorsearch(Xpost_Context *ctx,
         return rangecheck;
     s = xpost_string_get_pointer(ctx, str);
     k = xpost_string_get_pointer(ctx, seek);
-    if (ancsearch(s, k, seek.comp_.sz)) {
+    if (ancsearch(s, k, seek.comp_.sz))
+    {
         interval = xpost_object_get_interval(str, seek.comp_.sz, str.comp_.sz - seek.comp_.sz);
         if (xpost_object_get_type(interval) == invalidtype)
             return rangecheck;
@@ -199,7 +200,9 @@ int Sanchorsearch(Xpost_Context *ctx,
             return rangecheck;
         xpost_stack_push(ctx->lo, ctx->os, interval); /* match */
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
-    } else {
+    }
+    else
+    {
         xpost_stack_push(ctx->lo, ctx->os, str);
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
     }
@@ -208,8 +211,8 @@ int Sanchorsearch(Xpost_Context *ctx,
 
 static
 int Ssearch(Xpost_Context *ctx,
-             Xpost_Object str,
-             Xpost_Object seek)
+            Xpost_Object str,
+            Xpost_Object seek)
 {
     int i;
     char *s, *k;
@@ -219,8 +222,10 @@ int Ssearch(Xpost_Context *ctx,
         return rangecheck;
     s = xpost_string_get_pointer(ctx, str);
     k = xpost_string_get_pointer(ctx, seek);
-    for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++) {
-        if (ancsearch(s+i, k, seek.comp_.sz)) {
+    for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++)
+    {
+        if (ancsearch(s+i, k, seek.comp_.sz))
+        {
             interval = xpost_object_get_interval(str, i + seek.comp_.sz, str.comp_.sz - seek.comp_.sz - i);
             if (xpost_object_get_type(interval) == invalidtype)
                 return rangecheck;
@@ -244,8 +249,8 @@ int Ssearch(Xpost_Context *ctx,
 
 static
 int Sforall(Xpost_Context *ctx,
-             Xpost_Object S,
-             Xpost_Object P)
+            Xpost_Object S,
+            Xpost_Object P)
 {
     Xpost_Object interval;
     integer val;
@@ -268,7 +273,8 @@ int Sforall(Xpost_Context *ctx,
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
-    if (!xpost_object_is_exe(S)) {
+    if (!xpost_object_is_exe(S))
+    {
         //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0));
         if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
             return execstackoverflow;
@@ -285,7 +291,7 @@ int Sforall(Xpost_Context *ctx,
 // token : see optok.c
 
 int xpost_oper_init_string_ops (Xpost_Context *ctx,
-              Xpost_Object sd)
+                                Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -293,41 +299,40 @@ int xpost_oper_init_string_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
     op = xpost_operator_cons(ctx, "string", (Xpost_Op_Func)Istring, 1, 1,
-            integertype);
+                             integertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "length", (Xpost_Op_Func)Slength, 1, 1,
-            stringtype);
+                             stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "length", (Xpost_Op_Func)Nlength, 1, 1,
-            nametype);
+                             nametype);
     INSTALL;
     op = xpost_operator_cons(ctx, "copy", (Xpost_Op_Func)Scopy, 1, 2,
-            stringtype, stringtype);
+                             stringtype, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "get", (Xpost_Op_Func)Sget, 1, 2,
-            stringtype, integertype);
+                             stringtype, integertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "put", (Xpost_Op_Func)Sput, 0, 3,
-            stringtype, integertype, integertype);
+                             stringtype, integertype, integertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "getinterval", (Xpost_Op_Func)Sgetinterval, 1, 3,
-            stringtype, integertype, integertype);
+                             stringtype, integertype, integertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "putinterval", (Xpost_Op_Func)Sputinterval, 0, 3,
-            stringtype, integertype, stringtype);
+                             stringtype, integertype, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "anchorsearch", (Xpost_Op_Func)Sanchorsearch, 3, 2,
-            stringtype, stringtype);
+                             stringtype, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "search", (Xpost_Op_Func)Ssearch, 4, 2,
-            stringtype, stringtype);
+                             stringtype, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "forall", (Xpost_Op_Func)Sforall, 0, 2,
-            stringtype, proctype);
+                             stringtype, proctype);
     INSTALL;
     return 0;
 }
-

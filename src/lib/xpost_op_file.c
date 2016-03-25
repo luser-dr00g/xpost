@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -103,8 +103,8 @@ void *alloca (size_t);
    create file object for filename with access mode */
 static
 int xpost_op_string_mode_file (Xpost_Context *ctx,
-            Xpost_Object fn,
-            Xpost_Object mode)
+                               Xpost_Object fn,
+                               Xpost_Object mode)
 {
     Xpost_Object f;
     char *cfn, *cmode;
@@ -128,7 +128,7 @@ int xpost_op_string_mode_file (Xpost_Context *ctx,
    close file object */
 static
 int xpost_op_file_closefile (Xpost_Context *ctx,
-                 Xpost_Object f)
+                             Xpost_Object f)
 {
     int ret;
     ret = xpost_file_close(ctx->lo, f);
@@ -141,12 +141,19 @@ int xpost_op_file_closefile (Xpost_Context *ctx,
                false
    read a byte from file */
 static
-int xpost_op_file_read (Xpost_Context *ctx,
-            Xpost_Object f)
+int xpost_op_file_read(Xpost_Context *ctx,
+                       Xpost_Object f)
 {
     Xpost_Object b;
     if (!xpost_object_is_readable(ctx,f))
         return invalidaccess;
+    /*
+     * FIXME: check if this work on Windows
+     * indeed, on Windows, select() needs a socket, not a fd, and fileno() returns a fd
+     * See http://stackoverflow.com/questions/6418232/how-to-use-select-to-read-input-from-keyboard-in-c/6419955#6419955
+     * and https://msdn.microsoft.com/en-us/library/windows/desktop/ms682499%28v=vs.85%29.aspx
+     * Maybe WaitForSingleObject will also be needed
+     */
 #ifdef HAVE_SYS_SELECT_H
     {
         FILE *fp;
@@ -161,7 +168,7 @@ int xpost_op_file_read (Xpost_Context *ctx,
         tv_timeout.tv_sec = 0;
         tv_timeout.tv_usec = 0;
 
-        ret = select(fileno(fp)+1, &reads, &writes, &excepts, &tv_timeout);
+        ret = select(fileno(fp) + 1, &reads, &writes, &excepts, &tv_timeout);
 
         if (ret <= 0 || !FD_ISSET(fileno(fp), &reads))
         {
@@ -191,8 +198,8 @@ int xpost_op_file_read (Xpost_Context *ctx,
    write a byte to file */
 static
 int xpost_op_file_write (Xpost_Context *ctx,
-             Xpost_Object f,
-             Xpost_Object i)
+                         Xpost_Object f,
+                         Xpost_Object i)
 {
     int ret;
     if (!xpost_object_is_writeable(ctx, f))
@@ -210,8 +217,8 @@ char *hex = "0123456789" "ABCDEF" "abcdef";
    read hex-encoded data from file into string */
 static
 int xpost_op_file_readhexstring (Xpost_Context *ctx,
-                     Xpost_Object F,
-                     Xpost_Object S)
+                                 Xpost_Object F,
+                                 Xpost_Object S)
 {
     int n;
     int c[2];
@@ -257,8 +264,8 @@ int xpost_op_file_readhexstring (Xpost_Context *ctx,
    write string to file in hex-encoding */
 static
 int xpost_op_file_writehexstring (Xpost_Context *ctx,
-                      Xpost_Object F,
-                      Xpost_Object S)
+                                  Xpost_Object F,
+                                  Xpost_Object S)
 {
     int n;
     FILE *f;
@@ -285,8 +292,8 @@ int xpost_op_file_writehexstring (Xpost_Context *ctx,
    read from file into string */
 static
 int xpost_op_file_readstring (Xpost_Context *ctx,
-                  Xpost_Object F,
-                  Xpost_Object S)
+                              Xpost_Object F,
+                              Xpost_Object S)
 {
     int n;
     FILE *f;
@@ -316,8 +323,8 @@ int xpost_op_file_readstring (Xpost_Context *ctx,
    write string to file */
 static
 int xpost_op_file_writestring (Xpost_Context *ctx,
-                   Xpost_Object F,
-                   Xpost_Object S)
+                               Xpost_Object F,
+                               Xpost_Object S)
 {
     FILE *f;
     char *s;
@@ -337,8 +344,8 @@ int xpost_op_file_writestring (Xpost_Context *ctx,
    read a line of text from file */
 static
 int xpost_op_file_readline (Xpost_Context *ctx,
-                Xpost_Object F,
-                Xpost_Object S)
+                            Xpost_Object F,
+                            Xpost_Object S)
 {
     FILE *f;
     char *s;
@@ -368,7 +375,7 @@ int xpost_op_file_readline (Xpost_Context *ctx,
    return number of bytes available to read or -1 if not known */
 static
 int xpost_op_file_bytesavailable (Xpost_Context *ctx,
-                      Xpost_Object F)
+                                  Xpost_Object F)
 {
     int bytes;
     int ret;
@@ -396,7 +403,7 @@ int xpost_op_flush (Xpost_Context *ctx)
    flush output buffer for file */
 static
 int xpost_op_file_flushfile (Xpost_Context *ctx,
-                 Xpost_Object F)
+                             Xpost_Object F)
 {
     int ret;
     FILE *f;
@@ -421,7 +428,7 @@ int xpost_op_file_flushfile (Xpost_Context *ctx,
 
 static
 int xpost_op_file_resetfile (Xpost_Context *ctx,
-                 Xpost_Object F)
+                             Xpost_Object F)
 {
     FILE *f;
     if (!xpost_file_get_status(ctx->lo, F)) return 0;
@@ -436,7 +443,7 @@ int xpost_op_file_resetfile (Xpost_Context *ctx,
    return bool indicating whether file object is active or closed */
 static
 int xpost_op_file_status (Xpost_Context *ctx,
-              Xpost_Object F)
+                          Xpost_Object F)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(xpost_file_get_status(ctx->lo, F)));
     return 0;
@@ -470,7 +477,7 @@ int xpost_op_currentfile (Xpost_Context *ctx)
    delete named file from filesystem */
 static
 int xpost_op_string_deletefile (Xpost_Context *ctx,
-                 Xpost_Object S)
+                                Xpost_Object S)
 {
     char *s, *sbuf;
     int ret;
@@ -492,8 +499,8 @@ int xpost_op_string_deletefile (Xpost_Context *ctx,
    rename old file to new in filesystem */
 static
 int xpost_op_string_renamefile (Xpost_Context *ctx,
-                 Xpost_Object Old,
-                 Xpost_Object New)
+                                Xpost_Object Old,
+                                Xpost_Object New)
 {
     char *old, *new, *oldbuf, *newbuf;
     int ret;
@@ -520,9 +527,9 @@ int xpost_op_string_renamefile (Xpost_Context *ctx,
 /* internal continuation operator for filenameforall */
 static
 int xpost_op_contfilenameforall (Xpost_Context *ctx,
-                         Xpost_Object oglob,
-                         Xpost_Object Proc,
-                         Xpost_Object Scr)
+                                 Xpost_Object oglob,
+                                 Xpost_Object Proc,
+                                 Xpost_Object Scr)
 {
     glob_t *globbuf;
     char *str;
@@ -566,9 +573,9 @@ int xpost_op_contfilenameforall (Xpost_Context *ctx,
    execute proc for all filenames matching template using scratch string */
 static
 int xpost_op_filenameforall (Xpost_Context *ctx,
-                     Xpost_Object Tmp,
-                     Xpost_Object Proc,
-                     Xpost_Object Scr)
+                             Xpost_Object Tmp,
+                             Xpost_Object Proc,
+                             Xpost_Object Scr)
 {
     char *tmp, *tmpbuf;
     glob_t *globbuf;
@@ -603,8 +610,8 @@ int xpost_op_filenameforall (Xpost_Context *ctx,
    set position of read/write head for file */
 static
 int xpost_op_setfileposition (Xpost_Context *ctx,
-            Xpost_Object F,
-            Xpost_Object pos)
+                              Xpost_Object F,
+                              Xpost_Object pos)
 {
     int ret = fseek(xpost_file_get_file_pointer(ctx->lo, F), pos.int_.val, SEEK_SET);
     if (ret != 0)
@@ -616,7 +623,7 @@ int xpost_op_setfileposition (Xpost_Context *ctx,
    return position of read/write head for file */
 static
 int xpost_op_fileposition (Xpost_Context *ctx,
-            Xpost_Object F)
+                           Xpost_Object F)
 {
     long pos;
     pos = ftell(xpost_file_get_file_pointer(ctx->lo, F));
@@ -631,7 +638,7 @@ int xpost_op_fileposition (Xpost_Context *ctx,
    write string to stdout */
 static
 int xpost_op_string_print (Xpost_Context *ctx,
-             Xpost_Object S)
+                           Xpost_Object S)
 {
     size_t ret;
     char *s;
@@ -646,7 +653,7 @@ int xpost_op_string_print (Xpost_Context *ctx,
    enable/disable terminal echoing of input characters */
 static
 int xpost_op_bool_echo (Xpost_Context *ctx,
-            Xpost_Object b)
+                        Xpost_Object b)
 {
     (void)ctx;
     if (b.int_.val)
@@ -657,7 +664,7 @@ int xpost_op_bool_echo (Xpost_Context *ctx,
 }
 
 int xpost_oper_init_file_ops (Xpost_Context *ctx,
-              Xpost_Object sd)
+                              Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -736,5 +743,3 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "mark"), mark); */
     return 0;
 }
-
-

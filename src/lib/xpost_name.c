@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -258,7 +258,7 @@ unsigned int addname(Xpost_Context *ctx,
    in ternary search tree,
    adding string to stack if so.
    returns a generic object with
-       nametype tag with FBANK flag, 
+       nametype tag with FBANK flag,
        mark_.pad0 set to zero
        mark_.padw contains XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK stack index
  */

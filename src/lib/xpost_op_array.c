@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,8 +56,8 @@
 /* helper function */
 static
 int _xpost_op_array_copy_aux (Xpost_Context *ctx,
-            Xpost_Object S,
-            Xpost_Object D)
+                              Xpost_Object S,
+                              Xpost_Object D)
 {
     unsigned i;
     Xpost_Object t;
@@ -77,7 +77,7 @@ int _xpost_op_array_copy_aux (Xpost_Context *ctx,
    create array of length int */
 static
 int xpost_op_int_array (Xpost_Context *ctx,
-            Xpost_Object I)
+                        Xpost_Object I)
 {
     Xpost_Object t;
 
@@ -110,7 +110,8 @@ int xpost_op_array_to_mark (Xpost_Context *ctx)
     a = xpost_array_cons(ctx, i);
     if (xpost_object_get_type(a) == nulltype)
         return VMerror;
-    for ( ; i > 0; i--){
+    for ( ; i > 0; i--)
+    {
         v = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(v) == invalidtype)
             return stackunderflow;
@@ -126,7 +127,7 @@ int xpost_op_array_to_mark (Xpost_Context *ctx)
    number of elements in array */
 static
 int xpost_op_array_length (Xpost_Context *ctx,
-              Xpost_Object A)
+                           Xpost_Object A)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(A.comp_.sz)))
         return stackoverflow;
@@ -138,8 +139,8 @@ int xpost_op_array_length (Xpost_Context *ctx,
    get array element indexed by index */
 static
 int xpost_op_array_int_get (Xpost_Context *ctx,
-           Xpost_Object A,
-           Xpost_Object I)
+                            Xpost_Object A,
+                            Xpost_Object I)
 {
     Xpost_Object t;
     if (I.int_.val < 0)
@@ -156,9 +157,9 @@ int xpost_op_array_int_get (Xpost_Context *ctx,
    put any into array at index */
 static
 int xpost_op_array_int_any_put(Xpost_Context *ctx,
-          Xpost_Object A,
-          Xpost_Object I,
-          Xpost_Object O)
+                               Xpost_Object A,
+                               Xpost_Object I,
+                               Xpost_Object O)
 {
     if (I.int_.val < 0)
         return rangecheck;
@@ -169,9 +170,9 @@ int xpost_op_array_int_any_put(Xpost_Context *ctx,
    subarray of array starting at index for count elements */
 static
 int xpost_op_array_int_int_getinterval (Xpost_Context *ctx,
-                   Xpost_Object A,
-                   Xpost_Object I,
-                   Xpost_Object L)
+                                        Xpost_Object A,
+                                        Xpost_Object I,
+                                        Xpost_Object L)
 {
     Xpost_Object subarr;
     if (I.int_.val < 0)
@@ -187,9 +188,9 @@ int xpost_op_array_int_int_getinterval (Xpost_Context *ctx,
    replace subarray of array1 starting at index by array2 */
 static
 int xpost_op_array_int_array_putinterval (Xpost_Context *ctx,
-                   Xpost_Object D,
-                   Xpost_Object I,
-                   Xpost_Object S)
+                                          Xpost_Object D,
+                                          Xpost_Object I,
+                                          Xpost_Object S)
 {
     Xpost_Object subarr;
     if (I.int_.val < 0)
@@ -207,7 +208,7 @@ int xpost_op_array_int_array_putinterval (Xpost_Context *ctx,
    push all elements of array on stack */
 static
 int xpost_op_array_aload (Xpost_Context *ctx,
-             Xpost_Object A)
+                          Xpost_Object A)
 {
     int i;
 
@@ -223,7 +224,7 @@ int xpost_op_array_aload (Xpost_Context *ctx,
    pop elements from stack into array */
 static
 int xpost_op_anyn_array_astore (Xpost_Context *ctx,
-              Xpost_Object A)
+                                Xpost_Object A)
 {
     Xpost_Object t;
     int i;
@@ -250,8 +251,8 @@ int xpost_op_anyn_array_astore (Xpost_Context *ctx,
    copy elements of array1 to initial subarray of array2 */
 static
 int xpost_op_array_copy (Xpost_Context *ctx,
-            Xpost_Object S,
-            Xpost_Object D)
+                         Xpost_Object S,
+                         Xpost_Object D)
 {
     Xpost_Object subarr;
     if (D.comp_.sz < S.comp_.sz)
@@ -268,8 +269,8 @@ int xpost_op_array_copy (Xpost_Context *ctx,
    execute proc for each element of array */
 static
 int xpost_op_array_proc_forall(Xpost_Context *ctx,
-             Xpost_Object A,
-             Xpost_Object P)
+                               Xpost_Object A,
+                               Xpost_Object P)
 {
     Xpost_Object interval;
     Xpost_Object element;
@@ -310,7 +311,7 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
 }
 
 int xpost_oper_init_array_ops (Xpost_Context *ctx,
-               Xpost_Object sd)
+                               Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;

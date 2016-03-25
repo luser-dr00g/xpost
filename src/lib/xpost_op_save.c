@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,7 +82,7 @@ void *alloca (size_t);
 /* -  save  save
    create save object representing vm contents */
 static
-int Zsave (Xpost_Context *ctx)
+int Zsave(Xpost_Context *ctx)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_save_create_snapshot_object(ctx->lo)))
         return stackoverflow;
@@ -93,22 +93,23 @@ int Zsave (Xpost_Context *ctx)
 /* save  restore  -
    rewind vm to saved state */
 static
-int Vrestore (Xpost_Context *ctx,
-               Xpost_Object V)
+int Vrestore(Xpost_Context *ctx,
+             Xpost_Object V)
 {
     int z;
     unsigned int vs;
     int ret;
 
     ret = xpost_memory_table_get_addr(ctx->lo,
-            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+                                      XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     if (!ret)
     {
         XPOST_LOG_ERR("cannot retrieve address for save stack");
         return VMerror;
     }
     z = xpost_stack_count(ctx->lo, vs);
-    while(z > V.save_.lev) {
+    while(z > V.save_.lev)
+    {
         xpost_save_restore_snapshot(ctx->lo);
         z--;
     }
@@ -119,8 +120,8 @@ int Vrestore (Xpost_Context *ctx,
 /* bool  setglobal  -
    set vm allocation mode in current context. true is global. */
 static
-int Bsetglobal (Xpost_Context *ctx,
-                 Xpost_Object B)
+int Bsetglobal(Xpost_Context *ctx,
+               Xpost_Object B)
 {
     ctx->vmmode = B.int_.val? GLOBAL: LOCAL;
     return 0;
@@ -129,7 +130,7 @@ int Bsetglobal (Xpost_Context *ctx,
 /* -  currentglobal  bool
    return vm allocation mode for current context */
 static
-int Zcurrentglobal (Xpost_Context *ctx)
+int Zcurrentglobal(Xpost_Context *ctx)
 {
     xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(ctx->vmmode==GLOBAL));
     return 0;
@@ -138,17 +139,18 @@ int Zcurrentglobal (Xpost_Context *ctx)
 /* any  gcheck  bool
    check whether value is a legal element of a global composite object */
 static
-int Agcheck (Xpost_Context *ctx,
-              Xpost_Object A)
+int Agcheck(Xpost_Context *ctx,
+            Xpost_Object A)
 {
     Xpost_Object r;
-    switch(xpost_object_get_type(A)) {
-    default:
+    switch(xpost_object_get_type(A))
+    {
+        default:
             r = xpost_bool_cons(0); break;
-    case stringtype:
-    case nametype:
-    case dicttype:
-    case arraytype:
+        case stringtype:
+        case nametype:
+        case dicttype:
+        case arraytype:
             r = xpost_bool_cons((A.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)!=0);
     }
     xpost_stack_push(ctx->lo, ctx->os, r);
@@ -159,12 +161,12 @@ int Agcheck (Xpost_Context *ctx,
 /* -  vmstatus  level used max
    return size information for (local) vm */
 static
-int Zvmstatus (Xpost_Context *ctx)
+int Zvmstatus(Xpost_Context *ctx)
 {
     unsigned int vs;
 
     xpost_memory_table_get_addr(ctx->lo,
-            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+                                XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_stack_count(ctx->lo, vs)));
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(ctx->lo->used));
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(ctx->lo->max));
@@ -172,8 +174,8 @@ int Zvmstatus (Xpost_Context *ctx)
 }
 #endif
 
-int xpost_oper_init_save_ops (Xpost_Context *ctx,
-             Xpost_Object sd)
+int xpost_oper_init_save_ops(Xpost_Context *ctx,
+                             Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -181,7 +183,7 @@ int xpost_oper_init_save_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "save", (Xpost_Op_Func)Zsave, 1, 0);
@@ -204,5 +206,3 @@ int xpost_oper_init_save_ops (Xpost_Context *ctx,
 
     return 0;
 }
-
-

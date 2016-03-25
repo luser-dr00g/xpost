@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,7 +83,7 @@ void *alloca (size_t);
    execute arbitrary object */
 static
 int xpost_op_any_exec (Xpost_Context *ctx,
-            Xpost_Object O)
+                       Xpost_Object O)
 {
     if (!xpost_stack_push(ctx->lo, ctx->es, O))
         return execstackoverflow;
@@ -94,8 +94,8 @@ int xpost_op_any_exec (Xpost_Context *ctx,
    execute proc if bool is true */
 static
 int xpost_op_bool_proc_if (Xpost_Context *ctx,
-           Xpost_Object B,
-           Xpost_Object P)
+                           Xpost_Object B,
+                           Xpost_Object P)
 {
     if (B.int_.val)
         if (!xpost_stack_push(ctx->lo, ctx->es, P))
@@ -108,9 +108,9 @@ int xpost_op_bool_proc_if (Xpost_Context *ctx,
    proc2 if bool is false */
 static
 int xpost_op_bool_proc_proc_ifelse (Xpost_Context *ctx,
-                Xpost_Object B,
-                Xpost_Object Then,
-                Xpost_Object Else)
+                                    Xpost_Object B,
+                                    Xpost_Object Then,
+                                    Xpost_Object Else)
 {
     if (B.int_.val)
     {
@@ -134,9 +134,9 @@ int xpost_op_bool_proc_proc_ifelse (Xpost_Context *ctx,
    of increment to limit */
 static
 int xpost_op_int_int_int_proc_for (Xpost_Context *ctx,
-              Xpost_Object init,
-              Xpost_Object incr,
-              Xpost_Object lim,
+                                   Xpost_Object init,
+                                   Xpost_Object incr,
+                                   Xpost_Object lim,
               Xpost_Object P)
 {
     integer i = init.int_.val;
@@ -147,10 +147,10 @@ int xpost_op_int_int_int_proc_for (Xpost_Context *ctx,
     assert(ctx->gl->base);
 
     if (!xpost_stack_push(ctx->lo, ctx->es,
-                xpost_operator_cons_opcode(ctx->opcode_shortcuts.opfor)))
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.opfor)))
             return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es,
-                xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
@@ -173,10 +173,10 @@ int xpost_op_int_int_int_proc_for (Xpost_Context *ctx,
 /* same as IIIPfor but for reals */
 static
 int xpost_op_real_real_real_proc_for (Xpost_Context *ctx,
-              Xpost_Object init,
-              Xpost_Object incr,
-              Xpost_Object lim,
-              Xpost_Object P)
+                                      Xpost_Object init,
+                                      Xpost_Object incr,
+                                      Xpost_Object lim,
+                                      Xpost_Object P)
 {
     real i = init.real_.val;
     real j = incr.real_.val;
@@ -208,16 +208,16 @@ int xpost_op_real_real_real_proc_for (Xpost_Context *ctx,
    execute proc int times */
 static
 int xpost_op_int_proc_repeat (Xpost_Context *ctx,
-               Xpost_Object n,
-               Xpost_Object P)
+                              Xpost_Object n,
+                              Xpost_Object P)
 {
     if (n.int_.val <= 0) return 0;
 
     if (!xpost_stack_push(ctx->lo, ctx->es,
-                xpost_operator_cons_opcode(ctx->opcode_shortcuts.repeat)))
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.repeat)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es,
-                xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
@@ -234,7 +234,7 @@ int xpost_op_int_proc_repeat (Xpost_Context *ctx,
    execute proc an indefinite number of times */
 static
 int xpost_op_proc_loop (Xpost_Context *ctx,
-            Xpost_Object P)
+                        Xpost_Object P)
 {
     //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "loop", NULL,0,0));
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.loop)))
@@ -281,11 +281,11 @@ int xpost_op_exit (Xpost_Context *ctx)
         if (xpost_object_get_type(x) == invalidtype)
             return execstackunderflow;
         //xpost_object_dump(x);
-        if ( (xpost_dict_compare_objects(ctx, x, opfor)    == 0)
-          || (xpost_dict_compare_objects(ctx, x, oprepeat) == 0)
-          || (xpost_dict_compare_objects(ctx, x, oploop)   == 0)
-          || (xpost_dict_compare_objects(ctx, x, opforall) == 0)
-           ) {
+        if ((xpost_dict_compare_objects(ctx, x, opfor)    == 0) ||
+            (xpost_dict_compare_objects(ctx, x, oprepeat) == 0) ||
+            (xpost_dict_compare_objects(ctx, x, oploop)   == 0) ||
+            (xpost_dict_compare_objects(ctx, x, opforall) == 0))
+        {
             break;
         }
     }
@@ -298,8 +298,8 @@ int xpost_op_exit (Xpost_Context *ctx)
 }
 
 /* The stopped context is a boolean 'false' on the exec stack,
-   so normal execution simply falls through and pushes the 
-   false onto the operand stack. 'stop' then merely has to 
+   so normal execution simply falls through and pushes the
+   false onto the operand stack. 'stop' then merely has to
    search for 'false' and push a 'true', popping as it goes.  */
 
 /* -  stop  -
@@ -310,7 +310,8 @@ int xpost_op_stop(Xpost_Context *ctx)
     Xpost_Object f = xpost_bool_cons(0);
     int c = xpost_stack_count(ctx->lo, ctx->es);
     Xpost_Object x;
-    while (c--) {
+    while (c--)
+    {
         x = xpost_stack_pop(ctx->lo, ctx->es);
         if (xpost_object_get_type(x) == invalidtype)
             return execstackunderflow;
@@ -328,7 +329,7 @@ int xpost_op_stop(Xpost_Context *ctx)
    establish context for catching stop */
 static
 int xpost_op_any_stopped(Xpost_Context *ctx,
-              Xpost_Object o)
+                         Xpost_Object o)
 {
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_bool_cons(0)))
         return execstackoverflow;
@@ -351,12 +352,12 @@ int xpost_op_countexecstack(Xpost_Context *ctx)
    copy execution stack into array */
 static
 int xpost_op_array_execstack(Xpost_Context *ctx,
-                Xpost_Object A)
+                             Xpost_Object A)
 {
     Xpost_Object subarr;
     int z = xpost_stack_count(ctx->lo, ctx->es);
     int i;
-    for (i=0; i < z; i++)
+    for (i = 0; i < z; i++)
     {
         int ret;
         ret = xpost_array_put(ctx, A, i, xpost_stack_bottomup_fetch(ctx->lo, ctx->es, i));
@@ -385,7 +386,7 @@ int xpost_op_quit(Xpost_Context *ctx)
 /* implemented in data/init.ps */
 
 int xpost_oper_init_control_ops (Xpost_Context *ctx,
-              Xpost_Object sd)
+                                 Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -393,7 +394,7 @@ int xpost_oper_init_control_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "exec", (Xpost_Op_Func)xpost_op_any_exec, 0, 1, anytype);
@@ -403,10 +404,10 @@ int xpost_oper_init_control_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "ifelse", (Xpost_Op_Func)xpost_op_bool_proc_proc_ifelse, 0, 3, booleantype, proctype, proctype);
     INSTALL;
     op = xpost_operator_cons(ctx, "for", (Xpost_Op_Func)xpost_op_int_int_int_proc_for, 0, 4, \
-            integertype, integertype, integertype, proctype);
+                             integertype, integertype, integertype, proctype);
     INSTALL;
     op = xpost_operator_cons(ctx, "for", (Xpost_Op_Func)xpost_op_real_real_real_proc_for, 0, 4, \
-            floattype, floattype, floattype, proctype);
+                             floattype, floattype, floattype, proctype);
     INSTALL;
     ctx->opcode_shortcuts.opfor = op.mark_.padw;
     op = xpost_operator_cons(ctx, "repeat", (Xpost_Op_Func)xpost_op_int_proc_repeat, 0, 2, integertype, proctype);
@@ -435,5 +436,3 @@ int xpost_oper_init_control_ops (Xpost_Context *ctx,
 
     return 0;
 }
-
-

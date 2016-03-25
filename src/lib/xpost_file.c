@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -78,6 +78,7 @@ void *alloca (size_t);
 
 #ifdef _WIN32
 /*
+ * FIXME: maybe use a WIN32 API for all this. See FIXME in xpost_op_file.c
  * Note:
  * this hack is needed as tmpfile in the Windows CRT opens
  * the temporary file in c:/ which needs administrator
@@ -86,32 +87,32 @@ void *alloca (size_t);
 static FILE *
 f_tmpfile(void)
 {
-  char *buf;
-  const char *name;
-  const char *tmpdir;
-  size_t l1;
-  size_t l2;
+    char *buf;
+    const char *name;
+    const char *tmpdir;
+    size_t l1;
+    size_t l2;
 
-  tmpdir = getenv("TEMP");
-  if (!tmpdir)
-    tmpdir = getenv("TMP");
-  if (!tmpdir)
-    return NULL;
+    tmpdir = getenv("TEMP");
+    if (!tmpdir)
+        tmpdir = getenv("TMP");
+    if (!tmpdir)
+        return NULL;
 
-  name = tmpnam(NULL);
-  /* name points to a static buffer, so no need to check it */
+    name = tmpnam(NULL);
+    /* name points to a static buffer, so no need to check it */
 
-  l1 = strlen(tmpdir);
-  l2 = strlen(name);
-  buf = alloca(l1 + l2 + 1);
-  memcpy(buf, tmpdir, l1);
-  memcpy(buf + l1, name, l2);
-  buf[l1 + l2] = '\0';
+    l1 = strlen(tmpdir);
+    l2 = strlen(name);
+    buf = alloca(l1 + l2 + 1);
+    memcpy(buf, tmpdir, l1);
+    memcpy(buf + l1, name, l2);
+    buf[l1 + l2] = '\0';
 
 #ifdef DEBUG_FILE
-  printf("fopen\n");
+    printf("fopen\n");
 #endif
-  return fopen(buf, "w+bD");
+    return fopen(buf, "w+bD");
 }
 #else
 # define f_tmpfile tmpfile
@@ -146,7 +147,7 @@ int xpost_file_getc(FILE *in){
     Xpost_Object f = readonly(xpost_file_cons(fp)).
  */
 Xpost_Object xpost_file_cons(Xpost_Memory_File *mem,
-        /*@NULL@*/ const FILE *fp)
+                             /*@NULL@*/ const FILE *fp)
 {
     Xpost_Object f;
     unsigned int ent;
@@ -186,7 +187,7 @@ int lineedit(FILE *in, FILE **out)
         return undefinedfilename;
     }
 #ifdef DEBUG_FILE
-	printf("tmpfile (fdopen)\n");
+    printf("tmpfile (fdopen)\n");
 #endif
     fp = f_tmpfile();
     if (fp == NULL) {
@@ -222,7 +223,7 @@ int statementedit(FILE *in, FILE **out)
         return undefinedfilename;
     }
 #ifdef DEBUG_FILE
-	printf("tmpfile (fdopen)\n");
+    printf("tmpfile (fdopen)\n");
 #endif
     fp = f_tmpfile();
     if (fp == NULL) {
@@ -283,13 +284,13 @@ done:
     return 0;
 }
 
-/* Open a file object, 
+/* Open a file object,
    check for "special" filenames,
    fallback to fopen. */
 int xpost_file_open(Xpost_Memory_File *mem,
-        char *fn,
-        char *mode,
-        Xpost_Object *retval)
+                    char *fn,
+                    char *mode,
+                    Xpost_Object *retval)
 {
     Xpost_Object f;
     FILE *fp;
@@ -339,7 +340,7 @@ int xpost_file_open(Xpost_Memory_File *mem,
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     } else {
 #ifdef DEBUG_FILE
-		printf("fopen\n");
+        printf("fopen\n");
 #endif
         fp = fopen(fn, mode);
         if (fp == NULL) {
@@ -384,7 +385,7 @@ int xpost_file_open(Xpost_Memory_File *mem,
            FILE* <- filetype object
    yield the FILE* from a filetype object */
 FILE *xpost_file_get_file_pointer(Xpost_Memory_File *mem,
-               Xpost_Object f)
+                                  Xpost_Object f)
 {
     FILE *fp;
     int ret;
@@ -399,15 +400,15 @@ FILE *xpost_file_get_file_pointer(Xpost_Memory_File *mem,
 
 /* make sure the FILE* is not null */
 int xpost_file_get_status(Xpost_Memory_File *mem,
-                Xpost_Object f)
+                          Xpost_Object f)
 {
     return xpost_file_get_file_pointer(mem, f) != NULL;
 }
 
 /* call fstat. */
 int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
-                        Xpost_Object f,
-                        int *retval)
+                                   Xpost_Object f,
+                                   int *retval)
 {
     int ret;
     FILE *fp;
@@ -425,7 +426,7 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
     if (sb.st_size > LONG_MAX)
         return rangecheck;
     sz = (long)sb.st_size;
-    
+
     pos = ftell(fp);
     if ((sz - pos) > INT_MAX)
         return rangecheck;
@@ -437,7 +438,7 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
 /* close the file,
    NULL the FILE*. */
 int xpost_file_close(Xpost_Memory_File *mem,
-               Xpost_Object f)
+                     Xpost_Object f)
 {
     FILE *fp;
     int ret;
@@ -445,7 +446,7 @@ int xpost_file_close(Xpost_Memory_File *mem,
     fp = xpost_file_get_file_pointer(mem, f);
     if (fp) {
 #ifdef DEBUG_FILE
-		printf("fclose");
+        printf("fclose");
 #endif
         if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
             return 0;
@@ -465,7 +466,7 @@ int xpost_file_close(Xpost_Memory_File *mem,
 /* if the file is valid,
    read a byte. */
 Xpost_Object xpost_file_read_byte(Xpost_Memory_File *mem,
-                Xpost_Object f)
+                                  Xpost_Object f)
 {
     int c;
     if (!xpost_file_get_status(mem, f))
@@ -479,8 +480,8 @@ Xpost_Object xpost_file_read_byte(Xpost_Memory_File *mem,
 /* if the file is valid,
    write a byte. */
 int xpost_file_write_byte(Xpost_Memory_File *mem,
-               Xpost_Object f,
-               Xpost_Object b)
+                          Xpost_Object f,
+                          Xpost_Object b)
 {
     if (!xpost_file_get_status(mem, f))
     {
@@ -492,4 +493,3 @@ int xpost_file_write_byte(Xpost_Memory_File *mem,
     }
     return 0;
 }
-

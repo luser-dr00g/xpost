@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,8 +79,8 @@ void *alloca (size_t);
 /* any  pop  -
    discard top element */
 static
-int Apop (Xpost_Context *ctx,
-           Xpost_Object x)
+int Apop(Xpost_Context *ctx,
+         Xpost_Object x)
 {
     (void)ctx;
     (void)x;
@@ -90,9 +90,9 @@ int Apop (Xpost_Context *ctx,
 /* any1 any2  exch  any2 any1
    exchange top two elements */
 static
-int AAexch (Xpost_Context *ctx,
-             Xpost_Object x,
-             Xpost_Object y)
+int AAexch(Xpost_Context *ctx,
+           Xpost_Object x,
+           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os, y);
     xpost_stack_push(ctx->lo, ctx->os, x);
@@ -102,8 +102,8 @@ int AAexch (Xpost_Context *ctx,
 /* any  dup  any any
    duplicate top element */
 static
-int Adup (Xpost_Context *ctx,
-           Xpost_Object x)
+int Adup(Xpost_Context *ctx,
+         Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os, x);
     if (!xpost_stack_push(ctx->lo, ctx->os, x))
@@ -114,8 +114,8 @@ int Adup (Xpost_Context *ctx,
 /* any1..anyN N  copy  any1..anyN any1..anyN
    duplicate top n elements */
 static
-int Icopy (Xpost_Context *ctx,
-            Xpost_Object n)
+int Icopy(Xpost_Context *ctx,
+          Xpost_Object n)
 {
     int i;
     if (n.int_.val < 0)
@@ -124,7 +124,7 @@ int Icopy (Xpost_Context *ctx,
         return stackunderflow;
     for (i=0; i < n.int_.val; i++)
         if (!xpost_stack_push(ctx->lo, ctx->os,
-                xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val - 1)))
+                              xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val - 1)))
             return stackoverflow;
     return 0;
 }
@@ -132,8 +132,8 @@ int Icopy (Xpost_Context *ctx,
 /* anyN..any0 N  index  anyN..any0 anyN
    duplicate arbitrary element */
 static
-int Iindex (Xpost_Context *ctx,
-             Xpost_Object n)
+int Iindex(Xpost_Context *ctx,
+           Xpost_Object n)
 {
     if (n.int_.val < 0)
         return rangecheck;
@@ -141,7 +141,7 @@ int Iindex (Xpost_Context *ctx,
         return stackunderflow;
     //printf("index %d\n", n.int_.val);
     if (!xpost_stack_push(ctx->lo, ctx->os,
-                xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val)))
+                          xpost_stack_topdown_fetch(ctx->lo, ctx->os, n.int_.val)))
         return stackoverflow;
     return 0;
 }
@@ -149,9 +149,9 @@ int Iindex (Xpost_Context *ctx,
 /* a(n-1)..a(0) n j  roll  a((j-1)mod n)..a(0) a(n-1)..a(j mod n)
    roll n elements j times */
 static
-int IIroll (Xpost_Context *ctx,
-             Xpost_Object N,
-             Xpost_Object J)
+int IIroll(Xpost_Context *ctx,
+           Xpost_Object N,
+           Xpost_Object J)
 {
     Xpost_Object *t;
     Xpost_Object r;
@@ -161,11 +161,11 @@ int IIroll (Xpost_Context *ctx,
     if (n < 0)
         return rangecheck;
     if (n == 0) return 0;
-    if (j < 0) j = n - ( (- j) % n);
+    if (j < 0) j = n - ((- j) % n);
     j %= n;
     if (j == 0) return 0;
-    
-    t = alloca((n-j) * sizeof(Xpost_Object));
+
+    t = alloca((n - j) * sizeof(Xpost_Object));
     for (i = 0; i < n-j; i++)
     {
         r = xpost_stack_topdown_fetch(ctx->lo, ctx->os, n - 1 - i);
@@ -192,7 +192,7 @@ int IIroll (Xpost_Context *ctx,
 /* |- any1..anyN  clear  |-
    discard all elements */
 static
-int Zclear (Xpost_Context *ctx)
+int Zclear(Xpost_Context *ctx)
 {
     Xpost_Stack *s = (void *)(ctx->lo->base + ctx->os);
     s->top = 0;
@@ -209,7 +209,7 @@ int Zclear (Xpost_Context *ctx)
 /* |- any1..anyN  count  |- any1..anyN N
    count elements on stack */
 static
-int Zcount (Xpost_Context *ctx)
+int Zcount(Xpost_Context *ctx)
 {
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpost_stack_count(ctx->lo, ctx->os))))
         return stackoverflow;
@@ -222,7 +222,7 @@ int Zcount (Xpost_Context *ctx)
 
 /* mark obj1..objN  cleartomark  -
    discard elements down through mark */
-int xpost_op_cleartomark (Xpost_Context *ctx)
+int xpost_op_cleartomark(Xpost_Context *ctx)
 {
     Xpost_Object o;
     do {
@@ -235,13 +235,15 @@ int xpost_op_cleartomark (Xpost_Context *ctx)
 
 /* mark obj1..objN  counttomark  N
    count elements down to mark */
-int xpost_op_counttomark (Xpost_Context *ctx)
+int xpost_op_counttomark(Xpost_Context *ctx)
 {
     unsigned i;
     unsigned z;
     z = xpost_stack_count(ctx->lo, ctx->os);
-    for (i = 0; i < z; i++) {
-        if (xpost_stack_topdown_fetch(ctx->lo, ctx->os, i).tag == marktype) {
+    for (i = 0; i < z; i++)
+    {
+        if (xpost_stack_topdown_fetch(ctx->lo, ctx->os, i).tag == marktype)
+        {
             xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(i));
             return 0;
         }
@@ -249,8 +251,8 @@ int xpost_op_counttomark (Xpost_Context *ctx)
     return unmatchedmark;
 }
 
-int xpost_oper_init_stack_ops (Xpost_Context *ctx,
-             Xpost_Object sd)
+int xpost_oper_init_stack_ops(Xpost_Context *ctx,
+                              Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -258,7 +260,7 @@ int xpost_oper_init_stack_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
     op = xpost_operator_cons(ctx, "pop", (Xpost_Op_Func)Apop, 0, 1, anytype);
     INSTALL;

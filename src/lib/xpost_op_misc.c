@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -93,33 +93,36 @@ void *alloca (size_t);
 #include "xpost_op_misc.h"
 
 static
-Xpost_Object bind (Xpost_Context *ctx,
-             Xpost_Object p)
+Xpost_Object bind(Xpost_Context *ctx,
+                  Xpost_Object p)
 {
     Xpost_Object t, d;
     int i, j, z;
-    for (i = 0; i < p.comp_.sz; i++) {
+    for (i = 0; i < p.comp_.sz; i++)
+    {
         t = xpost_array_get(ctx, p, i);
-        switch(xpost_object_get_type(t)){
-        default: break;
-        case nametype:
-            z = xpost_stack_count(ctx->lo, ctx->ds);
-            for (j = 0; j < z; j++) {
-                d = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, j);
-                if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx,d), d, t)) {
-                    t = xpost_dict_get(ctx, d, t);
-                    if (xpost_object_get_type(t) == operatortype) {
-                        xpost_array_put(ctx, p, i, t);
+        switch(xpost_object_get_type(t))
+        {
+            default: break;
+            case nametype:
+                z = xpost_stack_count(ctx->lo, ctx->ds);
+                for (j = 0; j < z; j++) {
+                    d = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, j);
+                    if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx,d), d, t)) {
+                        t = xpost_dict_get(ctx, d, t);
+                        if (xpost_object_get_type(t) == operatortype) {
+                            xpost_array_put(ctx, p, i, t);
+                        }
+                        break;
                     }
-                    break;
                 }
-            }
-            break;
-        case arraytype:
-            if (xpost_object_is_exe(t)) {
-                t = bind(ctx, t);
-                xpost_array_put(ctx, p, i, t);
-            }
+                break;
+            case arraytype:
+                if (xpost_object_is_exe(t))
+                {
+                    t = bind(ctx, t);
+                    xpost_array_put(ctx, p, i, t);
+                }
         }
     }
     return xpost_object_set_access(ctx, p, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
@@ -128,8 +131,8 @@ Xpost_Object bind (Xpost_Context *ctx,
 /* proc  bind  proc
    replace names with operators in proc and make read-only */
 static
-int Pbind (Xpost_Context *ctx,
-            Xpost_Object P)
+int Pbind(Xpost_Context *ctx,
+          Xpost_Object P)
 {
     xpost_stack_push(ctx->lo, ctx->os, bind(ctx, P));
     return 0;
@@ -138,7 +141,7 @@ int Pbind (Xpost_Context *ctx,
 /* -  realtime  int
    return real time in milliseconds */
 static
-int realtime (Xpost_Context *ctx)
+int realtime(Xpost_Context *ctx)
 {
     double sec;
     long long lsec;
@@ -159,7 +162,7 @@ int realtime (Xpost_Context *ctx)
 /* -  usertime  int
    return execution time in milliseconds */
 static
-int usertime (Xpost_Context *ctx)
+int usertime(Xpost_Context *ctx)
 {
     double sec;
     long long lsec;
@@ -180,8 +183,8 @@ int usertime (Xpost_Context *ctx)
 /* string  getenv  string
    return value for environment variable */
 static
-int Sgetenv (Xpost_Context *ctx,
-              Xpost_Object S)
+int Sgetenv(Xpost_Context *ctx,
+            Xpost_Object S)
 {
     char *s;
     char *str;
@@ -209,18 +212,21 @@ int Sgetenv (Xpost_Context *ctx,
 /* string string  putenv
    set value for environment variable */
 static
-int SSputenv (Xpost_Context *ctx,
-              Xpost_Object N,
-              Xpost_Object S)
+int SSputenv(Xpost_Context *ctx,
+             Xpost_Object N,
+             Xpost_Object S)
 {
     char *n, *s, *r;
     n = xpost_string_get_pointer(ctx, N);
-    if (xpost_object_get_type(S) == nulltype) {
+    if (xpost_object_get_type(S) == nulltype)
+    {
         s = "";
         r = alloca(N.comp_.sz + 1);
         memcpy(r, n, N.comp_.sz);
         r[N.comp_.sz] = '\0';
-    } else {
+    }
+    else
+    {
         s = xpost_string_get_pointer(ctx, S);
         r = alloca(N.comp_.sz + 1 + S.comp_.sz + 1);
         memcpy(r, n, N.comp_.sz);
@@ -255,7 +261,7 @@ int traceon (Xpost_Context *ctx)
     return 0;
 }
 static
-int traceoff (Xpost_Context *ctx)
+int traceoff(Xpost_Context *ctx)
 {
     (void)ctx;
     TRACE = 0;
@@ -264,14 +270,14 @@ int traceoff (Xpost_Context *ctx)
 #endif
 
 static
-int debugloadon (Xpost_Context *ctx)
+int debugloadon(Xpost_Context *ctx)
 {
     (void)ctx;
     DEBUGLOAD = 1;
     return 0;
 }
 static
-int debugloadoff (Xpost_Context *ctx)
+int debugloadoff(Xpost_Context *ctx)
 {
     (void)ctx;
     DEBUGLOAD = 0;
@@ -279,17 +285,17 @@ int debugloadoff (Xpost_Context *ctx)
 }
 
 static
-int Odumpnames (Xpost_Context *ctx)
+int Odumpnames(Xpost_Context *ctx)
 {
     unsigned int names;
     printf("\nGlobal Name stack: ");
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
+                                XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
     xpost_stack_dump(ctx->gl, names);
     (void)puts("");
     printf("\nLocal Name stack: ");
     xpost_memory_table_get_addr(ctx->lo,
-            XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
+                                XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK, &names);
     xpost_stack_dump(ctx->lo, names);
     (void)puts("");
     return 0;
@@ -299,7 +305,7 @@ int Odumpnames (Xpost_Context *ctx)
 FIXME: interaction with file dump mechanism ?
 */
 static
-int dumpvm (Xpost_Context *ctx)
+int dumpvm(Xpost_Context *ctx)
 {
     xpost_memory_file_dump(ctx->lo);
     xpost_memory_table_dump(ctx->lo);
@@ -309,14 +315,14 @@ int dumpvm (Xpost_Context *ctx)
 }
 
 static
-int returntocaller (Xpost_Context *ctx)
+int returntocaller(Xpost_Context *ctx)
 {
     (void)ctx;
     return yieldtocaller;
 }
 
-int xpost_oper_init_misc_ops (Xpost_Context *ctx,
-             Xpost_Object sd)
+int xpost_oper_init_misc_ops(Xpost_Context *ctx,
+                             Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -329,21 +335,21 @@ int xpost_oper_init_misc_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "bind", (Xpost_Op_Func)Pbind, 1, 1, proctype);
     INSTALL;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "null"), null);
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "version"),
-            xpost_object_cvlit(xpost_string_cons(ctx, strlen(versionstr), versionstr)));
+                   xpost_object_cvlit(xpost_string_cons(ctx, strlen(versionstr), versionstr)));
     op = xpost_operator_cons(ctx, "realtime", (Xpost_Op_Func)realtime, 1, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "usertime", (Xpost_Op_Func)usertime, 1, 0);
     INSTALL;
     //languagelevel
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "product"),
-            xpost_object_cvlit(xpost_string_cons(ctx, strlen(productstr), productstr)));
+                   xpost_object_cvlit(xpost_string_cons(ctx, strlen(productstr), productstr)));
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "revision"), xpost_int_cons(revno));
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "serialnumber"), xpost_int_cons(serno));
     //executive: see init.ps
@@ -356,7 +362,7 @@ int xpost_oper_init_misc_ops (Xpost_Context *ctx,
     INSTALL;
 
     op = xpost_operator_cons(ctx, ".swap", (Xpost_Op_Func)_array_swap, 0, 3,
-            arraytype, integertype, integertype);
+                             arraytype, integertype, integertype);
     INSTALL;
 
 #if 0
@@ -382,5 +388,3 @@ int xpost_oper_init_misc_ops (Xpost_Context *ctx,
 
     return 0;
 }
-
-

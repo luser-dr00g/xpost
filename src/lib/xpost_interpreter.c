@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
  *
@@ -380,7 +380,7 @@ int evalarray(Xpost_Context *ctx)
 
     switch (a.comp_.sz)
     {
-    default /* > 1 */:
+        default /* > 1 */:
         {
             Xpost_Object interval;
             interval = xpost_object_get_interval(a, 1, a.comp_.sz - 1);
@@ -389,20 +389,20 @@ int evalarray(Xpost_Context *ctx)
             xpost_stack_push(ctx->lo, ctx->es, interval);
         }
         /*@fallthrough@*/
-    case 1:
-        b = xpost_array_get(ctx, a, 0);
-        if (xpost_object_get_type(b) == arraytype)
-        {
-            if (!xpost_stack_push(ctx->lo, ctx->os, b))
-                return stackoverflow;
-        }
-        else
-        {
-            if (!xpost_stack_push(ctx->lo, ctx->es, b))
-                return execstackoverflow;
-        }
-        /*@fallthrough@*/
-    case 0: /* drop */;
+        case 1:
+            b = xpost_array_get(ctx, a, 0);
+            if (xpost_object_get_type(b) == arraytype)
+            {
+                if (!xpost_stack_push(ctx->lo, ctx->os, b))
+                    return stackoverflow;
+            }
+            else
+            {
+                if (!xpost_stack_push(ctx->lo, ctx->es, b))
+                    return execstackoverflow;
+            }
+            /*@fallthrough@*/
+        case 0: /* drop */;
     }
     return 0;
 }
@@ -922,7 +922,7 @@ void setlocalconfig(Xpost_Context *ctx,
     char *subdevice;
 
     ctx->vmmode = GLOBAL;
-    
+
 #ifdef _WIN32
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "WIN32"), xpost_bool_cons(1));
 #endif
@@ -943,10 +943,10 @@ void setlocalconfig(Xpost_Context *ctx,
         }
     }
     newdevstr = xpost_string_cons(ctx,
-            strlen(strtemplate) - 4
-            + strlen(device_strings[i][1])
-            + strlen(device_strings[i][2]) + 1,
-            NULL);
+                                  strlen(strtemplate) - 4
+                                  + strlen(device_strings[i][1])
+                                  + strlen(device_strings[i][2]) + 1,
+                                  NULL);
     sprintf(xpost_string_get_pointer(ctx, newdevstr), strtemplate,
             device_strings[i][1], device_strings[i][2]);
     --newdevstr.comp_.sz; /* trim the '\0' */
@@ -1046,7 +1046,6 @@ void loadinitps(Xpost_Context *ctx)
     xpost_stack_push(ctx->lo, ctx->es,
                      xpost_object_cvx(xpost_string_cons(ctx, n, buf)));
 
-
     ctx->quit = 0;
     mainloop(ctx);
     ctx->ignoreinvalidaccess = 0;
@@ -1099,18 +1098,17 @@ XPAPI Xpost_Context *xpost_create(const char *device,
 
     switch (output_type)
     {
-    case XPOST_OUTPUT_FILENAME:
-        outfile = outputptr;
-        break;
-    case XPOST_OUTPUT_BUFFERIN:
-        bufferin = outputptr;
-        break;
-    case XPOST_OUTPUT_BUFFEROUT:
-        bufferout = (char **)outputptr;
-        break;
-    case XPOST_OUTPUT_DEFAULT:
-        ;
-        break;
+        case XPOST_OUTPUT_FILENAME:
+            outfile = outputptr;
+            break;
+        case XPOST_OUTPUT_BUFFERIN:
+            bufferin = outputptr;
+            break;
+        case XPOST_OUTPUT_BUFFEROUT:
+            bufferout = (char **)outputptr;
+            break;
+        case XPOST_OUTPUT_DEFAULT:
+            break;
     }
 
 #if 0
@@ -1188,20 +1186,20 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
 
     switch(input_type)
     {
-    case XPOST_INPUT_FILENAME:
-        ps_file = inputptr;
-        break;
-    case XPOST_INPUT_STRING:
-        ps_str = inputptr;
-        ps_file_ptr = tmpfile();
-        fwrite(ps_str, 1, strlen(ps_str), (FILE*)ps_file_ptr);
-        rewind((FILE*)ps_file_ptr);
-        break;
-    case XPOST_INPUT_FILEPTR:
-        ps_file_ptr = inputptr;
-        break;
-    case XPOST_INPUT_RESUME: /* resuming a returned session, skip startup */
-        goto run;
+        case XPOST_INPUT_FILENAME:
+            ps_file = inputptr;
+            break;
+        case XPOST_INPUT_STRING:
+            ps_str = inputptr;
+            ps_file_ptr = tmpfile();
+            fwrite(ps_str, 1, strlen(ps_str), (FILE*)ps_file_ptr);
+            rewind((FILE*)ps_file_ptr);
+            break;
+        case XPOST_INPUT_FILEPTR:
+            ps_file_ptr = inputptr;
+            break;
+        case XPOST_INPUT_RESUME: /* resuming a returned session, skip startup */
+            goto run;
     }
 
     /* prime the exec stack
@@ -1249,17 +1247,18 @@ run:
     ctx->state = C_RUN;
     ret = mainloop(ctx);
 
-    if (ret == 1){
+    if (ret == 1)
+    {
         Xpost_Object sem = xpost_dict_get(ctx,
-            xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
-            xpost_name_cons(ctx, "ShowpageSemantics"));
+                                          xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
+                                          xpost_name_cons(ctx, "ShowpageSemantics"));
         if (sem.int_.val == XPOST_SHOWPAGE_RETURN)
             return yieldtocaller;
     }
 
     xpost_save_restore_snapshot(ctx->gl);
     xpost_memory_table_get_addr(ctx->lo,
-            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+                                XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     if (xpost_object_get_type(lsav) == savetype)
     {
         for ( llev = xpost_stack_count(ctx->lo, vs);

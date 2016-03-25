@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -81,14 +81,19 @@ void *alloca (size_t);
 #include "xpost_operator.h"
 #include "xpost_op_font.h"
 
+/*
+ * FIXME: check if we can factorize show, ashow and kshow a bit.
+ * These codes seem quite similar
+ */
+
 typedef struct fontdata
 {
     void *face;
 } fontdata;
 
 static
-int _findfont (Xpost_Context *ctx,
-               Xpost_Object fontname)
+int _findfont(Xpost_Context *ctx,
+              Xpost_Object fontname)
 {
 #ifdef HAVE_FREETYPE
     Xpost_Object fontstr;
@@ -125,13 +130,13 @@ int _findfont (Xpost_Context *ctx,
 #endif
 }
 
-static int _scalefont (Xpost_Context *ctx, Xpost_Object fontdict, Xpost_Object size);
+static int _scalefont(Xpost_Context *ctx, Xpost_Object fontdict, Xpost_Object size);
 
 
 static
-int _makefont (Xpost_Context *ctx,
-               Xpost_Object fontdict,
-               Xpost_Object psmat)
+int _makefont(Xpost_Context *ctx,
+              Xpost_Object fontdict,
+              Xpost_Object psmat)
 {
     Xpost_Object privatestr;
     struct fontdata data;
@@ -141,7 +146,7 @@ int _makefont (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+                     xpost_object_get_ent(privatestr), 0, sizeof(data), &data);
 
     if (data.face == NULL)
         return invalidfont;
@@ -150,13 +155,15 @@ int _makefont (Xpost_Context *ctx,
     {
         float mat[6];
         int i;
-        for (i=0; i < 6; i++){
+        for (i = 0; i < 6; i++)
+        {
             Xpost_Object el;
             el = xpost_array_get(ctx, psmat, i);
-            switch (xpost_object_get_type(el)){
-            case integertype: mat[i] = (float)el.int_.val; break;
-            case realtype: mat[i] = el.real_.val; break;
-            default: return typecheck;
+            switch (xpost_object_get_type(el))
+            {
+                case integertype: mat[i] = (float)el.int_.val; break;
+                case realtype: mat[i] = el.real_.val; break;
+                default: return typecheck;
             }
         }
         xpost_font_face_transform(data.face, mat);
@@ -168,9 +175,9 @@ int _makefont (Xpost_Context *ctx,
 
 
 static
-int _scalefont (Xpost_Context *ctx,
-                Xpost_Object fontdict,
-                Xpost_Object size)
+int _scalefont(Xpost_Context *ctx,
+               Xpost_Object fontdict,
+               Xpost_Object size)
 {
 #if 1
     Xpost_Object privatestr;
@@ -180,7 +187,7 @@ int _scalefont (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
 
     if (data.face == NULL)
         return invalidfont;
@@ -210,8 +217,8 @@ int _scalefont (Xpost_Context *ctx,
 
 
 static
-int _setfont (Xpost_Context *ctx,
-              Xpost_Object fontdict)
+int _setfont(Xpost_Context *ctx,
+             Xpost_Object fontdict)
 {
     Xpost_Object userdict;
     Xpost_Object gd;
@@ -230,20 +237,20 @@ int _setfont (Xpost_Context *ctx,
 
 #ifdef HAVE_FREETYPE
 static
-void _draw_bitmap (Xpost_Context *ctx,
-              Xpost_Object devdic,
-              Xpost_Object putpix,
-              const unsigned char *buffer,
-              int rows,
-              int width,
-              int pitch,
-              char pixel_mode,
-              int xpos,
-              int ypos,
-              int ncomp,
-              Xpost_Object comp1,
-              Xpost_Object comp2,
-              Xpost_Object comp3)
+void _draw_bitmap(Xpost_Context *ctx,
+                  Xpost_Object devdic,
+                  Xpost_Object putpix,
+                  const unsigned char *buffer,
+                  int rows,
+                  int width,
+                  int pitch,
+                  char pixel_mode,
+                  int xpos,
+                  int ypos,
+                  int ncomp,
+                  Xpost_Object comp1,
+                  Xpost_Object comp2,
+                  Xpost_Object comp3)
 {
     int i, j;
     const unsigned char *tmp;
@@ -263,7 +270,7 @@ void _draw_bitmap (Xpost_Context *ctx,
             switch (pixel_mode)
             {
                 case XPOST_FONT_PIXEL_MODE_MONO:
-                    pix = (tmp[j/8] >> (7 - (j % 8))) & 1;
+                    pix = (tmp[j / 8] >> (7 - (j % 8))) & 1;
                     break;
                 case XPOST_FONT_PIXEL_MODE_GRAY:
                     pix = tmp[j];
@@ -286,8 +293,8 @@ void _draw_bitmap (Xpost_Context *ctx,
                         xpost_stack_push(ctx->lo, ctx->os, comp3);
                         break;
                 }
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpos+j));
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(ypos+i));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xpos + j));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(ypos + i));
                 xpost_stack_push(ctx->lo, ctx->os, devdic);
                 if (xpost_object_get_type(putpix) == operatortype)
                     xpost_stack_push(ctx->lo, ctx->es, putpix);
@@ -295,7 +302,7 @@ void _draw_bitmap (Xpost_Context *ctx,
                 {
                     xpost_stack_push(ctx->lo, ctx->os, putpix);
                     xpost_stack_push(ctx->lo, ctx->es,
-                            xpost_name_cons(ctx, "exec"));
+                                     xpost_name_cons(ctx, "exec"));
                 }
             }
         }
@@ -306,18 +313,18 @@ void _draw_bitmap (Xpost_Context *ctx,
 
 static
 int _show_char(Xpost_Context *ctx,
-        Xpost_Object devdic,
-        Xpost_Object putpix,
-        struct fontdata data,
-        real *xpos,
-        real *ypos,
-        unsigned int ch,
-        unsigned int *glyph_previous,
-        int has_kerning,
-        int ncomp,
-        Xpost_Object comp1,
-        Xpost_Object comp2,
-        Xpost_Object comp3)
+               Xpost_Object devdic,
+               Xpost_Object putpix,
+               struct fontdata data,
+               real *xpos,
+               real *ypos,
+               unsigned int ch,
+               unsigned int *glyph_previous,
+               int has_kerning,
+               int ncomp,
+               Xpost_Object comp1,
+               Xpost_Object comp2,
+               Xpost_Object comp3)
 {
 #ifdef HAVE_FREETYPE
     unsigned int glyph_index;
@@ -347,11 +354,13 @@ int _show_char(Xpost_Context *ctx,
     }
     if (!xpost_font_face_glyph_render(data.face, glyph_index))
         return 0;
-    xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width, &pitch, &pixel_mode, &left, &top, &advance_x, &advance_y);
+    xpost_font_face_glyph_buffer_get(data.face,
+                                     &buffer, &rows, &width, &pitch, &pixel_mode,
+                                     &left, &top, &advance_x, &advance_y);
     _draw_bitmap(ctx, devdic, putpix,
-            buffer, rows, width, pitch, pixel_mode,
-            *xpos + left, *ypos - top,
-            ncomp, comp1, comp2, comp3);
+                 buffer, rows, width, pitch, pixel_mode,
+                 *xpos + left, *ypos - top,
+                 ncomp, comp1, comp2, comp3);
     *xpos += advance_x >> 6;
     *ypos += advance_y >> 6;
     *glyph_previous = glyph_index;
@@ -388,12 +397,13 @@ int _get_current_point (Xpost_Context *ctx,
     /* get the current pen position */
     /*FIXME if any of these calls fail, should return nocurrentpoint; */
     path = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currpath"));
-    subpath = xpost_dict_get(ctx, path, xpost_int_cons(
-                xpost_dict_length_memory (xpost_context_select_memory(ctx,path), path) - 1));
+    subpath = xpost_dict_get(ctx,
+                             path,
+                             xpost_int_cons(xpost_dict_length_memory(xpost_context_select_memory(ctx,path), path) - 1));
     if (xpost_object_get_type(subpath) == invalidtype)
         return nocurrentpoint;
-    pathelem = xpost_dict_get(ctx, subpath, xpost_int_cons(
-                xpost_dict_length_memory (xpost_context_select_memory(ctx,subpath), subpath) - 1));
+    pathelem = xpost_dict_get(ctx,
+                              subpath, xpost_int_cons(xpost_dict_length_memory(xpost_context_select_memory(ctx,subpath), subpath) - 1));
     if (xpost_object_get_type(pathelem) == invalidtype)
         return nocurrentpoint;
     pathelemdata = xpost_dict_get(ctx, pathelem, xpost_name_cons(ctx, "data"));
@@ -414,7 +424,566 @@ int _get_current_point (Xpost_Context *ctx,
 }
 
 static
-int _show (Xpost_Context *ctx,
+int _show(Xpost_Context *ctx,
+          Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos, ypos;
+    char *ch;
+    Xpost_Object devdic;
+    Xpost_Object putpix;
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+    Xpost_Object finalize;
+    int ret;
+
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* load the device and PutPix member function */
+    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
+    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
+    XPOST_LOG_INFO("loaded DEVICE and PutPix");
+
+    /* get the font data from the font dict */
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
+
+    colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
+    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
+    }
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
+        comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
+        comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
+    }
+    else
+    {
+        XPOST_LOG_ERR("unimplemented device colorspace");
+        return unregistered;
+    }
+    XPOST_LOG_INFO("ncomp = %d", ncomp);
+
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
+    /* fill-in final pos before return */
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    /* render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++) {
+        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                ncomp, comp1, comp2, comp3);
+    }
+
+    /* update current position in the graphics state */
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+
+    return 0;
+}
+
+static
+int _ashow(Xpost_Context *ctx,
+           Xpost_Object dx,
+           Xpost_Object dy,
+           Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos, ypos;
+    char *ch;
+    Xpost_Object devdic;
+    Xpost_Object putpix;
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+    Xpost_Object finalize;
+    int ret;
+
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* load the device and PutPix member function */
+    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
+    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
+    XPOST_LOG_INFO("loaded DEVICE and PutPix");
+
+    /* get the font data from the font dict */
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
+
+    colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
+    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
+    }
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
+        comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
+        comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
+    }
+    else
+    {
+        XPOST_LOG_ERR("unimplemented device colorspace");
+        return unregistered;
+    }
+    XPOST_LOG_INFO("ncomp = %d", ncomp);
+
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
+    /* fill-in final pos before return */
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    /* render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++)
+    {
+        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                   ncomp, comp1, comp2, comp3);
+        xpos += dx.real_.val;
+        ypos += dy.real_.val;
+    }
+
+    /* update current position in the graphics state */
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+
+    return 0;
+}
+
+static
+int _widthshow(Xpost_Context *ctx,
+               Xpost_Object cx,
+               Xpost_Object cy,
+               Xpost_Object charcode,
+               Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos, ypos;
+    char *ch;
+    Xpost_Object devdic;
+    Xpost_Object putpix;
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+    Xpost_Object finalize;
+    int ret;
+
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* load the device and PutPix member function */
+    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
+    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
+    XPOST_LOG_INFO("loaded DEVICE and PutPix");
+
+    /* get the font data from the font dict */
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
+
+    colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
+    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
+    }
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
+        comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
+        comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
+    }
+    else
+    {
+        XPOST_LOG_ERR("unimplemented device colorspace");
+        return unregistered;
+    }
+    XPOST_LOG_INFO("ncomp = %d", ncomp);
+
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
+    /* fill-in final pos before return */
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    /* render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++)
+    {
+        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                   ncomp, comp1, comp2, comp3);
+        if (*ch == charcode.int_.val)
+        {
+            xpos += cx.real_.val;
+            ypos += cy.real_.val;
+        }
+    }
+
+    /* update current position in the graphics state */
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+
+    return 0;
+}
+
+static
+int _awidthshow(Xpost_Context *ctx,
+                Xpost_Object cx,
+                Xpost_Object cy,
+                Xpost_Object charcode,
+                Xpost_Object dx,
+                Xpost_Object dy,
+                Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos, ypos;
+    char *ch;
+    Xpost_Object devdic;
+    Xpost_Object putpix;
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+    Xpost_Object finalize;
+    int ret;
+
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* load the device and PutPix member function */
+    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
+    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
+    XPOST_LOG_INFO("loaded DEVICE and PutPix");
+
+    /* get the font data from the font dict */
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
+
+    colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
+    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+    {
+        ncomp = 1;
+        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
+    }
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+    {
+        ncomp = 3;
+        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
+        comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
+        comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
+    }
+    else
+    {
+        XPOST_LOG_ERR("unimplemented device colorspace");
+        return unregistered;
+    }
+    XPOST_LOG_INFO("ncomp = %d", ncomp);
+
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
+    /* fill-in final pos before return */
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    /* render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++)
+    {
+        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                ncomp, comp1, comp2, comp3);
+        xpos += dx.real_.val;
+        ypos += dy.real_.val;
+        if (*ch == charcode.int_.val)
+        {
+            xpos += cx.real_.val;
+            ypos += cy.real_.val;
+        }
+    }
+
+    /* update current position in the graphics state */
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+
+    return 0;
+}
+
+static
+int _stringwidth(Xpost_Context *ctx,
+                 Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    char *cstr;
+    real xpos = 0, ypos = 0;
+    char *ch;
+
+    int has_kerning;
+    unsigned int glyph_previous;
+
+    /* load the graphicsdict, current graphics state, and current font */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
+
+    /* get the font data from the font dict */
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    XPOST_LOG_INFO("loaded font data from dict");
+
+    /* get a c-style nul-terminated string */
+    cstr = alloca(str.comp_.sz + 1);
+    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+    cstr[str.comp_.sz] = '\0';
+    XPOST_LOG_INFO("append nul to string");
+
+    /* do everything BUT
+       render text in char *cstr  with font data  at pen position xpos ypos */
+    has_kerning = xpost_font_face_kerning_has(data.face);
+    glyph_previous = 0;
+    for (ch = cstr; *ch; ch++)
+    {
+        /* _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+                ncomp, comp1, comp2, comp3); */
+
+#ifdef HAVE_FREETYPE
+        unsigned int glyph_index;
+        unsigned char *buffer;
+        int rows;
+        int width;
+        int pitch;
+        char pixel_mode;
+        int left;
+        int top;
+        long advance_x;
+        long advance_y;
+
+        glyph_index = xpost_font_face_glyph_index_get(data.face, *ch);
+        if (has_kerning && glyph_previous && (glyph_index > 0))
+        {
+            long delta_x;
+            long delta_y;
+
+            if (xpost_font_face_kerning_delta_get(data.face, glyph_previous, glyph_index,
+                                                  &delta_x, &delta_y))
+            {
+                xpos += delta_x >> 6;
+                ypos += delta_y >> 6;
+            }
+        }
+        if (!xpost_font_face_glyph_render(data.face, glyph_index))
+            return unregistered;
+        xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width, &pitch, &pixel_mode, &left, &top, &advance_x, &advance_y);
+        /*
+        _draw_bitmap(ctx, devdic, putpix,
+                buffer, rows, width, pitch, pixel_mode,
+                *xpos + left, *ypos - top,
+                ncomp, comp1, comp2, comp3);
+                */
+        xpos += advance_x >> 6;
+        ypos += advance_y >> 6;
+        glyph_previous = glyph_index;
+#endif
+
+    }
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xpos));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(ypos));
+
+    return 0;
+}
+
+static
+int _kshow(Xpost_Context *ctx,
+           Xpost_Object proc,
            Xpost_Object str)
 {
     Xpost_Object userdict;
@@ -488,7 +1057,9 @@ int _show (Xpost_Context *ctx,
         comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
         comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
         comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
-    } else {
+    }
+    else
+    {
         XPOST_LOG_ERR("unimplemented device colorspace");
         return unregistered;
     }
@@ -506,7 +1077,8 @@ int _show (Xpost_Context *ctx,
     /* render text in char *cstr  with font data  at pen position xpos ypos */
     has_kerning = xpost_font_face_kerning_has(data.face);
     glyph_previous = 0;
-    for (ch = cstr; *ch; ch++) {
+    for (ch = cstr; *ch; ch++)
+    {
         _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
                 ncomp, comp1, comp2, comp3);
     }
@@ -518,555 +1090,8 @@ int _show (Xpost_Context *ctx,
     return 0;
 }
 
-static
-int _ashow (Xpost_Context *ctx,
-            Xpost_Object dx,
-            Xpost_Object dy,
-            Xpost_Object str)
-{
-    Xpost_Object userdict;
-    Xpost_Object gd;
-    Xpost_Object gs;
-    Xpost_Object fontdict;
-    Xpost_Object privatestr;
-    struct fontdata data;
-    char *cstr;
-    real xpos, ypos;
-    char *ch;
-    Xpost_Object devdic;
-    Xpost_Object putpix;
-    Xpost_Object colorspace;
-    int ncomp;
-    Xpost_Object comp1, comp2, comp3;
-    Xpost_Object finalize;
-    int ret;
-
-    int has_kerning;
-    unsigned int glyph_previous;
-
-    /* load the graphicsdict, current graphics state, and current font */
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    if (xpost_object_get_type(userdict) != dicttype)
-        return dictstackunderflow;
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
-    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
-    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
-    if (xpost_object_get_type(fontdict) == invalidtype)
-        return invalidfont;
-    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
-
-    /* load the device and PutPix member function */
-    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
-    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
-    XPOST_LOG_INFO("loaded DEVICE and PutPix");
-
-    /* get the font data from the font dict */
-    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
-    if (xpost_object_get_type(privatestr) == invalidtype)
-        return invalidfont;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
-    if (data.face == NULL)
-    {
-        XPOST_LOG_ERR("face is NULL");
-        return invalidfont;
-    }
-    XPOST_LOG_INFO("loaded font data from dict");
-
-    /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
-    XPOST_LOG_INFO("append nul to string");
-
-    ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
-        return ret;
-
-    colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
-    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
-    {
-        ncomp = 1;
-        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
-    }
-    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
-    {
-        ncomp = 3;
-        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
-        comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
-        comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
-    } else {
-        XPOST_LOG_ERR("unimplemented device colorspace");
-        return unregistered;
-    }
-    XPOST_LOG_INFO("ncomp = %d", ncomp);
-
-    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
-    /* fill-in final pos before return */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
-    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
-    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
-    xpost_stack_push(ctx->lo, ctx->es, finalize);
-
-    /* render text in char *cstr  with font data  at pen position xpos ypos */
-    has_kerning = xpost_font_face_kerning_has(data.face);
-    glyph_previous = 0;
-    for (ch = cstr; *ch; ch++) {
-        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
-                ncomp, comp1, comp2, comp3);
-        xpos += dx.real_.val;
-        ypos += dy.real_.val;
-    }
-
-    /* update current position in the graphics state */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-
-    return 0;
-}
-
-static
-int _widthshow (Xpost_Context *ctx,
-                Xpost_Object cx,
-                Xpost_Object cy,
-                Xpost_Object charcode,
-                Xpost_Object str)
-{
-    Xpost_Object userdict;
-    Xpost_Object gd;
-    Xpost_Object gs;
-    Xpost_Object fontdict;
-    Xpost_Object privatestr;
-    struct fontdata data;
-    char *cstr;
-    real xpos, ypos;
-    char *ch;
-    Xpost_Object devdic;
-    Xpost_Object putpix;
-    Xpost_Object colorspace;
-    int ncomp;
-    Xpost_Object comp1, comp2, comp3;
-    Xpost_Object finalize;
-    int ret;
-
-    int has_kerning;
-    unsigned int glyph_previous;
-
-    /* load the graphicsdict, current graphics state, and current font */
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    if (xpost_object_get_type(userdict) != dicttype)
-        return dictstackunderflow;
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
-    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
-    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
-    if (xpost_object_get_type(fontdict) == invalidtype)
-        return invalidfont;
-    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
-
-    /* load the device and PutPix member function */
-    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
-    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
-    XPOST_LOG_INFO("loaded DEVICE and PutPix");
-
-    /* get the font data from the font dict */
-    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
-    if (xpost_object_get_type(privatestr) == invalidtype)
-        return invalidfont;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
-    if (data.face == NULL)
-    {
-        XPOST_LOG_ERR("face is NULL");
-        return invalidfont;
-    }
-    XPOST_LOG_INFO("loaded font data from dict");
-
-    /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
-    XPOST_LOG_INFO("append nul to string");
-
-    ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
-        return ret;
-
-    colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
-    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
-    {
-        ncomp = 1;
-        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
-    }
-    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
-    {
-        ncomp = 3;
-        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
-        comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
-        comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
-    } else {
-        XPOST_LOG_ERR("unimplemented device colorspace");
-        return unregistered;
-    }
-    XPOST_LOG_INFO("ncomp = %d", ncomp);
-
-    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
-    /* fill-in final pos before return */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
-    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
-    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
-    xpost_stack_push(ctx->lo, ctx->es, finalize);
-
-    /* render text in char *cstr  with font data  at pen position xpos ypos */
-    has_kerning = xpost_font_face_kerning_has(data.face);
-    glyph_previous = 0;
-    for (ch = cstr; *ch; ch++) {
-        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
-                ncomp, comp1, comp2, comp3);
-        if (*ch == charcode.int_.val)
-        {
-            xpos += cx.real_.val;
-            ypos += cy.real_.val;
-        }
-    }
-
-    /* update current position in the graphics state */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-
-    return 0;
-}
-
-static
-int _awidthshow (Xpost_Context *ctx,
-                 Xpost_Object cx,
-                 Xpost_Object cy,
-                 Xpost_Object charcode,
-                 Xpost_Object dx,
-                 Xpost_Object dy,
-                 Xpost_Object str)
-{
-    Xpost_Object userdict;
-    Xpost_Object gd;
-    Xpost_Object gs;
-    Xpost_Object fontdict;
-    Xpost_Object privatestr;
-    struct fontdata data;
-    char *cstr;
-    real xpos, ypos;
-    char *ch;
-    Xpost_Object devdic;
-    Xpost_Object putpix;
-    Xpost_Object colorspace;
-    int ncomp;
-    Xpost_Object comp1, comp2, comp3;
-    Xpost_Object finalize;
-    int ret;
-
-    int has_kerning;
-    unsigned int glyph_previous;
-
-    /* load the graphicsdict, current graphics state, and current font */
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    if (xpost_object_get_type(userdict) != dicttype)
-        return dictstackunderflow;
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
-    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
-    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
-    if (xpost_object_get_type(fontdict) == invalidtype)
-        return invalidfont;
-    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
-
-    /* load the device and PutPix member function */
-    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
-    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
-    XPOST_LOG_INFO("loaded DEVICE and PutPix");
-
-    /* get the font data from the font dict */
-    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
-    if (xpost_object_get_type(privatestr) == invalidtype)
-        return invalidfont;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
-    if (data.face == NULL)
-    {
-        XPOST_LOG_ERR("face is NULL");
-        return invalidfont;
-    }
-    XPOST_LOG_INFO("loaded font data from dict");
-
-    /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
-    XPOST_LOG_INFO("append nul to string");
-
-    ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
-        return ret;
-
-    colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
-    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
-    {
-        ncomp = 1;
-        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
-    }
-    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
-    {
-        ncomp = 3;
-        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
-        comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
-        comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
-    } else {
-        XPOST_LOG_ERR("unimplemented device colorspace");
-        return unregistered;
-    }
-    XPOST_LOG_INFO("ncomp = %d", ncomp);
-
-    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
-    /* fill-in final pos before return */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
-    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
-    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
-    xpost_stack_push(ctx->lo, ctx->es, finalize);
-
-    /* render text in char *cstr  with font data  at pen position xpos ypos */
-    has_kerning = xpost_font_face_kerning_has(data.face);
-    glyph_previous = 0;
-    for (ch = cstr; *ch; ch++) {
-        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
-                ncomp, comp1, comp2, comp3);
-        xpos += dx.real_.val;
-        ypos += dy.real_.val;
-        if (*ch == charcode.int_.val)
-        {
-            xpos += cx.real_.val;
-            ypos += cy.real_.val;
-        }
-    }
-
-    /* update current position in the graphics state */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-
-    return 0;
-}
-
-static
-int _stringwidth (Xpost_Context *ctx,
-                  Xpost_Object str)
-{
-    Xpost_Object userdict;
-    Xpost_Object gd;
-    Xpost_Object gs;
-    Xpost_Object fontdict;
-    Xpost_Object privatestr;
-    struct fontdata data;
-    char *cstr;
-    real xpos = 0, ypos = 0;
-    char *ch;
-
-    int has_kerning;
-    unsigned int glyph_previous;
-
-    /* load the graphicsdict, current graphics state, and current font */
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    if (xpost_object_get_type(userdict) != dicttype)
-        return dictstackunderflow;
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
-    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
-    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
-    if (xpost_object_get_type(fontdict) == invalidtype)
-        return invalidfont;
-    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
-
-    /* get the font data from the font dict */
-    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
-    if (xpost_object_get_type(privatestr) == invalidtype)
-        return invalidfont;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
-    if (data.face == NULL)
-    {
-        XPOST_LOG_ERR("face is NULL");
-        return invalidfont;
-    }
-    XPOST_LOG_INFO("loaded font data from dict");
-
-    /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
-    XPOST_LOG_INFO("append nul to string");
-
-    /* do everything BUT
-       render text in char *cstr  with font data  at pen position xpos ypos */
-    has_kerning = xpost_font_face_kerning_has(data.face);
-    glyph_previous = 0;
-    for (ch = cstr; *ch; ch++) {
-        /* _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
-                ncomp, comp1, comp2, comp3); */
-
-#ifdef HAVE_FREETYPE
-        unsigned int glyph_index;
-        unsigned char *buffer;
-        int rows;
-        int width;
-        int pitch;
-        char pixel_mode;
-        int left;
-        int top;
-        long advance_x;
-        long advance_y;
-
-        glyph_index = xpost_font_face_glyph_index_get(data.face, *ch);
-        if (has_kerning && glyph_previous && (glyph_index > 0))
-        {
-            long delta_x;
-            long delta_y;
-
-            if (xpost_font_face_kerning_delta_get(data.face, glyph_previous, glyph_index,
-                                                  &delta_x, &delta_y))
-            {
-                xpos += delta_x >> 6;
-                ypos += delta_y >> 6;
-            }
-        }
-        if (!xpost_font_face_glyph_render(data.face, glyph_index))
-            return unregistered;
-        xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width, &pitch, &pixel_mode, &left, &top, &advance_x, &advance_y);
-        /*
-        _draw_bitmap(ctx, devdic, putpix,
-                buffer, rows, width, pitch, pixel_mode,
-                *xpos + left, *ypos - top,
-                ncomp, comp1, comp2, comp3);
-                */
-        xpos += advance_x >> 6;
-        ypos += advance_y >> 6;
-        glyph_previous = glyph_index;
-#endif
-
-    }
-
-    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xpos));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(ypos));
-
-    return 0;
-}
-
-static
-int _kshow (Xpost_Context *ctx,
-            Xpost_Object proc,
-            Xpost_Object str)
-{
-    Xpost_Object userdict;
-    Xpost_Object gd;
-    Xpost_Object gs;
-    Xpost_Object fontdict;
-    Xpost_Object privatestr;
-    struct fontdata data;
-    char *cstr;
-    real xpos, ypos;
-    char *ch;
-    Xpost_Object devdic;
-    Xpost_Object putpix;
-    Xpost_Object colorspace;
-    int ncomp;
-    Xpost_Object comp1, comp2, comp3;
-    Xpost_Object finalize;
-    int ret;
-
-    int has_kerning;
-    unsigned int glyph_previous;
-
-    /* load the graphicsdict, current graphics state, and current font */
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    if (xpost_object_get_type(userdict) != dicttype)
-        return dictstackunderflow;
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
-    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
-    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
-    if (xpost_object_get_type(fontdict) == invalidtype)
-        return invalidfont;
-    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
-
-    /* load the device and PutPix member function */
-    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
-    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
-    XPOST_LOG_INFO("loaded DEVICE and PutPix");
-
-    /* get the font data from the font dict */
-    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
-    if (xpost_object_get_type(privatestr) == invalidtype)
-        return invalidfont;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
-    if (data.face == NULL)
-    {
-        XPOST_LOG_ERR("face is NULL");
-        return invalidfont;
-    }
-    XPOST_LOG_INFO("loaded font data from dict");
-
-    /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
-    XPOST_LOG_INFO("append nul to string");
-
-    ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
-        return ret;
-
-    colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
-    if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
-    {
-        ncomp = 1;
-        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
-    }
-    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
-    {
-        ncomp = 3;
-        comp1 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp1"));
-        comp2 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp2"));
-        comp3 = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorcomp3"));
-    } else {
-        XPOST_LOG_ERR("unimplemented device colorspace");
-        return unregistered;
-    }
-    XPOST_LOG_INFO("ncomp = %d", ncomp);
-
-    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
-    /* fill-in final pos before return */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
-    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
-    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
-    xpost_stack_push(ctx->lo, ctx->es, finalize);
-
-    /* render text in char *cstr  with font data  at pen position xpos ypos */
-    has_kerning = xpost_font_face_kerning_has(data.face);
-    glyph_previous = 0;
-    for (ch = cstr; *ch; ch++) {
-        _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
-                ncomp, comp1, comp2, comp3);
-    }
-
-    /* update current position in the graphics state */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-
-    return 0;
-}
-
-int xpost_oper_init_font_ops (Xpost_Context *ctx,
-                Xpost_Object sd)
+int xpost_oper_init_font_ops(Xpost_Context *ctx,
+                             Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
@@ -1074,7 +1099,7 @@ int xpost_oper_init_font_ops (Xpost_Context *ctx,
 
     assert(ctx->gl->base);
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "findfont", (Xpost_Op_Func)_findfont, 1, 1, nametype);

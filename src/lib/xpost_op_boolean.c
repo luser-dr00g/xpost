@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -79,11 +79,11 @@ void *alloca (size_t);
    test equal */
 static
 int xpost_op_any_any_eq (Xpost_Context *ctx,
-          Xpost_Object x,
-          Xpost_Object y)
+                         Xpost_Object x,
+                         Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) == 0));
+                     xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) == 0));
     return 0;
 }
 
@@ -91,11 +91,11 @@ int xpost_op_any_any_eq (Xpost_Context *ctx,
    test not equal */
 static
 int xpost_op_any_any_ne (Xpost_Context *ctx,
-          Xpost_Object x,
-          Xpost_Object y)
+                         Xpost_Object x,
+                         Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) != 0));
+                     xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) != 0));
     return 0;
 }
 
@@ -103,11 +103,11 @@ int xpost_op_any_any_ne (Xpost_Context *ctx,
    test greater or equal */
 static
 int xpost_op_any_any_ge (Xpost_Context *ctx,
-          Xpost_Object x,
-          Xpost_Object y)
+                         Xpost_Object x,
+                         Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) >= 0));
+                     xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) >= 0));
     return 0;
 }
 
@@ -115,11 +115,11 @@ int xpost_op_any_any_ge (Xpost_Context *ctx,
    test greater than */
 static
 int xpost_op_any_any_gt (Xpost_Context *ctx,
-          Xpost_Object x,
-          Xpost_Object y)
+                         Xpost_Object x,
+                         Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) > 0));
+                     xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) > 0));
     return 0;
 }
 
@@ -127,11 +127,11 @@ int xpost_op_any_any_gt (Xpost_Context *ctx,
    test less or equal */
 static
 int xpost_op_any_any_le (Xpost_Context *ctx,
-          Xpost_Object x,
-          Xpost_Object y)
+                         Xpost_Object x,
+                         Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) <= 0));
+                     xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) <= 0));
     return 0;
 }
 
@@ -139,11 +139,11 @@ int xpost_op_any_any_le (Xpost_Context *ctx,
    test less than */
 static
 int xpost_op_any_any_lt (Xpost_Context *ctx,
-          Xpost_Object x,
-          Xpost_Object y)
+                         Xpost_Object x,
+                         Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) < 0));
+                     xpost_bool_cons(xpost_dict_compare_objects(ctx,x,y) < 0));
     return 0;
 }
 
@@ -151,21 +151,21 @@ int xpost_op_any_any_lt (Xpost_Context *ctx,
    logical|bitwise and */
 static
 int xpost_op_bool_bool_and (Xpost_Context *ctx,
-           Xpost_Object x,
-           Xpost_Object y)
+                            Xpost_Object x,
+                            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(x.int_.val & y.int_.val));
+                     xpost_bool_cons(x.int_.val & y.int_.val));
     return 0;
 }
 
 static
 int xpost_op_int_int_and (Xpost_Context *ctx,
-           Xpost_Object x,
-           Xpost_Object y)
+                          Xpost_Object x,
+                          Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_int_cons(x.int_.val & y.int_.val));
+                     xpost_int_cons(x.int_.val & y.int_.val));
     return 0;
 }
 
@@ -173,19 +173,19 @@ int xpost_op_int_int_and (Xpost_Context *ctx,
    logical|bitwise not */
 static
 int xpost_op_bool_not (Xpost_Context *ctx,
-           Xpost_Object x)
+                       Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons( ! x.int_.val ));
+                     xpost_bool_cons( ! x.int_.val ));
     return 0;
 }
 
 static
 int xpost_op_int_not (Xpost_Context *ctx,
-           Xpost_Object x)
+                      Xpost_Object x)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_int_cons( ~ x.int_.val ));
+                     xpost_int_cons( ~ x.int_.val ));
     return 0;
 }
 
@@ -193,21 +193,21 @@ int xpost_op_int_not (Xpost_Context *ctx,
    logical|bitwise inclusive or */
 static
 int xpost_op_bool_bool_or (Xpost_Context *ctx,
-          Xpost_Object x,
-          Xpost_Object y)
+                           Xpost_Object x,
+                           Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(x.int_.val | y.int_.val));
+                     xpost_bool_cons(x.int_.val | y.int_.val));
     return 0;
 }
 
 static
 int xpost_op_int_int_or (Xpost_Context *ctx,
-          Xpost_Object x,
-          Xpost_Object y)
+                         Xpost_Object x,
+                         Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_int_cons(x.int_.val | y.int_.val));
+                     xpost_int_cons(x.int_.val | y.int_.val));
     return 0;
 }
 
@@ -215,21 +215,21 @@ int xpost_op_int_int_or (Xpost_Context *ctx,
    exclusive or */
 static
 int xpost_op_bool_bool_xor (Xpost_Context *ctx,
-           Xpost_Object x,
-           Xpost_Object y)
+                            Xpost_Object x,
+                            Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_bool_cons(x.int_.val ^ y.int_.val));
+                     xpost_bool_cons(x.int_.val ^ y.int_.val));
     return 0;
 }
 
 static
 int xpost_op_int_int_xor (Xpost_Context *ctx,
-           Xpost_Object x,
-           Xpost_Object y)
+                          Xpost_Object x,
+                          Xpost_Object y)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-            xpost_int_cons(x.int_.val ^ y.int_.val));
+                     xpost_int_cons(x.int_.val ^ y.int_.val));
     return 0;
 }
 
@@ -242,20 +242,20 @@ int xpost_op_int_int_xor (Xpost_Context *ctx,
    bitwise shift of int1 (positive is left) */
 static
 int xpost_op_int_int_bitshift (Xpost_Context *ctx,
-                Xpost_Object x,
-                Xpost_Object y)
+                               Xpost_Object x,
+                               Xpost_Object y)
 {
     if (y.int_.val >= 0)
         xpost_stack_push(ctx->lo, ctx->os,
-                xpost_int_cons(x.int_.val << y.int_.val));
+                         xpost_int_cons(x.int_.val << y.int_.val));
     else
         xpost_stack_push(ctx->lo, ctx->os,
-                xpost_int_cons( (unsigned long)x.int_.val >> -y.int_.val));
+                         xpost_int_cons( (unsigned long)x.int_.val >> -y.int_.val));
     return 0;
 }
 
 int xpost_oper_init_bool_ops(Xpost_Context *ctx,
-             Xpost_Object sd)
+                             Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;

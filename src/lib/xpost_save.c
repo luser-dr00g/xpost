@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -61,7 +61,7 @@ typedef struct {
 
 /* create a stack in slot XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK.
    sz is 0 so gc will ignore it. */
-int xpost_save_init (Xpost_Memory_File *mem)
+int xpost_save_init(Xpost_Memory_File *mem)
 {
     unsigned t;
     unsigned ent;
@@ -84,7 +84,7 @@ int xpost_save_init (Xpost_Memory_File *mem)
 
 /* push a new save object on the save stack
    this object is itself a stack (contains a stackadr) */
-Xpost_Object xpost_save_create_snapshot_object (Xpost_Memory_File *mem)
+Xpost_Object xpost_save_create_snapshot_object(Xpost_Memory_File *mem)
 {
     Xpost_Object v;
     unsigned int vs;
@@ -92,7 +92,7 @@ Xpost_Object xpost_save_create_snapshot_object (Xpost_Memory_File *mem)
 
     v.tag = savetype;
     ret = xpost_memory_table_get_addr(mem,
-            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+                                      XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     if (!ret)
     {
         XPOST_LOG_ERR("cannot load save stack");
@@ -109,8 +109,8 @@ Xpost_Object xpost_save_create_snapshot_object (Xpost_Memory_File *mem)
    returns 1 if ent is saved (or not necessary to save),
    returns 0 if ent needs to be saved before changing.
  */
-unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
-                  unsigned ent)
+unsigned xpost_save_ent_is_saved(Xpost_Memory_File *mem,
+                                 unsigned ent)
 {
     Xpost_Memory_Table *tab;
     unsigned int llev;
@@ -120,7 +120,7 @@ unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
     Xpost_Object sav;
 
     ret = xpost_memory_table_get_addr(mem,
-            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+                                      XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     if (!ret)
     {
         XPOST_LOG_ERR("cannot load save stack");
@@ -145,7 +145,7 @@ unsigned xpost_save_ent_is_saved (Xpost_Memory_File *mem,
 /* make a clone of ent, return new ent */
 static
 unsigned int _copy_ent(Xpost_Memory_File *mem,
-              unsigned ent)
+                       unsigned ent)
 {
     Xpost_Memory_Table *tab;
     unsigned new;
@@ -167,7 +167,7 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
     if (new > XPOST_OBJECT_COMP_MAX_ENT)
     {
         XPOST_LOG_ERR("ent number %u exceeds object storage max %u",
-                    new, XPOST_OBJECT_COMP_MAX_ENT);
+                      new, XPOST_OBJECT_COMP_MAX_ENT);
         return 0;
     }
     ent = tent;
@@ -184,8 +184,8 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
         return 0;
     }
     memcpy(mem->base + adr,
-            mem->base + tab->tab[ent].adr,
-            tab->tab[ent].sz);
+           mem->base + tab->tab[ent].adr,
+           tab->tab[ent].sz);
 
     XPOST_LOG_INFO("ent %u copied to ent %u in %s", ent, new, mem->fname);
     return new;
@@ -194,9 +194,9 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
 /* set tlev for ent to current save level
    push saverec relating ent to saved copy */
 int xpost_save_save_ent(Xpost_Memory_File *mem,
-           unsigned tag,
-           unsigned pad,
-           unsigned ent)
+                        unsigned tag,
+                        unsigned pad,
+                        unsigned ent)
 {
     Xpost_Memory_Table *tab;
     Xpost_Object o;

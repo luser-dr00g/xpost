@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -82,7 +82,7 @@
    will break in the breakhere function (of course),
    which you can follow back to the main loop (gdb> next),
    just as it's about to read the next token.
- */
+*/
 int xpost_op_breakhere(Xpost_Context *ctx)
 {
     (void)ctx;
@@ -91,7 +91,7 @@ int xpost_op_breakhere(Xpost_Context *ctx)
 
 /* create systemdict and call
    all initop?* functions, installing all operators */
-int xpost_oplib_init_ops (Xpost_Context *ctx)
+int xpost_oplib_init_ops(Xpost_Context *ctx)
 {
     Xpost_Object op;
     Xpost_Object n;
@@ -115,7 +115,7 @@ int xpost_oplib_init_ops (Xpost_Context *ctx)
     tab->tab[ent].sz = 0; // make systemdict immune to collection
 
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 #ifdef DEBUGOP
     xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
@@ -190,4 +190,3 @@ int xpost_oplib_init_ops (Xpost_Context *ctx)
 
     return 1;
 }
-

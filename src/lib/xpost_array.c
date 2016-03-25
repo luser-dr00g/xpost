@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -118,7 +118,7 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
     o.comp_.off = 0;
     o = xpost_object_set_ent(o, ent);
     return o;
-} 
+}
 
 /**
   Allocate array in context's currently active memory file.
@@ -282,4 +282,3 @@ int main(void)
 }
 
 #endif
-

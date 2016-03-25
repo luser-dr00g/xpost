@@ -1,6 +1,6 @@
 /*
  * Xpost - a Level-2 Postscript interpreter
- * Copyright (C) 2013, Michael Joshua Ryan
+ * Copyright (C) 2013-2016, Michael Joshua Ryan
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,8 @@
 /* -  currentcontext  context
    return current context identifier */
 static
-int xpost_op_currentcontext (Xpost_Context *ctx){
+int xpost_op_currentcontext (Xpost_Context *ctx)
+{
     Xpost_Object ctxobj;
     ctxobj.mark_.tag = contexttype;
     ctxobj.mark_.padw = ctx->id;
@@ -62,21 +63,22 @@ int xpost_op_currentcontext (Xpost_Context *ctx){
     return 0;
 }
 
-/* 
+/*
    mark obj1..objN proc  fork  context
    create context executing proc with obj1..objN as operands
 */
 static
-int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
+int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc)
+{
     int cid, n;
     Xpost_Context *newctx;
 
     cid = xpost_context_fork3(ctx,
-            ctx->xpost_interpreter_cid_init,
-            ctx->gl->interpreter_cid_get_context,
-            ctx->xpost_interpreter_alloc_local_memory,
-            ctx->xpost_interpreter_alloc_global_memory,
-            ctx->garbage_collect_function);
+                              ctx->xpost_interpreter_cid_init,
+                              ctx->gl->interpreter_cid_get_context,
+                              ctx->xpost_interpreter_alloc_local_memory,
+                              ctx->xpost_interpreter_alloc_global_memory,
+                              ctx->garbage_collect_function);
     newctx = ctx->gl->interpreter_cid_get_context(cid);
     printf("op_fork ctx->id %u, cid %u, newctx->id %u\n", ctx->id, cid, newctx->id);
 
@@ -85,7 +87,7 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
     /* copy n objects to new context's operand stack */
     while (n--)
         xpost_stack_push(newctx->lo, newctx->os,
-                xpost_stack_topdown_fetch(ctx->lo, ctx->os, n));
+                         xpost_stack_topdown_fetch(ctx->lo, ctx->os, n));
     (void)xpost_op_cleartomark(ctx);
 
     xpost_stack_push(newctx->lo, newctx->es, xpost_operator_cons(newctx, "_i_am_zombie_", NULL,0,0));
@@ -102,14 +104,16 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc){
 }
 
 static
-int _i_am_zombie_ (Xpost_Context *ctx){
+int _i_am_zombie_ (Xpost_Context *ctx)
+{
     ctx->state = C_ZOMB;
     printf("I AM ZOMBIE\n");
     return contextswitch;
 }
 
 static
-int _i_am_free_ (Xpost_Context *ctx){
+int _i_am_free_ (Xpost_Context *ctx)
+{
     ctx->state = C_FREE;
     printf("I AM FREE\n");
     return contextswitch;
@@ -120,7 +124,8 @@ int _i_am_free_ (Xpost_Context *ctx){
    await context termination and return its results
 */
 static
-int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
+int xpost_op_join (Xpost_Context *ctx, Xpost_Object context)
+{
     //(void)context;
     Xpost_Context *child = ctx->gl->interpreter_cid_get_context(context.mark_.padw);
     if (child->state == C_ZOMB) {
@@ -129,7 +134,7 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
         xpost_stack_push(ctx->lo, ctx->os, mark);
         // Copy operand stack
         n = xpost_stack_count(child->lo, child->os);
-        for (i=0; i < n; i++)
+        for (i = 0; i < n; i++)
             xpost_stack_push(ctx->lo, ctx->os,
                     xpost_stack_bottomup_fetch(child->lo, child->os, i));
         // Cleanup child
@@ -151,7 +156,8 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context){
    suspend current context momentarily
 */
 static
-int xpost_op_yield (Xpost_Context *ctx){
+int xpost_op_yield (Xpost_Context *ctx)
+{
     (void)ctx;
     return contextswitch;
 }
@@ -161,10 +167,11 @@ int xpost_op_yield (Xpost_Context *ctx){
    enable context to terminate immediately when done
 */
 static
-int xpost_op_detach (Xpost_Context *ctx, Xpost_Object context){
+int xpost_op_detach (Xpost_Context *ctx, Xpost_Object context)
+{
     Xpost_Context *child = ctx->gl->interpreter_cid_get_context(context.mark_.padw);
     xpost_stack_bottomup_replace(child->lo, child->es, 0,
-            xpost_operator_cons(child, "_i_am_free_", NULL,0,0));
+                                 xpost_operator_cons(child, "_i_am_free_", NULL,0,0));
     return contextswitch;
 }
 
@@ -186,7 +193,7 @@ int xpost_op_detach (Xpost_Context *ctx, Xpost_Object context){
 */
 
 int xpost_oper_init_context_ops (Xpost_Context *ctx,
-             Xpost_Object sd)
+                                 Xpost_Object sd)
 {
     Xpost_Operator *optab;
     Xpost_Object n,op;
