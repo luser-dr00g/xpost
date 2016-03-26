@@ -187,8 +187,8 @@ typedef unsigned int word;      /* 2x small size */
  typedef unsigned __int64 dword; /* 2x small size */
  typedef __int64 integer;        /* 2x small size */
 # else
- typedef unsigned long dword;    /* 2x small size */
- typedef long integer;           /* 2x small size */
+ typedef unsigned long long dword;    /* 2x small size */
+ typedef long long integer;           /* 2x small size */
 # endif
 typedef double real;            /* 2x small size */
 typedef dword addr;             /* 2x small size (via dword) */
