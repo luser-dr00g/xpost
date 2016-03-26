@@ -89,15 +89,18 @@ AC_CANONICAL_HOST
 
 have_win32="no"
 have_cygwin="no"
+xpost_cross_option=""
 case "$host_os" in
    mingw*)
       have_win32="yes"
+      xpost_cross_option="x86_64-w64-mingw32"
    ;;
    cygwin*)
       have_cygwin="yes"
    ;;
 esac
 
+AC_SUBST([xpost_cross_option])
 AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
 
 
