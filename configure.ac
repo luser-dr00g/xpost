@@ -93,7 +93,7 @@ xpost_cross_option=""
 case "$host_os" in
    mingw*)
       have_win32="yes"
-      xpost_cross_option="x86_64-w64-mingw32"
+      xpost_cross_option="--host=x86_64-w64-mingw32"
    ;;
    cygwin*)
       have_cygwin="yes"
