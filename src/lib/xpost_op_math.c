@@ -343,13 +343,13 @@ int Ratan(Xpost_Context *ctx,
     ang = atan2(((double)num.real_.val * RAD_PER_DEG),
                 ((double)den.real_.val * RAD_PER_DEG))
           / RAD_PER_DEG;
-#if 0
+
     if (ang < 0.0) {
         double t;
         t = ang + 360.0;
         ang = t;
     }
-#endif
+
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)ang));
     return 0;
 }
