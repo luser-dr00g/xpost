@@ -33,7 +33,7 @@
 
 /* stack operators */
 
-int xpost_op_cleartomark(Xpost_Context *ctx)
+int xpost_op_cleartomark(Xpost_Context *ctx);
 int xpost_op_counttomark(Xpost_Context *ctx);
 
 int xpost_oper_init_stack_ops(Xpost_Context *ctx, Xpost_Object sd);
