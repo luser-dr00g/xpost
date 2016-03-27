@@ -64,6 +64,9 @@
 #include "xpost_op_dict.h"
 #include "xpost_op_path.h"
 
+#undef y0
+#undef y1
+
 /*
    % path == <<
    %             0 << subpath0 >>
