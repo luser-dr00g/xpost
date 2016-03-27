@@ -82,6 +82,7 @@
 # define xpost_realpath(op, np) _fullpath(np, op, XPOST_PATH_MAX)
 #else
 # include <limits.h>
+# include <stdlib.h>
 # define XPOST_PATH_MAX PATH_MAX
 # define xpost_realpath(op, np) realpath(op, np)
 #endif
