@@ -22,7 +22,7 @@ windres_verbose_ = $(windres_verbose_@AM_DEFAULT_V@)
 windres_verbose_0 = $(AM_V_at)echo "  RC      " $@;
 
 .rc.o:
-	$(wc_verbose)windres -o $@ $<
+	$(windres_verbose)$(RC) -o $@ $<
 endif
 
 

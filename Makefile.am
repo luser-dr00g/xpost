@@ -2,8 +2,6 @@ AUTOMAKE_OPTIONS = subdir-objects
 
 ACLOCAL_AMFLAGS = -I m4
 
-AM_DISTCHECK_CONFIGURE_FLAGS = @xpost_cross_option@
-
 MAINTAINERCLEANFILES = \
 Makefile.in \
 aclocal.m4 \
