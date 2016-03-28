@@ -9,6 +9,14 @@ collapse object flags: extended_int extended_real and opargsinhold.
 
 implement gc controls in xpost_op_param.c:vmreclaim().
 
+add more unit tests
+
+add the infra for coverage reports
+
+add doc to the web site
+
+add Visual Studio installer
+
 ## longer term
 
 re-examine the split between xpost_matrix.c and xpost_op_matrix.c.
