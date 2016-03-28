@@ -139,8 +139,8 @@ typedef struct Xpost_Memory_File
 
     int garbage_collect_is_installed;
     int (*garbage_collect)(struct Xpost_Memory_File *mem,
-                                    int dosweep,
-                                    int markall);
+                           int dosweep,
+                           int markall);
     int interpreter_cid_get_context_is_installed;
     struct _Xpost_Context *(*interpreter_cid_get_context)(unsigned int cid);
     int (*interpreter_get_initializing)(void);
@@ -209,13 +209,12 @@ int xpost_memory_init(void);
  * This function initializes the memory file @p mem, possibly from
  * file specified by the file descriptor @p fd, if not -1.
  */
-int xpost_memory_file_init (
-        Xpost_Memory_File *mem,
-        const char *fname,
-        int fd,
-        struct _Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
-        int (*xpost_interpreter_get_initializing)(void),
-        void (*xpost_interpreter_set_initializing)(int));
+int xpost_memory_file_init(Xpost_Memory_File *mem,
+                           const char *fname,
+                           int fd,
+                           struct _Xpost_Context *(*xpost_interpreter_cid_get_context)(unsigned int cid),
+                           int (*xpost_interpreter_get_initializing)(void),
+                           void (*xpost_interpreter_set_initializing)(int));
 
 
 /**
@@ -227,7 +226,7 @@ int xpost_memory_file_init (
  * This function destroys the memory file @p mem, possibly writing to
  * the file passed to xpost_memory_file_init().
  */
-int xpost_memory_file_exit (Xpost_Memory_File *mem);
+int xpost_memory_file_exit(Xpost_Memory_File *mem);
 
 /**
  * @brief Resize the given memory file, possibly moving the memory
@@ -239,9 +238,8 @@ int xpost_memory_file_exit (Xpost_Memory_File *mem);
  *
  * This function increases the memory used by @p mem by @p sz bites.
  */
-int xpost_memory_file_grow (
-        Xpost_Memory_File *mem,
-        size_t sz);
+int xpost_memory_file_grow(Xpost_Memory_File *mem,
+                           size_t sz);
 
 /**
  * @brief Allocate memory in the given memory file and return offset.
@@ -260,10 +258,9 @@ int xpost_memory_file_grow (
  * derived from mem->base. MUST recalculate all VM pointers after this
  * function.
  */
-int xpost_memory_file_alloc (
-        Xpost_Memory_File *mem,
-        unsigned int sz,
-        unsigned int *addr);
+int xpost_memory_file_alloc(Xpost_Memory_File *mem,
+                            unsigned int sz,
+                            unsigned int *addr);
 
 /**
  * @brief Dump the given memory file metadata and contents to stdout.
@@ -272,7 +269,7 @@ int xpost_memory_file_alloc (
  *
  * This function dumps to stdout the metadata of @p mem.
  */
-void xpost_memory_file_dump (const Xpost_Memory_File *mem);
+void xpost_memory_file_dump(const Xpost_Memory_File *mem);
 
 
 /*
@@ -294,15 +291,19 @@ void xpost_memory_file_dump (const Xpost_Memory_File *mem);
  * MUST recalculate all VM pointers after this function.
  * See note in xpost_memory_file_alloc().
  */
-int xpost_memory_table_init (
-        Xpost_Memory_File *mem,
-        unsigned int *addr);
+int xpost_memory_table_init(Xpost_Memory_File *mem,
+                            unsigned int *addr);
 
 int xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
-    int (*free_list_alloc)(struct Xpost_Memory_File *mem, unsigned sz, unsigned tag, unsigned int *entity));
+                                                   int (*free_list_alloc)(struct Xpost_Memory_File *mem,
+                                                                          unsigned int sz,
+                                                                          unsigned int tag,
+                                                                          unsigned int *entity));
 
 int xpost_memory_register_garbage_collect_function(Xpost_Memory_File *mem,
-    int (*garbage_collect)(struct Xpost_Memory_File *mem, int dosweep, int markall));
+                                                   int (*garbage_collect)(struct Xpost_Memory_File *mem,
+                                                                          int dosweep,
+                                                                          int markall));
 
 /**
  * @brief Allocate memory, returns table index.
@@ -320,11 +321,10 @@ int xpost_memory_register_garbage_collect_function(Xpost_Memory_File *mem,
  * MUST recalculate all VM pointers after this function.
  * See note in xpost_memory_file_alloc().
  */
-int xpost_memory_table_alloc (
-        Xpost_Memory_File *mem,
-        unsigned int sz,
-        unsigned int tag,
-        unsigned int *entity);
+int xpost_memory_table_alloc(Xpost_Memory_File *mem,
+                             unsigned int sz,
+                             unsigned int tag,
+                             unsigned int *entity);
 
 /**
  * @brief Find the table and relative entity index for an absolute
@@ -340,10 +340,9 @@ int xpost_memory_table_alloc (
  * through the @p atab pointer. It updates the referenced
  * absolute entity index with an index relative to the table segment.
  */
-int xpost_memory_table_find_relative (
-        Xpost_Memory_File *mem,
-        Xpost_Memory_Table **atab,
-        unsigned int *aent);
+int xpost_memory_table_find_relative(Xpost_Memory_File *mem,
+                                     Xpost_Memory_Table **atab,
+                                     unsigned int *aent);
 
 /**
  * @brief Get the address from an entity.
@@ -356,10 +355,9 @@ int xpost_memory_table_find_relative (
  * If successful, this function stores the address of the entity
  * @p ent in @p mem, through the @p addr pointer.
  */
-int xpost_memory_table_get_addr (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int *addr);
+int xpost_memory_table_get_addr(Xpost_Memory_File *mem,
+                                unsigned int ent,
+                                unsigned int *addr);
 
 /**
  * @brief Set the address for an entity.
@@ -372,10 +370,9 @@ int xpost_memory_table_get_addr (
  * If successful, this function replaces the address for
  * @p ent in @p mem with a new address @p addr.
  */
-int xpost_memory_table_set_addr (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int addr);
+int xpost_memory_table_set_addr(Xpost_Memory_File *mem,
+                                unsigned int ent,
+                                unsigned int addr);
 
 /**
  * @brief Get the size of an entity.
@@ -388,10 +385,9 @@ int xpost_memory_table_set_addr (
  * If successful, this function stores the size of the entity
  * @p ent in @p mem through the @p sz pointer.
  */
-int xpost_memory_table_get_size (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int *sz);
+int xpost_memory_table_get_size(Xpost_Memory_File *mem,
+                                unsigned int ent,
+                                unsigned int *sz);
 
 /**
  * @brief Set the size for an entity.
@@ -404,10 +400,9 @@ int xpost_memory_table_get_size (
  * If successful, this function replaces the size for
  * @p ent in @p mem with a new size @p size.
  */
-int xpost_memory_table_set_size (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int size);
+int xpost_memory_table_set_size(Xpost_Memory_File *mem,
+                                unsigned int ent,
+                                unsigned int size);
 
 /**
  * @brief Get the mark field of an entity.
@@ -420,10 +415,9 @@ int xpost_memory_table_set_size (
  * If successful, this function stores the mark field
  * of the entity @p ent in @p mem through the @p mark pointer.
  */
-int xpost_memory_table_get_mark (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int *mark);
+int xpost_memory_table_get_mark(Xpost_Memory_File *mem,
+                                unsigned int ent,
+                                unsigned int *mark);
 
 /**
  * @brief Set the mark field for an entity.
@@ -436,10 +430,9 @@ int xpost_memory_table_get_mark (
  * If successful, this function replaces the mark field
  * of the entity @p ent in @p mem with the new value @p mark.
  */
-int xpost_memory_table_set_mark (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int mark);
+int xpost_memory_table_set_mark(Xpost_Memory_File *mem,
+                                unsigned int ent,
+                                unsigned int mark);
 
 /**
  * @brief Get the tag of an entity.
@@ -452,10 +445,9 @@ int xpost_memory_table_set_mark (
  * If successful, this function stores the tag field
  * of the entity @p ent in @p mem through the @p tag pointer.
  */
-int xpost_memory_table_get_tag (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int *tag);
+int xpost_memory_table_get_tag(Xpost_Memory_File *mem,
+                               unsigned int ent,
+                               unsigned int *tag);
 
 /**
  * @brief Set the tag for an entity.
@@ -468,10 +460,9 @@ int xpost_memory_table_get_tag (
  * If successful, this function replaces the tag field
  * of the entity @p ent in @p mem.
  */
-int xpost_memory_table_set_tag (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int tag);
+int xpost_memory_table_set_tag(Xpost_Memory_File *mem,
+                               unsigned int ent,
+                               unsigned int tag);
 
 /**
  * @brief Fetch a value from a composite object.
@@ -488,12 +479,11 @@ int xpost_memory_table_set_tag (
  * It is used to retrieve bytes from strings, objects from arrays,
  * FILE*s from files.
  */
-int xpost_memory_get (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int offset,
-        unsigned int sz,
-        void *dest);
+int xpost_memory_get(Xpost_Memory_File *mem,
+                     unsigned int ent,
+                     unsigned int offset,
+                     unsigned int sz,
+                     void *dest);
 
 /**
  * @brief Put a value into a composite object.
@@ -509,18 +499,17 @@ int xpost_memory_get (
  * or other VM entity such as a file.
  * It is used to store bytes in strings, and objects in arrays.
  */
-int xpost_memory_put (
-        Xpost_Memory_File *mem,
-        unsigned int ent,
-        unsigned int offset,
-        unsigned int sz,
-        const void *src);
+int xpost_memory_put(Xpost_Memory_File *mem,
+                     unsigned int ent,
+                     unsigned int offset,
+                     unsigned int sz,
+                     const void *src);
 
 /**
  * @brief Dump the allocation info for a single ent
  */
-void xpost_memory_table_dump_ent (Xpost_Memory_File *mem,
-                                  unsigned int ent);
+void xpost_memory_table_dump_ent(Xpost_Memory_File *mem,
+                                 unsigned int ent);
 
 /**
  * @brief Dump the memory table data and associated memory
@@ -531,6 +520,6 @@ void xpost_memory_table_dump_ent (Xpost_Memory_File *mem,
  * This function dumps to stdout the data and associated memory of
  * the table at address 0 in @p mem.
  */
-void xpost_memory_table_dump (const Xpost_Memory_File *mem);
+void xpost_memory_table_dump(const Xpost_Memory_File *mem);
 
 #endif
