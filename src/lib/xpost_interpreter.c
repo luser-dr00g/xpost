@@ -62,7 +62,9 @@
 #include "xpost_oplib.h"
 
 static
-Xpost_Object namedollarerror; /* cached result of xpost_name_cons(ctx, "$error") to reduce time in error handler */
+Xpost_Object namedollarerror; /* cached result of xpost_name_cons(ctx, "$error")
+                                 to reduce time in error handler */
+static Xpost_Object nameerrordict;
 
 int TRACE = 0;             /* output trace log */
 Xpost_Interpreter *itpdata;  /* the global interpreter instance, containing all contexts and memory files */
@@ -199,6 +201,8 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
     if (xpost_object_get_type(xpost_name_cons(ctx, "setmiterlimit")) == invalidtype)
         return 0;
     if (xpost_object_get_type(namedollarerror = xpost_name_cons(ctx, "$error")) == invalidtype)
+        return 0;
+    if (xpost_object_get_type(nameerrordict = xpost_name_cons(ctx, "errordict")) == invalidtype)
         return 0;
 
     xpost_oplib_init_ops(ctx); /* populate the optab (and systemdict) with operators */
@@ -648,6 +652,7 @@ void _onerror(Xpost_Context *ctx,
         unsigned int err)
 {
     Xpost_Object sd;
+    Xpost_Object ed;
     Xpost_Object dollarerror;
 
     if (err > unknownerror) err = unknownerror;
@@ -676,7 +681,8 @@ void _onerror(Xpost_Context *ctx,
         int i;
         for (i = 0; i < n; i++)
         {
-            xpost_stack_push(ctx->lo, ctx->os, xpost_stack_bottomup_fetch(ctx->lo, ctx->hold, i));
+            xpost_stack_push(ctx->lo, ctx->os,
+                    xpost_stack_bottomup_fetch(ctx->lo, ctx->hold, i));
         }
     }
 
@@ -689,7 +695,8 @@ void _onerror(Xpost_Context *ctx,
     {
         XPOST_LOG_ERR("cannot load $error dict for error: %s",
                 errorname[err]);
-        xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "stop")));
+        xpost_stack_push(ctx->lo, ctx->es,
+                xpost_object_cvx(xpost_name_cons(ctx, "stop")));
         //itpdata->in_onerror = 0;
         return;
     }
@@ -699,10 +706,16 @@ void _onerror(Xpost_Context *ctx,
     /* printf("5\n"); */
     xpost_stack_push(ctx->lo, ctx->os, ctx->currentobject);
 
+#if 0
     /* printf("6\n"); */
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(xpost_name_cons(ctx, errorname[err])));
     /* printf("7\n"); */
     xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "signalerror")));
+#endif
+    ed = xpost_dict_get(ctx, sd, nameerrordict);
+    xpost_stack_push(ctx->lo, ctx->es,
+            xpost_dict_get(ctx, ed,
+                xpost_name_cons(ctx, errorname[err])));
 
     /* printf("8\n"); */
     itpdata->in_onerror = 0;
