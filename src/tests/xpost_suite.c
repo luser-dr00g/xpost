@@ -6,7 +6,7 @@
 
 #include <check.h>
 
-#include "xpost_main.h"
+#include "xpost.h"
 #include "xpost_suite.h"
 
 typedef struct

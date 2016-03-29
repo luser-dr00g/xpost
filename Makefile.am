@@ -58,16 +58,42 @@ XPOST_CLEANFILES += xpost.pc
 
 # Unit tests
 
+if XPOST_ENABLE_COVERAGE
+
+lcov-reset:
+	@rm -rf $(top_builddir)/coverage
+	@find $(top_builddir) -name "*.gcda" -delete
+	@lcov --zerocounters --directory $(top_builddir)
+
+lcov-report:
+	$(MKDIR_P) $(top_builddir)/coverage
+	lcov --capture --compat-libtool --output-file $(top_builddir)/coverage/coverage.info --directory $(top_builddir)
+	lcov --remove $(top_builddir)/coverage/coverage.info '*.h' --output-file $(top_builddir)/coverage/coverage.cleaned.info
+	lcov --remove $(top_builddir)/coverage/coverage.cleaned.info '*/tests/*' --output-file $(top_builddir)/coverage/coverage.cleaned2.info
+	genhtml --branch-coverage -t "$(PACKAGE_STRING)" -o $(top_builddir)/coverage/html $(top_builddir)/coverage/coverage.cleaned2.info
+	@echo "Coverage Report at $(top_builddir)/coverage/html"
+
+endif
+
 if XPOST_ENABLE_TESTS
 
 include src/tests/Makefile.mk
 
 if HAVE_VALGRIND
-XPOST_VAGRIND = $(top_srcdir)/valgrind_wrapper.sh
+XPOST_VALGRIND = $(top_srcdir)/valgrind_wrapper.sh
+endif
+
+lcov-check:
+if XPOST_ENABLE_COVERAGE
+	@$(MAKE) $(AM_MAKEFLAGS) lcov-reset
+endif
+	@$(MAKE) $(AM_MAKEFLAGS) check
+if XPOST_ENABLE_COVERAGE
+	@$(MAKE) $(AM_MAKEFLAGS) lcov-report
 endif
 
 check-local:
-	$(XPOST_VAGRIND) $(top_srcdir)/src/tests/.libs/xpost_suite$(EXEEXT)
+	$(XPOST_VALGRIND) $(top_srcdir)/src/tests/xpost_suite$(EXEEXT)
 
 else
 
@@ -103,4 +129,7 @@ visual_studio/vc12/xpost_suite/xpost_suite.vcxproj \
 visual_studio/vc12/xpost_suite/xpost_suite.vcxproj.filters
 
 clean-local:
-	rm -rf $(XPOST_CLEANFILES)
+	find . -type f -name '*.gcno' -delete
+	find . -type f -name '*.gcda' -delete
+	find . -type f -name check-results.xml -delete
+	rm -rf $(XPOST_CLEANFILES) coverage

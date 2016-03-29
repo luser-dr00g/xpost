@@ -111,10 +111,12 @@ src_lib_libxpost_la_CPPFLAGS = \
 -DXPOST_BUILD
 
 src_lib_libxpost_la_CFLAGS = \
-@XPOST_LIB_CFLAGS@
+@XPOST_LIB_CFLAGS@ \
+@XPOST_COV_CFLAGS@
 
 src_lib_libxpost_la_LIBADD = \
 @XPOST_LIB_LDFLAGS@ \
-@XPOST_LIB_LIBS@
+@XPOST_LIB_LIBS@ \
+@XPOST_COV_LIBS@
 
 src_lib_libxpost_la_LDFLAGS = -no-undefined -version-info @version_info@

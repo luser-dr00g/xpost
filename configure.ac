@@ -60,19 +60,30 @@ AC_ARG_ENABLE([mmap],
 
 have_mmap="no"
 
-AC_ARG_ENABLE([tests],
-   [AC_HELP_STRING([--enable-tests], [enable tests @<:@default=no@:>@])],
-   [
-    if test "x${enableval}" = "xyes" ; then
-       enable_tests="yes"
-    else
-       enable_tests="no"
-    fi
-   ],
-   [enable_tests="no"])
+AC_ARG_WITH([tests],
+   [AS_HELP_STRING([--with-tests=none|regular|coverage], [choose testing method: regular, coverage or none. @<:@default=none@:>@])],
+   [build_tests=${withval}],
+   [build_tests="none"])
+
+want_coverage="no"
+want_tests="no"
+case "${build_tests}" in
+   regular)
+     want_tests="yes"
+     ;;
+   coverage)
+     want_tests="yes"
+     want_coverage="yes"
+     ;;
+   no*)
+     ;;
+   *)
+     AC_MSG_ERROR([Unknown build tests option: --with-tests=${build_tests}])
+     ;;
+esac
 
 AC_ARG_ENABLE([valgrind],
-   [AC_HELP_STRING([--enable-valgrind], [enable running unit tests with valgrind @<:@default=no@:>@])],
+   [AS_HELP_STRING([--enable-valgrind], [enable running unit tests with valgrind @<:@default=no@:>@])],
    [
     if test "x${enableval}" = "xyes" ; then
        enable_valgrind="yes"
@@ -118,6 +129,23 @@ PKG_PROG_PKG_CONFIG
 
 # documentation
 XPOST_CHECK_DOXYGEN([build_doc="yes"], [build_doc="no"])
+
+# lcov
+have_coverage="no"
+if test "${want_coverage}" = "yes" ; then
+   AC_CHECK_PROG([have_lcov], [lcov], [yes], [no])
+   if test "x${have_lcov}" = "xyes" ; then
+      XPOST_COV_CFLAGS="--coverage"
+      XPOST_COV_LIBS="--coverage"
+      have_coverage="yes"
+   else
+      AC_MSG_ERROR([coverage report requested, but lcov is not found])
+   fi
+fi
+
+AC_SUBST([XPOST_COV_CFLAGS])
+AC_SUBST([XPOST_COV_LIBS])
+AM_CONDITIONAL([XPOST_ENABLE_COVERAGE], [test "${have_coverage}" = "yes"])
 
 # splint
 AC_CHECK_PROG([SPLINT], [splint], [splint], [none])
@@ -195,7 +223,7 @@ fi
 
 # check
 have_tests="no"
-if test "x${enable_tests}" = "xyes" ; then
+if test "x${want_tests}" = "xyes" ; then
    PKG_CHECK_MODULES([CHECK],
       [check >= 0.9.5],
       [have_tests="yes"],
@@ -449,6 +477,11 @@ if test "x${have_tests}" = "xyes" ; then
 echo "  Tests................: yes (make check)"
 else
 echo "  Tests................: no"
+fi
+if test "x${have_coverage}" = "xyes" ; then
+echo "  Coverage.............: yes (make lcov-check)"
+else
+echo "  Coverage.............: no"
 fi
 echo "  Valgrind.............: ${have_valgrind}"
 echo

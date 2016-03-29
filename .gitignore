@@ -3,6 +3,9 @@
 *.lo
 *.o
 *.exe
+*.gcda
+*.gcno
+coverage
 .deps
 .dirstamp
 .libs

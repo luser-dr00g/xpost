@@ -13,8 +13,10 @@ src_tests_xpost_suite_CPPFLAGS = \
 @XPOST_TEST_CPPFLAGS@
 
 src_tests_xpost_suite_CFLAGS = \
-@XPOST_LIB_CFLAGS@
+@XPOST_LIB_CFLAGS@ \
+@XPOST_COV_CFLAGS@
 
 src_tests_xpost_suite_LDADD = \
 $(top_builddir)/src/lib/libxpost.la \
-@CHECK_LIBS@
+@CHECK_LIBS@ \
+@XPOST_COV_LIBS@
