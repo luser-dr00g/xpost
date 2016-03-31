@@ -51,6 +51,8 @@ START_TEST(xpost_stack)
     unsigned int stack;
     int ret;
 
+    xpost_init();
+
     memset(&mem, 0, sizeof(Xpost_Memory_File));
     ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
@@ -62,6 +64,8 @@ START_TEST(xpost_stack)
     xpost_stack_free (&mem, stack);
     ret = xpost_memory_file_exit(&mem);
     ck_assert_int_eq (ret, 1);
+
+    xpost_quit();
 }
 END_TEST
 
@@ -73,6 +77,8 @@ START_TEST(xpost_stack_push_pop)
     int i;
     Xpost_Object obj;
     int ret;
+
+    xpost_init();
 
     memset(&mem, 0, sizeof(Xpost_Memory_File));
     ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
@@ -100,6 +106,8 @@ START_TEST(xpost_stack_push_pop)
     xpost_stack_free (&mem, stack);
     ret = xpost_memory_file_exit(&mem);
     ck_assert_int_eq (ret, 1);
+
+    xpost_quit();
 }
 END_TEST
 
