@@ -47,6 +47,7 @@ typedef struct
 } Xpost_Test_Case;
 
 static const Xpost_Test_Case _tests[] = {
+    { "Main", xpost_test_main },
     { "Memory", xpost_test_memory },
     { "Stack", xpost_test_stack },
     { NULL, NULL }
