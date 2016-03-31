@@ -93,7 +93,7 @@ if XPOST_ENABLE_COVERAGE
 endif
 
 check-local:
-	$(XPOST_VALGRIND) $(top_srcdir)/src/tests/xpost_suite$(EXEEXT)
+	$(XPOST_VALGRIND) $(top_builddir)/src/tests/xpost_suite$(EXEEXT)
 
 else
 
