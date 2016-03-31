@@ -132,4 +132,4 @@ clean-local:
 	find . -type f -name '*.gcno' -delete
 	find . -type f -name '*.gcda' -delete
 	find . -type f -name check-results.xml -delete
-	rm -rf $(XPOST_CLEANFILES) coverage
+	rm -rf $(XPOST_CLEANFILES) coverage xdump*
