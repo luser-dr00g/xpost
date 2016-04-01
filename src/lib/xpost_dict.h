@@ -61,6 +61,13 @@ typedef struct
     word pad;
 } dichead;
 
+typedef struct
+{
+    unsigned int hash;
+    Xpost_Object key;
+    Xpost_Object value;
+} dicrec;
+
 typedef struct Xpost_Magic_Pair
 {
     int (*get)(Xpost_Context *ctx, Xpost_Object dict, Xpost_Object key, Xpost_Object *pval);
@@ -70,12 +77,12 @@ typedef struct Xpost_Magic_Pair
 /**
  * @brief yields the number of real entries in the table for a dict of size n
  */
-#define DICTABN(n) (2 * ((n)+1))
+#define DICTABN(n) ((n)+1)
 
 /**
  * @brief yields the size in bytes of the table for a dict of size n
  */
-#define DICTABSZ(n) (DICTABN(n) * sizeof(Xpost_Object))
+#define DICTABSZ(n) (DICTABN(n) * sizeof(dicrec))
 
 /**
  * @brief yield the access field from the dichead in vm

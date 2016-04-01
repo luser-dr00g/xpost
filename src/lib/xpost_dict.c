@@ -89,6 +89,13 @@ typedef struct {
     word nused;
     word pad;
 } dichead;
+
+typedef struct
+{
+    unsigned int hash;
+    object key;
+    objecy value;
+} dicrec;
 */
 
 /* strict-aliasing compatible poking of double */
@@ -237,10 +244,11 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     unsigned int cnt;
     unsigned int ad;
     dichead *dp;
-    Xpost_Object *tp;
+    dicrec *tp;
     unsigned int i;
     unsigned int vs;
     unsigned int ent;
+    unsigned int hashnull;
 
     if (sz < 8) sz = 8;
     sz = (unsigned int)ceil((double)sz * 1.25);
@@ -275,8 +283,12 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     dp->pad = 0;
 
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* clear table */
-    for (i=0; i < DICTABN(sz); i++)
-        tp[i] = null; /* remember our null object is not all-zero! */
+    hashnull = hash(null);
+    for (i=0; i < DICTABN(sz); i++){
+        tp[i].hash = hashnull;
+        tp[i].key = null; /* remember our null object is not all-zero! */
+        tp[i].value = null;
+    }
 #ifdef DEBUGDIC
     printf("xpost_dict_cons_memory : "); xpost_dict_dump_memory (mem, d);
 #endif
@@ -339,7 +351,7 @@ int dicgrow(Xpost_Context *ctx,
     unsigned int newsz;
     unsigned int ad;
     dichead *dp;
-    Xpost_Object *tp;
+    dicrec *tp;
     Xpost_Object n;
     unsigned int i;
 
@@ -352,11 +364,11 @@ int dicgrow(Xpost_Context *ctx,
 
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
-    sz = (dp->sz + 1);
+    sz = DICTABN(dp->sz);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
     for ( i=0; i < sz; i++) {
-        if (xpost_object_get_type(tp[2*i]) != nulltype) {
-            xpost_dict_put_memory(ctx, mem, n, tp[2*i], tp[2*i+1]);
+        if (xpost_object_get_type(tp[i].key) != nulltype) {
+            xpost_dict_put_memory(ctx, mem, n, tp[i].key, tp[i].value);
         }
     }
 #ifdef DEBUGDIC
@@ -406,20 +418,20 @@ void xpost_dict_dump_memory (Xpost_Memory_File *mem,
 {
     unsigned int ad;
     dichead *dp;
-    Xpost_Object *tp;
+    dicrec *tp;
     unsigned int sz;
     unsigned int i;
 
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
-    sz = (dp->sz + 1);
+    sz = DICTABN(dp->sz);
 
     printf("\n");
     for (i=0; i < sz; i++) {
         printf("%u:", i);
-        if (xpost_object_get_type(tp[2*i]) != nulltype) {
-            xpost_object_dump(tp[2*i]);
+        if (xpost_object_get_type(tp[i].key) != nulltype) {
+            xpost_object_dump(tp[i].key);
         }
     }
 }
@@ -497,38 +509,41 @@ Xpost_Object clean_key (Xpost_Context *ctx,
 
 /* repeated loop body from the lookup function */
 #define RETURN_TAB_I_IF_EQ_K_OR_NULL    \
-    if (xpost_dict_compare_objects(ctx, tp[2*i], k) == 0    \
-    || xpost_dict_compare_objects(ctx, tp[2*i], null) == 0) \
-            return tp + (2*i);
+    if (xpost_object_get_type(tp[i].key) == nulltype \
+        || (hashval == tp[i].hash \
+            && xpost_dict_compare_objects(ctx, tp[i].key, k) == 0)) \
+        return tp + i
 
-static Xpost_Object invalidpair[2] = {{0},{0}};
+static dicrec invalidrec[] = {{ 0, {0}, {0}}};
 
 /* perform a hash-assisted lookup.
    returns a pointer to the desired pair (if found)), or a null-pair. */
 /*@dependent@*/ /*@null@*/
 static
-Xpost_Object *diclookup(Xpost_Context *ctx,
+dicrec *diclookup(Xpost_Context *ctx,
         /*@dependent@*/ Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
 {
     unsigned int ad;
     dichead *dp;
-    Xpost_Object *tp;
+    dicrec *tp;
     unsigned int sz;
+    unsigned int hashval;
     unsigned int h;
     unsigned int i;
 
     k = clean_key(ctx, k);
     if (xpost_object_get_type(k) == invalidtype)
-        return invalidpair;
+        return invalidrec;
 
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
     sz = (dp->sz + 1);
 
-    h = hash(k) % sz;
+    hashval = hash(k);
+    h = hashval % sz;
     i = h;
 #ifdef DEBUGDIC
     printf("diclookup(");
@@ -537,12 +552,12 @@ Xpost_Object *diclookup(Xpost_Context *ctx,
     printf("%%%u=%u",sz, h);
 #endif
 
-    RETURN_TAB_I_IF_EQ_K_OR_NULL
+    RETURN_TAB_I_IF_EQ_K_OR_NULL;
     for (++i; i < sz; i++) {
-        RETURN_TAB_I_IF_EQ_K_OR_NULL
+        RETURN_TAB_I_IF_EQ_K_OR_NULL;
     }
     for (i=0; i < h; i++) {
-        RETURN_TAB_I_IF_EQ_K_OR_NULL
+        RETURN_TAB_I_IF_EQ_K_OR_NULL;
     }
     return NULL; /* i == h : dict is overfull: no null entry */
 }
@@ -553,11 +568,12 @@ int xpost_dict_known_key(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    Xpost_Object *r;
+    dicrec *r;
 
     r = diclookup(ctx, mem, d, k);
     if (r == NULL) return 0;
-    return xpost_object_get_type(*r) != nulltype;
+    if (r == invalidrec) return 0;
+    return xpost_object_get_type(r->key) != nulltype;
 }
 
 /*
@@ -572,20 +588,24 @@ Xpost_Object xpost_dict_get_memory (Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    Xpost_Object *e;
+    dicrec *r;
 
-    e = diclookup(ctx, mem, d, k);
-    if (e == NULL || xpost_object_get_type(e[0]) == nulltype)
+    r = diclookup(ctx, mem, d, k);
+    if (r == invalidrec){
+        XPOST_LOG_ERR("warning: invalid key\n");
+        return invalid;
+    }
+    if (r == NULL || xpost_object_get_type(r->key) == nulltype)
     {
         return invalid;
     }
-    else if (xpost_object_get_type(e[1]) == magictype)
+    else if (xpost_object_get_type(r->value) == magictype)
     {
         Xpost_Object ret;
-        e[1].magic_.pair->get(ctx, d, k, &ret);
+        r->value.magic_.pair->get(ctx, d, k, &ret);
         return ret;
     }
-    return e[1];
+    return r->value;
 }
 
 /*
@@ -616,7 +636,7 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
         Xpost_Object k,
         Xpost_Object v)
 {
-    Xpost_Object *e;
+    dicrec *r;
     dichead *dp;
     unsigned int ad;
     int ret;
@@ -629,25 +649,29 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
             return VMerror;
 
-    e = diclookup(ctx, mem, d, k);
+    r = diclookup(ctx, mem, d, k);
 
-    if (e == NULL)
+    if (r == invalidrec){
+        XPOST_LOG_ERR("warning: invalid key\n");
+        return VMerror;
+    }
+    if (r == NULL)
     {
         /* dict overfull:  grow dict! */
         ret = dicgrow(ctx, d);
         if (!ret)
             return VMerror;
 
-        e = diclookup(ctx, mem, d, k);
-        if (e == NULL)
+        r = diclookup(ctx, mem, d, k);
+        if (r == NULL)
             return VMerror;
     }
-    else if (xpost_object_get_type(e[0]) == invalidtype)
+    else if (xpost_object_get_type(r->key) == invalidtype)
     {
-        fprintf(stderr, "warning: invalidtype key in dict\n");
-        e[0] = null;
+        XPOST_LOG_ERR("warning: invalidtype key in dict\n");
+        r->key = null;
     }
-    else if (xpost_object_get_type(e[0]) == nulltype)
+    else if (xpost_object_get_type(r->key) == nulltype)
     {
         if (xpost_dict_is_full_memory (mem, d)) {
             /* dict full:  grow dict! */
@@ -655,25 +679,26 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
             if (!ret)
                 return VMerror;
 
-            e = diclookup(ctx, mem, d, k);
+            r = diclookup(ctx, mem, d, k);
 
-            if (e == NULL)
+            if (r == NULL)
                 return VMerror;
 
         }
         xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
         dp = (void *)(mem->base + ad);
         ++ dp->nused;
-        e[0] = clean_key(ctx, k);
-        if (xpost_object_get_type(e[0]) == invalidtype)
+        r->key = clean_key(ctx, k);
+        r->hash = hash(r->key);
+        if (xpost_object_get_type(r->key) == invalidtype)
             return VMerror;
     }
-    else if (xpost_object_get_type(e[1]) == magictype)
+    else if (xpost_object_get_type(r->value) == magictype)
     {
-        e[1].magic_.pair->put(ctx, d, k, v);
+        r->value.magic_.pair->put(ctx, d, k, v);
         return 0;
     }
-    e[1] = v;
+    r->value = v;
     return 0;
 }
 
@@ -715,11 +740,12 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    Xpost_Object *e;
+    dicrec *e;
     unsigned int ad;
     dichead *dp;
-    Xpost_Object *tp;
+    dicrec *tp;
     unsigned int sz;
+    unsigned int hashval;
     unsigned int h;
     unsigned int i;
     unsigned int last = 0;
@@ -739,21 +765,22 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         return VMerror;
 
     e = diclookup(ctx, mem, d, k); /*find slot for key */
-    if (e == NULL || xpost_dict_compare_objects(ctx,e[0],null) == 0) {
+    if (e == NULL || e == invalidrec || xpost_dict_compare_objects(ctx,e->key,null) == 0) {
         return undefined;
     }
 
     /*find last chained key and value with same hash */
     /*FIXME: need to repeat this process with this 'last chained key with same hash'
       until the key we're clearing is the actual last key in the chain, recursively. */
-    sz = (dp->sz + 1);
-    h = hash(k) % sz;
+    sz = DICTABN(dp->sz);
+    hashval = hash(k);
+    h = hashval % sz;
 
     for (i=h; i < sz; i++)
-        if (h == hash(tp[2*i]) % sz) {
+        if (h == hash(tp[i].key) % sz) {
             last = i;
             lastisset = 1;
-        } else if (xpost_dict_compare_objects(ctx, tp[2*i], null) == 0) {
+        } else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0) {
             if (lastisset) {
                 found = 1;
                 break;
@@ -762,10 +789,10 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
 
     if (!found)
         for (i=0; i < h; i++)
-            if (h == hash(tp[2*i]) % sz) {
+            if (h == hash(tp[i].key) % sz) {
                 last = i;
                 lastisset = 1;
-            } else if (xpost_dict_compare_objects(ctx, tp[2*i], null) == 0) {
+            } else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0) {
                 if (lastisset) {
                     found = 1;
                     break;
@@ -773,14 +800,16 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
             }
 
     if (found) { /* f found: move last key and value to slot */
-        e[0] = tp[2*last];
-        e[1] = tp[2*last+1];
-        tp[2*last] = null;
-        tp[2*last+1] = null;
+        e->key = tp[last].key;
+        e->value = tp[last].value;
+        tp[last].key = null;
+        tp[last].hash = hash(tp[last].key);
+        tp[last].value = null;
     }
     else { /* ot found: write null over key and value */
-        e[0] = null;
-        e[1] = null;
+        e->key = null;
+        tp[last].hash = hash(tp[last].key);
+        e->value = null;
     }
 
     return 0;

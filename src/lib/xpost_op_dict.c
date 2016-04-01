@@ -330,7 +330,7 @@ int xpost_op_dict_copy(Xpost_Context *ctx,
     int i, sz;
     Xpost_Memory_File *mem;
     unsigned ad;
-    Xpost_Object *tp;
+    dicrec *tp;
     int ret;
 
     mem = xpost_context_select_memory(ctx, S);
@@ -343,11 +343,11 @@ int xpost_op_dict_copy(Xpost_Context *ctx,
         return VMerror;
     }
     tp = (void *)(mem->base + ad + sizeof(dichead));
-    for (i = 0; i < sz + 1; i++)
+    for (i = 0; i < DICTABN(sz); i++)
     {
-        if (xpost_object_get_type(tp[2 * i]) != nulltype)
+        if (xpost_object_get_type(tp[i].key) != nulltype)
         {
-            xpost_dict_put(ctx, D, tp[2 * i], tp[2 * i + 1]);
+            xpost_dict_put(ctx, D, tp[i].key, tp[i].value);
             tp = (void *)(mem->base + ad + sizeof(dichead)); /* recalc */
         }
     }
@@ -368,9 +368,7 @@ int xpost_op_dict_proc_forall (Xpost_Context *ctx,
     if (D.comp_.off <= D.comp_.sz) // FIXME: not finished?
     {
         unsigned ad;
-        Xpost_Object *tp; /* dict Table Pointer, indexed by pairs,
-                             tp[2 * i] for a key and tp[2 * i + 1]
-                             for that key's associated value */
+        dicrec *tp; /* dict Table Pointer */
         int ret;
 
         ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(D), &ad);
@@ -382,16 +380,16 @@ int xpost_op_dict_proc_forall (Xpost_Context *ctx,
         }
         tp = (void *)(mem->base + ad + sizeof(dichead));
 
-        for ( ; D.comp_.off <= D.comp_.sz; ++D.comp_.off) // find next pair
+        for ( ; D.comp_.off < DICTABN(D.comp_.sz); ++D.comp_.off) // find next pair
         {
-            if (xpost_object_get_type(tp[2 * D.comp_.off]) != nulltype) // found
+            if (xpost_object_get_type(tp[D.comp_.off].key) != nulltype) // found
             {
                 Xpost_Object k,v;
 
-                k = tp[2 * D.comp_.off];
+                k = tp[D.comp_.off].key;
                 if (xpost_object_get_type(k) == extendedtype)
                     k = xpost_dict_convert_extended_to_number(k);
-                v = tp[2 * D.comp_.off + 1];
+                v = tp[D.comp_.off].value;
 
                 if (!xpost_stack_push(ctx->lo, ctx->os, k))
                     return stackoverflow;
