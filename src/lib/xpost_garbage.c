@@ -149,12 +149,14 @@ int _xpost_garbage_mark_dict(Xpost_Context *ctx,
 
     {
         dichead *dp = (void *)(mem->base + adr);
-        Xpost_Object *tp = (void *)(mem->base + adr + sizeof(dichead));
+        dicrec *tp = (void *)(mem->base + adr + sizeof(dichead));
         int j;
 
         for (j = 0; j < DICTABN(dp->sz); j++)
         {
-            if (!_xpost_garbage_mark_object(ctx, mem, tp[j], markall))
+            if (!_xpost_garbage_mark_object(ctx, mem, tp[j].key, markall))
+                return 0;
+            if (!_xpost_garbage_mark_object(ctx, mem, tp[j].value, markall))
                 return 0;
         }
     }
