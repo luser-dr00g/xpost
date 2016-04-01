@@ -93,7 +93,7 @@ if XPOST_ENABLE_COVERAGE
 endif
 
 check-local:
-	$(XPOST_VALGRIND) $(top_srcdir)/src/tests/xpost_suite$(EXEEXT)
+	$(XPOST_VALGRIND) $(top_builddir)/src/tests/xpost_suite$(EXEEXT)
 
 else
 
@@ -132,4 +132,4 @@ clean-local:
 	find . -type f -name '*.gcno' -delete
 	find . -type f -name '*.gcda' -delete
 	find . -type f -name check-results.xml -delete
-	rm -rf $(XPOST_CLEANFILES) coverage
+	rm -rf $(XPOST_CLEANFILES) coverage xdump*

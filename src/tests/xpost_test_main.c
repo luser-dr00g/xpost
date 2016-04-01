@@ -29,11 +29,24 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef XPOST_SUITE_H_
-#define XPOST_SUITE_H_
-
-void xpost_test_main(TCase *tc);
-void xpost_test_memory(TCase *tc);
-void xpost_test_stack(TCase *tc);
-
+#ifdef HAVE_CONFIG_H
+# include "config.h"
 #endif
+
+#include <check.h>
+
+#include "xpost.h"
+
+#include "xpost_suite.h"
+
+START_TEST(xpost_init_simple)
+{
+    fail_if(xpost_init() != 2); /* one init by test suite */
+    fail_if(xpost_quit() != 1);
+}
+END_TEST
+
+void xpost_test_main(TCase *tc)
+{
+    tcase_add_test(tc, xpost_init_simple);
+}
