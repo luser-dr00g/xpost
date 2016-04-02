@@ -265,7 +265,7 @@ int _create_cont (Xpost_Context *ctx,
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
     wc.hbrBackground = (HBRUSH)(1 + COLOR_BTNFACE);
     wc.lpszMenuName =  NULL;
-    wc.lpszClassName = "XPOST_DEV_WIN32";
+    wc.lpszClassName = TEXT("XPOST_DEV_WIN32");
     wc.hIconSm = icon_sm;
 
     if(!RegisterClassEx(&wc))
@@ -284,7 +284,7 @@ int _create_cont (Xpost_Context *ctx,
         goto unregister_class;
     }
 
-    private.window = CreateWindow("XPOST_DEV_WIN32", "",
+    private.window = CreateWindow(TEXT("XPOST_DEV_WIN32"), TEXT(""),
                                   WS_OVERLAPPEDWINDOW | WS_SIZEBOX,
                                   0, 0,
                                   rect.right - rect.left,
@@ -298,7 +298,7 @@ int _create_cont (Xpost_Context *ctx,
         goto unregister_class;
     }
 
-    SetWindowText(private.window, "Xpost");
+    SetWindowText(private.window, TEXT("Xpost"));
 
     rd = (Render_Data *)malloc(sizeof(Render_Data_Gdi));
     if (!rd)
@@ -460,7 +460,7 @@ int _create_cont (Xpost_Context *ctx,
   destroy_window:
     DestroyWindow(private.window);
   unregister_class:
-    UnregisterClass("XPOST_DEV_WIN32", private.instance);
+    UnregisterClass(TEXT("XPOST_DEV_WIN32"), private.instance);
   free_library:
     FreeLibrary(private.instance);
     return unregistered;
@@ -971,7 +971,7 @@ int _destroy (Xpost_Context *ctx,
     free(rd);
     DestroyWindow(private.window);
 
-    if (!UnregisterClass("XPOST_DEV_WIN32", private.instance))
+    if (!UnregisterClass(TEXT("XPOST_DEV_WIN32"), private.instance))
         XPOST_LOG_INFO("UnregisterClass() failed");
 
     if (!FreeLibrary(private.instance))
