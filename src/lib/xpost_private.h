@@ -32,6 +32,17 @@
 #ifndef XPOST_PRIVATE_H
 #define XPOST_PRIVATE_H
 
+/* Used to export symbols used in unit tests */
+#ifdef XPCHECKAPI
+# undef XPCHECKAPI
+#endif
+
+#ifdef HAVE_CHECK
+# define XPCHECKAPI XPAPI
+#else
+# define XPCHECKAPI
+#endif
+
 /**
  * @brief Initialize the log module.
  *

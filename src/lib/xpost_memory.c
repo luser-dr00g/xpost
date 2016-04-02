@@ -109,7 +109,7 @@ xpost_memory_init(void)
    possibly using filename or file descriptor.
    install pointers to interpreter functions (so gc can discover contexts given only a memory file)
  */
-int
+XPCHECKAPI int
 xpost_memory_file_init(Xpost_Memory_File *mem,
                        const char *fname,
                        int fd,
@@ -234,7 +234,7 @@ xpost_memory_file_init(Xpost_Memory_File *mem,
 /*
    Close, deallocate, and destroy memory file structure
  */
-int
+XPCHECKAPI int
 xpost_memory_file_exit(Xpost_Memory_File *mem)
 {
     if (!mem)
@@ -287,7 +287,7 @@ xpost_memory_file_exit(Xpost_Memory_File *mem)
 /* grow memory file by sz bytes, rounded up to the nearest system page size.
    return 1 on success, 0 on failure.
  */
-int
+XPCHECKAPI int
 xpost_memory_file_grow(Xpost_Memory_File *mem,
                        size_t sz)
 {
@@ -424,7 +424,7 @@ xpost_memory_file_grow(Xpost_Memory_File *mem,
 /*
    allocate data linearly from the memory file
    */
-int
+XPCHECKAPI int
 xpost_memory_file_alloc(Xpost_Memory_File *mem,
                         unsigned int sz,
                         unsigned int *retaddr)
@@ -528,7 +528,7 @@ xpost_memory_file_dump(const Xpost_Memory_File *mem)
 /*
  * allocate and initialize a memory table data structure
  */
-int
+XPCHECKAPI int
 xpost_memory_table_init(Xpost_Memory_File *mem,
                         unsigned int *retaddr)
 {
@@ -650,7 +650,7 @@ _xpost_memory_table_alloc_new(Xpost_Memory_File *mem,
    allocate sz bytes in the memory table, using free-list if installed,
    possibly calling garbage collector, if installed
    */
-int
+XPCHECKAPI int
 xpost_memory_table_alloc(Xpost_Memory_File *mem,
                          unsigned int sz,
                          unsigned int tag,
@@ -861,7 +861,7 @@ xpost_memory_table_set_tag(Xpost_Memory_File *mem,
 
 
 /* get sz bytes at offset*sz from a memory allocation */
-int
+XPCHECKAPI int
 xpost_memory_get(Xpost_Memory_File *mem,
                  unsigned int ent,
                  unsigned int offset,
@@ -887,7 +887,7 @@ xpost_memory_get(Xpost_Memory_File *mem,
 }
 
 /* put sz bytes at offset*sz in a memory allocation */
-int
+XPCHECKAPI int
 xpost_memory_put(Xpost_Memory_File *mem,
                  unsigned int ent,
                  unsigned int offset,

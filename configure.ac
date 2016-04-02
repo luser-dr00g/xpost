@@ -226,7 +226,10 @@ have_tests="no"
 if test "x${want_tests}" = "xyes" ; then
    PKG_CHECK_MODULES([CHECK],
       [check >= 0.9.5],
-      [have_tests="yes"],
+      [
+       have_tests="yes"
+       AC_DEFINE([HAVE_CHECK], [1], [Define to 1 if check unit testing library is available])
+      ],
       [have_tests="no"])
 fi
 
