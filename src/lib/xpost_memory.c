@@ -87,7 +87,7 @@ xpost_memory_init(void)
 
     GetSystemInfo(&si);
 
-    xpost_memory_page_size = (size_t)si.dwPageSize;
+    xpost_memory_page_size = (size_t)si.dwAllocationGranularity;
     return 1;
 #elif defined HAVE_SYSCONF_PAGESIZE
     xpost_memory_page_size = (size_t)sysconf(_SC_PAGESIZE);
