@@ -79,12 +79,9 @@
 # include <windows.h> /* MAX_PATH */
 # undef WIN32_LEAN_AND_MEAN
 # define XPOST_PATH_MAX MAX_PATH
-# define xpost_realpath(op, np) _fullpath(np, op, XPOST_PATH_MAX)
 #else
 # include <limits.h>
-# include <stdlib.h>
 # define XPOST_PATH_MAX PATH_MAX
-# define xpost_realpath(op, np) realpath(op, np)
 #endif
 
 /**
@@ -122,6 +119,8 @@ int xpost_glob(const char *pattern, glob_t *pglob);
 void xpost_glob_free(glob_t *pglob);
 
 unsigned char xpost_module_path_get(const void *addr, char *buf, unsigned int size);
+
+char *xpost_realpath(const char *path, char *resolved_path);
 
 /**
  * @}

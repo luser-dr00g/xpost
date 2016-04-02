@@ -64,6 +64,7 @@ void *alloca (size_t);
 #include <string.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #ifdef HAVE_TERMIOS_H
 # include <termios.h>
@@ -441,4 +442,14 @@ xpost_module_path_get(const void *addr, char *buf, unsigned int size)
 #endif
 
     return 0;
+}
+
+char *
+xpost_realpath(const char *path, char *resolved_path)
+{
+#ifdef _WIN32
+    return _fullpath(resolved_path, path, XPOST_PATH_MAX);
+#else
+    return realpath(path, resolved_path);
+#endif
 }
