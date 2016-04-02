@@ -101,7 +101,7 @@ Xpost_Object xpost_bool_cons (int b)
     return xpost_object_cvlit(obj);
 }
 
-Xpost_Object xpost_int_cons (integer i)
+XPCHECKAPI Xpost_Object xpost_int_cons (integer i)
 {
     Xpost_Object obj;
 
@@ -132,7 +132,7 @@ Xpost_Object xpost_real_cons (real r)
    Type and Tag Manipulation
 */
 
-Xpost_Object_Type xpost_object_get_type (Xpost_Object obj)
+XPCHECKAPI Xpost_Object_Type xpost_object_get_type (Xpost_Object obj)
 {
     return (Xpost_Object_Type)(obj.tag & XPOST_OBJECT_TAG_DATA_TYPE_MASK);
 }

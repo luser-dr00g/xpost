@@ -32,6 +32,7 @@
 #define XPOST_OBJECT_H
 
 #include "xpost.h"
+#include "xpost_private.h" /* XPCHECKAPI */
 
 /**
  * @file xpost_object.h
@@ -425,7 +426,7 @@ Xpost_Object xpost_bool_cons(int b);
  * It sets the type to integertype, sest unlimited access, sets the
  * pad to 0, set the value to @p i. It returns the object as literal.
  */
-Xpost_Object xpost_int_cons(integer i);
+XPCHECKAPI Xpost_Object xpost_int_cons(integer i);
 
 /**
  * @brief Construct a realtype object with the given value.
@@ -457,7 +458,7 @@ Xpost_Object xpost_real_cons(real r);
  * This function returns the type of the object @p obj, that is the tag
  * with flags masked-off : obj.tag & #XPOST_OBJECT_TAG_DATA_TYPEMASK
  */
-Xpost_Object_Type xpost_object_get_type(Xpost_Object obj);
+XPCHECKAPI Xpost_Object_Type xpost_object_get_type(Xpost_Object obj);
 
 /**
  * @brief Determine whether the object is composite or not (ie. simple).
