@@ -77,7 +77,7 @@ typedef struct
 /**
  * @brief Create a stack data structure, returns vm address in addr.
  */
-int xpost_stack_init(Xpost_Memory_File *mem, unsigned int *addr);
+XPCHECKAPI int xpost_stack_init(Xpost_Memory_File *mem, unsigned int *addr);
 
 /**
  * @brief Empty the stack.
@@ -92,7 +92,7 @@ void xpost_stack_dump(Xpost_Memory_File *mem, unsigned int stackadr);
 /**
  * @brief Free a stack, and all succeeding segments.
  */
-void xpost_stack_free(Xpost_Memory_File *mem, unsigned int stackadr);
+XPCHECKAPI void xpost_stack_free(Xpost_Memory_File *mem, unsigned int stackadr);
 
 /**
  * @brief Count elements in stack.
@@ -102,9 +102,9 @@ int xpost_stack_count(Xpost_Memory_File *mem, unsigned int stackadr);
 /**
  * @brief Put an object on top of the stack.
  */
-int xpost_stack_push(Xpost_Memory_File *mem,
-                     unsigned int stackadr,
-                     Xpost_Object obj);
+XPCHECKAPI int xpost_stack_push(Xpost_Memory_File *mem,
+                                unsigned int stackadr,
+                                Xpost_Object obj);
 
 /**
  * @brief Index the stack from the top down, fetching object.
@@ -139,8 +139,8 @@ int xpost_stack_bottomup_replace(Xpost_Memory_File *mem,
 /**
  * @brief Pop the stack, remove and return top object.
  */
-Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
-                             unsigned stackadr);
+XPCHECKAPI Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
+                                        unsigned stackadr);
 
 /**
  * @}

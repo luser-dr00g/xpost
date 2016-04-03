@@ -58,8 +58,8 @@ typedef struct
 */
 
 /* allocate memory for one stack segment */
-int xpost_stack_init(Xpost_Memory_File *mem,
-                     unsigned int *paddr)
+XPCHECKAPI int xpost_stack_init(Xpost_Memory_File *mem,
+                                unsigned int *paddr)
 {
     unsigned int adr;
     Xpost_Stack *s;
@@ -105,8 +105,8 @@ void xpost_stack_dump(Xpost_Memory_File *mem,
 }
 
 /* deallocate stack segment and any chained segments */
-void xpost_stack_free(Xpost_Memory_File *mem,
-                      unsigned int stackadr)
+XPCHECKAPI void xpost_stack_free(Xpost_Memory_File *mem,
+                                 unsigned int stackadr)
 {
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
     Xpost_Memory_Table *tab;
@@ -134,9 +134,9 @@ int xpost_stack_count(Xpost_Memory_File *mem,
     return ct + s->top;
 }
 
-int xpost_stack_push(Xpost_Memory_File *mem,
-                     unsigned int stackadr,
-                     Xpost_Object obj)
+XPCHECKAPI int xpost_stack_push(Xpost_Memory_File *mem,
+                                unsigned int stackadr,
+                                Xpost_Object obj)
 {
     Xpost_Stack *root = (Xpost_Stack *)(mem->base + stackadr);
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + root->prevseg); /* load top segment */
@@ -291,8 +291,8 @@ int xpost_stack_bottomup_replace(Xpost_Memory_File *mem,
     return 1;
 }
 
-Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
-                             unsigned int stackadr)
+XPCHECKAPI Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
+                                        unsigned int stackadr)
 {
     Xpost_Stack *root = (Xpost_Stack *)(mem->base + stackadr);
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + root->prevseg); /* load top seg */
