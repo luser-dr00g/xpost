@@ -56,11 +56,11 @@
  * which are at the tail of a linked list of stack segments.
  *
  * For performance, this parameter should be set to be slightly
- * larger than expected maximum size (or the average, if the 
+ * larger than expected maximum size (or the average, if the
  * maximum is very large; however, there is currently no provision
  * for shrinking the size of a stack and returning memory).
  *
- * For testing, this parameter should be set very small, 
+ * For testing, this parameter should be set very small,
  * but it must be large enough to hold all parameters in a
  * type-checked postscript operator. cf. xpost_operator.c:holdn()
  */
