@@ -545,8 +545,12 @@ void _xpost_operator_push_args_to_hold(Xpost_Context *ctx,
     int j;
 
     assert(n < XPOST_MEMORY_TABLE_SIZE);
+#if 0
     hold = (void *)(ctx->lo->base + ctx->hold);
     hold->top = 0;     /* clear HOLD */
+    hold->prevseg = ctx->hold;
+#endif
+    xpost_stack_clear(ctx->lo, ctx->hold);
     for (j = n; j--;)
     {  /* copy */
         xpost_stack_push(ctx->lo, ctx->hold,

@@ -126,6 +126,10 @@ unsigned xpost_save_ent_is_saved(Xpost_Memory_File *mem,
         XPOST_LOG_ERR("cannot load save stack");
         return 0;
     }
+
+    if (xpost_stack_count(mem, vs) == 0)
+        return 1;
+
     sav = xpost_stack_topdown_fetch(mem, vs, 0);
     ret = xpost_memory_table_find_relative(mem, &tab, &ent);
     if (!ret)

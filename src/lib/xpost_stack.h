@@ -64,11 +64,12 @@
  * but it must be large enough to hold all parameters in a
  * type-checked postscript operator. cf. xpost_operator.c:holdn()
  */
-#define XPOST_STACK_SEGMENT_SIZE 500
+#define XPOST_STACK_SEGMENT_SIZE 1000
 
 typedef struct
 {
     unsigned int nextseg;
+    unsigned int prevseg;
     unsigned int top;
     Xpost_Object data[XPOST_STACK_SEGMENT_SIZE];
 } Xpost_Stack;
@@ -77,6 +78,11 @@ typedef struct
  * @brief Create a stack data structure, returns vm address in addr.
  */
 int xpost_stack_init(Xpost_Memory_File *mem, unsigned int *addr);
+
+/**
+ * @brief Empty the stack.
+ */
+void xpost_stack_clear(Xpost_Memory_File *mem, unsigned int stackadr);
 
 /**
  * @brief Dump the contents of a stack to stdout using xpost_object_dump.
