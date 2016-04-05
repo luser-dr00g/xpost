@@ -109,7 +109,9 @@ xpost_init(void)
     if (!xpost_module_path_get(xpost_init, _xpost_lib_dir, XPOST_PATH_MAX))
         return --_xpost_init_count;
 
-    snprintf(tmp1, sizeof(tmp1), "%s/../share/xpost", _xpost_lib_dir);
+    l = strlen(_xpost_lib_dir);
+    memcpy(tmp1, _xpost_lib_dir, l);
+    memcpy(tmp1 + l, "/../share/xpost", sizeof("/../share/xpost"));
     xpost_realpath(tmp1, tmp2);
     l = strlen(tmp2) + 1;
     memcpy(_xpost_data_dir, tmp2, l);
