@@ -115,7 +115,7 @@ xpost xpost_main
          opdimc               canvases (*)
 
 The file and operator modules were copied with little modification
-from previuos xpost, and so were not deemed to require separate tests.
+from previous xpost, and so were not deemed to require separate tests.
 
         Data-structure
           Hierarchy
@@ -266,7 +266,7 @@ which live in the memory file.
 
 These three modules (memory, stack, & save) are considered the "core"
 of the whole thing. I wrote these and then sat on them for over a year
-while making revisions to previuos xpost, periodically re-reading the code
+while making revisions to previous xpost, periodically re-reading the code
 to make sure it still made sense.
 
 
@@ -359,7 +359,7 @@ the stack contents for a combined typecheck/stackunderflow-error
 postscript stack to the operator-function's calling frame.
 It's all very perverse and clever.
 
-But profiling previuos xpost showed a big bottleneck with all this trickery.
+But profiling previous xpost showed a big bottleneck with all this trickery.
 So a possible optimization is to replace the operator-signature
 type with a dedicated function pointer to a function that
 implements the desired stack-checking. This would factor-out
