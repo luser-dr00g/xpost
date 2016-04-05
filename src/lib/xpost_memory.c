@@ -550,6 +550,8 @@ xpost_memory_table_init(Xpost_Memory_File *mem,
     tab = (Xpost_Memory_Table *)(mem->base + adr);
     tab->nexttab = 0;
     tab->nextent = 0;
+    tab->prevtab = adr;
+    tab->entbase = 0;
 
     *retaddr = adr;
     return 1;
@@ -591,9 +593,10 @@ _xpost_memory_table_alloc_new(Xpost_Memory_File *mem,
                               unsigned int *entity)
 {
     unsigned int mtabadr = 0;
+    unsigned int tabadr;
     unsigned int ent;
     unsigned int adr;
-    Xpost_Memory_Table *tab;
+    Xpost_Memory_Table *tab, *tab0;
     int ntab = 0;
 
     if (!mem)
@@ -602,17 +605,21 @@ _xpost_memory_table_alloc_new(Xpost_Memory_File *mem,
         return 0;
     }
 
-    tab = (Xpost_Memory_Table *)(mem->base + mtabadr);
+    tab0 = (Xpost_Memory_Table *)(mem->base + mtabadr);
+    tabadr = tab0->prevtab;
+    tab = (Xpost_Memory_Table *)(mem->base + tabadr);
 
+#if 0
     while (tab->nextent >= XPOST_MEMORY_TABLE_SIZE)
     {
         tab = (Xpost_Memory_Table *)(mem->base + tab->nexttab);
         ++ntab;
     }
+#endif
 
     ent = tab->nextent;
     ++tab->nextent;
-    if (ent > XPOST_OBJECT_COMP_MAX_ENT)
+    if (ent + tab->entbase > XPOST_OBJECT_COMP_MAX_ENT)
     {
         XPOST_LOG_ERR("Warning: ent number %u exceed object storage max %u",
                 ent, XPOST_OBJECT_COMP_MAX_ENT);
@@ -624,25 +631,35 @@ _xpost_memory_table_alloc_new(Xpost_Memory_File *mem,
         return 0;
     }
 
-    ent += ntab * XPOST_MEMORY_TABLE_SIZE; /* recalc */
-    xpost_memory_table_find_relative(mem, &tab, &ent); /* recalc */
+    //ent += ntab * XPOST_MEMORY_TABLE_SIZE; /* recalc */
+    //ent += tab->entbase;
+    //xpost_memory_table_find_relative(mem, &tab, &ent); /* recalc */
+    tab0 = (Xpost_Memory_Table *)(mem->base + mtabadr);
+    tab = (Xpost_Memory_Table *)(mem->base + tabadr);
     tab->tab[ent].adr = adr;
     tab->tab[ent].sz = sz;
     tab->tab[ent].tag = tag;
 
     if (tab->nextent == XPOST_MEMORY_TABLE_SIZE)
     {
-        unsigned int newtab;
-        if (!xpost_memory_table_init(mem, &newtab))
+        unsigned int newtabadr;
+        Xpost_Memory_Table *newtab;
+        if (!xpost_memory_table_init(mem, &newtabadr))
         {
             XPOST_LOG_ERR("%d unable to extend table chain", VMerror);
         }
-        ent += ntab * XPOST_MEMORY_TABLE_SIZE; /* recalc */
-        xpost_memory_table_find_relative(mem, &tab, &ent); /* recalc */
-        tab->nexttab = newtab;
+        //ent += ntab * XPOST_MEMORY_TABLE_SIZE; /* recalc */
+        //xpost_memory_table_find_relative(mem, &tab, &ent); /* recalc */
+        tab0 = (Xpost_Memory_Table *)(mem->base + mtabadr);
+        tab = (Xpost_Memory_Table *)(mem->base + tabadr);
+        tab->nexttab = newtabadr;
+        tab0->prevtab = newtabadr;
+        newtab = (Xpost_Memory_Table *)(mem->base + newtabadr);
+        newtab->prevtab = tabadr;
     }
 
-    *entity = ent + ntab * XPOST_MEMORY_TABLE_SIZE;
+    //*entity = ent + ntab * XPOST_MEMORY_TABLE_SIZE;
+    *entity = ent + tab->entbase;
     return 1;
 }
 

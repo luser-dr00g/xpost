@@ -160,6 +160,8 @@ typedef struct
     unsigned int nexttab; /**< next table in chain */
     unsigned int nextent; /**< next slot in table,
                                 or #XPOST_MEMORY_TABLE_SIZE if full */
+    unsigned int prevtab; /**< reverse link. head->prevtab==tail */
+    unsigned int entbase; /**< absolute 'ent' number of tab[0] */
     struct
     {
         unsigned int adr; /**< allocation address */
