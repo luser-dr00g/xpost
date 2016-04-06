@@ -55,7 +55,7 @@ char *prog =
     "0 0 1 setrgbcolor\n"
     "300 400 100 0 360 arc\n"
     "fill\n"
-    "0 setgray\n"
+    "0 0 0 setrgbcolor\n"
     "290 390 moveto\n"
     "/Palatino-Roman 20 selectfont\n"
     "(Xpost) show\n"
