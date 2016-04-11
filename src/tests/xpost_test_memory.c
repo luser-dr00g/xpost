@@ -135,7 +135,6 @@ END_TEST
 START_TEST(xpost_memory_tab_init)
 {
     Xpost_Memory_File mem = {0};
-    unsigned int addr;
     int ret;
 
     xpost_init();
@@ -143,9 +142,8 @@ START_TEST(xpost_memory_tab_init)
     ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
-    ret = xpost_memory_table_init(&mem, &addr);
+    ret = xpost_memory_table_init(&mem);
     ck_assert_int_eq (ret, 1);
-    ck_assert_int_eq (addr, 0); /* primary table must be at address 0 */
     ck_assert(mem.base != NULL);
     ret = xpost_memory_file_exit(&mem);
     ck_assert_int_eq (ret, 1);
@@ -157,7 +155,6 @@ END_TEST
 START_TEST(xpost_memory_tab_alloc)
 {
     Xpost_Memory_File mem = {0};
-    unsigned int addr;
     unsigned int ent;
     char arr[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
     char out[ sizeof arr ];
@@ -169,7 +166,7 @@ START_TEST(xpost_memory_tab_alloc)
     ret = xpost_memory_file_init(&mem, NULL, -1, NULL, NULL, NULL);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
-    ret = xpost_memory_table_init(&mem, &addr);
+    ret = xpost_memory_table_init(&mem);
     ck_assert_int_eq (ret, 1);
     ck_assert(mem.base != NULL);
     ret = xpost_memory_table_alloc(&mem, sizeof arr, 0, &ent);
