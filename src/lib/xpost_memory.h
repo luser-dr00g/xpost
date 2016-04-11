@@ -115,6 +115,23 @@ typedef enum
  */
 
 /**
+ * @struct Xpost_Memory_Table
+ * @brief The segmented Memory Table structure.
+ */
+typedef struct Xpost_Memory_Table
+{
+    unsigned int nextent; /**< next slot in table */
+    unsigned int max; /**< allocated size */
+    struct
+    {
+        unsigned int adr; /**< allocation address */
+        unsigned int sz; /**< size of allocation */
+        unsigned int mark; /**< garbage collection metadata */
+        unsigned int tag; /**< type of object using this allocation, if needed */
+    } *tab; /**< table entries */
+} Xpost_Memory_Table;
+
+/**
  * @struct Xpost_Memory_File
  * @brief A memory region that may be suballocated. Bookkeeping data
  * for region allocator.
@@ -131,6 +148,8 @@ typedef struct Xpost_Memory_File
     unsigned char *base; /**< pointer to mapped memory */
     unsigned int used;  /**< size used, cursor to free space */
     unsigned int max; /**< size available in memory pointed to by base */
+
+    struct Xpost_Memory_Table table;
 
     unsigned int start; /**< first 'live' entry in the memory_table. */
         /* the domain of the collector is entries >= start */
@@ -150,26 +169,6 @@ typedef struct Xpost_Memory_File
     int (*interpreter_get_initializing)(void);
     void (*interpreter_set_initializing)(int);
 } Xpost_Memory_File;
-
-/**
- * @struct Xpost_Memory_Table
- * @brief The segmented Memory Table structure.
- */
-typedef struct
-{
-    unsigned int nexttab; /**< next table in chain */
-    unsigned int nextent; /**< next slot in table,
-                                or #XPOST_MEMORY_TABLE_SIZE if full */
-    unsigned int prevtab; /**< reverse link. head->prevtab==tail */
-    unsigned int entbase; /**< absolute 'ent' number of tab[0] */
-    struct
-    {
-        unsigned int adr; /**< allocation address */
-        unsigned int sz; /**< size of allocation */
-        unsigned int mark; /**< garbage collection metadata */
-        unsigned int tag; /**< type of object using this allocation, if needed */
-    } tab [ XPOST_MEMORY_TABLE_SIZE ]; /**< table entries in this segment */
-} Xpost_Memory_Table;
 
 /*
  *
@@ -297,8 +296,7 @@ void xpost_memory_file_dump(const Xpost_Memory_File *mem);
  * MUST recalculate all VM pointers after this function.
  * See note in xpost_memory_file_alloc().
  */
-XPCHECKAPI int xpost_memory_table_init(Xpost_Memory_File *mem,
-                                       unsigned int *addr);
+XPCHECKAPI int xpost_memory_table_init(Xpost_Memory_File *mem);
 
 int xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
                                                    int (*free_list_alloc)(struct Xpost_Memory_File *mem,
@@ -331,24 +329,6 @@ XPCHECKAPI int xpost_memory_table_alloc(Xpost_Memory_File *mem,
                                         unsigned int sz,
                                         unsigned int tag,
                                         unsigned int *entity);
-
-/**
- * @brief Find the table and relative entity index for an absolute
- * entity index.
- *
- * @param[in,out] mem The memory file.
- * @param[out] atab The table.
- * @param[in,out] aent The entity.
- * @return 1 on success, 0 on failure.
- *
- * This function takes the memory file and an absolute entity,
- * and writes a pointer to the relevant segment of the table chain
- * through the @p atab pointer. It updates the referenced
- * absolute entity index with an index relative to the table segment.
- */
-int xpost_memory_table_find_relative(Xpost_Memory_File *mem,
-                                     Xpost_Memory_Table **atab,
-                                     unsigned int *aent);
 
 /**
  * @brief Get the address from an entity.

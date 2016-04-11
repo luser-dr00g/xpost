@@ -69,24 +69,13 @@
 static
 void _xpost_garbage_unmark(Xpost_Memory_File *mem)
 {
+    unsigned int i;
+
     if (!mem) return;
+
+    for (i = mem->start; i < mem->table.nextent; i++)
     {
-        Xpost_Memory_Table *tab = (void *)(mem->base);
-        unsigned int i;
-
-        for (i = mem->start; i < tab->nextent; i++)
-        {
-            tab->tab[i].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
-        }
-        while (tab->nexttab != 0)
-        {
-            tab = (void *)(mem->base + tab->nexttab);
-
-            for (i = 0; i < tab->nextent; i++)
-            {
-                tab->tab[i].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
-            }
-        }
+        mem->table.tab[i].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
     }
 }
 
@@ -95,21 +84,20 @@ static
 int _xpost_garbage_mark_ent(Xpost_Memory_File *mem,
                             unsigned int ent)
 {
-    Xpost_Memory_Table *tab;
-
     if (!mem) return 0;
 
     if (ent < mem->start)
-        return 1;
-
-    tab = (void *)(mem->base);
-
-    if (!xpost_memory_table_find_relative(mem,&tab,&ent))
     {
-        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        XPOST_LOG_ERR("attempt to mark ent %u < mem->start", ent);
+        return 1;
+    }
+
+    if (ent >= mem->table.nextent)
+    {
+        XPOST_LOG_ERR("cannot find ent %u", ent);
         return 0;
     }
-    tab->tab[ent].mark |= XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
+    mem->table.tab[ent].mark |= XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK;
     return 1;
 }
 
@@ -121,15 +109,13 @@ int _xpost_garbage_ent_is_marked(Xpost_Memory_File *mem,
 {
     if (!mem) return 0;
 
+    if (ent >= mem->table.nextent)
     {
-        Xpost_Memory_Table *tab = (void *)(mem->base);
-        if (!xpost_memory_table_find_relative(mem,&tab,&ent))
-        {
-            XPOST_LOG_ERR("cannot find table for ent %u", ent);
-            return 0;
-        }
-        *retval = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) >> XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET;
+        XPOST_LOG_ERR("cannot find table for ent %u", ent);
+        return 0;
     }
+    *retval = (mem->table.tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK)
+        >> XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET;
 
     return 1;
 }
@@ -151,13 +137,18 @@ int _xpost_garbage_mark_dict(Xpost_Context *ctx,
         dichead *dp = (void *)(mem->base + adr);
         dicrec *tp = (void *)(mem->base + adr + sizeof(dichead));
         int j;
+#ifdef DEBUG_GC
+        printf("markdict: nused=%d\n", dp->nused);
+#endif
 
         for (j = 0; j < DICTABN(dp->sz); j++)
         {
-            if (!_xpost_garbage_mark_object(ctx, mem, tp[j].key, markall))
-                return 0;
-            if (!_xpost_garbage_mark_object(ctx, mem, tp[j].value, markall))
-                return 0;
+            if (xpost_object_get_type(tp[j].key) != nulltype){
+                if (!_xpost_garbage_mark_object(ctx, mem, tp[j].key, markall))
+                    return 0;
+                if (!_xpost_garbage_mark_object(ctx, mem, tp[j].value, markall))
+                    return 0;
+            }
         }
     }
 
@@ -201,20 +192,35 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
 {
     unsigned int ad;
     int ret;
+    unsigned int tag;
 
     if (!mem) return 0;
 
-    switch(xpost_object_get_type(o))
-    {
-        default: break;
+    if (!xpost_object_is_composite(o))
+        return 1;
 
-        case arraytype:
 #ifdef DEBUG_GC
             printf("markobject: %d, %s (size %d)\n",
                    xpost_object_get_ent(o),
                    xpost_object_type_names[xpost_object_get_type(o)],
                    o.comp_.sz);
 #endif
+
+    switch(xpost_object_get_type(o))
+    {
+        default: break;
+
+        case arraytype:
+            if (xpost_object_get_ent(o) == 0)
+                return 1;
+
+            if (xpost_object_get_ent(o) < (signed)mem->start)
+            {
+                XPOST_LOG_ERR("attempt to mark %s object %d",
+                        xpost_object_type_names[xpost_object_get_type(o)],
+                        xpost_object_get_ent(o));
+                return 0;
+            }
             if (xpost_context_select_memory(ctx, o) != mem) {
                 if (markall)
                     mem = xpost_context_select_memory(ctx, o);
@@ -228,7 +234,7 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
                 ret = _xpost_garbage_mark_ent(mem, xpost_object_get_ent(o));
                 if (!ret)
                 {
-                    XPOST_LOG_ERR("cannot mark array");
+                    XPOST_LOG_ERR("cannot mark array %d", xpost_object_get_ent(o));
                     return 0;
                 }
                 ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(o), &ad);
@@ -237,18 +243,25 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
                     XPOST_LOG_ERR("cannot retrieve address for array ent %u", xpost_object_get_ent(o));
                     return 0;
                 }
-                if (!_xpost_garbage_mark_array(ctx, mem, ad, o.comp_.sz, markall))
+                ret = xpost_memory_table_get_tag(mem, xpost_object_get_ent(o), &tag);
+                if (!ret)
+                {
+                    XPOST_LOG_ERR("cannot retrieve tag for array ent %u", xpost_object_get_ent(o));
+                    return 0;
+                }
+                if (!_xpost_garbage_mark_array(ctx, mem, ad, tag - XPOST_OBJECT_NTYPES, markall))
                     return 0;
             }
             break;
 
         case dicttype:
-#ifdef DEBUG_GC
-            printf("markobject: %d, %s (size %d)\n",
-                   xpost_object_get_ent(o),
-                   xpost_object_type_names[xpost_object_get_type(o)],
-                   o.comp_.sz);
-#endif
+            if (xpost_object_get_ent(o) < (signed)mem->start)
+            {
+                XPOST_LOG_ERR("attempt to mark %s object %d",
+                        xpost_object_type_names[xpost_object_get_type(o)],
+                        xpost_object_get_ent(o));
+                return 0;
+            }
             if (xpost_context_select_memory(ctx, o) != mem)
             {
                 if (markall)
@@ -278,12 +291,13 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
             break;
 
         case stringtype:
-#ifdef DEBUG_GC
-            printf("markobject: %d, %s (size %d)\n",
-                   xpost_object_get_ent(o),
-                   xpost_object_type_names[xpost_object_get_type(o)],
-                   o.comp_.sz);
-#endif
+            if (xpost_object_get_ent(o) < (signed)mem->start)
+            {
+                XPOST_LOG_ERR("attempt to mark %s object %d",
+                        xpost_object_type_names[xpost_object_get_type(o)],
+                        xpost_object_get_ent(o));
+                return 0;
+            }
             if (xpost_context_select_memory(ctx, o) != mem)
             {
                 if (markall)
@@ -300,6 +314,13 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
             break;
 
         case filetype:
+            if (xpost_object_get_ent(o) < (signed)mem->start)
+            {
+                XPOST_LOG_ERR("attempt to mark %s object %d",
+                        xpost_object_type_names[xpost_object_get_type(o)],
+                        xpost_object_get_ent(o));
+                return 0;
+            }
             if (mem == ctx->gl)
             {
                 printf("file found in global vm\n");
@@ -316,6 +337,45 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
 
     return 1;
 }
+
+
+/* mark all allocations referred to by objects in stack */
+static
+int _xpost_garbage_mark_names(Xpost_Context *ctx,
+                              Xpost_Memory_File *mem,
+                              unsigned int stackadr,
+                              int markall)
+{
+    int start = 1;
+    if (!mem) return 0;
+
+    {
+        Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
+        unsigned int i;
+
+#ifdef DEBUG_GC
+        printf("marking stack of size %u\n", xpost_stack_count(mem, stackadr));
+#endif
+
+next:
+        for (i = start; i < s->top; i++)
+        {
+            if (!_xpost_garbage_mark_object(ctx, mem, s->data[i], markall))
+                return 0;
+        }
+        if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
+        {
+            if (s->nextseg == 0)
+                return 0;
+            s = (Xpost_Stack *)(mem->base + s->nextseg);
+            start = 0;
+            goto next;
+        }
+    }
+
+    return 1;
+}
+
 
 /* mark all allocations referred to by objects in stack */
 static
@@ -347,11 +407,6 @@ next:
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             goto next;
         }
-
-        /* if (s->nextseg) { /\* maybe not. this is a MARK phase, after all *\/ */
-        /*     xpost_stack_free(mem, s->nextseg); */
-        /*     s->nextseg = 0; */
-        /* } */
     }
 
     return 1;
@@ -373,7 +428,7 @@ int _xpost_garbage_mark_save_stack(Xpost_Context *ctx,
         (void)ctx;
 
 #ifdef DEBUG_GC
-        printf("marking save stack of size %u\n", xpost_stack_count(mem, stackadr));
+        printf("marking saverec stack of size %u\n", xpost_stack_count(mem, stackadr));
 #endif
 
 next:
@@ -442,12 +497,6 @@ next:
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             goto next;
         }
-
-        if (s->nextseg)
-        {
-            xpost_stack_free(mem, s->nextseg);
-            s->nextseg = 0;
-        }
     }
 
     return 1;
@@ -494,8 +543,6 @@ int _xpost_garbage_mark_save(Xpost_Context *ctx,
 static
 unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
 {
-    Xpost_Memory_Table *tab;
-    int ntab;
     unsigned int zero = 0;
     unsigned int z;
     unsigned int i;
@@ -512,13 +559,11 @@ unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
     memcpy(mem->base+z, &zero, sizeof(unsigned int)); /* discard list */
     /* *(unsigned int *)(mem->base+z) = 0; */
 
-    /* scan first table */
-    tab = (void *)(mem->base);
-    ntab = 0;
-    for (i = mem->start; i < tab->nextent; i++)
+    /* scan table */
+    for (i = mem->start; i < mem->table.nextent; i++)
     {
-        if (((tab->tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0) &&
-            (tab->tab[i].sz != 0))
+        if (((mem->table.tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0) &&
+            (mem->table.tab[i].sz != 0))
         {
             ret = xpost_free_memory_ent(mem, i);
             if (ret < 0)
@@ -527,28 +572,6 @@ unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
                 return sz;
             }
             sz += (unsigned int)ret;
-        }
-    }
-
-    /* scan linked tables */
-    while (i < XPOST_MEMORY_TABLE_SIZE && tab->nexttab != 0)
-    {
-        tab = (void *)(mem->base + tab->nexttab);
-        ++ntab;
-
-        for (i = mem->start; i < tab->nextent; i++)
-        {
-            if (((tab->tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0) &&
-                (tab->tab[i].sz != 0))
-            {
-                ret = xpost_free_memory_ent(mem, i + ntab*XPOST_MEMORY_TABLE_SIZE);
-                if (ret < 0)
-                {
-                    XPOST_LOG_ERR("cannot free ent");
-                    return sz;
-                }
-                sz += (unsigned int)ret;
-            }
         }
     }
 
@@ -627,7 +650,7 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
                           mem == ctx->gl? "global" : "local");
             return -1;
         }
-        if (!_xpost_garbage_mark_stack(ctx, mem, ad, markall))
+        if (!_xpost_garbage_mark_names(ctx, mem, ad, markall))
             return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++)
@@ -663,7 +686,7 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
 #ifdef DEBUG_GC
         printf("marking name stack\n");
 #endif
-        if (!_xpost_garbage_mark_stack(ctx, mem, ad, markall))
+        if (!_xpost_garbage_mark_names(ctx, mem, ad, markall))
             return -1;
 
         for (i = 0; i < MAXCONTEXT && cid[i]; i++)
@@ -698,6 +721,13 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
 #endif
             if (!_xpost_garbage_mark_object(ctx, mem, ctx->window_device, markall))
                 return -1;
+#if 0
+#ifdef DEBUG_GC
+            printf("marking event handler\n");
+#endif
+            if (!_xpost_garbage_mark_object(ctx, mem, ctx->event_handler, markall))
+                return -1;
+#endif
         }
     }
 
@@ -710,6 +740,9 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
         {
             for (i = 0; i < MAXCONTEXT && cid[i]; i++)
             {
+#ifdef DEBUG_GC
+                printf("sweep context(%d)->gl\n", cid[i]);
+#endif
                 ctx = mem->interpreter_cid_get_context(cid[i]);
                 sz += _xpost_garbage_sweep(ctx->lo);
             }
@@ -764,7 +797,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
         close(fd);
         return 0;
     }
-    ret = xpost_memory_table_init(ctx->gl, &tadr);
+    ret = xpost_memory_table_init(ctx->gl);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->gl);
@@ -808,7 +841,7 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
         xpost_memory_file_exit(ctx->gl);
         return 0;
     }
-    ret = xpost_memory_table_init(ctx->lo, &tadr);
+    ret = xpost_memory_table_init(ctx->lo);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->gl);
@@ -884,8 +917,9 @@ void exit_test_garbage(void)
 static
 int _clear_hold(Xpost_Context *_ctx)
 {
-    Xpost_Stack *s = (Xpost_Stack *)(_ctx->lo->base + _ctx->hold);
-    s->top = 0;
+    //Xpost_Stack *s = (Xpost_Stack *)(_ctx->lo->base + _ctx->hold);
+    //s->top = 0;
+    xpost_stack_clear(_ctx->lo, _ctx->hold);
     return 1;
 }
 
@@ -985,10 +1019,9 @@ unsigned int stac;
 /*     xpost_free_init(&mem); */
 /*     xpost_save_init(&mem); */
 /*     xpost_context_init_ctxlist(&mem); */
-/*     Xpost_Memory_Table *tab = (void *)mem.base; */
+/*     Xpost_Memory_Table *tab = &mem->table; */
 /*     unsigned int ent = xpost_memory_table_alloc(&mem, 0, 0); */
-/*     /\* xpost_memory_table_find_relative(&mem, &tab, &ent); *\/ */
-/*     stac = tab->tab[ent].adr = initstack(&mem); */
+/*     stac = mem->table.tab[ent].adr = initstack(&mem); */
 /*     /\* mem.roots[0] = XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK; *\/ */
 /*     /\* mem.roots[1] = ent; *\/ */
 /*     mem.start = ent+1; */

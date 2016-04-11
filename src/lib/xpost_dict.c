@@ -265,9 +265,8 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     //d.comp_.ent = ent;
     d = xpost_object_set_ent(d, ent);
 
-    tab = (void *)(mem->base);
+    tab = &mem->table;
     rent = ent;
-    xpost_memory_table_find_relative(mem, &tab, &rent);
     xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     cnt = xpost_stack_count(mem, vs);
     tab->tab[rent].mark = ( (0 << XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET)
@@ -361,6 +360,10 @@ int dicgrow(Xpost_Context *ctx,
     xpost_dict_dump_memory (mem, d);
 #endif
     n = xpost_dict_cons_memory (mem, newsz = 2 * xpost_dict_max_length_memory (mem, d));
+    if (xpost_object_get_type(n) == nulltype){
+        XPOST_LOG_ERR("cannot grow dict");
+        return 0;
+    }
 
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
@@ -377,26 +380,24 @@ int dicgrow(Xpost_Context *ctx,
 #endif
 
     {   /* exchange entities */
-        Xpost_Memory_Table *dtab, *ntab;
+        Xpost_Memory_Table *tab = &mem->table;
         unsigned int dent, nent;
         unsigned int hold;
 
         dent = xpost_object_get_ent(d);
         nent = xpost_object_get_ent(n);
-        xpost_memory_table_find_relative(mem, &dtab, &dent);
-        xpost_memory_table_find_relative(mem, &ntab, &nent);
 
         /* exchange adrs */
-        hold = dtab->tab[dent].adr;
-        dtab->tab[dent].adr = ntab->tab[nent].adr;
-        ntab->tab[nent].adr = hold;
+        hold = tab->tab[dent].adr;
+               tab->tab[dent].adr = tab->tab[nent].adr;
+                                    tab->tab[nent].adr = hold;
 
         /* exchange sizes */
-        hold = dtab->tab[dent].sz;
-        dtab->tab[dent].sz = ntab->tab[nent].sz;
-        ntab->tab[nent].sz = hold;
+        hold = tab->tab[dent].sz;
+               tab->tab[dent].sz = tab->tab[nent].sz;
+                                   tab->tab[nent].sz = hold;
 
-        if (xpost_free_memory_ent(mem, xpost_object_get_ent(n)) < 0)
+        if (xpost_free_memory_ent(mem, nent) < 0)
         {
             XPOST_LOG_ERR("cannot free old dict");
             return 0;

@@ -48,6 +48,7 @@
 #include <string.h>
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_main.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
@@ -772,6 +773,11 @@ int _flattenpath (Xpost_Context *ctx)
         int j;
 
         subpath = xpost_dict_get(ctx, path, xpost_int_cons(i));
+        if (xpost_object_get_type(subpath) == invalidtype)
+        {
+            XPOST_LOG_ERR("subpath %d not found in path", i);
+            return undefined;
+        }
         subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
         for (j = 0; j < subpathlen; j++)
         {
@@ -779,7 +785,17 @@ int _flattenpath (Xpost_Context *ctx)
             Xpost_Object cmd;
 
             elem = xpost_dict_get(ctx, subpath, xpost_int_cons(j));
+            if (xpost_object_get_type(elem) == invalidtype)
+            {
+                XPOST_LOG_ERR("elem %d not found in subpath %d", j, i);
+                return undefined;
+            }
             cmd = xpost_dict_get(ctx, elem, namecmd);
+            if (xpost_object_get_type(cmd) == invalidtype)
+            {
+                XPOST_LOG_ERR("/cmd not found in elem %d of subpath %d", j, i);
+                return undefined;
+            }
             if (cmd.mark_.padw == namemove.mark_.padw)
             {
                 cp = xpost_dict_get(ctx, elem, namedata);

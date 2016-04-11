@@ -76,7 +76,7 @@ int xpost_save_init(Xpost_Memory_File *mem)
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK);
 
     xpost_stack_init(mem, &t);
-    tab = (void *)mem->base;
+    tab = &mem->table;
     tab->tab[ent].adr = t;
 
     return 1;
@@ -131,8 +131,8 @@ unsigned xpost_save_ent_is_saved(Xpost_Memory_File *mem,
         return 1;
 
     sav = xpost_stack_topdown_fetch(mem, vs, 0);
-    ret = xpost_memory_table_find_relative(mem, &tab, &ent);
-    if (!ret)
+    tab = &mem->table;
+    if (ent >= tab->nextent)
     {
         XPOST_LOG_ERR("cannot find table for ent %u", ent);
         return 0;
@@ -153,12 +153,11 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
 {
     Xpost_Memory_Table *tab;
     unsigned new;
-    unsigned tent = ent;
     unsigned int adr;
     int ret;
 
-    ret = xpost_memory_table_find_relative(mem, &tab, &ent);
-    if (!ret)
+    tab = &mem->table;
+    if (ent >= tab->nextent)
     {
         XPOST_LOG_ERR("cannot find table for ent %u", ent);
         return 0;
@@ -174,13 +173,7 @@ unsigned int _copy_ent(Xpost_Memory_File *mem,
                       new, XPOST_OBJECT_COMP_MAX_ENT);
         return 0;
     }
-    ent = tent;
-    ret = xpost_memory_table_find_relative(mem, &tab, &ent); //recalc
-    if (!ret)
-    {
-        XPOST_LOG_ERR("cannot find table for ent %u", ent);
-        return 0;
-    }
+    tab = &mem->table; //recalc
     ret = xpost_memory_table_get_addr(mem, new, &adr);
     if (!ret)
     {
@@ -205,7 +198,6 @@ int xpost_save_save_ent(Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     Xpost_Object o;
     unsigned tlev;
-    unsigned rent = ent;
     Xpost_Object sav;
     unsigned int adr;
     unsigned int cpy;
@@ -220,15 +212,15 @@ int xpost_save_save_ent(Xpost_Memory_File *mem,
     }
     sav = xpost_stack_topdown_fetch(mem, adr, 0);
 
-    ret = xpost_memory_table_find_relative(mem, &tab, &rent);
-    if (!ret)
+    tab = &mem->table;
+    if (ent >= tab->nextent)
     {
         XPOST_LOG_ERR("cannot find table for ent %u", ent);
         return 0;
     }
     tlev = sav.save_.lev;
-    tab->tab[rent].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK; // clear TLEV field
-    tab->tab[rent].mark |= (tlev << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);  // set TLEV field
+    tab->tab[ent].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK; // clear TLEV field
+    tab->tab[ent].mark |= (tlev << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);  // set TLEV field
 
     o.saverec_.tag = tag;
     o.saverec_.pad = pad;
@@ -253,7 +245,7 @@ void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
 {
     unsigned int v;
     Xpost_Object sav;
-    Xpost_Memory_Table *stab, *ctab;
+    Xpost_Memory_Table *tab = &mem->table;
     unsigned int cnt;
     unsigned int sent, cent;
     int ret;
@@ -277,21 +269,19 @@ void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
             return;
         sent = rec.saverec_.src;
         cent = rec.saverec_.cpy;
-        ret = xpost_memory_table_find_relative(mem, &stab, &sent);
-        if (!ret)
+        if (sent >= tab->nextent)
         {
             XPOST_LOG_ERR("cannot find table for ent %u", sent);
             return;
         }
-        ret = xpost_memory_table_find_relative(mem, &ctab, &cent);
-        if (!ret)
+        if (cent >= tab->nextent)
         {
             XPOST_LOG_ERR("cannot find table for ent %u", cent);
             return;
         }
-        hold = stab->tab[sent].adr;                 // tmp = src
-        stab->tab[sent].adr = ctab->tab[cent].adr;  // src = cpy
-        ctab->tab[cent].adr = hold;                 // cpy = tmp
+        hold = tab->tab[sent].adr;                 // tmp = src
+        tab->tab[sent].adr = tab->tab[cent].adr;  // src = cpy
+        tab->tab[cent].adr = hold;                 // cpy = tmp
     }
     xpost_stack_free(mem, sav.save_.stk);
 }

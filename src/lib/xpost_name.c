@@ -109,7 +109,7 @@ int xpost_name_init(Xpost_Context *ctx)
         XPOST_LOG_ERR("Warning: name tree is not in special position");
 
     xpost_stack_init(ctx->gl, &t);
-    tab = (void *)ctx->gl->base; //recalc pointer
+    tab = &ctx->gl->table; //recalc pointer
     tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK].adr = t;
     tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = 0;
     xpost_memory_table_get_addr(ctx->gl,
@@ -136,7 +136,7 @@ int xpost_name_init(Xpost_Context *ctx)
         XPOST_LOG_ERR("Warning: name tree is not in special position");
 
     xpost_stack_init(ctx->lo, &t);
-    tab = (void *)ctx->lo->base; //recalc pointer
+    tab = &ctx->lo->table; //recalc pointer
     tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK].adr = t;
     tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = 0;
     xpost_memory_table_get_addr(ctx->lo,
@@ -280,14 +280,14 @@ Xpost_Object xpost_name_cons(Xpost_Context *ctx,
         u = tstsearch(ctx->gl, tstk, s);
         if (!u) {
             Xpost_Memory_File *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
-            Xpost_Memory_Table *tab = (void *)mem->base;
+            Xpost_Memory_Table *tab = &mem->table;
             ret = tstinsert(mem, tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr, s, &t);
             if (ret)
             {
                 //this can only be a VMerror
                 return invalid;
             }
-            tab = (void *)mem->base; //recalc pointer
+            tab = &mem->table; //recalc pointer
             tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = t;
             u = addname(ctx, s); // obeys vmmode
             o.mark_.tag = nametype | (ctx->vmmode==GLOBAL?XPOST_OBJECT_TAG_DATA_FLAG_BANK:0);

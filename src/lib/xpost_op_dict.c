@@ -82,6 +82,7 @@ int xpost_op_dict_to_mark(Xpost_Context *ctx)
     int i;
     Xpost_Object d, k, v;
     Xpost_Object t;
+    int ret;
 
     if (xpost_op_counttomark(ctx))
         return unmatchedmark;
@@ -101,7 +102,8 @@ int xpost_op_dict_to_mark(Xpost_Context *ctx)
         k = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(k) == invalidtype)
             return stackunderflow;
-        xpost_dict_put(ctx, d, k, v);
+        if (ret = xpost_dict_put(ctx, d, k, v))
+            return ret;
     }
     (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
     xpost_stack_push(ctx->lo, ctx->os, d);
@@ -237,8 +239,7 @@ int xpost_op_any_store(Xpost_Context *ctx,
     {
         D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
     }
-    xpost_dict_put(ctx, D, K, V);
-    return 0;
+    return xpost_dict_put(ctx, D, K, V);
 }
 
 /* dict key  get  any
@@ -265,8 +266,7 @@ int xpost_op_dict_any_any_put(Xpost_Context *ctx,
                               Xpost_Object K,
                               Xpost_Object V)
 {
-    xpost_dict_put(ctx, D, K, V);
-    return 0;
+    return xpost_dict_put(ctx, D, K, V);
 }
 
 /* dict key  undef  -
@@ -347,7 +347,8 @@ int xpost_op_dict_copy(Xpost_Context *ctx,
     {
         if (xpost_object_get_type(tp[i].key) != nulltype)
         {
-            xpost_dict_put(ctx, D, tp[i].key, tp[i].value);
+            if (ret = xpost_dict_put(ctx, D, tp[i].key, tp[i].value))
+                return ret;
             tp = (void *)(mem->base + ad + sizeof(dichead)); /* recalc */
         }
     }

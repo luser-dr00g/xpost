@@ -76,7 +76,7 @@ int xpost_free_init(Xpost_Memory_File *mem)
 
     /* set zero size to enable guards against NULL writes */
     {
-        Xpost_Memory_Table *tab = (Xpost_Memory_Table *)mem->base;
+        Xpost_Memory_Table *tab = &mem->table;
         tab->tab[XPOST_MEMORY_TABLE_SPECIAL_FREE].sz = 0;
     }
 
@@ -101,12 +101,12 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
     if (ent < mem->start)
         return 0;
 
-    ret = xpost_memory_table_find_relative(mem, &tab, &rent);
-    if (!ret)
+    if (ent >= mem->table.nextent)
     {
         XPOST_LOG_ERR("cannot free ent %u", ent);
         return -1;
     }
+    tab = &mem->table;
     a = tab->tab[rent].adr;
     sz = tab->tab[rent].sz;
     if (sz == 0) return 0; /* do not add zero-size allocations to list */
@@ -242,6 +242,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     unsigned int z;
     unsigned int e;                     /* working pointer */
     static int period = XPOST_GARBAGE_COLLECTION_PERIOD;
+    static int threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
     int ret;
 
     ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
@@ -275,7 +276,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
            but does not waste more than sz bytes, use it */
         if (tsz >= sz)
         {
-            Xpost_Memory_Table *tab;
+            Xpost_Memory_Table *tab = &mem->table;
             unsigned int ent;
             unsigned int ad;
 
@@ -293,8 +294,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
             }
             memcpy(mem->base + z, mem->base + ad, sizeof(unsigned int));
             ent = e;
-            ret = xpost_memory_table_find_relative(mem, &tab, &ent);
-            if (!ret)
+            if (ent >= mem->table.nextent)
             {
                 XPOST_LOG_ERR("cannot find table for ent %u", e);
                 return 0;
@@ -313,6 +313,15 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     }
     /* finished scanning free list */
 
+#ifdef XPOST_USE_THRESHOLD
+    (void)period;
+    if ((threshold -= sz) < 0)
+    {
+        threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+        return 2;
+    }
+#else
+    (void)threshold;
     if (--period == 0) /* check garbage-collection control */
     {
         period = XPOST_GARBAGE_COLLECTION_PERIOD;
@@ -320,6 +329,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
         /* collect(mem, 1, 0); */
         /* goto try_again; */
     }
+#endif
 
     return 0; /* not found, fall-back to _new allocator */
 }
@@ -357,8 +367,8 @@ unsigned int xpost_free_realloc(Xpost_Memory_File *mem,
         return 0;
     }
     rent = ent;
-    xpost_memory_table_find_relative(mem, &tab, &rent);
-    if (!ret)
+    tab = &mem->table;
+    if (ent >= mem->table.nextent)
     {
         XPOST_LOG_ERR("cannot find table for ent %u", ent);
         return 0;

@@ -109,9 +109,8 @@ int xpost_oplib_init_ops(Xpost_Context *ctx)
     }
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "systemdict"), sd);
     xpost_stack_push(ctx->lo, ctx->ds, sd); // push systemdict on dictstack
-    tab = NULL;
     ent = xpost_object_get_ent(sd);
-    xpost_memory_table_find_relative(ctx->gl, &tab, &ent);
+    tab = &ctx->gl->table;
     tab->tab[ent].sz = 0; // make systemdict immune to collection
 
     xpost_memory_table_get_addr(ctx->gl,

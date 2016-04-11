@@ -115,7 +115,7 @@ XPCHECKAPI void xpost_stack_free(Xpost_Memory_File *mem,
     if (s->nextseg)
         xpost_stack_free(mem, s->nextseg);
     xpost_memory_table_alloc(mem, 0, 0, &e); /* allocate entry with 0 size */
-    xpost_memory_table_find_relative(mem, &tab, &e);
+    tab = &mem->table;
     tab->tab[e].adr = stackadr; /* insert address */
     tab->tab[e].sz = sizeof(Xpost_Stack); /* insert size */
     /* discard */

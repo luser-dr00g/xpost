@@ -71,7 +71,7 @@ int xpost_context_init_ctxlist(Xpost_Memory_File *mem)
         return 0; /* was unregistered error */
     }
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST);
-    tab = (void *)mem->base;
+    tab = &mem->table;
     memset(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr, 0,
            MAXCONTEXT * sizeof(unsigned int));
 
@@ -86,7 +86,7 @@ int xpost_context_append_ctxlist(Xpost_Memory_File *mem,
     Xpost_Memory_Table *tab;
     unsigned int *ctxlist;
 
-    tab = (void *)mem->base;
+    tab = &mem->table;
     ctxlist = (void *)(mem->base + tab->tab[XPOST_MEMORY_TABLE_SPECIAL_CONTEXT_LIST].adr);
     // find first empty
     for (i=0; i < MAXCONTEXT; i++)
@@ -122,8 +122,8 @@ int initglobal(Xpost_Context *ctx,
 {
     char g_filenam[] = "gmemXXXXXX";
     int fd;
-    unsigned int tadr;
     int ret;
+    unsigned int safeadr;
 
     ctx->vmmode = GLOBAL;
 
@@ -145,12 +145,13 @@ int initglobal(Xpost_Context *ctx,
         close(fd);
         return 0;
     }
-    ret = xpost_memory_table_init(ctx->gl, &tadr);
+    ret = xpost_memory_table_init(ctx->gl);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->gl);
         return 0;
     }
+    xpost_memory_file_alloc(ctx->gl, 64, &safeadr); //safety buffer
     ret = xpost_free_init(ctx->gl);
     if (!ret)
     {
@@ -197,8 +198,8 @@ int initlocal(Xpost_Context *ctx,
 {
     char l_filenam[] = "lmemXXXXXX";
     int fd;
-    unsigned int tadr;
     int ret;
+    unsigned int safeadr;
 
     ctx->vmmode = LOCAL;
 
@@ -221,12 +222,13 @@ int initlocal(Xpost_Context *ctx,
         return 0;
     }
 
-    ret = xpost_memory_table_init(ctx->lo, &tadr);
+    ret = xpost_memory_table_init(ctx->lo);
     if (!ret)
     {
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
+    xpost_memory_file_alloc(ctx->lo, 64, &safeadr); //safety buffer
     ret = xpost_free_init(ctx->lo);
     if (!ret)
     {

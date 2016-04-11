@@ -106,12 +106,12 @@ Xpost_Object xpost_string_cons(Xpost_Context *ctx,
 char *xpost_string_get_pointer(Xpost_Context *ctx,
                                Xpost_Object S)
 {
-    Xpost_Memory_File *f;
+    Xpost_Memory_File *mem;
     Xpost_Memory_Table *tab;
     unsigned int ent = xpost_object_get_ent(S);
-    f = xpost_context_select_memory(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
-    xpost_memory_table_find_relative(f, &tab, &ent);
-    return (void *)(f->base + tab->tab[ent].adr + S.comp_.off);
+    mem = xpost_context_select_memory(ctx, S) /*S.tag&FBANK?ctx->gl:ctx->lo*/;
+    tab = &mem->table;
+    return (void *)(mem->base + tab->tab[ent].adr + S.comp_.off);
 }
 
 

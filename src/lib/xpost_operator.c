@@ -298,9 +298,8 @@ int xpost_operator_init_optab(Xpost_Context *ctx)
     {
         return 0;
     }
-    tab = (void *)(ctx->gl);
+    tab = &ctx->gl->table;
     assert(ent == XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE);
-    xpost_memory_table_find_relative(ctx->gl, &tab, &ent);
     tab->tab[ent].sz = 0; // so gc will ignore it
     //printf("ent: %d\nOPTAB: %d\n", ent, (int)XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE);
 
@@ -541,15 +540,9 @@ void _xpost_operator_push_args_to_hold(Xpost_Context *ctx,
                                        unsigned stacadr,
                                        int n)
 {
-    Xpost_Stack *hold;
     int j;
 
     assert(n < XPOST_MEMORY_TABLE_SIZE);
-#if 0
-    hold = (void *)(ctx->lo->base + ctx->hold);
-    hold->top = 0;     /* clear HOLD */
-    hold->prevseg = ctx->hold;
-#endif
     xpost_stack_clear(ctx->lo, ctx->hold);
     for (j = n; j--;)
     {  /* copy */

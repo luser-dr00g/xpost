@@ -78,14 +78,16 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
     if (sz == 0) {
         ent = 0;
     } else {
-        if (!xpost_memory_table_alloc(mem, (unsigned int)(sz * sizeof(Xpost_Object)), arraytype, &ent ))
+        if (!xpost_memory_table_alloc(mem,
+                    (unsigned int)(sz * sizeof(Xpost_Object)),
+                    sz + XPOST_OBJECT_NTYPES,
+                    &ent))
         {
             XPOST_LOG_ERR("cannot allocate array");
             return null;
         }
-        tab = (void *)(mem->base);
+        tab = &mem->table;
         rent = ent;
-        xpost_memory_table_find_relative(mem, &tab, &rent);
         xpost_memory_table_get_addr(mem,
                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
         cnt = xpost_stack_count(mem, vs);
