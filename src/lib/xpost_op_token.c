@@ -533,6 +533,11 @@ int toke(Xpost_Context *ctx,
     Xpost_Object o;
     int ret;
 
+    if (!src){
+        XPOST_LOG_ERR("src is NULL");
+        return unregistered;
+    }
+
     sta = snip(ctx, buf, src, next);
     if (!sta)
     {

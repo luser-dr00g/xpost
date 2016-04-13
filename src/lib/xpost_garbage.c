@@ -622,6 +622,10 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
             }
         }
     }
+    if (ctx==NULL){
+        XPOST_LOG_ERR("cannot find context");
+        return -1;
+    }
 #ifdef DEBUG_GC
     printf("using cid=%d\n", ctx->id);
 #endif
