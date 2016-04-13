@@ -533,7 +533,8 @@ int toke(Xpost_Context *ctx,
     Xpost_Object o;
     int ret;
 
-    if (!src){
+    if (!src)
+    {
         XPOST_LOG_ERR("src is NULL");
         return unregistered;
     }
