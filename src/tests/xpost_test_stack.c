@@ -61,7 +61,7 @@ START_TEST(xpost_stack)
     ret = xpost_stack_init(&mem, &stack);
     ck_assert_int_eq (ret, 1);
 
-    xpost_stack_free (&mem, stack);
+    //xpost_stack_free (&mem, stack); // cannot free without memory-tables and free-list
     ret = xpost_memory_file_exit(&mem);
     ck_assert_int_eq (ret, 1);
 
@@ -103,7 +103,7 @@ START_TEST(xpost_stack_push_pop)
         ck_assert_int_eq (obj.int_.val, i);
     }
 
-    xpost_stack_free (&mem, stack);
+    //xpost_stack_free (&mem, stack); //cannot free without memory-table and free-list
     ret = xpost_memory_file_exit(&mem);
     ck_assert_int_eq (ret, 1);
 
