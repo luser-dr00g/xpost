@@ -81,7 +81,9 @@ int main()
     printf("created interpreter context. executing program...\n");
     ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
     printf("executed program. xpost_run returned %s\n", ret? "yieldtocaller": "zero");
-    {
+    if (!ret){
+        fprintf(stderr, "error before showpage\n");
+    } else {
         typedef struct { unsigned char blue, green, red; } pixel;
         pixel *buffer = buffer_type_object;
         int i,j;
