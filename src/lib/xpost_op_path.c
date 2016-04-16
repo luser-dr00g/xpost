@@ -617,8 +617,8 @@ int _arc(Xpost_Context *ctx,
     }
     else
     {
-        Xpost_Object path = _cpath(ctx);
-        int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
+        //Xpost_Object path = _cpath(ctx);
+        //int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
         _arcbez(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2));
         xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
         xpost_stack_push(ctx->lo, ctx->es, _arc_start_proc);
@@ -652,8 +652,8 @@ int _arcn(Xpost_Context *ctx,
     }
     else
     {
-        Xpost_Object path = _cpath(ctx);
-        int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
+        //Xpost_Object path = _cpath(ctx);
+        //int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
         _arcbez(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2));
         xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
         xpost_stack_push(ctx->lo, ctx->es, _arc_start_proc);
@@ -775,7 +775,7 @@ int _flattenpath (Xpost_Context *ctx)
         subpath = xpost_dict_get(ctx, path, xpost_int_cons(i));
         if (xpost_object_get_type(subpath) == invalidtype)
         {
-            XPOST_LOG_ERR("subpath %d not found in path", i);
+            XPOST_LOG_ERR("subpath %d not found in path (size %d)", i, pathlen);
             return undefined;
         }
         subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
@@ -787,7 +787,7 @@ int _flattenpath (Xpost_Context *ctx)
             elem = xpost_dict_get(ctx, subpath, xpost_int_cons(j));
             if (xpost_object_get_type(elem) == invalidtype)
             {
-                XPOST_LOG_ERR("elem %d not found in subpath %d", j, i);
+                XPOST_LOG_ERR("elem %d not found in subpath %d (size %d)", j, i, subpathlen);
                 return undefined;
             }
             cmd = xpost_dict_get(ctx, elem, namecmd);

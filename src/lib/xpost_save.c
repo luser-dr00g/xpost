@@ -260,15 +260,18 @@ void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
     if (xpost_object_get_type(sav) == invalidtype)
         return;
     cnt = xpost_stack_count(mem, sav.save_.stk);
+    XPOST_LOG_INFO("restoring %u save records", cnt);
     while (cnt--)
     {
         Xpost_Object rec;
         unsigned hold;
+
         rec = xpost_stack_pop(mem, sav.save_.stk);
         if (xpost_object_get_type(rec) == invalidtype)
             return;
         sent = rec.saverec_.src;
         cent = rec.saverec_.cpy;
+        XPOST_LOG_INFO("replacing ent %u with copy ent %u", sent, cent);
         if (sent >= tab->nextent)
         {
             XPOST_LOG_ERR("cannot find table for ent %u", sent);
@@ -283,7 +286,7 @@ void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
         tab->tab[sent].adr = tab->tab[cent].adr;  // src = cpy
         tab->tab[cent].adr = hold;                 // cpy = tmp
     }
-    xpost_stack_free(mem, sav.save_.stk);
+    //xpost_stack_free(mem, sav.save_.stk);
 }
 
 #ifdef TESTMODULE_V

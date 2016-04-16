@@ -80,7 +80,7 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
     } else {
         if (!xpost_memory_table_alloc(mem,
                     (unsigned int)(sz * sizeof(Xpost_Object)),
-                    sz + XPOST_OBJECT_NTYPES,
+                    arraytype,
                     &ent))
         {
             XPOST_LOG_ERR("cannot allocate array");

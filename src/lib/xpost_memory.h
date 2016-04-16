@@ -125,6 +125,7 @@ typedef struct Xpost_Memory_Table
     struct
     {
         unsigned int adr; /**< allocation address */
+        unsigned int used; /**< size in use */
         unsigned int sz; /**< size of allocation */
         unsigned int mark; /**< garbage collection metadata */
         unsigned int tag; /**< type of object using this allocation, if needed */

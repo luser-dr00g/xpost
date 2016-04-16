@@ -235,7 +235,9 @@ int initlocal(Xpost_Context *ctx,
         xpost_memory_file_exit(ctx->lo);
         return 0;
     }
+#ifndef XPOST_NO_GC
     xpost_memory_register_garbage_collect_function(ctx->lo, garbage_collect_function);
+#endif
     ret = xpost_save_init(ctx->lo);
     if (!ret)
     {

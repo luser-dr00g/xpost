@@ -146,6 +146,9 @@ int _xpost_garbage_mark_dict(Xpost_Context *ctx,
             if (xpost_object_get_type(tp[j].key) != nulltype){
                 if (!_xpost_garbage_mark_object(ctx, mem, tp[j].key, markall))
                     return 0;
+#ifdef DEBUG_GC
+            printf(":");
+#endif
                 if (!_xpost_garbage_mark_object(ctx, mem, tp[j].value, markall))
                     return 0;
             }
@@ -165,12 +168,19 @@ int _xpost_garbage_mark_array(Xpost_Context *ctx,
 {
     if (!mem) return 0;
 
+#ifdef DEBUG_GC
+    printf("markarray: sz=%u\n", sz);
+#endif
+
     {
         Xpost_Object *op = (void *)(mem->base + adr);
         unsigned int j;
 
         for (j = 0; j < sz; j++)
         {
+#ifdef DEBUG_GC
+            printf("%u:", j);
+#endif
             if (!_xpost_garbage_mark_object(ctx, mem, op[j], markall))
                 return 0;
         }
@@ -212,7 +222,9 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
 
         case arraytype:
             if (xpost_object_get_ent(o) == 0)
+            {
                 return 1;
+            }
 
             if (xpost_object_get_ent(o) < (signed)mem->start)
             {
@@ -249,7 +261,8 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
                     XPOST_LOG_ERR("cannot retrieve tag for array ent %u", xpost_object_get_ent(o));
                     return 0;
                 }
-                if (!_xpost_garbage_mark_array(ctx, mem, ad, tag - XPOST_OBJECT_NTYPES, markall))
+                if (!_xpost_garbage_mark_array(ctx, mem, ad,
+                            mem->table.tab[xpost_object_get_ent(o)].used/sizeof(Xpost_Object), markall))
                     return 0;
             }
             break;
@@ -291,6 +304,11 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
             break;
 
         case stringtype:
+            if (xpost_object_get_ent(o) == 0)
+            {
+                return 1;
+            }
+
             if (xpost_object_get_ent(o) < (signed)mem->start)
             {
                 XPOST_LOG_ERR("attempt to mark %s object %d",
@@ -565,6 +583,9 @@ unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
         if (((mem->table.tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0) &&
             (mem->table.tab[i].sz != 0))
         {
+#ifdef DEBUG_GC
+            printf("freeing ent %u", i);
+#endif
             ret = xpost_free_memory_ent(mem, i);
             if (ret < 0)
             {

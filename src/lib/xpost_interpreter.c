@@ -1311,8 +1311,10 @@ XPAPI void xpost_destroy(Xpost_Context *ctx)
     }
     //xpost_garbage_collect(itpdata->ctab->gl, 1, 1);
     //xpost_garbage_collect(itpdata->ctab->lo, 1, 1);
+#ifndef XPOST_NO_GC
     xpost_garbage_collect(ctx->gl, 1, 1);
     xpost_garbage_collect(ctx->lo, 1, 1);
+#endif
 
     /* exit if all contexts are destroyed */
     //xpost_interpreter_exit(itpdata);

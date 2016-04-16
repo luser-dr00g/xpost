@@ -164,6 +164,11 @@ Xpost_Object xpost_object_set_ent(Xpost_Object obj,
 {
     if (!xpost_object_is_composite(obj))
         return invalid;
+    if (ent == 0 && obj.comp_.sz != 0)
+    {
+        XPOST_LOG_ERR("setting ent to 0 for non-zero-sized composite");
+        return invalid;
+    }
     obj.comp_.ent = ent;
     obj.comp_.tag &= (1 << XPOST_OBJECT_TAG_DATA_EXTRA_BITS) - 1;
     obj.comp_.tag |= (ent >> (8*sizeof(word)))

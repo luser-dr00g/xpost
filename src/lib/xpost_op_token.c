@@ -576,6 +576,9 @@ int Ftoken(Xpost_Context *ctx,
 {
     Xpost_Object t;
     int ret;
+
+    xpost_stack_push(ctx->lo, ctx->hold, F);
+
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
     ret = toke(ctx, &F, Fnext, Fback, &t);
@@ -622,6 +625,8 @@ int Stoken(Xpost_Context *ctx,
 {
     Xpost_Object t;
     int ret;
+
+    xpost_stack_push(ctx->lo, ctx->hold, S);
 
     ret = toke(ctx, &S, Snext, Sback, &t);
     if (ret)

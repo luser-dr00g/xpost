@@ -187,6 +187,8 @@ int xpost_op_any_load(Xpost_Context *ctx,
         xpost_stack_dump(ctx->lo, ctx->ds);
     }
 
+    xpost_stack_push(ctx->lo, ctx->hold, K);
+
     for (i = 0; i < z; i++)
     {
         Xpost_Object x;
