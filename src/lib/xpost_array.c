@@ -63,7 +63,7 @@
    wrap it up in an object.
 */
 Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
-               unsigned int sz)
+                                     unsigned int sz)
 {
     unsigned int ent;
     unsigned int rent;
@@ -75,13 +75,16 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
 
     assert(mem->base);
 
-    if (sz == 0) {
+    if (sz == 0)
+    {
         ent = 0;
-    } else {
+    }
+    else
+    {
         if (!xpost_memory_table_alloc(mem,
-                    (unsigned int)(sz * sizeof(Xpost_Object)),
-                    arraytype,
-                    &ent))
+                                      (unsigned int)(sz * sizeof(Xpost_Object)),
+                                      arraytype,
+                                      &ent))
         {
             XPOST_LOG_ERR("cannot allocate array");
             return null;
@@ -89,7 +92,7 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
         tab = &mem->table;
         rent = ent;
         xpost_memory_table_get_addr(mem,
-                XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+                                    XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
         cnt = xpost_stack_count(mem, vs);
         tab->tab[rent].mark = ( (0 << XPOST_MEMORY_TABLE_MARK_DATA_MARK_OFFSET)
                 | (0 << XPOST_MEMORY_TABLE_MARK_DATA_REFCOUNT_OFFSET)
@@ -102,7 +105,7 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
             int ret;
 
             ret = xpost_memory_put(mem,
-                    ent, i, (unsigned int)sizeof(Xpost_Object), &null);
+                                   ent, i, (unsigned int)sizeof(Xpost_Object), &null);
             if (!ret)
             {
                 XPOST_LOG_ERR("cannot fill array value");
@@ -130,7 +133,7 @@ Xpost_Object xpost_array_cons_memory(Xpost_Memory_File *mem,
    set BANK flag.   object.tag&BANK?global:local
 */
 Xpost_Object xpost_array_cons(Xpost_Context *ctx,
-               unsigned int sz)
+                              unsigned int sz)
 {
     Xpost_Object a = xpost_array_cons_memory(ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (xpost_object_get_type(a) != nulltype)
@@ -150,9 +153,9 @@ Xpost_Object xpost_array_cons(Xpost_Context *ctx,
    call memory_put.
 */
 int xpost_array_put_memory(Xpost_Memory_File *mem,
-            Xpost_Object a,
-            integer i,
-            Xpost_Object o)
+                           Xpost_Object a,
+                           integer i,
+                           Xpost_Object o)
 {
     int ret;
     if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(a)))
@@ -164,7 +167,9 @@ int xpost_array_put_memory(Xpost_Memory_File *mem,
         /*breakhere((Xpost_Context *)mem);*/
         return rangecheck;
     }
-    ret = xpost_memory_put(mem, xpost_object_get_ent(a), (unsigned int)(a.comp_.off + i), (unsigned int)sizeof(Xpost_Object), &o);
+    ret = xpost_memory_put(mem, xpost_object_get_ent(a),
+                           (unsigned int)(a.comp_.off + i),
+                           (unsigned int)sizeof(Xpost_Object), &o);
     if (!ret)
         return VMerror;
     return 0;
@@ -177,15 +182,16 @@ int xpost_array_put_memory(Xpost_Memory_File *mem,
    call xpost_array_put_memory.
 */
 int xpost_array_put(Xpost_Context *ctx,
-            Xpost_Object a,
-            integer i,
-            Xpost_Object o)
+                    Xpost_Object a,
+                    integer i,
+                    Xpost_Object o)
 {
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, a);
-    if (!ctx->ignoreinvalidaccess) {
-        if ( mem == ctx->gl
-                && xpost_object_is_composite(o)
-                && mem != xpost_context_select_memory(ctx, o))
+    if (!ctx->ignoreinvalidaccess)
+    {
+        if ( mem == ctx->gl &&
+             xpost_object_is_composite(o) &&
+             mem != xpost_context_select_memory(ctx, o))
             return invalidaccess;
     }
 
@@ -199,13 +205,15 @@ int xpost_array_put(Xpost_Context *ctx,
    call memory_get.
  */
 Xpost_Object xpost_array_get_memory(Xpost_Memory_File *mem,
-              Xpost_Object a,
-              integer i)
+                                    Xpost_Object a,
+                                    integer i)
 {
     Xpost_Object o;
     int ret;
 
-    ret = xpost_memory_get(mem, xpost_object_get_ent(a), (unsigned int)(a.comp_.off +i), (unsigned int)(sizeof(Xpost_Object)), &o);
+    ret = xpost_memory_get(mem, xpost_object_get_ent(a),
+                           (unsigned int)(a.comp_.off +i),
+                           (unsigned int)(sizeof(Xpost_Object)), &o);
     if (!ret)
     {
         return invalid;
@@ -221,8 +229,8 @@ Xpost_Object xpost_array_get_memory(Xpost_Memory_File *mem,
    call xpost_array_get_memory.
  */
 Xpost_Object xpost_array_get(Xpost_Context *ctx,
-              Xpost_Object a,
-              integer i)
+                             Xpost_Object a,
+                             integer i)
 {
     return xpost_array_get_memory(xpost_context_select_memory(ctx, a), a, i);
 }
