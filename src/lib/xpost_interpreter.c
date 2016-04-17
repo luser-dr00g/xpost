@@ -199,9 +199,9 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
         return 0;
     if (xpost_object_get_type(xpost_name_cons(ctx, "setmiterlimit")) == invalidtype)
         return 0;
-    if (xpost_object_get_type(namedollarerror = xpost_name_cons(ctx, "$error")) == invalidtype)
+    if (xpost_object_get_type((namedollarerror = xpost_name_cons(ctx, "$error"))) == invalidtype)
         return 0;
-    if (xpost_object_get_type(nameerrordict = xpost_name_cons(ctx, "errordict")) == invalidtype)
+    if (xpost_object_get_type((nameerrordict = xpost_name_cons(ctx, "errordict"))) == invalidtype)
         return 0;
 
     xpost_oplib_init_ops(ctx); /* populate the optab (and systemdict) with operators */

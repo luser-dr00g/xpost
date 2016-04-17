@@ -95,14 +95,15 @@ int xpost_op_dict_to_mark(Xpost_Context *ctx)
     d = xpost_object_cvlit(xpost_dict_cons (ctx, i));
     if (xpost_object_get_type(d) == nulltype)
         return VMerror;
-    for ( ; i > 0; i -= 2){
+    for ( ; i > 0; i -= 2)
+    {
         v = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(v) == invalidtype)
             return stackunderflow;
         k = xpost_stack_pop(ctx->lo, ctx->os);
         if (xpost_object_get_type(k) == invalidtype)
             return stackunderflow;
-        if (ret = xpost_dict_put(ctx, d, k, v))
+        if ((ret = xpost_dict_put(ctx, d, k, v)))
             return ret;
     }
     (void)xpost_stack_pop(ctx->lo, ctx->os); // pop mark
@@ -181,7 +182,8 @@ int xpost_op_any_load(Xpost_Context *ctx,
 {
     int i;
     int z = xpost_stack_count(ctx->lo, ctx->ds);
-    if (DEBUGLOAD) {
+    if (DEBUGLOAD)
+    {
         printf("\nload:");
         xpost_object_dump(K);
         xpost_stack_dump(ctx->lo, ctx->ds);
@@ -349,7 +351,7 @@ int xpost_op_dict_copy(Xpost_Context *ctx,
     {
         if (xpost_object_get_type(tp[i].key) != nulltype)
         {
-            if (ret = xpost_dict_put(ctx, D, tp[i].key, tp[i].value))
+            if ((ret = xpost_dict_put(ctx, D, tp[i].key, tp[i].value)))
                 return ret;
             tp = (void *)(mem->base + ad + sizeof(dichead)); /* recalc */
         }
@@ -477,7 +479,8 @@ static
 int xpost_op_cleardictstack(Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->ds);
-    while (z-- > 3) {
+    while (z-- > 3)
+    {
         (void)xpost_stack_pop(ctx->lo, ctx->ds);
     }
     /*

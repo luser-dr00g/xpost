@@ -864,17 +864,17 @@ int xpost_oper_init_xcb_device_ops (Xpost_Context *ctx,
     Xpost_Operator *optab;
     Xpost_Object n,op;
 
-    if (xpost_object_get_type(namePrivate = xpost_name_cons(ctx, "Private")) == invalidtype)
+    if (xpost_object_get_type((namePrivate = xpost_name_cons(ctx, "Private"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
+    if (xpost_object_get_type((namewidth = xpost_name_cons(ctx, "width"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameheight = xpost_name_cons(ctx, "height")) == invalidtype)
+    if (xpost_object_get_type((nameheight = xpost_name_cons(ctx, "height"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namedotcopydict = xpost_name_cons(ctx, ".copydict")) == invalidtype)
+    if (xpost_object_get_type((namedotcopydict = xpost_name_cons(ctx, ".copydict"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace")) == invalidtype)
+    if (xpost_object_get_type((namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB")) == invalidtype)
+    if (xpost_object_get_type((nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB"))) == invalidtype)
         return VMerror;
 
     xpost_memory_table_get_addr(ctx->gl,

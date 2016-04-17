@@ -861,23 +861,23 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
             XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     optab = (void *)(ctx->gl->base + optadr);
 
-    if (xpost_object_get_type(namegraphicsdict = xpost_name_cons(ctx, "graphicsdict")) == invalidtype)
+    if (xpost_object_get_type((namegraphicsdict = xpost_name_cons(ctx, "graphicsdict"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namecurrgstate = xpost_name_cons(ctx, "currgstate")) == invalidtype)
+    if (xpost_object_get_type((namecurrgstate = xpost_name_cons(ctx, "currgstate"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namecurrpath = xpost_name_cons(ctx, "currpath")) == invalidtype)
+    if (xpost_object_get_type((namecurrpath = xpost_name_cons(ctx, "currpath"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namecmd = xpost_name_cons(ctx, "cmd")) == invalidtype)
+    if (xpost_object_get_type((namecmd = xpost_name_cons(ctx, "cmd"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namedata = xpost_name_cons(ctx, "data")) == invalidtype)
+    if (xpost_object_get_type((namedata = xpost_name_cons(ctx, "data"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namemove = xpost_name_cons(ctx, "move")) == invalidtype)
+    if (xpost_object_get_type((namemove = xpost_name_cons(ctx, "move"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameline = xpost_name_cons(ctx, "line")) == invalidtype)
+    if (xpost_object_get_type((nameline = xpost_name_cons(ctx, "line"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namecurve = xpost_name_cons(ctx, "curve")) == invalidtype)
+    if (xpost_object_get_type((namecurve = xpost_name_cons(ctx, "curve"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameclose = xpost_name_cons(ctx, "close")) == invalidtype)
+    if (xpost_object_get_type((nameclose = xpost_name_cons(ctx, "close"))) == invalidtype)
         return VMerror;
 
     _mat = xpost_object_cvlit(xpost_array_cons(ctx, 6));

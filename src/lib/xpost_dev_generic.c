@@ -535,25 +535,25 @@ int xpost_oper_init_generic_device_ops (Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, ".yxsort", (Xpost_Op_Func)_yxsort, 0, 1, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillpoly", (Xpost_Op_Func)_fillpoly, 0, 2, arraytype, dicttype); INSTALL;
-    if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
+    if (xpost_object_get_type((namewidth = xpost_name_cons(ctx, "width"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace")) == invalidtype)
+    if (xpost_object_get_type((namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDeviceGray = xpost_name_cons(ctx, "DeviceGray")) == invalidtype)
+    if (xpost_object_get_type((nameDeviceGray = xpost_name_cons(ctx, "DeviceGray"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB")) == invalidtype)
+    if (xpost_object_get_type((nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameroll = xpost_name_cons(ctx, "roll")) == invalidtype)
+    if (xpost_object_get_type((nameroll = xpost_name_cons(ctx, "roll"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDrawLine = xpost_name_cons(ctx, "DrawLine")) == invalidtype)
+    if (xpost_object_get_type((nameDrawLine = xpost_name_cons(ctx, "DrawLine"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameexec = xpost_name_cons(ctx, "exec")) == invalidtype)
+    if (xpost_object_get_type((nameexec = xpost_name_cons(ctx, "exec"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namerepeat = xpost_name_cons(ctx, "repeat")) == invalidtype)
+    if (xpost_object_get_type((namerepeat = xpost_name_cons(ctx, "repeat"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namecvx = xpost_name_cons(ctx, "cvx")) == invalidtype)
+    if (xpost_object_get_type((namecvx = xpost_name_cons(ctx, "cvx"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameRbracket = xpost_name_cons(ctx, "]")) == invalidtype)
+    if (xpost_object_get_type((nameRbracket = xpost_name_cons(ctx, "]"))) == invalidtype)
         return VMerror;
 
     return 0;

@@ -277,13 +277,12 @@ int _emit (Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
+    unsigned char *data;
 #ifndef FAST_C_BUFFER
     Xpost_Object imgdata;
-#endif
-
-    unsigned char *data;
     int stride;
     int height;
+#endif
 
     /* load private data struct from string */
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);
@@ -292,12 +291,12 @@ int _emit (Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
-    stride = private.width;
-    height = private.height;
-
 #ifdef FAST_C_BUFFER
     data = (unsigned char *)private.buf->data;
 #else
+
+    stride = private.width;
+    height = private.height;
 
     data = malloc(stride * height * 3);
     imgdata = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "ImgData"));
@@ -467,17 +466,17 @@ int xpost_oper_init_bgr_device_ops (Xpost_Context *ctx,
     Xpost_Object n,op;
 
     /* factor-out name lookups from the operators (optimization) */
-    if (xpost_object_get_type(namePrivate = xpost_name_cons(ctx, "Private")) == invalidtype)
+    if (xpost_object_get_type((namePrivate = xpost_name_cons(ctx, "Private"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namewidth = xpost_name_cons(ctx, "width")) == invalidtype)
+    if (xpost_object_get_type((namewidth = xpost_name_cons(ctx, "width"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameheight = xpost_name_cons(ctx, "height")) == invalidtype)
+    if (xpost_object_get_type((nameheight = xpost_name_cons(ctx, "height"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namedotcopydict = xpost_name_cons(ctx, ".copydict")) == invalidtype)
+    if (xpost_object_get_type((namedotcopydict = xpost_name_cons(ctx, ".copydict"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace")) == invalidtype)
+    if (xpost_object_get_type((namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type(nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB")) == invalidtype)
+    if (xpost_object_get_type((nameDeviceRGB = xpost_name_cons(ctx, "DeviceRGB"))) == invalidtype)
         return VMerror;
 
     xpost_memory_table_get_addr(ctx->gl,
