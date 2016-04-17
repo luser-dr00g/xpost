@@ -142,20 +142,25 @@ int xpost_dict_compare_objects(Xpost_Context *ctx,
            Xpost_Object R)
 {
     /* fold nearly-comparable types to comparable */
-    if (xpost_object_get_type(L) != xpost_object_get_type(R)) {
-        if (xpost_object_get_type(L) == integertype && xpost_object_get_type(R) == realtype) {
+    if (xpost_object_get_type(L) != xpost_object_get_type(R))
+    {
+        if (xpost_object_get_type(L) == integertype && xpost_object_get_type(R) == realtype)
+        {
             L = xpost_real_cons((real)L.int_.val);
             goto cont;
         }
-        if (xpost_object_get_type(R) == integertype && xpost_object_get_type(L) == realtype) {
+        if (xpost_object_get_type(R) == integertype && xpost_object_get_type(L) == realtype)
+        {
             R = xpost_real_cons((real)R.int_.val);
             goto cont;
         }
-        if (xpost_object_get_type(L) == nametype && xpost_object_get_type(R) == stringtype) {
+        if (xpost_object_get_type(L) == nametype && xpost_object_get_type(R) == stringtype)
+        {
             L = xpost_name_get_string(ctx, L);
             goto cont;
         }
-        if (xpost_object_get_type(R) == nametype && xpost_object_get_type(L) == stringtype) {
+        if (xpost_object_get_type(R) == nametype && xpost_object_get_type(L) == stringtype)
+        {
             R = xpost_name_get_string(ctx, R);
             goto cont;
         }
@@ -163,7 +168,8 @@ int xpost_dict_compare_objects(Xpost_Context *ctx,
     }
 
 cont:
-    switch (xpost_object_get_type(L)) {
+    switch (xpost_object_get_type(L))
+    {
         default:
             XPOST_LOG_ERR("unhandled type (%s) in xpost_dict_compare_objects",
                     xpost_object_type_names[xpost_object_get_type(L)]);
@@ -179,14 +185,13 @@ cont:
         case realtype: return (fabs(L.real_.val - R.real_.val) < 0.0001)?
                                 0:
                                 L.real_.val - R.real_.val > 0? 1: -1;
-        case extendedtype: {
-                               double l,r;
-                               l = xpost_dict_convert_extended_to_double(L);
-                               r = xpost_dict_convert_extended_to_double(R);
-                               return (fabs(l - r) < 0.0001)?
-                                   0:
-                                   l - r > 0? 1: -1;
-                           }
+        case extendedtype:
+        {
+            double l,r;
+            l = xpost_dict_convert_extended_to_double(L);
+            r = xpost_dict_convert_extended_to_double(R);
+            return (fabs(l - r) < 0.0001) ? 0 : l - r > 0? 1: -1;
+        }
 
         case operatortype:  return L.mark_.padw - R.mark_.padw;
 
@@ -369,8 +374,10 @@ int dicgrow(Xpost_Context *ctx,
     dp = (void *)(mem->base + ad);
     sz = DICTABN(dp->sz);
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
-    for ( i=0; i < sz; i++) {
-        if (xpost_object_get_type(tp[i].key) != nulltype) {
+    for (i = 0; i < sz; i++)
+    {
+        if (xpost_object_get_type(tp[i].key) != nulltype)
+        {
             xpost_dict_put_memory(ctx, mem, n, tp[i].key, tp[i].value);
         }
     }
@@ -429,9 +436,11 @@ void xpost_dict_dump_memory (Xpost_Memory_File *mem,
     sz = DICTABN(dp->sz);
 
     printf("\n");
-    for (i=0; i < sz; i++) {
+    for (i = 0; i < sz; i++)
+    {
         printf("%u:", i);
-        if (xpost_object_get_type(tp[i].key) != nulltype) {
+        if (xpost_object_get_type(tp[i].key) != nulltype)
+        {
             xpost_object_dump(tp[i].key);
         }
     }
@@ -471,11 +480,16 @@ Xpost_Object xpost_dict_convert_extended_to_number (Xpost_Object e)
     Xpost_Object o;
     double d = xpost_dict_convert_extended_to_double(e);
 
-    if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_INT) {
+    if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_INT)
+    {
         o = xpost_int_cons((integer)d);
-    } else if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_REAL) {
+    }
+    else if (e.tag & XPOST_OBJECT_TAG_DATA_EXTENDED_REAL)
+    {
         o = xpost_real_cons((real)d);
-    } else {
+    }
+    else
+    {
         XPOST_LOG_ERR("invalid extended number object");
         return null;
     }
@@ -485,25 +499,27 @@ Xpost_Object xpost_dict_convert_extended_to_number (Xpost_Object e)
 /* make key the proper type for hashing */
 static
 Xpost_Object clean_key (Xpost_Context *ctx,
-                  Xpost_Object k)
+                        Xpost_Object k)
 {
-    switch(xpost_object_get_type(k)) {
-    default: break;
-    case stringtype: {
-        char *s = alloca(k.comp_.sz+1);
-        memcpy(s, xpost_string_get_pointer(ctx, k), k.comp_.sz);
-        s[k.comp_.sz] = '\0';
-        k = xpost_name_cons(ctx, s);
-    }
-    break;
-    case integertype:
-        k = consextended(k.int_.val);
-        k.tag |= XPOST_OBJECT_TAG_DATA_EXTENDED_INT;
-    break;
-    case realtype:
-        k = consextended(k.real_.val);
-        k.tag |= XPOST_OBJECT_TAG_DATA_EXTENDED_REAL;
-    break;
+    switch(xpost_object_get_type(k))
+    {
+        default: break;
+        case stringtype:
+        {
+            char *s = alloca(k.comp_.sz+1);
+            memcpy(s, xpost_string_get_pointer(ctx, k), k.comp_.sz);
+            s[k.comp_.sz] = '\0';
+            k = xpost_name_cons(ctx, s);
+            break;
+        }
+        case integertype:
+            k = consextended(k.int_.val);
+            k.tag |= XPOST_OBJECT_TAG_DATA_EXTENDED_INT;
+            break;
+        case realtype:
+            k = consextended(k.real_.val);
+            k.tag |= XPOST_OBJECT_TAG_DATA_EXTENDED_REAL;
+            break;
     }
     return k;
 }
@@ -554,10 +570,12 @@ dicrec *diclookup(Xpost_Context *ctx,
 #endif
 
     RETURN_TAB_I_IF_EQ_K_OR_NULL;
-    for (++i; i < sz; i++) {
+    for (++i; i < sz; i++)
+    {
         RETURN_TAB_I_IF_EQ_K_OR_NULL;
     }
-    for (i=0; i < h; i++) {
+    for (i = 0; i < h; i++)
+    {
         RETURN_TAB_I_IF_EQ_K_OR_NULL;
     }
     return NULL; /* i == h : dict is overfull: no null entry */
@@ -565,9 +583,9 @@ dicrec *diclookup(Xpost_Context *ctx,
 
 /* see if lookup returns a non-null pair. */
 int xpost_dict_known_key(Xpost_Context *ctx,
-        /*@dependent@*/ Xpost_Memory_File *mem,
-        Xpost_Object d,
-        Xpost_Object k)
+                         /*@dependent@*/ Xpost_Memory_File *mem,
+                         Xpost_Object d,
+                         Xpost_Object k)
 {
     dicrec *r;
 
@@ -674,7 +692,8 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
     }
     else if (xpost_object_get_type(r->key) == nulltype)
     {
-        if (xpost_dict_is_full_memory (mem, d)) {
+        if (xpost_dict_is_full_memory (mem, d))
+        {
             /* dict full:  grow dict! */
             ret = dicgrow(ctx, d);
             if (!ret)
@@ -684,8 +703,8 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
 
             if (r == NULL)
                 return VMerror;
-
         }
+
         xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
         dp = (void *)(mem->base + ad);
         ++ dp->nused;
@@ -714,7 +733,8 @@ int xpost_dict_put(Xpost_Context *ctx,
         Xpost_Object v)
 {
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, d);
-    if (!ctx->ignoreinvalidaccess) {
+    if (!ctx->ignoreinvalidaccess)
+    {
         if ( mem == ctx->gl
                 && xpost_object_is_composite(k)
                 && mem != xpost_context_select_memory(ctx, k))
@@ -766,7 +786,8 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         return VMerror;
 
     e = diclookup(ctx, mem, d, k); /*find slot for key */
-    if (e == NULL || e == invalidrec || xpost_dict_compare_objects(ctx,e->key,null) == 0) {
+    if (e == NULL || e == invalidrec || xpost_dict_compare_objects(ctx,e->key,null) == 0)
+    {
         return undefined;
     }
 
@@ -777,37 +798,53 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
     hashval = hash(k);
     h = hashval % sz;
 
-    for (i=h; i < sz; i++)
-        if (h == hash(tp[i].key) % sz) {
+    for (i = h; i < sz; i++)
+    {
+        if (h == hash(tp[i].key) % sz)
+        {
             last = i;
             lastisset = 1;
-        } else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0) {
-            if (lastisset) {
+        }
+        else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0)
+        {
+            if (lastisset)
+            {
                 found = 1;
                 break;
             }
         }
+    }
 
     if (!found)
-        for (i=0; i < h; i++)
-            if (h == hash(tp[i].key) % sz) {
+    {
+        for (i = 0; i < h; i++)
+        {
+            if (h == hash(tp[i].key) % sz)
+            {
                 last = i;
                 lastisset = 1;
-            } else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0) {
-                if (lastisset) {
+            }
+            else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0)
+            {
+                if (lastisset)
+                {
                     found = 1;
                     break;
                 }
             }
+        }
+    }
 
-    if (found) { /* f found: move last key and value to slot */
+    if (found) /* f found: move last key and value to slot */
+    {
         e->key = tp[last].key;
         e->value = tp[last].value;
         tp[last].key = null;
         tp[last].hash = hash(tp[last].key);
         tp[last].value = null;
     }
-    else { /* ot found: write null over key and value */
+    else /* ot found: write null over key and value */
+    {
         e->key = null;
         tp[last].hash = hash(tp[last].key);
         e->value = null;
@@ -831,7 +868,8 @@ void xpost_dict_undef(Xpost_Context *ctx,
 /*Xpost_Context ctx; */
 Xpost_Context *ctx;
 
-void init() {
+void init()
+{
     /*xpost_context_init(&ctx); */
     itpdata=malloc(sizeof*itpdata);
     xpost_interpreter_init(itpdata);
