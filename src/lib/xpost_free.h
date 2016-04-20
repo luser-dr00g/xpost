@@ -75,7 +75,7 @@
 typedef enum
 {
     XPOST_GARBAGE_COLLECTION_PERIOD = 20000,  /**< number of times to grow before collecting */
-    XPOST_GARBAGE_COLLECTION_THRESHOLD = 250000  /**< number of bytes to allocate before collecting */
+    XPOST_GARBAGE_COLLECTION_THRESHOLD = 500000  /**< number of bytes to allocate before collecting */
 } Xpost_Garbage_Params;
 
 #define XPOST_USE_THRESHOLD
