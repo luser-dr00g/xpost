@@ -508,9 +508,8 @@ int xpost_oper_init_dict_ops (Xpost_Context *ctx,
     int ret;
 
     assert(ctx->gl->base);
-    xpost_memory_table_get_addr(ctx->gl,
-                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (void *)(ctx->gl->base + optadr);
+    //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    //optab = (void *)(ctx->gl->base + optadr);
     op = xpost_operator_cons(ctx, "dict", (Xpost_Op_Func)xpost_op_int_dict, 1, 1, integertype);
     INSTALL;
     ret = xpost_dict_put(ctx, sd, xpost_name_cons(ctx, "<<"), mark);

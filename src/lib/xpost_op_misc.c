@@ -334,9 +334,8 @@ int xpost_oper_init_misc_ops(Xpost_Context *ctx,
     int serno = 0;
 
     assert(ctx->gl->base);
-    xpost_memory_table_get_addr(ctx->gl,
-                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (void *)(ctx->gl->base + optadr);
+    //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    //optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "bind", (Xpost_Op_Func)Pbind, 1, 1, proctype);
     INSTALL;

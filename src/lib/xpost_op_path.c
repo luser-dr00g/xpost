@@ -230,7 +230,7 @@ int _addtopath(Xpost_Context *ctx, Xpost_Object elem, Xpost_Object path)
         if (xpost_dict_compare_objects(ctx, cmd, namemove) == 0)
         {
             /* New Path */
-            subpath = xpost_dict_cons(ctx, 1);
+            subpath = xpost_dict_cons(ctx, 10);
             xpost_dict_put(ctx, subpath, xpost_int_cons(0), elem);
             xpost_dict_put(ctx, path, xpost_int_cons(0), subpath);
         }
@@ -259,7 +259,7 @@ int _addtopath(Xpost_Context *ctx, Xpost_Object elem, Xpost_Object path)
             else
             {
                 /* New Sub-path */
-                subpath = xpost_dict_cons(ctx, 1);
+                subpath = xpost_dict_cons(ctx, 10);
                 xpost_dict_put(ctx, subpath, xpost_int_cons(0), elem);
                 xpost_dict_put(ctx, path, xpost_int_cons(pathlen), subpath);
             }
@@ -577,7 +577,8 @@ int _arcbez(Xpost_Context *ctx,
     x0 = cos_a;
     y0 = sin_a;
     x1 = (real)((4 - cos_a) / 3.0);
-    y1 = - (((1 - cos_a) * (cos_a - 3)) / (3 * sin_a));
+    //y1 = - (((1 - cos_a) * (cos_a - 3)) / (3 * sin_a));
+    y1 = (1 - x1*cos_a) / sin_a;
     x2 = x1;
     y2 = -y1;
     x3 = cos_a;
@@ -757,15 +758,18 @@ int _flattenpath (Xpost_Context *ctx)
     ret = xpost_op_any_load(ctx, namegraphicsdict);
     if (ret) return ret;
     gd = xpost_stack_pop(ctx->lo, ctx->os);
+    xpost_stack_push(ctx->lo, ctx->hold, gd);
     gstate = xpost_dict_get(ctx, gd, namecurrgstate);
     flat = xpost_dict_get(ctx, gstate, xpost_name_cons(ctx, "flat"));
 
     path = _cpath(ctx);
     pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
+    xpost_stack_push(ctx->lo, ctx->hold, path);
     ret = _newpath(ctx);
     if (ret)
         return ret;
     the_new_path = _cpath(ctx);
+    xpost_stack_push(ctx->lo, ctx->hold, the_new_path);
     for (i = 0; i < pathlen; i++)
     {
         Xpost_Object subpath;
@@ -857,9 +861,8 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     unsigned int optadr;
 
     assert(ctx->gl->base);
-    xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (void *)(ctx->gl->base + optadr);
+    //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    //optab = (void *)(ctx->gl->base + optadr);
 
     if (xpost_object_get_type((namegraphicsdict = xpost_name_cons(ctx, "graphicsdict"))) == invalidtype)
         return VMerror;

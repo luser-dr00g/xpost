@@ -263,9 +263,8 @@ int xpost_oper_init_bool_ops(Xpost_Context *ctx,
     int ret;
 
     assert(ctx->gl->base);
-    xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (void *)(ctx->gl->base + optadr);
+    //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    //optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "eq", (Xpost_Op_Func)xpost_op_any_any_eq, 1, 2, anytype, anytype);
     INSTALL;

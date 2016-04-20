@@ -182,9 +182,8 @@ int xpost_oper_init_save_ops(Xpost_Context *ctx,
     unsigned int optadr;
 
     assert(ctx->gl->base);
-    xpost_memory_table_get_addr(ctx->gl,
-                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (void *)(ctx->gl->base + optadr);
+    //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    //optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "save", (Xpost_Op_Func)Zsave, 1, 0);
     INSTALL;

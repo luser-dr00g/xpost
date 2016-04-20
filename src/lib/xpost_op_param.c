@@ -137,9 +137,8 @@ int xpost_oper_init_param_ops(Xpost_Context *ctx,
     unsigned int optadr;
 
     assert(ctx->gl->base);
-    xpost_memory_table_get_addr(ctx->gl,
-                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (void *)(ctx->gl->base + optadr);
+    //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    //optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "vmreclaim", (Xpost_Op_Func)vmreclaim, 0, 1, integertype);
     INSTALL;

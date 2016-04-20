@@ -113,9 +113,8 @@ int xpost_oplib_init_ops(Xpost_Context *ctx)
     tab = &ctx->gl->table;
     tab->tab[ent].sz = 0; // make systemdict immune to collection
 
-    xpost_memory_table_get_addr(ctx->gl,
-                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (void *)(ctx->gl->base + optadr);
+    //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    //optab = (void *)(ctx->gl->base + optadr);
 #ifdef DEBUGOP
     xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     puts("");

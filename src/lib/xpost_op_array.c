@@ -319,9 +319,8 @@ int xpost_oper_init_array_ops (Xpost_Context *ctx,
     int ret;
 
     assert(ctx->gl->base);
-    xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
-    optab = (void *)(ctx->gl->base + optadr);
+    //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    //optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "array", (Xpost_Op_Func)xpost_op_int_array, 1, 1,
             integertype);
