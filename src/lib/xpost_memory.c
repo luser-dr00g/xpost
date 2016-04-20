@@ -461,9 +461,7 @@ xpost_memory_file_alloc(Xpost_Memory_File *mem,
     }
 
     *retaddr = adr;
-    /*
     XPOST_LOG_INFO("allocated %u bytes at %u in %s", sz, adr, mem->fname);
-      */
     return 1;
 }
 
@@ -644,7 +642,7 @@ xpost_memory_table_alloc(Xpost_Memory_File *mem,
             {
                 int sz_reclaimed;
 
-                sz_reclaimed = mem->garbage_collect(mem, 1, 1);
+                sz_reclaimed = mem->garbage_collect(mem, 1, 0);
                 if (sz_reclaimed == -1)
                     return 0;
                 if (sz_reclaimed > (int)sz)
@@ -659,8 +657,8 @@ xpost_memory_table_alloc(Xpost_Memory_File *mem,
         }
     }
     ret = _xpost_memory_table_alloc_new(mem, sz, tag, entity);
-    XPOST_LOG_INFO("allocated %u(%u) bytes with tag %u as ent %u in %s",
-            sz, mem->table.tab[*entity].sz, tag, *entity, mem->fname);
+    XPOST_LOG_INFO("allocated %u(%u) bytes with tag %u as ent %u at %u in %s",
+            sz, mem->table.tab[*entity].sz, tag, *entity, mem->table.tab[*entity].adr, mem->fname);
     mem->table.tab[*entity].used = sz;
     return ret;
 }
