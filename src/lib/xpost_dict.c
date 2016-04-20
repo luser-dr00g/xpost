@@ -359,6 +359,7 @@ int dicgrow(Xpost_Context *ctx,
     Xpost_Object n;
     unsigned int i;
 
+    xpost_stack_push(ctx->lo, ctx->hold, d);
     mem = xpost_context_select_memory(ctx, d);
 #ifdef DEBUGDIC
     printf("DI growing dict\n");
@@ -751,6 +752,9 @@ int xpost_dict_put(Xpost_Context *ctx,
             return invalidaccess;
         }
     }
+    xpost_stack_push(ctx->lo, ctx->hold, d);
+    xpost_stack_push(ctx->lo, ctx->hold, k);
+    xpost_stack_push(ctx->lo, ctx->hold, v);
 
     return xpost_dict_put_memory(ctx, xpost_context_select_memory(ctx, d), d, k, v);
 }
