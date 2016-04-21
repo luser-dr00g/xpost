@@ -638,11 +638,12 @@ xpost_memory_table_alloc(Xpost_Memory_File *mem,
         }
         else if (ret == 2)
         {
-            if (mem->garbage_collect_is_installed)
+            if (mem->garbage_collect_is_installed &&
+                    !mem->interpreter_get_initializing())
             {
                 int sz_reclaimed;
 
-                sz_reclaimed = mem->garbage_collect(mem, 1, 0);
+                sz_reclaimed = mem->garbage_collect(mem, 1, 1);
                 if (sz_reclaimed == -1)
                     return 0;
                 if (sz_reclaimed > (int)sz)

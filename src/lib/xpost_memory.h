@@ -155,6 +155,8 @@ typedef struct Xpost_Memory_File
     unsigned int start; /**< first 'live' entry in the memory_table. */
         /* the domain of the collector is entries >= start */
 
+    int period;
+    int threshold;
     int free_list_alloc_is_installed;
     int (*free_list_alloc)(struct Xpost_Memory_File *mem,
                            unsigned sz,

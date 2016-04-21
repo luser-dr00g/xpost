@@ -82,6 +82,8 @@ int xpost_free_init(Xpost_Memory_File *mem)
 
     /* make free list available for general memory allocations */
     (void) xpost_memory_register_free_list_alloc_function(mem, xpost_free_alloc);
+    mem->period = XPOST_GARBAGE_COLLECTION_PERIOD;
+    mem->threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
 
     return 1;
 }
@@ -241,9 +243,30 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
 {
     unsigned int z;
     unsigned int e;                     /* working pointer */
-    static int period = XPOST_GARBAGE_COLLECTION_PERIOD;
-    static int threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+    //static int period = XPOST_GARBAGE_COLLECTION_PERIOD;
+    //static int threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
     int ret;
+
+    if (!mem->interpreter_get_initializing())
+    {
+#ifdef XPOST_USE_THRESHOLD
+        //(void)period;
+        if ((mem->threshold -= sz) <= 0)
+        {
+            mem->threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+            return 2;
+        }
+#else
+        //(void)threshold;
+        if (--mem->period == 0) /* check garbage-collection control */
+        {
+            mem->period = XPOST_GARBAGE_COLLECTION_PERIOD;
+            return 2; /* not found, request garbage-collection and try-again */
+            /* collect(mem, 1, 0); */
+            /* goto try_again; */
+        }
+#endif
+    }
 
     ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* free pointer */
     if (!ret)
@@ -312,24 +335,6 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
         memcpy(&e, mem->base + z, sizeof(unsigned int));
     }
     /* finished scanning free list */
-
-#ifdef XPOST_USE_THRESHOLD
-    (void)period;
-    if ((threshold -= sz) < 0)
-    {
-        threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
-        return 2;
-    }
-#else
-    (void)threshold;
-    if (--period == 0) /* check garbage-collection control */
-    {
-        period = XPOST_GARBAGE_COLLECTION_PERIOD;
-        return 2; /* not found, request garbage-collection and try-again */
-        /* collect(mem, 1, 0); */
-        /* goto try_again; */
-    }
-#endif
 
     return 0; /* not found, fall-back to _new allocator */
 }
