@@ -851,7 +851,6 @@ int initalldata(const char *device)
 {
     int ret;
 
-    _initializing = 1;
     initevaltype();
     xpost_object_install_dict_get_access(xpost_dict_get_access);
     xpost_object_install_dict_set_access(xpost_dict_set_access);
@@ -1179,6 +1178,8 @@ XPAPI Xpost_Context *xpost_create(const char *device,
     }
 #endif
 
+    xpost_interpreter_set_initializing(0);
+
     return xpost_ctx;
 }
 
@@ -1254,7 +1255,6 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
 
     /* Run! */
 run:
-    _initializing = 0;
     ctx->quit = 0;
     ctx->state = C_RUN;
     ret = mainloop(ctx);
