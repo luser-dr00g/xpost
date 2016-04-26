@@ -13,6 +13,20 @@ AC_PREREQ([2.60])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
+
+# AC_PROG_C** defines CFLAGS to -g -O2 if CFLAGS is empty. Let's use our CFLAGS
+
+AC_MSG_CHECKING([whether CFLAGS is empty])
+if test  "x$CFLAGS" = "x" ; then
+   no_cflags="yes"
+else
+   no_cflags="no"
+fi
+AC_MSG_RESULT([${no_cflags}])
+
+CFLAGS_SHELL=${CFLAGS}
+CFLAGS=""
+
 AC_USE_SYSTEM_EXTENSIONS
 
 AM_INIT_AUTOMAKE([1.10 dist-bzip2])
@@ -31,6 +45,23 @@ AC_DEFINE([XPOST_VERSION_MIN], [v_min], [Define to the minor version of the libr
 AC_DEFINE([XPOST_VERSION_MIC], [v_mic], [Define to the micro version of the library])
 
 ### Additional options to configure
+
+AC_ARG_ENABLE([release],
+   [AS_HELP_STRING([--enable-release], [set release mode @<:@default=no@:>@])],
+   [
+    if test "x${enableval}" = "xyes" ; then
+       enable_release="yes"
+    else
+       enable_release="no"
+    fi
+   ],
+   [enable_release="no"])
+
+if test "x${enable_release}" = "xyes" ; then
+   AC_DEFINE([NDEBUG], [1], [Define to 1 if release mode is wanted])
+else
+   AC_DEFINE([_DEBUG], [1], [Define to 1 if debug mode is wanted])
+fi
 
 AC_ARG_ENABLE([large-object],
    [AS_HELP_STRING([--enable-large-object], [enable use of large object @<:@default=no@:>@])],
@@ -116,6 +147,7 @@ AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
 
 # C compiler
 AC_PROG_CC_C99
+CFLAGS=${CFLAGS_SHELL}
 
 if test "x${ac_cv_prog_cc_c99}" = "xno" ; then
    AC_MSG_ERROR([Can not find a C99 compliant compiler. Exiting...])
@@ -284,8 +316,7 @@ AM_CONDITIONAL([HAVE_VALGRIND], [test "x${have_valgrind}" = "xyes"])
 AC_SUBST([VALGRIND])
 
 # we finalize the setup
-
-XPOST_LIB_LIBS="${XPOST_LIB_LIBS} ${xpost_requirements_lib_libs}"
+XPOST_LIB_LIBS="${xpost_requirements_lib_libs} ${XPOST_LIB_LIBS}"
 
 AC_CHECK_LIB([Fridge], [mass_quantities_of_bass_ale])
 AC_CHECK_LIB([Fridge], [mass_quantities_of_any_ale],
@@ -327,19 +358,20 @@ xpost_lib_cflags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing
 
 xpost_lib_ldflags="-fdata-sections -ffunction-sections"
 
-if test "x${have_tests}" = "xyes" ; then
-   xpost_lib_flags="${xpost_lib_flags} -g3 -ggdb3 -O2"
-   XPOST_TEST_CPPFLAGS="-DDEBUG"
-else
-   XPOST_TEST_CPPFLAGS="-DNDEBUG"
+if test "x${enable_release}" = "xno" ; then
+   xpost_lib_cflags="${xpost_lib_cflags} -g3 -ggdb3 -O2"
 fi
 
 AC_SUBST([XPOST_TEST_CPPFLAGS])
 
-XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [${xpost_lib_cflags}])
+if test "x${no_cflags}" = "xyes" ; then
+   XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [${xpost_lib_cflags}])
+fi
 XPOST_CHECK_LINKER_FLAGS([XPOST_LIB], [${xpost_lib_ldflags}])
 
-XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline])
+if test "x${no_cflags}" = "xyes" ; then
+   XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline])
+fi
 
 XPOST_CHECK_LINKER_FLAGS([XPOST_BIN], [-fdata-sections -ffunction-sections])
 
@@ -454,6 +486,7 @@ echo "Configuration Options Summary:"
 echo
 echo "  OS...................: ${host_os}"
 echo
+echo "  Release mode.........: ${enable_release}"
 if test "x${have_mmap}" = "xyes" ; then
 echo "  mmap support.........: ${have_mmap} (mremap: ${have_mremap})"
 else
@@ -489,9 +522,17 @@ fi
 echo "  Valgrind.............: ${have_valgrind}"
 echo
 echo "Compilation............: make (or gmake)"
-echo "  CPPFLAGS.............: $CPPFLAGS"
-echo "  CFLAGS...............: $CFLAGS"
-echo "  LDFLAGS..............: $LDFLAGS"
+echo "  Environment flags....:"
+echo "    CPPFLAGS...........: $CPPFLAGS"
+echo "    CFLAGS.............: $CFLAGS"
+echo "    LDFLAGS............: ${LDFLAGS}"
+echo "  Xpost flags..........:"
+echo "    XPOST_LIB_CFLAGS...: ${XPOST_LIB_CFLAGS}"
+echo "    XPOST_LIB_LIBS.....: $XPOST_LIB_LIBS"
+echo "    XPOST_LIB_LDFLAGS..: $XPOST_LIB_LDFLAGS"
+echo "    XPOST_BIN_CFLAGS...: $XPOST_BIN_CFLAGS"
+echo "    XPOST_BIN_LIBS.....: $XPOST_BIN_LIBS"
+echo "    XPOST_BIN_LDFLAGS..: $XPOST_BIN_LDFLAGS"
 echo
 echo "Installation...........: make install (as root if needed, with 'su' or 'sudo')"
 echo "  prefix...............: $prefix"

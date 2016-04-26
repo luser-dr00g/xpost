@@ -66,7 +66,7 @@ static const char *_xpost_log_level_names[] =
     "DBG"
 };
 
-#ifdef DEBUG
+#ifdef _DEBUG
 static Xpost_Log_Level _xpost_log_level = XPOST_LOG_LEVEL_DBG;
 #else
 static Xpost_Log_Level _xpost_log_level = XPOST_LOG_LEVEL_ERR;
