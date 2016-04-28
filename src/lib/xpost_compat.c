@@ -87,7 +87,11 @@ void *alloca (size_t);
 #  define WIN32_LEAN_AND_MEAN
 # endif
 # include <windows.h>
+# include <sys/stat.h>
+# include <fcntl.h>
 # include <io.h>
+# include <wincrypt.h>
+# include <errno.h>
 # undef WIN32_LEAN_AND_MEAN
 #endif
 
@@ -175,15 +179,80 @@ int xpost_isatty(int fd)
 
 #ifdef _WIN32
 
-int mkstemp(char *template)
+static int
+mkstemp_fill(HCRYPTPROV provider, char *template)
 {
-    char *temp;
+    char *buf;
 
-    temp = _mktemp(template);
-    if (!temp)
+    buf = template;
+    while (*buf)
+    {
+        unsigned char val;
+
+        if (*buf != 'X')
+            return 0;
+
+        do
+        {
+            if (!CryptGenRandom(provider, 1, &val))
+                return 0;
+        } while (val > 251);
+
+        val = '0' + (val % 36);
+        if (val > '9')
+            val += 'a' - '9' - 1;
+
+        *buf = val;
+        buf++;
+    }
+
+    return 1;
+}
+
+int
+mkstemp(char *template)
+{
+    HCRYPTPROV provider = NULL;
+    char *filename;
+    char *trail;
+    size_t template_length;
+    int fd = -1;
+    int count =  TMP_MAX;
+
+    if (!template)
         return -1;
 
-    return _open(temp, _O_CREAT | _O_TEMPORARY | _O_EXCL | _O_RDWR, _S_IREAD | _S_IWRITE);
+    template_length = strlen(template);
+    if ((template + template_length - 6) < template)
+        return -1;
+
+    filename = alloca(template_length + 1);
+
+    if (!CryptAcquireContext(&provider, NULL, NULL,
+                             PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+        return -1;
+
+    while ((fd < 0) && (count-- > 0))
+    {
+        memcpy(filename, template, template_length + 1);
+        trail = filename + template_length - 6;
+
+        if (!mkstemp_fill(provider, trail))
+            break;
+
+        fd = _open(filename,
+                   O_CREAT | O_EXCL | O_RDWR | O_BINARY,
+                   S_IREAD | S_IWRITE);
+        if (fd != -1)
+            memcpy(template, filename, template_length + 1);
+        else
+        {
+            if (errno != EEXIST)
+                count = 0;
+        }
+    }
+
+    return fd;
 }
 
 #endif
