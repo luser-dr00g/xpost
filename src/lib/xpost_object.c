@@ -306,26 +306,13 @@ Xpost_Object xpost_object_cvlit (Xpost_Object obj)
  * @cond LOCAL
  */
 
-static char *
-_xpost_object_dump_composite (Xpost_Object obj)
-{
-    char buf[4096];
-
-    snprintf(buf, sizeof(buf) - 1,
-             " %c "
-             "%" XPOST_FMT_WORD(u) " "
-             "%" XPOST_FMT_WORD(u) " "
-             "%" XPOST_FMT_WORD(u) " "
-             "%" XPOST_FMT_WORD(u) ">",
-             obj.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK ? 'G' : 'L',
-             obj.comp_.tag,
-             obj.comp_.sz,
-             obj.comp_.ent,
-             obj.comp_.off);
-    buf[sizeof(buf) - 1] = '\0';
-
-    return strdup(buf);
-}
+#define XPOST_OBJECT_DUMP_COMPOSITE(op) \
+    op " %c %" XPOST_FMT_WORD(u) " %" XPOST_FMT_WORD(u) " %" XPOST_FMT_WORD(u) " %" XPOST_FMT_WORD(u) ">", \
+    obj.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK ? 'G' : 'L', \
+    obj.comp_.tag, \
+    obj.comp_.sz, \
+    obj.comp_.ent, \
+    obj.comp_.off
 
 /**
  * @endcond
@@ -367,32 +354,14 @@ xpost_object_dump (Xpost_Object obj)
             break;
 
         case stringtype:
-        {
-            char *msg;
-
-            msg = _xpost_object_dump_composite(obj);
-            XPOST_LOG_DUMP("<string%s", msg);
-            free(msg);
+            XPOST_LOG_DUMP(XPOST_OBJECT_DUMP_COMPOSITE("<string"));
             break;
-        }
         case arraytype:
-        {
-            char *msg;
-
-            msg = _xpost_object_dump_composite(obj);
-            XPOST_LOG_DUMP("<array%s", msg);
-            free(msg);
+            XPOST_LOG_DUMP(XPOST_OBJECT_DUMP_COMPOSITE("<array"));
             break;
-        }
         case dicttype:
-        {
-            char *msg;
-
-            msg = _xpost_object_dump_composite(obj);
-            XPOST_LOG_DUMP("<dict%s", msg);
-            free(msg);
+            XPOST_LOG_DUMP(XPOST_OBJECT_DUMP_COMPOSITE("<dict"));
             break;
-        }
 
         case nametype:
             XPOST_LOG_DUMP("<name %c "
