@@ -83,7 +83,7 @@
  * @brief Dump in file a message on the specified level and format.
  */
 #define XPOST_LOG_DUMP(...)                                           \
-    xpost_log_print_dump(XPOST_LOG_LEVEL_INFO, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+    xpost_log_print_dump(XPOST_LOG_LEVEL_INFO, __FUNCTION__, __VA_ARGS__)
 
 /**
  * @enum Xpost_Log_Level
@@ -188,9 +188,7 @@ XPAPI void xpost_log_print(Xpost_Log_Level level,
                            const char *fmt, ...);
 
 XPAPI void xpost_log_print_dump(Xpost_Log_Level level,
-                                const char *file,
                                 const char *fct,
-                                int line,
                                 const char *fmt, ...);
 
 #endif

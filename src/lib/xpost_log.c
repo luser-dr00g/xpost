@@ -350,12 +350,14 @@ xpost_log_print(Xpost_Log_Level level,
 
 XPAPI void
 xpost_log_print_dump(Xpost_Log_Level level,
-                     const char *file,
                      const char *fct,
-                     int line,
                      const char *fmt, ...)
 {
+    va_list args_copy;
     va_list args;
+    char *str;
+    int res;
+    int s;
 
     if (!fmt)
     {
@@ -367,6 +369,34 @@ xpost_log_print_dump(Xpost_Log_Level level,
         return;
 
     va_start(args, fmt);
-    _xpost_log_fprint_cb(_xpost_log_dump_file, level, file, fct, line, fmt, NULL, args);
+    va_copy(args_copy, args);
+
+    s = vsnprintf(NULL, 0, fmt, args);
+    if (s == -1)
+        return;
+
+    str = (char *)malloc((s + 2) * sizeof(char));
+    if (!str)
+        return;
+
+    s = vsnprintf(str, s + 1, fmt, args_copy);
+    if (s == -1)
+    {
+        free(str);
+        return;
+    }
+    str[s] = '\n';
+    str[s + 1] = '\0';
+
+    fprintf(_xpost_log_dump_file, "%s() : ", fct);
+    res = fprintf(_xpost_log_dump_file, str);
+    free(str);
+
+    if (res < 0)
+        return;
+
+    if ((int)res != (s + 1))
+        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %d written\n", __FUNCTION__, s + 1, res);
+
     va_end(args);
 }
