@@ -130,8 +130,9 @@ _xpost_main_usage(const char *filename)
     printf("  -D, --device-list             device list\n");
     printf("  -d, --device=[STRING]         device name\n");
     printf("  -g, --geometry=WxH{+-}X{+-}Y  geometry specification\n");
-    printf("  -q, --quiet                   suppress interpreter messages\n");
+    printf("  -q, --quiet                   suppress interpreter messages (default)\n");
     printf("  -v, --verbose                 do not go quiet into that good night\n");
+    printf("  -t, --trace                   add additional tracing messages, implies -v\n");
     printf("  -L, --license                 show program license\n");
     printf("  -V, --version                 show program version\n");
     printf("  -h, --help                    show this message\n");
@@ -241,7 +242,7 @@ int main(int argc, char *argv[])
     const char *device = NULL;
     const char *ps_file = NULL;
     const char *filename = argv[0];
-    int quiet = 0;
+    int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
     int have_device;
     int width = -1;
     int height = -1;
@@ -318,12 +319,17 @@ int main(int argc, char *argv[])
             else if ((!strcmp(argv[i], "-q")) ||
                      (!strcmp(argv[i], "--quiet")))
             {
-                quiet = 1;
+                output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
             }
             else if ((!strcmp(argv[i], "-v")) ||
                      (!strcmp(argv[i], "--verbose")))
             {
-                quiet = 0;
+                output_msg = XPOST_OUTPUT_MESSAGE_VERBOSE;
+            }
+            else if ((!strcmp(argv[i], "-t")) ||
+                     (!strcmp(argv[i], "--trace")))
+            {
+                output_msg = XPOST_OUTPUT_MESSAGE_TRACING;
             }
             else XPOST_MAIN_IF_OPT("-o", "--output=", output_file)
             else XPOST_MAIN_IF_OPT("-d", "--device=", device)
@@ -342,17 +348,20 @@ int main(int argc, char *argv[])
     }
 
     /* parse geometry if any */
-    if (!quiet)
+    if (output_msg != XPOST_OUTPUT_MESSAGE_QUIET)
     {
         printf("geom 1 : %s\n", geometry);
     }
-    have_geometry = _xpost_geometry_parse(geometry, &width, &height, &xoffset, &xsign, &yoffset, &ysign);
+    have_geometry = _xpost_geometry_parse(geometry,
+                                          &width, &height,
+                                          &xoffset, &xsign,
+                                          &yoffset, &ysign);
     if (have_geometry)
     {
         XPOST_LOG_ERR("bad formatted geometry");
         goto quit_xpost;
     }
-    if (!quiet)
+    if (output_msg != XPOST_OUTPUT_MESSAGE_QUIET)
     {
         printf("geom 2 : %dx%d%c%d%c%d\n",
                width, height,
@@ -388,11 +397,11 @@ int main(int argc, char *argv[])
     }
 
     if (!(ctx = xpost_create(device,
-                      XPOST_OUTPUT_FILENAME,
-                      output_file,
-                      XPOST_SHOWPAGE_DEFAULT,
-                      quiet,
-                      XPOST_IGNORE_SIZE, 0, 0)))
+                             XPOST_OUTPUT_FILENAME,
+                             output_file,
+                             XPOST_SHOWPAGE_DEFAULT,
+                             output_msg,
+                             XPOST_IGNORE_SIZE, 0, 0)))
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;

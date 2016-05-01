@@ -77,7 +77,7 @@ Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid);
  */
 int idleproc(Xpost_Context *ctx);
 
-extern int TRACE;
+extern int _xpost_interpreter_is_tracing;
 
 int xpost_interpreter_init(Xpost_Interpreter *itp, const char *device);
 void xpost_interpreter_exit(Xpost_Interpreter *itp);

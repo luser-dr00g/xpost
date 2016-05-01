@@ -65,7 +65,7 @@ Xpost_Object namedollarerror; /* cached result of xpost_name_cons(ctx, "$error")
                                  to reduce time in error handler */
 static Xpost_Object nameerrordict;
 
-int TRACE = 0;             /* output trace log */
+int _xpost_interpreter_is_tracing = 0;             /* output trace log */
 Xpost_Interpreter *itpdata;  /* the global interpreter instance, containing all contexts and memory files */
 static int _initializing = 1;  /* garbage collect does not run while _initializing is true.
                                   a getter function is exported in the memory file struct
@@ -328,7 +328,7 @@ static
 int evalload(Xpost_Context *ctx)
 {
     int ret;
-    if (TRACE)
+    if (_xpost_interpreter_is_tracing)
     {
         Xpost_Object s = xpost_name_get_string(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
         XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, xpost_string_get_pointer(ctx, s));
@@ -363,7 +363,7 @@ int evaloperator(Xpost_Context *ctx)
     if (xpost_object_get_type(op) == invalidtype)
         return stackunderflow;
 
-    if (TRACE)
+    if (_xpost_interpreter_is_tracing)
         xpost_operator_dump(ctx, op.mark_.padw);
     ret = xpost_operator_exec(ctx, op.mark_.padw);
     if (ret)
@@ -613,7 +613,7 @@ int eval(Xpost_Context *ctx)
     if (!validate_context(ctx))
         return unregistered;
 
-    if (TRACE)
+    if (_xpost_interpreter_is_tracing)
     {
         XPOST_LOG_DUMP("eval(): Executing: ");
         xpost_object_dump(t);
@@ -1096,7 +1096,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
                                   Xpost_Output_Type output_type,
                                   const void *outputptr,
                                   Xpost_Showpage_Semantics semantics,
-                                  int quiet,
+                                  Xpost_Output_Message output_msg,
                                   Xpost_Set_Size set_size,
                                   int width,
                                   int height)
@@ -1106,6 +1106,27 @@ XPAPI Xpost_Context *xpost_create(const char *device,
     const char *outfile = NULL;
     const char *bufferin = NULL;
     char **bufferout = NULL;
+    int quiet;
+
+    switch (output_msg)
+    {
+        case XPOST_OUTPUT_MESSAGE_QUIET:
+            quiet = 1;
+            _xpost_interpreter_is_tracing = 0;
+            break;
+        case XPOST_OUTPUT_MESSAGE_VERBOSE:
+            quiet = 0;
+            _xpost_interpreter_is_tracing = 0;
+            break;
+        case XPOST_OUTPUT_MESSAGE_TRACING:
+            quiet = 0;
+            _xpost_interpreter_is_tracing = 1;
+            break;
+        default:
+            XPOST_LOG_ERR("Wrong output message value");
+            return NULL;;
+    }
+
 
     switch (output_type)
     {
@@ -1153,9 +1174,9 @@ XPAPI Xpost_Context *xpost_create(const char *device,
     if (quiet)
     {
         xpost_dict_put(xpost_ctx,
-                sd /*xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)*/ ,
-                xpost_name_cons(xpost_ctx, "QUIET"),
-                null);
+                       sd /*xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)*/ ,
+                       xpost_name_cons(xpost_ctx, "QUIET"),
+                       null);
     }
 
     loadinitps(xpost_ctx);

@@ -257,14 +257,14 @@ static
 int traceon (Xpost_Context *ctx)
 {
     (void)ctx;
-    TRACE = 1;
+    _xpost_interpreter_is_tracing = 1;
     return 0;
 }
 static
 int traceoff(Xpost_Context *ctx)
 {
     (void)ctx;
-    TRACE = 0;
+    _xpost_interpreter_is_tracing = 0;
     return 0;
 }
 #endif

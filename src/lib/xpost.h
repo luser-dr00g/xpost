@@ -209,6 +209,13 @@ typedef enum {
     XPOST_USE_SIZE
 } Xpost_Set_Size;
 
+typedef enum
+{
+    XPOST_OUTPUT_MESSAGE_QUIET, /**< Suppress interpreter messages. */
+    XPOST_OUTPUT_MESSAGE_VERBOSE, /**< Display some interpreter messages. */
+    XPOST_OUTPUT_MESSAGE_TRACING /**< Display all interpreter messages and fill xdump* file. */
+} Xpost_Output_Message;
+
 /**
  * @brief Create a newly allocated context.
  *
@@ -232,7 +239,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
                                   Xpost_Output_Type output_type,
                                   const void *outputptr,
                                   Xpost_Showpage_Semantics semantics,
-                                  int quiet,
+                                  Xpost_Output_Message output_msg,
                                   Xpost_Set_Size set_size,
                                   int width,
                                   int height);

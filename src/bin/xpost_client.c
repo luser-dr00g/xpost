@@ -47,6 +47,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "xpost.h"
 
@@ -61,19 +62,99 @@ char *prog =
     "(Xpost) show\n"
     "showpage\n";
 
-int main()
+static void
+_xpost_client_license(void)
+{
+    printf("BSD 3-clause\n");
+}
+
+static void
+_xpost_client_version(const char *filename)
+{
+    int maj;
+    int min;
+    int mic;
+
+    xpost_version_get(&maj, &min, &mic);
+    printf("%s %d.%d.%d\n", filename, maj, min, mic);
+}
+
+static void
+_xpost_client_usage(const char *filename)
+{
+    printf("Usage: %s [options]\n\n", filename);
+    printf("Postscript level 2 interpreter\n\n");
+    printf("Options:\n");
+    printf("  -q, --quiet    suppress interpreter messages (default)\n");
+    printf("  -v, --verbose  do not go quiet into that good night\n");
+    printf("  -t, --trace    add additional tracing messages, implies -v\n");
+    printf("  -L, --license  show program license\n");
+    printf("  -V, --version  show program version\n");
+    printf("  -h, --help     show this message\n");
+}
+
+int main(int argc, const char *argv[])
 {
     Xpost_Context *ctx;
     void *buffer_type_object;
     int ret;
+    int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
+    int i;
+
+    i = 0;
+    while (++i < argc)
+    {
+        if (*argv[i] == '-')
+        {
+            if ((!strcmp(argv[i], "-h")) ||
+                (!strcmp(argv[i], "--help")))
+            {
+                _xpost_client_usage(argv[0]);
+                return EXIT_SUCCESS;
+            }
+            else if ((!strcmp(argv[i], "-V")) ||
+                     (!strcmp(argv[i], "--version")))
+            {
+                _xpost_client_version(argv[0]);
+                return EXIT_SUCCESS;
+            }
+            else if ((!strcmp(argv[i], "-L")) ||
+                     (!strcmp(argv[i], "--license")))
+            {
+                _xpost_client_license();
+                return EXIT_SUCCESS;
+            }
+            else if ((!strcmp(argv[i], "-q")) ||
+                     (!strcmp(argv[i], "--quiet")))
+            {
+                output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
+            }
+            else if ((!strcmp(argv[i], "-v")) ||
+                     (!strcmp(argv[i], "--verbose")))
+            {
+                output_msg = XPOST_OUTPUT_MESSAGE_VERBOSE;
+            }
+            else if ((!strcmp(argv[i], "-t")) ||
+                     (!strcmp(argv[i], "--trace")))
+            {
+                output_msg = XPOST_OUTPUT_MESSAGE_TRACING;
+            }
+            else
+            {
+                printf("unknown option\n");
+                _xpost_client_usage(argv[0]);
+                return EXIT_FAILURE;
+            }
+        }
+    }
 
     xpost_init();
     if (!(ctx = xpost_create("raster:bgr",
-            XPOST_OUTPUT_BUFFEROUT,
-            &buffer_type_object,
-            XPOST_SHOWPAGE_RETURN,
-            1,
-            XPOST_IGNORE_SIZE, 0, 0)))
+                             XPOST_OUTPUT_BUFFEROUT,
+                             &buffer_type_object,
+                             XPOST_SHOWPAGE_RETURN,
+                             output_msg,
+                             XPOST_IGNORE_SIZE, 0, 0)))
     {
         fprintf(stderr, "unable to create interpreter context");
         exit(0);
