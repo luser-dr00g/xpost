@@ -97,9 +97,7 @@ int main()
             for (j = 0; j < 612; j++)
             {
                 pixel pix = *buffer++;
-                fprintf(fp, "%d ", pix.red);
-                fprintf(fp, "%d ", pix.green);
-                fprintf(fp, "%d ", pix.blue);
+                fprintf(fp, "%d %d %d ", pix.red, pix.green, pix.blue);
                 if ((j%20)==0)
                     fprintf(fp, "\n");
             }
