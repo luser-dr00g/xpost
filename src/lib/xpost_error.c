@@ -36,4 +36,4 @@
 #include "xpost_object.h"
 #include "xpost_error.h"
 
-char *errorname[] = { ERRORS(XPOST_OBJECT_AS_STR) };
+const char *errorname[] = { ERRORS(XPOST_OBJECT_AS_STR) };

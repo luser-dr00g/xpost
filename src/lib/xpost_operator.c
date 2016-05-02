@@ -358,7 +358,7 @@ Xpost_Object xpost_operator_cons_opcode(int opcode)
    There should follow 'in' number of typenames passed after 'in'.
 */
 Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
-                                 char *name,
+                                 const char *name,
                                  /*@null@*/ Xpost_Op_Func fp,
                                  int out,
                                  int in, ...)

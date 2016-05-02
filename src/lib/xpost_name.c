@@ -154,8 +154,8 @@ int xpost_name_init(Xpost_Context *ctx)
 /* perform a search using the ternary search tree */
 static
 unsigned int tstsearch(Xpost_Memory_File *mem,
-                   unsigned int tadr,
-                   char *s)
+                       unsigned int tadr,
+                       const char *s)
 {
     while (tadr) {
         tst *p = (void *)(mem->base + tadr);
@@ -174,9 +174,9 @@ unsigned int tstsearch(Xpost_Memory_File *mem,
 /* add a string to the ternary search tree */
 static
 int tstinsert(Xpost_Memory_File *mem,
-                   unsigned int tadr,
-                   char *s,
-                   unsigned int *retval)
+              unsigned int tadr,
+              const char *s,
+              unsigned int *retval)
 {
     tst *p;
     unsigned int t; //temporary
@@ -227,7 +227,7 @@ int tstinsert(Xpost_Memory_File *mem,
 /* add the name to the name stack, return index */
 static
 unsigned int addname(Xpost_Context *ctx,
-                 char *s)
+                     const char *s)
 {
     Xpost_Memory_File *mem = ctx->vmmode==GLOBAL?ctx->gl:ctx->lo;
     unsigned int names;
@@ -263,7 +263,7 @@ unsigned int addname(Xpost_Context *ctx,
        mark_.padw contains XPOST_MEMORY_TABLE_SPECIAL_NAME_STACK stack index
  */
 Xpost_Object xpost_name_cons(Xpost_Context *ctx,
-                char *s)
+                             const char *s)
 {
     unsigned int u;
     unsigned int t;

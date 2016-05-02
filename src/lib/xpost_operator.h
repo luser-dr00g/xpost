@@ -143,7 +143,7 @@ Xpost_Object xpost_operator_cons_opcode(int opcode);
  *        possibly installing a new operator
  */
 Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
-                                 char *name,
+                                 const char *name,
                                  /*@null@*/ Xpost_Op_Func fp,
                                  int out,
                                  int in,

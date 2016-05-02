@@ -220,7 +220,6 @@ int SSputenv(Xpost_Context *ctx,
     n = xpost_string_get_pointer(ctx, N);
     if (xpost_object_get_type(S) == nulltype)
     {
-        s = "";
         r = alloca(N.comp_.sz + 1);
         memcpy(r, n, N.comp_.sz);
         r[N.comp_.sz] = '\0';
@@ -328,8 +327,8 @@ int xpost_oper_init_misc_ops(Xpost_Context *ctx,
     Xpost_Object n,op;
     unsigned int optadr;
 
-    char *productstr = "Xpost";
-    char *versionstr = "0.0";
+    const char *productstr = "Xpost";
+    const char *versionstr = "0.0";
     int revno = 1;
     int serno = 0;
 

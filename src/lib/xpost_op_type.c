@@ -294,7 +294,7 @@ int conv_rad(int num,
              char *s,
              int n)
 {
-    char *vec = "0123456789" "ABCDEFGHIJKLM" "NOPQRSTUVWXYZ";
+    const char *vec = "0123456789" "ABCDEFGHIJKLM" "NOPQRSTUVWXYZ";
     int off;
     if (n == 0) return 0;
     if (num < rad)

@@ -115,7 +115,7 @@ enum err { ERRORS(AS_BARE) };
 /**
  * @brief Printable string representations of Error codes.
  */
-extern char *errorname[] /*= { ERRORS(AS_STR) }*/;
+extern const char *errorname[] /*= { ERRORS(AS_STR) }*/;
 /* puts(errorname[(enum err)limitcheck]); */
 
 /**

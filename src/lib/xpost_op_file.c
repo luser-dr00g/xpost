@@ -210,7 +210,7 @@ int xpost_op_file_write (Xpost_Context *ctx,
     return 0;
 }
 
-char *hex = "0123456789" "ABCDEF" "abcdef";
+const char *hex = "0123456789" "ABCDEF" "abcdef";
 
 /* file string  readhexstring  substring true
                                false

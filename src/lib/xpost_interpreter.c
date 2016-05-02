@@ -911,7 +911,7 @@ void setlocalconfig(Xpost_Context *ctx,
                     char **bufferout,
                     Xpost_Showpage_Semantics semantics)
 {
-    char *device_strings[][3] =
+    const char *device_strings[][3] =
     {
         { "pgm",  "",                "newPGMIMAGEdevice" },
         { "ppm",  "",                "newPPMIMAGEdevice" },
@@ -923,7 +923,7 @@ void setlocalconfig(Xpost_Context *ctx,
         { "raster", "loadrasterdevice", "newrasterdevice" },
         { NULL, NULL, NULL }
     };
-    char *strtemplate = "currentglobal false setglobal "
+    const char *strtemplate = "currentglobal false setglobal "
                         "%s userdict /DEVICE 612 792 %s put "
                         "setglobal";
     Xpost_Object namenewdev;
@@ -1179,6 +1179,8 @@ XPAPI Xpost_Context *xpost_create(const char *device,
                        null);
     }
 
+    xpost_stack_clear(xpost_ctx->lo, xpost_ctx->hold);
+    xpost_interpreter_set_initializing(0);
     loadinitps(xpost_ctx);
 
     ret = copyudtosd(xpost_ctx, ud, sd);

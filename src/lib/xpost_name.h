@@ -52,7 +52,7 @@ typedef struct tst
 
 void xpost_name_dump_names(Xpost_Context *ctx);
 int xpost_name_init(Xpost_Context *ctx);
-Xpost_Object xpost_name_cons(Xpost_Context *ctx, char *s);
+Xpost_Object xpost_name_cons(Xpost_Context *ctx, const char *s);
 Xpost_Object xpost_name_get_string(Xpost_Context *ctx, Xpost_Object n);
 
 /**

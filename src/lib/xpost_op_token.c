@@ -319,7 +319,9 @@ int grok(Xpost_Context *ctx,
             case '<':
             {
                 int c;
-                char d, *x = "0123456789ABCDEF", *sp = s;
+                char d;
+                const char *x = "0123456789ABCDEF";
+                char *sp = s;
                 c = next(ctx, src);
                 if (c == '<')
                 {

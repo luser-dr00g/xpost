@@ -79,7 +79,7 @@ XPOST_OBJECT_SINGLETONS(XPOST_OBJECT_DEFINE_SINGLETON)
  * @var xpost_object_type_names
  * @brief Printable strings corresponding to #Xpost_Object_Type.
 */
-char *xpost_object_type_names[] =
+const char *xpost_object_type_names[] =
 {
     XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE_STR)
     "invalid"

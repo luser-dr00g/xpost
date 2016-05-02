@@ -51,7 +51,7 @@
 
 #include "xpost.h"
 
-char *prog =
+const char *prog =
     "%%BoundingBox: 200 300 400 500\n"
     "0 0 1 setrgbcolor\n"
     "300 400 100 0 360 arc\n"

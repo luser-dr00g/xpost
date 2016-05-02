@@ -56,7 +56,7 @@ Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
     int ret;
 
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
-    if (!xpost_memory_table_alloc(mem, (sz / sizeof(int) + 1) * sizeof(int), stringtype, &ent))
+    if (!xpost_memory_table_alloc(mem, ((sz + sizeof(Xpost_Object)) / sizeof(Xpost_Object))*sizeof(Xpost_Object), stringtype, &ent))
     {
         XPOST_LOG_ERR("cannot allocate string");
         return null;

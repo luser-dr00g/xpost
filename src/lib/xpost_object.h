@@ -387,7 +387,7 @@ XPOST_OBJECT_SINGLETONS(XPOST_OBJECT_DECLARE_SINGLETON)
  * @brief A table of strings keyed to the types enum.
  */
 extern
-char *xpost_object_type_names[]
+const char *xpost_object_type_names[]
     /*= { XPOST_OBJECT_TYPES(XPOST_OBJECT_AS_TYPE_STR) "invalid"}*/ ;
 
 /*
