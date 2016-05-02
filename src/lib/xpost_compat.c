@@ -252,6 +252,8 @@ mkstemp(char *template)
         }
     }
 
+    CryptReleaseContext(provider, 0);
+
     return fd;
 }
 
