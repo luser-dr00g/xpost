@@ -75,6 +75,7 @@ static Xpost_Log_Level _xpost_log_level = XPOST_LOG_LEVEL_ERR;
 static Xpost_Log_Print_Cb _xpost_log_print_cb = xpost_log_print_cb_stderr;
 static void *_xpost_log_print_cb_data = NULL;
 static FILE *_xpost_log_dump_file = NULL;
+static unsigned char _xpost_log_is_posix = 1;
 
 #ifdef _WIN32
 
@@ -95,13 +96,13 @@ _xpost_log_print_level_color_get(int level, WORD original_background)
             foreground = FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN;
             break;
         case XPOST_LOG_LEVEL_INFO:
-            foreground = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
+            foreground = FOREGROUND_RED | FOREGROUND_GREEN;
             break;
         case XPOST_LOG_LEVEL_DBG:
-          foreground = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
+          foreground = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
           break;
         default:
-            foreground = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
+            foreground = FOREGROUND_RED;
             break;
     }
 
@@ -109,11 +110,11 @@ _xpost_log_print_level_color_get(int level, WORD original_background)
 }
 
 static void
-_xpost_log_print_prefix_func(FILE *stream,
-                             Xpost_Log_Level level,
-                             const char *file,
-                             const char *fct,
-                             int line)
+_xpost_log_win32_print_prefix_func(FILE *stream,
+                                   Xpost_Log_Level level,
+                                   const char *file,
+                                   const char *fct,
+                                   int line)
 {
     CONSOLE_SCREEN_BUFFER_INFO scbi_stdout;
     CONSOLE_SCREEN_BUFFER_INFO scbi_stderr;
@@ -154,14 +155,14 @@ _xpost_log_print_prefix_func(FILE *stream,
     fprintf(stream, ": %s:%d %s()", file, line, fct);
 }
 
-#else
+#endif
 
 static void
-_xpost_log_print_prefix_func(FILE *stream,
-                             Xpost_Log_Level level,
-                             const char *file,
-                             const char *fct,
-                             int line)
+_xpost_log_posix_print_prefix_func(FILE *stream,
+                                   Xpost_Log_Level level,
+                                   const char *file,
+                                   const char *fct,
+                                   int line)
 {
     const char *color;
 
@@ -188,7 +189,6 @@ _xpost_log_print_prefix_func(FILE *stream,
             "\033[1m" "%s()" "\033[0m" " ",
             color, _xpost_log_level_names[level], file, line, fct);
 }
-#endif
 
 static void
 _xpost_log_fprint_cb(FILE *stream,
@@ -224,7 +224,12 @@ _xpost_log_fprint_cb(FILE *stream,
     str[s] = '\n';
     str[s + 1] = '\0';
 
-    _xpost_log_print_prefix_func(stream, level, file, fct, line);
+#ifdef _WIN32
+    if (!_xpost_log_is_posix)
+        _xpost_log_win32_print_prefix_func(stream, level, file, fct, line);
+    else
+#endif
+    _xpost_log_posix_print_prefix_func(stream, level, file, fct, line);
     res = fprintf(stream, str);
     free(str);
 
@@ -252,8 +257,16 @@ xpost_log_init(void)
     const char *level;
 
 #ifdef _WIN32
-    _xpost_log_handle_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    _xpost_log_handle_stderr = GetStdHandle(STD_ERROR_HANDLE);
+    DWORD mode;
+
+    if (GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode))
+    {
+        _xpost_log_handle_stdout = GetStdHandle(STD_OUTPUT_HANDLE);
+        _xpost_log_handle_stderr = GetStdHandle(STD_ERROR_HANDLE);
+        _xpost_log_is_posix = 0;
+    }
+    else
+        _xpost_log_is_posix = 1;
 #endif
 
     level = getenv("XPOST_LOG_LEVEL");
