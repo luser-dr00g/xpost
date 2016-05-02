@@ -354,7 +354,7 @@ AC_CHECK_HEADERS([libgen.h unistd.h signal.h sys/select.h])
 
 AM_PROG_CC_C_O
 
-xpost_lib_cflags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline"
+xpost_lib_cflags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline -Wwrite-strings"
 
 xpost_lib_ldflags="-fdata-sections -ffunction-sections"
 
