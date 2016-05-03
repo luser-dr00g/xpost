@@ -301,8 +301,8 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
                             o.comp_.sz, objmem->table.tab[ent].used/sizeof(Xpost_Object));
                 }
                 if (!_xpost_garbage_mark_array(ctx, objmem, ad,
-                            mem->table.tab[ent].used/sizeof(Xpost_Object)
-                            //o.comp_.sz
+                            //mem->table.tab[ent].used/sizeof(Xpost_Object)
+                            o.comp_.sz
                             , markall))
                     return 0;
             }
