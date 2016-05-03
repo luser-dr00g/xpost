@@ -1,0 +1,26 @@
+/dist 
+{ 
+  /angle exch def 
+  gsave 
+    newpath 
+    0 0 1000 0 angle arc 
+    {pop pop} {pop pop} {pop pop pop pop exch pop} {} pathforall 
+  grestore 
+  1000 div 
+} 
+bind def 
+
+/tmpstr 20 string def 
+
+% I use paper size "letter" 
+
+/in { 72 mul } bind def 
+/Times-Roman findfont 10 scalefont setfont 
+/lineskip 12 def 
+/nl { 1 in y moveto /y y lineskip sub def } bind def 
+/y 10 in def 
+nl 
+
+10 10 90 { dup tmpstr cvs show (  ) show dist tmpstr cvs show nl } for 
+
+showpage 

@@ -1,0 +1,202 @@
+%!
+
+/debug true def  % set true to print points to stdout
+
+/.args {
+    dup length 1 sub -1 0 {
+        2 copy get 4 3 roll def pop
+    } for
+    pop
+} def
+/.argsbegin {
+    dict begin
+        .args
+} def
+
+% x y  .  x-y*floor(x/y)
+/fmod {
+    2 copy div floor mul sub
+} def
+%45.0 90.0 fmod = % 45.0
+%927.0 90 fmod = % 27.0
+
+/point {
+    gsave
+        newpath
+        currentlinewidth 2 mul 0 360 arc fill
+    grestore
+} bind def
+
+/debugpoint {
+    debug { 2 copy exch =only ( )print = } if
+} def
+
+/updatexy {
+    /x t cos r mul def
+    /y t sin r mul def
+} def
+/updatexy' {
+    /x' t sin neg r mul hdelta mul def
+    /y' t cos r mul hdelta mul def
+} def
+
+/next_arc_curve {
+    /t0 a1 def
+    /t1 anext def
+    debug {
+        (next_arc_curve)=
+        t0 t1 exch =only (..)=only =
+    } if
+    /h t1 t0 sub def
+    %/hdelta h .00613647 mul def
+    /hdelta
+        .005825526 h mul
+        4.49157E-07 h h mul mul sub
+        4.32805E-08 h h h mul mul mul add
+    def
+
+    initialseg {
+        /t t0 def
+        updatexy
+        x y
+        debugpoint
+        %moveto
+        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+        /initialseg false def
+    } if
+    updatexy'
+    x x' add  y y' add
+    debugpoint
+    /t t h add def
+    updatexy
+    updatexy'
+    x x' sub  y y' sub
+    debugpoint
+    x         y
+    debugpoint
+    curveto
+    /a1 anext def
+} def
+
+/next_arc_quadrant {
+    /t0 a1 def
+    /t1 anext def
+    debug {
+        (next_arc_quadrant)=
+        t0 t1 exch =only (..)=only =
+    } if
+    /h 90 def
+    /hdelta .552282 def
+
+    initialseg {
+        /t t0 def
+        updatexy
+        x y
+        debugpoint
+        %moveto
+        { currentpoint pop pop } stopped { moveto }{ lineto } ifelse
+        /initialseg false def
+    } if
+    updatexy'
+    x x' add  y y' add
+    debugpoint
+    /t t h add def
+    updatexy
+    updatexy'
+    x x' sub  y y' sub
+    debugpoint
+    x         y
+    debugpoint
+    curveto
+    /a1 anext def
+} def
+
+/arc {
+    {x y r a1 a2} 20 .argsbegin
+    matrix currentmatrix x y translate
+    debug {
+        (a1=)print a1 =
+        (a2=)print a2 =
+    } if
+
+    r 0 lt {
+        /r r neg def
+        /a1 a1 180 add def
+        /a2 a2 180 add def
+    } if
+
+    { a2 a1 lt  not { exit } if  % while (a2<a1)
+        (adjust by 360)=
+        /a2 a2 360 add def
+    } loop
+
+    {
+        /initialseg true def
+
+        % first part up to 90 deg
+        a1 90 fmod 0 ne {
+            /anext a1 90 div floor 90 mul def
+            anext a2 lt not {exit} if  % goto last part
+            debug { (first part)= } if
+            next_arc_curve
+        } if
+
+        % multiples of 90 deg
+        {
+            /anext a1 90 add def
+            anext a2 le  not {exit} if  % while (anext<a2)
+            next_arc_quadrant
+        } loop
+
+    exit } loop
+
+    % last part, if any
+    a1 a2 lt {
+        /anext a2 def
+        debug { (last part)= } if
+        next_arc_curve
+    } if
+
+    setmatrix
+    end
+} def
+
+/draw {
+    true { gsave
+        {point}
+        {point}
+        {point point point}
+        {} pathforall
+    grestore } if
+    true { gsave
+        {moveto}
+        {lineto}
+        {6 4 roll lineto 4 2 roll lineto lineto}
+        {closepath} pathforall
+        stroke
+    grestore } if
+    stroke
+}
+%pop {stroke}  %uncomment to suppress lines through control points
+def
+
+{
+/X 306 def
+/Y 400 def
+
+X Y point
+
+X Y 300 0 90 arc draw 
+
+10 10 90 { X Y 2 index 2 mul 0 5 4 roll arc draw } for 
+
+10 10 90 { X Y 2 index 2 mul 90 5 4 roll 180 add arc draw } for 
+
+200 20 280 {
+X Y 3 2 roll 0 360 arc draw
+} for
+
+showpage
+} exec%pop
+
+%(xpost/arcdist.ps) run
