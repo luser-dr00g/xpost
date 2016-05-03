@@ -96,13 +96,13 @@ _xpost_log_print_level_color_get(int level, WORD original_background)
             foreground = FOREGROUND_INTENSITY | FOREGROUND_RED | FOREGROUND_GREEN;
             break;
         case XPOST_LOG_LEVEL_INFO:
-            foreground = FOREGROUND_RED | FOREGROUND_GREEN;
+            foreground = FOREGROUND_INTENSITY | FOREGROUND_GREEN;
             break;
         case XPOST_LOG_LEVEL_DBG:
           foreground = FOREGROUND_INTENSITY | FOREGROUND_BLUE;
           break;
         default:
-            foreground = FOREGROUND_RED;
+            foreground = FOREGROUND_BLUE;
             break;
     }
 
@@ -169,16 +169,16 @@ _xpost_log_posix_print_prefix_func(FILE *stream,
     switch (level)
     {
         case XPOST_LOG_LEVEL_ERR:
-            color = "\033[31;1m";
+            color = "\033[31m";
             break;
         case XPOST_LOG_LEVEL_WARN:
             color = "\033[33;1m";
             break;
-        case XPOST_LOG_LEVEL_DBG:
-	  color = "\033[34;1m";
-            break;
         case XPOST_LOG_LEVEL_INFO:
             color = "\033[32;1m";
+            break;
+        case XPOST_LOG_LEVEL_DBG:
+            color = "\033[34;1m";
             break;
         default:
             color = "\033[34m";
