@@ -56,7 +56,11 @@ Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
     int ret;
 
     //xpost_memory_table_alloc(mem, (sz/sizeof(int) + 1)*sizeof(int), 0, &ent);
-    if (!xpost_memory_table_alloc(mem, ((sz + sizeof(Xpost_Object)) / sizeof(Xpost_Object))*sizeof(Xpost_Object), stringtype, &ent))
+    if (!xpost_memory_table_alloc(mem,
+                                  ((sz + sizeof(Xpost_Object) /*- 1*/) / sizeof(Xpost_Object))*sizeof(Xpost_Object),
+                                  //sz,
+                                  stringtype,
+                                  &ent))
     {
         XPOST_LOG_ERR("cannot allocate string");
         return null;
@@ -90,9 +94,9 @@ Xpost_Object xpost_string_cons(Xpost_Context *ctx,
     s = xpost_string_cons_memory((ctx->vmmode == GLOBAL) ? ctx->gl : ctx->lo, sz, ini);
     if (xpost_object_get_type(s) != nulltype)
     {
-        xpost_stack_push(ctx->lo, ctx->hold, s); /* stash a reference on the hold stack in case of gc in caller */
         if (ctx->vmmode == GLOBAL)
             s.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+        xpost_stack_push(ctx->lo, ctx->hold, s); /* stash a reference on the hold stack in case of gc in caller */
     }
     return s;
 }

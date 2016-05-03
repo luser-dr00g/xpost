@@ -311,9 +311,9 @@ Xpost_Object xpost_dict_cons (Xpost_Context *ctx,
     Xpost_Object d = xpost_dict_cons_memory (ctx->vmmode==GLOBAL? ctx->gl: ctx->lo, sz);
     if (xpost_object_get_type(d) != nulltype)
     {
-        xpost_stack_push(ctx->lo, ctx->hold, d); /* stash a reference on the hold stack in case of gc in caller */
         if (ctx->vmmode == GLOBAL)
             d.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+        xpost_stack_push(ctx->lo, ctx->hold, d); /* stash a reference on the hold stack in case of gc in caller */
     }
     return d;
 }
@@ -370,6 +370,8 @@ int dicgrow(Xpost_Context *ctx,
         XPOST_LOG_ERR("cannot grow dict");
         return 0;
     }
+    if (mem == ctx->gl)
+        n.tag |= XPOST_OBJECT_TAG_DATA_FLAG_BANK;
 
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
@@ -405,11 +407,13 @@ int dicgrow(Xpost_Context *ctx,
                tab->tab[dent].sz = tab->tab[nent].sz;
                                    tab->tab[nent].sz = hold;
 
+#if 0
         if (xpost_free_memory_ent(mem, nent) < 0)
         {
             XPOST_LOG_ERR("cannot free old dict");
             return 0;
         }
+#endif
     }
     return 1;
 }
@@ -555,7 +559,8 @@ dicrec *diclookup(Xpost_Context *ctx,
     if (xpost_object_get_type(k) == invalidtype)
         return invalidrec;
 
-    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
+    if (!xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad))
+        return invalidrec;
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
     sz = (dp->sz + 1);
