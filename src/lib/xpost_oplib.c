@@ -178,7 +178,9 @@ int xpost_oplib_init_ops(Xpost_Context *ctx)
 #endif
     xpost_oper_init_bgr_device_ops(ctx, sd);
     xpost_oper_init_raster_device_ops(ctx, sd);
+#ifdef HAVE_LIBPNG
     xpost_oper_init_png_device_ops(ctx, sd);
+#endif
     xpost_oper_init_context_ops(ctx, sd);
 
 
