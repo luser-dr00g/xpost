@@ -92,6 +92,12 @@ src/lib/xpost_operator.h \
 src/lib/xpost_oplib.h \
 src/lib/xpost_private.h
 
+if HAVE_LIBPNG
+src_lib_libxpost_la_SOURCES += \
+src/lib/xpost_dev_png.c \
+src/lib/xpost_dev_png.h
+endif
+
 if HAVE_XCB
 src_lib_libxpost_la_SOURCES += \
 src/lib/xpost_dev_xcb.c \

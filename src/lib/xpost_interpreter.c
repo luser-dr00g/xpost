@@ -913,14 +913,15 @@ void setlocalconfig(Xpost_Context *ctx,
 {
     const char *device_strings[][3] =
     {
-        { "pgm",  "",                "newPGMIMAGEdevice" },
-        { "ppm",  "",                "newPPMIMAGEdevice" },
-        { "null", "",                "newnulldevice"     },
-        { "xcb",  "loadxcbdevice",   "newxcbdevice"      },
-        { "gdi",  "loadwin32device", "newwin32device"    },
-        { "gl",   "loadwin32device", "newwin32device"    },
-        { "bgr",  "loadbgrdevice",   "newbgrdevice"      },
-        { "raster", "loadrasterdevice", "newrasterdevice" },
+        { "pgm",    "",                 "newPGMIMAGEdevice" },
+        { "ppm",    "",                 "newPPMIMAGEdevice" },
+        { "null",   "",                 "newnulldevice"     },
+        { "xcb",    "loadxcbdevice",    "newxcbdevice"      },
+        { "gdi",    "loadwin32device",  "newwin32device"    },
+        { "gl",     "loadwin32device",  "newwin32device"    },
+        { "bgr",    "loadbgrdevice",    "newbgrdevice"      },
+        { "raster", "loadrasterdevice", "newrasterdevice"   },
+        { "png",    "loadpngdevice",    "newpngdevice"      },
         { NULL, NULL, NULL }
     };
     const char *strtemplate = "currentglobal false setglobal "

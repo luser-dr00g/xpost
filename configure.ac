@@ -211,7 +211,7 @@ PKG_CHECK_EXISTS([fontconfig],
    [
     have_fontconfig="yes"
     xpost_requirements_lib_pc="${xpost_requirements_lib_pc} fontconfig"
-    AC_DEFINE([HAVE_FONTCONFIG], [1], [Define to 1 if Fontconfig are detected])
+    AC_DEFINE([HAVE_FONTCONFIG], [1], [Define to 1 if Fontconfig is detected])
    ],
    [have_fontconfig="no"])
 
@@ -220,9 +220,20 @@ PKG_CHECK_EXISTS([freetype2],
    [
     have_freetype="yes"
     xpost_requirements_lib_pc="${xpost_requirements_lib_pc} freetype2"
-    AC_DEFINE([HAVE_FREETYPE], [1], [Define to 1 if Freetype are detected])
+    AC_DEFINE([HAVE_FREETYPE], [1], [Define to 1 if Freetype is detected])
    ],
    [have_freetype="no"])
+
+# libpng
+PKG_CHECK_EXISTS([libpng],
+   [
+    have_libpng="yes"
+    xpost_requirements_lib_pc="${xpost_requirements_lib_pc} libpng"
+    AC_DEFINE([HAVE_LIBPNG], [1], [Define to 1 if libpng is detected])
+   ],
+   [have_libpng="no"])
+
+AM_CONDITIONAL([HAVE_LIBPNG], [test "x${have_libpng}" = "xyes"])
 
 # libxcb
 PKG_CHECK_EXISTS([xcb-image xcb-icccm xcb],
@@ -496,6 +507,7 @@ echo "  Freetype support.....: ${have_freetype}"
 echo "  Fontconfig support...: ${have_fontconfig}"
 echo "  Devices:"
 echo "    PGM image..........: always"
+echo "    PNG image..........: ${have_libpng}"
 echo "    XCB................: ${have_xcb}"
 echo "    Win32..............: ${have_win32}"
 echo "  Documentation........: ${enable_doc} (make doc)"
