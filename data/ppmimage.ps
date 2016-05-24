@@ -44,6 +44,10 @@ DATA_DIR(/qsort.ps)strcat run
                 /dimensions [width height] def
             end
         } if
+        /OutputFilename where {
+            /OutputFilename exch 1 index load
+            3 copy put pop pop
+        } if
         %dup /defaultmatrix known {
         %    dup /defaultmatrix 2 copy get matrix copy put
         %} if
