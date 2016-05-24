@@ -82,7 +82,7 @@ _xpost_client_version(const char *filename)
 static void
 _xpost_client_usage(const char *filename)
 {
-    printf("Usage: %s [options]\n\n", filename);
+    printf("Usage: %s [options] [file.png]\n\n", filename);
     printf("Postscript level 2 interpreter\n\n");
     printf("Options:\n");
     printf("  -q, --quiet    suppress interpreter messages (default)\n");
@@ -97,9 +97,15 @@ int main(int argc, const char *argv[])
 {
     Xpost_Context *ctx;
     void *buffer_type_object;
+    const char *filename;
+    const char *device;
+    const void *ptr;
+    Xpost_Output_Type output_type;
     int ret;
     int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
     int i;
+
+    filename = NULL;
 
     i = 0;
     while (++i < argc)
@@ -146,12 +152,26 @@ int main(int argc, const char *argv[])
                 return EXIT_FAILURE;
             }
         }
+        else
+            filename = argv[i];
     }
 
     xpost_init();
-    if (!(ctx = xpost_create("raster:bgr",
-                             XPOST_OUTPUT_BUFFEROUT,
-                             &buffer_type_object,
+    if (filename)
+    {
+        device = "png";
+        output_type = XPOST_OUTPUT_FILENAME;
+        ptr = filename;
+    }
+    else
+    {
+        device = "raster:bgr";
+        output_type = XPOST_OUTPUT_BUFFEROUT;
+        ptr = &buffer_type_object;
+    }
+    if (!(ctx = xpost_create(device,
+                             output_type,
+                             ptr,
                              XPOST_SHOWPAGE_RETURN,
                              output_msg,
                              XPOST_IGNORE_SIZE, 0, 0)))
@@ -166,7 +186,7 @@ int main(int argc, const char *argv[])
     {
         fprintf(stderr, "error before showpage\n");
     }
-    else
+    else if (!filename)
     {
         typedef struct { unsigned char blue, green, red; } pixel;
         pixel *buffer = buffer_type_object;
