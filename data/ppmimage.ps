@@ -45,7 +45,7 @@ DATA_DIR(/qsort.ps)strcat run
             end
         } if
         /OutputFileName where {
-            /OutputFileName exch 1 index load
+            /OutputFileName exch 1 index get
             3 copy put pop pop
         } if
         %dup /defaultmatrix known {
