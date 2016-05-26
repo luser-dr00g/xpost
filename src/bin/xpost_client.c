@@ -101,6 +101,7 @@ int main(int argc, const char *argv[])
     const char *device;
     const void *ptr;
     Xpost_Output_Type output_type;
+    Xpost_Showpage_Semantics show_page;
     int ret;
     int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
     int i;
@@ -161,18 +162,20 @@ int main(int argc, const char *argv[])
     {
         device = "png";
         output_type = XPOST_OUTPUT_FILENAME;
+        show_page = XPOST_SHOWPAGE_NOPAUSE;
         ptr = filename;
     }
     else
     {
         device = "raster:bgr";
         output_type = XPOST_OUTPUT_BUFFEROUT;
+        show_page = XPOST_SHOWPAGE_RETURN;
         ptr = &buffer_type_object;
     }
     if (!(ctx = xpost_create(device,
                              output_type,
                              ptr,
-                             XPOST_SHOWPAGE_RETURN,
+                             show_page,
                              output_msg,
                              XPOST_IGNORE_SIZE, 0, 0)))
     {
