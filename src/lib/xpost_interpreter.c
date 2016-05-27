@@ -1220,6 +1220,7 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
     const char *ps_file = NULL;
     const FILE *ps_file_ptr = NULL;
     int ret;
+    Xpost_Object device;
 
     switch(input_type)
     {
@@ -1292,6 +1293,39 @@ run:
             return yieldtocaller;
     }
 
+    XPOST_LOG_INFO("destroying device");
+    device = xpost_dict_get(xpost_ctx,
+            xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 2),
+            xpost_name_cons(xpost_ctx, "DEVICE"));
+    XPOST_LOG_INFO("device type=%s", xpost_object_type_names[xpost_object_get_type(device)]);
+    //xpost_operator_dump(ctx, 1); // is this pointer value constant?
+    if (xpost_object_get_type(device) == arraytype){
+        XPOST_LOG_INFO("running proc");
+        xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
+        xpost_stack_push(ctx->lo, ctx->es, device);
+
+        ctx->quit = 0;
+        mainloop(ctx);
+
+        device = xpost_stack_pop(ctx->lo, ctx->os);
+    }
+    if (xpost_object_get_type(device) == dicttype)
+    {
+        Xpost_Object Destroy;
+        XPOST_LOG_INFO("destroying device dict");
+        Destroy = xpost_dict_get(xpost_ctx, device, xpost_name_cons(xpost_ctx, "Destroy"));
+        if (xpost_object_get_type(Destroy) == operatortype)
+        {
+            int ret;
+            xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, device);
+            ret = xpost_operator_exec(xpost_ctx, Destroy.mark_.padw);
+            if (ret)
+                XPOST_LOG_ERR("%s error destroying device", errorname[ret]);
+            else
+                XPOST_LOG_INFO("destroyed device");
+        }
+    }
+
     xpost_save_restore_snapshot(ctx->gl);
     xpost_memory_table_get_addr(ctx->lo,
                                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
@@ -1314,20 +1348,7 @@ run:
  */
 XPAPI void xpost_destroy(Xpost_Context *ctx)
 {
-    //xpost_operator_dump(ctx, 1); // is this pointer value constant?
-    if (xpost_object_get_type(xpost_ctx->window_device) == dicttype)
-    {
-        Xpost_Object Destroy;
-        Destroy = xpost_dict_get(xpost_ctx, xpost_ctx->window_device, xpost_name_cons(xpost_ctx, "Destroy"));
-        if (xpost_object_get_type(Destroy) == operatortype)
-        {
-            int ret;
-            xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, xpost_ctx->window_device);
-            ret = xpost_operator_exec(xpost_ctx, Destroy.mark_.padw);
-            if (ret)
-                XPOST_LOG_ERR("%s error destroying window device", errorname[ret]);
-        }
-    }
+
     if (!xpost_dict_known_key(ctx, ctx->gl, xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0), xpost_name_cons(ctx, "QUIET")))
     {
         printf("bye!\n");
