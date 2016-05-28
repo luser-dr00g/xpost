@@ -48,7 +48,7 @@
 typedef
 struct Xpost_Png_Pixel
 {
-    unsigned char blue, green, red;
+    unsigned char red, green, blue;
 } Xpost_Png_Pixel;
 
 /**

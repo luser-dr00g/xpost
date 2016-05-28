@@ -186,7 +186,7 @@ int _create_cont(Xpost_Context *ctx,
 	png_set_IHDR(private.png_ptr, private.info_ptr,
                  private.width, private.height, 8,
                  PNG_COLOR_TYPE_RGB, private.interlaced,
-                 PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
     sig_bit.red = 8;
     sig_bit.green = 8;
@@ -258,11 +258,9 @@ int _putpix(Xpost_Context *ctx,
                      sizeof(private), &private);
 
     /* check bounds */
-    if ((x.int_.val < 0) ||
-        (x.int_.val >= xpost_dict_get(ctx, devdic, namewidth).int_.val))
+    if ((x.int_.val < 0) || (x.int_.val >= private.width))
         return 0;
-    if ((y.int_.val < 0) ||
-        (y.int_.val >= xpost_dict_get(ctx, devdic, nameheight).int_.val))
+    if ((y.int_.val < 0) || (y.int_.val >= private.height))
         return 0;
 
     {
@@ -270,7 +268,7 @@ int _putpix(Xpost_Context *ctx,
         pixel.blue = blue.int_.val;
         pixel.green = green.int_.val;
         pixel.red = red.int_.val;
-        private.buf->data[y.int_.val * private.buf->width + x.int_.val] = pixel;
+        private.buf->data[y.int_.val * private.width + x.int_.val] = pixel;
     }
 
     /* save private data struct in string */
@@ -299,7 +297,7 @@ int _emit(Xpost_Context *ctx,
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     data = (unsigned char *)private.buf->data;
-    for (y = 0; y < private.width; y++)
+    for (y = 0; y < private.height; y++)
     {
         row_ptr = (png_bytep)data;
         png_write_rows(private.png_ptr, &row_ptr, 1);
