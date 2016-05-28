@@ -258,9 +258,10 @@ int _putpix(Xpost_Context *ctx,
                      sizeof(private), &private);
 
     /* check bounds */
-    if ((x.int_.val < 0) || (x.int_.val >= private.width))
-        return 0;
-    if ((y.int_.val < 0) || (y.int_.val >= private.height))
+    if ((x.int_.val < 0) ||
+        (x.int_.val >= private.width) ||
+        (y.int_.val < 0) ||
+        (y.int_.val >= private.height))
         return 0;
 
     {
