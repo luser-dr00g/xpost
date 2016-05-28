@@ -284,7 +284,7 @@ int _intersect (real ax, real ay,  real bx, real by,
     *rx = ax + ABpos * theCos;
     *ry = ay + ABpos * theSin;
 
-    XPOST_LOG_INFO(">< %d %d", *rx, *ry);
+    XPOST_LOG_INFO(">< %f %f", *rx, *ry);
     return 1;
 }
 
