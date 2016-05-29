@@ -124,11 +124,12 @@ _xpost_main_version(const char *filename)
 static void
 _xpost_main_usage(const char *filename)
 {
+    int i;
+
     printf("Usage: %s [options] [file.ps]\n\n", filename);
     printf("Postscript level 2 interpreter\n\n");
     printf("Options:\n");
     printf("  -o, --output=[FILE]           output file\n");
-    printf("  -D, --device-list             device list\n");
     printf("  -d, --device=[STRING]         device name\n");
     printf("  -g, --geometry=WxH{+-}X{+-}Y  geometry specification\n");
     printf("  -q, --quiet                   suppress interpreter messages (default)\n");
@@ -137,20 +138,11 @@ _xpost_main_usage(const char *filename)
     printf("  -L, --license                 show program license\n");
     printf("  -V, --version                 show program version\n");
     printf("  -h, --help                    show this message\n");
-}
-
-static void
-_xpost_main_device_list(void)
-{
-    int i;
-
-    printf("supported devices:\n");
+    printf("\n");
+    printf("  Supported devices:\n");
     i = 0;
     while (_xpost_main_devices[i])
-    {
-        printf("\t%s\n", _xpost_main_devices[i]);
-        i++;
-    }
+        printf("\t%s\n", _xpost_main_devices[i++]);
 }
 
 static int
@@ -309,12 +301,6 @@ int main(int argc, char *argv[])
                      (!strcmp(argv[i], "--license")))
             {
                 _xpost_main_license();
-                return EXIT_SUCCESS;
-            }
-            else if ((!strcmp(argv[i], "-D")) ||
-                     (!strcmp(argv[i], "--device-list")))
-            {
-                _xpost_main_device_list();
                 return EXIT_SUCCESS;
             }
             else if ((!strcmp(argv[i], "-q")) ||
