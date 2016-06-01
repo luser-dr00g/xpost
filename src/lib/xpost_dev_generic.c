@@ -79,7 +79,8 @@ void *alloca (size_t);
 #include "xpost_op_dict.h" /* call xpost_op_any_load operator for convenience */
 #include "xpost_dev_generic.h" /* check prototypes */
 
-struct point {
+struct point
+{
     real x, y;
 };
 
@@ -101,12 +102,16 @@ char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
 {
     Xpost_Object filenamestr;
     char *filename;
-    filenamestr = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "OutputFileName"));
+
+    filenamestr = xpost_dict_get(ctx, devdic,
+                                 xpost_name_cons(ctx, "OutputFileName"));
     filename = malloc(filenamestr.comp_.sz + 1);
-    if (filename) {
+    if (filename)
+    {
         memcpy(filename, xpost_string_get_pointer(ctx, filenamestr), filenamestr.comp_.sz);
         filename[filenamestr.comp_.sz] = '\0';
     }
+
     return filename;
 }
 
@@ -114,6 +119,7 @@ int xpost_device_set_filename(Xpost_Context *ctx, Xpost_Object devdic, char *fil
 {
     Xpost_Object filenamestr;
     int ret;
+
     filenamestr = xpost_string_cons(ctx, strlen(filename), filename);
     if ((ret = xpost_dict_put(ctx, devdic, xpost_name_cons(ctx, "OutputFileName"), filenamestr)))
         return ret;
@@ -121,12 +127,13 @@ int xpost_device_set_filename(Xpost_Context *ctx, Xpost_Object devdic, char *fil
 }
 
 static
-int _yxcomp (const void *left, const void *right)
+int _yxcomp(const void *left, const void *right)
 {
     const Xpost_Object *lt = left;
     const Xpost_Object *rt = right;
     Xpost_Object leftx, lefty, rightx, righty;
     integer ltx, lty, rtx, rty;
+
     leftx = xpost_array_get(localctx, *lt, 0);
     lefty = xpost_array_get(localctx, *lt, 1);
     rightx = xpost_array_get(localctx, *rt, 0);
@@ -139,15 +146,22 @@ int _yxcomp (const void *left, const void *right)
         (integer)rightx.real_.val : rightx.int_.val;
     rty = xpost_object_get_type(righty) == realtype ?
         (integer)righty.real_.val : righty.int_.val;
-    if (lty == rty) {
-        if (ltx < rtx) {
+    if (lty == rty)
+    {
+        if (ltx < rtx)
+        {
             return 1;
-        } else if (ltx > rtx) {
+        }
+        else if (ltx > rtx)
+        {
             return -1;
-        } else {
+        } else
+        {
             return 0;
         }
-    } else {
+    }
+    else
+    {
         if (lty < rty)
             return -1;
         else
@@ -172,7 +186,7 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
     arrcontents = (mem->base + arradr);
 
     localctx = ctx;
-    qsort(arrcontents, arr.comp_.sz, sizeof arr, _yxcomp);
+    qsort(arrcontents, arr.comp_.sz, sizeof(arr), _yxcomp);
     localctx = NULL;
 
     //if (!xpost_memory_put(xpost_context_select_memory(ctx, arr),
@@ -199,9 +213,9 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
 # define PIXEL_TOLERANCE 0.0001f
 #endif
 
-static
-inline
-int feq (real dif) {
+static inline
+int feq(real dif)
+{
 #ifdef _WANT_LARGE_OBJECT
     if (fabs(dif) < PIXEL_TOLERANCE)
         return 1;
@@ -213,9 +227,9 @@ int feq (real dif) {
 }
 
 static
-int _intersect (real ax, real ay,  real bx, real by,
-                real cx, real cy,  real dx, real dy,
-                real *rx, real *ry)
+int _intersect(real ax, real ay,  real bx, real by,
+               real cx, real cy,  real dx, real dy,
+               real *rx, real *ry)
 {
     real distAB;
     real theCos;
@@ -227,8 +241,8 @@ int _intersect (real ax, real ay,  real bx, real by,
     //        ax, ay,  bx, by,  cx, cy,  dx, dy);
 
     /* reject degenerate line */
-    if ( (feq(ax - bx) && feq(ay - by)) ||
-        (feq(cx - dx) && feq(cy - dy)) )
+    if ((feq(ax - bx) && feq(ay - by)) ||
+        (feq(cx - dx) && feq(cy - dy)))
     {
         return 0;
         /*
@@ -273,18 +287,20 @@ int _intersect (real ax, real ay,  real bx, real by,
     dx = newX;
 
     /* no intersection */
-    if ((cy < 0 && dy < 0) || (cy > 0 && dy > 0))
+    if (((cy < 0) && (dy < 0)) || ((cy > 0) && (dy > 0)))
         return 0;
 
     if (feq(dy - cy)) return 0;
+
     ABpos = dx + ((cx - dx) * dy) / (dy - cy);
-    if (ABpos < 0 || ABpos > distAB)
+    if ((ABpos < 0) || (ABpos > distAB))
         return 0;
 
     *rx = ax + ABpos * theCos;
     *ry = ay + ABpos * theSin;
 
     XPOST_LOG_INFO(">< %f %f", *rx, *ry);
+
     return 1;
 }
 
@@ -293,15 +309,24 @@ int _cyxcomp (const void *left, const void *right)
 {
     const struct point *lt = left;
     const struct point *rt = right;
-    if (feq(lt->y - rt->y)) {
-        if (lt->x < rt->x) {
+
+    if (feq(lt->y - rt->y))
+    {
+        if (lt->x < rt->x)
+        {
             return 1;
-        } else if (lt->x > rt->x) {
+        }
+        else if (lt->x > rt->x)
+        {
             return -1;
-        } else {
+        }
+        else
+        {
             return 0;
         }
-    } else {
+    }
+    else
+    {
         if (lt->y < rt->y)
             return -1;
         else
@@ -310,9 +335,9 @@ int _cyxcomp (const void *left, const void *right)
 }
 
 static
-int _fillpoly (Xpost_Context *ctx,
-               Xpost_Object poly,
-               Xpost_Object devdic)
+int _fillpoly(Xpost_Context *ctx,
+              Xpost_Object poly,
+              Xpost_Object devdic)
 {
     Xpost_Object colorspace;
     int ncomp;
@@ -353,9 +378,10 @@ int _fillpoly (Xpost_Context *ctx,
 
     /* extract polygon vertices from ps array */
     points = alloca(poly.comp_.sz * sizeof *points);
-    for (i=0; i < poly.comp_.sz; i++)
+    for (i = 0; i < poly.comp_.sz; i++)
     {
         Xpost_Object pair, x, y;
+
         pair = xpost_array_get(ctx, poly, i);
         x = xpost_array_get(ctx, pair, 0);
         y = xpost_array_get(ctx, pair, 1);
@@ -371,7 +397,8 @@ int _fillpoly (Xpost_Context *ctx,
     }
 
     /* find bounding box */
-    for (i = 0; i < poly.comp_.sz; i++){
+    for (i = 0; i < poly.comp_.sz; i++)
+    {
         if (points[i].x < minx)
             minx = points[i].x;
         if (points[i].x > maxx)
@@ -385,14 +412,17 @@ int _fillpoly (Xpost_Context *ctx,
     intersections = alloca((int)(maxy - miny) * 2 * 2 * sizeof *intersections);
 
     /* intersect polygon edges with scanlines */
-    for (i = 0, j = 0; i < poly.comp_.sz - 1; i++){
+    for (i = 0, j = 0; i < poly.comp_.sz - 1; i++)
+    {
         real rx, ry;
-        for (yscan = (real)(miny + 0.5); yscan < maxy; yscan += 1.0){
+
+        for (yscan = (real)(miny + 0.5); yscan < maxy; yscan += 1.0)
+        {
             if (_intersect(points[i].x, points[i].y,
-                        points[i+1].x, points[i+1].y,
-                        (real)(minx - 0.5), yscan,
-                        (real)(maxx + 0.5), yscan,
-                        &rx, &ry))
+                           points[i+1].x, points[i+1].y,
+                           (real)(minx - 0.5), yscan,
+                           (real)(maxx + 0.5), yscan,
+                           &rx, &ry))
             {
                 intersections[j].x = rx;
                 intersections[j].y = ry;
@@ -406,7 +436,8 @@ int _fillpoly (Xpost_Context *ctx,
     qsort(intersections, j, sizeof *intersections, _cyxcomp);
 
     /* arrange ((x1,y1),(x2,y2)) pairs */
-    for (i = 0; i < numlines * 2; i += 2) {
+    for (i = 0; i < numlines * 2; i += 2)
+    {
         xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i].x)));
         xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i].y)));
         xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i+1].x)));
@@ -446,19 +477,20 @@ int _fillpoly (Xpost_Context *ctx,
     /*the loop body finds the 4 coordinate numbers on the stack
      and must roll the color values beneath these numbers on the stack  */
 
-    switch (ncomp) {
-    case 1:
-        xpost_stack_push(ctx->lo, ctx->os, comp1);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(5)); /* total elements to roll */
-        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(1)); /* color components to move */
-        break;
-    case 3:
-        xpost_stack_push(ctx->lo, ctx->os, comp1);
-        xpost_stack_push(ctx->lo, ctx->os, comp2);
-        xpost_stack_push(ctx->lo, ctx->os, comp3);
-        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(7)); /* total elements to roll */
-        xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(3)); /* color components to move */
-        break;
+    switch (ncomp)
+    {
+        case 1:
+            xpost_stack_push(ctx->lo, ctx->os, comp1);
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(5)); /* total elements to roll */
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(1)); /* color components to move */
+            break;
+        case 3:
+            xpost_stack_push(ctx->lo, ctx->os, comp1);
+            xpost_stack_push(ctx->lo, ctx->os, comp2);
+            xpost_stack_push(ctx->lo, ctx->os, comp3);
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(7)); /* total elements to roll */
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(3)); /* color components to move */
+            break;
     }
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx( nameroll));
 
@@ -522,15 +554,16 @@ int _fillpoly (Xpost_Context *ctx,
     return 0;
 }
 
-int xpost_oper_init_generic_device_ops (Xpost_Context *ctx,
-                Xpost_Object sd)
+int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
+                                       Xpost_Object sd)
 {
     unsigned int optadr;
     Xpost_Operator *optab;
     Xpost_Object n,op;
 
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
+                                &optadr);
     optab = (Xpost_Operator *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, ".yxsort", (Xpost_Op_Func)_yxsort, 0, 1, arraytype); INSTALL;
