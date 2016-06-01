@@ -42,25 +42,6 @@
 #define XPOST_DEV_BGR_H
 
 /**
- * @brief A single Blue-Green-Red pixel
- */
-typedef
-struct Xpost_Bgr_Pixel
-{
-    unsigned char blue, green, red;
-} Xpost_Bgr_Pixel;
-
-/**
- * @brief A Blue-Green-Red raster buffer
- */
-typedef
-struct Xpost_Bgr_Buffer
-{
-    int width, height, byte_stride;
-    Xpost_Bgr_Pixel data[1];
-} Xpost_Bgr_Buffer;
-
-/**
  * @brief install operator loadbgrdevice in systemdict
  *
  * When run, creates a new operator
