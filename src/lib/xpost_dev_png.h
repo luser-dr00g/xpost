@@ -43,25 +43,6 @@
 #define XPOST_DEV_PNG_H
 
 /**
- * @brief A single Blue-Green-Red pixel
- */
-typedef
-struct Xpost_Png_Pixel
-{
-    unsigned char red, green, blue;
-} Xpost_Png_Pixel;
-
-/**
- * @brief A Blue-Green-Red raster buffer
- */
-typedef
-struct Xpost_Png_Buffer
-{
-    int width, height, byte_stride;
-    Xpost_Png_Pixel data[1];
-} Xpost_Png_Buffer;
-
-/**
  * @brief install operator loadpngdevice in systemdict
  *
  * When run, creates a new operator

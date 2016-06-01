@@ -60,6 +60,17 @@
 
 typedef struct
 {
+    unsigned char red, green, blue;
+} Xpost_Png_Pixel;
+
+typedef struct
+{
+    int width, height, byte_stride;
+    Xpost_Png_Pixel data[1];
+} Xpost_Png_Buffer;
+
+typedef struct
+{
     int width;
     int height;
     /*
@@ -473,7 +484,8 @@ int xpost_oper_init_png_device_ops(Xpost_Context *ctx,
         return VMerror;
 
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
+                                &optadr);
     optab = (Xpost_Operator *)(ctx->gl->base + optadr);
     op = xpost_operator_cons(ctx, "loadpngdevice", (Xpost_Op_Func)loadpngdevice, 1, 0); INSTALL;
     op = xpost_operator_cons(ctx, "loadpngdevicecont", (Xpost_Op_Func)loadpngdevicecont, 1, 1, dicttype);
