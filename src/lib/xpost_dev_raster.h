@@ -44,52 +44,6 @@
 #define XPOST_DEV_RASTER_H
 
 /**
- * @brief A blue green red alpha pixel
- */
-typedef
-struct Xpost_Raster_BGRA_Pixel
-{
-    unsigned char blue, green, red, alpha;
-} Xpost_Raster_BGRA_Pixel;
-
-/**
- * @brief a blue green red pixel
- */
-typedef
-struct Xpost_Raster_BGR_Pixel
-{
-    unsigned char blue, green, red;
-} Xpost_Raster_BGR_Pixel;
-
-/**
- * @brief a red green blue pixel
- */
-typedef
-struct Xpost_Raster_RGB_Pixel
-{
-    unsigned char red, green, blue;
-} Xpost_Raster_RGB_Pixel;
-
-/**
- * @brief a alpha red green blue pixel
- */
-typedef
-struct Xpost_Raster_ARGB_Pixel
-{
-    unsigned char alpha, red, green, blue;
-} Xpost_Raster_ARGB_Pixel;
-
-/**
- * @brief a generic buffer
- */
-typedef
-struct Xpost_Raster_Buffer
-{
-    int width, height, byte_stride;
-    /*(Xpost_Raster_*_Pixel)*/ char *data[1];
-} Xpost_Raster_Buffer;
-
-/**
  * @brief install operator loadrasterdevice in systemdict
  *
  * When run, creates a new operator
