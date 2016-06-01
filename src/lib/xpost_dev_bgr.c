@@ -235,9 +235,10 @@ int _putpix(Xpost_Context *ctx,
                      sizeof(private), &private);
 
     /* check bounds */
-    if (x.int_.val < 0 || x.int_.val >= xpost_dict_get(ctx, devdic, namewidth).int_.val)
-        return 0;
-    if (y.int_.val < 0 || y.int_.val >= xpost_dict_get(ctx, devdic, nameheight).int_.val)
+    if ((x.int_.val < 0) ||
+        (x.int_.val >= private.width) ||
+        (y.int_.val < 0) ||
+        (y.int_.val >= private.height))
         return 0;
 
     {
@@ -245,7 +246,7 @@ int _putpix(Xpost_Context *ctx,
         pixel.blue = blue.int_.val;
         pixel.green = green.int_.val;
         pixel.red = red.int_.val;
-        private.buf->data[y.int_.val * private.buf->width + x.int_.val] = pixel;
+        private.buf->data[y.int_.val * private.width + x.int_.val] = pixel;
     }
 
     /* save private data struct in string */
