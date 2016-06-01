@@ -55,12 +55,12 @@
 
 #define FAST_C_BUFFER
 
-typedef struct Xpost_Bgr_Pixel
+typedef struct
 {
     unsigned char blue, green, red;
 } Xpost_Bgr_Pixel;
 
-typedef struct Xpost_Bgr_Buffer
+typedef struct
 {
     int width, height, byte_stride;
     Xpost_Bgr_Pixel data[1];
@@ -76,8 +76,6 @@ typedef struct
     Xpost_Bgr_Buffer *buf;
 #endif
 } PrivateData;
-
-static int _flush (Xpost_Context *ctx, Xpost_Object devdic);
 
 
 static Xpost_Object namePrivate;
