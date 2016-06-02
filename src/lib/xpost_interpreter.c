@@ -1316,11 +1316,11 @@ run:
         Destroy = xpost_dict_get(xpost_ctx, device, xpost_name_cons(xpost_ctx, "Destroy"));
         if (xpost_object_get_type(Destroy) == operatortype)
         {
-            int ret;
+            int res;
             xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, device);
-            ret = xpost_operator_exec(xpost_ctx, Destroy.mark_.padw);
-            if (ret)
-                XPOST_LOG_ERR("%s error destroying device", errorname[ret]);
+            res = xpost_operator_exec(xpost_ctx, Destroy.mark_.padw);
+            if (res)
+                XPOST_LOG_ERR("%s error destroying device", errorname[res]);
             else
                 XPOST_LOG_INFO("destroyed device");
         }
