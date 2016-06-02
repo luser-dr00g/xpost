@@ -86,7 +86,8 @@ void *alloca (size_t);
 
 #define XCB_ALL_PLANES ~0
 
-typedef struct {
+typedef struct
+{
     xcb_connection_t *c;
     xcb_screen_t *scr;
     xcb_drawable_t win;
@@ -122,18 +123,19 @@ int _event_handler(Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     event = xcb_poll_for_event(private.c);
     if (event)
     {
         switch(event->response_type & ~0x80)
         {
-        case XCB_EXPOSE:
-            _flush(ctx, devdic);
-            break;
-        default:
-            break;
+            case XCB_EXPOSE:
+                _flush(ctx, devdic);
+                break;
+            default:
+                break;
         }
         free(event);
     }
@@ -273,10 +275,11 @@ int _create_cont(Xpost_Context *ctx,
        and initialize drawing parameters */
     private.gc = xcb_generate_id(private.c);
     {
-        unsigned int values[2] = {
-            private.scr->black_pixel,
-            private.scr->white_pixel
-        } ;
+        unsigned int values[2] =
+            {
+                private.scr->black_pixel,
+                private.scr->white_pixel
+            };
         xcb_create_gc(private.c, private.gc, private.win,
                       XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
                       values);
@@ -295,7 +298,8 @@ int _create_cont(Xpost_Context *ctx,
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     /* return device instance dictionary to ps */
     xpost_stack_push(ctx->lo, ctx->os, devdic);
@@ -340,9 +344,10 @@ int _putpix(Xpost_Context *ctx,
                      xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
     /* check bounds */
-    if (x.int_.val < 0 || x.int_.val >= xpost_dict_get(ctx, devdic, namewidth).int_.val)
-        return 0;
-    if (y.int_.val < 0 || y.int_.val >= xpost_dict_get(ctx, devdic, nameheight).int_.val)
+    if ((x.int_.val < 0) ||
+        (x.int_.val >= private.width) ||
+        (y.int_.val < 0) ||
+        (y.int_.val >= private.height))
         return 0;
 
     {
@@ -371,7 +376,8 @@ int _putpix(Xpost_Context *ctx,
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     return 0;
 }
@@ -390,7 +396,8 @@ int _getpix(Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     /* ?? I don't know ...
        make a 1-pixel image and use copy_area?  ... */
@@ -441,7 +448,8 @@ int _drawline(Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     {
         xcb_alloc_color_reply_t *rep;
@@ -462,10 +470,11 @@ int _drawline(Xpost_Context *ctx,
     }
 
     {
-        xcb_point_t points[] = {
-            { x1.int_.val, y1.int_.val },
-            { x2.int_.val, y2.int_.val }
-        };
+        xcb_point_t points[] =
+            {
+                { x1.int_.val, y1.int_.val },
+                { x2.int_.val, y2.int_.val }
+            };
         xcb_poly_line(private.c, XCB_COORD_MODE_ORIGIN,
                       private.img, private.gc, 2, points);
     }
@@ -486,7 +495,6 @@ int _fillrect(Xpost_Context *ctx,
 {
     Xpost_Object privatestr;
     PrivateData private;
-    int w,h;
     int i,j;
 
     /* fold numbers to integertype */
@@ -530,16 +538,15 @@ int _fillrect(Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
-    w = xpost_dict_get(ctx, devdic, namewidth).int_.val;
-    h = xpost_dict_get(ctx, devdic, nameheight).int_.val;
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
-    if (x.int_.val >= w || y.int_.val >= h)
+    if (x.int_.val >= private.width || y.int_.val >= private.height)
         return 0;
-    if (x.int_.val + width.int_.val > w)
-        width.int_.val = w - x.int_.val;
-    if (y.int_.val + height.int_.val > h)
-        height.int_.val = h - y.int_.val;
+    if (x.int_.val + width.int_.val > private.width)
+        width.int_.val = private.width - x.int_.val;
+    if (y.int_.val + height.int_.val > private.height)
+        height.int_.val = private.height - y.int_.val;
 
     {
         xcb_alloc_color_reply_t *rep;
@@ -558,9 +565,9 @@ int _fillrect(Xpost_Context *ctx,
         free(rep);
         xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, &value);
 
-        for (i=0; i < height.int_.val; i++)
+        for (i = 0; i < height.int_.val; i++)
         {
-            for (j=0; j < width.int_.val; j++)
+            for (j = 0; j < width.int_.val; j++)
             {
                 xcb_point_t p;
                 p.x = x.int_.val + j;
@@ -602,7 +609,8 @@ int _fillpoly(Xpost_Context *ctx,
     /* load private data struct from string */
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     {
         xcb_point_t *points;
@@ -625,7 +633,7 @@ int _fillpoly(Xpost_Context *ctx,
 
         points = alloca((poly.comp_.sz //+ 1
                     ) * sizeof *points);
-        for (i=0; i < poly.comp_.sz; i++)
+        for (i = 0; i < poly.comp_.sz; i++)
         {
             Xpost_Object pair, x, y;
             pair = xpost_array_get(ctx, poly, i);
@@ -665,10 +673,11 @@ int _flush(Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     xcb_copy_area(private.c, private.img, private.win, private.gc,
-            0, 0, 0, 0, private.width, private.height);
+                  0, 0, 0, 0, private.width, private.height);
     xcb_flush(private.c);
 
     return 0;
@@ -679,8 +688,7 @@ int _flush(Xpost_Context *ctx,
    for smoother previewing.
  */
 static
-int (*_emit)(Xpost_Context *ctx,
-             Xpost_Object devdic) = _flush;
+int (*_emit)(Xpost_Context *ctx, Xpost_Object devdic) = _flush;
 
 static
 int _destroy(Xpost_Context *ctx,
@@ -692,8 +700,9 @@ int _destroy(Xpost_Context *ctx,
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr), xpost_object_get_ent(privatestr), 0,
-                     sizeof private, &private);
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     xpost_context_install_event_handler(ctx, null, null);
 
@@ -878,7 +887,8 @@ int xpost_oper_init_xcb_device_ops (Xpost_Context *ctx,
         return VMerror;
 
     xpost_memory_table_get_addr(ctx->gl,
-            XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+                                XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE,
+                                &optadr);
     optab = (Xpost_Operator *)(ctx->gl->base + optadr);
     op = xpost_operator_cons(ctx, "loadxcbdevice", (Xpost_Op_Func)loadxcbdevice, 1, 0); INSTALL;
     op = xpost_operator_cons(ctx, "loadxcbdevicecont", (Xpost_Op_Func)loadxcbdevicecont, 1, 1, dicttype);
