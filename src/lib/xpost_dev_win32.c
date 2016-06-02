@@ -132,8 +132,8 @@ _xpost_dev_gl_win32_viewport_set(int width, int height)
 }
 
 static
-int _event_handler (Xpost_Context *ctx,
-                    Xpost_Object devdic)
+int _event_handler(Xpost_Context *ctx,
+                   Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
@@ -144,7 +144,8 @@ int _event_handler (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     while (PeekMessage(&msg, private.window, 0, 0, PM_REMOVE))
     {
@@ -173,10 +174,10 @@ _xpost_dev_win32_procedure(HWND   window,
 /* create an instance of the device
    using the class .copydict procedure */
 static
-int _create (Xpost_Context *ctx,
-             Xpost_Object width,
-             Xpost_Object height,
-             Xpost_Object classdic)
+int _create(Xpost_Context *ctx,
+            Xpost_Object width,
+            Xpost_Object height,
+            Xpost_Object classdic)
 {
     int ret;
 
@@ -194,8 +195,8 @@ int _create (Xpost_Context *ctx,
         then call _create_cont, by continuation. */
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_create_cont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic,
-                    namedotcopydict)))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_dict_get(ctx, classdic, namedotcopydict)))
         return execstackoverflow;
 
     return 0;
@@ -204,10 +205,10 @@ int _create (Xpost_Context *ctx,
 /* initialize the C-level data
    and define in the device instance */
 static
-int _create_cont (Xpost_Context *ctx,
-                  Xpost_Object w,
-                  Xpost_Object h,
-                  Xpost_Object devdic)
+int _create_cont(Xpost_Context *ctx,
+                 Xpost_Object w,
+                 Xpost_Object h,
+                 Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
@@ -442,12 +443,13 @@ int _create_cont (Xpost_Context *ctx,
     }
 
     xpost_context_install_event_handler(ctx,
-            xpost_operator_cons_opcode(_event_handler_opcode),
-            devdic);
+                                        xpost_operator_cons_opcode(_event_handler_opcode),
+                                        devdic);
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof(private), &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     /* return device instance dictionary to ps */
     xpost_stack_push(ctx->lo, ctx->os, devdic);
@@ -467,13 +469,13 @@ int _create_cont (Xpost_Context *ctx,
 }
 
 static
-int _putpix (Xpost_Context *ctx,
-             Xpost_Object red,
-             Xpost_Object green,
-             Xpost_Object blue,
-             Xpost_Object x,
-             Xpost_Object y,
-             Xpost_Object devdic)
+int _putpix(Xpost_Context *ctx,
+            Xpost_Object red,
+            Xpost_Object green,
+            Xpost_Object blue,
+            Xpost_Object x,
+            Xpost_Object y,
+            Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
@@ -502,12 +504,14 @@ int _putpix (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     /* check bounds */
-    if (x.int_.val < 0 || x.int_.val >= xpost_dict_get(ctx, devdic, namewidth).int_.val)
-        return 0;
-    if (y.int_.val < 0 || y.int_.val >= xpost_dict_get(ctx, devdic, nameheight).int_.val)
+    if ((x.int_.val < 0) ||
+        (x.int_.val >= private.width) ||
+        (y.int_.val < 0) ||
+        (y.int_.val >= private.height))
         return 0;
 
     rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
@@ -543,10 +547,10 @@ int _putpix (Xpost_Context *ctx,
 }
 
 static
-int _getpix (Xpost_Context *ctx,
-             Xpost_Object x,
-             Xpost_Object y,
-             Xpost_Object devdic)
+int _getpix(Xpost_Context *ctx,
+            Xpost_Object x,
+            Xpost_Object y,
+            Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
@@ -557,7 +561,8 @@ int _getpix (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (!rd)
@@ -567,14 +572,11 @@ int _getpix (Xpost_Context *ctx,
     {
         case RENDER_BACKEND_GDI:
             xpost_stack_push(ctx->lo, ctx->os,
-                             xpost_int_cons( (rd->backend.gdi.buf[y.int_.val * private.width + x.int_.val]
-                                              >> 16) & 0xFF));
+                             xpost_int_cons( (rd->backend.gdi.buf[y.int_.val * private.width + x.int_.val] >> 16) & 0xFF));
             xpost_stack_push(ctx->lo, ctx->os,
-                             xpost_int_cons( (rd->backend.gdi.buf[y.int_.val * private.width + x.int_.val]
-                                              >> 8) & 0xFF));
+                             xpost_int_cons( (rd->backend.gdi.buf[y.int_.val * private.width + x.int_.val] >> 8) & 0xFF));
             xpost_stack_push(ctx->lo, ctx->os,
-                             xpost_int_cons(rd->backend.gdi.buf[y.int_.val * private.width + x.int_.val]
-                                            & 0xFF));
+                             xpost_int_cons(rd->backend.gdi.buf[y.int_.val * private.width + x.int_.val] & 0xFF));
             break;
         default:
             break;
@@ -584,15 +586,15 @@ int _getpix (Xpost_Context *ctx,
 }
 
 static
-int _drawline (Xpost_Context *ctx,
-               Xpost_Object red,
-               Xpost_Object green,
-               Xpost_Object blue,
-               Xpost_Object x1,
-               Xpost_Object y1,
-               Xpost_Object x2,
-               Xpost_Object y2,
-               Xpost_Object devdic)
+int _drawline(Xpost_Context *ctx,
+              Xpost_Object red,
+              Xpost_Object green,
+              Xpost_Object blue,
+              Xpost_Object x1,
+              Xpost_Object y1,
+              Xpost_Object x2,
+              Xpost_Object y2,
+              Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
@@ -638,7 +640,7 @@ int _drawline (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0, sizeof(private), &private);
 
     _x1 = x1.int_.val;
     _x2 = x2.int_.val;
@@ -646,7 +648,7 @@ int _drawline (Xpost_Context *ctx,
     _y2 = y2.int_.val;
 
     XPOST_LOG_INFO("_drawline(%d, %d, %d, %d)",
-            _x1, _y1, _x2, _y2);
+                   _x1, _y1, _x2, _y2);
 
     rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (!rd)
@@ -778,21 +780,19 @@ int _drawline (Xpost_Context *ctx,
 }
 
 static
-int _fillrect (Xpost_Context *ctx,
-               Xpost_Object red,
-               Xpost_Object green,
-               Xpost_Object blue,
-               Xpost_Object x,
-               Xpost_Object y,
-               Xpost_Object width,
-               Xpost_Object height,
-               Xpost_Object devdic)
+int _fillrect(Xpost_Context *ctx,
+              Xpost_Object red,
+              Xpost_Object green,
+              Xpost_Object blue,
+              Xpost_Object x,
+              Xpost_Object y,
+              Xpost_Object width,
+              Xpost_Object height,
+              Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
     Render_Data *rd;
-    int w;
-    int h;
 
     /* fold numbers to integertype */
     if (xpost_object_get_type(red) == realtype)
@@ -835,16 +835,15 @@ int _fillrect (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
-    w = xpost_dict_get(ctx, devdic, namewidth).int_.val;
-    h = xpost_dict_get(ctx, devdic, nameheight).int_.val;
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
-    if (x.int_.val >= w || y.int_.val >= h)
+    if (x.int_.val >= private.width || y.int_.val >= private.height)
         return 0;
-    if (x.int_.val + width.int_.val > w)
-        width.int_.val = w - x.int_.val;
-    if (y.int_.val + height.int_.val > h)
-        height.int_.val = h - y.int_.val;
+    if (x.int_.val + width.int_.val > private.width)
+        width.int_.val = private.width - x.int_.val;
+    if (y.int_.val + height.int_.val > private.height)
+        height.int_.val = private.height - y.int_.val;
 
     rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (!rd)
@@ -890,8 +889,8 @@ int _fillrect (Xpost_Context *ctx,
 }
 
 static
-int _flush (Xpost_Context *ctx,
-            Xpost_Object devdic)
+int _flush(Xpost_Context *ctx,
+           Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
@@ -902,7 +901,8 @@ int _flush (Xpost_Context *ctx,
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     rd = (Render_Data *)GetWindowLongPtr(private.window, GWLP_USERDATA);
     if (!rd)
@@ -931,12 +931,11 @@ int _flush (Xpost_Context *ctx,
    for smoother previewing.
  */
 static
-int (*_emit) (Xpost_Context *ctx,
-           Xpost_Object devdic) = _flush;
+int (*_emit)(Xpost_Context *ctx, Xpost_Object devdic) = _flush;
 
 static
-int _destroy (Xpost_Context *ctx,
-              Xpost_Object devdic)
+int _destroy(Xpost_Context *ctx,
+             Xpost_Object devdic)
 {
     Xpost_Object privatestr;
     PrivateData private;
@@ -946,7 +945,8 @@ int _destroy (Xpost_Context *ctx,
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr), xpost_object_get_ent(privatestr), 0,
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0,
                      sizeof(private), &private);
 
     xpost_context_install_event_handler(ctx, null, null);
@@ -984,9 +984,9 @@ int _destroy (Xpost_Context *ctx,
    installed in userdict by calling 'loadXXXdevice'.
 */
 static
-int newwin32device (Xpost_Context *ctx,
-                    Xpost_Object width,
-                    Xpost_Object height)
+int newwin32device(Xpost_Context *ctx,
+                   Xpost_Object width,
+                   Xpost_Object height)
 {
     Xpost_Object classdic;
     int ret;
@@ -1005,7 +1005,9 @@ int newwin32device (Xpost_Context *ctx,
 
     /* xpost_stack_push will also throw an error upon an invalid object
        return from xpost_dict_get */
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, xpost_name_cons(ctx, "Create"))))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_dict_get(ctx, classdic,
+                                         xpost_name_cons(ctx, "Create"))))
         return execstackoverflow;
 
     return 0;
@@ -1020,7 +1022,7 @@ unsigned int _loadwin32devicecont_opcode;
    call loadXXXdevicecont by continuation.
 */
 static
-int loadwin32device (Xpost_Context *ctx)
+int loadwin32device(Xpost_Context *ctx)
 {
     Xpost_Object classdic;
     int ret;
@@ -1030,9 +1032,11 @@ int loadwin32device (Xpost_Context *ctx)
     if (ret)
         return ret;
     classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_loadwin32devicecont_opcode)))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(_loadwin32devicecont_opcode)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, namedotcopydict)))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_dict_get(ctx, classdic, namedotcopydict)))
         return execstackoverflow;
 
     return 0;
@@ -1043,8 +1047,8 @@ int loadwin32device (Xpost_Context *ctx)
    defines a new operator in userdict: newXXXdevice
 */
 static
-int loadwin32devicecont (Xpost_Context *ctx,
-                         Xpost_Object classdic)
+int loadwin32devicecont(Xpost_Context *ctx,
+                        Xpost_Object classdic)
 {
     Xpost_Object userdict;
     Xpost_Object op;
@@ -1062,33 +1066,33 @@ int loadwin32devicecont (Xpost_Context *ctx,
         return ret;
 
     op = xpost_operator_cons(ctx, "win32PutPix", (Xpost_Op_Func)_putpix, 0, 6,
-            numbertype, numbertype, numbertype, /* r g b color values */
-            numbertype, numbertype, /* x y coords */
-            dicttype); /* devdic */
+                             numbertype, numbertype, numbertype, /* r g b color values */
+                             numbertype, numbertype, /* x y coords */
+                             dicttype); /* devdic */
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "PutPix"), op);
     if (ret)
         return ret;
 
     op = xpost_operator_cons(ctx, "win32GetPix", (Xpost_Op_Func)_getpix, 3, 3,
-            numbertype, numbertype, dicttype);
+                             numbertype, numbertype, dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "GetPix"), op);
     if (ret)
         return ret;
 
     op = xpost_operator_cons(ctx, "win32DrawLine", (Xpost_Op_Func)_drawline, 0, 8,
-            numbertype, numbertype, numbertype, /* r g b color values */
-            numbertype, numbertype, /* x1 y1 */
-            numbertype, numbertype, /* x2 y2 */
-            dicttype); /* devdic */
+                             numbertype, numbertype, numbertype, /* r g b color values */
+                             numbertype, numbertype, /* x1 y1 */
+                             numbertype, numbertype, /* x2 y2 */
+                             dicttype); /* devdic */
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "DrawLine"), op);
     if (ret)
         return ret;
 
     op = xpost_operator_cons(ctx, "win32FillRect", (Xpost_Op_Func)_fillrect, 0, 8,
-            numbertype, numbertype, numbertype, /* r g b color values */
-            numbertype, numbertype, /* x y coords */
-            numbertype, numbertype, /* width height */
-            dicttype); /* devdic */
+                             numbertype, numbertype, numbertype, /* r g b color values */
+                             numbertype, numbertype, /* x y coords */
+                             numbertype, numbertype, /* width height */
+                             dicttype); /* devdic */
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "FillRect"), op);
     if (ret)
         return ret;
@@ -1114,7 +1118,8 @@ int loadwin32devicecont (Xpost_Context *ctx,
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "newwin32device", (Xpost_Op_Func)newwin32device, 1, 2, integertype, integertype);
+    op = xpost_operator_cons(ctx, "newwin32device", (Xpost_Op_Func)newwin32device, 1, 2,
+                             integertype, integertype);
     ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newwin32device"), op);
     if (ret)
         return ret;
@@ -1130,8 +1135,8 @@ int loadwin32devicecont (Xpost_Context *ctx,
    to produce the operator newXXXdevice
    which creates the device instance dictionary.
 */
-int xpost_oper_init_win32_device_ops (Xpost_Context *ctx,
-                  Xpost_Object sd)
+int xpost_oper_init_win32_device_ops(Xpost_Context *ctx,
+                                     Xpost_Object sd)
 {
     unsigned int optadr;
     Xpost_Operator *optab;
