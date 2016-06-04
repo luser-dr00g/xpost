@@ -235,6 +235,9 @@ int main(int argc, char *argv[])
     const char *device = NULL;
     const char *ps_file = NULL;
     const char *filename = argv[0];
+    const char *define = NULL;
+    char **defs = NULL;
+    int num_defs = 0;
     int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
     int have_device;
     int width = -1;
@@ -302,6 +305,31 @@ int main(int argc, char *argv[])
             {
                 _xpost_main_license();
                 return EXIT_SUCCESS;
+            }
+            else if ((!strncmp(argv[i], "-D", 2)) ||
+                     (!strcmp(argv[i], "--define")))
+            {
+                if (argv[i][1]=='D')
+                {
+                    define = argv[i] + 2;
+                }
+                else
+                {
+                    if ((i + 1) < argc)
+                    {
+                        ++i;
+                        define = argv[i];
+                    }
+                    else
+                    {
+                        XPOST_LOG_ERR("missing option value");
+                        _xpost_main_usage(filename);
+                        goto quit_xpost;
+                    }
+
+                }
+                defs = realloc(defs, ++num_defs * sizeof *defs);
+                defs[num_defs-1] = strdup(define);
             }
             else if ((!strcmp(argv[i], "-q")) ||
                      (!strcmp(argv[i], "--quiet")))
@@ -392,6 +420,18 @@ int main(int argc, char *argv[])
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
+    }
+
+    XPOST_LOG_INFO("defs=%p", (void*)defs);
+    if (defs){
+        xpost_add_definitions(ctx, num_defs, defs);
+        for (i = 0; i < num_defs; ++i)
+        {
+            free(defs[i]);
+        }
+        free(defs);
+        defs = NULL;
+        num_defs = 0;
     }
 
     xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file);

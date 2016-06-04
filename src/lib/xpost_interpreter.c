@@ -1207,6 +1207,52 @@ XPAPI Xpost_Context *xpost_create(const char *device,
     return xpost_ctx;
 }
 
+static
+Xpost_Object get_token(Xpost_Context *ctx, char *str){
+    Xpost_Object o;
+    xpost_stack_push(ctx->lo, ctx->os, xpost_string_cons(ctx, strlen(str), str));
+    xpost_operator_exec(ctx, xpost_operator_cons(ctx, "token",NULL,0,0).mark_.padw);
+    if (xpost_stack_pop(ctx->lo, ctx->os).int_.val){
+        o = xpost_stack_pop(ctx->lo, ctx->os);
+        xpost_stack_pop(ctx->lo, ctx->os);
+    } else {
+        o = null;
+    }
+    return o;
+}
+
+XPAPI int xpost_add_definitions(Xpost_Context *ctx, int cnt, char *defs[])
+{
+    int i;
+    Xpost_Object ud;
+
+    if (!ctx) return 0;
+    XPOST_LOG_INFO("adding %d defs", cnt);
+
+    ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    for (i = 0; i < cnt; i++)
+    {
+        char *eq = strchr(defs[i], '=');
+
+        XPOST_LOG_INFO("%s", defs[i]);
+        if (eq)
+        {
+            *eq++ = '\0';
+            xpost_dict_put(ctx, ud,
+                    xpost_name_cons(ctx, defs[i]),
+                    get_token(ctx, eq));
+            eq[-1] = '=';
+        }
+        else
+        {
+            xpost_dict_put(ctx, ud,
+                    xpost_name_cons(ctx, defs[i]),
+                    null);
+        }
+    }
+    return 1;
+}
+
 /*
    execute ps program until quit, fall-through to quit,
    SHOWPAGE_RETURN semantic, or error (default action: message, purge and quit).

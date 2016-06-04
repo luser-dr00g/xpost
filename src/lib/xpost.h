@@ -245,6 +245,28 @@ XPAPI Xpost_Context *xpost_create(const char *device,
                                   int height);
 
 /**
+ * @brief Add extra definitions to userdict
+ *
+ * @param ctx The context to use.
+ * @param cnt The number of elements in the @p defs array
+ * @param defs An argv-style array of pointers to "key=value" strings.
+ *
+ * This function allows extra defined key/value pairs to be
+ * added to userdict after a context is created using xpost_create,
+ * presumably before calling xpost_run.
+ *
+ * Definitions may be used by the ps program or to supply control
+ * information to specific devices.
+ *
+ * This will present some duplication of features once the 
+ * setpagedevice and setuserparams operators are implemented.
+ * But it still represents a useful construct for postscript code.
+ */
+XPAPI int xpost_add_definitions(Xpost_Context *ctx,
+                                int cnt,
+                                char *defs[]);
+
+/**
  * @brief Execute ps program.
  *
  * @param ctx The context to run.
