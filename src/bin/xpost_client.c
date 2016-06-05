@@ -51,6 +51,40 @@
 
 #include "xpost.h"
 
+
+#define XPOST_MAIN_IF_OPT(so, lo, opt)  \
+if ((!strcmp(argv[i], so)) || \
+   (!strncmp(argv[i], lo, sizeof(lo) - 1))) \
+{ \
+    if (*(argv[i] + 2) == '\0') \
+    { \
+        if ((i + 1) < argc) \
+        { \
+            i++; \
+            opt = argv[i]; \
+        } \
+        else \
+        { \
+            fprintf(stderr, "missing option value"); \
+            _xpost_client_usage(filename); \
+            goto quit_xpost; \
+        } \
+    } \
+    else \
+    { \
+        if (!*(argv[i] + sizeof(lo) - 1)) \
+        { \
+            fprintf(stderr, "missing option value"); \
+            _xpost_client_usage(filename); \
+            goto quit_xpost; \
+        } \
+        else \
+        { \
+            opt = argv[i] + sizeof(lo) - 1; \
+        } \
+    } \
+}
+
 const char *prog =
     "%%BoundingBox: 200 300 400 500\n"
     "0 0 1 setrgbcolor\n"
@@ -61,6 +95,13 @@ const char *prog =
     "/Palatino-Roman 20 selectfont\n"
     "(Xpost) show\n"
     "showpage\n";
+
+static const char *_xpost_main_devices[] =
+{
+    "raster",
+    "png",
+    NULL
+};
 
 static void
 _xpost_client_license(void)
@@ -82,15 +123,23 @@ _xpost_client_version(const char *filename)
 static void
 _xpost_client_usage(const char *filename)
 {
+    int i;
+
     printf("Usage: %s [options] [file.png]\n\n", filename);
     printf("Postscript level 2 interpreter\n\n");
     printf("Options:\n");
-    printf("  -q, --quiet    suppress interpreter messages (default)\n");
-    printf("  -v, --verbose  do not go quiet into that good night\n");
-    printf("  -t, --trace    add additional tracing messages, implies -v\n");
-    printf("  -L, --license  show program license\n");
-    printf("  -V, --version  show program version\n");
-    printf("  -h, --help     show this message\n");
+    printf("  -d, --device=[STRING]  device name [default=raster]\n");
+    printf("  -q, --quiet            suppress interpreter messages (default)\n");
+    printf("  -v, --verbose          do not go quiet into that good night\n");
+    printf("  -t, --trace            add additional tracing messages, implies -v\n");
+    printf("  -L, --license          show program license\n");
+    printf("  -V, --version          show program version\n");
+    printf("  -h, --help             show this message\n");
+    printf("\n");
+    printf("  Supported devices:\n");
+    i = 0;
+    while (_xpost_main_devices[i])
+        printf("\t%s\n", _xpost_main_devices[i++]);
 }
 
 int main(int argc, const char *argv[])
@@ -103,10 +152,13 @@ int main(int argc, const char *argv[])
     Xpost_Output_Type output_type;
     Xpost_Showpage_Semantics show_page;
     int ret;
-    int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
+    int output_msg;
+    int want_png;
     int i;
 
     filename = NULL;
+    device = "raster";
+    output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
 
     i = 0;
     while (++i < argc)
@@ -146,6 +198,7 @@ int main(int argc, const char *argv[])
             {
                 output_msg = XPOST_OUTPUT_MESSAGE_TRACING;
             }
+            else XPOST_MAIN_IF_OPT("-d", "--device=", device)
             else
             {
                 printf("unknown option\n");
@@ -157,21 +210,36 @@ int main(int argc, const char *argv[])
             filename = argv[i];
     }
 
-    xpost_init();
-    if (filename)
+    if (strcmp(device, "png") == 0)
     {
+        if (!filename)
+            filename = "xpost_client_out.png";
         device = "png";
+        want_png = 1;
+    }
+    else if (strcmp(device, "raster") == 0)
+    {
+        if (!filename)
+            filename = "xpost_client_out.ppm";
+        device = "raster:bgr";
+        want_png = 0;
+    }
+
+    if (want_png)
+    {
         output_type = XPOST_OUTPUT_FILENAME;
         show_page = XPOST_SHOWPAGE_NOPAUSE;
         ptr = filename;
     }
     else
     {
-        device = "raster:bgr";
         output_type = XPOST_OUTPUT_BUFFEROUT;
         show_page = XPOST_SHOWPAGE_RETURN;
         ptr = &buffer_type_object;
     }
+
+    xpost_init();
+
     if (!(ctx = xpost_create(device,
                              output_type,
                              ptr,
@@ -185,16 +253,19 @@ int main(int argc, const char *argv[])
     printf("created interpreter context. executing program...\n");
     ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
     printf("executed program. xpost_run returned %s\n", ret? "yieldtocaller": "zero");
-    if (!filename && !ret)
+    if (!want_png && !ret)
     {
         fprintf(stderr, "error before showpage\n");
     }
-    else if (!filename)
+    else if (!want_png)
     {
         typedef struct { unsigned char blue, green, red; } pixel;
-        pixel *buffer = buffer_type_object;
-        int i,j;
-        FILE *fp = fopen("xpost_client_out.ppm", "w");
+        pixel *buffer;
+        int i, j;
+        FILE *fp;
+
+        buffer = buffer_type_object;
+        fp = fopen(filename, "w");
         fprintf(fp, "P3\n612 792\n255\n");
         for (i = 0; i < 792; i++)
         {
@@ -202,7 +273,7 @@ int main(int argc, const char *argv[])
             {
                 pixel pix = *buffer++;
                 fprintf(fp, "%d %d %d ", pix.red, pix.green, pix.blue);
-                if ((j%20)==0)
+                if ((j % 20) == 0)
                     fprintf(fp, "\n");
             }
             fprintf(fp, "\n");
@@ -212,6 +283,7 @@ int main(int argc, const char *argv[])
     xpost_destroy(ctx);
     //free(buffer_type_object);
     xpost_quit();
+  quit_xpost:
     return 0;
 }
 
