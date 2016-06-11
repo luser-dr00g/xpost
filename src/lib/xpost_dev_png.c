@@ -56,7 +56,6 @@
 #include "xpost_dev_png.h" /* check prototypes */
 
 /* FIXME: add interlaced feature */
-/* FIXME: add compress feature */
 
 typedef struct
 {
@@ -80,7 +79,6 @@ typedef struct
     png_structp         png_ptr;
     png_infop           info_ptr;
     Xpost_Png_Buffer *buf;
-    int compression_level;
     unsigned int interlaced : 1;
 } PrivateData;
 
@@ -128,12 +126,16 @@ int _create_cont(Xpost_Context *ctx,
                  Xpost_Object h,
                  Xpost_Object devdic)
 {
-    Xpost_Object privatestr;
     PrivateData private;
+    Xpost_Object privatestr;
+    Xpost_Object ud;
+    Xpost_Object compression_level_o;
+    Xpost_Object interlaced_o;
     char *filename;
     png_color_8 sig_bit;
     integer width = w.int_.val;
     integer height = h.int_.val;
+    int compression_level;
     //printf("create_cont\n");
 
     /* create a string to contain device data structure */
@@ -169,8 +171,35 @@ int _create_cont(Xpost_Context *ctx,
         return unregistered;
     }
 
-    private.compression_level = 3;
-    private.interlaced = PNG_INTERLACE_NONE;
+    ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    compression_level_o = xpost_dict_get(ctx, ud,
+                                         xpost_name_cons(ctx, "compression_level"));
+    interlaced_o = xpost_dict_get(ctx, ud,
+                                  xpost_name_cons(ctx, "interlaced"));
+
+    if (xpost_object_get_type(compression_level_o) == invalidtype)
+        compression_level = 3;
+    else
+        compression_level = compression_level_o.int_.val;
+    XPOST_LOG_INFO("PNG compresion level: %d", compression_level);
+
+    if (xpost_object_get_type(interlaced_o) == invalidtype)
+        private.interlaced = PNG_INTERLACE_NONE;
+    else
+    {
+        if (interlaced_o.int_.val)
+        {
+#ifdef PNG_WRITE_INTERLACING_SUPPORTED
+            private.interlaced = PNG_INTERLACE_ADAM7;
+#else
+            private.interlaced = PNG_INTERLACE_NONE;
+#endif
+        }
+        else
+            private.interlaced = PNG_INTERLACE_NONE;
+    }
+    XPOST_LOG_INFO("PNG interlacing: %s",
+                   (private.interlaced == PNG_INTERLACE_ADAM7) ? "Adam7" : "none");
     private.info_ptr = NULL;
     private.png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
                                               NULL, NULL, NULL);
@@ -205,7 +234,7 @@ int _create_cont(Xpost_Context *ctx,
     sig_bit.alpha = 8;
     png_set_sBIT(private.png_ptr, private.info_ptr, &sig_bit);
 
-    png_set_compression_level(private.png_ptr, private.compression_level);
+    png_set_compression_level(private.png_ptr, compression_level);
     png_write_info(private.png_ptr, private.info_ptr);
     png_set_shift(private.png_ptr, &sig_bit);
     png_set_packing(private.png_ptr);
@@ -299,6 +328,8 @@ int _emit(Xpost_Context *ctx,
     PrivateData private;
     unsigned char *data;
     png_bytep row_ptr;
+    int num_passes = 1;
+    int pass;
     int y;
 
     /* load private data struct from string */
@@ -308,15 +339,22 @@ int _emit(Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
-    data = (unsigned char *)private.buf->data;
-    for (y = 0; y < private.height; y++)
+#ifdef PNG_WRITE_INTERLACING_SUPPORTED
+    num_passes = png_set_interlace_handling(private.png_ptr);
+#endif
+
+    for (pass = 0; pass < num_passes; pass++)
     {
-        row_ptr = (png_bytep)data;
-        png_write_rows(private.png_ptr, &row_ptr, 1);
-        data += 3 * private.width;
+        data = (unsigned char *)private.buf->data;
+        for (y = 0; y < private.height; y++)
+        {
+            row_ptr = (png_bytep)data;
+            png_write_rows(private.png_ptr, &row_ptr, 1);
+            data += 3 * private.width;
+        }
     }
 
-    /*pass data back to client application */
+    /* pass data back to client application */
     {
         Xpost_Object sd, outbufstr;
         sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);

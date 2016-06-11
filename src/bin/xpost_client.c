@@ -128,7 +128,9 @@ _xpost_client_usage(const char *filename)
     printf("Usage: %s [options] [file.png]\n\n", filename);
     printf("Postscript level 2 interpreter\n\n");
     printf("Options:\n");
-    printf("  -d, --device=[STRING]  device name [default=raster]\n");
+    printf("  -d, --device=[STRING]  device name (see below) [default=raster]\n");
+    printf("  -i, --interlaced       create interlaced PNG [default=disabled]\n");
+    printf("  -l, --level=[INT]      compression level for PNG betwwen 0 and 9 [default=0]\n");
     printf("  -q, --quiet            suppress interpreter messages (default)\n");
     printf("  -v, --verbose          do not go quiet into that good night\n");
     printf("  -t, --trace            add additional tracing messages, implies -v\n");
@@ -154,6 +156,9 @@ int main(int argc, const char *argv[])
     int ret;
     int output_msg;
     int want_png;
+    const char *compression_level = NULL;
+    int png_interlaced = -1;
+    int png_compression_level = 0;
     int i;
 
     filename = NULL;
@@ -198,7 +203,13 @@ int main(int argc, const char *argv[])
             {
                 output_msg = XPOST_OUTPUT_MESSAGE_TRACING;
             }
+            else if ((!strcmp(argv[i], "-i")) ||
+                     (!strcmp(argv[i], "--interlaced")))
+            {
+                png_interlaced = 1;
+            }
             else XPOST_MAIN_IF_OPT("-d", "--device=", device)
+            else XPOST_MAIN_IF_OPT("-l", "--level=", compression_level)
             else
             {
                 printf("unknown option\n");
@@ -225,11 +236,29 @@ int main(int argc, const char *argv[])
         want_png = 0;
     }
 
+    if (!want_png && ((png_interlaced == -1) || (compression_level)))
+    {
+        _xpost_client_usage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
     if (want_png)
     {
         output_type = XPOST_OUTPUT_FILENAME;
         show_page = XPOST_SHOWPAGE_NOPAUSE;
         ptr = filename;
+        if (png_interlaced == -1) png_interlaced = 0;
+        if (compression_level && *compression_level)
+        {
+            if ((compression_level[1] != '\0') ||
+                (compression_level[0] < '0') ||
+                (compression_level[0] > '9'))
+            {
+                _xpost_client_usage(argv[0]);
+                return EXIT_FAILURE;
+            }
+            png_compression_level = compression_level[0] - '0';
+        }
     }
     else
     {
@@ -250,9 +279,27 @@ int main(int argc, const char *argv[])
         fprintf(stderr, "unable to create interpreter context");
         exit(0);
     }
+
     printf("created interpreter context. executing program...\n");
+
+    if (want_png)
+    {
+        char buf1[64];
+        char buf2[64];
+        char *defs[2];
+
+        snprintf(buf1, sizeof(buf1),
+                 "compression_level=%d", png_compression_level);
+        snprintf(buf2, sizeof(buf2),
+                 "interlaced=%d", png_interlaced ? 1 : 0);
+        defs[0] = buf1;
+        defs[1] = buf2;
+        xpost_add_definitions(ctx, 2, defs);
+    }
+
     ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
     printf("executed program. xpost_run returned %s\n", ret? "yieldtocaller": "zero");
+
     if (!want_png && !ret)
     {
         fprintf(stderr, "error before showpage\n");
