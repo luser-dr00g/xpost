@@ -55,8 +55,6 @@
 #include "xpost_dev_generic.h" /* get filename */
 #include "xpost_dev_png.h" /* check prototypes */
 
-/* FIXME: add interlaced feature */
-
 typedef struct
 {
     unsigned char red, green, blue;
