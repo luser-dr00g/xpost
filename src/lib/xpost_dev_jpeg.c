@@ -83,7 +83,6 @@ typedef struct
      */
     FILE *f;
     Xpost_Jpeg_Buffer *buf;
-    int quality;
 } PrivateData;
 
 static Xpost_Object namePrivate;
@@ -154,8 +153,6 @@ int _create_cont(Xpost_Context *ctx,
 {
     PrivateData private;
     Xpost_Object privatestr;
-    Xpost_Object ud;
-    Xpost_Object quality_o;
     char *filename;
     integer width = w.int_.val;
     integer height = h.int_.val;
@@ -193,15 +190,6 @@ int _create_cont(Xpost_Context *ctx,
         XPOST_LOG_ERR("cannot retrieve JPEG file name");
         return unregistered;
     }
-
-    ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    quality_o = xpost_dict_get(ctx, ud, xpost_name_cons(ctx, "quality"));
-
-    if (xpost_object_get_type(quality_o) == invalidtype)
-        private.quality = 90;
-    else
-        private.quality = quality_o.int_.val;
-    XPOST_LOG_INFO("JPEG quality: %d", private.quality);
 
     /* allocate buffer header and array */
     private.buf = malloc(sizeof(Xpost_Jpeg_Buffer) +
@@ -294,10 +282,13 @@ int _emit(Xpost_Context *ctx,
 {
     struct jpeg_compress_struct cinfo;
     struct _JPEG_error_mgr jerr;
+    Xpost_Object ud;
+    Xpost_Object quality_o;
     Xpost_Object privatestr;
     PrivateData private;
     unsigned char *data;
     JSAMPROW *jbuf;
+    int quality;
     int num_passes = 1;
     int pass;
     int y;
@@ -308,6 +299,15 @@ int _emit(Xpost_Context *ctx,
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+
+    ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    quality_o = xpost_dict_get(ctx, ud, xpost_name_cons(ctx, "quality"));
+
+    if (xpost_object_get_type(quality_o) == invalidtype)
+        quality = 90;
+    else
+        quality = quality_o.int_.val;
+    XPOST_LOG_INFO("JPEG quality: %d", quality);
 
     memset(&cinfo, 0, sizeof(cinfo));
     cinfo.err = jpeg_std_error(&(jerr.pub));
@@ -327,11 +327,11 @@ int _emit(Xpost_Context *ctx,
     cinfo.in_color_space = JCS_RGB;
     cinfo.optimize_coding = FALSE;
     cinfo.dct_method = JDCT_ISLOW; /* JDCT_FLOAT JDCT_IFAST(quality loss) */
-    if (private.quality < 60)
+    if (quality < 60)
         cinfo.dct_method = JDCT_IFAST;
     jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, private.quality, TRUE);
-    if (private.quality >= 90)
+    jpeg_set_quality(&cinfo, quality, TRUE);
+    if (quality >= 90)
     {
         cinfo.comp_info[0].h_samp_factor = 1;
         cinfo.comp_info[0].v_samp_factor = 1;
