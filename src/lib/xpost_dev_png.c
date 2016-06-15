@@ -361,7 +361,7 @@ int _emit(Xpost_Context *ctx,
         {
             unsigned char **outbuf;
             memcpy(&outbuf, xpost_string_get_pointer(ctx, outbufstr), sizeof(outbuf));
-            *outbuf = data;
+            *outbuf = (unsigned char *)private.buf->data;
         }
     }
 
