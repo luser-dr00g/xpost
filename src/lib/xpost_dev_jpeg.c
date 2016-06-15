@@ -109,12 +109,15 @@ static void
 _JPEGErrorHandler(j_common_ptr cinfo)
 {
    return;
+   (void)cinfo;
 }
 
 static void
 _JPEGErrorHandler2(j_common_ptr cinfo, int msg_level)
 {
    return;
+   (void)cinfo;
+   (void)msg_level;
 }
 
 /* create an instance of the device
@@ -289,16 +292,14 @@ int _emit(Xpost_Context *ctx,
     unsigned char *data;
     JSAMPROW *jbuf;
     int quality;
-    int num_passes = 1;
-    int pass;
-    int y;
 
     /* load private data struct from string */
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
         return undefined;
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof private, &private);
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     quality_o = xpost_dict_get(ctx, ud, xpost_name_cons(ctx, "quality"));
@@ -360,7 +361,7 @@ int _emit(Xpost_Context *ctx,
         {
             unsigned char **outbuf;
             memcpy(&outbuf, xpost_string_get_pointer(ctx, outbufstr), sizeof(outbuf));
-            *outbuf = data;
+            *outbuf = (unsigned char *)private.buf->data;
         }
     }
 
