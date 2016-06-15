@@ -44,4 +44,5 @@ Many more installation and configuration options desribed in ./INSTALL.
 Support.
 --------
 
-Questions about Xpost can be addres in the Newsgroup xpost-discuss
+Questions about Xpost can be addressed in the Google Group xpost-discuss
+https://groups.google.com/forum/#!forum/xpost-discuss
