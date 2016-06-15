@@ -56,7 +56,7 @@
     <div class="container">
       <section id="downloads">
         <a href="http://luser-dr00g.github.io/xpost" class="btn">About</a>
-        <a href="http://luser-dr00g.github.io/xpost/documentation.html" class="btn">Documentation</a>
+        <a class="btn">Documentation</a>
         <a href="http://luser-dr00g.github.io/xpost/support.html" class="btn">Support</a>
       </section>
     </div>
@@ -64,7 +64,44 @@
     <div class="container">
       <section id="main_content">
         <h2>
-<a id="xpost" class="anchor" href="#xpost" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Documentation</h2>
+          <a id="xpost" class="anchor" href="#xpost" aria-hidden="true">
+            <span aria-hidden="true" class="octicon octicon-link"></span>
+          </a>
+          Documentation
+        </h2>
+
+        <h3>Display devices</h3>
+
+        <ul>
+          <li>X11:
+          <li>Windows:
+        </ul>
+
+        <h3>Image devices</h3>
+
+        <ul>
+          <li>JPEG:
+            It uses the jpeglib library (if available). The compression
+            ratio can be set with the <em>quality</em> option
+            (default: 90).
+          <li>PNG:
+            It uses the libpn library (if available). The interlaced
+            and compression level can be set with
+            the <em>interlaced</em> and <em>compression_level</em>
+            options (default respectively to none and 3).
+          <li>PPM:
+        </ul>
+
+        <h3>Memory devices</h3>
+
+        <ul>
+          <li>nulldevice:
+          <li>bgr:
+          <li>raster:
+        </ul>
+
+      </section>
+    </div>
 
   </body>
 </html>

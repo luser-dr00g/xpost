@@ -9,33 +9,6 @@
     <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print">
 
     <title>Xpost by luser-dr00g</title>
-
-    <style>
-      menu.ul {
-      list-style-type: none;
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background-color: #333;
-      }
-
-      menu.li {
-      float: left;
-      }
-
-      menu.li a {
-      display: inline-block;
-      color: white;
-      text-align: center;
-      padding: 14px 16px;
-      text-decoration: none;
-      }
-
-      menu.li a:hover {
-      background-color: #111;
-      }
-    </style>
-
   </head>
 
   <body>
@@ -55,7 +28,7 @@
 
     <div class="container">
       <section id="downloads">
-        <a href="http://luser-dr00g.github.io/xpost" class="btn">About</a>
+        <a class="btn">About</a>
         <a href="http://luser-dr00g.github.io/xpost/documentation.html" class="btn">Documentation</a>
         <a href="http://luser-dr00g.github.io/xpost/support.html" class="btn">Support</a>
       </section>
@@ -64,57 +37,80 @@
     <div class="container">
       <section id="main_content">
         <h2>
-<a id="xpost" class="anchor" href="#xpost" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Xpost</h2>
+          <a id="xpost" class="anchor" href="#xpost"
+             aria-hidden="true">
+            <span aria-hidden="true" class="octicon octicon-link"></span>
+          </a>
+          Xpost
+        </h2>
 
-<p>Xpost is a cross-platform interpreter for the PostScript Language
-written in C. It has autotools for building on unix systems, and
-Visual C solutions for building on Windows. Currently, a windows
-build cannot run because there's no installer to coordinate the 
-location for the postscript-language data files that are needed.</p>
+        <p>
+          Xpost is a cross-platform interpreter for the PostScript Language
+          written in C. It has autotools for building on unix systems, and
+          Visual C solutions for building on Windows. Currently, a windows
+          build cannot run because there's no installer to coordinate the
+          location for the postscript-language data files that are
+          needed.
+        </p>
 
-<p>We have determined that the interpreter runs "too slow". So we've 
-switched gears (from stalled-out on adding features) to
-Optimizing! It's no longer premature.</p>
+        <p>
+          We have determined that the interpreter runs "too slow". So we've
+          switched gears (from stalled-out on adding features) to
+          Optimizing! It's no longer premature.
+        </p>
 
-<p>The core of the interpreter was written by M Joshua Ryan (luser droog).
-The autotools build system, logging system, and win32 device were 
-written by Vincent Torri. Individual files bear the copyright of their
-respective contributors.</p>
+        <p>
+          The core of the interpreter was written by M Joshua Ryan (luser droog).
+          The autotools build system, logging system, and win32 device were
+          written by Vincent Torri. Individual files bear the copyright of their
+          respective contributors.
+        </p>
 
-<p>Xpost has rudimentary graphics support. MS Windows or X11 windows.
-PGM or PPM file output. Or a nulldevice, which executes the drawing
-operations and discards the output. A Raster device is in development
-which will yield the image data in BGR, BGRA, ARGB, or RGB byte orders
-to a calling program which uses xpost as a library component.</p>
+        <p>
+          Xpost has rudimentary graphics support. MS Windows or X11 windows.
+          PGM or PPM file output. Or a nulldevice, which executes the drawing
+          operations and discards the output. A Raster device is in development
+          which will yield the image data in BGR, BGRA, ARGB, or RGB byte orders
+          to a calling program which uses xpost as a library
+          component.
+        </p>
 
-<p>Xpost is currently distributed with a BSD-3-Clause licence which may
-allow its use in projects where Ghostscript is not available.</p>
+        <p>
+          Xpost is currently distributed with a BSD-3-Clause licence which may
+          allow its use in projects where Ghostscript is not
+          available.
+        </p>
 
-<p>The entire interpreter is implemented as a library which is used
-by a relatively small application file /src/bin/xpost.c. A simpler
-example of using the libary is in /src/bin/xpost_client.c.</p>
+        <p>
+          The entire interpreter is implemented as a library which is used
+          by a relatively small application file /src/bin/xpost.c. A simpler
+          example of using the libary is in /src/bin/xpost_client.c.
+        </p>
 
-<p>Quick Installation Instructions.</p>
+        <p>Quick Installation Instructions.</p>
 
-<hr>
+        <hr>
 
-<p>Currently the intepreter source is in src/bin and the commands</p>
+        <p>Currently the intepreter source is in src/bin and the commands</p>
 
-<pre><code>./autogen.sh   # (or ./configure if autogen.sh has already been launched)
-make
-</code></pre>
+        <pre><code>./autogen.sh   # (or ./configure if autogen.sh has already been launched)
+            make
+        </code></pre>
 
-<p>will create the interpreter binary xpost(.exe)? in src/bin.</p>
+        <p>will create the interpreter binary xpost(.exe)? in src/bin.</p>
 
-<pre><code>make install
-</code></pre>
+        <pre><code>make install
+        </code></pre>
 
-<p>will install the application, so xpost can be run as a command.</p>
+        <p>will install the application, so xpost can be run as a command.</p>
 
-<p>Many more installation and configuration options desribed in ./INSTALL.</p>
+        <p>
+          Many more installation and configuration options desribed
+          in ./INSTALL.
+        </p>
+
       </section>
     </div>
 
-    
   </body>
 </html>
