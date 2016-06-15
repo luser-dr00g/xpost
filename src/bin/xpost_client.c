@@ -142,6 +142,7 @@ _xpost_client_usage(const char *filename)
     printf("  -d, --device=[STRING]  device name (see below) [default=raster]\n");
     printf("  -i, --interlaced       create interlaced PNG [default=disabled]\n");
     printf("  -l, --level=[INT]      compression level for PNG betwwen 0 and 9 [default=0]\n");
+    printf("  -Q, --quality=[INT]    quality for JPEG betwwen 0 and 100 [default=90]\n");
     printf("  -q, --quiet            suppress interpreter messages (default)\n");
     printf("  -v, --verbose          do not go quiet into that good night\n");
     printf("  -t, --trace            add additional tracing messages, implies -v\n");
