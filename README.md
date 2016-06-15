@@ -38,6 +38,10 @@ will create the interpreter binary xpost(.exe)? in src/bin.
   make install
 will install the application, so xpost can be run as a command.
 
-
-
 Many more installation and configuration options desribed in ./INSTALL.
+
+
+Support.
+--------
+
+Questions about Xpost can be addres in the Newsgroup xpost-discuss
