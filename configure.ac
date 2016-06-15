@@ -224,6 +224,22 @@ PKG_CHECK_EXISTS([freetype2],
    ],
    [have_freetype="no"])
 
+# libjpeg
+AC_CHECK_LIB([jpeg], [jpeg_CreateDecompress],
+   [have_libjpeg="yes"], [have_libjpeg="no"])
+
+if test "x${have_libjpeg}" = "xyes" ; then
+   AC_CHECK_HEADER([jpeglib.h],
+      [
+       have_libjpeg="yes"
+       AC_DEFINE([HAVE_LIBJPEG], [1], [Define to 1 if libjpeg is detected])
+       xpost_requirements_lib_libs="-ljpeg ${xpost_requirements_lib_libs}"
+      ],
+      [have_libjpeg="no"])
+fi
+
+AM_CONDITIONAL([HAVE_LIBJPEG], [test "x${have_libjpeg}" = "xyes"])
+
 # libpng
 PKG_CHECK_EXISTS([libpng],
    [
@@ -507,6 +523,7 @@ echo "  Freetype support.....: ${have_freetype}"
 echo "  Fontconfig support...: ${have_fontconfig}"
 echo "  Devices:"
 echo "    PGM image..........: always"
+echo "    JPEG image.........: ${have_libjpeg}"
 echo "    PNG image..........: ${have_libpng}"
 echo "    XCB................: ${have_xcb}"
 echo "    Win32..............: ${have_win32}"

@@ -98,6 +98,12 @@ src/lib/xpost_dev_png.c \
 src/lib/xpost_dev_png.h
 endif
 
+if HAVE_LIBJPEG
+src_lib_libxpost_la_SOURCES += \
+src/lib/xpost_dev_jpeg.c \
+src/lib/xpost_dev_jpeg.h
+endif
+
 if HAVE_XCB
 src_lib_libxpost_la_SOURCES += \
 src/lib/xpost_dev_xcb.c \

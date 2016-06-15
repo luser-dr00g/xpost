@@ -922,6 +922,7 @@ void setlocalconfig(Xpost_Context *ctx,
         { "bgr",    "loadbgrdevice",    "newbgrdevice"      },
         { "raster", "loadrasterdevice", "newrasterdevice"   },
         { "png",    "loadpngdevice",    "newpngdevice"      },
+        { "jpeg",   "loadjpegdevice",   "newjpegdevice"      },
         { NULL, NULL, NULL }
     };
     const char *strtemplate = "currentglobal false setglobal "

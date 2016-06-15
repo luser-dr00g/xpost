@@ -100,7 +100,12 @@ static const char *_xpost_main_devices[] =
 #endif
     "bgr",
     "raster",
+#ifdef HAVE_LIBPNG
     "png",
+#endif
+#ifdef HAVE_LIBJPEG
+    "jpeg",
+#endif
     NULL
 };
 

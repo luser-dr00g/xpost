@@ -45,9 +45,15 @@
    1 unit = 1/72 inch.
  */
 
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
+#include <errno.h>
 
 #include "xpost.h"
 
@@ -96,10 +102,15 @@ const char *prog =
     "(Xpost) show\n"
     "showpage\n";
 
-static const char *_xpost_main_devices[] =
+static const char *_xpost_client_devices[] =
 {
     "raster",
+#ifdef HAVE_LIBPNG
     "png",
+#endif
+#ifdef HAVE_LIBJPEG
+    "jpeg",
+#endif
     NULL
 };
 
@@ -140,8 +151,8 @@ _xpost_client_usage(const char *filename)
     printf("\n");
     printf("  Supported devices:\n");
     i = 0;
-    while (_xpost_main_devices[i])
-        printf("\t%s\n", _xpost_main_devices[i++]);
+    while (_xpost_client_devices[i])
+        printf("\t%s\n", _xpost_client_devices[i++]);
 }
 
 int main(int argc, const char *argv[])
@@ -155,10 +166,14 @@ int main(int argc, const char *argv[])
     Xpost_Showpage_Semantics show_page;
     int ret;
     int output_msg;
+    int want_raster;
     int want_png;
     const char *compression_level = NULL;
     int png_interlaced = -1;
     int png_compression_level = 0;
+    int want_jpeg;
+    const char *quality = NULL;
+    long jpeg_quality = -1;
     int i;
 
     filename = NULL;
@@ -210,6 +225,7 @@ int main(int argc, const char *argv[])
             }
             else XPOST_MAIN_IF_OPT("-d", "--device=", device)
             else XPOST_MAIN_IF_OPT("-l", "--level=", compression_level)
+            else XPOST_MAIN_IF_OPT("-Q", "--quality=", quality)
             else
             {
                 printf("unknown option\n");
@@ -221,6 +237,9 @@ int main(int argc, const char *argv[])
             filename = argv[i];
     }
 
+    want_jpeg = 0;
+    want_png = 0;
+    want_raster = 0;
     if (strcmp(device, "png") == 0)
     {
         if (!filename)
@@ -228,16 +247,31 @@ int main(int argc, const char *argv[])
         device = "png";
         want_png = 1;
     }
+    else if (strcmp(device, "jpeg") == 0)
+    {
+        if (!filename)
+            filename = "xpost_client_out.jpeg";
+        device = "jpeg";
+        want_jpeg = 1;
+    }
     else if (strcmp(device, "raster") == 0)
     {
         if (!filename)
             filename = "xpost_client_out.ppm";
         device = "raster:bgr";
-        want_png = 0;
+        want_raster = 1;
     }
 
-    if (!want_png && ((png_interlaced == -1) || (compression_level)))
+    if (!want_png && ((png_interlaced != -1) || (compression_level)))
     {
+        printf("interlaced or compression level are available for PNG device only\n");
+        _xpost_client_usage(argv[0]);
+        return EXIT_FAILURE;
+    }
+
+    if (!want_jpeg && quality)
+    {
+        printf("quality is available for JPEG device only\n");
         _xpost_client_usage(argv[0]);
         return EXIT_FAILURE;
     }
@@ -259,6 +293,36 @@ int main(int argc, const char *argv[])
             }
             png_compression_level = compression_level[0] - '0';
         }
+    }
+    else if (want_jpeg)
+    {
+        output_type = XPOST_OUTPUT_FILENAME;
+        show_page = XPOST_SHOWPAGE_NOPAUSE;
+        ptr = filename;
+        if (quality && *quality)
+        {
+            char *endptr;
+
+            jpeg_quality = strtol(quality, &endptr, 10);
+
+            if ((errno == ERANGE &&
+                 (jpeg_quality == LONG_MAX || jpeg_quality == LONG_MIN)) ||
+                (errno != 0 && jpeg_quality == 0))
+            {
+                perror("strtol");
+                _xpost_client_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+
+            if (endptr == quality)
+            {
+                fprintf(stderr, "No digits were found\n");
+                _xpost_client_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+        }
+        if (jpeg_quality == -1)
+            jpeg_quality = 90;
     }
     else
     {
@@ -297,14 +361,24 @@ int main(int argc, const char *argv[])
         xpost_add_definitions(ctx, 2, defs);
     }
 
+    if (want_jpeg)
+    {
+        char buf[64];
+        char *defs[1];
+
+        snprintf(buf, sizeof(buf), "quality=%d", jpeg_quality);
+        defs[0] = buf;
+        xpost_add_definitions(ctx, 1, defs);
+    }
+
     ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
     printf("executed program. xpost_run returned %s\n", ret? "yieldtocaller": "zero");
 
-    if (!want_png && !ret)
+    if ((!want_png && !want_jpeg) && !ret)
     {
         fprintf(stderr, "error before showpage\n");
     }
-    else if (!want_png)
+    else if (!want_png && !want_jpeg)
     {
         typedef struct { unsigned char blue, green, red; } pixel;
         pixel *buffer;
