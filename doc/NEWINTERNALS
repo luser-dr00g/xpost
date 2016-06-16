@@ -23,17 +23,16 @@ with the `bool setglobal` operator. Global allocations may not contain local obj
 Local may contain global. Remember, local memory is more perishable. It is subject to
 save and restore. So this rule prevents dangling links in global memory.
 
-Inside the Memory File, at address 0, is the first of a chain of memory tables.
-Each segment of the table chain is a Memory Table struct which contains several
-allocation slots and a counter, and an address of the next table (or zero, if the
-counter is less than the table size).
+A Memory File has an internal indexing structure called the Memory Table.
+The Memory Table struct contains allocation slots and a counter. A simple linear
+allocator increases the counter to dole-out slots in the table.
 
 Addresses to memory occur in several definite forms, which represent several
 levels of "crackng the nut". Since the base pointer to memory, in either of the malloc
 or mmap configurations, will be an unsigned char *, a raw memory address is an
-integer which indexes the memory array. Since the memory may move whenever it must
-realloc(), this "relative" pointer is the safest analogue to an "absolute" pointer
-into the memory space.
+integer which indexes the memory array, ie. a byte-offset.
+Since the memory may move whenever it must realloc(), this "relative" pointer
+is the safest analogue to an "absolute" pointer into the memory space.
 
     The practical upshot is this Coding Rule for Xpost source code,
     including device operator functions:
@@ -50,7 +49,7 @@ into the memory space.
     There are lines in the source commented "//recalc" that show how
     to refresh a pointer after allocating, if you really need to do that.
 
-An index into the slots of the memory tables is called an "ent" for "entity" 
+An index into the slots of the memory table is called an "ent" for "entity" 
 or "entry" (I never could decide; sometimes one makes more sense than the other
 in a given context). The slot contains the raw address of the allocation, a field
 to hold accounting data (marks for gc, upper+lower save-levels), and the length of the
@@ -135,12 +134,11 @@ shrink them as well, but this is not currently activated.
 
 Tunable parameters.
 
-Many of the interpreter structures were designed as "chains", ie. linked-lists,
-but using "addresses" in the sense described above, rather than C pointers.
-The size of each segment may be changed by adjusting the constants in the 
-header files.
+The stack data structure was designed as a "chain", ie. a linked-list of
+segments of a larger, "virtual" array, but using "addresses" in the sense
+described above, rather than C pointers.  The size of each segment may be
+changed by adjusting the constant in the header file.
 
-XPOST_MEMORY_TABLE_SIZE  xpost_memory.h
 XPOST_STACK_SEGMENT_SIZE xpost_stack.h
 
 Since allocations retain their size, there is a parameter to control how
@@ -150,15 +148,15 @@ ratio of the two integers:
 XPOST_FREE_ACCEPT_OVERSIZE  xpost_free.h
 XPOST_FREE_ACCEPT_DENOM
 
-The garbage collector cycle is controlled by the parameter
+The garbage collector cycle can be configured to be controlled by the parameter
 
 XPOST_GARBAGE_COLLECTION_PERIOD
 
-but it ought to be
+which measures the number of allocations, or
 
 XPOST_GARBAGE_COLLECTION_THRESHOLD
 
-and measure allocated bytes, as described in the PLRM 2ed and 3ed.
+which measures bytes allocated.
 
 
 Matrices
@@ -242,31 +240,31 @@ From the data/pgmimage.ps file:
 %
 % procedures:
 %           width height PGMIMAGE  Create  ->  IMAGE
-                    creates an internal data structure for a widthXheight image
-
+%                   creates an internal data structure for a widthXheight image
+%
 %                   val x y IMAGE  PutPix  ->  -
-                    set the color value of a single pixel
-
+%                   set the color value of a single pixel
+%
 %                       x y IMAGE  GetPix  ->  val
-                    currently not implemented in window devices
-
+%                   currently not implemented in window devices
+%
 %           val x1 y1 x2 y2 IMAGE  DrawLine  ->  -
-                    calls PutPix in a Bresenham-DDA line including endpoints
-                    used as a special case when drawing 0.0 .. 1.0 pixel lines
-                    used by FillRect and FillPoly for each scanline
-
+%                   calls PutPix in a Bresenham-DDA line including endpoints
+%                   used as a special case when drawing 0.0 .. 1.0 pixel lines
+%                   used by FillRect and FillPoly for each scanline
+%
 %      val x y width height IMAGE  DrawRect  ->  -
-                    not used by postscript graphics
-
+%                   not used by postscript graphics
+%
 %      val x y width height IMAGE  FillRect  ->  -
-                    calls DrawLine for each scanline
-
+%                   calls DrawLine for each scanline
+%
 %               val polygon IMAGE  FillPoly  ->  -
-                    calls DrawLine for each scanline
-
+%                   calls DrawLine for each scanline
+%
 %                           IMAGE  Emit  ->  -
-                    output ascii PGM file
-
+%                   output ascii PGM file
+%
 % eg:
 % PS> /dev 40 20 newPGMIMAGEdevice def
 % PS> 55 1 1 38 17 dev dup /DrawLine get exec
@@ -321,18 +319,33 @@ event-handling. Composable "NeWS" canvases, I suppose need to be
 implemented internally. Since we can't really depend on fancy
 opacity effects from the environment, I think.
 
-The BGR device
+The Raster device
 
-The bgr device is intended for use when xpost is a library component
+The Raster device is intended for use when xpost is a library component
 of another program. It can make use of configuration options from
 the call to xpost_create() to return the image buffer to the calling
 program, as well as controlling the behavior of the `showpage`
-operator.
+operator. It can return an image buffer in several raw formats 
+selected by these device strings:
+"raster:bgr", "raster:bgra", "raster:rgb", "raster argb".
 
 For interactive use, showpage flushes the drawing to the window
 and reads a line from the keyboard (waits for the Enter key).
 For library use, it may instruct showpage to `quit` the interpreter
-which will return control back to the caller. If it all works right,
-the caller will then have access to the raster image data.
+which will return control back to the caller. 
+The caller will then have access to the raster image data.
 
+The postscript program is then suspended at the point just before
+`showpage` returns. The suspended program may be continued by the
+caller (possibly to produce subsequent pages) by calling xpost_run
+again with the instruction to Resume.
+
+For single-page postscript programs, and depending upon the
+details of the chosen device's behavior, it may be simpler
+to call xpost_run with the Showpage semantic to not-pause
+rather than the early return described above.  The postscript
+program will execute to completion and the interpreter will
+clean-up and exit, particularly calling the device's Destroy
+function which may be necessary for it to finalize its actions
+(such as writing files with the PNG device). 
 

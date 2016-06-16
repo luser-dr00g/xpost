@@ -24,7 +24,7 @@ Xpost is currently distributed with a BSD-3-Clause licence which may
 allow its use in projects where Ghostscript is not available.
 
 The entire interpreter is implemented as a library which is used
-by a relatively small application file /src/bin/xpost.c. A simpler
+by a relatively small application file /src/bin/xpost_main.c. A simpler
 example of using the libary is in /src/bin/xpost_client.c.
 
 
