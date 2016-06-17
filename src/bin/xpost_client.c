@@ -92,7 +92,15 @@ if ((!strcmp(argv[i], so)) || \
 }
 
 const char *prog =
+    "%!PS-Adobe-1.0\n"
+    "%%Creator: vim\n"
+    "%%CreationDate: Fri, Jun 17, 2016 12:20:20 AM\n"
+    "%%Pages: 1\n"
+    "%%DocumentFonts: Palatino-Roman\n"
     "%%BoundingBox: 200 300 400 500\n"
+    "%%EndComments\n"
+    "%%EndProlog\n"
+    "%%Page: 0 1\n"
     "0 0 1 setrgbcolor\n"
     "300 400 100 0 360 arc\n"
     "fill\n"
@@ -100,7 +108,9 @@ const char *prog =
     "290 390 moveto\n"
     "/Palatino-Roman 20 selectfont\n"
     "(Xpost) show\n"
-    "showpage\n";
+    "showpage\n"
+    "%%Trailer\n"
+    ;
 
 static const char *_xpost_client_devices[] =
 {
