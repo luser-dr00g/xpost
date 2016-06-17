@@ -422,7 +422,8 @@ int main(int argc, char *argv[])
                              output_file,
                              XPOST_SHOWPAGE_DEFAULT,
                              output_msg,
-                             XPOST_USE_SIZE, width, height)))
+                             have_geometry ? XPOST_USE_SIZE : XPOST_IGNORE_SIZE,
+                             width, height)))
     {
         XPOST_LOG_ERR("Failed to initialize.");
         goto quit_xpost;
