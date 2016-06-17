@@ -34,6 +34,7 @@
 #endif
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -909,7 +910,10 @@ void setlocalconfig(Xpost_Context *ctx,
                     const char *outfile,
                     const char *bufferin,
                     char **bufferout,
-                    Xpost_Showpage_Semantics semantics)
+                    Xpost_Showpage_Semantics semantics,
+                    Xpost_Set_Size set_size,
+                    int width,
+                    int height)
 {
     const char *device_strings[][3] =
     {
@@ -926,13 +930,14 @@ void setlocalconfig(Xpost_Context *ctx,
         { NULL, NULL, NULL }
     };
     const char *strtemplate = "currentglobal false setglobal "
-                        "%s userdict /DEVICE 612 792 %s put "
+                        "%s userdict /DEVICE %s %s put "
                         "setglobal";
     Xpost_Object namenewdev;
     Xpost_Object newdevstr;
     int i;
     char *devstr;
     char *subdevice;
+    char *dimensions;
 
     ctx->vmmode = GLOBAL;
 
@@ -955,13 +960,20 @@ void setlocalconfig(Xpost_Context *ctx,
             break;
         }
     }
+    if (set_size == XPOST_USE_SIZE){
+        dimensions = malloc(2 + (int)ceil(log10(width)) + (int)ceil(log10(height)));
+        sprintf(dimensions, "%d %d", width, height);
+    } else {
+        dimensions = "612 792";
+    }
     newdevstr = xpost_string_cons(ctx,
-                                  strlen(strtemplate) - 4
+                                  strlen(strtemplate) - 6
                                   + strlen(device_strings[i][1])
+                                  + strlen(dimensions)
                                   + strlen(device_strings[i][2]) + 1,
                                   NULL);
     sprintf(xpost_string_get_pointer(ctx, newdevstr), strtemplate,
-            device_strings[i][1], device_strings[i][2]);
+            device_strings[i][1], dimensions, device_strings[i][2]);
     --newdevstr.comp_.sz; /* trim the '\0' */
 
     namenewdev = xpost_name_cons(ctx, "newdefaultdevice");
@@ -1171,7 +1183,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
 
     setlocalconfig(xpost_ctx, sd,
                    device, outfile, bufferin, bufferout,
-                   semantics);
+                   semantics, set_size, width, height);
 
     if (quiet)
     {
