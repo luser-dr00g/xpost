@@ -42,6 +42,8 @@
 #ifndef XPOST_DEV_PNG_H
 #define XPOST_DEV_PNG_H
 
+#ifdef HAVE_LIBPNG
+
 /**
  * @brief install operator loadpngdevice in systemdict
  *
@@ -54,6 +56,8 @@
  */
 int xpost_oper_init_png_device_ops(Xpost_Context *ctx,
                                    Xpost_Object sd);
+
+#endif
 
 /**
  * @}

@@ -14,8 +14,10 @@ src/lib/xpost_array.c \
 src/lib/xpost_compat.c \
 src/lib/xpost_context.c \
 src/lib/xpost_dev_bgr.c \
-src/lib/xpost_dev_raster.c \
 src/lib/xpost_dev_generic.c \
+src/lib/xpost_dev_jpeg.c \
+src/lib/xpost_dev_png.c \
+src/lib/xpost_dev_raster.c \
 src/lib/xpost_dict.c \
 src/lib/xpost_error.c \
 src/lib/xpost_file.c \
@@ -55,8 +57,10 @@ src/lib/xpost_oplib.c \
 src/lib/xpost_array.h \
 src/lib/xpost_compat.h \
 src/lib/xpost_dev_bgr.h \
-src/lib/xpost_dev_raster.h \
 src/lib/xpost_dev_generic.h \
+src/lib/xpost_dev_jpeg.h \
+src/lib/xpost_dev_png.h \
+src/lib/xpost_dev_raster.h \
 src/lib/xpost_dict.h \
 src/lib/xpost_error.h \
 src/lib/xpost_file.h \
@@ -91,18 +95,6 @@ src/lib/xpost_op_token.h \
 src/lib/xpost_operator.h \
 src/lib/xpost_oplib.h \
 src/lib/xpost_private.h
-
-if HAVE_LIBPNG
-src_lib_libxpost_la_SOURCES += \
-src/lib/xpost_dev_png.c \
-src/lib/xpost_dev_png.h
-endif
-
-if HAVE_LIBJPEG
-src_lib_libxpost_la_SOURCES += \
-src/lib/xpost_dev_jpeg.c \
-src/lib/xpost_dev_jpeg.h
-endif
 
 if HAVE_XCB
 src_lib_libxpost_la_SOURCES += \

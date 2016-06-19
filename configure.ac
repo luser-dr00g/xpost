@@ -238,8 +238,6 @@ if test "x${have_libjpeg}" = "xyes" ; then
       [have_libjpeg="no"])
 fi
 
-AM_CONDITIONAL([HAVE_LIBJPEG], [test "x${have_libjpeg}" = "xyes"])
-
 # libpng
 PKG_CHECK_EXISTS([libpng],
    [
@@ -248,8 +246,6 @@ PKG_CHECK_EXISTS([libpng],
     AC_DEFINE([HAVE_LIBPNG], [1], [Define to 1 if libpng is detected])
    ],
    [have_libpng="no"])
-
-AM_CONDITIONAL([HAVE_LIBPNG], [test "x${have_libpng}" = "xyes"])
 
 # libxcb
 PKG_CHECK_EXISTS([xcb-image xcb-icccm xcb],
