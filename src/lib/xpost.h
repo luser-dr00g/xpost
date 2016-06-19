@@ -258,7 +258,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
  * Definitions may be used by the ps program or to supply control
  * information to specific devices.
  *
- * This will present some duplication of features once the 
+ * This will present some duplication of features once the
  * setpagedevice and setuserparams operators are implemented.
  * But it still represents a useful construct for postscript code.
  */
@@ -318,6 +318,43 @@ XPAPI int xpost_run(Xpost_Context *ctx,
  * @see xpost_create()
  */
 XPAPI void xpost_destroy(Xpost_Context *ctx);
+
+/**
+ * @brief Set quality value for compression of JPEG files.
+ *
+ * @param ctx The context to use.
+ * @param quality The quality value, between 0 and 100.
+ *
+ * This function is a helper to set the quality value for compressing
+ * a JPEG file to @p quality. It internally uses
+ * xpost_add_definitions(). @p quality must be between 0 and 100. On
+ * error, nothing is done.
+ *
+ * @see xpost_add_definitions()
+ */
+XPAPI void
+xpost_dev_jpeg_options_set(Xpost_Context *ctx,
+                           int quality);
+
+/**
+ * @brief Set quality value for compression of PNG files.
+ *
+ * @param ctx The context to use.
+ * @param compression_level The compression level, between 0 and 9.
+ * @param interlaced Whether the PNG file is interlaced or not.
+ *
+ * This function is a helper to set the compression level and whether
+ * the PNG file is interlaced or not with respectively
+ * @p compression_level and @p interlaced. It internally uses
+ * xpost_add_definitions(). @p compression_level must be between 0 and
+ * 9. On error, nothing is done.
+ *
+ * @see xpost_add_definitions()
+ */
+XPAPI void
+xpost_dev_png_options_set(Xpost_Context *ctx,
+                          int compression_level,
+                          int interlaced);
 
 /**
  * @}

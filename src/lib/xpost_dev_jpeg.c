@@ -302,7 +302,7 @@ int _emit(Xpost_Context *ctx,
                      sizeof(private), &private);
 
     ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    quality_o = xpost_dict_get(ctx, ud, xpost_name_cons(ctx, "quality"));
+    quality_o = xpost_dict_get(ctx, ud, xpost_name_cons(ctx, "jpeg_quality"));
 
     if (xpost_object_get_type(quality_o) == invalidtype)
         quality = 90;
@@ -525,4 +525,22 @@ int xpost_oper_init_jpeg_device_ops(Xpost_Context *ctx,
     _loadjpegdevicecont_opcode = op.mark_.padw;
 
     return 0;
+}
+
+XPAPI void
+xpost_dev_jpeg_options_set(Xpost_Context *ctx, int quality)
+{
+    char buf[32];
+    char *def[1];
+
+    if ((quality < 0) || (quality > 100))
+    {
+        XPOST_LOG_ERR("wrong quality value for the JPEG device (%d)",
+                      quality);
+        return;
+    }
+
+    snprintf(buf, sizeof(buf), "jpeg_quality=%d", quality);
+    def[0] = buf;
+    xpost_add_definitions(ctx, 1, def);
 }

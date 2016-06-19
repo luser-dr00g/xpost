@@ -171,9 +171,9 @@ int _create_cont(Xpost_Context *ctx,
 
     ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     compression_level_o = xpost_dict_get(ctx, ud,
-                                         xpost_name_cons(ctx, "compression_level"));
+                                         xpost_name_cons(ctx, "png_compression_level"));
     interlaced_o = xpost_dict_get(ctx, ud,
-                                  xpost_name_cons(ctx, "interlaced"));
+                                  xpost_name_cons(ctx, "png_interlaced"));
 
     if (xpost_object_get_type(compression_level_o) == invalidtype)
         compression_level = 3;
@@ -528,4 +528,29 @@ int xpost_oper_init_png_device_ops(Xpost_Context *ctx,
     _loadpngdevicecont_opcode = op.mark_.padw;
 
     return 0;
+}
+
+XPAPI void
+xpost_dev_png_options_set(Xpost_Context *ctx,
+                          int compression_level,
+                          int interlaced)
+{
+    char buf1[32];
+    char buf2[32];
+    char *defs[2];
+
+    if ((compression_level < 0) || (compression_level > 9))
+    {
+        XPOST_LOG_ERR("wrong compression level for the PNG device (%d)",
+                      compression_level);
+        return;
+    }
+
+    snprintf(buf1, sizeof(buf1),
+             "png_compression_level=%d", compression_level);
+    snprintf(buf2, sizeof(buf2),
+             "png_interlaced=%d", interlaced ? 1 : 0);
+    defs[0] = buf1;
+    defs[1] = buf2;
+    xpost_add_definitions(ctx, 2, defs);
 }

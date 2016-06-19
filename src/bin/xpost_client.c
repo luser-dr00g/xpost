@@ -358,29 +358,10 @@ int main(int argc, const char *argv[])
     printf("created interpreter context. executing program...\n");
 
     if (want_png)
-    {
-        char buf1[64];
-        char buf2[64];
-        char *defs[2];
-
-        snprintf(buf1, sizeof(buf1),
-                 "compression_level=%d", png_compression_level);
-        snprintf(buf2, sizeof(buf2),
-                 "interlaced=%d", png_interlaced ? 1 : 0);
-        defs[0] = buf1;
-        defs[1] = buf2;
-        xpost_add_definitions(ctx, 2, defs);
-    }
+        xpost_dev_png_options_set(ctx, png_compression_level, png_interlaced);
 
     if (want_jpeg)
-    {
-        char buf[64];
-        char *defs[1];
-
-        snprintf(buf, sizeof(buf), "quality=%d", jpeg_quality);
-        defs[0] = buf;
-        xpost_add_definitions(ctx, 1, defs);
-    }
+        xpost_dev_jpeg_options_set(ctx, jpeg_quality);
 
     ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
     printf("executed program. xpost_run returned %s\n", ret? "yieldtocaller": "zero");
