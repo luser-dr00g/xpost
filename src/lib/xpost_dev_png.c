@@ -29,6 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_LIBPNG
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -554,3 +556,19 @@ xpost_dev_png_options_set(Xpost_Context *ctx,
     defs[1] = buf2;
     xpost_add_definitions(ctx, 2, defs);
 }
+
+#else /* ! HAVE_LIBPNG */
+
+#include "xpost.h"
+
+XPAPI void
+xpost_dev_png_options_set(Xpost_Context *ctx,
+                          int compression_level,
+                          int interlaced)
+{
+    (void)ctx;
+    (void)compression_level;
+    (void)interlaced;
+}
+
+#endif

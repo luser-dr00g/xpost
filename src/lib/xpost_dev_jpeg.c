@@ -29,6 +29,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#ifdef HAVE_LIBJPEG
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -544,3 +546,16 @@ xpost_dev_jpeg_options_set(Xpost_Context *ctx, int quality)
     def[0] = buf;
     xpost_add_definitions(ctx, 1, def);
 }
+
+#else /* ! HAVE_LIBJPEG */
+
+#include "xpost.h"
+
+XPAPI void
+xpost_dev_jpeg_options_set(Xpost_Context *ctx, int quality)
+{
+    (void)ctx;
+    (void)quality;
+}
+
+#endif
