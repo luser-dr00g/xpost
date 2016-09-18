@@ -139,6 +139,8 @@ src_lib_libxpost_dsc_la_CPPFLAGS = -DXPOST_BUILD
 
 src_lib_libxpost_dsc_la_CFLAGS =
 
-src_lib_libxpost_dsc_la_LIBADD =
+if ! HAVE_WIN32
+src_lib_libxpost_dsc_la_LIBADD = @XPOST_LIB_LIBS@
+endif
 
 src_lib_libxpost_dsc_la_LDFLAGS = -no-undefined -version-info @version_info@
