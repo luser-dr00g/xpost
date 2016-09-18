@@ -200,7 +200,7 @@ xpost_dsc_ctx_new_from_file(const char *filename)
         goto close_fd;
     }
 
-    base = mmap(NULL, map->length, PROT_READ, MAP_SHARED, map->fd, 0);
+    base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, map->fd, 0);
     if (!base)
     {
         printf("Can not map file %s into memory", filename);
@@ -220,7 +220,7 @@ xpost_dsc_ctx_new_from_file(const char *filename)
     return ctx;
 
   unmap_base:
-    munmap(base, st.st_size);
+    munmap((void *)base, st.st_size);
   close_fd:
     close(fd);
 
@@ -235,7 +235,7 @@ xpost_dsc_ctx_del(Xpost_Dsc_Ctx *ctx)
 
     if (ctx->from_file)
     {
-        munmap(ctx->base, ctx->length);
+        munmap((void *)ctx->base, ctx->length);
         close(ctx->fd);
     }
 
