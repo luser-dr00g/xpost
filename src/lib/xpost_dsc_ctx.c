@@ -200,7 +200,7 @@ xpost_dsc_ctx_new_from_file(const char *filename)
         goto close_fd;
     }
 
-    base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, map->fd, 0);
+    base = mmap(NULL, st.st_size, PROT_READ, MAP_SHARED, fd, 0);
     if (!base)
     {
         printf("Can not map file %s into memory", filename);
