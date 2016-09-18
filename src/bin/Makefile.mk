@@ -1,5 +1,14 @@
 
-bin_PROGRAMS = src/bin/xpost src/bin/xpost_client
+bin_PROGRAMS = src/bin/xpost src/bin/xpost_client src/bin/xpost_dsc
+
+src_bin_xpost_dsc_SOURCES = \
+src/bin/xpost_dsc.c
+
+src_bin_xpost_dsc_CPPFLAGS = \
+-I$(top_srcdir)/src/lib
+
+src_bin_xpost_dsc_LDADD = \
+src/lib/libxpost_dsc.la
 
 src_bin_xpost_client_SOURCES = \
 src/bin/xpost_client.c

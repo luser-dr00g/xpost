@@ -1,5 +1,5 @@
 
-lib_LTLIBRARIES = src/lib/libxpost.la
+lib_LTLIBRARIES = src/lib/libxpost.la src/lib/libxpost_dsc.la
 
 includes_HEADERS = \
 src/lib/xpost.h \
@@ -124,3 +124,21 @@ src_lib_libxpost_la_LIBADD = \
 @XPOST_COV_LIBS@
 
 src_lib_libxpost_la_LDFLAGS = -no-undefined -version-info @version_info@
+
+includes_HEADERS += \
+src/lib/xpost_dsc.h
+
+src_lib_libxpost_dsc_la_SOURCES = \
+src/lib/xpost_compat.c \
+src/lib/xpost_log.c \
+src/lib/xpost_dsc_ctx.c \
+src/lib/xpost_dsc_parse.c \
+src/lib/xpost_dsc_ctx.h
+
+src_lib_libxpost_dsc_la_CPPFLAGS = -DXPOST_BUILD
+
+src_lib_libxpost_dsc_la_CFLAGS =
+
+src_lib_libxpost_dsc_la_LIBADD =
+
+src_lib_libxpost_dsc_la_LDFLAGS = -no-undefined -version-info @version_info@
