@@ -97,6 +97,19 @@
  *============================================================================*/
 
 
+#define XPOST_DSC_ERROR_TEST(test, msg) \
+    do \
+    { \
+        if (test) \
+        { \
+            XPOST_LOG_ERR(msg); \
+            break; \
+        } \
+    } while (0)
+
+#define XPOST_DSC_HEADER_ERROR_TEST(cmt) \
+    XPOST_DSC_ERROR_TEST(!in_header, cmt " comment not in header")
+
 #define XPOST_DSC_EOL(iter) ((*iter == '\r') || (*iter == '\n'))
 
 #define XPOST_DSC_EOF(cur) ((cur - ctx->base) == ctx->length)
@@ -457,6 +470,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
     unsigned char in_header = 0;
     unsigned char in_script = 0;
     unsigned char in_trailer = 0;
+    unsigned char in_font = 0;
 
     /* first line is for version info */
     next = _xpost_dsc_header_version_get(ctx, h, &end, &sz);
@@ -500,191 +514,212 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
         if (XPOST_DSC_CMT_CHECK_EXACT(BODY_END_PROLOG))
         {
             XPOST_LOG_INFO("EndProlog.");
-            in_trailer = 0;
+            XPOST_DSC_ERROR_TEST(in_header || in_trailer,
+                                 "EndProlog comment in header or trailer");
+
             in_script = 1;
         }
 
-        if (in_header)
+        if (XPOST_DSC_CMT_CHECK_EXACT(TRAILER))
         {
-//            if ((sz >= 2) && (ctx->cur_loc[0] == '%') && (ctx->cur_loc[1] == '%'))
-            {
-                char *txt = NULL;
+            XPOST_LOG_INFO("Trailer.");
+            XPOST_DSC_ERROR_TEST(!in_script, "Trailer comment not in script");
 
-                /* we check which comment we have */
-                if (XPOST_DSC_CMT_CHECK_EXACT(TRAILER))
-                {
-                    XPOST_LOG_INFO("Trailer.");
-                    in_trailer = 1;
-                }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_TITLE))
+            in_trailer = 1;
+        }
+
+        /* Header comments */
+        {
+            char *txt = NULL;
+
+            /* Level 1 */
+            if (XPOST_DSC_CMT_CHECK(HEADER_TITLE))
+            {
+                /* %%Title can be found in %%BeginFont */
+                XPOST_DSC_ERROR_TEST(!in_header && !in_font,
+                                     "Title comment not in header or in font");
+                if (in_header)
                 {
                     XPOST_DSC_TEXT_GET(txt, HEADER_TITLE);
                     h->header.title = txt;
                 }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_CREATOR))
+            }
+            else if (XPOST_DSC_CMT_CHECK(HEADER_CREATOR))
+            {
+                /* %%Creator can be found in %%BeginFont */
+                XPOST_DSC_ERROR_TEST(!in_header && !in_font,
+                                     "Creator comment not in header or in font");
+                if (in_header)
                 {
                     XPOST_DSC_TEXT_GET(txt, HEADER_CREATOR);
                     h->header.creator = txt;
                 }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_CREATION_DATE))
+            }
+            else if (XPOST_DSC_CMT_CHECK(HEADER_CREATION_DATE))
+            {
+                /* %%CreationDate can be found in %%BeginFont */
+                XPOST_DSC_ERROR_TEST(!in_header && !in_font,
+                                     "CreationDate comment not in header or in font");
+                if (in_header)
                 {
                     XPOST_DSC_TEXT_GET(txt, HEADER_CREATION_DATE);
                     h->header.creation_date = txt;
                 }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_FOR))
+            }
+            else if (XPOST_DSC_CMT_CHECK(HEADER_FOR))
+            {
+                XPOST_DSC_HEADER_ERROR_TEST("For");
+                XPOST_DSC_TEXT_GET(txt, HEADER_FOR);
+                h->header.for_whom = txt;
+            }
+            else if (XPOST_DSC_CMT_CHECK(HEADER_PAGES))
+            {
+                if ((in_trailer) && (ctx->HEADER_PAGES != 2))
                 {
-                    XPOST_DSC_TEXT_GET(txt, HEADER_FOR);
-                    h->header.for_whom = txt;
+                    XPOST_LOG_ERR("%%PAGES is in trailer "
+                                  "but not atend, exiting.");
+                    return 0;
                 }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_PAGES))
+
+                if (!in_trailer)
                 {
-                    if ((in_trailer) && (ctx->HEADER_PAGES != 2))
+                    if (!ctx->HEADER_PAGES)
                     {
-                        XPOST_LOG_ERR("%%PAGES is in trailer "
-                                      "but not atend, exiting.");
-                        return 0;
-                    }
-
-                    if (!in_trailer)
-                    {
-                        if (!ctx->HEADER_PAGES)
-                        {
-                            if (XPOST_DSC_CMT_IS_ATEND(HEADER_PAGES))
-                                ctx->HEADER_PAGES = 2;
-                            else
-                                goto get_pages;
-                        }
-                    }
-                    else
-                    {
-                        const unsigned char *iter;
-                        int val;
-
-                      get_pages:
-                        iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_PAGES);
-                        if (*iter == ' ')
-                            iter++;
-
-                        if (_xpost_dsc_integer_get(iter, &val))
-                            h->header.pages = val;
-                        ctx->HEADER_PAGES = 1;
-                    }
-                }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_BOUNDING_BOX))
-                {
-                    if ((in_trailer) && (ctx->HEADER_BOUNDING_BOX != 2))
-                    {
-                        XPOST_LOG_ERR("%%BoundingBox is in trailer "
-                                      "but not atend, exiting.");
-                        return 0;
-                    }
-
-                    if (!in_trailer)
-                    {
-                        if (!ctx->HEADER_BOUNDING_BOX)
-                        {
-                            if (XPOST_DSC_CMT_IS_ATEND(HEADER_BOUNDING_BOX))
-                                ctx->HEADER_BOUNDING_BOX = 2;
-                            else
-                                goto get_bounding_box;
-                        }
-                    }
-                    else
-                    {
-                        Xpost_Dsc_Bounding_Box bb;
-                        const unsigned char *iter;
-
-                      get_bounding_box:
-                        iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_BOUNDING_BOX);
-                        if (*iter == ' ')
-                            iter++;
-
-                        if (_xpost_dsc_header_bounding_box_get(iter, &bb))
-                            h->header.bounding_box = bb;
-                        ctx->HEADER_BOUNDING_BOX = 1;
-                    }
-                }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_DOCUMENT_FONTS))
-                {
-                    if ((in_trailer) && (ctx->HEADER_DOCUMENT_FONTS != 2))
-                    {
-                        XPOST_LOG_ERR("%%DocumentFonts is in trailer "
-                                      "but not atend, exiting.");
-                        return 0;
-                    }
-
-                    if (!in_trailer)
-                    {
-                        if (!ctx->HEADER_DOCUMENT_FONTS)
-                        {
-                            if (XPOST_DSC_CMT_IS_ATEND(HEADER_DOCUMENT_FONTS))
-                                ctx->HEADER_DOCUMENT_FONTS = 2;
-                            else
-                                goto get_document_fonts;
-                        }
-                    }
-                    else
-                    {
-                        const unsigned char *iter;
-                        char **array;
-                        int nbr;
-
-                      get_document_fonts:
-                        iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_FONTS);
-                        if (*iter == ' ')
-                            iter++;
-
-                        array = _xpost_dsc_header_string_array_get(iter, &nbr);
-                        h->header.document_fonts.array = array;
-                        h->header.document_fonts.nbr = nbr;
-                        ctx->HEADER_DOCUMENT_FONTS = 1;
-                    }
-                }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_DOCUMENT_PAPER_SIZES))
-                {
-                    if (h->ps_version_maj > 1)
-                    {
-                        const unsigned char *iter;
-                        char **array;
-                        int nbr;
-
-                        if (!ctx->HEADER_DOCUMENT_PAPER_SIZES)
-                        {
-                            iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_PAPER_SIZES);
-                            if (*iter == ' ')
-                                iter++;
-
-                            array = _xpost_dsc_header_string_array_get(iter, &nbr);
-                            h->header.document_paper_sizes.array = array;
-                            h->header.document_paper_sizes.nbr = nbr;
-                            ctx->HEADER_DOCUMENT_PAPER_SIZES = 1;
-                        }
-                    }
-                    else
-                    {
-                        XPOST_LOG_INFO("Comment not allowed in version %d.",
-                                       h->ps_version_maj);
-                    }
-                }
-                else if (XPOST_DSC_CMT_CHECK(HEADER_PAGE_ORDER))
-                {
-                    if (h->ps_version_maj > 2)
-                    {
-                        XPOST_DSC_TEXT_GET(txt, HEADER_PAGE_ORDER);
-                        h->header.page_order = txt;
-                    }
-                    else
-                    {
-                        XPOST_LOG_INFO("Comment not allowed in version %d.",
-                                       h->ps_version_maj);
+                        if (XPOST_DSC_CMT_IS_ATEND(HEADER_PAGES))
+                            ctx->HEADER_PAGES = 2;
+                        else
+                            goto get_pages;
                     }
                 }
                 else
                 {
-                    XPOST_LOG_INFO("Comment not allowed in header.");
+                    const unsigned char *iter;
+                    int val;
+
+                  get_pages:
+                    iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_PAGES);
+                    if (*iter == ' ')
+                        iter++;
+
+                    if (_xpost_dsc_integer_get(iter, &val))
+                        h->header.pages = val;
+                    ctx->HEADER_PAGES = 1;
                 }
             }
-        }
+            else if (XPOST_DSC_CMT_CHECK(HEADER_BOUNDING_BOX))
+            {
+                if ((in_trailer) && (ctx->HEADER_BOUNDING_BOX != 2))
+                {
+                    XPOST_LOG_ERR("%%BoundingBox is in trailer "
+                                  "but not atend, exiting.");
+                    return 0;
+                }
+
+                if (!in_trailer)
+                {
+                    if (!ctx->HEADER_BOUNDING_BOX)
+                    {
+                        if (XPOST_DSC_CMT_IS_ATEND(HEADER_BOUNDING_BOX))
+                            ctx->HEADER_BOUNDING_BOX = 2;
+                        else
+                            goto get_bounding_box;
+                    }
+                }
+                else
+                {
+                    Xpost_Dsc_Bounding_Box bb;
+                    const unsigned char *iter;
+
+                  get_bounding_box:
+                    iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_BOUNDING_BOX);
+                    if (*iter == ' ')
+                        iter++;
+
+                    if (_xpost_dsc_header_bounding_box_get(iter, &bb))
+                        h->header.bounding_box = bb;
+                    ctx->HEADER_BOUNDING_BOX = 1;
+                }
+            }
+            else if (XPOST_DSC_CMT_CHECK(HEADER_DOCUMENT_FONTS))
+            {
+                if ((in_trailer) && (ctx->HEADER_DOCUMENT_FONTS != 2))
+                {
+                    XPOST_LOG_ERR("%%DocumentFonts is in trailer "
+                                  "but not atend, exiting.");
+                    return 0;
+                }
+
+                if (!in_trailer)
+                {
+                    if (!ctx->HEADER_DOCUMENT_FONTS)
+                    {
+                        if (XPOST_DSC_CMT_IS_ATEND(HEADER_DOCUMENT_FONTS))
+                            ctx->HEADER_DOCUMENT_FONTS = 2;
+                        else
+                            goto get_document_fonts;
+                    }
+                }
+                else
+                {
+                    const unsigned char *iter;
+                    char **array;
+                    int nbr;
+
+                  get_document_fonts:
+                    iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_FONTS);
+                    if (*iter == ' ')
+                        iter++;
+
+                    array = _xpost_dsc_header_string_array_get(iter, &nbr);
+                    h->header.document_fonts.array = array;
+                    h->header.document_fonts.nbr = nbr;
+                    ctx->HEADER_DOCUMENT_FONTS = 1;
+                }
+            }
+            /* Level 2 */
+            else if (XPOST_DSC_CMT_CHECK(HEADER_DOCUMENT_PAPER_SIZES))
+            {
+                XPOST_DSC_HEADER_ERROR_TEST("DocumentPaperSizes");
+                if (h->ps_version_maj > 1)
+                {
+                    const unsigned char *iter;
+                    char **array;
+                    int nbr;
+
+                    if (!ctx->HEADER_DOCUMENT_PAPER_SIZES)
+                    {
+                        iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_PAPER_SIZES);
+                        if (*iter == ' ')
+                            iter++;
+
+                        array = _xpost_dsc_header_string_array_get(iter, &nbr);
+                        h->header.document_paper_sizes.array = array;
+                        h->header.document_paper_sizes.nbr = nbr;
+                        ctx->HEADER_DOCUMENT_PAPER_SIZES = 1;
+                    }
+                }
+                else
+                {
+                    XPOST_LOG_INFO("Comment not allowed in version %d.",
+                                   h->ps_version_maj);
+                }
+            }
+            /* Level 3 */
+            else if (XPOST_DSC_CMT_CHECK(HEADER_PAGE_ORDER))
+            {
+                XPOST_DSC_HEADER_ERROR_TEST("PageOrder");
+                if (h->ps_version_maj > 2)
+                {
+                    XPOST_DSC_TEXT_GET(txt, HEADER_PAGE_ORDER);
+                    h->header.page_order = txt;
+                }
+                else
+                {
+                    XPOST_LOG_INFO("Comment not allowed in version %d.",
+                                   h->ps_version_maj);
+                }
+            }
+        } /* end of management of header comments */
 
         if (in_script)
         {
