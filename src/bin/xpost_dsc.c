@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
 
         for (i = 0; i < h.header.pages; i++)
         {
-            printf("page #%d\n", i);
+            printf("page #%d\n", i + 1);
             printf("  label: %s\n", h.pages[i].label);
             printf("  ordinal: %d\n", h.pages[i].ordinal);
         }

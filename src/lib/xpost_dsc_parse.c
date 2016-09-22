@@ -477,6 +477,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
     const unsigned char *next;
     const unsigned char *end;
     ptrdiff_t sz;
+    int page_idx = 0;
     unsigned char in_header = 0;
     unsigned char in_script = 0;
     unsigned char in_trailer = 0;
@@ -736,9 +737,6 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
 
         /* script comments */
         {
-            char *txt = NULL;
-            int page_idx = 0;
-
             if (XPOST_DSC_CMT_CHECK(BODY_PAGE))
             {
                 const unsigned char *iter;
