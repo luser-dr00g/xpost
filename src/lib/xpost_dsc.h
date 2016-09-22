@@ -79,8 +79,8 @@ typedef struct
 
 typedef struct
 {
-    const unsigned char *start; /* relative to base address */
-    const unsigned char *end; /* relative to base address */
+    ptrdiff_t start; /* relative to base address */
+    ptrdiff_t end; /* relative to base address */
     char *label;
     int ordinal; /* -1 means '?' is vmaj is 1 */
     Xpost_Dsc_Str_Array *fonts;

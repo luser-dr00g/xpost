@@ -95,8 +95,27 @@ int main(int argc, char *argv[])
         for (i = 0; i < h.header.pages; i++)
         {
             printf("page #%d\n", i + 1);
+            printf("  start: %d\n", h.pages[i].start);
+            printf("  end: %d\n", h.pages[i].end);
             printf("  label: %s\n", h.pages[i].label);
             printf("  ordinal: %d\n", h.pages[i].ordinal);
+
+#if 0
+            /* Usage */
+            {
+                int j;
+                const unsigned char *iter;
+
+                iter = xpost_dsc_file_base_get(&h) + h.pages[i].start;
+                printf("-----\n");
+                for (iter; iter < xpost_dsc_file_base_get(&h) + h.pages[i].end; iter++)
+                {
+                    printf("%c", *iter);
+                }
+                printf("\n");
+                printf("-----\n");
+            }
+#endif
         }
     }
 

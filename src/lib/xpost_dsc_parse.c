@@ -535,6 +535,8 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
         {
             XPOST_LOG_INFO("Trailer.");
             XPOST_DSC_ERROR_TEST(!in_script, "Trailer comment not in script");
+            if (page_idx > 0)
+                h->pages[page_idx - 1].end = ctx->cur_loc - ctx->base;
 
             in_trailer = 1;
         }
@@ -798,7 +800,9 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
 
                 if (h->pages && (page_idx < h->header.pages))
                 {
-                    h->pages[page_idx].start = next;
+                    h->pages[page_idx].start = next - ctx->base;
+                    if (page_idx > 0)
+                        h->pages[page_idx - 1].end = ctx->cur_loc - ctx->base;
                     h->pages[page_idx].label = label;
                     h->pages[page_idx].ordinal = ordinal;
                 }
