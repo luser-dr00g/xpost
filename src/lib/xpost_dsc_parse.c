@@ -240,11 +240,33 @@ _xpost_dsc_prefix_cmp_exact(const unsigned char *iter, ptrdiff_t sz, const char 
     return 1;
 }
 
+static unsigned char
+_xpost_dsc_intger_get_from_string(const unsigned char *str, int *val)
+{
+    char *endptr;
+
+    *val = strtol(str, &endptr, 10);
+    if (((errno == ERANGE) &&
+         ((*val == LONG_MAX) || (*val == LONG_MIN))) ||
+        ((errno != 0) && (*val == 0)))
+    {
+        perror("strtol");
+        return 0;
+    }
+
+    if (endptr == (char *)str)
+    {
+        XPOST_LOG_ERR("No digits were found");
+        return 0;
+    }
+
+   return 1;
+}
+
 static const unsigned char *
 _xpost_dsc_integer_get(const unsigned char *cur_loc, int *val)
 {
     char buf[20];
-    char *endptr;
     const unsigned char *iter;
 
     iter = cur_loc;
@@ -256,22 +278,10 @@ _xpost_dsc_integer_get(const unsigned char *cur_loc, int *val)
     memcpy(buf, cur_loc, iter - cur_loc);
     buf[iter - cur_loc] = '\0';
 
-    *val = strtol(buf, &endptr, 10);
-    if (((errno == ERANGE) &&
-         ((*val == LONG_MAX) || (*val == LONG_MIN))) ||
-        ((errno != 0) && (*val == 0)))
-    {
-        perror("strtol");
+    if (!_xpost_dsc_intger_get_from_string(buf, val))
         return NULL;
-    }
 
-   if (endptr == buf)
-   {
-       fprintf(stderr, "No digits were found\n");
-       return NULL;
-   }
-
-   return iter;
+    return iter;
 }
 
 static unsigned char
@@ -602,7 +612,10 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                         iter++;
 
                     if (_xpost_dsc_integer_get(iter, &val))
+                    {
                         h->header.pages = val;
+                        h->pages = (Xpost_Dsc_Page *)calloc(val, sizeof(Xpost_Dsc_Page));
+                    }
                     ctx->HEADER_PAGES = 1;
                 }
             }
@@ -721,16 +734,79 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
             }
         } /* end of management of header comments */
 
-        if (in_script)
+        /* script comments */
         {
             char *txt = NULL;
+            int page_idx = 0;
 
             if (XPOST_DSC_CMT_CHECK(BODY_PAGE))
             {
-                XPOST_DSC_TEXT_GET(txt, BODY_PAGE);
-                h->header.page_order = txt;
+                const unsigned char *iter;
+                const unsigned char *iter_next;
+                char *label;
+                char *ordinal_str;
+                int ordinal;
+
+                XPOST_DSC_ERROR_TEST(!in_script, "Page comment not in script");
+                iter = XPOST_DSC_CMT_ARG(BODY_PAGE);
+                if (*iter == ' ')
+                    iter++;
+
+                iter_next = iter;
+                while (!XPOST_DSC_EOL(iter_next))
+                {
+                    if (*iter_next == ' ')
+                        break;
+                    iter_next++;
+                }
+
+                label = (char *)malloc(iter_next - iter + 1);
+                if (label)
+                {
+                    memcpy(label, iter, iter_next - iter);
+                    label[iter_next - iter]= '\0';
+                }
+
+                iter = ++iter_next;
+                while (!XPOST_DSC_EOL(iter_next))
+                {
+                    if (*iter_next == ' ')
+                        break;
+                    iter_next++;
+                }
+
+                if (!XPOST_DSC_EOL(iter_next))
+                {
+                    XPOST_LOG_ERR("EOL not reached in %%PAGE comment");
+                    break;
+                }
+
+                ordinal_str = (char *)malloc(iter_next - iter + 1);
+                if (ordinal_str)
+                {
+                    memcpy(ordinal_str, iter, iter_next - iter);
+                    ordinal_str[iter_next - iter]= '\0';
+                }
+
+                if (((h->ps_version_maj == 1)) &&
+                    ((iter_next - iter) == 1) &&
+                    (*iter == '?'))
+                    ordinal = -1;
+
+                if (!_xpost_dsc_intger_get_from_string(iter, &ordinal))
+                    break;
+                if (ordinal < 1)
+                    break;
+
+                if (h->pages && (page_idx < h->header.pages))
+                {
+                    h->pages[page_idx].start = next;
+                    h->pages[page_idx].label = label;
+                    h->pages[page_idx].ordinal = ordinal;
+                }
+                page_idx++;
             }
-        }
+        } /* end of management of script */
 
         ctx->cur_loc = next;
     }

@@ -79,9 +79,9 @@ typedef struct
 
 typedef struct
 {
-    unsigned char *position; /* relative to base address */
+    const unsigned char *start; /* relative to base address */
     char *label;
-    int ordinal; /* -1 means '?' */
+    int ordinal; /* -1 means '?' is vmaj is 1 */
     Xpost_Dsc_Str_Array *fonts;
 } Xpost_Dsc_Page;
 
@@ -105,6 +105,8 @@ typedef struct
         /* level 3 */
         char *page_order;
     } header;
+
+    Xpost_Dsc_Page *pages;
 } Xpost_Dsc;
 
 XPAPI unsigned char xpost_dsc_parse_from_file(const char *filename,

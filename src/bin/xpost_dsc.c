@@ -88,6 +88,17 @@ int main(int argc, char *argv[])
            h.header.bounding_box.ury);
     PRINT_STR_ARRAY("paper sizes", document_paper_sizes);
     printf("page order : %s\n", h.header.page_order);
+    if (h.pages)
+    {
+        int i;
+
+        for (i = 0; i < h.header.pages; i++)
+        {
+            printf("page #%d\n", i);
+            printf("  label: %s\n", h.pages[i].label);
+            printf("  ordinal: %d\n", h.pages[i].ordinal);
+        }
+    }
 
     return 0;
 }
