@@ -32,6 +32,8 @@
 #ifndef XPOST_DSC_H
 #define XPOST_DSC_H
 
+#include <stddef.h> /* for ptrdiff_t */
+
 #ifdef XPAPI
 # undef XPAPI
 #endif
