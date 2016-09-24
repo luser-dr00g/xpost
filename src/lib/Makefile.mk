@@ -131,7 +131,6 @@ src/lib/xpost_dsc.h
 src_lib_libxpost_dsc_la_SOURCES = \
 src/lib/xpost_compat.c \
 src/lib/xpost_log.c \
-src/lib/xpost_dsc_ctx.c \
 src/lib/xpost_dsc_file.c \
 src/lib/xpost_dsc_parse.c \
 src/lib/xpost_dsc_ctx.h
