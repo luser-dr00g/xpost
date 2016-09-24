@@ -57,6 +57,7 @@
 
 int main(int argc, char *argv[])
 {
+    Xpost_Dsc_File *file;
     Xpost_Dsc h;
     unsigned char res;
 
@@ -66,11 +67,18 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    res = xpost_dsc_parse_from_file(argv[1], &h);
+    file = xpost_dsc_file_new_from_file(argv[1]);
+    if (!file)
+    {
+        printf("can not create file from filename %s\n", argv[1]);
+    }
+
+    res = xpost_dsc_parse_from_file(file, &h);
     printf("result : %s\n", res ? "good" : "error");
     if (!res)
     {
         printf("exiting because of errors...");
+        xpost_dsc_file_del(file);
         return -1;
     }
 
@@ -118,6 +126,9 @@ int main(int argc, char *argv[])
 #endif
         }
     }
+
+    xpost_dsc_free(&h);
+    xpost_dsc_file_del(file);
 
     return 0;
 }

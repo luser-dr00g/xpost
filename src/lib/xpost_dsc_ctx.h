@@ -45,11 +45,6 @@ typedef struct Xpost_Dsc_Ctx Xpost_Dsc_Ctx;
 
 struct Xpost_Dsc_Ctx
 {
-#ifdef _WIN32
-    HANDLE h;
-#else
-    int fd;
-#endif
     const unsigned char *base;
     const unsigned char *cur_loc;
     size_t length;
@@ -67,17 +62,9 @@ struct Xpost_Dsc_Ctx
     unsigned int HEADER_DOCUMENT_PAPER_SIZES : 1;
     /* level 3 */
     unsigned int HEADER_PAGE_ORDER : 1;
-    unsigned int from_file : 1;
     unsigned int line_too_long : 1;
     unsigned int eof : 1;
 };
-
-Xpost_Dsc_Ctx *xpost_dsc_ctx_new_from_address(const unsigned char *base,
-                                              size_t length);
-
-Xpost_Dsc_Ctx *xpost_dsc_ctx_new_from_file(const char *filename);
-
-void xpost_dsc_ctx_del(Xpost_Dsc_Ctx *ctx);
 
 
 #endif

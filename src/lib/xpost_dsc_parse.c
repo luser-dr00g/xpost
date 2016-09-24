@@ -199,7 +199,7 @@ _xpost_dsc_line_get(Xpost_Dsc_Ctx *ctx, const unsigned char **end, ptrdiff_t *sz
 
     if ((e2 - ctx->cur_loc) > 255)
     {
-        printf(" ** line too long\n");
+        XPOST_LOG_ERR("Line too long");
         ctx->line_too_long = 1;
         return NULL;
     }
@@ -794,7 +794,12 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                     ordinal = -1;
 
                 if (!_xpost_dsc_intger_get_from_string(iter, &ordinal))
+                {
+                    free(ordinal_str);
                     break;
+                }
+
+                free(ordinal_str);
                 if (ordinal < 1)
                     break;
 
@@ -837,29 +842,57 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
 
 
 XPAPI unsigned char
-xpost_dsc_parse_from_file(const char *filename, Xpost_Dsc *h)
+xpost_dsc_parse_from_file(const Xpost_Dsc_File *file, Xpost_Dsc *h)
 {
-    Xpost_Dsc_Ctx *ctx;
+    Xpost_Dsc_Ctx ctx;
     unsigned char res;
 
-    if (!filename || !*filename)
+    if (!file)
     {
-        printf("ERR: file empty\n");
+        XPOST_LOG_ERR("Invalid file");
         return 0;
     }
 
     memset(h, 0, sizeof(Xpost_Dsc));
+    memset(&ctx, 0, sizeof(Xpost_Dsc_Ctx));
 
-    ctx = xpost_dsc_ctx_new_from_file(filename);
-    if (!ctx)
-    {
-        printf("ERR: can not create context\n");
-        return 0;
-    }
+    ctx.base = xpost_dsc_file_base_get(file);
+    ctx.cur_loc = ctx.base;
+    ctx.length = xpost_dsc_file_length_get(file);
 
-    res = _xpost_dsc_parse(ctx, h);
-
-    xpost_dsc_ctx_del(ctx);
+    res = _xpost_dsc_parse(&ctx, h);
 
     return res;
+}
+
+XPAPI void
+xpost_dsc_free(Xpost_Dsc *h)
+{
+    int i;
+
+    if (h->header.title)
+        free(h->header.title);
+    if (h->header.creator)
+        free(h->header.creator);
+    if (h->header.creation_date)
+        free(h->header.creation_date);
+    if (h->header.for_whom)
+        free(h->header.for_whom);
+
+    for (i = 0; i < h->header.document_fonts.nbr; i++)
+        free(h->header.document_fonts.array[i]);
+    free(h->header.document_fonts.array);
+
+    for (i = 0; i < h->header.document_paper_sizes.nbr; i++)
+        free(h->header.document_paper_sizes.array[i]);
+    free(h->header.document_paper_sizes.array);
+
+    for (i = 0; i < h->header.pages; i++)
+    {
+        if (h->pages[i].label)
+            free(h->pages[i].label);
+    }
+
+    if (h->pages)
+        free(h->pages);
 }
