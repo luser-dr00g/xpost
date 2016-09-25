@@ -95,7 +95,19 @@ int main(int argc, char *argv[])
            h.header.bounding_box.urx,
            h.header.bounding_box.ury);
     PRINT_STR_ARRAY("paper sizes", document_paper_sizes);
-    printf("page order : %s\n", h.header.page_order);
+    printf("page order : ");
+    switch (h.header.page_order)
+    {
+        case XPOST_DSC_PAGE_ORDER_ASCEND:
+            printf("Ascend\n");
+            break;
+        case XPOST_DSC_PAGE_ORDER_DESCEND:
+            printf("Descend\n");
+            break;
+        case XPOST_DSC_PAGE_ORDER_SPECIAL:
+            printf("Special\n");
+            break;
+    }
     if (h.pages)
     {
         int i;

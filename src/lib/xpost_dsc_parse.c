@@ -120,7 +120,7 @@
 
 #define XPOST_DSC_CMT_CHECK(cmt) _xpost_dsc_prefix_cmp(ctx->cur_loc, sz, XPOST_DSC_CMT(cmt))
 
-#define XPOST_DSC_CMT_CHECK_EXACT(cmt) _xpost_dsc_prefix_cmp(ctx->cur_loc, sz, XPOST_DSC_CMT(cmt))
+#define XPOST_DSC_CMT_CHECK_EXACT(cmt) _xpost_dsc_prefix_cmp_exact(ctx->cur_loc, sz, XPOST_DSC_CMT(cmt))
 
 #define XPOST_DSC_CMT_ARG(cmt) \
     ctx->cur_loc + XPOST_DSC_CMT_LEN(cmt) + ((*(ctx->cur_loc + XPOST_DSC_CMT_LEN(cmt)) == ' ') ? 1 : 0)
@@ -726,8 +726,42 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                 XPOST_DSC_HEADER_ERROR_TEST("PageOrder");
                 if (h->ps_version_maj > 2)
                 {
-                    XPOST_DSC_TEXT_GET(txt, HEADER_PAGE_ORDER);
-                    h->header.page_order = txt;
+                    if ((in_trailer) && (ctx->HEADER_PAGE_ORDER != 2))
+                    {
+                        XPOST_LOG_ERR("%%PageOrder is in trailer "
+                                      "but not atend, exiting.");
+                        return 0;
+                    }
+
+                    if (!in_trailer)
+                    {
+                        if (!ctx->HEADER_PAGE_ORDER)
+                        {
+                            if (XPOST_DSC_CMT_IS_ATEND(HEADER_PAGE_ORDER))
+                                ctx->HEADER_PAGE_ORDER = 2;
+                            else
+                                goto get_page_order;
+                        }
+                    }
+                    else
+                    {
+                        const unsigned char *iter;
+
+                      get_page_order:
+                        iter = XPOST_DSC_CMT_ARG(HEADER_PAGE_ORDER);
+                        if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Ascend"))
+                            h->header.page_order = XPOST_DSC_PAGE_ORDER_ASCEND;
+                        else if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Descend"))
+                            h->header.page_order = XPOST_DSC_PAGE_ORDER_DESCEND;
+                        else if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Special"))
+                            h->header.page_order = XPOST_DSC_PAGE_ORDER_SPECIAL;
+                        else
+                        {
+                            XPOST_LOG_ERR("%%PageOrder value is invalid");
+                            return 0;
+                        }
+
+                    }
                 }
                 else
                 {

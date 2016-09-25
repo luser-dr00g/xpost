@@ -63,7 +63,8 @@ struct Xpost_Dsc_Ctx
     /* level 2 */
     unsigned int HEADER_DOCUMENT_PAPER_SIZES : 1;
     /* level 3 */
-    unsigned int HEADER_PAGE_ORDER : 1;
+    unsigned int HEADER_PAGE_ORDER : 2;
+
     unsigned int line_too_long : 1;
     unsigned int eof : 1;
 };

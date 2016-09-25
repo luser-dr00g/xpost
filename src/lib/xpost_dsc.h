@@ -82,6 +82,13 @@ XPAPI void xpost_dsc_file_del(Xpost_Dsc_File *file);
 
 /* DSC */
 
+typedef enum
+{
+    XPOST_DSC_PAGE_ORDER_ASCEND,
+    XPOST_DSC_PAGE_ORDER_DESCEND,
+    XPOST_DSC_PAGE_ORDER_SPECIAL
+} Xpost_Dsc_Page_Order;
+
 typedef struct
 {
     int llx;
@@ -123,7 +130,7 @@ typedef struct
         /* level 2 */
         Xpost_Dsc_Str_Array document_paper_sizes;
         /* level 3 */
-        char *page_order;
+        Xpost_Dsc_Page_Order page_order;
     } header;
 
     Xpost_Dsc_Page *pages;
