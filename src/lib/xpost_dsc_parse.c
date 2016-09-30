@@ -48,7 +48,7 @@
 #include "xpost_dsc_ctx.h"
 
 /*
- * Postscrip DSC parser
+ * Postscript DSC parser
  * x means minimal conforming level 1 DSC
  * a means (atend) is supported
  *
@@ -241,7 +241,7 @@ _xpost_dsc_prefix_cmp_exact(const unsigned char *iter, ptrdiff_t sz, const char 
 }
 
 static unsigned char
-_xpost_dsc_intger_get_from_string(const unsigned char *str, int *val)
+_xpost_dsc_integer_get_from_string(const unsigned char *str, int *val)
 {
     char *endptr;
 
@@ -278,7 +278,7 @@ _xpost_dsc_integer_get(const unsigned char *cur_loc, int *val)
     memcpy(buf, cur_loc, iter - cur_loc);
     buf[iter - cur_loc] = '\0';
 
-    if (!_xpost_dsc_intger_get_from_string(buf, val))
+    if (!_xpost_dsc_integer_get_from_string(buf, val))
         return NULL;
 
     return iter;
@@ -827,7 +827,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                     (*iter == '?'))
                     ordinal = -1;
 
-                if (!_xpost_dsc_intger_get_from_string(iter, &ordinal))
+                if (!_xpost_dsc_integer_get_from_string(iter, &ordinal))
                 {
                     free(ordinal_str);
                     break;

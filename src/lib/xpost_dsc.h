@@ -84,6 +84,7 @@ XPAPI void xpost_dsc_file_del(Xpost_Dsc_File *file);
 
 typedef enum
 {
+    XPOST_DSC_PAGE_ORDER_NONE,
     XPOST_DSC_PAGE_ORDER_ASCEND,
     XPOST_DSC_PAGE_ORDER_DESCEND,
     XPOST_DSC_PAGE_ORDER_SPECIAL
@@ -108,7 +109,7 @@ typedef struct
     ptrdiff_t start; /* relative to base address */
     ptrdiff_t end; /* relative to base address */
     char *label;
-    int ordinal; /* -1 means '?' is vmaj is 1 */
+    int ordinal; /* -1 means '?' with DSC level 1 */
     Xpost_Dsc_Str_Array *fonts;
 } Xpost_Dsc_Page;
 
