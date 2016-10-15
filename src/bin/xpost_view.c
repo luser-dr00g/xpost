@@ -40,9 +40,6 @@
 #ifdef HAVE_XCB
 #include <xcb/xcb.h>
 #include <xcb/xcb_image.h>
-#include <xcb/xcb_aux.h>
-#include <xcb/xcb_icccm.h>
-#include <xcb/xcb_atom.h>
 #include <xcb/xcb_event.h>
 #endif
 
@@ -119,7 +116,7 @@ _xpost_view_win_new(int xorig, int yorig, int width, int height)
     mask = XCB_CW_BACK_PIXMAP | XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
     values[0] = XCB_NONE;
     values[1] = win->scr->white_pixel;
-    values[2] = XCB_EVENT_MASK_EXPOSURE;
+    values[2] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS;
     xcb_create_window(win->c, XCB_COPY_FROM_PARENT,
                       win->window, win->scr->root,
                       0, 0,
@@ -129,8 +126,16 @@ _xpost_view_win_new(int xorig, int yorig, int width, int height)
                       win->scr->root_visual,
                       mask,
                       values);
-    xcb_icccm_set_wm_name(win->c, win->window,
-                          XCB_ATOM_STRING, 8, strlen("Xpost"), "Xpost");
+
+    /* set title */
+    xcb_change_property(win->c,
+                        XCB_PROP_MODE_REPLACE,
+                        win->window,
+                        XCB_ATOM_WM_NAME,
+                        XCB_ATOM_STRING,
+                        8,
+                        sizeof("Xpost") - 1,
+                        "Xpost");
     xcb_map_window(win->c, win->window);
     xcb_flush(win->c);
 
@@ -194,7 +199,8 @@ _xpost_view_main_loop(Xpost_View_Window *win)
                               sizeof("WM_PROTOCOLS") - 1, "WM_PROTOCOLS");
     reply1 = xcb_intern_atom_reply(win->c, cookie1, 0);
     reply2 = xcb_intern_atom_reply(win->c, cookie2, 0);
-    xcb_icccm_set_wm_protocols (win->c, reply2->atom, win->window, 1, &reply1->atom);
+    xcb_change_property(win->c, XCB_PROP_MODE_REPLACE, win->window, reply2->atom, 4, 32, 1,
+                        &reply1->atom);
 
     finished = 0;
     while (!finished)
@@ -211,10 +217,17 @@ _xpost_view_main_loop(Xpost_View_Window *win)
                     xcb_flush(win->c);
                     break;
                 case XCB_CLIENT_MESSAGE:
-                    if (((xcb_client_message_event_t *)e)->data.data32[0] == reply1->atom)
-                      finished = 1;
+                {
+                    xcb_client_message_event_t *event;
+
+                    printf("client message\n");
+                    event = (xcb_client_message_event_t *)e;
+                    if (event->data.data32[0] == reply1->atom)
+                        finished = 1;
                     break;
+                }
                 case XCB_BUTTON_PRESS:
+                    printf("button pressed\n");
                     finished = 1;
                     break;
             }
@@ -223,14 +236,17 @@ _xpost_view_main_loop(Xpost_View_Window *win)
 
         xcb_flush (win->c);
     }
+
+    free(reply2);
+    free(reply1);
 }
 
 #elif defined _WIN32
 
 typedef struct
 {
-   BITMAPINFOHEADER bih;
-   DWORD masks[3];
+    BITMAPINFOHEADER bih;
+    DWORD masks[3];
 } BITMAPINFO_XPOST;
 
 struct _Xpost_View_Window
@@ -296,7 +312,7 @@ _xpost_view_win_new(int xorig, int yorig, int width, int height)
 
     win->instance = GetModuleHandle(NULL);
     if (!win->instance)
-      goto free_win;
+        goto free_win;
 
     icon = LoadImage(win->instance,
                      MAKEINTRESOURCE(101),
