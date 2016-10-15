@@ -84,6 +84,13 @@ XPAPI void xpost_dsc_file_del(Xpost_Dsc_File *file);
 
 typedef enum
 {
+    XPOST_DSC_STATUS_ERROR,
+    XPOST_DSC_STATUS_NO_DSC,
+    XPOST_DSC_STATUS_SUCCESS,
+} Xpost_Dsc_Status;
+
+typedef enum
+{
     XPOST_DSC_PAGE_ORDER_NONE,
     XPOST_DSC_PAGE_ORDER_ASCEND,
     XPOST_DSC_PAGE_ORDER_DESCEND,
@@ -137,10 +144,10 @@ typedef struct
     Xpost_Dsc_Page *pages;
 } Xpost_Dsc;
 
-XPAPI unsigned char xpost_dsc_parse_from_file(const Xpost_Dsc_File *file,
-                                              Xpost_Dsc *h);
+XPAPI Xpost_Dsc_Status xpost_dsc_parse_from_file(const Xpost_Dsc_File *file,
+                                                 Xpost_Dsc *dsc);
 
-XPAPI void xpost_dsc_free(Xpost_Dsc *h);
+XPAPI void xpost_dsc_free(Xpost_Dsc *dsc);
 
 
 #ifdef __cplusplus
