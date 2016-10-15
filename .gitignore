@@ -36,6 +36,8 @@ stamp-h1
 xpost.pc
 src/bin/xpost
 src/bin/xpost_client
+src/bin/xpost_dsc
+src/bin/xpost_view
 visual_studio/vc14/.vs/
 visual_studio/vc14/Debug/
 visual_studio/vc14/Release/
