@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    printf("version : %d.%d\n", h.ps_version_maj, h.ps_version_min);
+    printf("version : %d.%d\n", h.ps_vmaj, h.ps_vmin);
     PRINT_STR_ARRAY("document fonts", document_fonts);
     printf("title : %s\n", h.header.title);
     printf("creator : %s\n", h.header.creator);
@@ -106,6 +106,9 @@ int main(int argc, char *argv[])
             break;
         case XPOST_DSC_PAGE_ORDER_SPECIAL:
             printf("Special\n");
+            break;
+        default:
+            printf("Unknown\n");
             break;
     }
     if (h.pages)

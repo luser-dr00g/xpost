@@ -97,6 +97,9 @@
  *============================================================================*/
 
 
+#define XPOST_CMT_IS_SPACE(vmaj, iter) \
+    (*(iter) == ' ') || (((vmaj) > 1) && (*(iter) == '\t'))
+
 #define XPOST_DSC_ERROR_TEST(test, msg) \
     do \
     { \
@@ -122,18 +125,18 @@
 
 #define XPOST_DSC_CMT_CHECK_EXACT(cmt) _xpost_dsc_prefix_cmp_exact(ctx->cur_loc, sz, XPOST_DSC_CMT(cmt))
 
-#define XPOST_DSC_CMT_ARG(cmt) \
-    ctx->cur_loc + XPOST_DSC_CMT_LEN(cmt) + ((*(ctx->cur_loc + XPOST_DSC_CMT_LEN(cmt)) == ' ') ? 1 : 0)
+#define XPOST_DSC_CMT_ARG(vmaj, cmt) \
+    ctx->cur_loc + XPOST_DSC_CMT_LEN(cmt) + (XPOST_CMT_IS_SPACE(vmaj, (ctx->cur_loc + XPOST_DSC_CMT_LEN(cmt))) ? 1 : 0)
 
-#define XPOST_DSC_CMT_IS_ATEND(cmt) _xpost_dsc_prefix_cmp_exact(XPOST_DSC_CMT_ARG(cmt), sz, "(atend)")
+#define XPOST_DSC_CMT_IS_ATEND(vmaj, cmt) _xpost_dsc_prefix_cmp_exact(XPOST_DSC_CMT_ARG(vmaj, cmt), sz, "(atend)")
 
-#define XPOST_DSC_TEXT_GET(buf, cmt) \
+#define XPOST_DSC_TEXT_GET(vmaj, buf, cmt) \
     do \
     { \
         if (!ctx->cmt) \
         { \
             const unsigned char *iter; \
-            iter = XPOST_DSC_CMT_ARG(cmt); \
+            iter = XPOST_DSC_CMT_ARG(vmaj, cmt); \
             buf = malloc(((end - iter) + 1) * sizeof(char)); \
             if (buf) \
             { \
@@ -395,30 +398,24 @@ _xpost_dsc_header_string_array_get(const unsigned char *cur_loc, int *count)
     return array;
 }
 
-static const unsigned char *
-_xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h, const unsigned char **end, ptrdiff_t *size)
+static unsigned char
+_xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h, const unsigned char *end, ptrdiff_t sz)
 {
     const unsigned char *next;
     unsigned char v_maj;
     unsigned char v_min;
     size_t len;
-    ptrdiff_t sz;
 
-    next = _xpost_dsc_line_get(ctx, end, size);
-    if (!next)
-        return NULL;
-
-    sz = *size;
-    if ((*end - ctx->cur_loc) < 14)
+    if ((end - ctx->cur_loc) < 14)
     {
         XPOST_LOG_ERR("First comment erronoeus, size insufficient.");
-        return NULL;
+        return 0;
     }
 
     if (!XPOST_DSC_CMT_CHECK(HEADER_VERSION))
     {
         XPOST_LOG_ERR("First comment erronoeus.");
-        return NULL;
+        return 0;
     }
 
     len = XPOST_DSC_CMT_LEN(HEADER_VERSION);
@@ -426,49 +423,49 @@ _xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h, const unsigned c
     if ((v_maj < '0') || (v_maj > '9'))
     {
         XPOST_LOG_ERR("First comment erronoeus (invalid vmaj) %c.", *(ctx->cur_loc + len));
-        return NULL;
+        return 0;
     }
 
     if (*(ctx->cur_loc + len + 1) != '.')
     {
         XPOST_LOG_ERR("First comment erronoeus (invalid version) %c.", *(ctx->cur_loc + len + 1));
-        return NULL;
+        return 0;
     }
 
     v_min = *(ctx->cur_loc + len + 2);
     if ((v_min < '0') || (v_min > '9'))
     {
         XPOST_LOG_ERR("First comment erronoeus (invalid vmin) %c.", *(ctx->cur_loc + len + 2));
-        return NULL;
+        return 0;
     }
 
-    h->ps_version_maj = v_maj - '0';
-    h->ps_version_min = v_min - '0';
+    h->ps_vmaj = v_maj - '0';
+    h->ps_vmin = v_min - '0';
 
-    if ((h->ps_version_maj == 0) || (h->ps_version_maj > 3))
+    if ((h->ps_vmaj == 0) || (h->ps_vmaj > 3))
     {
         XPOST_LOG_ERR("First comment erronoeus (invalid vmaj).");
-        return NULL;
+        return 0;
     }
 
-    if (((h->ps_version_maj == 2) && (h->ps_version_min > 1)) ||
-        (h->ps_version_min > 0))
+    if (((h->ps_vmaj == 2) && (h->ps_vmin > 1)) ||
+        (h->ps_vmin > 0))
     {
         XPOST_LOG_ERR("First comment erronoeus (invalid vmin).");
-        return NULL;
+        return 0;
     }
 
-    if ((h->ps_version_maj == 1) &&
+    if ((h->ps_vmaj == 1) &&
         !XPOST_DSC_EOL((ctx->cur_loc + sizeof(XPOST_DSC_CMT(HEADER_VERSION)) + 2)))
     {
         XPOST_LOG_ERR("First comment erronoeus (level 1).");
-        return NULL;
+        return 0;
 
     }
 
     /* FIXME: do the options after the version of maj >= 2 */
 
-    return next;
+    return 1;
 }
 
 static unsigned char
@@ -484,8 +481,10 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
     unsigned char in_font = 0;
 
     /* first line is for version info */
-    next = _xpost_dsc_header_version_get(ctx, h, &end, &sz);
+    next = _xpost_dsc_line_get(ctx, &end, &sz);
     if (!next)
+        return 0;
+    if (!_xpost_dsc_header_version_get(ctx, h, end, sz))
         return 0;
 
     ctx->cur_loc = next;
@@ -516,7 +515,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
             }
             else
             {
-                XPOST_LOG_INFO("End of header (no %%%%).");
+                XPOST_LOG_INFO("End of header (no 2 %%).");
                 in_header = 0;
                 continue;
             }
@@ -553,7 +552,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                                      "Title comment not in header or in font");
                 if (in_header)
                 {
-                    XPOST_DSC_TEXT_GET(txt, HEADER_TITLE);
+                    XPOST_DSC_TEXT_GET(h->ps_vmaj, txt, HEADER_TITLE);
                     h->header.title = txt;
                 }
             }
@@ -564,7 +563,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                                      "Creator comment not in header or in font");
                 if (in_header)
                 {
-                    XPOST_DSC_TEXT_GET(txt, HEADER_CREATOR);
+                    XPOST_DSC_TEXT_GET(h->ps_vmaj, txt, HEADER_CREATOR);
                     h->header.creator = txt;
                 }
             }
@@ -575,14 +574,14 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                                      "CreationDate comment not in header or in font");
                 if (in_header)
                 {
-                    XPOST_DSC_TEXT_GET(txt, HEADER_CREATION_DATE);
+                    XPOST_DSC_TEXT_GET(h->ps_vmaj, txt, HEADER_CREATION_DATE);
                     h->header.creation_date = txt;
                 }
             }
             else if (XPOST_DSC_CMT_CHECK(HEADER_FOR))
             {
                 XPOST_DSC_HEADER_ERROR_TEST("For");
-                XPOST_DSC_TEXT_GET(txt, HEADER_FOR);
+                XPOST_DSC_TEXT_GET(h->ps_vmaj, txt, HEADER_FOR);
                 h->header.for_whom = txt;
             }
             else if (XPOST_DSC_CMT_CHECK(HEADER_PAGES))
@@ -598,7 +597,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                 {
                     if (!ctx->HEADER_PAGES)
                     {
-                        if (XPOST_DSC_CMT_IS_ATEND(HEADER_PAGES))
+                        if (XPOST_DSC_CMT_IS_ATEND(h->ps_vmaj, HEADER_PAGES))
                             ctx->HEADER_PAGES = 2;
                         else
                             goto get_pages;
@@ -635,7 +634,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                 {
                     if (!ctx->HEADER_BOUNDING_BOX)
                     {
-                        if (XPOST_DSC_CMT_IS_ATEND(HEADER_BOUNDING_BOX))
+                        if (XPOST_DSC_CMT_IS_ATEND(h->ps_vmaj, HEADER_BOUNDING_BOX))
                             ctx->HEADER_BOUNDING_BOX = 2;
                         else
                             goto get_bounding_box;
@@ -669,7 +668,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                 {
                     if (!ctx->HEADER_DOCUMENT_FONTS)
                     {
-                        if (XPOST_DSC_CMT_IS_ATEND(HEADER_DOCUMENT_FONTS))
+                        if (XPOST_DSC_CMT_IS_ATEND(h->ps_vmaj, HEADER_DOCUMENT_FONTS))
                             ctx->HEADER_DOCUMENT_FONTS = 2;
                         else
                             goto get_document_fonts;
@@ -695,78 +694,71 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
             /* Level 2 */
             else if (XPOST_DSC_CMT_CHECK(HEADER_DOCUMENT_PAPER_SIZES))
             {
+                const unsigned char *iter;
+                char **array;
+                int nbr;
+
                 XPOST_DSC_HEADER_ERROR_TEST("DocumentPaperSizes");
-                if (h->ps_version_maj > 1)
-                {
-                    const unsigned char *iter;
-                    char **array;
-                    int nbr;
+                if (h->ps_vmaj < 2)
+                    XPOST_LOG_WARN("Comment allowed in version 2, "
+                                   "but version is %d.",
+                                   h->ps_vmaj);
 
-                    if (!ctx->HEADER_DOCUMENT_PAPER_SIZES)
-                    {
-                        iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_PAPER_SIZES);
-                        if (*iter == ' ')
-                            iter++;
-
-                        array = _xpost_dsc_header_string_array_get(iter, &nbr);
-                        h->header.document_paper_sizes.array = array;
-                        h->header.document_paper_sizes.nbr = nbr;
-                        ctx->HEADER_DOCUMENT_PAPER_SIZES = 1;
-                    }
-                }
-                else
+                if (!ctx->HEADER_DOCUMENT_PAPER_SIZES)
                 {
-                    XPOST_LOG_INFO("Comment not allowed in version %d.",
-                                   h->ps_version_maj);
+                    iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_PAPER_SIZES);
+                    if (*iter == ' ')
+                        iter++;
+
+                    array = _xpost_dsc_header_string_array_get(iter, &nbr);
+                    h->header.document_paper_sizes.array = array;
+                    h->header.document_paper_sizes.nbr = nbr;
+                    ctx->HEADER_DOCUMENT_PAPER_SIZES = 1;
                 }
             }
             /* Level 3 */
             else if (XPOST_DSC_CMT_CHECK(HEADER_PAGE_ORDER))
             {
                 XPOST_DSC_HEADER_ERROR_TEST("PageOrder");
-                if (h->ps_version_maj > 2)
+                if (h->ps_vmaj < 3)
+                    XPOST_LOG_WARN("Comment allowed in version 3, "
+                                   "but version is %d.",
+                                   h->ps_vmaj);
+
+                if ((in_trailer) && (ctx->HEADER_PAGE_ORDER != 2))
                 {
-                    if ((in_trailer) && (ctx->HEADER_PAGE_ORDER != 2))
-                    {
-                        XPOST_LOG_ERR("%%PageOrder is in trailer "
-                                      "but not atend, exiting.");
-                        return 0;
-                    }
+                    XPOST_LOG_ERR("%%PageOrder is in trailer "
+                                  "but not atend, exiting.");
+                    return 0;
+                }
 
-                    if (!in_trailer)
+                if (!in_trailer)
+                {
+                    if (!ctx->HEADER_PAGE_ORDER)
                     {
-                        if (!ctx->HEADER_PAGE_ORDER)
-                        {
-                            if (XPOST_DSC_CMT_IS_ATEND(HEADER_PAGE_ORDER))
-                                ctx->HEADER_PAGE_ORDER = 2;
-                            else
-                                goto get_page_order;
-                        }
-                    }
-                    else
-                    {
-                        const unsigned char *iter;
-
-                      get_page_order:
-                        iter = XPOST_DSC_CMT_ARG(HEADER_PAGE_ORDER);
-                        if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Ascend"))
-                            h->header.page_order = XPOST_DSC_PAGE_ORDER_ASCEND;
-                        else if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Descend"))
-                            h->header.page_order = XPOST_DSC_PAGE_ORDER_DESCEND;
-                        else if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Special"))
-                            h->header.page_order = XPOST_DSC_PAGE_ORDER_SPECIAL;
+                        if (XPOST_DSC_CMT_IS_ATEND(h->ps_vmaj, HEADER_PAGE_ORDER))
+                            ctx->HEADER_PAGE_ORDER = 2;
                         else
-                        {
-                            XPOST_LOG_ERR("%%PageOrder value is invalid");
-                            return 0;
-                        }
-
+                            goto get_page_order;
                     }
                 }
                 else
                 {
-                    XPOST_LOG_INFO("Comment not allowed in version %d.",
-                                   h->ps_version_maj);
+                    const unsigned char *iter;
+
+                  get_page_order:
+                    iter = XPOST_DSC_CMT_ARG(h->ps_vmaj, HEADER_PAGE_ORDER);
+                    if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Ascend"))
+                        h->header.page_order = XPOST_DSC_PAGE_ORDER_ASCEND;
+                    else if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Descend"))
+                        h->header.page_order = XPOST_DSC_PAGE_ORDER_DESCEND;
+                    else if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Special"))
+                        h->header.page_order = XPOST_DSC_PAGE_ORDER_SPECIAL;
+                    else
+                    {
+                        XPOST_LOG_ERR("%%PageOrder value is invalid");
+                        return 0;
+                    }
                 }
             }
         } /* end of management of header comments */
@@ -782,7 +774,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                 int ordinal;
 
                 XPOST_DSC_ERROR_TEST(!in_script, "Page comment not in script");
-                iter = XPOST_DSC_CMT_ARG(BODY_PAGE);
+                iter = XPOST_DSC_CMT_ARG(h->ps_vmaj, BODY_PAGE);
                 if (*iter == ' ')
                     iter++;
 
@@ -822,7 +814,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
                     ordinal_str[iter_next - iter]= '\0';
                 }
 
-                if (((h->ps_version_maj == 1)) &&
+                if (((h->ps_vmaj == 1)) &&
                     ((iter_next - iter) == 1) &&
                     (*iter == '?'))
                     ordinal = -1;
@@ -855,10 +847,8 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *h)
     /*
      * DSC level 1 says that if there is no For comment, the intended
      * recipient is assumed to be the same as the value of Creator.
-     *
-     * FIXME: the test must be on the presence of For or not, not on its value.
      */
-    if ((!h->header.for_whom) && (h->header.creator)&& (h->ps_version_maj == 1))
+    if ((h->ps_vmaj == 1) && (!ctx->HEADER_FOR) && (h->header.creator))
         h->header.for_whom = strdup(h->header.creator);
 
     return 1;

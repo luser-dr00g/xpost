@@ -115,8 +115,8 @@ typedef struct
 
 typedef struct
 {
-    unsigned char ps_version_maj;
-    unsigned char ps_version_min;
+    unsigned char ps_vmaj;
+    unsigned char ps_vmin;
 
     struct
     {
