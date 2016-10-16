@@ -470,7 +470,7 @@ _xpost_view_main_loop(Xpost_View_Window *win)
             do
             {
                 if (msg.message == WM_QUIT)
-                    return 0;
+                    return;
                 TranslateMessage(&msg);
                 DispatchMessageW(&msg);
             } while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE));
