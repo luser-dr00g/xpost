@@ -6,7 +6,8 @@ src/bin/xpost_dsc \
 src/bin/xpost_view
 
 src_bin_xpost_view_SOURCES = \
-src/bin/xpost_view.c
+src/bin/xpost_view.c \
+src/bin/xpost_view.h
 
 if HAVE_XCB
 src_bin_xpost_view_SOURCES += \
