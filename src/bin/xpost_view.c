@@ -356,7 +356,7 @@ _xpost_view_win_new(int xorig, int yorig, int width, int height)
     if (!AdjustWindowRectEx(&rect, WS_OVERLAPPEDWINDOW | WS_SIZEBOX, FALSE, 0))
         goto unregister_class;
 
-    win->window = CreateWindowEx(0, "XPOST_VIEW", "test",
+    win->window = CreateWindowEx(0, "XPOST_VIEW", "Xpost viewer",
                                  WS_OVERLAPPEDWINDOW | WS_SIZEBOX,
                                  xorig, yorig,
                                  rect.right - rect.left,
@@ -366,8 +366,6 @@ _xpost_view_win_new(int xorig, int yorig, int width, int height)
 
     if (!win->window)
         goto unregister_class;
-
-    SetWindowText(win->window, "Xpost viewer");
 
     win->dc =  GetDC(win->window);
     if (!win->dc)
