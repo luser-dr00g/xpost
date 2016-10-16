@@ -8,6 +8,16 @@ src/bin/xpost_view
 src_bin_xpost_view_SOURCES = \
 src/bin/xpost_view.c
 
+if HAVE_XCB
+src_bin_xpost_view_SOURCES += \
+src/bin/xpost_view_xcb.c
+endif
+
+if HAVE_WIN32
+src_bin_xpost_view_SOURCES += \
+src/bin/xpost_view_win32.c
+endif
+
 src_bin_xpost_view_CPPFLAGS = \
 -I$(top_srcdir)/src/lib
 
