@@ -66,7 +66,6 @@ void *alloca (size_t);
 #include <xcb/xcb.h>
 #include <xcb/xcb_image.h>
 #include <xcb/xcb_aux.h>
-#include <xcb/xcb_icccm.h>
 
 #include "xpost.h"
 #include "xpost_log.h"
@@ -253,7 +252,16 @@ int _create_cont(Xpost_Context *ctx,
                           private.scr->root_visual,
                           mask,
                           value);
-        xcb_icccm_set_wm_name(private.c, private.win, XCB_ATOM_STRING, 8, strlen("Xpost"), "Xpost");
+
+        /* set title */
+        xcb_change_property(private.c,
+                            XCB_PROP_MODE_REPLACE,
+                            private.win,
+                            XCB_ATOM_WM_NAME,
+                            XCB_ATOM_STRING,
+                            8,
+                            sizeof("Xpost") - 1,
+                            "Xpost");
     }
 #if 0
     {

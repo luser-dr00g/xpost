@@ -134,8 +134,8 @@ _xpost_view_win_new(int xorig, int yorig, int width, int height)
                         XCB_ATOM_WM_NAME,
                         XCB_ATOM_STRING,
                         8,
-                        sizeof("Xpost") - 1,
-                        "Xpost");
+                        sizeof("Xpost viewer") - 1,
+                        "Xpost viewer");
     xcb_map_window(win->c, win->window);
     xcb_flush(win->c);
 
@@ -367,7 +367,7 @@ _xpost_view_win_new(int xorig, int yorig, int width, int height)
     if (!win->window)
         goto unregister_class;
 
-    SetWindowText(win->window, "Xpost");
+    SetWindowText(win->window, "Xpost viewer");
 
     win->dc =  GetDC(win->window);
     if (!win->dc)
