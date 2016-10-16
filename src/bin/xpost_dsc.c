@@ -37,6 +37,12 @@
 
 #include <xpost_dsc.h>
 
+#ifdef _WIN32
+# define FMT_PTRDIFF_T "%Id"
+#else
+# define FMT_PTRDIFF_T "%td"
+#endif
+
 #define PRINT_STR_ARRAY(msg, memb) \
     do { \
         int i; \
@@ -118,8 +124,8 @@ int main(int argc, char *argv[])
         for (i = 0; i < h.header.pages; i++)
         {
             printf("page #%d\n", i + 1);
-            printf("  start: %d\n", h.pages[i].start);
-            printf("  end: %d\n", h.pages[i].end);
+            printf("  start: " FMT_PTRDIFF_T "\n", h.pages[i].start);
+            printf("  end: " FMT_PTRDIFF_T "\n", h.pages[i].end);
             printf("  label: %s\n", h.pages[i].label);
             printf("  ordinal: %d\n", h.pages[i].ordinal);
 
