@@ -374,19 +374,19 @@ int main(int argc, const char *argv[])
     {
         typedef struct { unsigned char blue, green, red; } pixel;
         pixel *buffer;
-        int i, j;
+        int x, y;
         FILE *fp;
 
         buffer = buffer_type_object;
         fp = fopen(filename, "w");
         fprintf(fp, "P3\n612 792\n255\n");
-        for (i = 0; i < 792; i++)
+        for (x = 0; x < 792; x++)
         {
-            for (j = 0; j < 612; j++)
+            for (y = 0; y < 612; y++)
             {
                 pixel pix = *buffer++;
                 fprintf(fp, "%d %d %d ", pix.red, pix.green, pix.blue);
-                if ((j % 20) == 0)
+                if ((y % 20) == 0)
                     fprintf(fp, "\n");
             }
             fprintf(fp, "\n");
