@@ -74,10 +74,10 @@ _xpost_view_usage(const char *progname)
 }
 
 static int
-_xpost_view_options_read(int argc, char *argv[], int *msg, const char **file)
+_xpost_view_options_read(int argc, char *argv[], Xpost_Output_Message *msg, const char **file)
 {
     const char *psfile;
-    int output_msg;
+    Xpost_Output_Message output_msg;
     int i;
 
     psfile = NULL;
@@ -147,20 +147,18 @@ _xpost_view_options_read(int argc, char *argv[], int *msg, const char **file)
 
 int main(int argc, char *argv[])
 {
-    Xpost_View_Window *win;
+    Xpost_Dsc dsc;
+    Xpost_Dsc_File *file;
     Xpost_Context *ctx;
-    const char *device;
+    Xpost_View_Window *win;
+    void *buffer;
     const char *psfile;
-    int output_msg;
+    Xpost_Showpage_Semantics semantics;
+    Xpost_Dsc_Status status;
+    Xpost_Output_Message output_msg;
+    int width;
+    int height;
     int ret;
-
-#ifdef HAVE_XCB
-    device = "xcb";
-#elif defined _WIN32
-    device = "gdi";
-#else
-# error "System not supported"
-#endif
 
     psfile = NULL;
     output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
@@ -169,31 +167,76 @@ int main(int argc, char *argv[])
     if (ret == -1) return EXIT_FAILURE;
     else if (ret == 0) return EXIT_SUCCESS;
 
-    /* if (!xpost_init()) */
-    /* { */
-    /*     fprintf(stderr, "Xpost failed to initialize\n"); */
-    /*     return EXIT_FAILURE; */
-    /* } */
+    file = xpost_dsc_file_new_from_file(psfile);
+    if (!file)
+        return EXIT_FAILURE;
 
-    /* ctx = xpost_create(device); */
-    /* if (!xpost_init()) */
-    /* { */
-    /*     fprintf(stderr, "Xpost failed to create interpreter\n"); */
-    /*     goto quit_xpost; */
-    /* } */
+    status = xpost_dsc_parse_from_file(file, &dsc);
 
+    /*
+     * status:
+     * XPOST_DSC_STATUS_ERROR: DSC, but ps file not conforming to mandatory DSC
+     * XPOST_DSC_STATUS_NO_DSC: no error, but no DSC
+     * XPOST_DSC_STATUS_SUCCESS: no error and DSC
+     */
 
-    win = xpost_view_win_new(0, 0, 480, 640);
+    if (status == XPOST_DSC_STATUS_ERROR)
+    {
+        fprintf(stderr, "File %s not conforming to DSC\n", psfile);
+        goto del_file;
+    }
+
+    if (status == XPOST_DSC_STATUS_NO_DSC)
+    {
+        semantics = XPOST_SHOWPAGE_RETURN;
+        width = 612;
+        height = 792;
+    }
+    else
+    {
+        semantics = XPOST_SHOWPAGE_NOPAUSE;
+        width = dsc.header.bounding_box.urx;
+        height = dsc.header.bounding_box.ury;
+    }
+
+    if (!xpost_init())
+    {
+        fprintf(stderr, "Xpost failed to initialize\n");
+        goto free_dsc;
+    }
+
+    ctx = xpost_create("raster:bgr",
+                       XPOST_OUTPUT_BUFFEROUT,
+                       &buffer,
+                       semantics,
+                       output_msg,
+                       XPOST_USE_SIZE, width, height);
+    if (!ctx)
+    {
+        fprintf(stderr, "Xpost failed to create interpreter context\n");
+        goto quit_xpost;
+    }
+
+    //ret = xpost_run(ctx, XPOST_INPUT_STRING, (void *)dsc.pages[0].start);
+
+    win = xpost_view_win_new(10, 10, width, height);
     if (!win)
         return 0;
 
     xpost_view_main_loop(win);
 
-    /* xpost_quit(); */
+    xpost_quit();
+    xpost_dsc_free(&dsc);
+    xpost_dsc_file_del(file);
 
     return EXIT_SUCCESS;
 
   quit_xpost:
-    printf("err\n");
+    xpost_quit();
+  free_dsc:
+    xpost_dsc_free(&dsc);
+  del_file:
+    xpost_dsc_file_del(file);
+
     return EXIT_FAILURE;
 }

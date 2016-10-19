@@ -99,11 +99,6 @@ _xpost_view_win32_procedure(HWND   window,
     }
 }
 
-const char *xpost_view_device_get(void)
-{
-    return "gdi";
-}
-
 Xpost_View_Window *
 xpost_view_win_new(int xorig, int yorig, int width, int height)
 {
@@ -281,4 +276,7 @@ xpost_view_main_loop(Xpost_View_Window *win)
             } while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE));
         }
     }
+
+    return;
+    (void)win;
 }

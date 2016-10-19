@@ -34,8 +34,6 @@
 
 typedef struct _Xpost_View_Window Xpost_View_Window;
 
-const char *xpost_view_device_get(void);
-
 Xpost_View_Window *xpost_view_win_new(int xorig, int yorig, int width, int height);
 
 void xpost_view_win_del(Xpost_View_Window *win);

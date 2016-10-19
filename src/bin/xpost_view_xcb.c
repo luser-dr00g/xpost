@@ -58,11 +58,6 @@ struct _Xpost_View_Window
     xcb_colormap_t cmap;
 };
 
-const char *xpost_view_device_get(void)
-{
-    return "xcb";
-}
-
 Xpost_View_Window *
 xpost_view_win_new(int xorig, int yorig, int width, int height)
 {
@@ -113,7 +108,7 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
     values[2] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS;
     xcb_create_window(win->c, XCB_COPY_FROM_PARENT,
                       win->window, win->scr->root,
-                      0, 0,
+                      xorig, yorig,
                       width, height,
                       5,
                       XCB_WINDOW_CLASS_INPUT_OUTPUT,
