@@ -115,20 +115,21 @@
 
 #define XPOST_DSC_EOL(iter) ((*iter == '\r') || (*iter == '\n'))
 
-#define XPOST_DSC_EOF(cur) ((cur - ctx->base) == ctx->length)
+/* casting to size_t below is harmless, as cur always > ctx->base */
+#define XPOST_DSC_EOF(cur) ((size_t)(cur - ctx->base) >= ctx->length)
 
 #define XPOST_DSC_CMT(cmt) XPOST_DSC_ ## cmt
 
 #define XPOST_DSC_CMT_LEN(cmt) (sizeof(XPOST_DSC_ ## cmt) - 1)
 
-#define XPOST_DSC_CMT_CHECK(cmt) _xpost_dsc_prefix_cmp(ctx->cur_loc, sz, XPOST_DSC_CMT(cmt))
+#define XPOST_DSC_CMT_CHECK(cmt) _xpost_dsc_prefix_cmp(ctx->cur_loc, XPOST_DSC_CMT(cmt))
 
-#define XPOST_DSC_CMT_CHECK_EXACT(cmt) _xpost_dsc_prefix_cmp_exact(ctx->cur_loc, sz, XPOST_DSC_CMT(cmt))
+#define XPOST_DSC_CMT_CHECK_EXACT(cmt) _xpost_dsc_prefix_cmp_exact(ctx->cur_loc, XPOST_DSC_CMT(cmt))
 
 #define XPOST_DSC_CMT_ARG(vmaj, cmt) \
     ctx->cur_loc + XPOST_DSC_CMT_LEN(cmt) + (XPOST_CMT_IS_SPACE(vmaj, (ctx->cur_loc + XPOST_DSC_CMT_LEN(cmt))) ? 1 : 0)
 
-#define XPOST_DSC_CMT_IS_ATEND(vmaj, cmt) _xpost_dsc_prefix_cmp_exact(XPOST_DSC_CMT_ARG(vmaj, cmt), sz, "(atend)")
+#define XPOST_DSC_CMT_IS_ATEND(vmaj, cmt) _xpost_dsc_prefix_cmp_exact(XPOST_DSC_CMT_ARG(vmaj, cmt), "(atend)")
 
 #define XPOST_DSC_TEXT_GET(vmaj, buf, cmt) \
     do \
@@ -181,7 +182,7 @@ _xpost_dsc_line_get(Xpost_Dsc_Ctx *ctx, const unsigned char **end, ptrdiff_t *sz
     const unsigned char *e2;
 
     e1 = ctx->cur_loc;
-    while (((e1 - ctx->base) < ctx->length) && !XPOST_DSC_EOL(e1))
+    while (!XPOST_DSC_EOF(e1) && !XPOST_DSC_EOL(e1))
         e1++;
     if (XPOST_DSC_EOF(e1))
     {
@@ -191,7 +192,7 @@ _xpost_dsc_line_get(Xpost_Dsc_Ctx *ctx, const unsigned char **end, ptrdiff_t *sz
     }
 
     e2 = e1;
-    while (((e2 - ctx->base) < ctx->length) && XPOST_DSC_EOL(e2))
+    while (!XPOST_DSC_EOF(e2) && XPOST_DSC_EOL(e2))
         e2++;
     if (XPOST_DSC_EOF(e2))
     {
@@ -214,7 +215,7 @@ _xpost_dsc_line_get(Xpost_Dsc_Ctx *ctx, const unsigned char **end, ptrdiff_t *sz
 }
 
 static unsigned char
-_xpost_dsc_prefix_cmp(const unsigned char *iter, ptrdiff_t sz, const char *prefix)
+_xpost_dsc_prefix_cmp(const unsigned char *iter, const char *prefix)
 {
     while (*prefix)
     {
@@ -228,7 +229,7 @@ _xpost_dsc_prefix_cmp(const unsigned char *iter, ptrdiff_t sz, const char *prefi
 }
 
 static unsigned char
-_xpost_dsc_prefix_cmp_exact(const unsigned char *iter, ptrdiff_t sz, const char *prefix)
+_xpost_dsc_prefix_cmp_exact(const unsigned char *iter, const char *prefix)
 {
     while (*prefix)
     {
@@ -248,7 +249,7 @@ _xpost_dsc_integer_get_from_string(const unsigned char *str, int *val)
 {
     char *endptr;
 
-    *val = strtol(str, &endptr, 10);
+    *val = strtol((const char *)str, &endptr, 10);
     if (((errno == ERANGE) &&
          ((*val == LONG_MAX) || (*val == LONG_MIN))) ||
         ((errno != 0) && (*val == 0)))
@@ -269,7 +270,7 @@ _xpost_dsc_integer_get_from_string(const unsigned char *str, int *val)
 static const unsigned char *
 _xpost_dsc_integer_get(const unsigned char *cur_loc, int *val)
 {
-    char buf[20];
+    unsigned char buf[20];
     const unsigned char *iter;
 
     iter = cur_loc;
@@ -399,9 +400,8 @@ _xpost_dsc_header_string_array_get(const unsigned char *cur_loc, int *count)
 }
 
 static Xpost_Dsc_Status
-_xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned char *end, ptrdiff_t sz)
+_xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned char *end)
 {
-    const unsigned char *next;
     unsigned char v_maj;
     unsigned char v_min;
     size_t len;
@@ -486,7 +486,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
     if (!next)
         return XPOST_DSC_STATUS_NO_DSC;
 
-    status = _xpost_dsc_header_version_get(ctx, dsc, end, sz);
+    status = _xpost_dsc_header_version_get(ctx, dsc, end);
     if (status < XPOST_DSC_STATUS_SUCCESS)
         return status;
 
@@ -507,8 +507,6 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
         {
             if ((sz >= 2) && (ctx->cur_loc[0] == '%') && (ctx->cur_loc[1] == '%'))
             {
-                char *txt = NULL;
-
                 if (XPOST_DSC_CMT_CHECK_EXACT(HEADER_END_COMMENTS))
                 {
                     XPOST_LOG_INFO("End of header (EndComments).");
@@ -755,11 +753,11 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                   get_page_order:
                     iter = XPOST_DSC_CMT_ARG(dsc->ps_vmaj, HEADER_PAGE_ORDER);
-                    if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Ascend"))
+                    if (_xpost_dsc_prefix_cmp_exact(iter, "Ascend"))
                         dsc->header.page_order = XPOST_DSC_PAGE_ORDER_ASCEND;
-                    else if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Descend"))
+                    else if (_xpost_dsc_prefix_cmp_exact(iter, "Descend"))
                         dsc->header.page_order = XPOST_DSC_PAGE_ORDER_DESCEND;
-                    else if (_xpost_dsc_prefix_cmp_exact(iter, sz, "Special"))
+                    else if (_xpost_dsc_prefix_cmp_exact(iter, "Special"))
                         dsc->header.page_order = XPOST_DSC_PAGE_ORDER_SPECIAL;
                     else
                     {

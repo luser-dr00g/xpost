@@ -267,7 +267,7 @@ xpost_dsc_file_base_get(const Xpost_Dsc_File *file)
     return (file) ? file->base : NULL;
 }
 
-XPAPI const size_t
+XPAPI size_t
 xpost_dsc_file_length_get(const Xpost_Dsc_File *file)
 {
     return (file) ? file->length : 0;

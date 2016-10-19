@@ -76,7 +76,7 @@ XPAPI Xpost_Dsc_File *xpost_dsc_file_new_from_file(const char *filename);
 
 XPAPI const unsigned char *xpost_dsc_file_base_get(const Xpost_Dsc_File *file);
 
-XPAPI const size_t xpost_dsc_file_length_get(const Xpost_Dsc_File *file);
+XPAPI size_t xpost_dsc_file_length_get(const Xpost_Dsc_File *file);
 
 XPAPI void xpost_dsc_file_del(Xpost_Dsc_File *file);
 
