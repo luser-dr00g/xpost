@@ -137,7 +137,8 @@ src/lib/xpost_dsc_ctx.h
 
 src_lib_libxpost_dsc_la_CPPFLAGS = -DXPOST_BUILD
 
-src_lib_libxpost_dsc_la_CFLAGS =
+src_lib_libxpost_dsc_la_CFLAGS = \
+@XPOST_LIB_CFLAGS@
 
 if ! HAVE_WIN32
 src_lib_libxpost_dsc_la_LIBADD = @XPOST_LIB_LIBS@

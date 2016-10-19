@@ -22,6 +22,9 @@ endif
 src_bin_xpost_view_CPPFLAGS = \
 -I$(top_srcdir)/src/lib
 
+src_bin_xpost_view_CFLAGS = \
+@XPOST_LIB_CFLAGS@
+
 src_bin_xpost_view_LDADD = \
 src/lib/libxpost.la \
 src/lib/libxpost_dsc.la
@@ -32,6 +35,9 @@ src/bin/xpost_dsc.c
 src_bin_xpost_dsc_CPPFLAGS = \
 -I$(top_srcdir)/src/lib
 
+src_bin_xpost_dsc_CFLAGS = \
+@XPOST_LIB_CFLAGS@
+
 src_bin_xpost_dsc_LDADD = \
 src/lib/libxpost_dsc.la
 
@@ -40,6 +46,9 @@ src/bin/xpost_client.c
 
 src_bin_xpost_client_CPPFLAGS = \
 -I$(top_srcdir)/src/lib
+
+src_bin_xpost_client_CFLAGS = \
+@XPOST_LIB_CFLAGS@
 
 src_bin_xpost_client_LDADD = \
 src/lib/libxpost.la
@@ -65,6 +74,9 @@ src_bin_xpost_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 -DPACKAGE_INSTALL_DIR=\"$(prefix)/\" \
 @XPOST_BIN_CFLAGS@
+
+src_bin_xpost_CFLAGS = \
+@XPOST_LIB_CFLAGS@
 
 src_bin_xpost_LDADD = \
 src/lib/libxpost.la \
