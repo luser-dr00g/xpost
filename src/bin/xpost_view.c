@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     if (!file)
         return EXIT_FAILURE;
 
-    status = xpost_dsc_parse_from_file(file, &dsc);
+    status = xpost_dsc_parse(file, &dsc);
 
     /*
      * status:

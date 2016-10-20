@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
         printf("can not create file from filename %s\n", argv[1]);
     }
 
-    res = xpost_dsc_parse_from_file(file, &h);
+    res = xpost_dsc_parse(file, &h);
     printf("result : %s\n", res ? "good" : "error");
     if (!res)
     {

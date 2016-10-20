@@ -873,7 +873,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
 
 XPAPI Xpost_Dsc_Status
-xpost_dsc_parse_from_file(const Xpost_Dsc_File *file, Xpost_Dsc *dsc)
+xpost_dsc_parse(const Xpost_Dsc_File *file, Xpost_Dsc *dsc)
 {
     Xpost_Dsc_Ctx ctx;
     Xpost_Dsc_Status res;

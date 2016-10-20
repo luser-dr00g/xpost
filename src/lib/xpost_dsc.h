@@ -144,8 +144,8 @@ typedef struct
     Xpost_Dsc_Page *pages;
 } Xpost_Dsc;
 
-XPAPI Xpost_Dsc_Status xpost_dsc_parse_from_file(const Xpost_Dsc_File *file,
-                                                 Xpost_Dsc *dsc);
+XPAPI Xpost_Dsc_Status xpost_dsc_parse(const Xpost_Dsc_File *file,
+                                       Xpost_Dsc *dsc);
 
 XPAPI void xpost_dsc_free(Xpost_Dsc *dsc);
 
