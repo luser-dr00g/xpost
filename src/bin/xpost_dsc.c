@@ -47,8 +47,8 @@
     do { \
         int i; \
         printf("%s : ", msg); \
-        for (i = 0; i < h.header.memb.nbr; i++) \
-            printf("%s ", h.header.memb.array[i]); \
+        for (i = 0; i < dsc.header.memb.nbr; i++) \
+            printf("%s ", dsc.header.memb.array[i]); \
         printf("\n"); \
     } while (0)
 
@@ -56,15 +56,15 @@
     do { \
         int i; \
         printf("%s : ", msg); \
-        for (i = 0; i < h.header.memb.nbr; i++) \
-            printf("%d ", h.header.memb.array[i]); \
+        for (i = 0; i < dsc.header.memb.nbr; i++) \
+            printf("%d ", dsc.header.memb.array[i]); \
         printf("\n"); \
     } while (0)
 
 int main(int argc, char *argv[])
 {
     Xpost_Dsc_File *file;
-    Xpost_Dsc h;
+    Xpost_Dsc dsc;
     unsigned char res;
 
     if (argc < 2)
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
         printf("can not create file from filename %s\n", argv[1]);
     }
 
-    res = xpost_dsc_parse(file, &h);
+    res = xpost_dsc_parse(file, &dsc);
     printf("result : %s\n", res ? "good" : "error");
     if (!res)
     {
@@ -88,21 +88,21 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    printf("version : %d.%d\n", h.ps_vmaj, h.ps_vmin);
+    printf("version : %d.%d\n", dsc.ps_vmaj, dsc.ps_vmin);
     PRINT_STR_ARRAY("document fonts", document_fonts);
-    printf("title : %s\n", h.header.title);
-    printf("creator : %s\n", h.header.creator);
-    printf("creation date : %s\n", h.header.creation_date);
-    printf("for whom : %s\n", h.header.for_whom ? h.header.for_whom : "");
-    printf("pages : %d\n", h.header.pages);
+    printf("title : %s\n", dsc.header.title);
+    printf("creator : %s\n", dsc.header.creator);
+    printf("creation date : %s\n", dsc.header.creation_date);
+    printf("for whom : %s\n", dsc.header.for_whom ? dsc.header.for_whom : "");
+    printf("pages : %d\n", dsc.header.pages);
     printf("bounding box : %d %d %d %d\n",
-           h.header.bounding_box.llx,
-           h.header.bounding_box.lly,
-           h.header.bounding_box.urx,
-           h.header.bounding_box.ury);
+           dsc.header.bounding_box.llx,
+           dsc.header.bounding_box.lly,
+           dsc.header.bounding_box.urx,
+           dsc.header.bounding_box.ury);
     PRINT_STR_ARRAY("paper sizes", document_paper_sizes);
     printf("page order : ");
-    switch (h.header.page_order)
+    switch (dsc.header.page_order)
     {
         case XPOST_DSC_PAGE_ORDER_ASCEND:
             printf("Ascend\n");
@@ -117,17 +117,17 @@ int main(int argc, char *argv[])
             printf("Unknown\n");
             break;
     }
-    if (h.pages)
+    if (dsc.pages)
     {
         int i;
 
-        for (i = 0; i < h.header.pages; i++)
+        for (i = 0; i < dsc.header.pages; i++)
         {
             printf("page #%d\n", i + 1);
-            printf("  start: " FMT_PTRDIFF_T "\n", h.pages[i].start);
-            printf("  end: " FMT_PTRDIFF_T "\n", h.pages[i].end);
-            printf("  label: %s\n", h.pages[i].label);
-            printf("  ordinal: %d\n", h.pages[i].ordinal);
+            printf("  start: " FMT_PTRDIFF_T "\n", dsc.pages[i].section.start);
+            printf("  end: " FMT_PTRDIFF_T "\n", dsc.pages[i].section.end);
+            printf("  label: %s\n", dsc.pages[i].label);
+            printf("  ordinal: %d\n", dsc.pages[i].ordinal);
 
 #if 0
             /* Usage */
@@ -135,9 +135,9 @@ int main(int argc, char *argv[])
                 int j;
                 const unsigned char *iter;
 
-                iter = xpost_dsc_file_base_get(&h) + h.pages[i].start;
+                iter = xpost_dsc_file_base_get(&h) + dsc.pages[i].start;
                 printf("-----\n");
-                for (iter; iter < xpost_dsc_file_base_get(&h) + h.pages[i].end; iter++)
+                for (iter; iter < xpost_dsc_file_base_get(&h) + dsc.pages[i].end; iter++)
                 {
                     printf("%c", *iter);
                 }
@@ -148,7 +148,21 @@ int main(int argc, char *argv[])
         }
     }
 
-    xpost_dsc_free(&h);
+    /* display prolog */
+    {
+        ptrdiff_t iter;
+
+        /* iter = dsc.prolog.start; */
+        printf("----- Begin Prolog -----\n");
+        for (iter = dsc.prolog.start; iter < dsc.prolog.end; iter++)
+        {
+            printf("%c", *(xpost_dsc_file_base_get(file) + iter));
+        }
+        printf("\n");
+        printf("----- End Prolog -----\n");
+    }
+
+    xpost_dsc_free(&dsc);
     xpost_dsc_file_del(file);
 
     return 0;
