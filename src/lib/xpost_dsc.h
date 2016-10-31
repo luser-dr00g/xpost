@@ -115,6 +115,11 @@ typedef struct
 {
     ptrdiff_t start; /* relative to base address */
     ptrdiff_t end; /* relative to base address */
+} Xpost_Dsc_Section;
+
+typedef struct
+{
+    Xpost_Dsc_Section section;
     char *label;
     int ordinal; /* -1 means '?' with DSC level 1 */
     Xpost_Dsc_Str_Array *fonts;
@@ -140,6 +145,8 @@ typedef struct
         /* level 3 */
         Xpost_Dsc_Page_Order page_order;
     } header;
+
+    Xpost_Dsc_Section prolog;
 
     Xpost_Dsc_Page *pages;
 } Xpost_Dsc;

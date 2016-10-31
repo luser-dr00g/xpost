@@ -53,6 +53,7 @@
  * a means (atend) is supported
  *
  * header:
+ * %!PS-Adobe-?-?
  * %%DocumentFonts       x  a  1
  * %%Title                     1
  * %%Creator                   1
@@ -82,6 +83,16 @@
  * %%PageOrder                 3
  *
  * %%EndComments               1
+ *
+ * Note: Postscript version are retrieved.
+ *
+ * The header section ends either with %%EndComments or else any line not
+ * beginning with %%
+ *
+ * The prolog section begins either with %%BeginProlog or any non blank line
+ *
+ * %%BeginProlog
+ *
  * %%EndProlog                 1
  *
  * body:
@@ -468,6 +479,10 @@ _xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned
     return XPOST_DSC_STATUS_SUCCESS;
 }
 
+/*
+ * FIXME: %%BeginProlog
+ */
+
 static Xpost_Dsc_Status
 _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 {
@@ -477,6 +492,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
     int page_idx = 0;
     Xpost_Dsc_Status status = XPOST_DSC_STATUS_SUCCESS;
     unsigned char in_header = 0;
+    unsigned char in_prolog = 0;
     unsigned char in_script = 0;
     unsigned char in_trailer = 0;
     unsigned char in_font = 0;
@@ -511,6 +527,8 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                 {
                     XPOST_LOG_INFO("End of header (EndComments).");
                     in_header = 0;
+                    in_prolog = 1;
+                    dsc->prolog.start = next - ctx->base;
                     continue;
                 }
             }
@@ -518,6 +536,8 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
             {
                 XPOST_LOG_INFO("End of header (no 2 %%).");
                 in_header = 0;
+                in_prolog = 1;
+                dsc->prolog.start = ctx->cur_loc - ctx->base;
                 continue;
             }
         }
@@ -527,7 +547,8 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
             XPOST_LOG_INFO("EndProlog.");
             XPOST_DSC_ERROR_TEST(in_header || in_trailer,
                                  "EndProlog comment in header or trailer");
-
+            dsc->prolog.end = ctx->cur_loc - ctx->base;
+            in_prolog = 0;
             in_script = 1;
         }
 
@@ -536,7 +557,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
             XPOST_LOG_INFO("Trailer.");
             XPOST_DSC_ERROR_TEST(!in_script, "Trailer comment not in script");
             if (page_idx > 0)
-                dsc->pages[page_idx - 1].end = ctx->cur_loc - ctx->base;
+                dsc->pages[page_idx - 1].section.end = ctx->cur_loc - ctx->base;
 
             in_trailer = 1;
         }
@@ -838,9 +859,9 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                 if (dsc->pages && (page_idx < dsc->header.pages))
                 {
-                    dsc->pages[page_idx].start = next - ctx->base;
+                    dsc->pages[page_idx].section.start = next - ctx->base;
                     if (page_idx > 0)
-                        dsc->pages[page_idx - 1].end = ctx->cur_loc - ctx->base;
+                        dsc->pages[page_idx - 1].section.end = ctx->cur_loc - ctx->base;
                     dsc->pages[page_idx].label = label;
                     dsc->pages[page_idx].ordinal = ordinal;
                 }
