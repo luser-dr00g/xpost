@@ -11,6 +11,11 @@
 systemdict begin % make these definitions in systemdict
 true setglobal   % systemdict is global, so these allocations must be global
 
+/statusdict <<
+    /manualfeed false
+    /product (Xpost)
+>> def
+
 /strcat {
     2 copy
     length exch length exch 1 index add % a b an bn+an
