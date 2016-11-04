@@ -212,13 +212,6 @@ _xpost_dsc_line_get(Xpost_Dsc_Ctx *ctx, const unsigned char **end, ptrdiff_t *sz
         return NULL;
     }
 
-    if ((e2 - ctx->cur_loc) > 255)
-    {
-        XPOST_LOG_ERR("Line too long");
-        ctx->line_too_long = 1;
-        return NULL;
-    }
-
     *end = e1;
     *sz = e1 - ctx->cur_loc;
 
@@ -279,7 +272,7 @@ _xpost_dsc_integer_get_from_string(const unsigned char *str, int *val)
 }
 
 static const unsigned char *
-_xpost_dsc_integer_get(const unsigned char *cur_loc, int *val)
+_xpost_dsc_integer_get(int vmaj, const unsigned char *cur_loc, int *val)
 {
     unsigned char buf[20];
     const unsigned char *iter;
@@ -287,7 +280,7 @@ _xpost_dsc_integer_get(const unsigned char *cur_loc, int *val)
     iter = cur_loc;
     while ((*iter >= '0') && (*iter <= '9'))
         iter++;
-    if ((*iter != ' ') && !XPOST_DSC_EOL(iter))
+    if ((!XPOST_CMT_IS_SPACE(vmaj, iter)) && (!XPOST_DSC_EOL(iter)))
         return NULL;
 
     memcpy(buf, cur_loc, iter - cur_loc);
@@ -300,64 +293,81 @@ _xpost_dsc_integer_get(const unsigned char *cur_loc, int *val)
 }
 
 static unsigned char
-_xpost_dsc_header_bounding_box_get(const unsigned char *iter,
+_xpost_dsc_header_bounding_box_get(int vmaj,
+                                   const unsigned char *iter,
                                    Xpost_Dsc_Bounding_Box *bb)
 {
     int val;
+    int llx;
+    int lly;
+    int urx;
+    int ury;
+
+    llx = 0.0;
+    lly = 0.0;
+    urx = 0.0;
+    ury = 0.0;
 
     bb->llx = 0.0;
     bb->lly = 0.0;
     bb->urx = 0.0;
     bb->ury = 0.0;
-    iter = _xpost_dsc_integer_get(iter, &val);
+    iter = _xpost_dsc_integer_get(vmaj, iter, &val);
     if (iter)
     {
-        bb->llx = val;
-        if (*iter == ' ') iter++;
+        llx = val;
+        if (XPOST_CMT_IS_SPACE(vmaj, iter)) iter++;
         else
         {
-            printf("error\n");
+            XPOST_LOG_ERR("Boundingbox ill-form");
             return 0;
         }
-        iter = _xpost_dsc_integer_get(iter, &val);
+        iter = _xpost_dsc_integer_get(vmaj, iter, &val);
         if (iter)
         {
-            bb->lly = val;
-            if (*iter == ' ') iter++;
+            lly = val;
+            if (XPOST_CMT_IS_SPACE(vmaj, iter)) iter++;
             else
             {
-                printf("error\n");
+                XPOST_LOG_ERR("Boundingbox ill-form");
                 return 0;
             }
-            iter = _xpost_dsc_integer_get(iter, &val);
-            if (iter)
+        }
+        iter = _xpost_dsc_integer_get(vmaj, iter, &val);
+        if (iter)
+        {
+            urx = val;
+            if (XPOST_CMT_IS_SPACE(vmaj, iter)) iter++;
+            else
             {
-                bb->urx = val;
-                if (*iter == ' ') iter++;
-                else
-                {
-                    printf("error\n");
-                    return 0;
-                }
-                iter = _xpost_dsc_integer_get(iter, &val);
-                if (iter)
-                {
-                    bb->ury = val;
-                    if (!XPOST_DSC_EOL(iter))
-                    {
-                        printf("error\n");
-                        return 0;
-                    }
-                }
+                XPOST_LOG_ERR("Boundingbox ill-form");
+                return 0;
+            }
+        }
+        iter = _xpost_dsc_integer_get(vmaj, iter, &val);
+        if (iter)
+        {
+            ury = val;
+            if (!XPOST_DSC_EOL(iter))
+            {
+                XPOST_LOG_ERR("Boundingbox ill-form");
+                return 0;
             }
         }
     }
+
+    bb->llx = llx;
+    bb->lly = lly;
+    bb->urx = urx;
+    bb->ury = ury;
 
     return 1;
 }
 
 static char **
-_xpost_dsc_header_string_array_get(const unsigned char *cur_loc, int *count)
+_xpost_dsc_header_string_array_get(int vmaj,
+                                   const unsigned char *cur_loc,
+                                   int *count)
 {
     const unsigned char *iter;
     char **array;
@@ -367,7 +377,7 @@ _xpost_dsc_header_string_array_get(const unsigned char *cur_loc, int *count)
     iter = cur_loc;
     while (!XPOST_DSC_EOL(iter))
     {
-        if (*iter == ' ')
+        if (XPOST_CMT_IS_SPACE(vmaj, iter))
             nbr++;
         iter++;
     }
@@ -386,7 +396,7 @@ _xpost_dsc_header_string_array_get(const unsigned char *cur_loc, int *count)
     iter = cur_loc;
     while (!XPOST_DSC_EOL(iter))
     {
-        if (*iter == ' ')
+        if (XPOST_CMT_IS_SPACE(vmaj, iter))
         {
             array[nbr] = (char *)malloc((iter - cur_loc + 1) * sizeof(char));
             if (array[nbr])
@@ -506,6 +516,9 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
     if (status < XPOST_DSC_STATUS_SUCCESS)
         return status;
 
+    if ((dsc->ps_vmaj > 1) && (sz > 255))
+        XPOST_LOG_WARN("Line too long");
+
     ctx->cur_loc = next;
     in_header = 1;
 
@@ -515,9 +528,12 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
         if (!next)
         {
             XPOST_LOG_INFO("Can not get line: %s.",
-                           ctx->eof ? " EOF" : ctx->line_too_long ? "too long" : "");
+                           " EOF");
             break;
         }
+
+        if ((dsc->ps_vmaj > 1) && (sz > 255))
+            XPOST_LOG_WARN("Line too long");
 
         if (in_header)
         {
@@ -633,10 +649,10 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                   get_pages:
                     iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_PAGES);
-                    if (*iter == ' ')
+                    if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
                         iter++;
 
-                    if (_xpost_dsc_integer_get(iter, &val))
+                    if (_xpost_dsc_integer_get(dsc->ps_vmaj, iter, &val))
                     {
                         dsc->header.pages = val;
                         dsc->pages = (Xpost_Dsc_Page *)calloc(val, sizeof(Xpost_Dsc_Page));
@@ -671,12 +687,14 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                   get_bounding_box:
                     iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_BOUNDING_BOX);
-                    if (*iter == ' ')
+                    if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
                         iter++;
 
-                    if (_xpost_dsc_header_bounding_box_get(iter, &bb))
+                    if (_xpost_dsc_header_bounding_box_get(dsc->ps_vmaj, iter, &bb))
+                    {
                         dsc->header.bounding_box = bb;
-                    ctx->HEADER_BOUNDING_BOX = 1;
+                        ctx->HEADER_BOUNDING_BOX = 1;
+                    }
                 }
             }
             else if (XPOST_DSC_CMT_CHECK(HEADER_DOCUMENT_FONTS))
@@ -707,13 +725,16 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                   get_document_fonts:
                     iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_FONTS);
-                    if (*iter == ' ')
+                    if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
                         iter++;
 
-                    array = _xpost_dsc_header_string_array_get(iter, &nbr);
-                    dsc->header.document_fonts.array = array;
-                    dsc->header.document_fonts.nbr = nbr;
-                    ctx->HEADER_DOCUMENT_FONTS = 1;
+                    array = _xpost_dsc_header_string_array_get(dsc->ps_vmaj, iter, &nbr);
+                    if (array)
+                    {
+                        dsc->header.document_fonts.array = array;
+                        dsc->header.document_fonts.nbr = nbr;
+                        ctx->HEADER_DOCUMENT_FONTS = 1;
+                    }
                 }
             }
             /* Level 2 */
@@ -732,13 +753,16 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                 if (!ctx->HEADER_DOCUMENT_PAPER_SIZES)
                 {
                     iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_PAPER_SIZES);
-                    if (*iter == ' ')
+                    if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
                         iter++;
 
-                    array = _xpost_dsc_header_string_array_get(iter, &nbr);
-                    dsc->header.document_paper_sizes.array = array;
-                    dsc->header.document_paper_sizes.nbr = nbr;
-                    ctx->HEADER_DOCUMENT_PAPER_SIZES = 1;
+                    array = _xpost_dsc_header_string_array_get(dsc->ps_vmaj, iter, &nbr);
+                    if (array)
+                    {
+                        dsc->header.document_paper_sizes.array = array;
+                        dsc->header.document_paper_sizes.nbr = nbr;
+                        ctx->HEADER_DOCUMENT_PAPER_SIZES = 1;
+                    }
                 }
             }
             /* Level 3 */
@@ -802,13 +826,13 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                 XPOST_DSC_ERROR_TEST(!in_script, "Page comment not in script");
                 iter = XPOST_DSC_CMT_ARG(dsc->ps_vmaj, BODY_PAGE);
-                if (*iter == ' ')
+                if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
                     iter++;
 
                 iter_next = iter;
                 while (!XPOST_DSC_EOL(iter_next))
                 {
-                    if (*iter_next == ' ')
+                    if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter_next))
                         break;
                     iter_next++;
                 }
@@ -823,7 +847,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                 iter = ++iter_next;
                 while (!XPOST_DSC_EOL(iter_next))
                 {
-                    if (*iter_next == ' ')
+                    if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter_next))
                         break;
                     iter_next++;
                 }
