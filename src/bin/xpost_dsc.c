@@ -149,18 +149,18 @@ int main(int argc, char *argv[])
     }
 
     /* display prolog */
-    {
-        ptrdiff_t iter;
+    /* { */
+    /*     ptrdiff_t iter; */
 
-        /* iter = dsc.prolog.start; */
-        printf("----- Begin Prolog -----\n");
-        for (iter = dsc.prolog.start; iter < dsc.prolog.end; iter++)
-        {
-            printf("%c", *(xpost_dsc_file_base_get(file) + iter));
-        }
-        printf("\n");
-        printf("----- End Prolog -----\n");
-    }
+    /*     /\* iter = dsc.prolog.start; *\/ */
+    /*     printf("----- Begin Prolog -----\n"); */
+    /*     for (iter = dsc.prolog.start; iter < dsc.prolog.end; iter++) */
+    /*     { */
+    /*         printf("%c", *(xpost_dsc_file_base_get(file) + iter)); */
+    /*     } */
+    /*     printf("\n"); */
+    /*     printf("----- End Prolog -----\n"); */
+    /* } */
 
     xpost_dsc_free(&dsc);
     xpost_dsc_file_del(file);
