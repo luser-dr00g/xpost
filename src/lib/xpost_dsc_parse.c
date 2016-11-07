@@ -420,14 +420,39 @@ _xpost_dsc_header_string_array_get(int vmaj,
     return array;
 }
 
-static Xpost_Dsc_Status
-_xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned char *end)
+static unsigned char
+_xpost_dsc_version_get(const unsigned char *iter, unsigned char *vmaj, unsigned char *vmin)
 {
     unsigned char v_maj;
     unsigned char v_min;
-    size_t len;
 
-    if ((end - ctx->cur_loc) < 14)
+    v_maj = *iter;
+    if ((v_maj < '0') || (v_maj > '9'))
+        return 0;
+
+    iter++;
+    if (*iter != '.')
+        return 0;
+
+    iter++;
+    v_min = *iter;
+    if ((v_min < '0') || (v_min > '9'))
+        return 0;
+
+    *vmaj = v_maj - '0';
+    *vmin = v_min - '0';
+
+    return 1;
+}
+
+static Xpost_Dsc_Status
+_xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned char *end)
+{
+    const unsigned char *iter;
+
+    iter = ctx->cur_loc;
+
+    if ((end - iter) < 14)
     {
         XPOST_LOG_WARN("First comment erronoeus, size insufficient.");
         return XPOST_DSC_STATUS_NO_DSC;
@@ -439,29 +464,14 @@ _xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned
         return XPOST_DSC_STATUS_NO_DSC;
     }
 
-    len = XPOST_DSC_CMT_LEN(HEADER_VERSION);
-    v_maj = *(ctx->cur_loc + len);
-    if ((v_maj < '0') || (v_maj > '9'))
+    iter += XPOST_DSC_CMT_LEN(HEADER_VERSION);
+    if (!_xpost_dsc_version_get(iter, &dsc->ps_vmaj, &dsc->ps_vmin))
     {
-        XPOST_LOG_WARN("First comment erronoeus (invalid vmaj) %c.", *(ctx->cur_loc + len));
+        XPOST_LOG_WARN("First comment erronoeus (invalid version number).");
         return XPOST_DSC_STATUS_NO_DSC;
     }
 
-    if (*(ctx->cur_loc + len + 1) != '.')
-    {
-        XPOST_LOG_WARN("First comment erronoeus (invalid version) %c.", *(ctx->cur_loc + len + 1));
-        return XPOST_DSC_STATUS_NO_DSC;
-    }
-
-    v_min = *(ctx->cur_loc + len + 2);
-    if ((v_min < '0') || (v_min > '9'))
-    {
-        XPOST_LOG_WARN("First comment erronoeus (invalid vmin) %c.", *(ctx->cur_loc + len + 2));
-        return XPOST_DSC_STATUS_NO_DSC;
-    }
-
-    dsc->ps_vmaj = v_maj - '0';
-    dsc->ps_vmin = v_min - '0';
+    iter += 3;
 
     if ((dsc->ps_vmaj == 0) || (dsc->ps_vmaj > 3))
     {
@@ -484,7 +494,62 @@ _xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned
 
     }
 
-    /* FIXME: do the options after the version of maj >= 2 */
+    /* if char is EOL, we exit */
+    if (XPOST_DSC_EOL(iter))
+        return XPOST_DSC_STATUS_SUCCESS;
+
+    /* otherwise, it must be a space */
+    if (!XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
+        return XPOST_DSC_STATUS_NO_DSC;
+
+    iter++;
+    if (dsc->ps_vmaj >= 2)
+    {
+        if (_xpost_dsc_prefix_cmp_exact(iter, "Query"))
+            dsc->job = XPOST_DSC_JOB_QUERY;
+        else if (_xpost_dsc_prefix_cmp_exact(iter, "ExitServer"))
+            dsc->job = XPOST_DSC_JOB_EXIT_SERVER;
+        else if (_xpost_dsc_prefix_cmp(iter, "EPSF-"))
+        {
+            iter += 5;
+            if (!_xpost_dsc_version_get(iter, &dsc->eps_vmaj, &dsc->eps_vmin))
+            {
+                XPOST_LOG_WARN("First comment erronoeus (invalid EPS version number).");
+                return XPOST_DSC_STATUS_NO_DSC;
+            }
+            if (((dsc->eps_vmaj == 1) && (dsc->eps_vmin == 2)) ||
+                ((dsc->eps_vmaj == 2) && (dsc->eps_vmin == 0)) ||
+                ((dsc->eps_vmaj == 3) && (dsc->eps_vmin == 0)))
+                dsc->job = XPOST_DSC_JOB_EPS;
+            else
+            {
+                XPOST_LOG_WARN("First comment erronoeus (invalid EPS version number).");
+                return XPOST_DSC_STATUS_NO_DSC;
+            }
+        }
+        else if ((dsc->ps_vmaj >= 3) && (_xpost_dsc_prefix_cmp(iter, "Resource-")))
+        {
+            iter += 9;
+            if (_xpost_dsc_prefix_cmp_exact(iter, "Encoding"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_ENCODING;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "File"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_FILE;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "Font"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_FONT;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "Form"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_FORM;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "Pattern"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_PATTERN;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "ProcSet"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_PROCSET;
+            else
+                return XPOST_DSC_STATUS_NO_DSC;
+        }
+        else
+        {
+            return XPOST_DSC_STATUS_NO_DSC;
+        }
+    }
 
     return XPOST_DSC_STATUS_SUCCESS;
 }

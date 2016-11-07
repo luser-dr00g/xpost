@@ -86,8 +86,22 @@ typedef enum
 {
     XPOST_DSC_STATUS_ERROR,
     XPOST_DSC_STATUS_NO_DSC,
-    XPOST_DSC_STATUS_SUCCESS,
+    XPOST_DSC_STATUS_SUCCESS
 } Xpost_Dsc_Status;
+
+typedef enum
+{
+    XPOST_DSC_JOB_NONE,
+    XPOST_DSC_JOB_EPS,
+    XPOST_DSC_JOB_QUERY,
+    XPOST_DSC_JOB_EXIT_SERVER,
+    XPOST_DSC_JOB_RESOURCE_ENCODING,
+    XPOST_DSC_JOB_RESOURCE_FILE,
+    XPOST_DSC_JOB_RESOURCE_FONT,
+    XPOST_DSC_JOB_RESOURCE_FORM,
+    XPOST_DSC_JOB_RESOURCE_PATTERN,
+    XPOST_DSC_JOB_RESOURCE_PROCSET
+} Xpost_Dsc_Job;
 
 typedef enum
 {
@@ -129,6 +143,9 @@ typedef struct
 {
     unsigned char ps_vmaj;
     unsigned char ps_vmin;
+    Xpost_Dsc_Job job;
+    unsigned char eps_vmaj;
+    unsigned char eps_vmin;
 
     struct
     {

@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
     Xpost_Dsc_File *file;
     Xpost_Dsc dsc;
-    unsigned char res;
+    Xpost_Dsc_Status res;
 
     if (argc < 2)
     {
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     }
 
     res = xpost_dsc_parse(file, &dsc);
-    printf("result : %s\n", res ? "good" : "error");
+    printf("result : %s\n", (res == XPOST_DSC_STATUS_SUCCESS)? "good" : "error");
     if (!res)
     {
         printf("exiting because of errors...");
@@ -88,7 +88,40 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    printf("version : %d.%d\n", dsc.ps_vmaj, dsc.ps_vmin);
+    printf("version : %d.%d", dsc.ps_vmaj, dsc.ps_vmin);
+    switch (dsc.job)
+    {
+        case XPOST_DSC_JOB_EPS:
+            printf(" EPS %d.%d\n", dsc.eps_vmaj, dsc.eps_vmin);
+            break;
+        case XPOST_DSC_JOB_QUERY:
+            printf(" Query\n");
+            break;
+        case XPOST_DSC_JOB_EXIT_SERVER:
+            printf(" ExitServer\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_ENCODING:
+            printf(" Resource (encoding)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_FILE:
+            printf(" Resource (file)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_FONT:
+            printf(" Resource (font)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_FORM:
+            printf(" Resource (form)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_PATTERN:
+            printf(" Resource (pattern)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_PROCSET:
+            printf(" Resource (procset)\n");
+            break;
+        default:
+            printf("\n");
+            break;
+    }
     PRINT_STR_ARRAY("document fonts", document_fonts);
     printf("title : %s\n", dsc.header.title);
     printf("creator : %s\n", dsc.header.creator);
