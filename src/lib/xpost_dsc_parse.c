@@ -365,6 +365,24 @@ _xpost_dsc_header_bounding_box_get(int vmaj,
 }
 
 static char **
+_xpost_dsc_string_array_append(char **array1, int count1, char **array2, int count2)
+{
+    char **array;
+    int i;
+
+    array = (char **)realloc(array1, (count1 + count2) * sizeof(char *));
+    if (!array)
+        return NULL;
+
+    for (i = 0; i < count2; i++)
+    {
+        array[i + count1] = strdup(array2[i]);
+    }
+
+    return array;
+}
+
+static char **
 _xpost_dsc_header_string_array_get(int vmaj,
                                    const unsigned char *cur_loc,
                                    int *count)
@@ -592,8 +610,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
         next = _xpost_dsc_line_get(ctx, &end, &sz);
         if (!next)
         {
-            XPOST_LOG_INFO("Can not get line: %s.",
-                           " EOF");
+            XPOST_LOG_INFO("Can not get line: EOF.");
             break;
         }
 
@@ -799,6 +816,25 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                         dsc->header.document_fonts.array = array;
                         dsc->header.document_fonts.nbr = nbr;
                         ctx->HEADER_DOCUMENT_FONTS = 1;
+                    }
+
+                    while (((*next) && (*next == '%')) &&
+                           (*(next + 1) && (*(next + 1) == '%')) &&
+                           (*(next + 2) && (*(next + 2) == '+')) &&
+                           (*(next + 3) && (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, next + 3))))
+                    {
+                        array = _xpost_dsc_header_string_array_get(dsc->ps_vmaj, next + 4, &nbr);
+                        if (array)
+                        {
+                            dsc->header.document_fonts.array = _xpost_dsc_string_array_append(dsc->header.document_fonts.array, dsc->header.document_fonts.nbr, array, nbr);
+                            dsc->header.document_fonts.nbr += nbr;
+                            for (; nbr >0; nbr--)
+                                free(array[nbr - 1]);
+                            free(array);
+                        }
+
+                        ctx->cur_loc = next;
+                        next = _xpost_dsc_line_get(ctx, &end, &sz);
                     }
                 }
             }
@@ -1009,8 +1045,6 @@ xpost_dsc_parse(const Xpost_Dsc_File *file, Xpost_Dsc *dsc)
 XPAPI void
 xpost_dsc_free(Xpost_Dsc *dsc)
 {
-    int i;
-
     if (dsc->header.title)
         free(dsc->header.title);
     if (dsc->header.creator)
@@ -1020,19 +1054,16 @@ xpost_dsc_free(Xpost_Dsc *dsc)
     if (dsc->header.for_whom)
         free(dsc->header.for_whom);
 
-    for (i = 0; i < dsc->header.document_fonts.nbr; i++)
-        free(dsc->header.document_fonts.array[i]);
+    for (; dsc->header.document_fonts.nbr > 0; dsc->header.document_fonts.nbr--)
+        free(dsc->header.document_fonts.array[dsc->header.document_fonts.nbr - 1]);
     free(dsc->header.document_fonts.array);
 
-    for (i = 0; i < dsc->header.document_paper_sizes.nbr; i++)
-        free(dsc->header.document_paper_sizes.array[i]);
+    for (; dsc->header.document_paper_sizes.nbr > 0; dsc->header.document_paper_sizes.nbr--)
+        free(dsc->header.document_paper_sizes.array[dsc->header.document_paper_sizes.nbr - 1]);
     free(dsc->header.document_paper_sizes.array);
 
-    for (i = 0; i < dsc->header.pages; i++)
-    {
-        if (dsc->pages[i].label)
-            free(dsc->pages[i].label);
-    }
+    for (; dsc->header.pages > 0; dsc->header.pages--)
+        free(dsc->pages[dsc->header.pages - 1].label);
 
     if (dsc->pages)
         free(dsc->pages);
