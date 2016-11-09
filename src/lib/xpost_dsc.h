@@ -159,6 +159,8 @@ typedef struct
         Xpost_Dsc_Bounding_Box bounding_box;
         /* level 2 */
         Xpost_Dsc_Str_Array document_paper_sizes;
+        Xpost_Dsc_Str_Array document_needed_fonts;
+        Xpost_Dsc_Str_Array document_supplied_fonts;
         /* level 3 */
         Xpost_Dsc_Page_Order page_order;
     } header;
