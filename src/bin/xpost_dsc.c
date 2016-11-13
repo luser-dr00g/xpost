@@ -150,6 +150,19 @@ int main(int argc, char *argv[])
             printf("Unknown\n");
             break;
     }
+    if (dsc.fonts)
+    {
+        int i;
+
+        for (i = 0; i < dsc.header.document_fonts.nbr; i++)
+        {
+            printf("font #%d\n", i + 1);
+            printf("  start: " FMT_PTRDIFF_T "\n", dsc.fonts[i].section.start);
+            printf("  end: " FMT_PTRDIFF_T "\n", dsc.fonts[i].section.end);
+            printf("  fontname: %s\n", dsc.fonts[i].fontname);
+            printf("  printername: %s\n", dsc.fonts[i].printername ? dsc.fonts[i].printername : "");
+        }
+    }
     if (dsc.pages)
     {
         int i;
@@ -193,6 +206,20 @@ int main(int argc, char *argv[])
     /*     } */
     /*     printf("\n"); */
     /*     printf("----- End Prolog -----\n"); */
+    /* } */
+
+    /* display font */
+    /* { */
+    /*     ptrdiff_t iter; */
+
+    /*     /\* iter = dsc.prolog.start; *\/ */
+    /*     printf("----- Begin Font 0 -----\n"); */
+    /*     for (iter = dsc.fonts[0].section.start; iter < dsc.fonts[0].section.end; iter++) */
+    /*     { */
+    /*         printf("%c", *(xpost_dsc_file_base_get(file) + iter)); */
+    /*     } */
+    /*     printf("\n"); */
+    /*     printf("----- End Font 0 -----\n"); */
     /* } */
 
     xpost_dsc_free(&dsc);

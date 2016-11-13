@@ -134,6 +134,13 @@ typedef struct
 typedef struct
 {
     Xpost_Dsc_Section section;
+    char *fontname;
+    char *printername;
+} Xpost_Dsc_Font;
+
+typedef struct
+{
+    Xpost_Dsc_Section section;
     char *label;
     int ordinal; /* -1 means '?' with DSC level 1 */
     Xpost_Dsc_Str_Array *fonts;
@@ -167,6 +174,7 @@ typedef struct
 
     Xpost_Dsc_Section prolog;
 
+    Xpost_Dsc_Font *fonts;
     Xpost_Dsc_Page *pages;
 } Xpost_Dsc;
 

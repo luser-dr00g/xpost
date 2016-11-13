@@ -97,6 +97,8 @@
  *
  * body:
  * %%EndProlog           x     1
+ * %%BeginFont                 2
+ * %%EndFont                   2
  * %%Page                x     1
  * %%PageFonts
  * %%Trailer             x     1
@@ -208,7 +210,10 @@
 
 #define XPOST_DSC_HEADER_END_COMMENTS "%%EndComments"
 
-#define XPOST_DSC_BODY_END_PROLOG "%%EndProlog"
+#define XPOST_DSC_BEGIN_PROLOG "%%BeginProlog"
+#define XPOST_DSC_END_PROLOG "%%EndProlog"
+#define XPOST_DSC_BODY_BEGIN_FONT "%%BeginFont:"
+#define XPOST_DSC_BODY_END_FONT "%%EndFont"
 #define XPOST_DSC_BODY_PAGE "%%Page:"
 #define XPOST_DSC_BODY_PAGE_FONTS "%%PageFonts:"
 #define XPOST_DSC_TRAILER "%%Trailer"
@@ -599,16 +604,13 @@ _xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned
     return XPOST_DSC_STATUS_SUCCESS;
 }
 
-/*
- * FIXME: %%BeginProlog
- */
-
 static Xpost_Dsc_Status
 _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 {
     const unsigned char *next;
     const unsigned char *end;
     ptrdiff_t sz;
+    int font_idx = 0;
     int page_idx = 0;
     Xpost_Dsc_Status status = XPOST_DSC_STATUS_SUCCESS;
     unsigned char in_header = 0;
@@ -669,7 +671,19 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
             }
         }
 
-        if (XPOST_DSC_CMT_CHECK_EXACT(BODY_END_PROLOG))
+        if (XPOST_DSC_CMT_CHECK_EXACT(BEGIN_PROLOG))
+        {
+            XPOST_LOG_INFO("BeginProlog.");
+            XPOST_DSC_ERROR_TEST(!(in_header || in_prolog),
+                                 "BeginProlog comment not in header nor in trailer");
+            in_header = 0;
+            in_prolog = 1;
+            dsc->prolog.start = ctx->cur_loc - ctx->base;
+            ctx->cur_loc = next;
+            continue;
+        }
+
+        if (XPOST_DSC_CMT_CHECK_EXACT(END_PROLOG))
         {
             XPOST_LOG_INFO("EndProlog.");
             XPOST_DSC_ERROR_TEST(in_header || in_trailer,
@@ -848,6 +862,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                     }
 
                     XPOST_CMT_LINE_CONTINUED_GET(header.document_fonts);
+                    dsc->fonts = (Xpost_Dsc_Font *)calloc(nbr, sizeof(Xpost_Dsc_Font));
                 }
             }
             /* Level 2 */
@@ -987,6 +1002,102 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
             }
         } /* end of management of header comments */
 
+        /* body comments */
+        {
+            if (XPOST_DSC_CMT_CHECK(BODY_BEGIN_FONT))
+            {
+                const unsigned char *iter;
+                const unsigned char *iter_next;
+
+                XPOST_DSC_ERROR_TEST(in_header, "BeginFont comment in header");
+                if (in_font == 1)
+                {
+                    XPOST_LOG_ERR("%%BeginFont inside a %%BeginFont");
+                    status = XPOST_DSC_STATUS_ERROR;
+                    break;
+                }
+                if (font_idx >= dsc->header.document_fonts.nbr)
+                {
+                    XPOST_LOG_ERR("Too many fonts");
+                    status = XPOST_DSC_STATUS_ERROR;
+                    break;
+                }
+                iter = XPOST_DSC_CMT_ARG(dsc->ps_vmaj, BODY_BEGIN_FONT);
+                if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
+                    iter++;
+
+                if (dsc->fonts && (font_idx < dsc->header.document_fonts.nbr))
+                {
+                    char *fontname = NULL;
+                    char *printername = NULL;
+
+                    /* get fontname */
+                    iter_next = iter;
+                    while (!XPOST_DSC_EOL(iter_next))
+                    {
+                        if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter_next))
+                            break;
+                        iter_next++;
+                    }
+
+                    fontname = (char *)malloc(iter_next - iter + 1);
+                    if (fontname)
+                    {
+                        memcpy(fontname, iter, iter_next - iter);
+                        fontname[iter_next - iter]= '\0';
+                    }
+
+                    /* check if we have printername */
+                    if (!XPOST_DSC_EOL(iter_next))
+                    {
+                        iter = ++iter_next;
+                        while (!XPOST_DSC_EOL(iter_next))
+                        {
+                            if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter_next))
+                                break;
+                            iter_next++;
+                        }
+                        printername = (char *)malloc(iter_next - iter + 1);
+                        if (printername)
+                        {
+                            memcpy(printername, iter, iter_next - iter);
+                            printername[iter_next - iter]= '\0';
+                        }
+                    }
+
+                    if (!XPOST_DSC_EOL(iter_next))
+                    {
+                        XPOST_LOG_ERR("EOL not reached in %%BeginFont comment");
+                        status = XPOST_DSC_STATUS_ERROR;
+                        free(printername);
+                        free(fontname);
+                        break;
+                    }
+
+                    dsc->fonts[font_idx].section.start = next - ctx->base;
+                    dsc->fonts[font_idx].fontname = fontname;
+                    dsc->fonts[font_idx].printername = printername;
+                }
+
+                in_font = 1;
+            }
+            else if (XPOST_DSC_CMT_CHECK(BODY_END_FONT))
+            {
+                XPOST_DSC_ERROR_TEST(in_header, "EndFont comment in header");
+                if (in_font == 0)
+                {
+                    XPOST_LOG_ERR("%%EndFont without a %%BeginFont");
+                    status = XPOST_DSC_STATUS_ERROR;
+                    break;
+                }
+
+                dsc->fonts[page_idx].section.end = ctx->cur_loc - ctx->base;
+
+                in_font = 0;
+                font_idx++;
+            }
+        }
+
         /* script comments */
         {
             if (XPOST_DSC_CMT_CHECK(BODY_PAGE))
@@ -1027,7 +1138,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                 if (!XPOST_DSC_EOL(iter_next))
                 {
-                    XPOST_LOG_ERR("EOL not reached in %%PAGE comment");
+                    XPOST_LOG_ERR("EOL not reached in %%Page comment");
                     status = XPOST_DSC_STATUS_ERROR;
                     break;
                 }
@@ -1117,6 +1228,8 @@ xpost_dsc_parse(const Xpost_Dsc_File *file, Xpost_Dsc *dsc)
 XPAPI void
 xpost_dsc_free(Xpost_Dsc *dsc)
 {
+    int i;
+
     free(dsc->header.title);
     free(dsc->header.creator);
     free(dsc->header.creation_date);
@@ -1129,6 +1242,13 @@ xpost_dsc_free(Xpost_Dsc *dsc)
     for (; dsc->header.document_needed_fonts.nbr > 0; dsc->header.document_needed_fonts.nbr--)
         free(dsc->header.document_needed_fonts.array[dsc->header.document_needed_fonts.nbr - 1]);
     free(dsc->header.document_needed_fonts.array);
+
+    for (i = 0; i < dsc->header.document_fonts.nbr; i++)
+    {
+        free(dsc->fonts[i].fontname);
+        free(dsc->fonts[i].printername);
+    }
+    free(dsc->fonts);
 
     for (; dsc->header.document_fonts.nbr > 0; dsc->header.document_fonts.nbr--)
         free(dsc->header.document_fonts.array[dsc->header.document_fonts.nbr - 1]);
