@@ -97,6 +97,8 @@
  *
  * body:
  * %%EndProlog           x     1
+ * %%BeginFont                 2
+ * %%EndFont                   2
  * %%Page                x     1
  * %%PageFonts
  * %%Trailer             x     1
@@ -110,6 +112,31 @@
 
 #define XPOST_CMT_IS_SPACE(vmaj, iter) \
     (*(iter) == ' ') || (((vmaj) > 1) && (*(iter) == '\t'))
+
+#define XPOST_CMT_LINE_IS_CONTINUED(iter) \
+    ((*((iter) + 0) && (*((iter) + 0) == '%')) && \
+     (*((iter) + 1) && (*((iter) + 1) == '%')) && \
+     (*((iter) + 2) && (*((iter) + 2) == '+')) && \
+     (*((iter) + 3) && (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, (iter) + 3))))
+
+#define XPOST_CMT_LINE_CONTINUED_GET(Array_) \
+    do \
+    { \
+        while (XPOST_CMT_LINE_IS_CONTINUED(next)) \
+        { \
+            array = _xpost_dsc_header_string_array_get(dsc->ps_vmaj, next + 4, &nbr); \
+            if (array) \
+            { \
+                dsc->Array_.array = _xpost_dsc_string_array_append(dsc->Array_.array, dsc->Array_.nbr, array, nbr); \
+                dsc->Array_.nbr += nbr; \
+                for (; nbr >0; nbr--) \
+                    free(array[nbr - 1]); \
+                            free(array); \
+            } \
+            ctx->cur_loc = next; \
+            next = _xpost_dsc_line_get(ctx, &end, &sz); \
+        } \
+    } while (0)
 
 #define XPOST_DSC_ERROR_TEST(test, msg) \
     do \
@@ -175,13 +202,18 @@
 
 /* level 2 */
 #define XPOST_DSC_HEADER_DOCUMENT_PAPER_SIZES "%%DocumentPaperSizes:"
+#define XPOST_DSC_HEADER_DOCUMENT_NEEDED_FONTS "%%DocumentNeededFonts:"
+#define XPOST_DSC_HEADER_DOCUMENT_SUPPLIED_FONTS "%%DocumentNeededFonts:"
 
 /* level 3 */
 #define XPOST_DSC_HEADER_PAGE_ORDER "%%PageOrder:"
 
 #define XPOST_DSC_HEADER_END_COMMENTS "%%EndComments"
 
-#define XPOST_DSC_BODY_END_PROLOG "%%EndProlog"
+#define XPOST_DSC_BEGIN_PROLOG "%%BeginProlog"
+#define XPOST_DSC_END_PROLOG "%%EndProlog"
+#define XPOST_DSC_BODY_BEGIN_FONT "%%BeginFont:"
+#define XPOST_DSC_BODY_END_FONT "%%EndFont"
 #define XPOST_DSC_BODY_PAGE "%%Page:"
 #define XPOST_DSC_BODY_PAGE_FONTS "%%PageFonts:"
 #define XPOST_DSC_TRAILER "%%Trailer"
@@ -365,6 +397,24 @@ _xpost_dsc_header_bounding_box_get(int vmaj,
 }
 
 static char **
+_xpost_dsc_string_array_append(char **array1, int count1, char **array2, int count2)
+{
+    char **array;
+    int i;
+
+    array = (char **)realloc(array1, (count1 + count2) * sizeof(char *));
+    if (!array)
+        return NULL;
+
+    for (i = 0; i < count2; i++)
+    {
+        array[i + count1] = strdup(array2[i]);
+    }
+
+    return array;
+}
+
+static char **
 _xpost_dsc_header_string_array_get(int vmaj,
                                    const unsigned char *cur_loc,
                                    int *count)
@@ -420,14 +470,39 @@ _xpost_dsc_header_string_array_get(int vmaj,
     return array;
 }
 
-static Xpost_Dsc_Status
-_xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned char *end)
+static unsigned char
+_xpost_dsc_version_get(const unsigned char *iter, unsigned char *vmaj, unsigned char *vmin)
 {
     unsigned char v_maj;
     unsigned char v_min;
-    size_t len;
 
-    if ((end - ctx->cur_loc) < 14)
+    v_maj = *iter;
+    if ((v_maj < '0') || (v_maj > '9'))
+        return 0;
+
+    iter++;
+    if (*iter != '.')
+        return 0;
+
+    iter++;
+    v_min = *iter;
+    if ((v_min < '0') || (v_min > '9'))
+        return 0;
+
+    *vmaj = v_maj - '0';
+    *vmin = v_min - '0';
+
+    return 1;
+}
+
+static Xpost_Dsc_Status
+_xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned char *end)
+{
+    const unsigned char *iter;
+
+    iter = ctx->cur_loc;
+
+    if ((end - iter) < 14)
     {
         XPOST_LOG_WARN("First comment erronoeus, size insufficient.");
         return XPOST_DSC_STATUS_NO_DSC;
@@ -439,29 +514,14 @@ _xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned
         return XPOST_DSC_STATUS_NO_DSC;
     }
 
-    len = XPOST_DSC_CMT_LEN(HEADER_VERSION);
-    v_maj = *(ctx->cur_loc + len);
-    if ((v_maj < '0') || (v_maj > '9'))
+    iter += XPOST_DSC_CMT_LEN(HEADER_VERSION);
+    if (!_xpost_dsc_version_get(iter, &dsc->ps_vmaj, &dsc->ps_vmin))
     {
-        XPOST_LOG_WARN("First comment erronoeus (invalid vmaj) %c.", *(ctx->cur_loc + len));
+        XPOST_LOG_WARN("First comment erronoeus (invalid version number).");
         return XPOST_DSC_STATUS_NO_DSC;
     }
 
-    if (*(ctx->cur_loc + len + 1) != '.')
-    {
-        XPOST_LOG_WARN("First comment erronoeus (invalid version) %c.", *(ctx->cur_loc + len + 1));
-        return XPOST_DSC_STATUS_NO_DSC;
-    }
-
-    v_min = *(ctx->cur_loc + len + 2);
-    if ((v_min < '0') || (v_min > '9'))
-    {
-        XPOST_LOG_WARN("First comment erronoeus (invalid vmin) %c.", *(ctx->cur_loc + len + 2));
-        return XPOST_DSC_STATUS_NO_DSC;
-    }
-
-    dsc->ps_vmaj = v_maj - '0';
-    dsc->ps_vmin = v_min - '0';
+    iter += 3;
 
     if ((dsc->ps_vmaj == 0) || (dsc->ps_vmaj > 3))
     {
@@ -484,14 +544,65 @@ _xpost_dsc_header_version_get(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc, const unsigned
 
     }
 
-    /* FIXME: do the options after the version of maj >= 2 */
+    /* if char is EOL, we exit */
+    if (XPOST_DSC_EOL(iter))
+        return XPOST_DSC_STATUS_SUCCESS;
+
+    /* otherwise, it must be a space */
+    if (!XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
+        return XPOST_DSC_STATUS_NO_DSC;
+
+    iter++;
+    if (dsc->ps_vmaj >= 2)
+    {
+        if (_xpost_dsc_prefix_cmp_exact(iter, "Query"))
+            dsc->job = XPOST_DSC_JOB_QUERY;
+        else if (_xpost_dsc_prefix_cmp_exact(iter, "ExitServer"))
+            dsc->job = XPOST_DSC_JOB_EXIT_SERVER;
+        else if (_xpost_dsc_prefix_cmp(iter, "EPSF-"))
+        {
+            iter += 5;
+            if (!_xpost_dsc_version_get(iter, &dsc->eps_vmaj, &dsc->eps_vmin))
+            {
+                XPOST_LOG_WARN("First comment erronoeus (invalid EPS version number).");
+                return XPOST_DSC_STATUS_NO_DSC;
+            }
+            if (((dsc->eps_vmaj == 1) && (dsc->eps_vmin == 2)) ||
+                ((dsc->eps_vmaj == 2) && (dsc->eps_vmin == 0)) ||
+                ((dsc->eps_vmaj == 3) && (dsc->eps_vmin == 0)))
+                dsc->job = XPOST_DSC_JOB_EPS;
+            else
+            {
+                XPOST_LOG_WARN("First comment erronoeus (invalid EPS version number).");
+                return XPOST_DSC_STATUS_NO_DSC;
+            }
+        }
+        else if ((dsc->ps_vmaj >= 3) && (_xpost_dsc_prefix_cmp(iter, "Resource-")))
+        {
+            iter += 9;
+            if (_xpost_dsc_prefix_cmp_exact(iter, "Encoding"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_ENCODING;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "File"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_FILE;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "Font"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_FONT;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "Form"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_FORM;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "Pattern"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_PATTERN;
+            else if (_xpost_dsc_prefix_cmp_exact(iter, "ProcSet"))
+                dsc->job = XPOST_DSC_JOB_RESOURCE_PROCSET;
+            else
+                return XPOST_DSC_STATUS_NO_DSC;
+        }
+        else
+        {
+            return XPOST_DSC_STATUS_NO_DSC;
+        }
+    }
 
     return XPOST_DSC_STATUS_SUCCESS;
 }
-
-/*
- * FIXME: %%BeginProlog
- */
 
 static Xpost_Dsc_Status
 _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
@@ -499,6 +610,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
     const unsigned char *next;
     const unsigned char *end;
     ptrdiff_t sz;
+    int font_idx = 0;
     int page_idx = 0;
     Xpost_Dsc_Status status = XPOST_DSC_STATUS_SUCCESS;
     unsigned char in_header = 0;
@@ -527,8 +639,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
         next = _xpost_dsc_line_get(ctx, &end, &sz);
         if (!next)
         {
-            XPOST_LOG_INFO("Can not get line: %s.",
-                           " EOF");
+            XPOST_LOG_INFO("Can not get line: EOF.");
             break;
         }
 
@@ -545,6 +656,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                     in_header = 0;
                     in_prolog = 1;
                     dsc->prolog.start = next - ctx->base;
+                    ctx->cur_loc = next;
                     continue;
                 }
             }
@@ -554,11 +666,24 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                 in_header = 0;
                 in_prolog = 1;
                 dsc->prolog.start = ctx->cur_loc - ctx->base;
+                ctx->cur_loc = next;
                 continue;
             }
         }
 
-        if (XPOST_DSC_CMT_CHECK_EXACT(BODY_END_PROLOG))
+        if (XPOST_DSC_CMT_CHECK_EXACT(BEGIN_PROLOG))
+        {
+            XPOST_LOG_INFO("BeginProlog.");
+            XPOST_DSC_ERROR_TEST(!(in_header || in_prolog),
+                                 "BeginProlog comment not in header nor in trailer");
+            in_header = 0;
+            in_prolog = 1;
+            dsc->prolog.start = ctx->cur_loc - ctx->base;
+            ctx->cur_loc = next;
+            continue;
+        }
+
+        if (XPOST_DSC_CMT_CHECK_EXACT(END_PROLOG))
         {
             XPOST_LOG_INFO("EndProlog.");
             XPOST_DSC_ERROR_TEST(in_header || in_trailer,
@@ -735,6 +860,9 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                         dsc->header.document_fonts.nbr = nbr;
                         ctx->HEADER_DOCUMENT_FONTS = 1;
                     }
+
+                    XPOST_CMT_LINE_CONTINUED_GET(header.document_fonts);
+                    dsc->fonts = (Xpost_Dsc_Font *)calloc(nbr, sizeof(Xpost_Dsc_Font));
                 }
             }
             /* Level 2 */
@@ -763,6 +891,66 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                         dsc->header.document_paper_sizes.nbr = nbr;
                         ctx->HEADER_DOCUMENT_PAPER_SIZES = 1;
                     }
+
+                    XPOST_CMT_LINE_CONTINUED_GET(header.document_paper_sizes);
+                }
+            }
+            else if (XPOST_DSC_CMT_CHECK(HEADER_DOCUMENT_NEEDED_FONTS))
+            {
+                const unsigned char *iter;
+                char **array;
+                int nbr;
+
+                XPOST_DSC_HEADER_ERROR_TEST("DocumentNeededFonts");
+                if (dsc->ps_vmaj < 2)
+                    XPOST_LOG_WARN("Comment allowed in version 2, "
+                                   "but version is %d.",
+                                   dsc->ps_vmaj);
+
+                if (!ctx->HEADER_DOCUMENT_NEEDED_FONTS)
+                {
+                    iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_NEEDED_FONTS);
+                    if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
+                        iter++;
+
+                    array = _xpost_dsc_header_string_array_get(dsc->ps_vmaj, iter, &nbr);
+                    if (array)
+                    {
+                        dsc->header.document_needed_fonts.array = array;
+                        dsc->header.document_needed_fonts.nbr = nbr;
+                        ctx->HEADER_DOCUMENT_NEEDED_FONTS = 1;
+                    }
+
+                    XPOST_CMT_LINE_CONTINUED_GET(header.document_needed_fonts);
+                }
+            }
+            else if (XPOST_DSC_CMT_CHECK(HEADER_DOCUMENT_SUPPLIED_FONTS))
+            {
+                const unsigned char *iter;
+                char **array;
+                int nbr;
+
+                XPOST_DSC_HEADER_ERROR_TEST("DocumentSuppliedFonts");
+                if (dsc->ps_vmaj < 2)
+                    XPOST_LOG_WARN("Comment allowed in version 2, "
+                                   "but version is %d.",
+                                   dsc->ps_vmaj);
+
+                if (!ctx->HEADER_DOCUMENT_SUPPLIED_FONTS)
+                {
+                    iter = ctx->cur_loc + XPOST_DSC_CMT_LEN(HEADER_DOCUMENT_SUPPLIED_FONTS);
+                    if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
+                        iter++;
+
+                    array = _xpost_dsc_header_string_array_get(dsc->ps_vmaj, iter, &nbr);
+                    if (array)
+                    {
+                        dsc->header.document_supplied_fonts.array = array;
+                        dsc->header.document_supplied_fonts.nbr = nbr;
+                        ctx->HEADER_DOCUMENT_SUPPLIED_FONTS = 1;
+                    }
+
+                    XPOST_CMT_LINE_CONTINUED_GET(header.document_supplied_fonts);
                 }
             }
             /* Level 3 */
@@ -814,6 +1002,102 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
             }
         } /* end of management of header comments */
 
+        /* body comments */
+        {
+            if (XPOST_DSC_CMT_CHECK(BODY_BEGIN_FONT))
+            {
+                const unsigned char *iter;
+                const unsigned char *iter_next;
+
+                XPOST_DSC_ERROR_TEST(in_header, "BeginFont comment in header");
+                if (in_font == 1)
+                {
+                    XPOST_LOG_ERR("%%BeginFont inside a %%BeginFont");
+                    status = XPOST_DSC_STATUS_ERROR;
+                    break;
+                }
+                if (font_idx >= dsc->header.document_fonts.nbr)
+                {
+                    XPOST_LOG_ERR("Too many fonts");
+                    status = XPOST_DSC_STATUS_ERROR;
+                    break;
+                }
+                iter = XPOST_DSC_CMT_ARG(dsc->ps_vmaj, BODY_BEGIN_FONT);
+                if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
+                    iter++;
+
+                if (dsc->fonts && (font_idx < dsc->header.document_fonts.nbr))
+                {
+                    char *fontname = NULL;
+                    char *printername = NULL;
+
+                    /* get fontname */
+                    iter_next = iter;
+                    while (!XPOST_DSC_EOL(iter_next))
+                    {
+                        if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter_next))
+                            break;
+                        iter_next++;
+                    }
+
+                    fontname = (char *)malloc(iter_next - iter + 1);
+                    if (fontname)
+                    {
+                        memcpy(fontname, iter, iter_next - iter);
+                        fontname[iter_next - iter]= '\0';
+                    }
+
+                    /* check if we have printername */
+                    if (!XPOST_DSC_EOL(iter_next))
+                    {
+                        iter = ++iter_next;
+                        while (!XPOST_DSC_EOL(iter_next))
+                        {
+                            if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter_next))
+                                break;
+                            iter_next++;
+                        }
+                        printername = (char *)malloc(iter_next - iter + 1);
+                        if (printername)
+                        {
+                            memcpy(printername, iter, iter_next - iter);
+                            printername[iter_next - iter]= '\0';
+                        }
+                    }
+
+                    if (!XPOST_DSC_EOL(iter_next))
+                    {
+                        XPOST_LOG_ERR("EOL not reached in %%BeginFont comment");
+                        status = XPOST_DSC_STATUS_ERROR;
+                        free(printername);
+                        free(fontname);
+                        break;
+                    }
+
+                    dsc->fonts[font_idx].section.start = next - ctx->base;
+                    dsc->fonts[font_idx].fontname = fontname;
+                    dsc->fonts[font_idx].printername = printername;
+                }
+
+                in_font = 1;
+            }
+            else if (XPOST_DSC_CMT_CHECK(BODY_END_FONT))
+            {
+                XPOST_DSC_ERROR_TEST(in_header, "EndFont comment in header");
+                if (in_font == 0)
+                {
+                    XPOST_LOG_ERR("%%EndFont without a %%BeginFont");
+                    status = XPOST_DSC_STATUS_ERROR;
+                    break;
+                }
+
+                dsc->fonts[page_idx].section.end = ctx->cur_loc - ctx->base;
+
+                in_font = 0;
+                font_idx++;
+            }
+        }
+
         /* script comments */
         {
             if (XPOST_DSC_CMT_CHECK(BODY_PAGE))
@@ -854,7 +1138,7 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                 if (!XPOST_DSC_EOL(iter_next))
                 {
-                    XPOST_LOG_ERR("EOL not reached in %%PAGE comment");
+                    XPOST_LOG_ERR("EOL not reached in %%Page comment");
                     status = XPOST_DSC_STATUS_ERROR;
                     break;
                 }
@@ -946,29 +1230,35 @@ xpost_dsc_free(Xpost_Dsc *dsc)
 {
     int i;
 
-    if (dsc->header.title)
-        free(dsc->header.title);
-    if (dsc->header.creator)
-        free(dsc->header.creator);
-    if (dsc->header.creation_date)
-        free(dsc->header.creation_date);
-    if (dsc->header.for_whom)
-        free(dsc->header.for_whom);
+    free(dsc->header.title);
+    free(dsc->header.creator);
+    free(dsc->header.creation_date);
+    free(dsc->header.for_whom);
+
+    for (; dsc->header.document_supplied_fonts.nbr > 0; dsc->header.document_supplied_fonts.nbr--)
+        free(dsc->header.document_supplied_fonts.array[dsc->header.document_supplied_fonts.nbr - 1]);
+    free(dsc->header.document_supplied_fonts.array);
+
+    for (; dsc->header.document_needed_fonts.nbr > 0; dsc->header.document_needed_fonts.nbr--)
+        free(dsc->header.document_needed_fonts.array[dsc->header.document_needed_fonts.nbr - 1]);
+    free(dsc->header.document_needed_fonts.array);
 
     for (i = 0; i < dsc->header.document_fonts.nbr; i++)
-        free(dsc->header.document_fonts.array[i]);
+    {
+        free(dsc->fonts[i].fontname);
+        free(dsc->fonts[i].printername);
+    }
+    free(dsc->fonts);
+
+    for (; dsc->header.document_fonts.nbr > 0; dsc->header.document_fonts.nbr--)
+        free(dsc->header.document_fonts.array[dsc->header.document_fonts.nbr - 1]);
     free(dsc->header.document_fonts.array);
 
-    for (i = 0; i < dsc->header.document_paper_sizes.nbr; i++)
-        free(dsc->header.document_paper_sizes.array[i]);
+    for (; dsc->header.document_paper_sizes.nbr > 0; dsc->header.document_paper_sizes.nbr--)
+        free(dsc->header.document_paper_sizes.array[dsc->header.document_paper_sizes.nbr - 1]);
     free(dsc->header.document_paper_sizes.array);
 
-    for (i = 0; i < dsc->header.pages; i++)
-    {
-        if (dsc->pages[i].label)
-            free(dsc->pages[i].label);
-    }
-
-    if (dsc->pages)
-        free(dsc->pages);
+    for (; dsc->header.pages > 0; dsc->header.pages--)
+        free(dsc->pages[dsc->header.pages - 1].label);
+    free(dsc->pages);
 }

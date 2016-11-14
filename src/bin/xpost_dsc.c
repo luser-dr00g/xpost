@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 {
     Xpost_Dsc_File *file;
     Xpost_Dsc dsc;
-    unsigned char res;
+    Xpost_Dsc_Status res;
 
     if (argc < 2)
     {
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
     }
 
     res = xpost_dsc_parse(file, &dsc);
-    printf("result : %s\n", res ? "good" : "error");
+    printf("result : %s\n", (res == XPOST_DSC_STATUS_SUCCESS)? "good" : "error");
     if (!res)
     {
         printf("exiting because of errors...");
@@ -88,7 +88,40 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    printf("version : %d.%d\n", dsc.ps_vmaj, dsc.ps_vmin);
+    printf("version : %d.%d", dsc.ps_vmaj, dsc.ps_vmin);
+    switch (dsc.job)
+    {
+        case XPOST_DSC_JOB_EPS:
+            printf(" EPS %d.%d\n", dsc.eps_vmaj, dsc.eps_vmin);
+            break;
+        case XPOST_DSC_JOB_QUERY:
+            printf(" Query\n");
+            break;
+        case XPOST_DSC_JOB_EXIT_SERVER:
+            printf(" ExitServer\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_ENCODING:
+            printf(" Resource (encoding)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_FILE:
+            printf(" Resource (file)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_FONT:
+            printf(" Resource (font)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_FORM:
+            printf(" Resource (form)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_PATTERN:
+            printf(" Resource (pattern)\n");
+            break;
+        case XPOST_DSC_JOB_RESOURCE_PROCSET:
+            printf(" Resource (procset)\n");
+            break;
+        default:
+            printf("\n");
+            break;
+    }
     PRINT_STR_ARRAY("document fonts", document_fonts);
     printf("title : %s\n", dsc.header.title);
     printf("creator : %s\n", dsc.header.creator);
@@ -116,6 +149,19 @@ int main(int argc, char *argv[])
         default:
             printf("Unknown\n");
             break;
+    }
+    if (dsc.fonts)
+    {
+        int i;
+
+        for (i = 0; i < dsc.header.document_fonts.nbr; i++)
+        {
+            printf("font #%d\n", i + 1);
+            printf("  start: " FMT_PTRDIFF_T "\n", dsc.fonts[i].section.start);
+            printf("  end: " FMT_PTRDIFF_T "\n", dsc.fonts[i].section.end);
+            printf("  fontname: %s\n", dsc.fonts[i].fontname);
+            printf("  printername: %s\n", dsc.fonts[i].printername ? dsc.fonts[i].printername : "");
+        }
     }
     if (dsc.pages)
     {
@@ -160,6 +206,20 @@ int main(int argc, char *argv[])
     /*     } */
     /*     printf("\n"); */
     /*     printf("----- End Prolog -----\n"); */
+    /* } */
+
+    /* display font */
+    /* { */
+    /*     ptrdiff_t iter; */
+
+    /*     /\* iter = dsc.prolog.start; *\/ */
+    /*     printf("----- Begin Font 0 -----\n"); */
+    /*     for (iter = dsc.fonts[0].section.start; iter < dsc.fonts[0].section.end; iter++) */
+    /*     { */
+    /*         printf("%c", *(xpost_dsc_file_base_get(file) + iter)); */
+    /*     } */
+    /*     printf("\n"); */
+    /*     printf("----- End Font 0 -----\n"); */
     /* } */
 
     xpost_dsc_free(&dsc);
