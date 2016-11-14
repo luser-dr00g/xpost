@@ -58,6 +58,10 @@ void *alloca (size_t);
 # endif
 #endif
 
+#ifndef _WIN32
+# include <stdio_ext.h> /* __fpurge */
+#endif
+
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -118,13 +122,98 @@ f_tmpfile(void)
 # define f_tmpfile tmpfile
 #endif
 
-/* interface fgetc
-   in preparation for more elaborate cross-platform non-blocking mechanisms
-cf. http://stackoverflow.com/questions/20428616/how-to-handle-window-events-while-waiting-for-terminal-input
-and http://stackoverflow.com/questions/25506324/how-to-do-pollstdin-or-selectstdin-when-stdin-is-a-windows-console
-   */
-int xpost_file_getc(FILE *in){
-    return fgetc(in);
+int disk_readch(Xpost_File file){
+    Xpost_DiskFile df = (Xpost_DiskFile) file;
+    /*
+     * FIXME: check if this work on Windows
+     * indeed, on Windows, select() needs a socket, not a fd, and fileno() returns a fd
+     * See http://stackoverflow.com/questions/6418232/how-to-use-select-to-read-input-from-keyboard-in-c/6419955#6419955
+     * and https://msdn.microsoft.com/en-us/library/windows/desktop/ms682499%28v=vs.85%29.aspx
+     * Maybe WaitForSingleObject will also be needed
+     */
+#ifdef HAVE_SYS_SELECT_H
+    {
+        FILE *fp;
+        fd_set reads, writes, excepts;
+        int ret;
+        struct timeval tv_timeout;
+        //fp = xpost_file_get_file_pointer(ctx->lo, f);
+        fp = df->file;
+        FD_ZERO(&reads);
+        FD_ZERO(&writes);
+        FD_ZERO(&excepts);
+        FD_SET(fileno(fp), &reads);
+        tv_timeout.tv_sec = 0;
+        tv_timeout.tv_usec = 0;
+
+        ret = select(fileno(fp) + 1, &reads, &writes, &excepts, &tv_timeout);
+
+        if (ret <= 0 || !FD_ISSET(fileno(fp), &reads))
+        {
+            /* byte not available, push retry, and request eval() to block this thread */
+            //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "read", NULL,0,0));
+            //xpost_stack_push(ctx->lo, ctx->os, f);
+            //return ioblock;
+            errno=EINTR;
+            return EOF;
+        }
+    }
+#endif
+    return fgetc(df->file);
+}
+
+int disk_writech(Xpost_File file, int c){
+    Xpost_DiskFile df = (Xpost_DiskFile) file;
+    return fputc(c, df->file);
+}
+
+int disk_close(Xpost_File file){
+    Xpost_DiskFile df = (Xpost_DiskFile) file;
+    FILE *fp = df->file;
+    if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
+        return 0;
+    int ret = fclose(df->file);
+    return df->file = NULL, ret;
+}
+
+int disk_flush(Xpost_File file){
+    Xpost_DiskFile df = (Xpost_DiskFile) file;
+    return fflush(df->file);
+}
+
+void disk_purge(Xpost_File file){
+    Xpost_DiskFile df = (Xpost_DiskFile) file;
+#ifndef _WIN32
+    __fpurge(df->file);
+#endif
+}
+
+int disk_unreadch(Xpost_File file, int c){
+    Xpost_DiskFile df = (Xpost_DiskFile) file;
+    return ungetc(c, df->file);
+}
+
+long disk_tell(Xpost_File file){
+    Xpost_DiskFile df = (Xpost_DiskFile) file;
+    return ftell(df->file);
+}
+
+int disk_seek(Xpost_File file, long offset){
+    Xpost_DiskFile df = (Xpost_DiskFile) file;
+    return fseek(df->file, offset, SEEK_SET);
+}
+
+struct Xpost_File_Methods disk_methods = {
+    disk_readch, disk_writech, disk_close, disk_flush, disk_purge, disk_unreadch, disk_tell, disk_seek
+};
+
+Xpost_File xpost_diskfile_open(const FILE *fp){
+    Xpost_DiskFile df = malloc(sizeof *df);
+    if (df) {
+        df->methods.methods = &disk_methods;
+        df->file = (FILE*)fp;
+    }
+    return (Xpost_File)df;
 }
 
 /* filetype objects use a slightly different interpretation
@@ -137,8 +226,8 @@ int xpost_file_getc(FILE *in){
 /* construct a file object.
    set the tag,
    use the "doubleword" field as a "pointer" (ent),
-   allocate a FILE *,
-   install the FILE *,
+   allocate a Xpost_File,
+   install the Xpost_File,
    return object.
    caller must set access for a readable file,
    default is writable.
@@ -152,19 +241,21 @@ Xpost_Object xpost_file_cons(Xpost_Memory_File *mem,
     Xpost_Object f;
     unsigned int ent;
     int ret;
+    Xpost_File df;
 
 #ifdef DEBUG_FILE
     printf("xpost_file_cons %p\n", fp);
 #endif
     f.tag = filetype /*| (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET)*/;
+    df = xpost_diskfile_open(fp);
     /* xpost_memory_table_alloc(mem, sizeof(FILE *), 0, &f.mark_.padw); */
-    if (!xpost_memory_table_alloc(mem, sizeof(FILE *), filetype, &ent))
+    if (!xpost_memory_table_alloc(mem, sizeof df, filetype, &ent))
     {
         XPOST_LOG_ERR("cannot allocate file record");
         return invalid;
     }
     f.mark_.padw = ent;
-    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof df, &df);
     if (!ret)
     {
         XPOST_LOG_ERR("cannot save FILE* in VM");
@@ -181,7 +272,7 @@ int lineedit(FILE *in, FILE **out)
     FILE *fp;
     int c;
 
-    c = xpost_file_getc(in);
+    c = fgetc(in);
     if (c == EOF)
     {
         return undefinedfilename;
@@ -196,7 +287,7 @@ int lineedit(FILE *in, FILE **out)
     }
     while (c != EOF && c != '\n') {
         (void)fputc(c, fp);
-        c = xpost_file_getc(in);
+        c = fgetc(in);
     }
     fseek(fp, 0, SEEK_SET);
     //return fp;
@@ -217,7 +308,7 @@ int statementedit(FILE *in, FILE **out)
     int defer = -1; /* defer is a flag (-1 == false)
                        and an index into nest[] */
 
-    c = xpost_file_getc(in);
+    c = fgetc(in);
     if (c == EOF)
     {
         return undefinedfilename;
@@ -249,7 +340,7 @@ int statementedit(FILE *in, FILE **out)
                 case ')': --defer; break;
                 case '(': nest[++defer] = c; break;
                 case '\\': fputc(c, fp);
-                           c = xpost_file_getc(in);
+                           c = fgetc(in);
                            if (c == EOF) goto done;
                            goto next;
                 } break;
@@ -261,7 +352,7 @@ int statementedit(FILE *in, FILE **out)
         case '(':
         case '<': nest[++defer] = c; break;
         case '\\': fputc(c, fp);
-                   c = xpost_file_getc(in); break;
+                   c = fgetc(in); break;
         }
         if (c == '\n') {
             if (defer == -1) goto done;
@@ -275,7 +366,7 @@ int statementedit(FILE *in, FILE **out)
         }
 next:
         fputc(c, fp);
-        c = xpost_file_getc(in);
+        c = fgetc(in);
     } while(c != EOF);
 done:
     fseek(fp, 0, SEEK_SET);
@@ -384,13 +475,13 @@ int xpost_file_open(Xpost_Memory_File *mem,
 /* adapter:
            FILE* <- filetype object
    yield the FILE* from a filetype object */
-FILE *xpost_file_get_file_pointer(Xpost_Memory_File *mem,
+Xpost_File xpost_file_get_file_pointer(Xpost_Memory_File *mem,
                                   Xpost_Object f)
 {
-    FILE *fp;
+    Xpost_File fp;
     int ret;
 
-    ret = xpost_memory_get(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+    ret = xpost_memory_get(mem, f.mark_.padw, 0, sizeof fp, &fp);
     if (!ret)
     {
         return NULL;
@@ -405,6 +496,7 @@ int xpost_file_get_status(Xpost_Memory_File *mem,
     return xpost_file_get_file_pointer(mem, f) != NULL;
 }
 
+//FIXME assumes DiskFile subtype
 /* call fstat. */
 int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
                                    Xpost_Object f,
@@ -415,7 +507,7 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
     struct stat sb;
     long sz, pos;
 
-    fp = xpost_file_get_file_pointer(mem, f);
+    fp = ((Xpost_DiskFile)xpost_file_get_file_pointer(mem, f))->file;
     if (!fp) return ioerror;
     ret = fstat(fileno(fp), &sb);
     if (ret != 0)
@@ -437,10 +529,10 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
 
 /* close the file,
    NULL the FILE*. */
-int xpost_file_close(Xpost_Memory_File *mem,
+int xpost_file_object_close(Xpost_Memory_File *mem,
                      Xpost_Object f)
 {
-    FILE *fp;
+    Xpost_File fp;
     int ret;
 
     fp = xpost_file_get_file_pointer(mem, f);
@@ -448,12 +540,10 @@ int xpost_file_close(Xpost_Memory_File *mem,
 #ifdef DEBUG_FILE
         printf("fclose");
 #endif
-        if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
-            return 0;
 
-        fclose(fp);
+        xpost_file_close(fp);
         fp = NULL;
-        ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof(FILE *), &fp);
+        ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof fp, &fp);
         if (!ret)
         {
             XPOST_LOG_ERR("cannot write NULL over FILE* in VM");
@@ -461,6 +551,24 @@ int xpost_file_close(Xpost_Memory_File *mem,
         }
     }
     return 0;
+}
+
+int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File fp)
+{
+    int i,j,k=0;
+    for (i=0; i<count; ++i)
+        for (j=0; j<size; ++j)
+            buf[k++] = xpost_file_getc(fp);
+    return i;
+}
+
+int xpost_file_write(const unsigned char *buf, int size, int count, Xpost_File fp)
+{
+    int i,j,k=0;
+    for (i=0; i<count; ++i)
+        for (j=0; j<size; ++j)
+            xpost_file_putc(fp, buf[k++]);
+    return i;
 }
 
 /* if the file is valid,
@@ -473,7 +581,11 @@ Xpost_Object xpost_file_read_byte(Xpost_Memory_File *mem,
     {
         return invalid;
     }
+retry:
+    errno=0;
     c = xpost_file_getc(xpost_file_get_file_pointer(mem, f));
+    if (c == EOF && errno==EINTR)
+        goto retry;
     return xpost_int_cons(c);
 }
 
@@ -487,7 +599,7 @@ int xpost_file_write_byte(Xpost_Memory_File *mem,
     {
         return ioerror;
     }
-    if (fputc(b.int_.val, xpost_file_get_file_pointer(mem, f)) == EOF)
+    if (xpost_file_putc(xpost_file_get_file_pointer(mem, f), b.int_.val) == EOF)
     {
         return ioerror;
     }

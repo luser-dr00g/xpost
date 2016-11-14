@@ -487,7 +487,7 @@ int evalfile(Xpost_Context *ctx)
     }
     else
     {
-        ret = xpost_file_close(ctx->lo, f);
+        ret = xpost_file_object_close(ctx->lo, f);
         if (ret)
             XPOST_LOG_ERR("%s error closing file", errorname[ret]);
     }

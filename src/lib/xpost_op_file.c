@@ -131,7 +131,7 @@ int xpost_op_file_closefile (Xpost_Context *ctx,
                              Xpost_Object f)
 {
     int ret;
-    ret = xpost_file_close(ctx->lo, f);
+    ret = xpost_file_object_close(ctx->lo, f);
     if (ret)
         return ret;
     return 0;
@@ -147,38 +147,6 @@ int xpost_op_file_read(Xpost_Context *ctx,
     Xpost_Object b;
     if (!xpost_object_is_readable(ctx,f))
         return invalidaccess;
-    /*
-     * FIXME: check if this work on Windows
-     * indeed, on Windows, select() needs a socket, not a fd, and fileno() returns a fd
-     * See http://stackoverflow.com/questions/6418232/how-to-use-select-to-read-input-from-keyboard-in-c/6419955#6419955
-     * and https://msdn.microsoft.com/en-us/library/windows/desktop/ms682499%28v=vs.85%29.aspx
-     * Maybe WaitForSingleObject will also be needed
-     */
-#ifdef HAVE_SYS_SELECT_H
-    {
-        FILE *fp;
-        fd_set reads, writes, excepts;
-        int ret;
-        struct timeval tv_timeout;
-        fp = xpost_file_get_file_pointer(ctx->lo, f);
-        FD_ZERO(&reads);
-        FD_ZERO(&writes);
-        FD_ZERO(&excepts);
-        FD_SET(fileno(fp), &reads);
-        tv_timeout.tv_sec = 0;
-        tv_timeout.tv_usec = 0;
-
-        ret = select(fileno(fp) + 1, &reads, &writes, &excepts, &tv_timeout);
-
-        if (ret <= 0 || !FD_ISSET(fileno(fp), &reads))
-        {
-            /* byte not available, push retry, and request eval() to block this thread */
-            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "read", NULL,0,0));
-            xpost_stack_push(ctx->lo, ctx->os, f);
-            return ioblock;
-        }
-    }
-#endif
     b = xpost_file_read_byte(ctx->lo, f);
     if (xpost_object_get_type(b) == invalidtype)
         return ioerror;
@@ -223,7 +191,7 @@ int xpost_op_file_readhexstring (Xpost_Context *ctx,
     int n;
     int c[2];
     int eof = 0;
-    FILE *f;
+    Xpost_File f;
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
@@ -268,7 +236,7 @@ int xpost_op_file_writehexstring (Xpost_Context *ctx,
                                   Xpost_Object S)
 {
     int n;
-    FILE *f;
+    Xpost_File f;
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
@@ -279,9 +247,9 @@ int xpost_op_file_writehexstring (Xpost_Context *ctx,
 
     for (n = 0; n < S.comp_.sz; n++)
     {
-        if (fputc(hex[s[n] / 16], f) == EOF)
+        if (xpost_file_putc(f, hex[s[n] / 16]) == EOF)
             return ioerror;
-        if (fputc(hex[s[n] % 16], f) == EOF)
+        if (xpost_file_putc(f, hex[s[n] % 16]) == EOF)
             return ioerror;
     }
     return 0;
@@ -296,7 +264,7 @@ int xpost_op_file_readstring (Xpost_Context *ctx,
                               Xpost_Object S)
 {
     int n;
-    FILE *f;
+    Xpost_File f;
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
@@ -304,7 +272,7 @@ int xpost_op_file_readstring (Xpost_Context *ctx,
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
-    n = fread(s, 1, S.comp_.sz, f);
+    n = xpost_file_read(s, 1, S.comp_.sz, f);
     if (n == S.comp_.sz)
     {
         xpost_stack_push(ctx->lo, ctx->os, S);
@@ -326,7 +294,7 @@ int xpost_op_file_writestring (Xpost_Context *ctx,
                                Xpost_Object F,
                                Xpost_Object S)
 {
-    FILE *f;
+    Xpost_File f;
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
@@ -334,7 +302,7 @@ int xpost_op_file_writestring (Xpost_Context *ctx,
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
-    if (fwrite(s, 1, S.comp_.sz, f) != S.comp_.sz)
+    if (xpost_file_write(s, 1, S.comp_.sz, f) != S.comp_.sz)
         return ioerror;
     return 0;
 }
@@ -347,7 +315,7 @@ int xpost_op_file_readline (Xpost_Context *ctx,
                             Xpost_Object F,
                             Xpost_Object S)
 {
-    FILE *f;
+    Xpost_File f;
     char *s;
     int n, c = ' ';
     if (!xpost_file_get_status(ctx->lo, F))
@@ -406,12 +374,12 @@ int xpost_op_file_flushfile (Xpost_Context *ctx,
                              Xpost_Object F)
 {
     int ret;
-    FILE *f;
+    Xpost_File f;
     if (!xpost_file_get_status(ctx->lo, F)) return 0;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     if (xpost_object_is_writeable(ctx, F))
     {
-        ret = fflush(f);
+        ret = xpost_file_flush(f);
         if (ret != 0)
             return ioerror;
     }
@@ -430,10 +398,10 @@ static
 int xpost_op_file_resetfile (Xpost_Context *ctx,
                              Xpost_Object F)
 {
-    FILE *f;
+    Xpost_File f;
     if (!xpost_file_get_status(ctx->lo, F)) return 0;
     f = xpost_file_get_file_pointer(ctx->lo, F);
-    __fpurge(f);
+    xpost_file_purge(f);
     return 0;
 }
 
@@ -613,7 +581,7 @@ int xpost_op_setfileposition (Xpost_Context *ctx,
                               Xpost_Object F,
                               Xpost_Object pos)
 {
-    int ret = fseek(xpost_file_get_file_pointer(ctx->lo, F), pos.int_.val, SEEK_SET);
+    int ret = xpost_file_seek(xpost_file_get_file_pointer(ctx->lo, F), pos.int_.val);
     if (ret != 0)
         return ioerror;
     return 0;
@@ -626,7 +594,7 @@ int xpost_op_fileposition (Xpost_Context *ctx,
                            Xpost_Object F)
 {
     long pos;
-    pos = ftell(xpost_file_get_file_pointer(ctx->lo, F));
+    pos = xpost_file_tell(xpost_file_get_file_pointer(ctx->lo, F));
     if (pos == -1)
         return ioerror;
     else

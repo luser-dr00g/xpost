@@ -43,18 +43,89 @@
 
 /*
    a filetype object uses .mark_.padw to store the ent
-   for the FILE *
+   for the Xpost_File pointer
+
+   The Xpost_File code for abstract use of files and file-like
+   interfaces is a slight variation of an approach described
+   by Tim Rentsch.
    */
+
+typedef struct Xpost_File *Xpost_File;
+
+typedef struct Xpost_File_Methods {
+    int (*readch)(Xpost_File);
+    int (*writech)(Xpost_File, int);
+    int (*close)(Xpost_File);
+    int (*flush)(Xpost_File);
+    void (*purge)(Xpost_File);
+    int (*unreadch)(Xpost_File, int);
+    long (*tell)(Xpost_File);
+    int (*seek)(Xpost_File, long);
+} *Xpost_File_Methods;
+
+struct Xpost_File {
+    Xpost_File_Methods methods;
+};
+
+typedef struct Xpost_DiskFile {
+    struct Xpost_File methods;
+    FILE *file;
+} *Xpost_DiskFile;
+
+/* interface fgetc
+   in preparation for more elaborate cross-platform non-blocking mechanisms
+cf. http://stackoverflow.com/questions/20428616/how-to-handle-window-events-while-waiting-for-terminal-input
+and http://stackoverflow.com/questions/25506324/how-to-do-pollstdin-or-selectstdin-when-stdin-is-a-windows-console
+   */
+/**
+ * @brief Read a byte from an Xpost_File abstraction.
+ */
+static inline
+int xpost_file_getc(Xpost_File in){
+    return in->methods->readch(in);
+}
+
+static inline
+int xpost_file_putc(Xpost_File out, int c){
+    return out->methods->writech(out, c);
+}
+
+static inline
+int xpost_file_close(Xpost_File f){
+    return f->methods->close(f);
+}
+
+static inline
+int xpost_file_flush(Xpost_File f){
+    return f->methods->flush(f);
+}
+
+static inline
+void xpost_file_purge(Xpost_File f){
+    f->methods->purge(f);
+}
+
+static inline
+int xpost_file_ungetc(Xpost_File in, int c){
+    return in->methods->unreadch(in, c);
+}
+
+static inline
+long xpost_file_tell(Xpost_File f){
+    return f->methods->tell(f);
+}
+
+static inline
+int xpost_file_seek(Xpost_File f, long offset){
+    return f->methods->seek(f, offset);
+}
+
 
 /**
  * @brief Construct a file object given a FILE*.
  */
 Xpost_Object xpost_file_cons(Xpost_Memory_File *mem, /*@NULL@*/ const FILE *fp);
 
-/**
- * @brief Read a byte from FILE*.
- */
-int xpost_file_getc(FILE *in);
 
 /**
  * @brief Open and construct a file object given filename and mode.
@@ -64,7 +135,7 @@ int xpost_file_open(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *
 /**
  * @brief Return the FILE* from the file object.
  */
-FILE *xpost_file_get_file_pointer(Xpost_Memory_File *mem, Xpost_Object f);
+Xpost_File xpost_file_get_file_pointer(Xpost_Memory_File *mem, Xpost_Object f);
 
 /**
  * @brief Get the status of the file object.
@@ -79,7 +150,10 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem, Xpost_Object f, int *
 /**
  * @brief Close the file and deallocate the descriptor in VM.
  */
-int xpost_file_close(Xpost_Memory_File *mem, Xpost_Object f);
+int xpost_file_object_close(Xpost_Memory_File *mem, Xpost_Object f);
+
+int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File fp);
+int xpost_file_write(const unsigned char *buf, int size, int count, Xpost_File fp);
 
 /**
  * @brief Read a byte from file object.

@@ -571,7 +571,7 @@ void Fback(Xpost_Context *ctx,
            int c,
            Xpost_Object *F)
 {
-    (void)ungetc(c, xpost_file_get_file_pointer(ctx->lo, *F));
+    (void)xpost_file_ungetc(xpost_file_get_file_pointer(ctx->lo, *F), c);
 }
 static
 int Ftoken(Xpost_Context *ctx,
