@@ -191,7 +191,7 @@ int xpost_op_file_readhexstring (Xpost_Context *ctx,
     int n;
     int c[2];
     int eof = 0;
-    Xpost_File f;
+    Xpost_File *f;
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
@@ -236,7 +236,7 @@ int xpost_op_file_writehexstring (Xpost_Context *ctx,
                                   Xpost_Object S)
 {
     int n;
-    Xpost_File f;
+    Xpost_File *f;
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
@@ -264,7 +264,7 @@ int xpost_op_file_readstring (Xpost_Context *ctx,
                               Xpost_Object S)
 {
     int n;
-    Xpost_File f;
+    Xpost_File *f;
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
@@ -294,7 +294,7 @@ int xpost_op_file_writestring (Xpost_Context *ctx,
                                Xpost_Object F,
                                Xpost_Object S)
 {
-    Xpost_File f;
+    Xpost_File *f;
     char *s;
     if (!xpost_file_get_status(ctx->lo, F))
         return ioerror;
@@ -315,7 +315,7 @@ int xpost_op_file_readline (Xpost_Context *ctx,
                             Xpost_Object F,
                             Xpost_Object S)
 {
-    Xpost_File f;
+    Xpost_File *f;
     char *s;
     int n, c = ' ';
     if (!xpost_file_get_status(ctx->lo, F))
@@ -374,7 +374,7 @@ int xpost_op_file_flushfile (Xpost_Context *ctx,
                              Xpost_Object F)
 {
     int ret;
-    Xpost_File f;
+    Xpost_File *f;
     if (!xpost_file_get_status(ctx->lo, F)) return 0;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     if (xpost_object_is_writeable(ctx, F))
@@ -398,7 +398,7 @@ static
 int xpost_op_file_resetfile (Xpost_Context *ctx,
                              Xpost_Object F)
 {
-    Xpost_File f;
+    Xpost_File *f;
     if (!xpost_file_get_status(ctx->lo, F)) return 0;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     xpost_file_purge(f);

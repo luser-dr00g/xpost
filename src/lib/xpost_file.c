@@ -122,8 +122,8 @@ f_tmpfile(void)
 # define f_tmpfile tmpfile
 #endif
 
-int disk_readch(Xpost_File file){
-    Xpost_DiskFile df = (Xpost_DiskFile) file;
+int disk_readch(Xpost_File *file){
+    Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     /*
      * FIXME: check if this work on Windows
      * indeed, on Windows, select() needs a socket, not a fd, and fileno() returns a fd
@@ -162,13 +162,13 @@ int disk_readch(Xpost_File file){
     return fgetc(df->file);
 }
 
-int disk_writech(Xpost_File file, int c){
-    Xpost_DiskFile df = (Xpost_DiskFile) file;
+int disk_writech(Xpost_File *file, int c){
+    Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return fputc(c, df->file);
 }
 
-int disk_close(Xpost_File file){
-    Xpost_DiskFile df = (Xpost_DiskFile) file;
+int disk_close(Xpost_File *file){
+    Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     FILE *fp = df->file;
     if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
         return 0;
@@ -176,30 +176,30 @@ int disk_close(Xpost_File file){
     return df->file = NULL, ret;
 }
 
-int disk_flush(Xpost_File file){
-    Xpost_DiskFile df = (Xpost_DiskFile) file;
+int disk_flush(Xpost_File *file){
+    Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return fflush(df->file);
 }
 
-void disk_purge(Xpost_File file){
-    Xpost_DiskFile df = (Xpost_DiskFile) file;
+void disk_purge(Xpost_File *file){
+    Xpost_DiskFile *df = (Xpost_DiskFile*) file;
 #ifndef _WIN32
     __fpurge(df->file);
 #endif
 }
 
-int disk_unreadch(Xpost_File file, int c){
-    Xpost_DiskFile df = (Xpost_DiskFile) file;
+int disk_unreadch(Xpost_File *file, int c){
+    Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return ungetc(c, df->file);
 }
 
-long disk_tell(Xpost_File file){
-    Xpost_DiskFile df = (Xpost_DiskFile) file;
+long disk_tell(Xpost_File *file){
+    Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return ftell(df->file);
 }
 
-int disk_seek(Xpost_File file, long offset){
-    Xpost_DiskFile df = (Xpost_DiskFile) file;
+int disk_seek(Xpost_File *file, long offset){
+    Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return fseek(df->file, offset, SEEK_SET);
 }
 
@@ -207,13 +207,13 @@ struct Xpost_File_Methods disk_methods = {
     disk_readch, disk_writech, disk_close, disk_flush, disk_purge, disk_unreadch, disk_tell, disk_seek
 };
 
-Xpost_File xpost_diskfile_open(const FILE *fp){
-    Xpost_DiskFile df = malloc(sizeof *df);
+Xpost_File *xpost_diskfile_open(const FILE *fp){
+    Xpost_DiskFile *df = malloc(sizeof *df);
     if (df) {
         df->methods.methods = &disk_methods;
         df->file = (FILE*)fp;
     }
-    return (Xpost_File)df;
+    return (Xpost_File*)df;
 }
 
 /* filetype objects use a slightly different interpretation
@@ -241,7 +241,7 @@ Xpost_Object xpost_file_cons(Xpost_Memory_File *mem,
     Xpost_Object f;
     unsigned int ent;
     int ret;
-    Xpost_File df;
+    Xpost_File *df;
 
 #ifdef DEBUG_FILE
     printf("xpost_file_cons %p\n", fp);
@@ -475,10 +475,10 @@ int xpost_file_open(Xpost_Memory_File *mem,
 /* adapter:
            FILE* <- filetype object
    yield the FILE* from a filetype object */
-Xpost_File xpost_file_get_file_pointer(Xpost_Memory_File *mem,
+Xpost_File *xpost_file_get_file_pointer(Xpost_Memory_File *mem,
                                   Xpost_Object f)
 {
-    Xpost_File fp;
+    Xpost_File *fp;
     int ret;
 
     ret = xpost_memory_get(mem, f.mark_.padw, 0, sizeof fp, &fp);
@@ -507,7 +507,7 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
     struct stat sb;
     long sz, pos;
 
-    fp = ((Xpost_DiskFile)xpost_file_get_file_pointer(mem, f))->file;
+    fp = ((Xpost_DiskFile*)xpost_file_get_file_pointer(mem, f))->file;
     if (!fp) return ioerror;
     ret = fstat(fileno(fp), &sb);
     if (ret != 0)
@@ -532,7 +532,7 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
 int xpost_file_object_close(Xpost_Memory_File *mem,
                      Xpost_Object f)
 {
-    Xpost_File fp;
+    Xpost_File *fp;
     int ret;
 
     fp = xpost_file_get_file_pointer(mem, f);
@@ -553,7 +553,7 @@ int xpost_file_object_close(Xpost_Memory_File *mem,
     return 0;
 }
 
-int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File fp)
+int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File *fp)
 {
     int i,j,k=0;
     for (i=0; i<count; ++i)
@@ -562,7 +562,7 @@ int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File fp)
     return i;
 }
 
-int xpost_file_write(const unsigned char *buf, int size, int count, Xpost_File fp)
+int xpost_file_write(const unsigned char *buf, int size, int count, Xpost_File *fp)
 {
     int i,j,k=0;
     for (i=0; i<count; ++i)
