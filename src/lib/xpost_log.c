@@ -75,10 +75,10 @@ static Xpost_Log_Level _xpost_log_level = XPOST_LOG_LEVEL_ERR;
 static Xpost_Log_Print_Cb _xpost_log_print_cb = xpost_log_print_cb_stderr;
 static void *_xpost_log_print_cb_data = NULL;
 static FILE *_xpost_log_dump_file = NULL;
-static unsigned char _xpost_log_is_posix = 1;
 
 #ifdef _WIN32
 
+static unsigned char _xpost_log_is_posix = 1;
 static HANDLE _xpost_log_handle_stdout = NULL;
 static HANDLE _xpost_log_handle_stderr = NULL;
 

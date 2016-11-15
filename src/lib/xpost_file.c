@@ -122,7 +122,8 @@ f_tmpfile(void)
 # define f_tmpfile tmpfile
 #endif
 
-int disk_readch(Xpost_File *file){
+static int
+disk_readch(Xpost_File *file){
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     /*
      * FIXME: check if this work on Windows
@@ -162,43 +163,51 @@ int disk_readch(Xpost_File *file){
     return fgetc(df->file);
 }
 
-int disk_writech(Xpost_File *file, int c){
+static int
+disk_writech(Xpost_File *file, int c){
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return fputc(c, df->file);
 }
 
-int disk_close(Xpost_File *file){
+static int
+disk_close(Xpost_File *file){
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     FILE *fp = df->file;
+    int ret;
     if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
         return 0;
-    int ret = fclose(df->file);
+    ret = fclose(df->file);
     return df->file = NULL, ret;
 }
 
-int disk_flush(Xpost_File *file){
+static int
+disk_flush(Xpost_File *file){
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return fflush(df->file);
 }
 
-void disk_purge(Xpost_File *file){
+static void
+disk_purge(Xpost_File *file){
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
 #ifndef _WIN32
     __fpurge(df->file);
 #endif
 }
 
-int disk_unreadch(Xpost_File *file, int c){
+static int
+disk_unreadch(Xpost_File *file, int c){
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return ungetc(c, df->file);
 }
 
-long disk_tell(Xpost_File *file){
+static long
+disk_tell(Xpost_File *file){
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return ftell(df->file);
 }
 
-int disk_seek(Xpost_File *file, long offset){
+static int
+disk_seek(Xpost_File *file, long offset){
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     return fseek(df->file, offset, SEEK_SET);
 }
@@ -207,7 +216,8 @@ struct Xpost_File_Methods disk_methods = {
     disk_readch, disk_writech, disk_close, disk_flush, disk_purge, disk_unreadch, disk_tell, disk_seek
 };
 
-Xpost_File *xpost_diskfile_open(const FILE *fp){
+static Xpost_File *
+xpost_diskfile_open(const FILE *fp){
     Xpost_DiskFile *df = malloc(sizeof *df);
     if (df) {
         df->methods.methods = &disk_methods;
