@@ -52,7 +52,8 @@
 
 typedef struct Xpost_File Xpost_File;
 
-typedef struct Xpost_File_Methods {
+typedef struct Xpost_File_Methods
+{
     int (*readch)(Xpost_File*);
     int (*writech)(Xpost_File*, int);
     int (*close)(Xpost_File*);
@@ -63,11 +64,13 @@ typedef struct Xpost_File_Methods {
     int (*seek)(Xpost_File*, long);
 } Xpost_File_Methods;
 
-struct Xpost_File {
+struct Xpost_File
+{
     Xpost_File_Methods *methods;
 };
 
-typedef struct Xpost_DiskFile {
+typedef struct Xpost_DiskFile
+{
     Xpost_File methods;
     FILE *file;
 } Xpost_DiskFile;
@@ -81,42 +84,50 @@ and http://stackoverflow.com/questions/25506324/how-to-do-pollstdin-or-selectstd
  * @brief Read a byte from an Xpost_File abstraction.
  */
 static inline
-int xpost_file_getc(Xpost_File *in){
+int xpost_file_getc(Xpost_File *in)
+{
     return in->methods->readch(in);
 }
 
 static inline
-int xpost_file_putc(Xpost_File *out, int c){
+int xpost_file_putc(Xpost_File *out, int c)
+{
     return out->methods->writech(out, c);
 }
 
 static inline
-int xpost_file_close(Xpost_File *f){
+int xpost_file_close(Xpost_File *f)
+{
     return f->methods->close(f);
 }
 
 static inline
-int xpost_file_flush(Xpost_File *f){
+int xpost_file_flush(Xpost_File *f)
+{
     return f->methods->flush(f);
 }
 
 static inline
-void xpost_file_purge(Xpost_File *f){
+void xpost_file_purge(Xpost_File *f)
+{
     f->methods->purge(f);
 }
 
 static inline
-int xpost_file_ungetc(Xpost_File *in, int c){
+int xpost_file_ungetc(Xpost_File *in, int c)
+{
     return in->methods->unreadch(in, c);
 }
 
 static inline
-long xpost_file_tell(Xpost_File *f){
+long xpost_file_tell(Xpost_File *f)
+{
     return f->methods->tell(f);
 }
 
 static inline
-int xpost_file_seek(Xpost_File *f, long offset){
+int xpost_file_seek(Xpost_File *f, long offset)
+{
     return f->methods->seek(f, offset);
 }
 

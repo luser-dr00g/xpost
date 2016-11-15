@@ -123,8 +123,10 @@ f_tmpfile(void)
 #endif
 
 static int
-disk_readch(Xpost_File *file){
+disk_readch(Xpost_File *file)
+{
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
+
     /*
      * FIXME: check if this work on Windows
      * indeed, on Windows, select() needs a socket, not a fd, and fileno() returns a fd
@@ -132,6 +134,7 @@ disk_readch(Xpost_File *file){
      * and https://msdn.microsoft.com/en-us/library/windows/desktop/ms682499%28v=vs.85%29.aspx
      * Maybe WaitForSingleObject will also be needed
      */
+
 #ifdef HAVE_SYS_SELECT_H
     {
         FILE *fp;
@@ -160,34 +163,43 @@ disk_readch(Xpost_File *file){
         }
     }
 #endif
+
     return fgetc(df->file);
 }
 
 static int
-disk_writech(Xpost_File *file, int c){
+disk_writech(Xpost_File *file, int c)
+{
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
+
     return fputc(c, df->file);
 }
 
 static int
-disk_close(Xpost_File *file){
+disk_close(Xpost_File *file)
+{
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
     FILE *fp = df->file;
     int ret;
+
     if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
         return 0;
     ret = fclose(df->file);
+
     return df->file = NULL, ret;
 }
 
 static int
-disk_flush(Xpost_File *file){
+disk_flush(Xpost_File *file)
+{
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
+
     return fflush(df->file);
 }
 
 static void
-disk_purge(Xpost_File *file){
+disk_purge(Xpost_File *file)
+{
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
 #ifndef _WIN32
     __fpurge(df->file);
@@ -195,34 +207,52 @@ disk_purge(Xpost_File *file){
 }
 
 static int
-disk_unreadch(Xpost_File *file, int c){
+disk_unreadch(Xpost_File *file, int c)
+{
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
+
     return ungetc(c, df->file);
 }
 
 static long
-disk_tell(Xpost_File *file){
+disk_tell(Xpost_File *file)
+{
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
+
     return ftell(df->file);
 }
 
 static int
-disk_seek(Xpost_File *file, long offset){
+disk_seek(Xpost_File *file, long offset)
+{
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
+
     return fseek(df->file, offset, SEEK_SET);
 }
 
-struct Xpost_File_Methods disk_methods = {
-    disk_readch, disk_writech, disk_close, disk_flush, disk_purge, disk_unreadch, disk_tell, disk_seek
+struct Xpost_File_Methods disk_methods =
+{
+    disk_readch,
+    disk_writech,
+    disk_close,
+    disk_flush,
+    disk_purge,
+    disk_unreadch,
+    disk_tell,
+    disk_seek
 };
 
 static Xpost_File *
-xpost_diskfile_open(const FILE *fp){
+xpost_diskfile_open(const FILE *fp)
+{
     Xpost_DiskFile *df = malloc(sizeof *df);
-    if (df) {
+
+    if (df)
+    {
         df->methods.methods = &disk_methods;
         df->file = (FILE*)fp;
     }
+
     return (Xpost_File*)df;
 }
 
@@ -291,17 +321,20 @@ int lineedit(FILE *in, FILE **out)
     printf("tmpfile (fdopen)\n");
 #endif
     fp = f_tmpfile();
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         XPOST_LOG_ERR("tmpfile() returned NULL");
         return ioerror;
     }
-    while (c != EOF && c != '\n') {
+    while (c != EOF && c != '\n')
+    {
         (void)fputc(c, fp);
         c = fgetc(in);
     }
     fseek(fp, 0, SEEK_SET);
     //return fp;
     *out = fp;
+
     return 0;
 }
 
@@ -327,48 +360,61 @@ int statementedit(FILE *in, FILE **out)
     printf("tmpfile (fdopen)\n");
 #endif
     fp = f_tmpfile();
-    if (fp == NULL) {
+    if (fp == NULL)
+    {
         XPOST_LOG_ERR("tmpfile() returned NULL");
         return ioerror;
     }
-    do {
-        if (defer > -1) {
+    do
+    {
+        if (defer > -1)
+        {
             if (defer > MAXNEST)
             {
                 return syntaxerror;
             }
-            switch(nest[defer]) { /* what's the innermost nest? */
-            case '{': /* within a proc, can end proc or begin proc, string, hex */
-                switch (c) {
-                case '}': --defer; break;
+            switch(nest[defer])
+            { /* what's the innermost nest? */
+                case '{': /* within a proc, can end proc or begin proc, string, hex */
+                    switch (c)
+                    {
+                        case '}': --defer; break;
+                        case '{':
+                        case '(':
+                        case '<': nest[++defer] = c; break;
+                    }
+                    break;
+                case '(': /* within a string, can begin or end nested paren */
+                    switch (c)
+                    {
+                        case ')': --defer; break;
+                        case '(': nest[++defer] = c; break;
+                        case '\\': fputc(c, fp);
+                            c = fgetc(in);
+                            if (c == EOF) goto done;
+                            goto next;
+                    }
+                    break;
+                case '<': /* hexstrings don't nest, can only end it */
+                    if (c == '>') --defer;
+                    break;
+            }
+        }
+        else
+            switch (c)
+            { /* undefined, can begin any structure */
                 case '{':
                 case '(':
                 case '<': nest[++defer] = c; break;
-                } break;
-            case '(': /* within a string, can begin or end nested paren */
-                switch (c) {
-                case ')': --defer; break;
-                case '(': nest[++defer] = c; break;
                 case '\\': fputc(c, fp);
-                           c = fgetc(in);
-                           if (c == EOF) goto done;
-                           goto next;
-                } break;
-            case '<': /* hexstrings don't nest, can only end it */
-                if (c == '>') --defer; break;
+                    c = fgetc(in); break;
             }
-        } else switch (c) { /* undefined, can begin any structure */
-        case '{':
-        case '(':
-        case '<': nest[++defer] = c; break;
-        case '\\': fputc(c, fp);
-                   c = fgetc(in); break;
-        }
-        if (c == '\n') {
+        if (c == '\n')
+        {
             if (defer == -1) goto done;
             { /* sub-prompt */
                 int i;
-                for (i=0; i <= defer; i++)
+                for (i = 0; i <= defer; i++)
                     putchar(nest[i]);
                 fputs(".:", stdout);
                 fflush(NULL);
@@ -399,29 +445,36 @@ int xpost_file_open(Xpost_Memory_File *mem,
 
     f.tag = filetype;
 
-    if (strcmp(fn, "%stdin")==0) {
-        if (strcmp(mode, "r")!=0)
+    if (strcmp(fn, "%stdin") == 0)
+    {
+        if (strcmp(mode, "r") != 0)
         {
             return invalidfileaccess;
         }
         f = xpost_file_cons(mem, stdin);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-    } else if (strcmp(fn, "%stdout")==0) {
-        if (strcmp(mode, "w")!=0)
+    }
+    else if (strcmp(fn, "%stdout") == 0)
+    {
+        if (strcmp(mode, "w") != 0)
         {
             return invalidfileaccess;
         }
         f = xpost_file_cons(mem, stdout);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-    } else if (strcmp(fn, "%stderr")==0) {
-        if (strcmp(mode, "w")!=0)
+    }
+    else if (strcmp(fn, "%stderr") == 0)
+    {
+        if (strcmp(mode, "w") != 0)
         {
             return invalidfileaccess;
         }
         f = xpost_file_cons(mem, stderr);
-    } else if (strcmp(fn, "%lineedit")==0) {
+    }
+    else if (strcmp(fn, "%lineedit") == 0)
+    {
         ret = lineedit(stdin, &fp);
         if (ret)
         {
@@ -430,7 +483,9 @@ int xpost_file_open(Xpost_Memory_File *mem,
         f = xpost_file_cons(mem, fp);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-    } else if (strcmp(fn, "%statementedit")==0) {
+    }
+    else if (strcmp(fn, "%statementedit") == 0)
+    {
         ret = statementedit(stdin, &fp);
         if (ret)
         {
@@ -439,37 +494,48 @@ int xpost_file_open(Xpost_Memory_File *mem,
         f = xpost_file_cons(mem, fp);
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
         f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-    } else {
+    }
+    else
+    {
 #ifdef DEBUG_FILE
         printf("fopen\n");
 #endif
         fp = fopen(fn, mode);
-        if (fp == NULL) {
-            switch (errno) {
-            case EACCES:
-                return invalidfileaccess;
-                break;
-            case ENOENT:
-                return undefinedfilename;
-                break;
-            default:
-                return unregistered;
-                break;
+        if (fp == NULL)
+        {
+            switch (errno)
+            {
+                case EACCES:
+                    return invalidfileaccess;
+                    break;
+                case ENOENT:
+                    return undefinedfilename;
+                    break;
+                default:
+                    return unregistered;
+                    break;
             }
         }
         f = xpost_file_cons(mem, fp);
-        if (strcmp(mode, "r")==0){
+        if (strcmp(mode, "r") == 0)
+        {
             f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
             f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-        } else if (strcmp(mode, "r+")==0){
+        }
+        else if (strcmp(mode, "r+") == 0)
+        {
             f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
             f.tag |= ( (XPOST_OBJECT_TAG_ACCESS_FILE_READ
                     | XPOST_OBJECT_TAG_ACCESS_FILE_WRITE)
                     << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-        } else if (strcmp(mode, "w")==0){
+        }
+        else if (strcmp(mode, "w") == 0)
+        {
             f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
             f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
-        } else {
+        }
+        else
+        {
             XPOST_LOG_ERR("bad mode string");
             return ioerror;
         }
@@ -479,6 +545,7 @@ int xpost_file_open(Xpost_Memory_File *mem,
     f.tag |= XPOST_OBJECT_TAG_DATA_FLAG_LIT;
     //return f;
     *retval = f;
+
     return 0;
 }
 
@@ -486,7 +553,7 @@ int xpost_file_open(Xpost_Memory_File *mem,
            FILE* <- filetype object
    yield the FILE* from a filetype object */
 Xpost_File *xpost_file_get_file_pointer(Xpost_Memory_File *mem,
-                                  Xpost_Object f)
+                                        Xpost_Object f)
 {
     Xpost_File *fp;
     int ret;
@@ -534,19 +601,21 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem,
         return rangecheck;
 
     *retval = (int)(sz - pos);
+
     return 0;
 }
 
 /* close the file,
    NULL the FILE*. */
 int xpost_file_object_close(Xpost_Memory_File *mem,
-                     Xpost_Object f)
+                            Xpost_Object f)
 {
     Xpost_File *fp;
     int ret;
 
     fp = xpost_file_get_file_pointer(mem, f);
-    if (fp) {
+    if (fp)
+    {
 #ifdef DEBUG_FILE
         printf("fclose");
 #endif
@@ -565,19 +634,23 @@ int xpost_file_object_close(Xpost_Memory_File *mem,
 
 int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File *fp)
 {
-    int i,j,k=0;
-    for (i=0; i<count; ++i)
-        for (j=0; j<size; ++j)
+    int i, j, k = 0;
+
+    for (i = 0; i < count; ++i)
+        for (j = 0; j < size; ++j)
             buf[k++] = xpost_file_getc(fp);
+
     return i;
 }
 
 int xpost_file_write(const unsigned char *buf, int size, int count, Xpost_File *fp)
 {
-    int i,j,k=0;
-    for (i=0; i<count; ++i)
-        for (j=0; j<size; ++j)
+    int i, j, k = 0;
+
+    for (i = 0; i < count; ++i)
+        for (j = 0; j < size; ++j)
             xpost_file_putc(fp, buf[k++]);
+
     return i;
 }
 
@@ -587,6 +660,7 @@ Xpost_Object xpost_file_read_byte(Xpost_Memory_File *mem,
                                   Xpost_Object f)
 {
     int c;
+
     if (!xpost_file_get_status(mem, f))
     {
         return invalid;
@@ -596,6 +670,7 @@ retry:
     c = xpost_file_getc(xpost_file_get_file_pointer(mem, f));
     if (c == EOF && errno==EINTR)
         goto retry;
+
     return xpost_int_cons(c);
 }
 
