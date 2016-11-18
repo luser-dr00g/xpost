@@ -12,7 +12,7 @@
 
 /definefont { % /fontname -dict-
     dup type /dicttype ne
-    2 index type /nametype ne or {
+    2 index type /nulltype eq or {
         /definefont cvx /typecheck signalerror
     } if
     {

@@ -48,6 +48,15 @@
    The Xpost_File code for abstract use of files and file-like
    interfaces is a slight variation of an approach described
    by Tim Rentsch.
+
+   Using simple inheritance (by composition), the Xpost_File*
+   functions are virtualized through this vtable. With the 
+   specified inlining this should result in minimal overhead
+   of simple pointer indirection.
+
+   String-backed MemoryFiles and morphism-interfaced FilteredFiles
+   will implement the same virtual functions for their respective
+   structures.
    */
 
 typedef struct Xpost_File Xpost_File;

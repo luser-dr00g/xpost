@@ -185,8 +185,9 @@ disk_close(Xpost_File *file)
     if (fp == stdin || fp == stdout || fp == stderr) /* do NOT close standard files */
         return 0;
     ret = fclose(df->file);
+    df->file = NULL;
 
-    return df->file = NULL, ret;
+    return ret;
 }
 
 static int
