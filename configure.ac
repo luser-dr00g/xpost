@@ -377,7 +377,7 @@ AC_CHECK_HEADERS([libgen.h unistd.h signal.h sys/select.h])
 
 AM_PROG_CC_C_O
 
-xpost_lib_cflags="-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline -Wwrite-strings"
+xpost_lib_cflags="-pedantic -Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline -Wwrite-strings"
 
 xpost_lib_ldflags="-fdata-sections -ffunction-sections"
 
@@ -393,7 +393,7 @@ fi
 XPOST_CHECK_LINKER_FLAGS([XPOST_LIB], [${xpost_lib_ldflags}])
 
 if test "x${no_cflags}" = "xyes" ; then
-   XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline])
+   XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-pedantic -Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline])
 fi
 
 XPOST_CHECK_LINKER_FLAGS([XPOST_BIN], [-fdata-sections -ffunction-sections])
