@@ -2,8 +2,12 @@
 bin_PROGRAMS = \
 src/bin/xpost \
 src/bin/xpost_client \
-src/bin/xpost_dsc \
+src/bin/xpost_dsc
+
+if HAVE_GRAPHICS
+bin_PROGRAMS += \
 src/bin/xpost_view
+endif
 
 src_bin_xpost_view_SOURCES = \
 src/bin/xpost_view.c \

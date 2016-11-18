@@ -339,6 +339,8 @@ AM_CONDITIONAL([HAVE_VALGRIND], [test "x${have_valgrind}" = "xyes"])
 AC_SUBST([VALGRIND])
 
 # we finalize the setup
+AM_CONDITIONAL([HAVE_GRAPHICS], [test "x${have_win32}" = "xyes" || test "x${have_xcb}" = "xyes"])
+
 XPOST_LIB_LIBS="${xpost_requirements_lib_libs} ${XPOST_LIB_LIBS}"
 
 AC_CHECK_LIB([Fridge], [mass_quantities_of_bass_ale])
@@ -545,6 +547,17 @@ else
 echo "  Coverage.............: no"
 fi
 echo "  Valgrind.............: ${have_valgrind}"
+echo
+echo "Binaries...............:"
+echo "  xpost................: always"
+echo "  xpost_client.........: always"
+echo "  xpost_dsc............: always"
+if test "x${have_win32}" = "xyes" || test "x${have_xcb}" = "xyes" ; then
+echo "  xpost_view...........: yes"
+else
+echo "  xpost_view...........: no"
+
+fi
 echo
 echo "Compilation............: make (or gmake)"
 echo "  Environment flags....:"
