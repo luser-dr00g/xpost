@@ -329,8 +329,7 @@ int grok(Xpost_Context *ctx,
                     *retval = xpost_object_cvx(xpost_name_cons(ctx, "<<"));
                     return 0;
                 }
-                back(ctx, c, src);
-                while (c = next(ctx, src), c != '>' && c != EOF)
+                for ( ; c != '>' && c != EOF; c = next(ctx, src))
                 {
                     if (isspace(c))
                         continue;
