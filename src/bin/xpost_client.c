@@ -363,7 +363,7 @@ int main(int argc, const char *argv[])
     if (want_jpeg)
         xpost_dev_jpeg_options_set(ctx, jpeg_quality);
 
-    ret = xpost_run(ctx, XPOST_INPUT_STRING, prog);
+    ret = xpost_run(ctx, XPOST_INPUT_STRING, prog, 0);
     printf("executed program. xpost_run returned %s\n", ret? "yieldtocaller": "zero");
 
     if ((!want_png && !want_jpeg) && !ret)

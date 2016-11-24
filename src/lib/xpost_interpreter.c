@@ -1270,7 +1270,7 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx, int cnt, char *defs[])
    execute ps program until quit, fall-through to quit,
    SHOWPAGE_RETURN semantic, or error (default action: message, purge and quit).
  */
-XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void *inputptr)
+XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void *inputptr, size_t set_size)
 {
     Xpost_Object lsav = null;
     int llev = 0;
@@ -1289,7 +1289,10 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
         case XPOST_INPUT_STRING:
             ps_str = inputptr;
             ps_file_ptr = tmpfile();
-            fwrite(ps_str, 1, strlen(ps_str), (FILE*)ps_file_ptr);
+            if (set_size)
+                fwrite(ps_str, 1, set_size, (FILE*)ps_file_ptr);
+            else
+                fwrite(ps_str, 1, strlen(ps_str), (FILE*)ps_file_ptr);
             rewind((FILE*)ps_file_ptr);
             break;
         case XPOST_INPUT_FILEPTR:

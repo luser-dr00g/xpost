@@ -58,6 +58,8 @@
 # endif
 #endif
 
+#include <stdlib.h> /* for size_t */
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* ifdef __cplusplus */
@@ -209,6 +211,10 @@ typedef enum {
     XPOST_USE_SIZE
 } Xpost_Set_Size;
 
+/**
+ * @typedef Xpost_Output_Message
+ * @brief Specify the kind of messages that the interpreter displays to output.
+ */
 typedef enum
 {
     XPOST_OUTPUT_MESSAGE_QUIET, /**< Suppress interpreter messages. */
@@ -271,18 +277,25 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx,
  *
  * @param ctx The context to run.
  * @param input_type The input type to use.
- * @param inputptr
+ * @param inputptr The pointer passed to the interpreter.
+ * @param size The size of the memory passed to the interpreter.
  * @return
  *
  * This function executes a ps program until quit, fall-through to quit,
  * #XPOST_SHOWPAGE_RETURN semantic, or error (default action: message,
  * purge and quit).
  *
- * Depending upon the input type, this function will package the input
+ * Depending upon @p input_type, this function will package the input
  * into an appropriate postscript object and schedule it for execution
  * by marking it executable and pushing to the exec stack, or by
  * pushing to the operand stack and pushing to the exec stack a small
  * program to execute it.
+ *
+ * The parameter @p size is used when @p input_type is
+ * #XPOST_INPUT_STRING. If @p inputptr is a nul terminated string, 0
+ * can be passed and the default size will be the length of the
+ * string. If @p inputptr is a piece of memory, then pass the size of
+ * that memory.
  *
  * For a filename, push a proc to open and execute it.
  *
@@ -301,10 +314,13 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx,
  * a constant for the context, whereas it is intended that a context
  * may be re-used by calling xpost_run upon it again, presumably with
  * differing arguments.
+ *
+ * @see #Xpost_Input_Type
  */
 XPAPI int xpost_run(Xpost_Context *ctx,
                     Xpost_Input_Type input_type,
-                    const void *inputptr);
+                    const void *inputptr,
+                    size_t size);
 
 /**
  * @brief Destroy the given context.

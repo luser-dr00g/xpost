@@ -145,6 +145,23 @@ _xpost_view_options_read(int argc, char *argv[], Xpost_Output_Message *msg, cons
     return 1;
 }
 
+static void
+_xpost_view_page_display(Xpost_Context *ctx,
+                         const Xpost_Dsc *dsc,
+                         int page_num,
+                         Xpost_View_Window *win,
+                         const void *buffer)
+{
+    if ((page_num < 0) || (page_num >= dsc->header.pages))
+        return;
+
+    xpost_run(ctx, XPOST_INPUT_STRING,
+              (void *)dsc->pages[page_num].section.start,
+              dsc->pages[page_num].section.start - dsc->pages[page_num].section.end);
+
+    xpost_view_page_display(win, buffer);
+}
+
 int main(int argc, char *argv[])
 {
     Xpost_Dsc dsc;
@@ -205,7 +222,7 @@ int main(int argc, char *argv[])
         goto free_dsc;
     }
 
-    ctx = xpost_create("raster:bgr",
+    ctx = xpost_create("raster:bgra",
                        XPOST_OUTPUT_BUFFEROUT,
                        &buffer,
                        semantics,
@@ -217,11 +234,38 @@ int main(int argc, char *argv[])
         goto quit_xpost;
     }
 
-    //ret = xpost_run(ctx, XPOST_INPUT_STRING, (void *)dsc.pages[0].start);
+    /* Prolog */
+    printf("begin prolog : %d\n", (int)(dsc.prolog.end - dsc.prolog.start));
+    ret = xpost_run(ctx, XPOST_INPUT_STRING,
+                    (void *)(xpost_dsc_file_base_get(file) + dsc.prolog.start),
+                    dsc.prolog.end - dsc.prolog.start);
+    printf("end prolog %d\n", ret);
+
+    /* { */
+    /*     unsigned int *iter2; */
+    /*     int i,j; */
+    /*     buffer = malloc(width * height * sizeof(unsigned int)); */
+    /*     for (j = 0, iter2 = buffer; j < height; j++) */
+    /*     { */
+    /*         for (i = 0; i < width; i++, iter2++) */
+    /*         { */
+    /*             if ((i < 100) && (j < 200)) */
+    /*                 *iter2 = 0xffff0000; */
+    /*             else */
+    /*                 *iter2 = 0xff00ff00; */
+    /*         } */
+    /*     } */
+    /* } */
+
+    ret = xpost_run(ctx, XPOST_INPUT_STRING,
+                    (void *)(xpost_dsc_file_base_get(file) + dsc.pages[0].section.start),
+                    dsc.pages[0].section.end - dsc.pages[0].section.start);
 
     win = xpost_view_win_new(10, 10, width, height);
     if (!win)
         return 0;
+
+    _xpost_view_page_display(ctx, &dsc, 0, win, buffer);
 
     xpost_view_main_loop(win);
 

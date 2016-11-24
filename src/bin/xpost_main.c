@@ -441,7 +441,7 @@ int main(int argc, char *argv[])
         num_defs = 0;
     }
 
-    xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file);
+    xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file, 0);
     xpost_destroy(ctx);
 
     xpost_quit();

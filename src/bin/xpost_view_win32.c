@@ -47,6 +47,16 @@
 #include "xpost_dsc.h"
 #include "xpost_view.h"
 
+#include <sys/time.h>
+static double
+ecore_time_unix_get(void)
+{
+   struct timeval timev;
+
+   gettimeofday(&timev, NULL);
+   return (double)timev.tv_sec + (((double)timev.tv_usec) / 1000000);
+}
+
 typedef struct
 {
     BITMAPINFOHEADER bih;
@@ -74,6 +84,11 @@ _xpost_view_win32_procedure(HWND   window,
     Xpost_View_Window *win;
 
     win = (Xpost_View_Window *)GetWindowLongPtr(window, GWLP_USERDATA);
+    if (!win)
+    {
+        printf("no win...\n");
+        return DefWindowProc(window, message, window_param, data_param);
+    }
 
     switch (message)
     {
@@ -90,6 +105,44 @@ _xpost_view_win32_procedure(HWND   window,
             if (window_param == VK_LEFT)
                 printf(" left !!\n");
             return 0;
+        case WM_ERASEBKGND:
+            return 1;
+        case WM_PAINT:
+        {
+            RECT rect;
+
+            printf("PAINT0\n");
+            if (GetUpdateRect(window, &rect, FALSE))
+            {
+                PAINTSTRUCT ps;
+                HDC dc;
+
+                dc = BeginPaint(window, &ps);
+                if (dc)
+                {
+                    HGDIOBJ obj;
+                    double t1, t2;
+                    HDC dc_mem = CreateCompatibleDC(dc);
+                    printf("PAINT1 %ld %ld %ld %ld\n", rect.left, rect.top, rect.right, rect.bottom);
+                    printf("PAINT2 %ld %ld %ld %ld\n", ps.rcPaint.left, ps.rcPaint.top, ps.rcPaint.right, ps.rcPaint.bottom);
+                    t1 = ecore_time_unix_get();
+                    obj = SelectObject(dc_mem, win->bitmap);
+                    BitBlt(dc,
+                           rect.left, rect.top,
+                           rect.right - rect.left,
+                           rect.bottom - rect.top,
+                           dc_mem,
+                           rect.left, rect.top,
+                           SRCCOPY);
+                    SelectObject(dc_mem, obj);
+                    DeleteDC(dc_mem);
+                    EndPaint(window, &ps);
+                    t2 = ecore_time_unix_get();
+                    printf("blit : %E\n", t2 - t1);
+                }
+            }
+            return 0;
+        }
         case WM_DESTROY:
             printf("destroy window message\n");
             PostQuitMessage(0);
@@ -108,7 +161,7 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
     HICON icon = NULL;
     HICON icon_sm = NULL;
 
-    win = (Xpost_View_Window *)malloc(sizeof(Xpost_View_Window));
+    win = (Xpost_View_Window *)calloc(1, sizeof(Xpost_View_Window));
     if (!win)
         return NULL;
 
@@ -136,14 +189,14 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
 
     memset (&wc, 0, sizeof (WNDCLASSEX));
     wc.cbSize = sizeof (WNDCLASSEX);
-    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.style = 0; /* CS_HREDRAW | CS_VREDRAW; */
     wc.lpfnWndProc = _xpost_view_win32_procedure;
     wc.cbClsExtra = 0;
     wc.cbWndExtra = 0;
     wc.hInstance = win->instance;
     wc.hIcon = icon;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)(1 + COLOR_BTNFACE);
+    wc.hbrBackground = NULL; /* (HBRUSH)(1 + COLOR_BTNFACE); */
     wc.lpszMenuName =  NULL;
     wc.lpszClassName = "XPOST_VIEW";
     wc.hIconSm = icon_sm;
@@ -257,7 +310,17 @@ xpost_view_win_del(Xpost_View_Window *win)
 }
 
 void
-xpost_view_main_loop(Xpost_View_Window *win)
+xpost_view_page_display(const Xpost_View_Window *win,
+                        const void *buffer)
+{
+    /* FIXME: remove that memcpy */
+    memcpy(win->buf, buffer, win->bitmap_info->bih.biSizeImage);
+    InvalidateRect(win->window, NULL, FALSE);
+    UpdateWindow(win->window);
+}
+
+void
+xpost_view_main_loop(const Xpost_View_Window *win)
 {
     while(1)
     {
