@@ -637,11 +637,6 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
     while (1)
     {
         next = _xpost_dsc_line_get(ctx, &end, &sz);
-        if (!next)
-        {
-            XPOST_LOG_INFO("Can not get line: EOF.");
-            break;
-        }
 
         if ((dsc->ps_vmaj > 1) && (sz > 255))
             XPOST_LOG_WARN("Line too long");
@@ -1163,7 +1158,9 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
                 free(ordinal_str);
                 if (ordinal < 1)
+                {
                     break;
+                }
 
                 if (dsc->pages && (page_idx < dsc->header.pages))
                 {
@@ -1178,6 +1175,12 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
         } /* end of management of script */
 
         ctx->cur_loc = next;
+
+        if (!next)
+        {
+            XPOST_LOG_INFO("EOF reached.");
+            break;
+        }
     }
 
     /*
