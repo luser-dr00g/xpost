@@ -51,28 +51,33 @@ struct _Xpost_View_Window
 {
     xcb_connection_t *c;
     xcb_screen_t *scr;
+    xcb_image_t *image;
     xcb_drawable_t window;
-    int width, height;
-    xcb_pixmap_t img;
+    xcb_drawable_t pixmap;
+    int width, height, depth;
     xcb_gcontext_t gc;
-    xcb_colormap_t cmap;
 };
+
 
 Xpost_View_Window *
 xpost_view_win_new(int xorig, int yorig, int width, int height)
 {
     xcb_screen_iterator_t iter;
+    xcb_rectangle_t rect;
     xcb_get_geometry_reply_t *geom;
     Xpost_View_Window *win;
     int scrno;
     unsigned int values[3];
     unsigned int mask;
-    unsigned char depth;
 
-    win = (Xpost_View_Window *)malloc(sizeof(Xpost_View_Window));
+    win = (Xpost_View_Window *)calloc(1, sizeof(Xpost_View_Window));
     if (!win)
         return NULL;
 
+    win->width = width;
+    win->height = height;
+
+    /* open a connection */
     win->c = xcb_connect(NULL, &scrno);
     if (xcb_connection_has_error(win->c))
     {
@@ -80,6 +85,7 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
         goto free_win;
     }
 
+    /* get the screen */
     iter = xcb_setup_roots_iterator(xcb_get_setup(win->c));
     for (; iter.rem; --scrno, xcb_screen_next(&iter))
     {
@@ -90,6 +96,7 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
         }
     }
 
+    /* get the depth of the screen */
     geom = xcb_get_geometry_reply(win->c,
                                   xcb_get_geometry(win->c, win->scr->root), 0);
     if (!geom)
@@ -98,9 +105,10 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
         goto disconnect_c;
     }
 
-    depth = geom->depth;
+    win->depth = geom->depth;
     free(geom);
 
+    /* create the window */
     win->window = xcb_generate_id(win->c);
     mask = XCB_CW_BACK_PIXMAP | XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
     values[0] = XCB_NONE;
@@ -116,7 +124,7 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
                       mask,
                       values);
 
-    /* set title */
+    /* set title of the window */
     xcb_change_property(win->c,
                         XCB_PROP_MODE_REPLACE,
                         win->window,
@@ -125,27 +133,28 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
                         8,
                         sizeof("Xpost viewer") - 1,
                         "Xpost viewer");
-    xcb_map_window(win->c, win->window);
-    xcb_flush(win->c);
 
-    win->img = xcb_generate_id(win->c);
-    xcb_create_pixmap(win->c,
-                      depth, win->img,
-                      win->window, win->width, win->height);
-
+    /* set background context */
     win->gc = xcb_generate_id(win->c);
-    values[0] = win->scr->black_pixel;
-    values[1] = win->scr->white_pixel;
+    values[0] = win->scr->white_pixel;
+    values[1] = 0;
     xcb_create_gc(win->c, win->gc, win->window,
-                  XCB_GC_FOREGROUND | XCB_GC_BACKGROUND,
+                  XCB_GC_BACKGROUND | XCB_GC_GRAPHICS_EXPOSURES,
                   values);
 
-    win->cmap = xcb_generate_id(win->c);
-    xcb_create_colormap(win->c, XCB_COLORMAP_ALLOC_NONE, win->cmap,
-                        win->window, win->scr->root_visual);
+    /* set background pixmap */
+    rect.x = 0;
+    rect.y = 0;
+    rect.width = width;
+    rect.height = height;
+    win->pixmap = xcb_generate_id(win->c);
+    xcb_create_pixmap(win->c,
+                      win->depth, win->pixmap,
+                      win->window, width, height);
+    xcb_poly_fill_rectangle(win->c, win->pixmap, win->gc, 1, &rect);
 
-    win->width = width;
-    win->height = height;
+    xcb_map_window(win->c, win->window);
+    xcb_flush(win->c);
 
     return win;
 
@@ -168,20 +177,34 @@ xpost_view_win_del(Xpost_View_Window *win)
 }
 
 void
-xpost_view_main_loop(Xpost_View_Window *win)
+xpost_view_page_display(Xpost_View_Window *win,
+                        const void *buffer)
+{
+    xcb_image_t *image;
+
+    image = xcb_image_create_native(win->c, win->width, win->height,
+                                    XCB_IMAGE_FORMAT_Z_PIXMAP,
+                                    win->depth, (void *)buffer,
+                                    4 * win->width * win->height, NULL);
+    xcb_image_put(win->c, win->window, win->gc, image, 0, 0, 0);
+    win->image = image;
+}
+
+void
+xpost_view_main_loop(const Xpost_View_Window *win)
 {
     xcb_intern_atom_cookie_t cookie1;
     xcb_intern_atom_cookie_t cookie2;
     xcb_intern_atom_reply_t* reply1;
     xcb_intern_atom_reply_t* reply2;
-    xcb_gcontext_t gc = { 0 };
     int finished;
 
     /*
      * Listen to X client messages in order to be able to pickup
      * the "delete window" message that is generated for example
      * when someone clicks the top-right X button within the window
-     * manager decoration (or when user hits ALT-F4). */
+     * manager decoration (or when user hits ALT-F4).
+     */
     cookie1 = xcb_intern_atom(win->c, 1,
                               sizeof("WM_DELETE_WINDOW") - 1, "WM_DELETE_WINDOW");
     cookie2 = xcb_intern_atom(win->c, 1,
@@ -201,8 +224,7 @@ xpost_view_main_loop(Xpost_View_Window *win)
             switch (XCB_EVENT_RESPONSE_TYPE(e))
             {
                 case XCB_EXPOSE:
-                    /* xcb_copy_area(win->c, win->pixmap, win->window, gc, */
-                    /*               0, 0, 0, 0, win->width, win->height); */
+                    xcb_image_put(win->c, win->window, win->gc, win->image, 0, 0, 0);
                     xcb_flush(win->c);
                     break;
                 case XCB_CLIENT_MESSAGE:

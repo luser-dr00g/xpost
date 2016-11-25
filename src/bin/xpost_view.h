@@ -38,7 +38,7 @@ Xpost_View_Window *xpost_view_win_new(int xorig, int yorig, int width, int heigh
 
 void xpost_view_win_del(Xpost_View_Window *win);
 
-void xpost_view_page_display(const Xpost_View_Window *win,
+void xpost_view_page_display(Xpost_View_Window *win,
                              const void *buffer);
 
 void xpost_view_main_loop(const Xpost_View_Window *win);
