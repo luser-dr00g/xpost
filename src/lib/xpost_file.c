@@ -254,7 +254,7 @@ xpost_diskfile_open(const FILE *fp)
         df->file = (FILE*)fp;
     }
 
-    return (Xpost_File*)df;
+    return &df->methods;
 }
 
 /* filetype objects use a slightly different interpretation
