@@ -113,7 +113,9 @@ xpost_view_win_new(int xorig, int yorig, int width, int height)
     mask = XCB_CW_BACK_PIXMAP | XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
     values[0] = XCB_NONE;
     values[1] = win->scr->white_pixel;
-    values[2] = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS;
+    values[2] = XCB_EVENT_MASK_EXPOSURE |
+                XCB_EVENT_MASK_BUTTON_PRESS |
+                XCB_EVENT_MASK_KEY_RELEASE;
     xcb_create_window(win->c, XCB_COPY_FROM_PARENT,
                       win->window, win->scr->root,
                       xorig, yorig,
@@ -241,6 +243,17 @@ xpost_view_main_loop(const Xpost_View_Window *win)
                     printf("button pressed\n");
                     finished = 1;
                     break;
+                case XCB_KEY_RELEASE:
+                {
+                    xcb_key_release_event_t *event;
+
+                    event = (xcb_key_release_event_t *)e;
+                    if (event->detail == 113)
+                        xpost_view_page_change(-1);
+                    if (event->detail == 114)
+                        xpost_view_page_change(1);
+                    break;
+                }
             }
             free (e);
         }
