@@ -82,7 +82,7 @@ _xpost_view_usage(const char *progname)
 }
 
 static int
-_xpost_view_options_read(int argc, char *argv[], Xpost_Output_Message *msg, const char **file)
+_xpost_view_options_read(int argc, char *argv[], Xpost_Output_Message *msg, const char **filename)
 {
     const char *psfile;
     Xpost_Output_Message output_msg;
@@ -148,7 +148,7 @@ _xpost_view_options_read(int argc, char *argv[], Xpost_Output_Message *msg, cons
     }
 
     *msg = output_msg;
-    *file = psfile;
+    *filename = psfile;
 
     return 1;
 }
