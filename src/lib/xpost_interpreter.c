@@ -44,21 +44,21 @@
 #include "xpost.h"
 #include "xpost_log.h"
 #include "xpost_compat.h" /* mkstemp, xpost_isatty */
-#include "xpost_memory.h"  // itp contexts contain mfiles and mtabs
-#include "xpost_object.h"  // eval functions examine objects
-#include "xpost_stack.h"  // eval functions manipulate stacks
+#include "xpost_memory.h"  /* itp contexts contain mfiles and mtabs */
+#include "xpost_object.h"  /* eval functions examine objects */
+#include "xpost_stack.h"  /* eval functions manipulate stacks */
 #include "xpost_error.h"
 #include "xpost_context.h"
-#include "xpost_save.h"  // save/restore vm
-#include "xpost_string.h"  // eval functions examine strings
-#include "xpost_array.h"  // eval functions examine arrays
-#include "xpost_name.h"  // eval functions examine names
-#include "xpost_dict.h"  // eval functions examine dicts
-#include "xpost_file.h"  // eval functions examine files
+#include "xpost_save.h"  /* save/restore vm */
+#include "xpost_string.h"  /* eval functions examine strings */
+#include "xpost_array.h"  /* eval functions examine arrays */
+#include "xpost_name.h"  /* eval functions examine names */
+#include "xpost_dict.h"  /* eval functions examine dicts */
+#include "xpost_file.h"  /* eval functions examine files */
 
-#include "xpost_interpreter.h" // uses: context itp MAXCONTEXT MAXMFILE
-#include "xpost_garbage.h"  //  test gc, install collect() in context's memory files
-#include "xpost_operator.h"  // eval functions call operators
+#include "xpost_interpreter.h" /* uses: context itp MAXCONTEXT MAXMFILE */
+#include "xpost_garbage.h"  /*  test gc, install collect() in context's memory files */
+#include "xpost_operator.h"  /* eval functions call operators */
 #include "xpost_oplib.h"
 
 static
@@ -77,6 +77,13 @@ int eval(Xpost_Context *ctx);
 int mainloop(Xpost_Context *ctx);
 void init(void);
 void xit(void);
+
+/*
+   global shortcut for a single-threaded interpreter
+FIXME: "static context pointer". s.b. changed to a returned
+   value from xpost_create()
+   value now returned. this variable should be removed */
+Xpost_Context *xpost_ctx;
 
 /* getter function for _initializing, for export */
 int xpost_interpreter_get_initializing(void)
@@ -136,7 +143,7 @@ unsigned int nextid = 0;
 static int xpost_interpreter_cid_init(unsigned int *cid)
 {
     unsigned int startid = nextid;
-    //printf("cid_init\n");
+    /*printf("cid_init\n"); */
     while ( xpost_interpreter_cid_get_context(++nextid)->state != 0 )
     {
         if (nextid == startid + MAXCONTEXT)
@@ -157,7 +164,7 @@ static int xpost_interpreter_cid_init(unsigned int *cid)
  */
 Xpost_Context *xpost_interpreter_cid_get_context(unsigned int cid)
 {
-    //TODO reject cid 0
+    /*TODO reject cid 0 */
     return &itpdata->ctab[ (cid - 1) % MAXCONTEXT ];
 }
 
@@ -208,7 +215,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
     xpost_oplib_init_ops(ctx); /* populate the optab (and systemdict) with operators */
 
     {
-        Xpost_Object gd; //globaldict
+        Xpost_Object gd; /*globaldict */
         gd = xpost_dict_cons (ctx, 100);
         if (xpost_object_get_type(gd) == nulltype)
         {
@@ -232,7 +239,7 @@ int _xpost_interpreter_extra_context_init(Xpost_Context *ctx, const char *device
     if (xpost_object_get_type(xpost_name_cons(ctx, "solitaire")) == invalidtype)
         return 0;
     {
-        Xpost_Object ud; //userdict
+        Xpost_Object ud; /*userdict */
         ud = xpost_dict_cons (ctx, 100);
         if (xpost_object_get_type(ud) == nulltype)
         {
@@ -339,7 +346,7 @@ int evalload(Xpost_Context *ctx)
             xpost_stack_pop(ctx->lo, ctx->es)))
         return stackoverflow;
     assert(ctx->gl->base);
-    //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "load", NULL,0,0).mark_.padw);
+    /*xpost_operator_exec(ctx, xpost_operator_cons(ctx, "load", NULL,0,0).mark_.padw); */
     ret = xpost_operator_exec(ctx, ctx->opcode_shortcuts.load);
     if (ret)
         return ret;
@@ -422,7 +429,7 @@ int evalstring(Xpost_Context *ctx)
     if (!xpost_stack_push(ctx->lo, ctx->os, s))
         return stackoverflow;
     assert(ctx->gl->base);
-    //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "token",NULL,0,0).mark_.padw);
+    /*xpost_operator_exec(ctx, xpost_operator_cons(ctx, "token",NULL,0,0).mark_.padw); */
     ret = xpost_operator_exec(ctx, ctx->opcode_shortcuts.token);
     if (ret)
         return ret;
@@ -464,7 +471,7 @@ int evalfile(Xpost_Context *ctx)
     if (!xpost_stack_push(ctx->lo, ctx->os, f))
         return stackoverflow;
     assert(ctx->gl->base);
-    //xpost_operator_exec(ctx, xpost_operator_cons(ctx, "token",NULL,0,0).mark_.padw);
+    /*xpost_operator_exec(ctx, xpost_operator_cons(ctx, "token",NULL,0,0).mark_.padw); */
     ret = xpost_operator_exec(ctx, ctx->opcode_shortcuts.token);
     if (ret)
         return ret;
@@ -561,11 +568,11 @@ int idleproc (Xpost_Context *ctx)
 static
 int validate_context(Xpost_Context *ctx)
 {
-    //assert(ctx);
-    //assert(ctx->lo);
-    //assert(ctx->lo->base);
-    //assert(ctx->gl);
-    //assert(ctx->gl->base);
+    /*assert(ctx); */
+    /*assert(ctx->lo); */
+    /*assert(ctx->lo->base); */
+    /*assert(ctx->gl); */
+    /*assert(ctx->gl->base); */
     if (!ctx)
     {
         XPOST_LOG_ERR("ctx invalid");
@@ -664,7 +671,7 @@ void _onerror(Xpost_Context *ctx,
     {
         fprintf(stderr, "LOOP in error handler\nabort\n");
         ++ctx->quit;
-        //exit(undefinedresult);
+        /*exit(undefinedresult); */
     }
 
     ++itpdata->in_onerror;
@@ -697,7 +704,7 @@ void _onerror(Xpost_Context *ctx,
                 errorname[err]);
         xpost_stack_push(ctx->lo, ctx->es,
                 xpost_object_cvx(xpost_name_cons(ctx, "stop")));
-        //itpdata->in_onerror = 0;
+        /*itpdata->in_onerror = 0; */
         return;
     }
 
@@ -735,12 +742,12 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
 
     return ctx;
 
-    // return next context to execute
+    /* return next context to execute */
     printf("--switching contexts--\n");
-    //putchar('.'); fflush(0);
+    /*putchar('.'); fflush(0); */
     for (i = (ctx - itpdata->ctab) + 1; i < MAXCONTEXT; i++)
     {
-        //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
+        /*printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state); */
         if (itpdata->ctab[i].state == C_RUN)
         {
             return &itpdata->ctab[i];
@@ -752,7 +759,7 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
     }
     for (i = 0; i <= ctx-itpdata->ctab; i++)
     {
-        //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
+        /*printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state); */
         if (itpdata->ctab[i].state == C_RUN)
         {
             return &itpdata->ctab[i];
@@ -764,7 +771,7 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
     }
     for (i = (ctx - itpdata->ctab) + 1; i < MAXCONTEXT; i++)
     {
-        //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
+        /*printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state); */
         if (itpdata->ctab[i].state == C_RUN)
         {
             return &itpdata->ctab[i];
@@ -772,7 +779,7 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
     }
     for (i = 0; i <= ctx-itpdata->ctab; i++)
     {
-        //printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state);
+        /*printf("--%d-- %d\n", itpdata->ctab[i].id, itpdata->ctab[i].state); */
         if (itpdata->ctab[i].state == C_RUN)
         {
             return &itpdata->ctab[i];
@@ -782,14 +789,6 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
     return ctx;
 }
 
-
-/*
-   global shortcut for a single-threaded interpreter
-FIXME: "static context pointer". s.b. changed to a returned
-   value from xpost_create()
-   // value now returned. this variable should be removed
- */
-Xpost_Context *xpost_ctx;
 
 
 /*
@@ -1168,7 +1167,7 @@ XPAPI Xpost_Context *xpost_create(const char *device,
         return NULL;
 #endif
 
-    nextid = 0; //reset process counter
+    nextid = 0; /*reset process counter */
 
     /* Allocate and initialize all interpreter data structures. */
     ret = initalldata(device);
@@ -1280,6 +1279,7 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
     const FILE *ps_file_ptr = NULL;
     int ret;
     Xpost_Object device;
+    Xpost_Object semantic;
 
     switch(input_type)
     {
@@ -1320,7 +1320,7 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
     */
     if (ps_file)
     {
-        //printf("ps_file\n");
+        /*printf("ps_file\n"); */
         xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(xpost_string_cons(ctx, strlen(ps_file), ps_file)));
         xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "startfilename")));
     }
@@ -1346,21 +1346,18 @@ run:
     ctx->state = C_RUN;
     ret = mainloop(ctx);
 
-    if (ret == 1)
-    {
-        Xpost_Object sem = xpost_dict_get(ctx,
-                                          xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
-                                          xpost_name_cons(ctx, "ShowpageSemantics"));
-        if (sem.int_.val == XPOST_SHOWPAGE_RETURN)
-            return yieldtocaller;
-    }
+    semantic = xpost_dict_get(ctx,
+                  xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
+                  xpost_name_cons(ctx, "ShowpageSemantics"));
+    if (semantic.int_.val == XPOST_SHOWPAGE_RETURN)
+        return ret == 1 ? yieldtocaller : 0;
 
     XPOST_LOG_INFO("destroying device");
-    device = xpost_dict_get(xpost_ctx,
-            xpost_stack_bottomup_fetch(xpost_ctx->lo, xpost_ctx->ds, 2),
-            xpost_name_cons(xpost_ctx, "DEVICE"));
+    device = xpost_dict_get(ctx,
+            xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2),
+            xpost_name_cons(ctx, "DEVICE"));
     XPOST_LOG_INFO("device type=%s", xpost_object_type_names[xpost_object_get_type(device)]);
-    //xpost_operator_dump(ctx, 1); // is this pointer value constant?
+    /*xpost_operator_dump(ctx, 1); // is this pointer value constant? */
     if (xpost_object_get_type(device) == arraytype){
         XPOST_LOG_INFO("running proc");
         xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
@@ -1375,12 +1372,12 @@ run:
     {
         Xpost_Object Destroy;
         XPOST_LOG_INFO("destroying device dict");
-        Destroy = xpost_dict_get(xpost_ctx, device, xpost_name_cons(xpost_ctx, "Destroy"));
+        Destroy = xpost_dict_get(ctx, device, xpost_name_cons(ctx, "Destroy"));
         if (xpost_object_get_type(Destroy) == operatortype)
         {
             int res;
-            xpost_stack_push(xpost_ctx->lo, xpost_ctx->os, device);
-            res = xpost_operator_exec(xpost_ctx, Destroy.mark_.padw);
+            xpost_stack_push(ctx->lo, ctx->os, device);
+            res = xpost_operator_exec(ctx, Destroy.mark_.padw);
             if (res)
                 XPOST_LOG_ERR("%s error destroying device", errorname[res]);
             else
@@ -1416,8 +1413,8 @@ XPAPI void xpost_destroy(Xpost_Context *ctx)
         printf("bye!\n");
         fflush(NULL);
     }
-    //xpost_garbage_collect(itpdata->ctab->gl, 1, 1);
-    //xpost_garbage_collect(itpdata->ctab->lo, 1, 1);
+    /*xpost_garbage_collect(itpdata->ctab->gl, 1, 1); */
+    /*xpost_garbage_collect(itpdata->ctab->lo, 1, 1); */
 #if 0
 #ifndef XPOST_NO_GC
     xpost_garbage_collect(ctx->gl, 1, 1);
@@ -1426,6 +1423,6 @@ XPAPI void xpost_destroy(Xpost_Context *ctx)
 #endif
 
     /* exit if all contexts are destroyed */
-    //xpost_interpreter_exit(itpdata);
-    //free(itpdata);
+    /*xpost_interpreter_exit(itpdata); */
+    /*free(itpdata); */
 }
