@@ -584,10 +584,10 @@ end % userdict
     /GRAPHICS_LOADED where { pop }{
         DATA_DIR (/graphics.ps) strcat run
         userdict /GRAPHICS_LOADED true put
+        /QUIET where { pop }{ (graphics loaded, calling initgraphics\n)print } ifelse
+        userdict /USEDRAWLINE true put
+        initgraphics
     } ifelse
-    /QUIET where { pop }{ (graphics loaded, calling initgraphics\n)print } ifelse
-	userdict /USEDRAWLINE true put
-	initgraphics
 } def
 
 /testfont {
