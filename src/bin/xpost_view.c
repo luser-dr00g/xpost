@@ -41,6 +41,14 @@
 #include "xpost_dsc.h"
 #include "xpost_view.h"
 
+static Xpost_Context *ctx = NULL;
+static Xpost_Dsc _dsc = { 0 };
+static Xpost_Dsc *dsc = &_dsc;
+static Xpost_Dsc_File *file = NULL;
+static int page_num = 0;
+static Xpost_View_Window *win = NULL;
+static void *buffer = NULL;
+
 static void
 _xpost_view_license(void)
 {
@@ -146,29 +154,35 @@ _xpost_view_options_read(int argc, char *argv[], Xpost_Output_Message *msg, cons
 }
 
 static void
-_xpost_view_page_display(Xpost_Context *ctx,
-                         const Xpost_Dsc *dsc,
-                         int page_num,
-                         Xpost_View_Window *win,
-                         const void *buffer)
+_xpost_view_page_set(void)
 {
-    if ((page_num < 0) || (page_num >= dsc->header.pages))
-        return;
-
     xpost_run(ctx, XPOST_INPUT_STRING,
-              (void *)dsc->pages[page_num].section.start,
-              dsc->pages[page_num].section.start - dsc->pages[page_num].section.end);
+              (void *)(xpost_dsc_file_base_get(file) + dsc->pages[page_num].section.start),
+              dsc->pages[page_num].section.end - dsc->pages[page_num].section.start);
 
     xpost_view_page_display(win, buffer);
+
+    xpost_run(ctx, XPOST_INPUT_RESUME,
+              (void *)(xpost_dsc_file_base_get(file) + dsc->pages[page_num].section.start),
+              dsc->pages[page_num].section.end - dsc->pages[page_num].section.start);
+}
+
+void xpost_view_page_change(int i)
+{
+    int page = page_num + i;
+
+    if (page < 0) page = 0;
+    if (page > (dsc->header.pages - 1)) page = dsc->header.pages - 1;
+
+    if (page != page_num)
+    {
+        page_num = page;
+        _xpost_view_page_set();
+    }
 }
 
 int main(int argc, char *argv[])
 {
-    Xpost_Dsc dsc;
-    Xpost_Dsc_File *file;
-    Xpost_Context *ctx;
-    Xpost_View_Window *win;
-    void *buffer;
     const char *psfile;
     Xpost_Dsc_Status status;
     Xpost_Output_Message output_msg;
@@ -187,7 +201,7 @@ int main(int argc, char *argv[])
     if (!file)
         return EXIT_FAILURE;
 
-    status = xpost_dsc_parse(file, &dsc);
+    status = xpost_dsc_parse(file, dsc);
 
     /*
      * status:
@@ -209,8 +223,8 @@ int main(int argc, char *argv[])
     }
     else
     {
-        width = dsc.header.bounding_box.urx;
-        height = dsc.header.bounding_box.ury;
+        width = dsc->header.bounding_box.urx;
+        height = dsc->header.bounding_box.ury;
     }
 
     if (!xpost_init())
@@ -231,37 +245,40 @@ int main(int argc, char *argv[])
         goto quit_xpost;
     }
 
+    win = xpost_view_win_new(10, 10, width, height);
+    if (!win)
+    {
+        fprintf(stderr, "Can not create window\n");
+        goto destroy_context;
+    }
+
     /* Prolog */
-    printf("begin prolog : %d\n", (int)(dsc.prolog.end - dsc.prolog.start));
+    printf("begin prolog : %d\n", (int)(dsc->prolog.end - dsc->prolog.start));
     ret = xpost_run(ctx, XPOST_INPUT_STRING,
-                    (void *)(xpost_dsc_file_base_get(file) + dsc.prolog.start),
-                    dsc.prolog.end - dsc.prolog.start);
+                    (void *)(xpost_dsc_file_base_get(file) + dsc->prolog.start),
+                    dsc->prolog.end - dsc->prolog.start);
     printf("end prolog %d\n", ret);
 
     /* FIXME: manage the case where there is no DSC */
     /* get buffer for the first page */
-    ret = xpost_run(ctx, XPOST_INPUT_STRING,
-                    (void *)(xpost_dsc_file_base_get(file) + dsc.pages[0].section.start),
-                    dsc.pages[0].section.end - dsc.pages[0].section.start);
-
-    win = xpost_view_win_new(10, 10, width, height);
-    if (!win)
-        return 0;
-
-    _xpost_view_page_display(ctx, &dsc, 0, win, buffer);
+    _xpost_view_page_set();
 
     xpost_view_main_loop(win);
 
+    xpost_view_win_del(win);
+    xpost_destroy(ctx);
     xpost_quit();
-    xpost_dsc_free(&dsc);
+    xpost_dsc_free(dsc);
     xpost_dsc_file_del(file);
 
     return EXIT_SUCCESS;
 
+  destroy_context:
+    xpost_destroy(ctx);
   quit_xpost:
     xpost_quit();
   free_dsc:
-    xpost_dsc_free(&dsc);
+    xpost_dsc_free(dsc);
   del_file:
     xpost_dsc_file_del(file);
 

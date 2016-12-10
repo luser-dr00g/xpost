@@ -43,8 +43,6 @@
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 
-#include "xpost.h"
-#include "xpost_dsc.h"
 #include "xpost_view.h"
 
 #include <sys/time.h>
@@ -101,9 +99,9 @@ _xpost_view_win32_procedure(HWND   window,
             return 0;
         case WM_KEYUP:
             if (window_param == VK_RIGHT)
-                printf(" right !!\n");
+                xpost_view_page_change(1);
             if (window_param == VK_LEFT)
-                printf(" left !!\n");
+                xpost_view_page_change(-1);
             return 0;
         case WM_ERASEBKGND:
             return 1;
