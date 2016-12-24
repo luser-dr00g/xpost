@@ -237,7 +237,7 @@ _xpost_log_fprint_cb(FILE *stream,
         return;
 
     if ((int)res != (s + 1))
-        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %d written\n", __FUNCTION__, s + 1, res);
+        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %d written\n", __func__, s + 1, res);
 
     (void)data;
 }
@@ -349,7 +349,7 @@ xpost_log_print(Xpost_Log_Level level,
 
     if (!fmt)
     {
-        fprintf(stderr, "ERROR: %s() fmt == NULL\n", __FUNCTION__);
+        fprintf(stderr, "ERROR: %s() fmt == NULL\n", __func__);
         return;
     }
 
@@ -374,7 +374,7 @@ xpost_log_print_dump(Xpost_Log_Level level,
 
     if (!fmt)
     {
-        fprintf(stderr, "ERROR: %s() fmt == NULL\n", __FUNCTION__);
+        fprintf(stderr, "ERROR: %s() fmt == NULL\n", __func__);
         return;
     }
 
@@ -409,7 +409,7 @@ xpost_log_print_dump(Xpost_Log_Level level,
         return;
 
     if ((int)res != (s + 1))
-        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %d written\n", __FUNCTION__, s + 1, res);
+        fprintf(stderr, "ERROR: %s(): want to write %d bytes, %d written\n", __func__, s + 1, res);
 
     va_end(args);
 }
