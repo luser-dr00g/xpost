@@ -84,6 +84,18 @@ typedef struct Xpost_DiskFile
     FILE *file;
 } Xpost_DiskFile;
 
+typedef struct Xpost_MemoryFile
+{
+    Xpost_File methods;
+    unsigned char *contents;
+    int is_malloc;
+    int is_read;
+    size_t read_next;
+    size_t read_limit;
+    size_t write_next;
+    size_t write_capacity;
+} Xpost_MemoryFile;
+
 /* interface fgetc
    in preparation for more elaborate cross-platform non-blocking mechanisms
 cf. http://stackoverflow.com/questions/20428616/how-to-handle-window-events-while-waiting-for-terminal-input
@@ -146,6 +158,15 @@ int xpost_file_seek(Xpost_File *f, long offset)
  */
 Xpost_Object xpost_file_cons(Xpost_Memory_File *mem, /*@NULL@*/ const FILE *fp);
 
+/**
+ * @brief Construct a file object wrapping a pointer and size.
+ */
+Xpost_Object xpost_file_cons_readbuffer(Xpost_Memory_File *mem, unsigned char *str, size_t limit);
+
+/**
+ * @brief Construct a file object for accumulating output.
+ */
+Xpost_Object xpost_file_cons_writebuffer(Xpost_Memory_File *mem);
 
 /**
  * @brief Open and construct a file object given filename and mode.

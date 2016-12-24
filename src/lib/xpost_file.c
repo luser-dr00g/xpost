@@ -257,6 +257,159 @@ xpost_diskfile_open(const FILE *fp)
     return &df->methods;
 }
 
+
+static int
+memory_readch(Xpost_File *f)
+{
+    Xpost_MemoryFile *mf = (Xpost_MemoryFile *)f;
+
+    if (!mf->is_read)
+        return EOF;
+    if (mf->read_next == mf->read_limit)
+        return EOF;
+
+    return mf->contents[ mf->read_next++ ];
+}
+
+static int
+memory_writech(Xpost_File *f, int c)
+{
+    Xpost_MemoryFile *mf = (Xpost_MemoryFile *)f;
+
+    if (mf->is_read)
+        return EOF;
+    if (mf->write_next == mf->write_capacity){
+        unsigned char *tmp;
+        if (!mf->is_malloc)
+	    return EOF;
+	tmp = realloc(mf->contents, mf->write_capacity * 1.4 + 12);
+	if (!tmp)
+	    return EOF;
+	mf->contents = tmp;
+	mf->write_capacity = mf->write_capacity * 1.4 + 12;
+    }
+
+    mf->contents[ mf->write_next++ ] = c;
+    return 0;
+}
+
+static int
+memory_close(Xpost_File *f)
+{
+    Xpost_MemoryFile *mf = (Xpost_MemoryFile *)f;
+
+    if (mf->is_malloc)
+        free(mf->contents);
+
+    mf->contents = NULL;
+    mf->read_next =
+      mf->read_limit =
+      mf->write_next =
+      mf->write_capacity = 0;
+    
+    return 0;
+}
+
+static int
+memory_flush(Xpost_File *f)
+{
+    Xpost_MemoryFile *mf = (Xpost_MemoryFile *)f;
+
+    (void)mf;
+    return 0;
+}
+
+static void
+memory_purge(Xpost_File *f)
+{
+    Xpost_MemoryFile *mf = (Xpost_MemoryFile *)f;
+
+    if (mf->is_read)
+        mf->read_next = mf->read_limit;
+}
+
+static int
+memory_unreadch(Xpost_File *f, int c)
+{
+    Xpost_MemoryFile *mf = (Xpost_MemoryFile *)f;
+
+    if (!mf->is_read)
+        return EOF;
+    if (mf->read_next <= 0)
+        return EOF;
+
+    mf->contents[ --mf->read_next ] = c;
+    return 0;
+}
+
+static long
+memory_tell(Xpost_File *f)
+{
+    Xpost_MemoryFile *mf = (Xpost_MemoryFile *)f;
+
+    return mf->read_next;
+}
+
+static int
+memory_seek(Xpost_File *f, long pos)
+{
+    Xpost_MemoryFile *mf = (Xpost_MemoryFile *)f;
+
+    if (pos > (ssize_t)mf->read_limit)
+        return EOF;
+
+    mf->read_next = pos;
+    return 0;
+}
+
+struct Xpost_File_Methods memory_methods =
+{
+    memory_readch,
+    memory_writech,
+    memory_close,
+    memory_flush,
+    memory_purge,
+    memory_unreadch,
+    memory_tell,
+    memory_seek
+};
+
+static Xpost_File *
+xpost_memoryfile_open_read(unsigned char *ptr, size_t limit)
+{
+    Xpost_MemoryFile *mf = malloc(sizeof *mf);
+
+    if (mf)
+    {
+        mf->methods.methods = &memory_methods;
+        mf->contents = ptr;
+        mf->is_read = 1;
+        mf->is_malloc = 0;
+        mf->read_next = 0;
+        mf->read_limit = limit;
+    }
+
+    return &mf->methods;
+}
+
+static Xpost_File *
+xpost_memoryfile_open_write(void)
+{
+    Xpost_MemoryFile *mf = malloc(sizeof *mf);
+
+    if (mf)
+    {
+        mf->methods.methods = &memory_methods;
+	mf->contents = NULL;
+	mf->is_read = 0;
+	mf->is_malloc = 1;
+	mf->write_next = 0;
+	mf->write_capacity = 0;
+    }
+
+    return &mf->methods;
+}
+
 /* filetype objects use a slightly different interpretation
    of the access field.
    It uses two flags rather than a 2-bit number.
@@ -299,8 +452,58 @@ Xpost_Object xpost_file_cons(Xpost_Memory_File *mem,
     ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof df, &df);
     if (!ret)
     {
-        XPOST_LOG_ERR("cannot save FILE* in VM");
+        XPOST_LOG_ERR("cannot save file pointer in VM");
         return invalid;
+    }
+    return f;
+}
+
+Xpost_Object xpost_file_cons_readbuffer(Xpost_Memory_File *mem,
+					unsigned char *ptr,
+					size_t limit)
+{
+    Xpost_Object f;
+    unsigned int ent;
+    int ret;
+    Xpost_File *mf;
+
+    f.tag = filetype;
+    mf = xpost_memoryfile_open_read(ptr, limit);
+    if (!xpost_memory_table_alloc(mem, sizeof mf, filetype, &ent))
+    {
+        XPOST_LOG_ERR("cannot allocate file record");
+        return invalid;
+    }
+    f.mark_.padw = ent;
+    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof mf, &mf);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot save file pointer in VM");
+        return invalid;
+    }
+    return f;
+}
+
+Xpost_Object xpost_file_cons_writebuffer(Xpost_Memory_File *mem)
+{
+    Xpost_Object f;
+    unsigned int ent;
+    int ret;
+    Xpost_File *mf;
+
+    f.tag = filetype;
+    mf = xpost_memoryfile_open_write();
+    if (!xpost_memory_table_alloc(mem, sizeof mf, filetype, &ent))
+    {
+        XPOST_LOG_ERR("cannot allocate file record");
+	return invalid;
+    }
+    f.mark_.padw = ent;
+    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof mf, &mf);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot save file pointer in VM");
+	return invalid;
     }
     return f;
 }
