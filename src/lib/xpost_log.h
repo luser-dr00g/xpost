@@ -44,7 +44,7 @@
  * @brief Log a message on the specified level and format.
  */
 #define XPOST_LOG(l, ...) \
-    xpost_log_print(l, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)
+    xpost_log_print(l, __FILE__, __func__, __LINE__, __VA_ARGS__)
 
 /**
  * @def XPOST_LOG_ERR(...)
@@ -83,7 +83,7 @@
  * @brief Dump in file a message on the specified level and format.
  */
 #define XPOST_LOG_DUMP(...)                                           \
-    xpost_log_print_dump(XPOST_LOG_LEVEL_INFO, __FUNCTION__, __VA_ARGS__)
+    xpost_log_print_dump(XPOST_LOG_LEVEL_INFO, __func__, __VA_ARGS__)
 
 /**
  * @enum Xpost_Log_Level
