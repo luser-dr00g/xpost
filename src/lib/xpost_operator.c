@@ -37,6 +37,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
+#include <string.h> /* memcpy */
 
 #include "xpost.h"
 #include "xpost_log.h"
@@ -317,6 +318,7 @@ void xpost_operator_dump(Xpost_Context *ctx,
     char *s;
     Xpost_Signature *sig;
     unsigned int adr;
+    uintptr_t fp;
 
     xpost_memory_table_get_addr(ctx->gl,
                                 XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &adr);
@@ -328,10 +330,11 @@ void xpost_operator_dump(Xpost_Context *ctx,
     str = xpost_name_get_string(ctx, o);
     s = xpost_string_get_pointer(ctx, str);
     sig = (void *)(ctx->gl->base + op.sigadr);
+    memcpy(&fp, &sig[0].fp, sizeof fp);
     printf("<operator %d %d:%*s %p>",
            opcode,
            str.comp_.sz, str.comp_.sz, s,
-           (void *)sig[0].fp );
+           (void *)fp );
 }
 
 /* create operator object by opcode number */

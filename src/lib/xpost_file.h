@@ -193,8 +193,8 @@ int xpost_file_get_bytes_available(Xpost_Memory_File *mem, Xpost_Object f, int *
  */
 int xpost_file_object_close(Xpost_Memory_File *mem, Xpost_Object f);
 
-int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File *fp);
-int xpost_file_write(const unsigned char *buf, int size, int count, Xpost_File *fp);
+int xpost_file_read(char *buf, int size, int count, Xpost_File *fp);
+int xpost_file_write(const char *buf, int size, int count, Xpost_File *fp);
 
 /**
  * @brief Read a byte from file object.

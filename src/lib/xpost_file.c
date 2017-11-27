@@ -836,7 +836,7 @@ int xpost_file_object_close(Xpost_Memory_File *mem,
     return 0;
 }
 
-int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File *fp)
+int xpost_file_read(char *buf, int size, int count, Xpost_File *fp)
 {
     int i, j, k = 0;
 
@@ -847,7 +847,7 @@ int xpost_file_read(unsigned char *buf, int size, int count, Xpost_File *fp)
     return i;
 }
 
-int xpost_file_write(const unsigned char *buf, int size, int count, Xpost_File *fp)
+int xpost_file_write(const char *buf, int size, int count, Xpost_File *fp)
 {
     int i, j, k = 0;
 

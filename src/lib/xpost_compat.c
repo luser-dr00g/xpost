@@ -438,11 +438,22 @@ xpost_glob_free(glob_t *pglob)
 }
 
 unsigned char
-xpost_module_path_get(const void *addr, char *buf, unsigned int size)
+xpost_module_path_get(int (*fp)(void), char *buf, unsigned int size)
 {
+    void *addr;
+
+    
 #if defined (_WIN32) || defined (__CYGWIN__)
     MEMORY_BASIC_INFORMATION mbi;
 
+    if (sizeof addr != sizeof fp)
+    {
+        //XPOST_LOG_ERR("sizeof uintptr_t != sizeof (int (*)())");
+
+        return 0;
+    }
+    memcpy(&addr, &fp, sizeof addr);
+    
     if (VirtualQuery(addr, &mbi, sizeof(mbi)) &&
         (mbi.State == MEM_COMMIT) &&
         (mbi.AllocationBase))
@@ -491,6 +502,12 @@ xpost_module_path_get(const void *addr, char *buf, unsigned int size)
     }
 #else
     Dl_info xpost_info;
+
+    if (sizeof addr != sizeof fp)
+    {
+        XPOST_LOG_ERR("sizeof uintptr_t != sizeof (int (*)())");
+    }
+    memcpy(&addr, &fp, sizeof addr);
 
     if (dladdr(addr, &xpost_info))
     {

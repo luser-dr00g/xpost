@@ -963,7 +963,8 @@ void setlocalconfig(Xpost_Context *ctx,
         dimensions = malloc(2 + (int)ceil(log10(width)) + (int)ceil(log10(height)));
         sprintf(dimensions, "%d %d", width, height);
     } else {
-        dimensions = "612 792";
+        static char x[] = "612 792";
+        dimensions = x;
     }
     newdevstr = xpost_string_cons(ctx,
                                   strlen(strtemplate) - 6
@@ -1047,7 +1048,10 @@ void loadinitps(Xpost_Context *ctx)
     XPOST_PATH_INIT;
 
 #ifdef PACKAGE_DATA_DIR
-    path = PACKAGE_DATA_DIR;
+    {
+        static char x[] = PACKAGE_DATA_DIR;
+        path = x;
+    }
     XPOST_PATH_INIT;
 #endif
 
