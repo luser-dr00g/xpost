@@ -229,13 +229,13 @@ xpost_font_face_transform(void *face, float *mat)
 {
 #ifdef HAVE_FREETYPE
     FT_Matrix matrix;
-    FT_Vector pen;
+    //FT_Vector pen;
     matrix.xx = (FT_Fixed)(mat[0] * 0x10000L);
     matrix.xy = (FT_Fixed)(mat[1] * 0x10000L);
     matrix.yx = (FT_Fixed)(mat[2] * 0x10000L);
     matrix.yy = (FT_Fixed)(mat[3] * 0x10000L);
-    pen.x = (FT_F26Dot6)(mat[4] * 64.0);
-    pen.y = (FT_F26Dot6)(mat[5] * 64.0);
+    //pen.x = (FT_F26Dot6)(mat[4] * 64.0);
+    //pen.y = (FT_F26Dot6)(mat[5] * 64.0);
     FT_Set_Transform((FT_Face)face, &matrix, 0);
 #else
     (void)face;
