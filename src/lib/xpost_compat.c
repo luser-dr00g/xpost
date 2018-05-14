@@ -96,6 +96,8 @@ void *alloca (size_t);
 #endif
 
 #include "xpost_compat.h"
+#include "xpost.h"
+#include "xpost_log.h"
 
 /*
    Enable keyboard echo on terminal (console) input
