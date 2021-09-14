@@ -33,6 +33,10 @@
 # include <config.h>
 #endif
 
+#ifdef HAVE_STDLIB_H
+# undef HAVE_STDLIB_H
+#endif
+
 #ifdef HAVE_LIBJPEG
 
 #include <stdlib.h>

@@ -143,7 +143,7 @@ AC_DEFUN([XPOST_CHECK_DOXYGEN],
 DOXYGEN="doxygen"
 
 AC_ARG_ENABLE([doc],
-   AC_HELP_STRING(
+   AS_HELP_STRING(
       [--disable-doc],
       [Disable the build of the documentation @<:@default=yes@:>@]),
    [if test "${disable_doc}" = "yes" ; then
@@ -155,7 +155,7 @@ AC_ARG_ENABLE([doc],
 )
 
 AC_ARG_WITH([doxygen],
-   [AC_HELP_STRING(
+   [AS_HELP_STRING(
       [--with-doxygen=FILE],
       [doxygen program to use @<:@default=doxygen@:>@])],
    [DOXYGEN=${withval}],

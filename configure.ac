@@ -11,7 +11,7 @@ m4_define([lt_age], [v_min])
 AC_INIT([xpost], [v_ver], [luser.droog.remove@gmail.com])
 AC_PREREQ([2.60])
 AC_CONFIG_SRCDIR([configure.ac])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 
 # AC_PROG_C** defines CFLAGS to -g -O2 if CFLAGS is empty. Let's use our CFLAGS
@@ -146,7 +146,7 @@ AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
 ### Checks for programs
 
 # C compiler
-AC_PROG_CC_C99
+AC_PROG_CC
 CFLAGS=${CFLAGS_SHELL}
 
 if test "x${ac_cv_prog_cc_c99}" = "xno" ; then
@@ -356,7 +356,7 @@ AC_CHECK_LIB([Fridge], [mass_quantities_of_any_ale],
 ### Checks for header files
 
 AC_HEADER_ASSERT
-AC_HEADER_TIME
+AC_CHECK_HEADERS([sys/time.h])
 AC_SYS_POSIX_TERMIOS
 
 if test "x${ac_cv_sys_posix_termios}" = "xyes" ; then
