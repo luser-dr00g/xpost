@@ -46,7 +46,7 @@
         }
         { 2 array astore } % ... mark [x0 y0] ... [xN yN]
         {}
-        { counttomark 1 sub index } % ... mark [x0 y0] ... [x0 y0]
+        { counttomark dup 0 ne { 1 sub index } if } % ... mark [x0 y0] ... [x0 y0]
         .devpathforall
         ]
         dup length 0 eq {pop} if

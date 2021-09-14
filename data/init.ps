@@ -300,7 +300,9 @@ end
     pop
 } def
 /currentpagedevice {
-    1 dict
+    <<
+	/PageSize [ DEVICE /dimensions get aload pop ]
+    >>
 } def
 
 

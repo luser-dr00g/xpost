@@ -185,11 +185,9 @@ int Sanchorsearch(Xpost_Context *ctx,
     char *s, *k;
     Xpost_Object interval;
 
-    if (seek.comp_.sz > str.comp_.sz)
-        return rangecheck;
     s = xpost_string_get_pointer(ctx, str);
     k = xpost_string_get_pointer(ctx, seek);
-    if (ancsearch(s, k, seek.comp_.sz))
+    if (seek.comp_.sz <= str.comp_.sz && ancsearch(s, k, seek.comp_.sz))
     {
         interval = xpost_object_get_interval(str, seek.comp_.sz, str.comp_.sz - seek.comp_.sz);
         if (xpost_object_get_type(interval) == invalidtype)

@@ -101,6 +101,8 @@ int _findfont(Xpost_Context *ctx,
     Xpost_Object privatestr;
     struct fontdata data;
     char *fname;
+    Xpost_Object fontbbox;
+    Xpost_Object fontbboxarray[4];
 
     if (xpost_object_get_type(fontname) == nametype)
         fontstr = xpost_name_get_string(ctx, fontname);
@@ -113,11 +115,19 @@ int _findfont(Xpost_Context *ctx,
     fontdict = xpost_dict_cons (ctx, 10);
     privatestr = xpost_string_cons(ctx, sizeof data, NULL);
     xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "Private"), privatestr);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontName"), fontname);
 
     /* initialize font data, with x-scale and y-scale set to 1 */
     data.face = xpost_font_face_new_from_name(fname);
     if (data.face == NULL)
         return invalidfont;
+
+    fontbbox = xpost_array_cons(ctx, 4);
+    xpost_font_face_get_bbox(data.face, fontbboxarray);
+    xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
+		     xpost_object_get_ent(fontbbox),
+		     0, 4 * sizeof(Xpost_Object), fontbboxarray);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontBBox"), fontbbox);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
@@ -1006,6 +1016,7 @@ int _kshow(Xpost_Context *ctx,
     int has_kerning;
     unsigned int glyph_previous;
 
+    (void) &proc;
     /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     if (xpost_object_get_type(userdict) != dicttype)

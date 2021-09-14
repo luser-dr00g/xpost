@@ -136,7 +136,7 @@ int _create_cont(Xpost_Context *ctx,
     privatestr = xpost_string_cons(ctx, sizeof(PrivateData), NULL);
     if (xpost_object_get_type(privatestr) == invalidtype)
     {
-        XPOST_LOG_ERR("cannot allocat private data structure");
+        XPOST_LOG_ERR("cannot allocate private data structure");
         return unregistered;
     }
     xpost_dict_put(ctx, devdic, namePrivate, privatestr);

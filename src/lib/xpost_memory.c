@@ -314,7 +314,7 @@ xpost_memory_file_grow(Xpost_Memory_File *mem,
         sz = xpost_memory_page_size;
     else
         sz = (sz / xpost_memory_page_size + 1) * xpost_memory_page_size;
-    sz += mem->max;
+    sz += mem->max * 1.5;
 
     XPOST_LOG_INFO("grow memory file%s%s (old: %d  new: %d)",
                    mem->fname ? " for " : "", mem->fname ? mem->fname : "",
@@ -542,11 +542,9 @@ xpost_memory_table_init(Xpost_Memory_File *mem)
 
 /* install free-list function into memory file */
 int
-xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
-                                               int (*free_list_alloc)(struct Xpost_Memory_File *mem,
-                                                                      unsigned int sz,
-                                                                      unsigned int tag,
-                                                                      unsigned int *entity))
+xpost_memory_register_free_list_alloc_function(
+    Xpost_Memory_File *mem,
+    int (*free_list_alloc)(struct Xpost_Memory_File *mem, unsigned int sz, unsigned int tag, unsigned int *entity))
 {
     mem->free_list_alloc = free_list_alloc;
     mem->free_list_alloc_is_installed = 1;
@@ -555,10 +553,9 @@ xpost_memory_register_free_list_alloc_function(Xpost_Memory_File *mem,
 
 /* install garbage-collect function into memory file */
 int
-xpost_memory_register_garbage_collect_function(Xpost_Memory_File *mem,
-                                               int (*garbage_collect)(struct Xpost_Memory_File *mem,
-                                                                      int dosweep,
-                                                                      int markall))
+xpost_memory_register_garbage_collect_function(
+    Xpost_Memory_File *mem,
+    int (*garbage_collect)(struct Xpost_Memory_File *mem, int dosweep, int markall))
 {
     mem->garbage_collect = garbage_collect;
     mem->garbage_collect_is_installed = 1;

@@ -230,7 +230,7 @@ _xpost_log_fprint_cb(FILE *stream,
     else
 #endif
     _xpost_log_posix_print_prefix_func(stream, level, file, fct, line);
-    res = fprintf(stream, str);
+    res = fprintf(stream, "%s", str);
     free(str);
 
     if (res < 0)
@@ -402,7 +402,7 @@ xpost_log_print_dump(Xpost_Log_Level level,
     str[s + 1] = '\0';
 
     fprintf(_xpost_log_dump_file, "%s() : ", fct);
-    res = fprintf(_xpost_log_dump_file, str);
+    res = fprintf(_xpost_log_dump_file, "%s", str);
     free(str);
 
     if (res < 0)

@@ -95,6 +95,8 @@ void *alloca (size_t);
 # undef WIN32_LEAN_AND_MEAN
 #endif
 
+#include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_compat.h"
 
 /*

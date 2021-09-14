@@ -1167,7 +1167,7 @@ int main(void)
 
     xpost_quit();
 
-}
+// WTF???  }
     return 0;
 }
 

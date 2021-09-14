@@ -59,6 +59,8 @@
 //#define RAD_PER_DEG (M_PI / 180.0)
 #define RAD_PER_DEG (0.0174533)
 
+// TODO Factor out name_cons() calls.
+
 static
 Xpost_Object _get_ctm(Xpost_Context *ctx)
 {

@@ -1,5 +1,5 @@
 /*
- * Xpost - a Level-2 Postscript interpreter
+2 * Xpost - a Level-2 Postscript interpreter
  * Copyright (C) 2013-2016, Michael Joshua Ryan
  * Copyright (C) 2013, Thorsten Behrens
  * All rights reserved.
@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 #include <string.h> /* memcpy */
+#include <stdint.h>
 
 #include "xpost.h"
 #include "xpost_log.h"
@@ -331,10 +332,13 @@ void xpost_operator_dump(Xpost_Context *ctx,
     s = xpost_string_get_pointer(ctx, str);
     sig = (void *)(ctx->gl->base + op.sigadr);
     memcpy(&fp, &sig[0].fp, sizeof fp);
+    /*
     printf("<operator %d %d:%*s %p>",
            opcode,
            str.comp_.sz, str.comp_.sz, s,
            (void *)fp );
+    */
+    XPOST_LOG_DUMP("%*s ", str.comp_.sz, s);
 }
 
 /* create operator object by opcode number */

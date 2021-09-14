@@ -201,6 +201,15 @@ xpost_font_face_new_from_name(const char *name)
 }
 
 void
+xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray){
+    FT_Face f = face;
+    bboxarray[0] = xpost_real_cons(f->bbox.xMin);
+    bboxarray[1] = xpost_real_cons(f->bbox.yMin);
+    bboxarray[2] = xpost_real_cons(f->bbox.xMax);
+    bboxarray[3] = xpost_real_cons(f->bbox.yMax);
+}
+
+void
 xpost_font_face_free(void *face)
 {
 #ifdef HAVE_FREETYPE

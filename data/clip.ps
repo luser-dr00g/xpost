@@ -264,23 +264,29 @@ def
 
     CR { % one clipping polygon
         %dup dup length 2 sub get % polygon final-point
-        dup 0 get
-        /U exch def
-        1 1 index length 1 sub getinterval
-        {
-            /V exch def
-            [ U aload pop V aload pop p2abc ]  % clip-line
-            /CL exch def
-            /DEBUGCLIP where { pop
-                CL ==
-            } if
+	dup length 0 eq {
+	    pop
+	}{
+	    
+	    dup 0 get
+	    /U exch def
+	    1 1 index length 1 sub getinterval
+	    {
+		/V exch def
+		[ U aload pop V aload pop p2abc ]  % clip-line
+		/CL exch def
+		/DEBUGCLIP where { pop
+		    CL ==
+		} if
 
-            /PA [ PA { % one subject polygon
-                CL hodgman-sutherland
-            } forall ] def
+		/PA [ PA { % one subject polygon
+		    CL hodgman-sutherland
+		} forall ] def
 
-            /U V def
-        } forall
+		/U V def
+	    } forall
+
+	} ifelse
     } forall
     newpath
 

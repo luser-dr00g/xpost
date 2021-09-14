@@ -284,11 +284,12 @@ static unsigned char
 _xpost_dsc_integer_get_from_string(const unsigned char *str, int *val)
 {
     char *endptr;
+    long v;
 
-    *val = strtol((const char *)str, &endptr, 10);
+    *val = v = strtol((const char *)str, &endptr, 10);
     if (((errno == ERANGE) &&
-         ((*val == LONG_MAX) || (*val == LONG_MIN))) ||
-        ((errno != 0) && (*val == 0)))
+         ((v == LONG_MAX) || (v == LONG_MIN))) ||
+        ((errno != 0) && (v == 0)))
     {
         perror("strtol");
         return 0;

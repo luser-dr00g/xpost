@@ -9,10 +9,12 @@ data/image.ps \
 data/pgmimage.ps \
 data/ppmimage.ps \
 data/nulldev.ps \
+data/pdfwrite.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
 data/paint.ps \
+data/pattern.ps \
 data/font.ps \
 data/init.ps \
 data/prepr.ps \
@@ -44,10 +46,12 @@ data/image.ps \
 data/pgmimage.ps \
 data/ppmimage.ps \
 data/nulldev.ps \
+data/pdfwrite.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
 data/paint.ps \
+data/pattern.ps \
 data/font.ps \
 data/init.ps \
 data/prepr.ps \

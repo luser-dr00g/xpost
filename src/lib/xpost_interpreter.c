@@ -623,14 +623,14 @@ int eval(Xpost_Context *ctx)
 
     if (_xpost_interpreter_is_tracing)
     {
-        XPOST_LOG_DUMP("eval(): Executing: ");
+        //XPOST_LOG_DUMP("eval(): Executing: ");
         xpost_object_dump(t);
-        XPOST_LOG_DUMP("Stack: ");
-        xpost_stack_dump(ctx->lo, ctx->os);
-        XPOST_LOG_DUMP("Dict Stack: ");
-        xpost_stack_dump(ctx->lo, ctx->ds);
-        XPOST_LOG_DUMP("Exec Stack: ");
-        xpost_stack_dump(ctx->lo, ctx->es);
+        //XPOST_LOG_DUMP("Stack: ");
+        //xpost_stack_dump(ctx->lo, ctx->os);
+        //XPOST_LOG_DUMP("Dict Stack: ");
+        //xpost_stack_dump(ctx->lo, ctx->ds);
+        //XPOST_LOG_DUMP("Exec Stack: ");
+        //xpost_stack_dump(ctx->lo, ctx->es);
     }
 
     ret = idleproc(ctx); /* periodically process asynchronous events */
@@ -916,16 +916,17 @@ void setlocalconfig(Xpost_Context *ctx,
 {
     const char *device_strings[][3] =
     {
-        { "pgm",    "",                 "newPGMIMAGEdevice" },
-        { "ppm",    "",                 "newPPMIMAGEdevice" },
-        { "null",   "",                 "newnulldevice"     },
-        { "xcb",    "loadxcbdevice",    "newxcbdevice"      },
-        { "gdi",    "loadwin32device",  "newwin32device"    },
-        { "gl",     "loadwin32device",  "newwin32device"    },
-        { "bgr",    "loadbgrdevice",    "newbgrdevice"      },
-        { "raster", "loadrasterdevice", "newrasterdevice"   },
-        { "png",    "loadpngdevice",    "newpngdevice"      },
-        { "jpeg",   "loadjpegdevice",   "newjpegdevice"      },
+        { "pgm",     "",                 "newPGMIMAGEdevice" },
+        { "ppm",     "",                 "newPPMIMAGEdevice" },
+        { "null",    "",                 "newnulldevice"     },
+        { "xcb",     "loadxcbdevice",    "newxcbdevice"      },
+        { "gdi",     "loadwin32device",  "newwin32device"    },
+        { "gl",      "loadwin32device",  "newwin32device"    },
+        { "bgr",     "loadbgrdevice",    "newbgrdevice"      },
+        { "raster",  "loadrasterdevice", "newrasterdevice"   },
+        { "pdfwrite","",                 "newPDFWRITEdevice" },
+        { "png",     "loadpngdevice",    "newpngdevice"      },
+        { "jpeg",    "loadjpegdevice",   "newjpegdevice"      },
         { NULL, NULL, NULL }
     };
     const char *strtemplate = "currentglobal false setglobal "
@@ -1054,6 +1055,24 @@ void loadinitps(Xpost_Context *ctx)
     }
     XPOST_PATH_INIT;
 #endif
+
+    {
+        static char x[] = "data";
+        path = x;
+    }
+    XPOST_PATH_INIT;
+
+    {
+        static char x[] = "../data";
+        path = x;
+    }
+    XPOST_PATH_INIT;
+
+    {
+        static char x[] = "../../data";
+        path = x;
+    }
+    XPOST_PATH_INIT;
 
     XPOST_LOG_ERR("init.ps can not be found");
 
@@ -1387,6 +1406,15 @@ run:
             else
                 XPOST_LOG_INFO("destroyed device");
         }
+	if (xpost_object_get_type(Destroy) == arraytype)
+	{
+	    XPOST_LOG_INFO("running Destroy proc");
+	    xpost_stack_push(ctx->lo, ctx->os, device);
+	    xpost_stack_push(ctx->lo, ctx->es, Destroy);
+
+	    ctx->quit = 0;
+	    mainloop(ctx);
+	}
     }
 
     xpost_save_restore_snapshot(ctx->gl);

@@ -19,6 +19,7 @@
     /DeviceGray /setgray cvx
     /DeviceRGB /setrgbcolor cvx
     /DeviceCMYK /setcmykcolor cvx
+    /Pattern { pop }
 >> def
 /setcolor {
     //setcolordict currentcolorspace get exec
@@ -157,6 +158,16 @@
     ColorConversion /DeviceCMYK get
         graphicsdict /currgstate get /colorspace get
         get exec
+} bind def
+
+% if PatternType == 1 and PaintType == 2, then color comps will also be passed
+/setpattern {
+    currentcolorspace 0 get /Pattern ne {
+	%[ /Pattern currentcolorspace ] setcolorspace
+	/DeviceGrey setcolorspace
+	0 setgray
+    } if
+    setcolor
 } bind def
 
 /QUIET where { pop }{ (eof color\n)print } ifelse

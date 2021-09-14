@@ -100,6 +100,12 @@ void xpost_font_quit(void);
 void *xpost_font_face_new_from_name(const char *name);
 
 /**
+ * @brief Return bounding box from a font face.
+ *
+ */
+void xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray);
+
+/**
  * @brief Free the given font.
  *
  * @param[in,out] face The font face.
