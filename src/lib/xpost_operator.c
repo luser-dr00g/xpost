@@ -38,6 +38,7 @@
 #include <stdio.h>
 #include <stdlib.h> /* NULL */
 #include <string.h> /* memcpy */
+#include <stdint.h> /* uintptr_t */
 
 #include "xpost.h"
 #include "xpost_log.h"
