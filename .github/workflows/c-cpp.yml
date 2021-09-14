@@ -16,7 +16,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get -qq update
-        sudo apt install build-essential libpng-dev libjpeg-dev libfreetype6-dev libfontconfig1-dev libxcb-icccm4-dev libxcb-image0-dev libxcb1-dev check
+        sudo apt install build-essential libpng-dev libjpeg-dev libfreetype6-dev libfontconfig1-dev libxcb-icccm4-dev libxcb-image0-dev libxcb1-dev libxcb-util-dev check
     - name: configure
       run: autoreconf -vif && ./configure --with-tests=regular
     - name: make
