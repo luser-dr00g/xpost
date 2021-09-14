@@ -1,0 +1,15 @@
+%!
+
+% dict matrix  makepattern  pattern
+/makepattern {
+    exch dup length dict copy exch
+    gstate currentgstate exch                      % d gs mat
+    2 copy pop /currmatrix get dup concatmatrix  % d gs' mat
+    pop %pstack ()=
+    dup /currpath 1 dict put    % clear currentpath     % d gs'
+    % replace clippath with dict/BBox
+    % replace device with special one
+    /Implementation exch 3 copy put pop pop
+    readonly
+} def
+
