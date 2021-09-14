@@ -214,7 +214,7 @@ mkstemp_fill(HCRYPTPROV provider, char *template)
 int
 mkstemp(char *template)
 {
-    HCRYPTPROV provider = NULL;
+    HCRYPTPROV provider = 0;
     char *filename;
     char *trail;
     size_t template_length;
