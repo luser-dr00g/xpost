@@ -79,6 +79,7 @@ void *alloca (size_t);
 #endif
 
 #include "xpost.h"
+#include "xpost_log.h"
 #include "xpost_compat.h"
 #include "xpost_memory.h"
 #include "xpost_object.h"
@@ -180,6 +181,17 @@ int xpost_op_file_write (Xpost_Context *ctx,
 
 const char *hex = "0123456789" "ABCDEF" "abcdef";
 
+static
+int read_hex_digit( Xpost_File *f, int *p )
+{
+    int eof = 0;
+    do
+        if ((*p = xpost_file_getc(f)) == EOF)
+            ++eof;
+    while ( !eof && !strchr(hex, *p) );
+    return eof;
+}
+
 /* file string  readhexstring  substring true
                                false
    read hex-encoded data from file into string */
@@ -200,28 +212,17 @@ int xpost_op_file_readhexstring (Xpost_Context *ctx,
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
 
-    for (n = 0; !eof && n < S.comp_.sz; n++)
+    for (n = 0; n < S.comp_.sz; n++)
     {
-        do
-        {
-            c[0] = xpost_file_getc(f);
-            if (c[0] == EOF) ++eof;
-        } while(!eof && strchr(hex, c[0]) != NULL);
-        if (!eof)
-        {
-            do
-            {
-                c[1] = xpost_file_getc(f);
-                if (c[1] == EOF) ++eof;
-            } while(!eof && strchr(hex, c[1]) != NULL);
-        }
-        else
-        {
-            c[1] = '0';
-        }
+        eof = read_hex_digit(f, &c[0]);
+	XPOST_LOG_INFO("read %c", c[0]);
+        if (!eof) eof = read_hex_digit(f, &c[1]);
+        if (eof) break;
+	XPOST_LOG_INFO("read %c", c[1]);
         s[n] = ((strchr(hex, toupper(c[0])) - hex) << 4)
-             | (strchr(hex, toupper(c[1])) - hex);
+             + (strchr(hex, toupper(c[1])) - hex);
     }
+    fflush(stdout);
     S.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, S);
     xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(!eof));
