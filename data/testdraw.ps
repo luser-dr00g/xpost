@@ -1,4 +1,4 @@
-loadgraphics
+%loadgraphics
 %initgraphics
 
 /randgray {
@@ -95,7 +95,9 @@ loadgraphics
 dup (initial rng seed: )=only =
 dup /initialsrand exch def
 srand
+currentfile flushfile
 .75 setflat
+
 
 %[1 0 0 -1 0 DEVICE /height get] setmatrix
 

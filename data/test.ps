@@ -667,7 +667,18 @@ rand rand eq not check
 %(rcheck)=
 %rcurveto
 %(read)=
-%(readhexstring)=
+
+(readhexstring)=
+{currentfile 3 string readhexstring}exec
+616263
+
+check (abc) eq check
+
+{currentfile 3 string readhexstring}exec
+303132
+
+check (012) eq check
+
 %(readline)=
 %(readonly)=
 %(readstring)=
@@ -825,7 +836,7 @@ false false xor false eq check
 7 3 xor 4 eq check
 12 3 xor 15 eq check
 
-DATA_DIR(/testdraw.ps)strcat run
+%DATA_DIR(/testdraw.ps)strcat run
 
 failcount 0 eq {
     (SUCCESS)=
