@@ -532,7 +532,7 @@ int lineedit(FILE *in, FILE **out)
     }
     while (c != EOF && c != '\n')
     {
-        (void)fputc(c, fp);
+        if (fputc(c, fp) == EOF) return ioerror;
         c = fgetc(in);
     }
     fseek(fp, 0, SEEK_SET);
@@ -593,7 +593,7 @@ int statementedit(FILE *in, FILE **out)
                     {
                         case ')': --defer; break;
                         case '(': nest[++defer] = c; break;
-                        case '\\': fputc(c, fp);
+                        case '\\': if (fputc(c, fp) == EOF) return ioerror;
                             c = fgetc(in);
                             if (c == EOF) goto done;
                             goto next;
@@ -610,7 +610,7 @@ int statementedit(FILE *in, FILE **out)
                 case '{':
                 case '(':
                 case '<': nest[++defer] = c; break;
-                case '\\': fputc(c, fp);
+                case '\\': if (fputc(c, fp) == EOF) return ioerror;
                     c = fgetc(in); break;
             }
         if (c == '\n')
@@ -625,7 +625,7 @@ int statementedit(FILE *in, FILE **out)
             }
         }
 next:
-        fputc(c, fp);
+        if (fputc(c, fp) == EOF) return ioerror;
         c = fgetc(in);
     } while(c != EOF);
 done:
@@ -861,7 +861,7 @@ int xpost_file_write(const char *buf, int size, int count, Xpost_File *fp)
 
     for (i = 0; i < count; ++i)
         for (j = 0; j < size; ++j)
-            xpost_file_putc(fp, buf[k++]);
+            if (xpost_file_putc(fp, buf[k++]) == EOF) return i;
 
     return i;
 }
