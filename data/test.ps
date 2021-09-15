@@ -681,7 +681,18 @@ check (012) eq check
 
 %(readline)=
 %(readonly)=
-%(readstring)=
+
+(readstring)=
+{currentfile 3 string readstring}exec
+abc
+
+(1:)= pstack
+ check (abc) eq check
+
+DATA_DIR(/readstring.ps)strcat run
+(2:)= pstack
+ not check 0 3 getinterval (abc) eq check
+
 %renderbands
 
 (repeat)=

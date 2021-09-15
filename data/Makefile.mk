@@ -23,6 +23,7 @@ data/m.ps \
 data/qsort.ps \
 data/s.pic \
 data/s.ps \
+data/readstring.ps \
 data/test.ps \
 data/testdraw.ps \
 data/tea1.ps \
@@ -60,6 +61,7 @@ data/m.ps \
 data/qsort.ps \
 data/s.pic \
 data/s.ps \
+data/readstring.ps \
 data/test.ps \
 data/testdraw.ps \
 data/tea1.ps \

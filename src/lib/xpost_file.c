@@ -836,6 +836,8 @@ int xpost_file_object_close(Xpost_Memory_File *mem,
     return 0;
 }
 
+// returned value is count of complete size-sized chunks read.
+// function may have read up to size-1 additional bytes.
 int xpost_file_read(char *buf, int size, int count, Xpost_File *fp)
 {
     int c, i, j, k = 0;

@@ -193,7 +193,7 @@ int read_hex_digit( Xpost_File *f, int *p )
 }
 
 /* file string  readhexstring  substring true
-                               false
+                               substring false
    read hex-encoded data from file into string */
 static
 int xpost_op_file_readhexstring (Xpost_Context *ctx,
@@ -257,7 +257,7 @@ int xpost_op_file_writehexstring (Xpost_Context *ctx,
 }
 
 /* file string  readstring  substring true
-                            false
+                            substring false
    read from file into string */
 static
 int xpost_op_file_readstring (Xpost_Context *ctx,
@@ -309,7 +309,7 @@ int xpost_op_file_writestring (Xpost_Context *ctx,
 }
 
 /* file string  readline  substring true
-                          false
+                          substring false
    read a line of text from file */
 static
 int xpost_op_file_readline (Xpost_Context *ctx,
