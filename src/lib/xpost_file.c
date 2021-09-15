@@ -838,11 +838,17 @@ int xpost_file_object_close(Xpost_Memory_File *mem,
 
 int xpost_file_read(char *buf, int size, int count, Xpost_File *fp)
 {
-    int i, j, k = 0;
+    int c, i, j, k = 0;
 
     for (i = 0; i < count; ++i)
+    {
         for (j = 0; j < size; ++j)
-            buf[k++] = xpost_file_getc(fp);
+	{
+            c = xpost_file_getc(fp);
+	    if (c == EOF) return i;
+            buf[k++] = c;
+	}
+    }
 
     return i;
 }
