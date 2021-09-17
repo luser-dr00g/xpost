@@ -95,7 +95,7 @@ static
 int _findfont(Xpost_Context *ctx,
               Xpost_Object fontname)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     Xpost_Object fontstr;
     Xpost_Object fontdict;
     Xpost_Object privatestr;
@@ -245,7 +245,7 @@ int _setfont(Xpost_Context *ctx,
     return 0;
 }
 
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
 static
 void _draw_bitmap(Xpost_Context *ctx,
                   Xpost_Object devdic,
@@ -336,7 +336,7 @@ int _show_char(Xpost_Context *ctx,
                Xpost_Object comp2,
                Xpost_Object comp3)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     unsigned int glyph_index;
     unsigned char *buffer;
     int rows;
@@ -944,7 +944,7 @@ int _stringwidth(Xpost_Context *ctx,
         /* _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
                 ncomp, comp1, comp2, comp3); */
 
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
         unsigned int glyph_index;
         unsigned char *buffer;
         int rows;

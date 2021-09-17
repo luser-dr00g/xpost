@@ -220,7 +220,7 @@ PKG_CHECK_EXISTS([freetype2],
    [
     have_freetype="yes"
     xpost_requirements_lib_pc="${xpost_requirements_lib_pc} freetype2"
-    AC_DEFINE([HAVE_FREETYPE], [1], [Define to 1 if Freetype is detected])
+    AC_DEFINE([HAVE_FREETYPE2], [1], [Define to 1 if Freetype is detected])
    ],
    [have_freetype="no"])
 
