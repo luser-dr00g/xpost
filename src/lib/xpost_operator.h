@@ -65,7 +65,7 @@
 /**
  * @brief a "generic" function pointer for operator functions
  */
-typedef int (*Xpost_Op_Func)(Xpost_Context *ctx);
+typedef int (*Xpost_Op_Func)();
 
 /**
  * @brief operator signature structure
