@@ -42,6 +42,11 @@
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
 
+#ifdef _WIN32
+# include <io.h> /* chsize */
+# define ftruncate(fd_, size_) chsize((fd_), (size_))
+#endif
+
 #ifdef HAVE_UNISTD_H
 # include <unistd.h> /* ftruncate close sysconf getpagesize */
 #endif
