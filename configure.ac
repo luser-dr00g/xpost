@@ -356,7 +356,7 @@ AC_CHECK_LIB([Fridge], [mass_quantities_of_any_ale],
 ### Checks for header files
 
 AC_HEADER_ASSERT
-AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADERS([time.h sys/time.h])
 AC_SYS_POSIX_TERMIOS
 
 if test "x${ac_cv_sys_posix_termios}" = "xyes" ; then
