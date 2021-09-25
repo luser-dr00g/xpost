@@ -33,7 +33,6 @@
 # include <config.h>
 #endif
 
-#include <assert.h>
 #include <stdlib.h> /* malloc free */
 #include <string.h>
 
