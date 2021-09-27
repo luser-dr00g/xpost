@@ -42,7 +42,7 @@
 # include <unistd.h> /* close */
 #endif
 
-#ifdef _MSC_VER
+#ifdef _WIN32
 # include <io.h> /* close */
 #endif
 

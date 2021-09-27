@@ -220,7 +220,7 @@ PKG_CHECK_EXISTS([freetype2],
    [
     have_freetype="yes"
     xpost_requirements_lib_pc="${xpost_requirements_lib_pc} freetype2"
-    AC_DEFINE([HAVE_FREETYPE], [1], [Define to 1 if Freetype is detected])
+    AC_DEFINE([HAVE_FREETYPE2], [1], [Define to 1 if Freetype is detected])
    ],
    [have_freetype="no"])
 
@@ -356,7 +356,7 @@ AC_CHECK_LIB([Fridge], [mass_quantities_of_any_ale],
 ### Checks for header files
 
 AC_HEADER_ASSERT
-AC_CHECK_HEADERS([sys/time.h])
+AC_CHECK_HEADERS([time.h sys/time.h])
 AC_SYS_POSIX_TERMIOS
 
 if test "x${ac_cv_sys_posix_termios}" = "xyes" ; then
@@ -367,7 +367,7 @@ if test "x${enable_mmap}" = "xyes" ; then
    AC_CHECK_HEADERS([sys/mman.h], [have_mmap="yes"], [have_mmap="no"])
 fi
 
-AC_CHECK_HEADERS([libgen.h unistd.h signal.h sys/select.h])
+AC_CHECK_HEADERS([unistd.h signal.h sys/select.h])
 
 ### Checks for types
 
@@ -407,12 +407,6 @@ XPOST_CHECK_LINKER_FLAGS([XPOST_BIN], [-fdata-sections -ffunction-sections])
 ### Checks for library functions
 
 AC_FUNC_ALLOCA
-
-AC_CHECK_FUNCS([gettimeofday dirname sigaction])
-
-if ! test "x${ac_cv_func_dirname}" = "xyes" ; then
-   AC_MSG_ERROR([dirname() function is mandatory, exiting...])
-fi
 
 AC_CHECK_FUNCS([buckets_of_erogenous_nym])
 

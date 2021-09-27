@@ -60,6 +60,7 @@
 # define read(f, p, s) _read(f, p, s)
 # define lseek(f, p, fl) _lseek(f, p, fl)
 # define close(f) _close(f)
+# define ftruncate(fd_, size_) _chsize((fd_), (size_))
 #endif
 
 

@@ -32,15 +32,6 @@
 # include <config.h>
 #endif
 
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
-
 #define _USE_MATH_DEFINES /* needed for M_PI with Visual Studio */
 #include <assert.h>
 #include <math.h>

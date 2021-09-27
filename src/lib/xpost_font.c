@@ -39,7 +39,7 @@
 # include <fontconfig/fontconfig.h>
 #endif
 
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
 # include <ft2build.h>
 # include FT_FREETYPE_H
 #endif
@@ -53,14 +53,14 @@
 static FcConfig *_xpost_font_fc_config = NULL;
 #endif
 
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
 static FT_Library _xpost_font_ft_library = NULL;
 #endif
 
 int
 xpost_font_init(void)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     FT_Error err_ft;
 
     err_ft = FT_Init_FreeType(&_xpost_font_ft_library);
@@ -98,12 +98,12 @@ xpost_font_quit(void)
     FcFini();
 #endif
 
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     FT_Done_FreeType(_xpost_font_ft_library);
 #endif
 }
 
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
 static char *
 _xpost_font_face_filename_and_index_get(const char *name, int *idx)
 {
@@ -166,7 +166,7 @@ _xpost_font_face_filename_and_index_get(const char *name, int *idx)
 void *
 xpost_font_face_new_from_name(const char *name)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     FT_Face face;
     FT_Error err;
     char *filename;
@@ -202,17 +202,22 @@ xpost_font_face_new_from_name(const char *name)
 
 void
 xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray){
+#ifdef HAVE_FREETYPE2
     FT_Face f = face;
     bboxarray[0] = xpost_real_cons(f->bbox.xMin);
     bboxarray[1] = xpost_real_cons(f->bbox.yMin);
     bboxarray[2] = xpost_real_cons(f->bbox.xMax);
     bboxarray[3] = xpost_real_cons(f->bbox.yMax);
+#else
+    (void)face;
+    (void)bboxarray;
+#endif
 }
 
 void
 xpost_font_face_free(void *face)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     if (!face)
         return;
 
@@ -225,7 +230,7 @@ xpost_font_face_free(void *face)
 void
 xpost_font_face_scale(void *face, real scale)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     FT_Set_Char_Size((FT_Face)face, 0, (FT_F26Dot6)(scale * 64), 96, 96);
 #else
     (void)face;
@@ -236,7 +241,7 @@ xpost_font_face_scale(void *face, real scale)
 void
 xpost_font_face_transform(void *face, float *mat)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     FT_Matrix matrix;
     //FT_Vector pen;
     matrix.xx = (FT_Fixed)(mat[0] * 0x10000L);
@@ -255,7 +260,7 @@ xpost_font_face_transform(void *face, float *mat)
 unsigned int
 xpost_font_face_glyph_index_get(void *face, char c)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     return FT_Get_Char_Index(face, c);
 #else
     (void)face;
@@ -267,7 +272,7 @@ xpost_font_face_glyph_index_get(void *face, char c)
 int
 xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     FT_Error err;
 
     err = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
@@ -304,7 +309,7 @@ xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
 void
 xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, int *width, int *pitch, char *pixel_mode, int *left, int *top, long *advance_x, long *advance_y)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     *buffer = ((FT_Face)face)->glyph->bitmap.buffer;
     *rows = ((FT_Face)face)->glyph->bitmap.rows;
     *width = ((FT_Face)face)->glyph->bitmap.width;
@@ -331,7 +336,7 @@ xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, 
 int
 xpost_font_face_kerning_has(void *face)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     if (!FT_HAS_KERNING(((FT_Face)face)))
         return 1;
 
@@ -346,7 +351,7 @@ xpost_font_face_kerning_has(void *face)
 int
 xpost_font_face_kerning_delta_get(void *face, unsigned int glyph_previous, unsigned int glyph_index, long *delta_x, long *delta_y)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     FT_Vector delta;
     FT_Error err;
 

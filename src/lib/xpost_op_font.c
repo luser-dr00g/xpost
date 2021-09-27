@@ -32,21 +32,14 @@
 # include <config.h>
 #endif
 
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
+#include <stdlib.h> /* NULL strtod */
+#include <stddef.h>
+
 #ifdef HAVE_ALLOCA_H
 # include <alloca.h>
 #elif !defined alloca
 # ifdef __GNUC__
 #  define alloca __builtin_alloca
-# elif defined _AIX
-#  define alloca __alloca
 # elif defined _MSC_VER
 #  include <malloc.h>
 #  define alloca _alloca
@@ -60,7 +53,6 @@ void *alloca (size_t);
 
 #include <assert.h>
 #include <stdio.h>
-#include <stdlib.h> /* NULL strtod */
 #include <string.h>
 
 #include "xpost.h"
@@ -95,7 +87,7 @@ static
 int _findfont(Xpost_Context *ctx,
               Xpost_Object fontname)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     Xpost_Object fontstr;
     Xpost_Object fontdict;
     Xpost_Object privatestr;
@@ -245,7 +237,7 @@ int _setfont(Xpost_Context *ctx,
     return 0;
 }
 
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
 static
 void _draw_bitmap(Xpost_Context *ctx,
                   Xpost_Object devdic,
@@ -336,7 +328,7 @@ int _show_char(Xpost_Context *ctx,
                Xpost_Object comp2,
                Xpost_Object comp3)
 {
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
     unsigned int glyph_index;
     unsigned char *buffer;
     int rows;
@@ -944,7 +936,7 @@ int _stringwidth(Xpost_Context *ctx,
         /* _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
                 ncomp, comp1, comp2, comp3); */
 
-#ifdef HAVE_FREETYPE
+#ifdef HAVE_FREETYPE2
         unsigned int glyph_index;
         unsigned char *buffer;
         int rows;
