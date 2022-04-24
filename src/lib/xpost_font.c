@@ -79,9 +79,9 @@ xpost_font_init(void)
         _xpost_font_fc_config = FcInitLoadConfigAndFonts();
         if (_xpost_font_fc_config == NULL)
             XPOST_LOG_ERR("cannot load Fc config and fonts");
+# endif
 
         return 1;
-# endif
     }
 
     return 0;
