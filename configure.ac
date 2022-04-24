@@ -32,6 +32,7 @@ AC_USE_SYSTEM_EXTENSIONS
 AM_INIT_AUTOMAKE([1.10 dist-bzip2])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
+lt_cv_deplibs_check_method=pass_all
 LT_INIT([win32-dll])
 
 version_info="lt_cur:lt_rev:lt_age"
