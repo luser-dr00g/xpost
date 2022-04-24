@@ -1,4 +1,4 @@
-[![Github Build status](https://github.com/luser-dr00g/xpost/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/luser-dr00g/xpost/actions?query=workflow%3A%22GitHub+CI%22)
+[![linux CI](https://github.com/luser-dr00g/xpost/actions/workflows/linux.yml/badge.svg)](https://github.com/luser-dr00g/xpost/actions/workflows/linux.yml)
 [![Build Status](https://drone.io/github.com/luser-dr00g/xpost/status.png)](https://drone.io/github.com/luser-dr00g/xpost/latest)
 
 [The original README has moved to doc/INTERNALS,

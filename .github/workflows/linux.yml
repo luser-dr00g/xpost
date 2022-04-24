@@ -1,16 +1,15 @@
-name: C/C++ CI
+name: linux CI
 
 on:
   push:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+    types: [opened, synchronize, reopened]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
