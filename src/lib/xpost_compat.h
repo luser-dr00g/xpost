@@ -120,7 +120,7 @@ void xpost_glob_free(glob_t *pglob);
 
 unsigned char xpost_module_path_get(int (*fp)(void), char *buf, unsigned int size);
 
-char *xpost_realpath(const char *path, char *resolved_path);
+char *xpost_realpath(const char *path);
 
 /**
  * @}

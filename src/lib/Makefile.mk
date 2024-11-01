@@ -105,14 +105,18 @@ endif
 if HAVE_WIN32
 src_lib_libxpost_la_SOURCES += \
 src/lib/xpost_dev_win32.c \
-src/lib/xpost_dev_win32.h
+src/lib/xpost_dev_win32.h \
+src/lib/xpost_compat_win32.c
+else
+src/lib/xpost_compat_posix.c
 endif
 
 
 src_lib_libxpost_la_CPPFLAGS = \
 -DPACKAGE_DATA_DIR=\"$(pkgdatadir)\" \
 -DPACKAGE_INSTALL_DIR=\"$(prefix)/\" \
--DXPOST_BUILD
+-DXPOST_BUILD \
+-D_POSIX_C_SOURCE=200809L
 
 src_lib_libxpost_la_CFLAGS = \
 @XPOST_LIB_CFLAGS@ \
