@@ -68,7 +68,7 @@
 static int _xpost_init_count = 0;
 static double _xpost_start_time = 0.0;
 static char _xpost_lib_dir[XPOST_PATH_MAX];
-static char _xpost_data_dir[XPOST_PATH_MAX];
+static char *_xpost_data_dir = NULL;
 
 /*============================================================================*
  *                                 Global                                     *
@@ -88,7 +88,6 @@ XPAPI int
 xpost_init(void)
 {
     char tmp1[XPOST_PATH_MAX];
-    char tmp2[XPOST_PATH_MAX];
 #ifdef HAVE_GETTIMEOFDAY
     struct timeval tv;
 #endif
@@ -109,9 +108,12 @@ xpost_init(void)
     l = strlen(_xpost_lib_dir);
     memcpy(tmp1, _xpost_lib_dir, l);
     memcpy(tmp1 + l, "/../share/xpost", sizeof("/../share/xpost"));
-    xpost_realpath(tmp1, tmp2);
-    l = strlen(tmp2) + 1;
-    memcpy(_xpost_data_dir, tmp2, l);
+    _xpost_data_dir = xpost_realpath(tmp1);
+    if (!_xpost_data_dir)
+        return --_xpost_init_count;
+
+    XPOST_LOG_ERR("Init: libdir : '%s'.", _xpost_lib_dir);
+    XPOST_LOG_ERR("Init: datadir: '%s'.", _xpost_data_dir);
 
     if (!xpost_memory_init())
         return --_xpost_init_count;
@@ -152,6 +154,7 @@ xpost_quit(void)
 
     xpost_font_quit();
     xpost_log_quit();
+    free(_xpost_data_dir);
 
     return _xpost_init_count;
 }
