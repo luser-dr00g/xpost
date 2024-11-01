@@ -18,8 +18,6 @@ jobs:
             install: base-devel git  mingw-w64-i686-toolchain mingw-w64-i686-libjpeg-turbo mingw-w64-i686-libpng mingw-w64-i686-freetype mingw-w64-i686-fontconfig mingw-w64-i686-check
           - msystem: mingw64
             install: base-devel git  mingw-w64-x86_64-toolchain mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libpng mingw-w64-x86_64-freetype mingw-w64-x86_64-fontconfig mingw-w64-x86_64-check
-          - msystem: msys
-            install: base-devel git  gcc  libjpeg-turbo libpng check
     name: msys2 - ${{ matrix.config.msystem }}
     runs-on: windows-latest
     defaults:
