@@ -527,13 +527,3 @@ xpost_module_path_get(int (*fp)(void), char *buf, unsigned int size)
 
     return 0;
 }
-
-char *
-xpost_realpath(const char *path, char *resolved_path)
-{
-#ifdef _WIN32
-    return _fullpath(resolved_path, path, XPOST_PATH_MAX);
-#else
-    return realpath(path, resolved_path);
-#endif
-}
