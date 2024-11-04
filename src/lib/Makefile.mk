@@ -108,7 +108,13 @@ src/lib/xpost_dev_win32.c \
 src/lib/xpost_dev_win32.h \
 src/lib/xpost_compat_win32.c
 else
+if HAVE_OSX
+src_lib_libxpost_la_SOURCES += \
+src/lib/xpost_compat_osx.c
+else
+src_lib_libxpost_la_SOURCES += \
 src/lib/xpost_compat_posix.c
+endif
 endif
 
 

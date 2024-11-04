@@ -132,6 +132,7 @@ AC_CANONICAL_HOST
 
 have_win32="no"
 have_cygwin="no"
+have_osx="no"
 case "$host_os" in
    mingw*)
       have_win32="yes"
@@ -139,9 +140,13 @@ case "$host_os" in
    cygwin*)
       have_cygwin="yes"
    ;;
+   osx*)
+      have_osx="yes"
+   ;;
 esac
 
 AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
+AM_CONDITIONAL([HAVE_OSX], [test "x${have_osx}" = "xyes"])
 
 
 ### Checks for programs
