@@ -36,22 +36,6 @@
 #include <stdlib.h> /* malloc */
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -503,10 +487,9 @@ Xpost_Object clean_key (Xpost_Context *ctx,
         default: break;
         case stringtype:
         {
-            char *s = alloca(k.comp_.sz+1);
-            memcpy(s, xpost_string_get_pointer(ctx, k), k.comp_.sz);
-            s[k.comp_.sz] = '\0';
+	    char *s = xpost_string_allocate_cstring(ctx, k);
             k = xpost_name_cons(ctx, s);
+	    free(s);
             break;
         }
         case integertype:

@@ -35,22 +35,6 @@
 #include <stdlib.h> /* abs */
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <math.h>
 #include <string.h>
@@ -168,10 +152,6 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
     unsigned int arradr;
     Xpost_Memory_File *mem;
 
-    //arrcontents = alloca(arr.comp_.sz * sizeof arr);
-    //if (!xpost_memory_get(xpost_context_select_memory(ctx, arr),
-    //            xpost_object_get_ent(arr), 0, arr.comp_.sz * sizeof arr, arrcontents))
-    //    return VMerror;
     mem = xpost_context_select_memory(ctx, arr);
     if (!xpost_memory_table_get_addr(mem, xpost_object_get_ent(arr), &arradr))
         return VMerror;
@@ -180,10 +160,6 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
     localctx = ctx;
     qsort(arrcontents, arr.comp_.sz, sizeof(arr), _yxcomp);
     localctx = NULL;
-
-    //if (!xpost_memory_put(xpost_context_select_memory(ctx, arr),
-    //            xpost_object_get_ent(arr), 0, arr.comp_.sz * sizeof arr, arrcontents))
-    //    return VMerror;
 
     return 0;
 }
@@ -369,7 +345,7 @@ int _fillpoly(Xpost_Context *ctx,
     }
 
     /* extract polygon vertices from ps array */
-    points = alloca(poly.comp_.sz * sizeof *points);
+    points = malloc(poly.comp_.sz * sizeof *points);
     for (i = 0; i < poly.comp_.sz; i++)
     {
         Xpost_Object pair, x, y;
@@ -401,7 +377,7 @@ int _fillpoly(Xpost_Context *ctx,
             maxy = points[i].y;
     }
 
-    intersections = alloca((int)(maxy - miny) * 2 * 2 * sizeof *intersections);
+    intersections = calloc((int)(maxy - miny), 2 * 2 * sizeof *intersections);
 
     /* intersect polygon edges with scanlines */
     for (i = 0, j = 0; i < poly.comp_.sz - 1; i++)
@@ -543,6 +519,8 @@ int _fillpoly(Xpost_Context *ctx,
     /*performance could be increased by factoring-out calls to xpost_name_cons()  ... DONE!
       or using opcode shortcuts for Rbracket & cvx (or just the arrtomark() function) and repeat.
      */
+    free(points);
+    free(intersections);
     return 0;
 }
 

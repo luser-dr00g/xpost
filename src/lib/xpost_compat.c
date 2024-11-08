@@ -36,22 +36,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -222,11 +206,13 @@ mkstemp(char *template)
     if ((template + template_length - 6) < template)
         return -1;
 
-    filename = alloca(template_length + 1);
+    filename = malloc(template_length + 1);
 
     if (!CryptAcquireContext(&provider, NULL, NULL,
-                             PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+                             PROV_RSA_FULL, CRYPT_VERIFYCONTEXT)){
+        free(filename);
         return -1;
+    }
 
     while ((fd < 0) && (count-- > 0))
     {
@@ -250,6 +236,7 @@ mkstemp(char *template)
 
     CryptReleaseContext(provider, 0);
 
+    free(filename);
     return fd;
 }
 
@@ -470,11 +457,13 @@ xpost_module_path_get(int (*fp)(void), char *buf, unsigned int size)
                                         NULL, 0, NULL, NULL);
             if (asize != 0)
             {
-                path = alloca(asize * sizeof(char));
+                path = malloc(asize * sizeof(char));
                 asize = WideCharToMultiByte(CP_ACP, 0, tpath, -1,
                                             path, asize, NULL, NULL);
-                if (!asize) /* we should never get there */
+                if (!asize){ /* we should never get there */
+		    free(path);
                     return 0;
+		}
             }
 # else
             path = tpath;
@@ -491,6 +480,9 @@ xpost_module_path_get(int (*fp)(void), char *buf, unsigned int size)
                 if (length <= size)
                 {
                     memcpy(buf, path, length);
+# ifdef UNICODE
+		    free(path);
+# endif
                     return 1;
                 }
             }

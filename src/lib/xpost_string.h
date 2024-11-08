@@ -104,6 +104,12 @@ int xpost_string_get(Xpost_Context *ctx,
                      integer *retval);
 
 /**
+ * @brief allocate and return a C-style nul-terminated string
+ */
+char *xpost_string_allocate_cstring(Xpost_Context *ctx,
+                                    Xpost_Object s);
+
+/**
  * @}
  */
 

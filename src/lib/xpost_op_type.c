@@ -35,22 +35,6 @@
 #include <stdlib.h> /* NULL strtod */
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
@@ -198,15 +182,17 @@ int Scvi(Xpost_Context *ctx,
 {
     double dbl;
     long num;
-    char *t = alloca(s.comp_.sz+1);
-    memcpy(t, xpost_string_get_pointer(ctx, s), s.comp_.sz);
-    t[s.comp_.sz] = '\0';
+    char *t = xpost_string_allocate_cstring(ctx, s);
 
     dbl = strtod(t, NULL);
-    if ((dbl == HUGE_VAL || dbl -HUGE_VAL) && errno==ERANGE)
+    if ((dbl == HUGE_VAL || dbl -HUGE_VAL) && errno==ERANGE){
+        free(t);
         return limitcheck;
-    if (dbl >= LONG_MAX || dbl <= LONG_MIN)
+    }
+    if (dbl >= LONG_MAX || dbl <= LONG_MIN){
+        free(t);
         return limitcheck;
+    }
     num = (long)dbl;
 
     /*
@@ -216,6 +202,7 @@ int Scvi(Xpost_Context *ctx,
     */
 
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(num));
+    free(t);
     return 0;
 }
 
@@ -228,17 +215,18 @@ int Scvn(Xpost_Context *ctx,
     char *t;
     Xpost_Object name;
 
-    t = alloca(s.comp_.sz+1);
-    memcpy(t, xpost_string_get_pointer(ctx, s), s.comp_.sz);
-    t[s.comp_.sz] = '\0';
+    t = xpost_string_allocate_cstring(ctx, s);
     name = xpost_name_cons(ctx, t);
-    if (xpost_object_get_type(name) == invalidtype)
+    if (xpost_object_get_type(name) == invalidtype){
+        free(t);
         return VMerror;
+    }
     if (xpost_object_is_exe(s))
         name = xpost_object_cvx(name);
     else
         name = xpost_object_cvlit(name);
     xpost_stack_push(ctx->lo, ctx->os, name);
+    free(t);
     return 0;
 }
 
@@ -269,13 +257,14 @@ int Scvr(Xpost_Context *ctx,
          Xpost_Object str)
 {
     double num;
-    char *s = alloca(str.comp_.sz + 1);
-    memcpy(s, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    s[str.comp_.sz] = '\0';
+    char *s = xpost_string_allocate_cstring(ctx, str);
     num = strtod(s, NULL);
-    if ((num == HUGE_VAL || num -HUGE_VAL) && errno == ERANGE)
+    if ((num == HUGE_VAL || num -HUGE_VAL) && errno == ERANGE){
+        free(s);
         return limitcheck;
+    }
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)num));
+    free(s);
     return 0;
 }
 

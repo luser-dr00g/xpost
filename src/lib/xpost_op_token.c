@@ -442,7 +442,7 @@ int grok(Xpost_Context *ctx,
                 }
                 else
                 {
-                    if (isspace(*s))
+                    if ((isspace)(*s))
                     {
                         ns = 0;
                     }

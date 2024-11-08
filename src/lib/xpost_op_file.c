@@ -35,22 +35,6 @@
 #include <stdlib.h> /* NULL */
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -103,17 +87,18 @@ int xpost_op_string_mode_file (Xpost_Context *ctx,
     char *cfn, *cmode;
     int ret;
 
-    cfn = alloca(fn.comp_.sz + 1);
-    memcpy(cfn, xpost_string_get_pointer(ctx, fn), fn.comp_.sz);
-    cfn[fn.comp_.sz] = '\0';
-    cmode = alloca(mode.comp_.sz + 1);
-    memcpy(cmode, xpost_string_get_pointer(ctx, mode), mode.comp_.sz);
-    cmode[mode.comp_.sz] = '\0';
+    cfn = xpost_string_allocate_cstring(ctx, fn);
+    cmode = xpost_string_allocate_cstring(ctx, mode);
 
     ret = xpost_file_open(ctx->lo, cfn, cmode, &f);
-    if (ret)
+    if (ret){
+        free(cfn);
+	free(cmode);
         return ret;
+    }
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    free(cfn);
+    free(cmode);
     return 0;
 }
 
@@ -443,16 +428,19 @@ int xpost_op_string_deletefile (Xpost_Context *ctx,
     char *sbuf;
     int ret;
 
-    sbuf = alloca(S.comp_.sz + 1);
-    memcpy(sbuf, xpost_string_get_pointer(ctx, S), S.comp_.sz);
-    sbuf[S.comp_.sz] = '\0';
+    sbuf = xpost_string_allocate_cstring(ctx, S);
     ret = remove(sbuf);
     if (ret != 0)
         switch (errno)
         {
-            case ENOENT: return undefinedfilename;
-            default: return ioerror;
+            case ENOENT:
+	      free(sbuf);
+	      return undefinedfilename;
+            default:
+	      free(sbuf);
+	      return ioerror;
         }
+    free(sbuf);
     return 0;
 }
 
@@ -466,21 +454,25 @@ int xpost_op_string_renamefile (Xpost_Context *ctx,
     char *oldbuf, *newbuf;
     int ret;
 
-    oldbuf = alloca(Old.comp_.sz + 1);
-    memcpy(oldbuf, xpost_string_get_pointer(ctx, Old), Old.comp_.sz);
-    oldbuf[Old.comp_.sz] = '\0';
+    oldbuf = xpost_string_allocate_cstring(ctx, Old);
 
-    newbuf = alloca(New.comp_.sz + 1);
-    memcpy(newbuf, xpost_string_get_pointer(ctx, New), New.comp_.sz);
-    newbuf[New.comp_.sz] = '\0';
+    newbuf = xpost_string_allocate_cstring(ctx, New);
 
     ret = rename(oldbuf, newbuf);
     if (ret != 0)
         switch(errno)
         {
-            case ENOENT: return undefinedfilename;
-            default: return ioerror;
+            case ENOENT:
+	      free(oldbuf);
+	      free(newbuf);
+	      return undefinedfilename;
+            default:
+	      free(oldbuf);
+	      free(newbuf);
+	      return ioerror;
         }
+    free(oldbuf);
+    free(newbuf);
     return 0;
 }
 
@@ -544,15 +536,16 @@ int xpost_op_filenameforall (Xpost_Context *ctx,
     Xpost_Object oglob;
     int ret;
 
-    tmpbuf = alloca(Tmp.comp_.sz + 1);
-    memcpy(tmpbuf, xpost_string_get_pointer(ctx, Tmp), Tmp.comp_.sz);
-    tmpbuf[Tmp.comp_.sz] = '\0';
+    tmpbuf = xpost_string_allocate_cstring(ctx, Tmp);
     globbuf = malloc(sizeof *globbuf);
-    if (!globbuf)
+    if (!globbuf){
+        free(tmpbuf);
         return unregistered;
+    }
     ret = xpost_glob(tmpbuf, globbuf);
     if (ret != 0)
     {
+        free(tmpbuf);
         free(globbuf);
         return ioerror;
     }
@@ -562,6 +555,7 @@ int xpost_op_filenameforall (Xpost_Context *ctx,
     oglob.glob_.ptr = globbuf;
 
     xpost_op_contfilenameforall(ctx, oglob, Proc, xpost_object_cvlit(Scr));
+    free(tmpbuf);
     return 0;
 }
 
