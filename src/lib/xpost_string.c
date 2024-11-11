@@ -33,6 +33,7 @@
 #endif
 
 #include <stdlib.h> /* size_t */
+#include <string.h> /* memcpy */
 
 #include "xpost.h"
 #include "xpost_log.h"
@@ -177,6 +178,15 @@ int xpost_string_get(Xpost_Context *ctx,
                      integer *retval)
 {
     return xpost_string_get_memory(xpost_context_select_memory(ctx, s) /*s.tag&FBANK? ctx->gl: ctx->lo*/, s, i, retval);
+}
+
+/* allocate and return a C-style nul-terminated string */
+char *xpost_string_allocate_cstring(Xpost_Context *ctx,
+                                    Xpost_Object s)
+{
+    char *p = calloc( s.comp_.sz + 1, 1 );
+    memcpy( p, xpost_string_get_pointer(ctx, s), s.comp_.sz );
+    return p;
 }
 
 #ifdef TESTMODULE_ST

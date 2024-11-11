@@ -35,22 +35,6 @@
 #include <stdlib.h> /* NULL strtod */
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -175,26 +159,26 @@ static
 int Sgetenv(Xpost_Context *ctx,
             Xpost_Object S)
 {
-    char *s;
     char *str;
     char *r;
-    s = xpost_string_get_pointer(ctx, S);
-    str = alloca(S.comp_.sz + 1);
-    memcpy(str, s, S.comp_.sz);
-    str[S.comp_.sz] = '\0';
+    str = xpost_string_allocate_cstring(ctx, S);
     r = getenv(str);
     if (r)
     {
         Xpost_Object strobj;
         strobj = xpost_string_cons(ctx, strlen(r), r);
-        if (xpost_object_get_type(strobj) == nulltype)
+        if (xpost_object_get_type(strobj) == nulltype){
+	    free(str);
             return VMerror;
+	}
         xpost_stack_push(ctx->lo, ctx->os, strobj);
     }
     else
     {
+        free(str);
         return undefined;
     }
+    free(str);
     return 0;
 }
 
@@ -209,20 +193,19 @@ int SSputenv(Xpost_Context *ctx,
     n = xpost_string_get_pointer(ctx, N);
     if (xpost_object_get_type(S) == nulltype)
     {
-        r = alloca(N.comp_.sz + 1);
-        memcpy(r, n, N.comp_.sz);
-        r[N.comp_.sz] = '\0';
+        r = xpost_string_allocate_cstring(ctx, N);
     }
     else
     {
         s = xpost_string_get_pointer(ctx, S);
-        r = alloca(N.comp_.sz + 1 + S.comp_.sz + 1);
+	r = malloc(N.comp_.sz + 1 + S.comp_.sz + 1);
         memcpy(r, n, N.comp_.sz);
         r[N.comp_.sz] = '=';
         memcpy(r + N.comp_.sz + 1, s, S.comp_.sz);
         r[N.comp_.sz + 1 + S.comp_.sz] = '\0';
     }
     putenv(r);
+    free(r);
     return 0;
 }
 

@@ -35,22 +35,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #ifndef _WIN32
 # include <stdio_ext.h> /* __fpurge */
 #endif
@@ -83,7 +67,7 @@ void *alloca (size_t);
 static FILE *
 f_tmpfile(void)
 {
-    char *buf;
+    char buf[XPOST_PATH_MAX];
     const char *name;
     const char *tmpdir;
     size_t l1;
@@ -100,10 +84,10 @@ f_tmpfile(void)
 
     l1 = strlen(tmpdir);
     l2 = strlen(name);
-    buf = alloca(l1 + l2 + 1);
+    memset(buf, 0, l1 + l2 + 1);
     memcpy(buf, tmpdir, l1);
     memcpy(buf + l1, name, l2);
-    buf[l1 + l2] = '\0';
+    //buf[l1 + l2] = '\0';
 
 #ifdef DEBUG_FILE
     printf("fopen\n");

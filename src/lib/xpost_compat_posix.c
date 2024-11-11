@@ -32,6 +32,9 @@
 #include <stdlib.h> /* malloc, free realpath, ,mkstemp */
 #include <string.h> /* strlen, memcpy */
 
+// This prototype isn't visible under cygwin
+char *realpath(const char *restrict file_name, char *restrict resolved_name);
+
 #include "xpost_compat.h"
 
 

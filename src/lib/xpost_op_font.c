@@ -35,22 +35,6 @@
 #include <stdlib.h> /* NULL strtod */
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -100,9 +84,7 @@ int _findfont(Xpost_Context *ctx,
         fontstr = xpost_name_get_string(ctx, fontname);
     else
         fontstr = fontname;
-    fname = alloca(fontstr.comp_.sz + 1);
-    memcpy(fname, xpost_string_get_pointer(ctx, fontstr), fontstr.comp_.sz);
-    fname[fontstr.comp_.sz] = '\0';
+    fname = xpost_string_allocate_cstring(ctx, fontstr);
 
     fontdict = xpost_dict_cons (ctx, 10);
     privatestr = xpost_string_cons(ctx, sizeof data, NULL);
@@ -111,8 +93,10 @@ int _findfont(Xpost_Context *ctx,
 
     /* initialize font data, with x-scale and y-scale set to 1 */
     data.face = xpost_font_face_new_from_name(fname);
-    if (data.face == NULL)
+    if (data.face == NULL){
+        free(fname);
         return invalidfont;
+    }
 
     fontbbox = xpost_array_cons(ctx, 4);
     xpost_font_face_get_bbox(data.face, fontbboxarray);
@@ -124,6 +108,7 @@ int _findfont(Xpost_Context *ctx,
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
+    free(fname);
     return 0;
 #else
     (void)ctx;
@@ -479,14 +464,14 @@ int _show(Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
+    cstr = xpost_string_allocate_cstring(ctx, str);
     XPOST_LOG_INFO("append nul to string");
 
     ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
+    if (ret){
+        free(cstr);
         return ret;
+    }
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
     if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
@@ -504,6 +489,7 @@ int _show(Xpost_Context *ctx,
     else
     {
         XPOST_LOG_ERR("unimplemented device colorspace");
+	free(cstr);
         return unregistered;
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
@@ -529,6 +515,7 @@ int _show(Xpost_Context *ctx,
     xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
     xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
+    free(cstr);
     return 0;
 }
 
@@ -588,14 +575,14 @@ int _ashow(Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
+    cstr = xpost_string_allocate_cstring(ctx, str);
     XPOST_LOG_INFO("append nul to string");
 
     ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
+    if (ret){
+        free(cstr);
         return ret;
+    }
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
     if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
@@ -613,6 +600,7 @@ int _ashow(Xpost_Context *ctx,
     else
     {
         XPOST_LOG_ERR("unimplemented device colorspace");
+	free(cstr);
         return unregistered;
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
@@ -641,6 +629,7 @@ int _ashow(Xpost_Context *ctx,
     xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
     xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
+    free(cstr);
     return 0;
 }
 
@@ -701,14 +690,14 @@ int _widthshow(Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
+    cstr = xpost_string_allocate_cstring(ctx, str);
     XPOST_LOG_INFO("append nul to string");
 
     ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
+    if (ret){
+        free(cstr);
         return ret;
+    }
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
     if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
@@ -726,6 +715,7 @@ int _widthshow(Xpost_Context *ctx,
     else
     {
         XPOST_LOG_ERR("unimplemented device colorspace");
+	free(cstr);
         return unregistered;
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
@@ -757,6 +747,7 @@ int _widthshow(Xpost_Context *ctx,
     xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
     xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
+    free(cstr);
     return 0;
 }
 
@@ -819,14 +810,14 @@ int _awidthshow(Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
+    cstr = xpost_string_allocate_cstring(ctx, str);
     XPOST_LOG_INFO("append nul to string");
 
     ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
+    if (ret){
+        free(cstr);
         return ret;
+    }
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
     if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
@@ -844,6 +835,7 @@ int _awidthshow(Xpost_Context *ctx,
     else
     {
         XPOST_LOG_ERR("unimplemented device colorspace");
+	free(cstr);
         return unregistered;
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
@@ -877,6 +869,7 @@ int _awidthshow(Xpost_Context *ctx,
     xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
     xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
+    free(cstr);
     return 0;
 }
 
@@ -922,9 +915,7 @@ int _stringwidth(Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
+    cstr = xpost_string_allocate_cstring(ctx, str);
     XPOST_LOG_INFO("append nul to string");
 
     /* do everything BUT
@@ -980,6 +971,7 @@ int _stringwidth(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xpos));
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(ypos));
 
+    free(cstr);
     return 0;
 }
 
@@ -1039,14 +1031,14 @@ int _kshow(Xpost_Context *ctx,
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
-    cstr = alloca(str.comp_.sz + 1);
-    memcpy(cstr, xpost_string_get_pointer(ctx, str), str.comp_.sz);
-    cstr[str.comp_.sz] = '\0';
+    cstr = xpost_string_allocate_cstring(ctx, str);
     XPOST_LOG_INFO("append nul to string");
 
     ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret)
+    if (ret){
+        free(cstr);
         return ret;
+    }
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
     if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
@@ -1064,6 +1056,7 @@ int _kshow(Xpost_Context *ctx,
     else
     {
         XPOST_LOG_ERR("unimplemented device colorspace");
+	free(cstr);
         return unregistered;
     }
     XPOST_LOG_INFO("ncomp = %d", ncomp);
@@ -1090,6 +1083,7 @@ int _kshow(Xpost_Context *ctx,
     xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
     xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
+    free(cstr);
     return 0;
 }
 

@@ -35,22 +35,6 @@
 #include <stdlib.h> /* abs */
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -631,7 +615,7 @@ int _fillpoly(Xpost_Context *ctx,
         free(rep);
         xcb_change_gc(private.c, private.gc, XCB_GC_FOREGROUND, &value);
 
-        points = alloca((poly.comp_.sz //+ 1
+        points = malloc((poly.comp_.sz //+ 1
                     ) * sizeof *points);
         for (i = 0; i < poly.comp_.sz; i++)
         {
@@ -655,6 +639,7 @@ int _fillpoly(Xpost_Context *ctx,
                       XCB_COORD_MODE_ORIGIN,
                       poly.comp_.sz, //+ 1
                       points);
+        free(points);
     }
 
     return 0;

@@ -35,22 +35,6 @@
 #include <stdlib.h> /* NULL */
 #include <stddef.h>
 
-#ifdef HAVE_ALLOCA_H
-# include <alloca.h>
-#elif !defined alloca
-# ifdef __GNUC__
-#  define alloca __builtin_alloca
-# elif defined _MSC_VER
-#  include <malloc.h>
-#  define alloca _alloca
-# elif !defined HAVE_ALLOCA
-#  ifdef  __cplusplus
-extern "C"
-#  endif
-void *alloca (size_t);
-# endif
-#endif
-
 #include <assert.h>
 #include <stdio.h>
 
@@ -157,27 +141,36 @@ int IIroll(Xpost_Context *ctx,
     j %= n;
     if (j == 0) return 0;
 
-    t = alloca((n - j) * sizeof(Xpost_Object));
+    t = malloc((n - j) * sizeof(Xpost_Object));
     for (i = 0; i < n-j; i++)
     {
         r = xpost_stack_topdown_fetch(ctx->lo, ctx->os, n - 1 - i);
-        if (xpost_object_get_type(r) == invalidtype)
+        if (xpost_object_get_type(r) == invalidtype){
+	    free(t);
             return stackunderflow;
+	}
         t[i] = r;
     }
     for (i = 0; i < j; i++)
     {
         r = xpost_stack_topdown_fetch(ctx->lo, ctx->os, j - 1 - i);
-        if (xpost_object_get_type(r) == invalidtype)
+        if (xpost_object_get_type(r) == invalidtype){
+	    free(t);
             return stackunderflow;
-        if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, n - 1 - i, r))
+	}
+        if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, n - 1 - i, r)){
+	    free(t);
             return stackunderflow;
+	}
     }
     for (i = 0; i < n-j; i++)
     {
-        if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, n - j - 1 - i, t[i]))
+        if (!xpost_stack_topdown_replace(ctx->lo, ctx->os, n - j - 1 - i, t[i])){
+	    free(t);
             return stackunderflow;
+	}
     }
+    free(t);
     return 0;
 }
 
