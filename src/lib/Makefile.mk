@@ -158,7 +158,9 @@ src/lib/xpost_compat_posix.c
 endif
 endif
 
-src_lib_libxpost_dsc_la_CPPFLAGS = -DXPOST_BUILD
+src_lib_libxpost_dsc_la_CPPFLAGS = \
+-DXPOST_BUILD \
+-D_POSIX_C_SOURCE=200809L
 
 src_lib_libxpost_dsc_la_CFLAGS = \
 @XPOST_LIB_CFLAGS@
