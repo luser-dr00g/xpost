@@ -106,7 +106,7 @@ xpost_mkstemp(char *template, int *fd)
     iter += len_tmp;
     *iter = '/';
     iter++;
-    memcpy(iter, template, l + 1);
+    memcpy(iter, template, len + 1);
 
     *fd = mkstemp(filename);
 
