@@ -79,7 +79,7 @@ xpost_realpath(const char *path)
 int
 xpost_mkstemp(char *template, int *fd)
 {
-    char *tmpdir = NULL;
+    const char *tmpdir = NULL;
     char *filename;
     char *iter;
     size_t len_tmp;
