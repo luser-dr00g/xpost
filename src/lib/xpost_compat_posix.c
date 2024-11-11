@@ -29,9 +29,30 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h>
+#include <stdlib.h> /* malloc, free realpath, ,mkstemp */
+#include <string.h> /* strlen, memcpy */
 
 #include "xpost_compat.h"
+
+
+/*============================================================================*
+ *                                  Local                                     *
+ *============================================================================*/
+
+/*============================================================================*
+ *                                 Global                                     *
+ *============================================================================*/
+
+int
+xpost_compat_init(void)
+{
+    return 1;
+}
+
+void
+xpost_compat_quit(void)
+{
+}
 
 char *
 xpost_realpath(const char *path)
@@ -51,3 +72,44 @@ xpost_realpath(const char *path)
 
     return resolved_path;
 }
+
+int
+xpost_mkstemp(char *template, int *fd)
+{
+    char *tmpdir = NULL;
+    char *filename;
+    char *iter;
+    size_t len_tmp;
+    size_t len;
+
+    if (!template || ! *template)
+        return 0;
+
+    len = strlen(template);
+
+    tmpdir = getenv("TMPDIR");
+    if (!tmpdir || !*tmpdir) tmpdir = getenv("TMP");
+    if (!tmpdir || !*tmpdir) tmpdir = getenv("TEMPDIR");
+    if (!tmpdir || !*tmpdir) tmpdir = getenv("TEMP");
+    if (!tmpdir || !*tmpdir) tmpdir = "/tmp";
+
+    len_tmp = strlen(tmpdir);
+    filename = (char *)malloc(len_tmp + 1 + len, + 1);
+    if (!filename)
+        return 0;
+
+    iter = filename;
+    memcpy(iter, tmpdir, l_tmp);
+    iter += l_tmp;
+    *iter = '/';
+    iter++;
+    memcpy(iter, template, l + 1);
+
+    *fd = mkstemp(filename);
+
+    return *fd != -1;
+}
+
+/*============================================================================*
+ *                                   API                                      *
+ *============================================================================*/

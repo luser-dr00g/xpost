@@ -300,7 +300,7 @@ int _create_cont(Xpost_Context *ctx,
 
     SetWindowText(private.window, TEXT("Xpost"));
 
-    rd = (Render_Data *)malloc(sizeof(Render_Data_Gdi));
+    rd = (Render_Data *)malloc(sizeof(Render_Data));
     if (!rd)
     {
         XPOST_LOG_ERR("allocation of memory failed");

@@ -35,7 +35,6 @@
 
 #include <assert.h>
 #include <stdio.h> /* FILE* */
-#include <stdlib.h> /* mkstemp */
 #include <string.h> /* memset */
 
 #ifdef HAVE_UNISTD_H
@@ -47,7 +46,7 @@
 #endif
 
 #include "xpost.h"
-#include "xpost_compat.h" /* mkstemp */
+#include "xpost_compat.h" /* xpost_mkstemp */
 #include "xpost_object.h"
 #include "xpost_memory.h"
 #include "xpost_stack.h"
@@ -136,7 +135,10 @@ int initglobal(Xpost_Context *ctx,
         return 0;
     }
 
-    fd = mkstemp(g_filenam);
+    if (!xpost_mkstemp(g_filenam, &fd))
+    {
+        return 0;
+    }
 
     ret = xpost_memory_file_init(ctx->gl, g_filenam, fd, xpost_interpreter_cid_get_context,
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing);
@@ -212,7 +214,10 @@ int initlocal(Xpost_Context *ctx,
         return 0;
     }
 
-    fd = mkstemp(l_filenam);
+    if (!xpost_mkstemp(l_filenam, &fd))
+    {
+        return 0;
+    }
 
     ret = xpost_memory_file_init(ctx->lo, l_filenam, fd, xpost_interpreter_cid_get_context,
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing);

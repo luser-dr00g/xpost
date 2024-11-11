@@ -145,13 +145,24 @@ src/lib/xpost_dsc_file.c \
 src/lib/xpost_dsc_parse.c \
 src/lib/xpost_dsc_ctx.h
 
+if HAVE_WIN32
+src_lib_libxpost_dsc_la_SOURCES += \
+src/lib/xpost_compat_win32.c
+else
+if HAVE_OSX
+src_lib_libxpost_dsc_la_SOURCES += \
+src/lib/xpost_compat_osx.c
+else
+src_lib_libxpost_dsc_la_SOURCES += \
+src/lib/xpost_compat_posix.c
+endif
+endif
+
 src_lib_libxpost_dsc_la_CPPFLAGS = -DXPOST_BUILD
 
 src_lib_libxpost_dsc_la_CFLAGS = \
 @XPOST_LIB_CFLAGS@
 
-if ! HAVE_WIN32
 src_lib_libxpost_dsc_la_LIBADD = @XPOST_LIB_LIBS@
-endif
 
 src_lib_libxpost_dsc_la_LDFLAGS = -no-undefined -version-info @version_info@
