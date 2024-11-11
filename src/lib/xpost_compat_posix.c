@@ -97,18 +97,20 @@ xpost_mkstemp(char *template, int *fd)
     if (!tmpdir || !*tmpdir) tmpdir = "/tmp";
 
     len_tmp = strlen(tmpdir);
-    filename = (char *)malloc(len_tmp + 1 + len, + 1);
+    filename = (char *)malloc(len_tmp + 1 + len + 1);
     if (!filename)
         return 0;
 
     iter = filename;
-    memcpy(iter, tmpdir, l_tmp);
-    iter += l_tmp;
+    memcpy(iter, tmpdir, len_tmp);
+    iter += len_tmp;
     *iter = '/';
     iter++;
     memcpy(iter, template, l + 1);
 
     *fd = mkstemp(filename);
+
+    free(filename);
 
     return *fd != -1;
 }
