@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h> /* malloc, free realpath, ,mkstemp */
+#include <stdlib.h> /* malloc, free realpath, mkstemp */
 #include <string.h> /* strlen, memcpy */
 
 // This prototype isn't visible under cygwin
