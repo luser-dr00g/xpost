@@ -50,7 +50,7 @@
 
 #include "xpost.h"
 #include "xpost_log.h"
-#include "xpost_compat.h" /* mkstemp, snprintf */
+#include "xpost_compat.h" /* xpost_mkstemp, snprintf */
 #include "xpost_private.h"
 
 
@@ -152,7 +152,7 @@ _xpost_log_win32_print_prefix_func(FILE *stream,
         SetConsoleTextAttribute(handle, scbi->wAttributes);
     }
 
-    fprintf(stream, ": %s:%d %s()", file, line, fct);
+    fprintf(stream, ": %s:%d %s() ", file, line, fct);
 }
 
 #endif
@@ -281,8 +281,7 @@ xpost_log_init(void)
             _xpost_log_level = (int)l;
     }
 
-    fd = mkstemp(dump_filename);
-    if (fd == -1)
+    if (!xpost_mkstemp(dump_filename, &fd))
         return 0;
 
     _xpost_log_dump_file = fdopen(fd, "wb");

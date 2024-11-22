@@ -43,7 +43,7 @@
 
 #include "xpost.h"
 #include "xpost_log.h"
-#include "xpost_compat.h" /* mkstemp, xpost_isatty */
+#include "xpost_compat.h" /* xpost_isatty */
 #include "xpost_memory.h"  /* itp contexts contain mfiles and mtabs */
 #include "xpost_object.h"  /* eval functions examine objects */
 #include "xpost_stack.h"  /* eval functions manipulate stacks */

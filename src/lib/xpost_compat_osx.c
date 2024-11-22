@@ -29,11 +29,31 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
+#include <limits.h> /* PATH_MAX */
+#include <stdlib.h> /* realpath mkstemp*/
+#include <string.h> /* strdup */
 
 #include "xpost_compat.h"
+
+
+/*============================================================================*
+ *                                  Local                                     *
+ *============================================================================*/
+
+/*============================================================================*
+ *                                 Global                                     *
+ *============================================================================*/
+
+int
+xpost_compat_init(void)
+{
+    return 1;
+}
+
+void
+xpost_compat_quit(void)
+{
+}
 
 char *
 xpost_realpath(const char *path)
@@ -48,3 +68,17 @@ xpost_realpath(const char *path)
 
     return strdup(resolved_path);
 }
+
+int
+xpost_mkstemp(char *template, int *fd)
+{
+    if (!template || ! *template)
+        return 0;
+
+    *fd = mkstemp(template);
+    return *fd != -1;
+}
+
+/*============================================================================*
+ *                                   API                                      *
+ *============================================================================*/

@@ -85,6 +85,16 @@
 #endif
 
 /**
+ * @brief initialize the compatibility layer
+ */
+int xpost_compat_init(void);
+
+/**
+ * @brief quit the compatibility layer
+ */
+void xpost_compat_quit(void);
+
+/**
  * @brief control the ECHO parameter of the terminal or console associated with file.
  */
 void echoon(FILE *f);
@@ -92,17 +102,18 @@ void echooff(FILE *f);
 
 int xpost_isatty(int fd);
 
-#ifdef _WIN32
-
 /**
  * @brief open a temporary file using @p template to generate the name.
  *
- * @returns new file descriptor
+ * @param[inout] template The template.
+ * @param[out] fd A buffer to get the new file descriptor.
+ * @returns 1 on success, 0 otherwise.
  *
- * Also modifies the @p template argument string.
+ * The @p template parameter must finish with "XXXXXX" and is modified.
  */
-int mkstemp(char *template);
+int xpost_mkstemp(char *template, int *fd);
 
+#ifdef _WIN32
 
 typedef struct
 {

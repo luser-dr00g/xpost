@@ -29,12 +29,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h>
+#include <stdlib.h> /* malloc, free realpath, mkstemp */
+#include <string.h> /* strlen, memcpy */
 
 // This prototype isn't visible under cygwin
 char *realpath(const char *restrict file_name, char *restrict resolved_name);
 
 #include "xpost_compat.h"
+
+
+/*============================================================================*
+ *                                  Local                                     *
+ *============================================================================*/
+
+/*============================================================================*
+ *                                 Global                                     *
+ *============================================================================*/
+
+int
+xpost_compat_init(void)
+{
+    return 1;
+}
+
+void
+xpost_compat_quit(void)
+{
+}
 
 char *
 xpost_realpath(const char *path)
@@ -54,3 +75,46 @@ xpost_realpath(const char *path)
 
     return resolved_path;
 }
+
+int
+xpost_mkstemp(char *template, int *fd)
+{
+    const char *tmpdir = NULL;
+    char *filename;
+    char *iter;
+    size_t len_tmp;
+    size_t len;
+
+    if (!template || ! *template)
+        return 0;
+
+    len = strlen(template);
+
+    tmpdir = getenv("TMPDIR");
+    if (!tmpdir || !*tmpdir) tmpdir = getenv("TMP");
+    if (!tmpdir || !*tmpdir) tmpdir = getenv("TEMPDIR");
+    if (!tmpdir || !*tmpdir) tmpdir = getenv("TEMP");
+    if (!tmpdir || !*tmpdir) tmpdir = "/tmp";
+
+    len_tmp = strlen(tmpdir);
+    filename = (char *)malloc(len_tmp + 1 + len + 1);
+    if (!filename)
+        return 0;
+
+    iter = filename;
+    memcpy(iter, tmpdir, len_tmp);
+    iter += len_tmp;
+    *iter = '/';
+    iter++;
+    memcpy(iter, template, len + 1);
+
+    *fd = mkstemp(filename);
+
+    free(filename);
+
+    return *fd != -1;
+}
+
+/*============================================================================*
+ *                                   API                                      *
+ *============================================================================*/

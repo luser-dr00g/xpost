@@ -44,7 +44,7 @@
 
 #include "xpost.h"
 #include "xpost_log.h"
-#include "xpost_compat.h" /* mkstemp */
+#include "xpost_compat.h" /* xpost_mkstemp */
 #include "xpost_memory.h"
 #include "xpost_object.h"
 #include "xpost_stack.h"
@@ -866,7 +866,10 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
     {
         return 0;
     }
-    fd = mkstemp(fname);
+    if (!xpost_mkstemp(fname, &fd))
+    {
+        return 0;
+    }
     ret = xpost_memory_file_init(ctx->gl, fname, fd, xpost_interpreter_cid_get_context,
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing);
     if (!ret)
@@ -909,7 +912,11 @@ int init_test_garbage(int (*xpost_interpreter_cid_init)(unsigned int *cid),
         return 0;
     }
     strcpy(fname, "xmemXXXXXX");
-    fd = mkstemp(fname);
+    if (!xpost_mkstemp(fname, &fd))
+    {
+        xpost_memory_file_exit(ctx->gl);
+        return 0;
+    }
     ret = xpost_memory_file_init(ctx->lo, fname, fd, xpost_interpreter_cid_get_context,
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing);
     if (!ret)
