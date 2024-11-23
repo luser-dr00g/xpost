@@ -72,10 +72,6 @@
 #include "xpost_operator.h"
 #include "xpost_op_file.h"
 
-#ifndef _WIN32
-# include <stdio_ext.h> /* __fpurge */
-#endif
-
 /* filename mode  file  file
    create file object for filename with access mode */
 static

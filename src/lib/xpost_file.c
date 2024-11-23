@@ -35,10 +35,6 @@
 #include <stdlib.h>
 #include <stddef.h>
 
-#ifndef _WIN32
-# include <stdio_ext.h> /* __fpurge */
-#endif
-
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -178,9 +174,7 @@ static void
 disk_purge(Xpost_File *file)
 {
     Xpost_DiskFile *df = (Xpost_DiskFile*) file;
-#ifndef _WIN32
-    __fpurge(df->file);
-#endif
+    xpost_fpurge(df->file);
 }
 
 static int

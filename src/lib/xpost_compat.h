@@ -100,6 +100,15 @@ void xpost_compat_quit(void);
 void echoon(FILE *f);
 void echooff(FILE *f);
 
+/**
+ * @brief discard any pending buffered I/O on the given stream.
+ *
+ * @param[in] f The stream to purge.
+ *
+ * @note On Windows, this function does nothing.
+ */
+void xpost_fpurge(FILE *f);
+
 int xpost_isatty(int fd);
 
 /**

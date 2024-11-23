@@ -29,8 +29,12 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h> /* getenv, malloc, free */
-#include <stdio.h>  /* TMP_MAX */
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include <stdio.h>  /* FILE, TMP_MAX */
+#include <stdlib.h> /* free, getenv, malloc, */
 #include <string.h> /* strlen, memcpy */
 
 #include <windows.h>
@@ -110,31 +114,11 @@ xpost_compat_quit(void)
     WSACleanup();
 }
 
-char *
-xpost_realpath(const char *path)
+void
+xpost_fpurge(FILE *f)
 {
-    char *resolved_path;
-    DWORD sz = 0UL;
-
-    if (!path || !*path)
-        return NULL;
-
-    sz = GetFullPathName(path, 0UL, NULL, NULL);
-    if (sz == 0UL)
-        return NULL;
-
-    resolved_path = malloc(sz * sizeof(char));
-    if (!resolved_path)
-        return NULL;
-
-    sz = GetFullPathName(path, sz, resolved_path, NULL);
-    if (sz == 0UL)
-    {
-        free(resolved_path);
-        return NULL;
-    }
-
-    return resolved_path;
+    /* no __fpurge() or fpurge functionos on Windows */
+    (void)f;
 }
 
 int
@@ -233,6 +217,33 @@ xpost_mkstemp(char *template, int *fd)
     *fd = f;
 
     return 1;
+}
+
+char *
+xpost_realpath(const char *path)
+{
+    char *resolved_path;
+    DWORD sz = 0UL;
+
+    if (!path || !*path)
+        return NULL;
+
+    sz = GetFullPathName(path, 0UL, NULL, NULL);
+    if (sz == 0UL)
+        return NULL;
+
+    resolved_path = malloc(sz * sizeof(char));
+    if (!resolved_path)
+        return NULL;
+
+    sz = GetFullPathName(path, sz, resolved_path, NULL);
+    if (sz == 0UL)
+    {
+        free(resolved_path);
+        return NULL;
+    }
+
+    return resolved_path;
 }
 
 /*============================================================================*

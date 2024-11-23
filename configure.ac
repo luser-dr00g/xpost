@@ -29,7 +29,7 @@ CFLAGS=""
 
 AC_USE_SYSTEM_EXTENSIONS
 
-AM_INIT_AUTOMAKE([1.10 dist-bzip2])
+AM_INIT_AUTOMAKE([1.10 dist-xz])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 lt_cv_deplibs_check_method=pass_all
@@ -132,7 +132,6 @@ AC_CANONICAL_HOST
 
 have_win32="no"
 have_cygwin="no"
-have_osx="no"
 case "$host_os" in
    mingw*)
       have_win32="yes"
@@ -140,14 +139,9 @@ case "$host_os" in
    cygwin*)
       have_cygwin="yes"
    ;;
-   osx*)
-      have_osx="yes"
-   ;;
 esac
 
 AM_CONDITIONAL([HAVE_WIN32], [test "x${have_win32}" = "xyes"])
-AM_CONDITIONAL([HAVE_OSX], [test "x${have_osx}" = "xyes"])
-
 
 ### Checks for programs
 
@@ -329,6 +323,50 @@ dladdr(NULL, NULL);
    AC_MSG_RESULT([${have_dl}])
    if test "x${have_dl}" = "xno" ; then
       AC_MSG_ERROR([dladdr() function is mandatory, exiting...])
+   fi
+fi
+
+# fpurge or __fpurge
+have___fpurge="no"
+have_fpurge="no"
+if test "x${have_win32}" = "xno" ; then
+   AC_MSG_CHECKING([for __fpurge() in libc])
+   AC_LINK_IFELSE(
+      [AC_LANG_PROGRAM(
+          [[
+#include <stdio.h>
+#include <stdio_ext.h>
+          ]],
+          [[
+__fpurge(NULL);
+          ]])],
+      [
+       have___fpurge="yes"
+       AC_DEFINE([HAVE_STDIO_EXT_H], [1], [Define to 1 if stdio_ext.h exists])
+      ],
+      [have___fpurge="no"])
+
+   AC_MSG_RESULT([${have___fpurge}])
+
+   if test "x${have___fpurge}" = "xno" ; then
+      AC_MSG_CHECKING([for fpurge() in libc])
+      AC_LINK_IFELSE(
+         [AC_LANG_PROGRAM(
+             [[
+#include <stdio.h>
+             ]],
+             [[
+fpurge(NULL);
+             ]])],
+         [
+          have_fpurge="yes"
+         ],
+         [have_fpurge="no"])
+
+      AC_MSG_RESULT([${have_fpurge}])
+      if test "x${have_fpurge}" = "xno" ; then
+         AC_MSG_ERROR([__fpurge() or fpurge() function are mandatory, exiting...])
+      fi
    fi
 fi
 
