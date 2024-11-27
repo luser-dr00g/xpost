@@ -42,10 +42,6 @@
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
 
-#ifdef HAVE_UNISTD_H
-# include <unistd.h> /* ftruncate close sysconf getpagesize */
-#endif
-
 #ifdef HAVE_SYS_MMAN_H
 # include <sys/mman.h> /* mmap munmap mremap */
 #endif
@@ -56,11 +52,13 @@
 # endif
 # include <windows.h>
 # undef WIN32_LEAN_AND_MEAN
-# include <io.h>
+# include <io.h> /* _chsize close */
 # define read(f, p, s) _read(f, p, s)
 # define lseek(f, p, fl) _lseek(f, p, fl)
 # define close(f) _close(f)
 # define ftruncate(fd_, size_) _chsize((fd_), (size_))
+#else
+# include <unistd.h> /* close ftruncate getpagesize read sysconf write */
 #endif
 
 
