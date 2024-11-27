@@ -1,4 +1,5 @@
 [![linux CI](https://github.com/luser-dr00g/xpost/actions/workflows/linux.yml/badge.svg)](https://github.com/luser-dr00g/xpost/actions/workflows/linux.yml)
+[![Windows CI](https://github.com/luser-dr00g/xpost/actions/workflows/msys2.yml/badge.svg)](https://github.com/luser-dr00g/xpost/actions/workflows/msys2.yml)
 [![Build Status](https://drone.io/github.com/luser-dr00g/xpost/status.png)](https://drone.io/github.com/luser-dr00g/xpost/latest)
 
 **Note**: The original README has moved to doc/INTERNALS, and has been superceded by doc/NEWINTERNALS.
