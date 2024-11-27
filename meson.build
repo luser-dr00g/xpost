@@ -41,6 +41,42 @@ config_h = configuration_data()
 
 cc = meson.get_compiler('c')
 
+splint = find_program('splint', required: false)
+
+if splint.found()
+
+  splint_cmd = [
+    splint,
+    '+posixlib',
+    '-boolops',
+    '-predboolint',
+    '+ignoresigns',
+    '-type',
+    '+charindex',
+    '-nestcomment',
+    '-noeffect',
+    '-redef',
+    '-shiftnegative',
+    '-castfcnptr',
+    '-shiftimplementation',
+    '-predboolothers',
+    '-exportlocal',
+    '-mustfreefresh',
+    '-preproc',
+    '-I' + meson.current_source_dir() / 'src' / 'lib',
+     meson.current_source_dir() / 'src' / 'lib' / '*.c',
+     meson.current_source_dir() / 'src' / 'lib' / '*.h',
+     meson.current_source_dir() / 'src' / 'bin' / '*.c',
+     meson.current_source_dir() / 'src' / 'bin' / '*.h',
+  ]
+
+  custom_target('splint',
+    output: '.',
+    command: splint_cmd,
+    install: false
+  )
+endif
+
 # dependencies
 
 fontconfig_dep = dependency('fontconfig', required: false)
@@ -119,6 +155,8 @@ summary({'OS': host_os,
          'freetype': freetype_dep.found().to_string('yes', 'no'),
          'jpeg device': jpeg_dep.found().to_string('yes', 'no'),
          'png device': libpng_dep.found().to_string('yes', 'no'),
+         'documentation': (get_option('doc') and doxygen.found()).to_string('yes', 'no'),
+         'splint': splint.found().to_string('yes', 'no'),
         }, section: 'Configuration Options Summary:')
 
 summary({'prefix': dir_prefix,

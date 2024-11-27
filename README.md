@@ -60,12 +60,23 @@ You can install Xpost in another location:
   ninja -C builddir
   ninja -C builddir install
 ```
+
 To know the options of an already configured build:
 ```
   meson configure builddir
 ```
 The meson build system is lacking some features like splint and valgrind, and
 will be added in the future.
+
+To build the doc:
+```
+meson compile -C builddir doc
+```
+
+To run `splint`
+```
+meson compile -C builddir splint
+```
 
 ## Support
 
