@@ -1,0 +1,21 @@
+name: osx CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        brew install meson ninja fontconfig freetype libpng jpeg-turbo xcb-util-image
+    - name: configure
+      run: meson setup builddir
+    - name: make
+      run: ninja -C builddir
