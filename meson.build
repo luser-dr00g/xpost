@@ -5,7 +5,7 @@ project('xpost', 'c',
                       'buildtype=debug',
                       'warning_level=2'
                     ],
-  meson_version   : '>= 0.56',
+  meson_version   : '>= 0.62',
 )
 
 v_array = meson.project_version().split('.')
@@ -75,6 +75,11 @@ if sys_windows
   gdi_dep = cc.find_library('gdi32')
   gl_dep = cc.find_library('opengl32')
   winsock2_dep = cc.find_library('ws2_32')
+else
+  dl_dep = dependency('dl')
+  if not cc.has_function('dladdr', dependencies: dl_dep)
+    error('dladdr() is mandatory on UNIX')
+  endif
 endif
 
 config_h.set('XPOST_VERSION_MAJ', v_maj)

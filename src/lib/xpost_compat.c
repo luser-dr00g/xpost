@@ -33,6 +33,8 @@
 # include <config.h>
 #endif
 
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stddef.h>
 
@@ -44,14 +46,6 @@
 
 #ifdef HAVE_TERMIOS_H
 # include <termios.h>
-#endif
-
-#ifdef HAVE_UNISTD_H
-# include <unistd.h>
-#endif
-
-#ifdef HAVE_DLFCN_H
-# include <dlfcn.h>
 #endif
 
 #ifdef __CYGWIN__
@@ -69,6 +63,9 @@
 # include <wincrypt.h>
 # include <errno.h>
 # undef WIN32_LEAN_AND_MEAN
+#else
+# include <dlfcn.h> /* dladdr */
+# include <unistd.h> /* isatty */
 #endif
 
 #include "xpost.h"

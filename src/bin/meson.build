@@ -48,6 +48,9 @@ if sys_windows or xcb_dep.found()
   xpost_view_src = files([
     'xpost_view.c'
   ])
+
+  xpost_view_dep = [ libxpost_dep, libxpost_dsc_dep ]
+
   if sys_windows
     xpost_view_src += files([
       'xpost_view_win32.c'
@@ -56,11 +59,13 @@ if sys_windows or xcb_dep.found()
     xpost_view_src += files([
       'xpost_view_xcb.c'
     ])
+
+    xpost_view_dep += xcb_dep
   endif
 
   executable('xpost_view', xpost_view_src,
     c_args: '-DHAVE_CONFIG_H',
-    dependencies: [ libxpost_dep, libxpost_dsc_dep ],
+    dependencies: xpost_view_dep,
     include_directories: [
       config_dir,
       include_directories('../lib') ],
