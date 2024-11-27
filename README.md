@@ -41,6 +41,27 @@ will install the application, so xpost can be run as a command.
 
 Many more installation and configuration options desribed in ./INSTALL.
 
+Alternate Build System
+--------- ----- ------
+
+A meson support has been added. To install xpost with meson, run these commands:
+
+  meson setup builddir
+  ninja -C builddir
+  ninja -C builddir install
+
+You can install Xpost in another location:
+
+  meson setup -Dprefix=/foo/bar builddir
+  ninja -C builddir
+  ninja -C builddir install
+
+To know the options of an already configured build:
+
+  meson configure builddir
+
+The meson build system is lacking some features like splint and valgrind, and
+will be added in the future.
 
 Support.
 --------

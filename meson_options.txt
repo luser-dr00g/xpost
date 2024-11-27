@@ -1,0 +1,24 @@
+
+option('doc',
+  type: 'boolean',
+  value: true,
+  description: 'uild documentation with Doxygen'
+)
+
+option('large-object',
+  type: 'boolean',
+  value: false,
+  description: 'use of large objects'
+)
+
+option('mmap',
+  type: 'boolean',
+  value: true,
+  description: 'use of mapped memory'
+)
+
+option('valgrind',
+  type: 'boolean',
+  value: false,
+  description: 'run unit tests with valgrind'
+)

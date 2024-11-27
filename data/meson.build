@@ -1,0 +1,41 @@
+
+xpost_data_src = files([
+  'clip.ps',
+  'err.ps',
+  'graphics.ps',
+  'device.ps',
+  'color.ps',
+  'image.ps',
+  'pgmimage.ps',
+  'ppmimage.ps',
+  'nulldev.ps',
+  'pdfwrite.ps',
+  'gstate.ps',
+  'matrix.ps',
+  'path.ps',
+  'paint.ps',
+  'pattern.ps',
+  'font.ps',
+  'init.ps',
+  'prepr.ps',
+  'm.pic',
+  'm.ps',
+  'qsort.ps',
+  's.pic',
+  's.ps',
+  'readstring.ps',
+  'test.ps',
+  'testdraw.ps',
+  'tea1.ps',
+  'mat.ps',
+  'teapot',
+  'sin1x.ps',
+  'dancingmen.ps',
+  'teamath.ps',
+  'bitfont.ps',
+  'class.ps'
+])
+
+install_data(xpost_data_src,
+  install_dir: dir_pkgdata
+)
