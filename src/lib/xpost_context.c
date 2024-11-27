@@ -37,12 +37,10 @@
 #include <stdio.h> /* FILE* */
 #include <string.h> /* memset */
 
-#ifdef HAVE_UNISTD_H
-# include <unistd.h> /* close */
-#endif
-
 #ifdef _WIN32
 # include <io.h> /* close */
+#else
+# include <unistd.h> /* close */
 #endif
 
 #include "xpost.h"
