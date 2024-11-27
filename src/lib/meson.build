@@ -89,7 +89,7 @@ libxpost_lib = library('xpost', libxpost_src,
   c_args: [
     '-DHAVE_CONFIG_H',
     '-DXPOST_BUILD',
-    '-D_POSIX_C_SOURCE=200809L',
+    '-D_XOPEN_SOURCE=700',
     '-DPACKAGE_DATA_DIR="' + dir_pkgdata + '"',
     '-DPACKAGE_INSTALL_DIR="' + dir_prefix + '"'
   ],
