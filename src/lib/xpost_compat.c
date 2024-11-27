@@ -33,8 +33,14 @@
 # include <config.h>
 #endif
 
+/* for dladdr Unix */
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE
+#endif
+
+/* for dladdr on OS X */
+#ifndef _DARWIN_C_SOURCE
+# define _DARWIN_C_SOURCE
 #endif
 
 #include <stdlib.h>
