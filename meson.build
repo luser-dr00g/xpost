@@ -124,12 +124,12 @@ else
     ])
     config_h.set10('HAVE_STDIO_EXT_H', true)
   elif cc.has_function('fpurge', prefix: '#include <stdio.h>')
-    if cc.compiles(
+    if not cc.compiles(
       '''
       #include <stdio.h>
       int main() { int i = fpurge(NULL); return 0; }
       ''')
-      config_h.set10('HAVE_FPURGE_SGN', true)
+      config_h.set10('HAVE_NO_FPURGE_SGN', true)
     endif
   else
     error('__fpurge() or fpurge() are mandatory on UNIX')
