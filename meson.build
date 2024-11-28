@@ -144,19 +144,21 @@ else
       int main() { long sz = sysconf(_SC_PAGESIZE); return 0; }
       ''')
       config_h.set10('HAVE_SYSCONF_PAGESIZE', true)
+      message('_SC_PAGESIZE is available with sysconf()')
   elif cc.compiles(
       '''
       #include <unistd.h>
       int main() { long sz = sysconf(_SC_PAGE_SIZE); return 0; }
       ''')
       config_h.set10('HAVE_SYSCONF_PAGE_SIZE', true)
+      message('_SC_PAGE_SIZE is available with sysconf()')
   elif cc.compiles(
       '''
       #include <unistd.h>
       int main() { long sz = getpagesize(); return 0; }
       ''')
       config_h.set10('HAVE_GETPAGESIZE', true)
-  else
+      message('getpagesize() is available()')
   endif
 
 endif
