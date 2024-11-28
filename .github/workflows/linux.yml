@@ -15,7 +15,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get -qq update
-        sudo apt install build-essential libpng-dev libjpeg-dev libfreetype6-dev libfontconfig1-dev check meson ninja
+        sudo apt install build-essential libpng-dev libjpeg-dev libfreetype6-dev libfontconfig1-dev check meson ninja-build
     - name: configure
       run: autoreconf -vif && ./configure --with-tests=regular
     - name: make
