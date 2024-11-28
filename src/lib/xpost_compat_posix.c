@@ -29,8 +29,17 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdlib.h> /* malloc, free realpath, mkstemp */
-#include <string.h> /* strlen, memcpy */
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+
+#include <limits.h> /* PATH_MAX */
+#include <stdio.h> /* FILE, fpurge */
+#include <stdlib.h> /* free, malloc, mkstemp, realpath */
+#include <string.h> /* memcpy, strdup, strlen */
+#ifdef HAVE_STDIO_EXT_H
+# include <stdio_ext.h> /* __fpurge */
+#endif
 
 // This prototype isn't visible under cygwin
 char *realpath(const char *restrict file_name, char *restrict resolved_name);
@@ -57,23 +66,14 @@ xpost_compat_quit(void)
 {
 }
 
-char *
-xpost_realpath(const char *path)
+void
+xpost_fpurge(FILE *f)
 {
-    char *resolved_path;
-
-    if (!path || !*path)
-        return NULL;
-
-    resolved_path = realpath(path, NULL);
-    if (!resolved_path)
-        return NULL;
-
-    resolved_path = realpath(path, resolved_path);
-    if (!resolved_path)
-        return NULL;
-
-    return resolved_path;
+#ifdef HAVE_STDIO_EXT_H
+    __fpurge(f);
+#else
+    fpurge(f);
+#endif
 }
 
 int
@@ -113,6 +113,37 @@ xpost_mkstemp(char *template, int *fd)
     free(filename);
 
     return *fd != -1;
+}
+
+char *
+xpost_realpath(const char *path)
+{
+# if defined(__APPLE__) && defined(__MACH__)
+    char resolved_path[PATH_MAX];
+
+    if (!path || !*path)
+        return NULL;
+
+    if (!realpath(path, resolved_path))
+        return NULL;
+
+    return strdup(resolved_path);
+#else
+    char *resolved_path;
+
+    if (!path || !*path)
+        return NULL;
+
+    resolved_path = realpath(path, NULL);
+    if (!resolved_path)
+        return NULL;
+
+    resolved_path = realpath(path, resolved_path);
+    if (!resolved_path)
+        return NULL;
+
+    return resolved_path;
+#endif
 }
 
 /*============================================================================*
