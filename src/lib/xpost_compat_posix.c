@@ -44,6 +44,11 @@
 // This prototype isn't visible under cygwin
 char *realpath(const char *restrict file_name, char *restrict resolved_name);
 
+// This prototype isn't visible under OS X
+#ifdef HAVE_NO_FPURGE_SGN
+int fpurge(FILE *);
+#endif
+
 #include "xpost_compat.h"
 
 
