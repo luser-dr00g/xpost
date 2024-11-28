@@ -99,7 +99,7 @@ if libpng_dep.found()
   config_h.set('HAVE_LIBPNG', 1)
 endif
 
-xcb_dep = dependency('xcb-image xcb-icccm xcb', required: false)
+xcb_dep = dependency('xcb-image xcb-icccm xcb xcb-aux', required: false)
 if xcb_dep.found()
   config_h.set('HAVE_XCB', 1)
 endif
