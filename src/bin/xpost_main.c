@@ -254,7 +254,17 @@ int main(int argc, char *argv[])
     int xsign = 1;
     int ysign = 1;
     int have_geometry = 0;
+    int maj;
+    int min;
+    int mic;
     int i;
+
+    xpost_version_get(&maj, &min, &mic);
+    printf("Xpost %d.%d.%d\n", maj, min, mic);
+    printf("Copyright (C) 2013, Michael Joshua Ryan. All rights reserved.\n");
+    printf("This software is supplied under the BSD 3 clause and comes with NO WARRANTY:\n");
+    printf("see the file COPYING for details.\n");
+
 #ifdef HAVE_SIGACTION
     struct sigaction sa, oldsa;
 
