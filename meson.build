@@ -5,7 +5,7 @@ project('xpost', 'c',
                       'buildtype=debug',
                       'warning_level=2'
                     ],
-  meson_version   : '>= 0.62',
+  meson_version   : '>= 1.0.0',
 )
 
 v_array = meson.project_version().split('.')
@@ -115,6 +115,16 @@ else
   dl_dep = dependency('dl')
   if not cc.has_function('dladdr', dependencies: dl_dep)
     error('dladdr() is mandatory on UNIX')
+  endif
+
+  if cc.has_function('__fpurge',
+    prefix: [
+      '#include <stdio.h>',
+      '#include <stdio_ext.h>'
+    ])
+    config_h.set10('HAVE_STDIO_EXT_H', true)
+  elif not cc.has_function('fpurge', prefix: '#include <stdio.h>')
+    error('__fpurge() or fpurge() are mandatory on UNIX')
   endif
 endif
 
