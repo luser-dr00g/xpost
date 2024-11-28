@@ -104,19 +104,21 @@ if xcb_dep.found()
   config_h.set('HAVE_XCB', 1)
 endif
 
-m_dep = cc.find_library('m', required : false)
-
 if sys_windows
   bcrypt_dep = cc.find_library('bcrypt')
   gdi_dep = cc.find_library('gdi32')
   gl_dep = cc.find_library('opengl32')
   winsock2_dep = cc.find_library('ws2_32')
 else
+  m_dep = cc.find_library('m', required : false)
+
+# dladdr
   dl_dep = dependency('dl')
   if not cc.has_function('dladdr', dependencies: dl_dep)
     error('dladdr() is mandatory on UNIX')
   endif
 
+# fpurge
   if cc.has_function('__fpurge',
     prefix: [
       '#include <stdio.h>',
@@ -134,6 +136,29 @@ else
   else
     error('__fpurge() or fpurge() are mandatory on UNIX')
   endif
+
+# page size
+  if cc.compiles(
+      '''
+      #include <unistd.h>
+      int main() { long sz = sysconf(_SC_PAGESIZE); return 0; }
+      ''')
+      config_h.set10('HAVE_SYSCONF_PAGESIZE', true)
+  elif cc.compiles(
+      '''
+      #include <unistd.h>
+      int main() { long sz = sysconf(_SC_PAGE_SIZE); return 0; }
+      ''')
+      config_h.set10('HAVE_SYSCONF_PAGE_SIZE', true)
+  elif cc.compiles(
+      '''
+      #include <unistd.h>
+      int main() { long sz = getpagesize(); return 0; }
+      ''')
+      config_h.set10('HAVE_GETPAGESIZE', true)
+  else
+  endif
+
 endif
 
 config_h.set('XPOST_VERSION_MAJ', v_maj)

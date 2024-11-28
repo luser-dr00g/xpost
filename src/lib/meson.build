@@ -72,8 +72,7 @@ libxpost_deps = [
   freetype_dep,
   jpeg_dep,
   libpng_dep,
-  xcb_dep,
-  m_dep
+  xcb_dep
 ]
 
 if sys_windows
@@ -83,6 +82,8 @@ if sys_windows
     gl_dep,
     winsock2_dep
   ]
+else
+  libxpost_deps += m_dep
 endif
 
 libxpost_lib = library('xpost', libxpost_src,
