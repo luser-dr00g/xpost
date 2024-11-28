@@ -37,12 +37,6 @@
 
 #include <xpost_dsc.h>
 
-#ifdef _WIN32
-# define FMT_PTRDIFF_T "%Id"
-#else
-# define FMT_PTRDIFF_T "%td"
-#endif
-
 #define PRINT_STR_ARRAY(msg, memb) \
     do { \
         int i; \
@@ -157,8 +151,8 @@ int main(int argc, char *argv[])
         for (i = 0; i < dsc.header.document_fonts.nbr; i++)
         {
             printf("font #%d\n", i + 1);
-            printf("  start: " FMT_PTRDIFF_T "\n", dsc.fonts[i].section.start);
-            printf("  end: " FMT_PTRDIFF_T "\n", dsc.fonts[i].section.end);
+            printf("  start: %td\n", dsc.fonts[i].section.start);
+            printf("  end: %td\n", dsc.fonts[i].section.end);
             printf("  fontname: %s\n", dsc.fonts[i].fontname);
             printf("  printername: %s\n", dsc.fonts[i].printername ? dsc.fonts[i].printername : "");
         }
@@ -170,8 +164,8 @@ int main(int argc, char *argv[])
         for (i = 0; i < dsc.header.pages; i++)
         {
             printf("page #%d\n", i + 1);
-            printf("  start: " FMT_PTRDIFF_T "\n", dsc.pages[i].section.start);
-            printf("  end: " FMT_PTRDIFF_T "\n", dsc.pages[i].section.end);
+            printf("  start: %td\n", dsc.pages[i].section.start);
+            printf("  end: %td\n", dsc.pages[i].section.end);
             printf("  label: %s\n", dsc.pages[i].label);
             printf("  ordinal: %d\n", dsc.pages[i].ordinal);
 
