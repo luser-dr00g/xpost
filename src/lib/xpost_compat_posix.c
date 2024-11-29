@@ -40,7 +40,11 @@
 #endif
 #include <stdlib.h> /* free, malloc, mkstemp, realpath */
 #include <string.h> /* memcpy, strdup, strlen */
-#include <time.h> /* mach_absolute_time, clock_gettime, time /
+#include <time.h> /* clock_gettime, time */
+
+#if defined(__APPLE__) && defined(__MACH__)
+# include <mach/mach_time.h> /* mach_absolute_time */
+#endif
 
 // This prototype isn't visible under cygwin
 char *realpath(const char *restrict file_name, char *restrict resolved_name);
