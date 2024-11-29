@@ -131,6 +131,11 @@ if sys_windows
   gl_dep = cc.find_library('opengl32')
   winsock2_dep = cc.find_library('ws2_32')
 else
+
+  if cc.has_header('sys/select.h')
+    config_h.set10('HAVE_SYS_SELECT_H', true)
+  endif
+
   m_dep = cc.find_library('m', required : false)
 
 # dladdr
