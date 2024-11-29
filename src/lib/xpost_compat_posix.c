@@ -152,7 +152,7 @@ long long
 xpost_get_usertime_ms(void)
 {
 #if defined(__APPLE__) && defined(__MACH__)
-    return  = (long long)(mach_absolute_time() - _xpost_time_start) / 1000000LL;
+    return  (long long)(mach_absolute_time() - _xpost_time_start) / 1000000LL;
 #elif HAVE_CLOCK_GETTIME
     struct timespec t;
 
