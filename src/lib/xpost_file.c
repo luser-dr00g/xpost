@@ -42,6 +42,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifdef HAVE_SYS_SELECT_H
+# include <sys/select.h>
+#endif
+
 #include "xpost.h"
 #include "xpost_log.h"
 #include "xpost_compat.h"
