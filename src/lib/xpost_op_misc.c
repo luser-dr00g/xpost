@@ -113,19 +113,13 @@ int Pbind(Xpost_Context *ctx,
 static
 int realtime(Xpost_Context *ctx)
 {
-    double sec;
-    long long lsec;
-#ifdef HAVE_GETTIMEOFDAY
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    sec = (long)tv.tv_sec * 1000 + (long)tv.tv_usec / 1000;
-#else
-    sec = time(NULL) * 1000.0;
-#endif
-    lsec = (long long)sec;
-    lsec &= 0x00000000ffffffff; /* truncate any large value */
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((int)lsec)))
+    long long ms;
+
+    ms = xpost_get_realtime_ms();
+    ms &= 0x00000000ffffffff; /* truncate any large value */
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((int)ms)))
         return stackoverflow;
+
     return 0;
 }
 
@@ -134,18 +128,11 @@ int realtime(Xpost_Context *ctx)
 static
 int usertime(Xpost_Context *ctx)
 {
-    double sec;
-    long long lsec;
-#ifdef HAVE_GETTIMEOFDAY
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    sec = ((long)tv.tv_sec * 1000) + ((long)tv.tv_usec / 1000);
-#else
-    sec = time(NULL) * 1000.0;
-#endif
-    lsec = (long long)(sec - xpost_start_time_get());
-    lsec &= 0x00000000ffffffff; /* truncate any large value */
-    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((int)lsec)))
+    long long ms;
+
+    ms = xpost_get_usertime_ms();
+    ms &= 0x00000000ffffffff; /* truncate any large value */
+    if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((int)ms)))
         return stackoverflow;
     return 0;
 }

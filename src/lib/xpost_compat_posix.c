@@ -35,11 +35,12 @@
 
 #include <limits.h> /* PATH_MAX */
 #include <stdio.h> /* FILE, fpurge */
-#include <stdlib.h> /* free, malloc, mkstemp, realpath */
-#include <string.h> /* memcpy, strdup, strlen */
 #ifdef HAVE_STDIO_EXT_H
 # include <stdio_ext.h> /* __fpurge */
 #endif
+#include <stdlib.h> /* free, malloc, mkstemp, realpath */
+#include <string.h> /* memcpy, strdup, strlen */
+#include <time.h> /* mach_absolute_time, clock_gettime, time /
 
 // This prototype isn't visible under cygwin
 char *realpath(const char *restrict file_name, char *restrict resolved_name);
@@ -54,6 +55,15 @@ int fpurge(FILE *);
  *                                  Local                                     *
  *============================================================================*/
 
+#if defined(__APPLE__) && defined(__MACH__)
+static unsigned long long _xpost_time_start;
+#elif HAVE_CLOCK_GETTIME
+static clockid_t _xpost_time_clock_id = 0;
+struct timespec _xpost_time_start;
+#else
+static time_t _xpost_time_start = 0;
+#endif
+
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
@@ -61,6 +71,37 @@ int fpurge(FILE *);
 int
 xpost_compat_init(void)
 {
+#if defined(__APPLE__) && defined(__MACH__)
+    _xpost_time_start = mach_absolute_time();
+#elif HAVE_CLOCK_GETTIME
+# ifdef HAVE_CLOCK_MONOTONIC
+    if (!clock_gettime(CLOCK_MONOTONIC, &_xpost_time_start))
+    {
+        _xpost_time_clock_id = CLOCK_MONOTONIC;
+        XPOST_LOG_DBG("using CLOCK_MONOTONIC");
+    }
+    else
+# endif
+    {
+        if (!clock_gettime(CLOCK_REALTIME, &_xpost_time_start))
+        {
+            // may go backwards
+            _ecore_time_clock_id = CLOCK_REALTIME;
+            XPOST_LOG_WRN("CLOCK_MONOTONIC not available. Fallback to CLOCK_REALTIME");
+        }
+        else
+            return 0;
+    }
+#else
+    time_t t;
+
+    t =  = time(NULL);
+    if (t == ((time_t) -1))
+        return 0;
+
+    _xpost_time_start = t * 1000;
+#endif
+
     return 1;
 }
 
@@ -76,6 +117,54 @@ xpost_fpurge(FILE *f)
     __fpurge(f);
 #else
     fpurge(f);
+#endif
+}
+
+long long
+xpost_get_realtime_ms(void)
+{
+#if defined(__APPLE__) && defined(__MACH__)
+    return (long long)(mach_absolute_time() / 1000000ULL);
+#elif HAVE_CLOCK_GETTIME
+    struct timespec t;
+
+    if (!clock_gettime(_xpost_time_clock_id, &t))
+        return (long long)t.tv_sec + (long long)t.tv_nsec / 1000000LL;
+    /* very unlikely */
+    else
+        return 0;
+#else
+    time_t t;
+
+    t =  = time(NULL);
+    if (t == ((time_t) -1))
+        return 0;
+
+    return t * 1000;
+#endif
+}
+
+long long
+xpost_get_usertime_ms(void)
+{
+#if defined(__APPLE__) && defined(__MACH__)
+    return  = (long long)(mach_absolute_time() - _xpost_time_start) / 1000000LL;
+#elif HAVE_CLOCK_GETTIME
+    struct timespec t;
+
+    if (!clock_gettime(_xpost_time_clock_id, &t))
+        return (long long)(t.tv_sec - _xpost_time_start.tv_sec) + (long long)(t.tv_nsec - _xpost_time_start.tv_nsec) / 1000000LL;
+    /* very unlikely */
+    else
+        return 0;
+#else
+    time_t t;
+
+    t =  = time(NULL);
+    if (t == ((time_t) -1))
+        return 0;
+
+    return (t - _xpost_time_start) * 1000;
 #endif
 }
 

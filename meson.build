@@ -71,8 +71,29 @@ if splint.found()
   ]
 
   custom_target('splint',
-    output: '.',
+    output: 'splint',
     command: splint_cmd,
+    install: false
+  )
+endif
+
+wc = find_program('wc', required: false)
+
+if wc.found()
+
+  wc_cmd = [
+    wc,
+    '-l',
+    meson.current_source_dir() / 'src' / 'bin' / '*.c',
+    meson.current_source_dir() / 'src' / 'bin' / '*.h',
+    meson.current_source_dir() / 'src' / 'lib' / '*.c',
+    meson.current_source_dir() / 'src' / 'lib' / '*.h',
+    meson.current_source_dir() / 'data' / '*.ps'
+  ]
+
+  custom_target('wc',
+    output: 'wc',
+    command: wc_cmd,
     install: false
   )
 endif
@@ -135,6 +156,36 @@ else
     endif
   else
     error('__fpurge() or fpurge() are mandatory on UNIX')
+  endif
+
+# clock_gettime
+  if cc.has_function('clock_gettime', prefix: '#include <time.h>')
+    if cc.compiles(
+      '''
+      #include <time.h>
+      int main()
+      {
+        struct timespec t;
+        clock_gettime(CLOCK_MONOTONIC, &t);
+        return 0;
+      }
+      ''')
+      config_h.set10('HAVE_CLOCK_MONOTONIC', true)
+      message('CLOCK_MONOTONIC is available with clock_gettime()')
+    elif cc.compiles(
+      '''
+      #include <time.h>
+      int main()
+      {
+        struct timespec t;
+        clock_gettime(CLOCK_REALTIME, &t);
+        return 0;
+      }
+      ''')
+      message('CLOCK_REALTIME is available with clock_gettime()')
+    else
+      error('CLOCK_MONOTONIC or CLOCK_REALTIME with clock_gettime() are mandatory on UNIX')
+    endif
   endif
 
 # page size
@@ -202,6 +253,7 @@ summary({'OS': host_os,
          'png device': libpng_dep.found().to_string('yes', 'no'),
          'documentation': (get_option('doc') and doxygen.found()).to_string('yes', 'no'),
          'splint': splint.found().to_string('yes', 'no'),
+         'wc': wc.found().to_string('yes', 'no'),
         }, section: 'Configuration Options Summary:')
 
 summary({'prefix': dir_prefix,

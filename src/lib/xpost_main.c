@@ -34,7 +34,6 @@
 #endif
 
 #include <string.h>
-#include <time.h> /* time */
 
 #ifdef HAVE_SYS_TIME_H
 # include <sys/time.h>
@@ -63,19 +62,12 @@
  *============================================================================*/
 
 static int _xpost_init_count = 0;
-static double _xpost_start_time = 0.0;
 static char _xpost_lib_dir[XPOST_PATH_MAX];
 static char *_xpost_data_dir = NULL;
 
 /*============================================================================*
  *                                 Global                                     *
  *============================================================================*/
-
-double
-xpost_start_time_get(void)
-{
-    return _xpost_start_time;
-}
 
 /*============================================================================*
  *                                   API                                      *
@@ -109,21 +101,11 @@ xpost_init(void)
     if (!_xpost_data_dir)
         return --_xpost_init_count;
 
-    XPOST_LOG_ERR("Init: libdir : '%s'.", _xpost_lib_dir);
-    XPOST_LOG_ERR("Init: datadir: '%s'.", _xpost_data_dir);
-
     if (!xpost_memory_init())
         return --_xpost_init_count;
 
     if (!xpost_font_init())
         return --_xpost_init_count;
-
-#ifdef HAVE_GETTIMEOFDAY
-    gettimeofday(&tv, NULL);
-    _xpost_start_time = (((long)tv.tv_sec) * 1000) + ((long)tv.tv_usec / 1000);
-#else
-    _xpost_start_time = time(NULL) * 1000.0;
-#endif
 
     return _xpost_init_count;
 }

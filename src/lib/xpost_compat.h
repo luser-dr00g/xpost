@@ -109,6 +109,23 @@ void echooff(FILE *f);
  */
 void xpost_fpurge(FILE *f);
 
+/**
+ * @brief return the number of milliseconds, whatever the stating time is.
+ *
+ * @return The number of milliseconds.
+ *
+ * @note The returned value is platform dependant.
+ */
+long long xpost_get_realtime_ms(void);
+
+/**
+ * @brief return the number of milliseconds since the Postscript
+ * interpreter has started.
+ *
+ * @return The number of milliseconds.
+ */
+long long xpost_get_usertime_ms(void);
+
 int xpost_isatty(int fd);
 
 /**

@@ -49,6 +49,8 @@
  *                                  Local                                     *
  *============================================================================*/
 
+static long long _xpost_time_freq;
+static long long _xpost_time_start;
 static BCRYPT_ALG_HANDLE _xpost_bcrypt_provider;
 
 static int
@@ -94,6 +96,8 @@ _xpost_mkstemp_fill(char *template)
 int
 xpost_compat_init(void)
 {
+    LARGE_INTEGER freq;
+    LARGE_INTEGER count;
     WSADATA wsa_data;
 
     if (WSAStartup(MAKEWORD(2, 2), &wsa_data) != 0)
@@ -103,6 +107,11 @@ xpost_compat_init(void)
                                                     BCRYPT_RNG_ALGORITHM,
                                                     NULL, 0)))
         return 0;
+
+    QueryPerformanceFrequency(&freq);
+    QueryPerformanceCounter(&count);
+    _xpost_time_freq = (long long)freq.QuadPart;
+    _xpost_time_start = (long long)count.QuadPart;
 
     return 1;
 }
@@ -119,6 +128,24 @@ xpost_fpurge(FILE *f)
 {
     /* no __fpurge() or fpurge functionos on Windows */
     (void)f;
+}
+
+long long
+xpost_get_realtime_ms(void)
+{
+    LARGE_INTEGER count;
+
+    QueryPerformanceCounter(&count);
+    return (count.QuadPart * 1000LL) / _xpost_time_freq;
+}
+
+long long
+xpost_get_usertime_ms(void)
+{
+    LARGE_INTEGER count;
+
+    QueryPerformanceCounter(&count);
+    return ((count.QuadPart - _xpost_time_start) * 1000LL) / _xpost_time_freq;
 }
 
 int

@@ -16,6 +16,10 @@ jobs:
       run: |
         sudo apt-get -qq update
         sudo apt install build-essential libpng-dev libjpeg-dev libfreetype6-dev libfontconfig1-dev check meson ninja-build
+    - name: meson
+      run: meson setup builddir
+    - name: ninja
+      run: ninja -C builddir
     - name: configure
       run: autoreconf -vif && ./configure --with-tests=regular
     - name: make
@@ -24,7 +28,3 @@ jobs:
       run: make check
     - name: make distcheck
       run: make distcheck
-    - name: meson
-      run: meson setup builddir
-    - name: ninja
-      run: ninja -C builddir
