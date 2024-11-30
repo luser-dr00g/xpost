@@ -223,7 +223,6 @@ xpost_mkstemp(char *template, int *fd)
         if (!_xpost_mkstemp_fill(trail))
             break;
 
-        printf("\n*** tmp: '%s'\n\n", filename);
         f = _open(filename,
                    O_CREAT | O_EXCL | O_RDWR | O_BINARY,
                    S_IREAD | S_IWRITE);
