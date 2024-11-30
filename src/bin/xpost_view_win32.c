@@ -311,6 +311,8 @@ void
 xpost_view_page_display(Xpost_View_Window *win,
                         const void *buffer)
 {
+    if (!win || ! buf)
+        return;
     /* FIXME: remove that memcpy */
     memcpy(win->buf, buffer, win->bitmap_info->bih.biSizeImage);
     InvalidateRect(win->window, NULL, FALSE);
