@@ -99,7 +99,7 @@ xpost_compat_init(void)
 #else
     time_t t;
 
-    t =  = time(NULL);
+    t = time(NULL);
     if (t == ((time_t) -1))
         return 0;
 
@@ -140,7 +140,7 @@ xpost_get_realtime_ms(void)
 #else
     time_t t;
 
-    t =  = time(NULL);
+    t = time(NULL);
     if (t == ((time_t) -1))
         return 0;
 
@@ -164,7 +164,7 @@ xpost_get_usertime_ms(void)
 #else
     time_t t;
 
-    t =  = time(NULL);
+    t = time(NULL);
     if (t == ((time_t) -1))
         return 0;
 
