@@ -77,9 +77,6 @@ XPAPI int
 xpost_init(void)
 {
     char tmp1[XPOST_PATH_MAX];
-#ifdef HAVE_GETTIMEOFDAY
-    struct timeval tv;
-#endif
     size_t l;
 
     if (++_xpost_init_count != 1)
