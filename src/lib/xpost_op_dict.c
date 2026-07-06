@@ -64,6 +64,12 @@ int xpost_op_int_dict(Xpost_Context *ctx,
                       Xpost_Object I)
 {
     Xpost_Object dic;
+
+    if (I.int_.val < 0)
+        return rangecheck;
+    if (I.int_.val > 65535) /* sz field is 16 bits; PLRM minimum limit */
+        return limitcheck;
+
     dic = xpost_dict_cons (ctx, I.int_.val);
     if (xpost_object_get_type(dic) == nulltype)
         return VMerror;

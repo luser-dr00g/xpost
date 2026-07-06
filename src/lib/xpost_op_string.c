@@ -55,6 +55,12 @@ int Istring(Xpost_Context *ctx,
             Xpost_Object I)
 {
     Xpost_Object str;
+
+    if (I.int_.val < 0)
+        return rangecheck;
+    if (I.int_.val > 65535) /* sz field is 16 bits; PLRM minimum limit */
+        return limitcheck;
+
     str = xpost_string_cons(ctx, I.int_.val, NULL);
     if (xpost_object_get_type(str) == nulltype)
         return VMerror;
@@ -218,7 +224,7 @@ int Ssearch(Xpost_Context *ctx,
 
     if (seek.comp_.sz > str.comp_.sz)
     {
-        /* seek cannot match: report not-found, per PLRM */
+        /* needle cannot match: report not-found, per PLRM */
         xpost_stack_push(ctx->lo, ctx->os, str);
         xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
         return 0;

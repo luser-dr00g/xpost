@@ -81,6 +81,11 @@ int xpost_op_int_array (Xpost_Context *ctx,
 {
     Xpost_Object t;
 
+    if (I.int_.val < 0)
+        return rangecheck;
+    if (I.int_.val > 65535) /* sz field is 16 bits; PLRM minimum limit */
+        return limitcheck;
+
     t = xpost_array_cons(ctx, I.int_.val);
     if (xpost_object_get_type(t) == nulltype)
         return VMerror;
