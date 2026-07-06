@@ -439,7 +439,7 @@ Xpost_Object consextended (double d)
 
     r.number = d;
     o.extended_.tag = extendedtype;
-    o.extended_.sign_exp = (r.bits >> 52) & 0x7FF;
+    o.extended_.sign_exp = (r.bits >> 52) & 0xFFF;
     o.extended_.fraction = (r.bits >> 20) & 0xFFFFFFFF;
     return o;
 }
