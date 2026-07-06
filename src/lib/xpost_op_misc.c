@@ -75,6 +75,7 @@ Xpost_Object bind(Xpost_Context *ctx,
         {
             default: break;
             case nametype:
+                if (!xpost_object_is_exe(t)) break; /* bind only replaces executable names */
                 z = xpost_stack_count(ctx->lo, ctx->ds);
                 for (j = 0; j < z; j++) {
                     d = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, j);
