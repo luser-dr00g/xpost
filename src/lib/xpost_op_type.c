@@ -174,35 +174,63 @@ int Ncvi(Xpost_Context *ctx,
     return 0;
 }
 
+/* helper function: interpret the whole string as a PostScript numeral
+   (decimal or radix form); returns 0 on success or an error code */
+static
+int _string_to_number(const char *t,
+                      double *out)
+{
+    char *end;
+    long base;
+    double num;
+
+    /* radix numeral, e.g. 16#ff */
+    errno = 0;
+    base = strtol(t, &end, 10);
+    if (end != t && *end == '#' && base >= 2 && base <= 36)
+    {
+        long v;
+        const char *p = end + 1;
+        if (*p == '\0')
+            return typecheck;
+        errno = 0;
+        v = strtol(p, &end, (int)base);
+        if (*end != '\0')
+            return typecheck;
+        if (errno == ERANGE)
+            return limitcheck;
+        *out = (double)v;
+        return 0;
+    }
+
+    errno = 0;
+    num = strtod(t, &end);
+    if (end == t || *end != '\0')
+        return typecheck;
+    if (errno == ERANGE)
+        return limitcheck;
+    *out = num;
+    return 0;
+}
+
 /* string  cvi  int
-   convert initial portion of string to integer */
+   convert string numeral to integer */
 static
 int Scvi(Xpost_Context *ctx,
          Xpost_Object s)
 {
     double dbl;
-    long num;
+    int ret;
     char *t = xpost_string_allocate_cstring(ctx, s);
 
-    dbl = strtod(t, NULL);
-    if ((dbl == HUGE_VAL || dbl -HUGE_VAL) && errno==ERANGE){
-        free(t);
-        return limitcheck;
-    }
-    if (dbl >= LONG_MAX || dbl <= LONG_MIN){
-        free(t);
-        return limitcheck;
-    }
-    num = (long)dbl;
-
-    /*
-      num = strtol(t, NULL, 10);
-      if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
-      return limitcheck;
-    */
-
-    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(num));
+    ret = _string_to_number(t, &dbl);
     free(t);
+    if (ret)
+        return ret;
+    if (dbl >= LONG_MAX || dbl <= LONG_MIN)
+        return limitcheck;
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((long)dbl));
     return 0;
 }
 
@@ -251,20 +279,21 @@ int Ncvr(Xpost_Context *ctx,
 }
 
 /* string  cvr  real
-   convert initial portion of string to real */
+   convert string numeral to real */
 static
 int Scvr(Xpost_Context *ctx,
          Xpost_Object str)
 {
     double num;
+    int ret;
     char *s = xpost_string_allocate_cstring(ctx, str);
-    num = strtod(s, NULL);
-    if ((num == HUGE_VAL || num -HUGE_VAL) && errno == ERANGE){
-        free(s);
-        return limitcheck;
-    }
-    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)num));
+
+    ret = _string_to_number(s, &num);
     free(s);
+    if (ret)
+        return ret;
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)num));
     return 0;
 }
 
