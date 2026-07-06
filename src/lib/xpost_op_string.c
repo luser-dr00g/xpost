@@ -217,7 +217,12 @@ int Ssearch(Xpost_Context *ctx,
     Xpost_Object interval;
 
     if (seek.comp_.sz > str.comp_.sz)
-        return rangecheck;
+    {
+        /* seek cannot match: report not-found, per PLRM */
+        xpost_stack_push(ctx->lo, ctx->os, str);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+        return 0;
+    }
     s = xpost_string_get_pointer(ctx, str);
     k = xpost_string_get_pointer(ctx, seek);
     for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++)
