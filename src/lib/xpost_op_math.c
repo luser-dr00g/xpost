@@ -59,38 +59,36 @@
 #include "xpost_operator.h"
 #include "xpost_op_math.h"
 
-static
-int subwillunder(long x, long y);
+/* bounds of the postscript integer type, for overflow detection */
+static const long long integer_max =
+    (long long)(((unsigned long long)1 << (sizeof(integer)*8 - 1)) - 1);
+static const long long integer_min =
+    -(long long)(((unsigned long long)1 << (sizeof(integer)*8 - 1)) - 1) - 1;
 
 static
 int addwillover(long x,
                 long y)
 {
-    if (y == LONG_MIN) return x!=0;
-    if (y < 0) return subwillunder(x, -y);
-    if (x > LONG_MAX - y) return 1;
-    return 0;
+    if (y < 0) return x < integer_min - y;
+    return x > integer_max - y;
 }
 
 static
 int subwillunder(long x,
                  long y)
 {
-    if (y == LONG_MIN) return 1;
-    if (y < 0) return addwillover(x, -y);
-    if (x < LONG_MIN + y) return 1;
-    return 0;
+    if (y < 0) return x > integer_max + y;
+    return x < integer_min + y;
 }
 
 static
 int mulwillover(long x,
                 long y)
 {
-    if (x == 0||y == 0) return 0;
-    if (x < 0) x = -x;
-    if (y < 0) y = -y;
-    if (x > LONG_MAX / y) return 1;
-    return 0;
+    long long xx = x < 0 ? -(long long)x : (long long)x;
+    long long yy = y < 0 ? -(long long)y : (long long)y;
+    if (xx == 0 || yy == 0) return 0;
+    return xx > integer_max / yy;
 }
 
 /* num1 num2  add  sum
