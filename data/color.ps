@@ -22,7 +22,17 @@
     /Pattern { pop }
 >> def
 /setcolor {
-    //setcolordict currentcolorspace get exec
+    currentcolorspace
+    dup type /arraytype eq { dup 0 get dup /Separation eq exch /DeviceN eq or } { false } ifelse
+    {
+        % [/Separation name alt tint] or [/DeviceN names alt tint]:
+        % switch to the alternative space and convert via the tint transform
+        dup 2 get setcolorspace
+        3 get exec
+        setcolor
+    } {
+        //setcolordict exch get exec
+    } ifelse
 } bind def
 
 /currentcolordict <<
