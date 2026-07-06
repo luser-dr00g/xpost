@@ -313,8 +313,9 @@ int _fillpoly(Xpost_Context *ctx,
     int numlines;
     /* Xpost_Object x1, y1, x2, y2; */
     Xpost_Object drawline;
-    struct point *points, *intersections;
+    struct point *points, *intersections, *tmp;
     int i, j;
+    int cap;
     real yscan;
     real minx = (real)0x7ffffff;
     real miny = minx;
@@ -377,7 +378,14 @@ int _fillpoly(Xpost_Context *ctx,
             maxy = points[i].y;
     }
 
-    intersections = calloc((int)(maxy - miny), 2 * 2 * sizeof *intersections);
+    /* a complex polygon may cross a scanline many times; grow as needed */
+    cap = 4 * ((int)(maxy - miny) + 1);
+    intersections = calloc(cap, sizeof *intersections);
+    if (!intersections)
+    {
+        free(points);
+        return VMerror;
+    }
 
     /* intersect polygon edges with scanlines */
     for (i = 0, j = 0; i < poly.comp_.sz - 1; i++)
@@ -392,6 +400,18 @@ int _fillpoly(Xpost_Context *ctx,
                            (real)(maxx + 0.5), yscan,
                            &rx, &ry))
             {
+                if (j == cap)
+                {
+                    cap *= 2;
+                    tmp = realloc(intersections, cap * sizeof *intersections);
+                    if (!tmp)
+                    {
+                        free(points);
+                        free(intersections);
+                        return VMerror;
+                    }
+                    intersections = tmp;
+                }
                 intersections[j].x = rx;
                 intersections[j].y = ry;
                 j++;
