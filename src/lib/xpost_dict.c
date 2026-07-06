@@ -158,15 +158,16 @@ cont:
         case booleantype: /*@fallthrough@*/
         case integertype: return L.int_.val - R.int_.val;
 
-        case realtype: return (fabs(L.real_.val - R.real_.val) < 0.0001)?
-                                0:
-                                L.real_.val - R.real_.val > 0? 1: -1;
+        /* numbers compare exactly: this function also backs
+           the relational operators */
+        case realtype: return L.real_.val < R.real_.val ? -1 :
+                              L.real_.val > R.real_.val ? 1 : 0;
         case extendedtype:
         {
             double l,r;
             l = xpost_dict_convert_extended_to_double(L);
             r = xpost_dict_convert_extended_to_double(R);
-            return (fabs(l - r) < 0.0001) ? 0 : l - r > 0? 1: -1;
+            return l < r ? -1 : l > r ? 1 : 0;
         }
 
         case operatortype:  return L.mark_.padw - R.mark_.padw;
