@@ -539,7 +539,7 @@ dicrec *diclookup(Xpost_Context *ctx,
         return invalidrec;
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
-    sz = (dp->sz + 1);
+    sz = DICTABN(dp->sz);
 
     hashval = hash(k);
     h = hashval % sz;
@@ -740,7 +740,11 @@ int xpost_dict_put(Xpost_Context *ctx,
     return xpost_dict_put_memory(ctx, xpost_context_select_memory(ctx, d), d, k, v);
 }
 
-/* undefine key from dict */
+/* undefine key from dict.
+
+   after emptying the slot, re-slot the entries that follow it in the
+   probe cluster so no entry is left unreachable beyond the new hole
+   (Knuth TAOCP vol.3, 6.4 Algorithm R). */
 int xpost_dict_undef_memory(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object d,
@@ -751,12 +755,9 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
     dichead *dp;
     dicrec *tp;
     unsigned int sz;
-    unsigned int hashval;
-    unsigned int h;
+    unsigned int hashnull;
     unsigned int i;
-    unsigned int last = 0;
-    int lastisset = 0;
-    int found = 0;
+    unsigned int j;
 
     if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
@@ -771,68 +772,39 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         return VMerror;
 
     e = diclookup(ctx, mem, d, k); /*find slot for key */
-    if (e == NULL || e == invalidrec || xpost_dict_compare_objects(ctx,e->key,null) == 0)
+    if (e == NULL || e == invalidrec || xpost_object_get_type(e->key) == nulltype)
     {
         return undefined;
     }
 
-    /*find last chained key and value with same hash */
-    /*FIXME: need to repeat this process with this 'last chained key with same hash'
-      until the key we're clearing is the actual last key in the chain, recursively. */
     sz = DICTABN(dp->sz);
-    hashval = hash(k);
-    h = hashval % sz;
+    hashnull = hash(null);
 
-    for (i = h; i < sz; i++)
-    {
-        if (h == hash(tp[i].key) % sz)
-        {
-            last = i;
-            lastisset = 1;
-        }
-        else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0)
-        {
-            if (lastisset)
-            {
-                found = 1;
-                break;
-            }
-        }
-    }
+    j = e - tp; /* empty the slot */
+    tp[j].key = null;
+    tp[j].hash = hashnull;
+    tp[j].value = null;
+    --dp->nused;
 
-    if (!found)
+    i = j;
+    while (1) /* re-slot the remainder of the cluster */
     {
-        for (i = 0; i < h; i++)
-        {
-            if (h == hash(tp[i].key) % sz)
-            {
-                last = i;
-                lastisset = 1;
-            }
-            else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0)
-            {
-                if (lastisset)
-                {
-                    found = 1;
-                    break;
-                }
-            }
-        }
-    }
+        unsigned int home;
 
-    if (found) /* f found: move last key and value to slot */
-    {
-        e->key = tp[last].key;
-        e->value = tp[last].value;
-        tp[last].key = null;
-        tp[last].hash = hash(tp[last].key);
-        tp[last].value = null;
-    }
-    else /* ot found: write null over key and value */
-    {
-        e->key = null;
-        tp[last].hash = hash(tp[last].key);
-        e->value = null;
+        i = (i + 1) % sz;
+        if (xpost_object_get_type(tp[i].key) == nulltype)
+            break;
+        /* move entry i into the hole at j unless its home slot lies
+           cyclically within (j, i], in which case it is still reachable */
+        home = tp[i].hash % sz;
+        if (i > j ? (home <= j || home > i) : (home <= j && home > i))
+        {
+            tp[j] = tp[i];
+            tp[i].key = null;
+            tp[i].hash = hashnull;
+            tp[i].value = null;
+            j = i;
+        }
     }
 
     return 0;
