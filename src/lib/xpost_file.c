@@ -112,6 +112,7 @@ disk_readch(Xpost_File *file)
      */
 
 #ifdef HAVE_SYS_SELECT_H
+    if (df->poll_before_read)
     {
         FILE *fp;
         fd_set reads, writes, excepts;
@@ -224,8 +225,14 @@ xpost_diskfile_open(const FILE *fp)
 
     if (df)
     {
+        struct stat st;
+
         df->methods.methods = &disk_methods;
         df->file = (FILE*)fp;
+        /* reads from a regular file never block, so only poll fds that
+           can stall (pipes, terminals, sockets) */
+        df->poll_before_read = !(fstat(fileno(df->file), &st) == 0 &&
+                                 S_ISREG(st.st_mode));
     }
 
     return &df->methods;

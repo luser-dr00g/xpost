@@ -82,6 +82,9 @@ typedef struct Xpost_DiskFile
 {
     Xpost_File methods;
     FILE *file;
+    int poll_before_read; /* select() before each read: only needed for
+                             pipes/terminals/sockets, where a read may block;
+                             regular files are always ready */
 } Xpost_DiskFile;
 
 typedef struct Xpost_MemoryFile
