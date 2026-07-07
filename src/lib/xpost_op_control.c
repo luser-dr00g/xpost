@@ -120,20 +120,21 @@ int xpost_op_int_int_int_proc_for (Xpost_Context *ctx,
     if (up? i > n : i < n) return 0;
     assert(ctx->gl->base);
 
+    /* loop frame: the sentinel loop operator (which exit searches for)
+       under literal state that the iterate operator updates in place */
     if (!xpost_stack_push(ctx->lo, ctx->es,
                           xpost_operator_cons_opcode(ctx->opcode_shortcuts.opfor)))
             return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es,
-                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
-        return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
-        return execstackoverflow;
-
-    if (!xpost_stack_push(ctx->lo, ctx->es, lim))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, incr))
         return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, lim))
+        return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_int_cons(i + j)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.forcont)))
         return execstackoverflow;
 
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
@@ -141,6 +142,67 @@ int xpost_op_int_int_int_proc_for (Xpost_Context *ctx,
     if (!xpost_stack_push(ctx->lo, ctx->os, init))
         return stackoverflow;
 
+    return 0;
+}
+
+/* continue a for loop: es holds (from the top) the next value, the
+   limit, the increment, the literal proc, and the sentinel */
+static
+int xpost_op_for_iterate (Xpost_Context *ctx)
+{
+    Xpost_Stack *root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+    Xpost_Stack *top = (Xpost_Stack *)(ctx->lo->base + root->prevseg);
+    Xpost_Object i, lim, incr, P;
+
+    if (top->top >= 5 && top->top < XPOST_STACK_SEGMENT_SIZE - 2)
+    {
+        i    = top->data[top->top - 1];
+        lim  = top->data[top->top - 2];
+        incr = top->data[top->top - 3];
+        P    = top->data[top->top - 4];
+        if (incr.int_.val > 0 ? i.int_.val > lim.int_.val
+                              : i.int_.val < lim.int_.val)
+        {
+            top->top -= 5; /* drop the frame */
+            return 0;
+        }
+        if (!xpost_stack_push(ctx->lo, ctx->os, i))
+            return stackoverflow;
+        /* the push may grow the memory file and move its base:
+           re-derive the frame pointers before writing through them */
+        root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+        top = (Xpost_Stack *)(ctx->lo->base + root->prevseg);
+        top->data[top->top - 1] = xpost_int_cons(i.int_.val + incr.int_.val);
+        top->data[top->top]     = xpost_operator_cons_opcode(ctx->opcode_shortcuts.forcont);
+        top->data[top->top + 1] = xpost_object_cvx(P);
+        top->top += 2;
+        return 0;
+    }
+
+    i    = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    lim  = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 1);
+    incr = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 2);
+    P    = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 3);
+    if (xpost_object_get_type(i) == invalidtype)
+        return execstackunderflow;
+    if (incr.int_.val > 0 ? i.int_.val > lim.int_.val
+                          : i.int_.val < lim.int_.val)
+    {
+        int k;
+        for (k = 0; k < 5; k++)
+            (void)xpost_stack_pop(ctx->lo, ctx->es);
+        return 0;
+    }
+    if (!xpost_stack_push(ctx->lo, ctx->os, i))
+        return stackoverflow;
+    if (!xpost_stack_topdown_replace(ctx->lo, ctx->es, 0,
+                                     xpost_int_cons(i.int_.val + incr.int_.val)))
+        return execstackunderflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.forcont)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(P)))
+        return execstackoverflow;
     return 0;
 }
 
@@ -187,20 +249,67 @@ int xpost_op_int_proc_repeat (Xpost_Context *ctx,
 {
     if (n.int_.val <= 0) return 0;
 
+    /* loop frame, as for the for operator */
     if (!xpost_stack_push(ctx->lo, ctx->es,
                           xpost_operator_cons_opcode(ctx->opcode_shortcuts.repeat)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es,
-                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
-        return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
-
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_int_cons(n.int_.val - 1)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.repeatcont)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
         return execstackoverflow;
 
+    return 0;
+}
+
+/* continue a repeat loop: es holds (from the top) the remaining
+   count, the literal proc, and the sentinel */
+static
+int xpost_op_repeat_iterate (Xpost_Context *ctx)
+{
+    Xpost_Stack *root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+    Xpost_Stack *top = (Xpost_Stack *)(ctx->lo->base + root->prevseg);
+    Xpost_Object n, P;
+
+    if (top->top >= 3 && top->top < XPOST_STACK_SEGMENT_SIZE - 2)
+    {
+        n = top->data[top->top - 1];
+        P = top->data[top->top - 2];
+        if (n.int_.val <= 0)
+        {
+            top->top -= 3; /* drop the frame */
+            return 0;
+        }
+        top->data[top->top - 1] = xpost_int_cons(n.int_.val - 1);
+        top->data[top->top]     = xpost_operator_cons_opcode(ctx->opcode_shortcuts.repeatcont);
+        top->data[top->top + 1] = xpost_object_cvx(P);
+        top->top += 2;
+        return 0;
+    }
+
+    n = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    P = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 1);
+    if (xpost_object_get_type(n) == invalidtype)
+        return execstackunderflow;
+    if (n.int_.val <= 0)
+    {
+        int k;
+        for (k = 0; k < 3; k++)
+            (void)xpost_stack_pop(ctx->lo, ctx->es);
+        return 0;
+    }
+    if (!xpost_stack_topdown_replace(ctx->lo, ctx->es, 0,
+                                     xpost_int_cons(n.int_.val - 1)))
+        return execstackunderflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.repeatcont)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(P)))
+        return execstackoverflow;
     return 0;
 }
 
@@ -210,15 +319,43 @@ static
 int xpost_op_proc_loop (Xpost_Context *ctx,
                         Xpost_Object P)
 {
-    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "loop", NULL,0,0));
+    /* loop frame, as for the for operator */
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.loop)))
-        return execstackoverflow;
-    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.loopcont)))
+        return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, P))
+        return execstackoverflow;
+    return 0;
+}
+
+/* continue a loop: es holds (from the top) the literal proc and the
+   sentinel; only exit or stop ends the loop */
+static
+int xpost_op_loop_iterate (Xpost_Context *ctx)
+{
+    Xpost_Stack *root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+    Xpost_Stack *top = (Xpost_Stack *)(ctx->lo->base + root->prevseg);
+    Xpost_Object P;
+
+    if (top->top >= 2 && top->top < XPOST_STACK_SEGMENT_SIZE - 2)
+    {
+        P = top->data[top->top - 1];
+        top->data[top->top]     = xpost_operator_cons_opcode(ctx->opcode_shortcuts.loopcont);
+        top->data[top->top + 1] = xpost_object_cvx(P);
+        top->top += 2;
+        return 0;
+    }
+
+    P = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    if (xpost_object_get_type(P) == invalidtype)
+        return execstackunderflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.loopcont)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(P)))
         return execstackoverflow;
     return 0;
 }
@@ -395,6 +532,13 @@ int xpost_oper_init_control_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "loop", (Xpost_Op_Func)xpost_op_proc_loop, 0, 1, proctype);
     INSTALL;
     ctx->opcode_shortcuts.loop = op.mark_.padw;
+    /* internal loop-continuation operators, referenced by opcode only */
+    op = xpost_operator_cons(ctx, "for.iterate", (Xpost_Op_Func)xpost_op_for_iterate, 0, 0);
+    ctx->opcode_shortcuts.forcont = op.mark_.padw;
+    op = xpost_operator_cons(ctx, "repeat.iterate", (Xpost_Op_Func)xpost_op_repeat_iterate, 0, 0);
+    ctx->opcode_shortcuts.repeatcont = op.mark_.padw;
+    op = xpost_operator_cons(ctx, "loop.iterate", (Xpost_Op_Func)xpost_op_loop_iterate, 0, 0);
+    ctx->opcode_shortcuts.loopcont = op.mark_.padw;
     op = xpost_operator_cons(ctx, "exit", (Xpost_Op_Func)xpost_op_exit, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "stop", (Xpost_Op_Func)xpost_op_stop, 0, 0);
