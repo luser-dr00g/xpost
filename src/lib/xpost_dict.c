@@ -674,6 +674,61 @@ Xpost_Object xpost_dict_get(Xpost_Context *ctx,
 }
 
 /*
+   Get value from dict with a name key.
+
+   names are already canonical dict keys, so the key normalisation and
+   generality of the full lookup are unnecessary; magic values and any
+   irregularity fall back to the full path. */
+Xpost_Object xpost_dict_get_name(Xpost_Context *ctx,
+        Xpost_Object d,
+        Xpost_Object k)
+{
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, d);
+    unsigned int ent = xpost_object_get_ent(d);
+    unsigned int ad;
+    dichead *dp;
+    dicrec *tp;
+    unsigned int sz;
+    unsigned int hashval;
+    unsigned int h;
+    unsigned int i;
+
+    if (ent >= mem->table.nextent)
+        return invalid;
+    ad = mem->table.tab[ent].adr;
+    dp = (void *)(mem->base + ad);
+    tp = (void *)(mem->base + ad + sizeof(dichead));
+    sz = DICTABN(dp->sz);
+
+    hashval = hash(k);
+    h = hashval % sz;
+
+    for (i = h; i < sz; i++)
+    {
+        if (xpost_object_get_type(tp[i].key) == nulltype)
+            return invalid;
+        if (hashval == tp[i].hash && _keys_equal(ctx, tp[i].key, k))
+        {
+            if (xpost_object_get_type(tp[i].value) == magictype)
+                return xpost_dict_get_memory(ctx, mem, d, k);
+            return tp[i].value;
+        }
+    }
+    for (i = 0; i < h; i++)
+    {
+        if (xpost_object_get_type(tp[i].key) == nulltype)
+            return invalid;
+        if (hashval == tp[i].hash && _keys_equal(ctx, tp[i].key, k))
+        {
+            if (xpost_object_get_type(tp[i].value) == magictype)
+                return xpost_dict_get_memory(ctx, mem, d, k);
+            return tp[i].value;
+        }
+    }
+    return invalid;
+}
+
+/*
    Put key+value in dict with specified memory file.
    (dict must be valid for this memory file)
 
