@@ -163,6 +163,10 @@ Xpost_Object xpost_dict_get_memory(Xpost_Context *ctx, /*@dependent@*/ Xpost_Mem
 */
 Xpost_Object xpost_dict_get(Xpost_Context *ctx, Xpost_Object d, Xpost_Object k);
 
+Xpost_Object xpost_dict_get_name(Xpost_Context *ctx,
+                                 Xpost_Object d,
+                                 Xpost_Object k);
+
 /**
    store key and value in dictionary
 */
