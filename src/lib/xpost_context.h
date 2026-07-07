@@ -70,6 +70,9 @@ struct _Xpost_Context {
         int forcont;
         int repeatcont;
         int loopcont;
+        int arrayforallcont;
+        int stringforallcont;
+        int dictforallcont;
         int token;
         int transform;
         int itransform;

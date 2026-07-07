@@ -283,35 +283,53 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
         return 0;
 
     assert(ctx->gl->base);
+    (void)interval;
+    (void)element;
+    /* loop frame: the sentinel forall operator (which exit searches
+       for) under literal state that the iterate operator consumes */
     if (!xpost_stack_push(ctx->lo, ctx->es,
                 xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es,
-                xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
-        return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
-
-    /* update array descriptor before push for next iteration */
-    interval = xpost_object_get_interval(A, 1, A.comp_.sz - 1);
-    if (xpost_object_get_type(interval) == invalidtype)
-        return rangecheck;
-
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(interval)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(A)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                xpost_operator_cons_opcode(ctx->opcode_shortcuts.arrayforallcont)))
         return execstackoverflow;
-    element = xpost_array_get(ctx, A, 0);
-    /*
-    if (xpost_object_is_exe(element)) {
-        if (!xpost_stack_push(ctx->lo, ctx->es,
-                    xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
-            return execstackoverflow;
+    return 0;
+}
+
+/* continue an array forall: es holds (from the top) the remaining
+   interval, the literal proc, and the sentinel */
+int xpost_op_array_forall_iterate(Xpost_Context *ctx)
+{
+    Xpost_Object A, P, element;
+
+    A = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    P = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 1);
+    if (xpost_object_get_type(A) == invalidtype)
+        return execstackunderflow;
+    if (A.comp_.sz == 0)
+    {
+        int k;
+        for (k = 0; k < 3; k++)
+            (void)xpost_stack_pop(ctx->lo, ctx->es);
+        return 0;
     }
-    */
+    element = xpost_array_get(ctx, A, 0);
+    if (xpost_object_get_type(element) == invalidtype)
+        return rangecheck;
     if (!xpost_stack_push(ctx->lo, ctx->os, element))
         return stackoverflow;
-
+    if (!xpost_stack_topdown_replace(ctx->lo, ctx->es, 0,
+            xpost_object_cvlit(xpost_object_get_interval(A, 1, A.comp_.sz - 1))))
+        return execstackunderflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                xpost_operator_cons_opcode(ctx->opcode_shortcuts.arrayforallcont)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(P)))
+        return execstackoverflow;
     return 0;
 }
 
@@ -362,6 +380,8 @@ int xpost_oper_init_array_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "forall", (Xpost_Op_Func)xpost_op_array_proc_forall, 0, 2,
             arraytype, proctype);
     INSTALL;
+    op = xpost_operator_cons(ctx, "forall.array.iterate", (Xpost_Op_Func)xpost_op_array_forall_iterate, 0, 0);
+    ctx->opcode_shortcuts.arrayforallcont = op.mark_.padw;
 
     return 1;
 }
