@@ -70,6 +70,8 @@ static
 int Vrestore(Xpost_Context *ctx,
              Xpost_Object V)
 {
+    ++ctx->namebind_gen; /* restored dicts may change bindings */
+
     int z;
     unsigned int vs;
     int ret;
