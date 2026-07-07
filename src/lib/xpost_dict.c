@@ -204,16 +204,24 @@ static
 unsigned int hash(Xpost_Object k)
 {
     unsigned int h;
-    h = ( (xpost_object_get_type(k)
-            | (k.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
-            << 1) /* ignore flags (except BANK!) */
-        + (k.comp_.sz << 3)
-        + (xpost_object_get_ent(k) << 7)
-        + (k.comp_.off << 5);
+    /* names are identified by bank and name-stack index alone;
+       xpost_object_get_ent() is -1 for non-composites, so without this
+       case every name key would hash identically */
+    if (xpost_object_get_type(k) == nametype)
+        h = ( (nametype
+                | (k.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
+                << 1)
+            + ((unsigned int)k.mark_.padw << 3);
+    else
+        h = ( (xpost_object_get_type(k)
+                | (k.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
+                << 1) /* ignore flags (except BANK!) */
+            + (k.comp_.sz << 3)
+            + (xpost_object_get_ent(k) << 7)
+            + (k.comp_.off << 5);
     /* h = xpost_object_get_type(k); /\* test collisions. *\/ */
-    /* mix bits so the modulo by (often even) table sizes spreads keys
-       across all slots: name keys otherwise contribute only multiples
-       of 128, colliding into gcd(128,sz)-strided clusters */
+    /* mix bits so the modulo by the table size spreads keys across
+       all slots for any size */
     h *= 2654435761u; /* Knuth multiplicative hash (golden ratio) */
     h ^= h >> 16;
 #ifdef DEBUGDIC
