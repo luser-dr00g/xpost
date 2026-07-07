@@ -529,7 +529,7 @@ int toke(Xpost_Context *ctx,
          void (*back)(Xpost_Context *ctx, int c, Xpost_Object *src),
          Xpost_Object *retval)
 {
-    char buf[NBUF] = "";
+    char buf[NBUF]; /* grok() NUL-terminates at the token length */
     int sta;  // status, and size
     Xpost_Object o;
     int ret;
