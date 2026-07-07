@@ -645,9 +645,12 @@ int eval(Xpost_Context *ctx)
         //xpost_stack_dump(ctx->lo, ctx->es);
     }
 
-    ret = idleproc(ctx); /* periodically process asynchronous events */
-    if (ret)
-        return ret;
+    if (xpost_object_get_type(ctx->event_handler) == operatortype)
+    {
+        ret = idleproc(ctx); /* periodically process asynchronous events */
+        if (ret)
+            return ret;
+    }
 
     { /* check object for sanity before using jump table */
         Xpost_Object_Type type = xpost_object_get_type(t);
