@@ -849,6 +849,8 @@ int xpost_dict_put(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->hold, k);
     xpost_stack_push(ctx->lo, ctx->hold, v);
 
+    ++ctx->namebind_gen; /* a binding may change: invalidate name cache */
+
     return xpost_dict_put_memory(ctx, xpost_context_select_memory(ctx, d), d, k, v);
 }
 
@@ -862,6 +864,8 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
+    ++ctx->namebind_gen;
+
     dicrec *e;
     unsigned int ad;
     dichead *dp;

@@ -147,6 +147,8 @@ static
 int xpost_op_dict_begin(Xpost_Context *ctx,
                         Xpost_Object D)
 {
+    ++ctx->namebind_gen; /* visibility changes */
+
     if (!xpost_stack_push(ctx->lo, ctx->ds, D))
         return dictstackoverflow;
     return 0;
@@ -157,6 +159,8 @@ int xpost_op_dict_begin(Xpost_Context *ctx,
 static
 int xpost_op_end(Xpost_Context *ctx)
 {
+    ++ctx->namebind_gen;
+
     if (xpost_stack_count(ctx->lo, ctx->ds) <= 3)
         return dictstackunderflow;
     (void)xpost_stack_pop(ctx->lo, ctx->ds);
@@ -170,14 +174,40 @@ int xpost_op_any_any_def(Xpost_Context *ctx,
                          Xpost_Object K,
                          Xpost_Object V)
 {
+    Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, D);
     int ret;
-    //Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
-    //xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D); puts("");
-    ret = xpost_dict_put(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
+
+    /* the current dictionary is topmost, so def deterministically sets
+       the visible binding of a name key: refresh that cache entry
+       instead of invalidating every resolution. the arguments are held
+       by the operator machinery, so the general wrapper's re-holding
+       is unnecessary. */
+    if (xpost_object_get_type(K) == nametype &&
+        !(mem == ctx->gl &&
+          ((xpost_object_is_composite(K) &&
+            mem != xpost_context_select_memory(ctx, K)) ||
+           (xpost_object_is_composite(V) &&
+            mem != xpost_context_select_memory(ctx, V)))))
+    {
+        ret = xpost_dict_put_memory(ctx, mem, D, K, V);
+        if (ret)
+            return ret;
+        {
+            unsigned int key = ((unsigned int)K.mark_.padw << 1) |
+                ((K.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ? 1 : 0);
+            if (key < ctx->namecache_size)
+            {
+                ctx->namecache_gen[key] = ctx->namebind_gen;
+                ctx->namecache_val[key] = V;
+            }
+        }
+        return 0;
+    }
+
+    ret = xpost_dict_put(ctx, D, K, V);
     if (ret)
         return ret;
-    //puts("!def!");
-    //xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D); puts("");
     return 0;
 }
 
@@ -534,6 +564,9 @@ static
 int xpost_op_cleardictstack(Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->ds);
+
+    ++ctx->namebind_gen;  /* popped dicts invalidate cached resolutions */
+
     while (z-- > 3)
     {
         (void)xpost_stack_pop(ctx->lo, ctx->ds);
@@ -581,6 +614,7 @@ int xpost_oper_init_dict_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "end", (Xpost_Op_Func)xpost_op_end, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "def", (Xpost_Op_Func)xpost_op_any_any_def, 0, 2, anytype, anytype);
+    ctx->opcode_shortcuts.opdef = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "load", (Xpost_Op_Func)xpost_op_any_load, 1, 1, anytype);
     INSTALL;

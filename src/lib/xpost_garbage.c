@@ -886,6 +886,15 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
     else /* local */
     {
         //printf("collect!\n");
+        /* the name-lookup cache holds objects outside the root set;
+           entities recycled by this collection must not be served from
+           it afterwards */
+        for (i = 0; i < MAXCONTEXT && cid[i]; i++)
+        {
+            Xpost_Context *cctx = mem->interpreter_cid_get_context(cid[i]);
+            if (cctx)
+                ++cctx->namebind_gen;
+        }
         _xpost_garbage_unmark(mem);
         if (markall)
             _xpost_garbage_unmark(ctx->gl);
