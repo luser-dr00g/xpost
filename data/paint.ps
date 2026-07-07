@@ -56,18 +56,28 @@
         pstack()=
         hook
     } if
+    % merge the subpaths, separated by null, so that FillPoly scans
+    % them together and interior subpaths produce holes
+    [ exch
     {
         dup length 2 gt {
-            [ currentcolordict DEVICE /nativecolorspace get get exec
-            counttomark { currenttransfer exec counttomark 1 roll } repeat
-            counttomark 2 add -1 roll
-            DEVICE dup /FillPoly get exec
-            pop
-            %pstack()=
+            aload pop null
         }{
             pop
         } ifelse
     } forall
+    ]
+
+    dup length 2 gt {
+        [ currentcolordict DEVICE /nativecolorspace get get exec
+        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        counttomark 2 add -1 roll
+        DEVICE dup /FillPoly get exec
+        pop
+        %pstack()=
+    }{
+        pop
+    } ifelse
 
     flushpage
     newpath
@@ -75,7 +85,10 @@
 
 % -  eofill  -
 % fill using even-odd rule
+% the scanline pairing in FillPoly is even-odd, so this
+% coincides with fill
 /eofill {
+    fill
 } def
 
 % -  stroke  -

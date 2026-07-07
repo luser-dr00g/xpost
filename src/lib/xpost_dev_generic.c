@@ -60,6 +60,9 @@ struct point
     real x, y;
 };
 
+/* marks a subpath separator in a point list */
+#define SUBPATH_BREAK ((real)-0x7ffffff)
+
 /* FIXME: re-entrancy */
 static Xpost_Context *localctx;
 
@@ -345,13 +348,20 @@ int _fillpoly(Xpost_Context *ctx,
         return unregistered;
     }
 
-    /* extract polygon vertices from ps array */
+    /* extract polygon vertices from ps array;
+       null elements separate subpaths */
     points = malloc(poly.comp_.sz * sizeof *points);
     for (i = 0; i < poly.comp_.sz; i++)
     {
         Xpost_Object pair, x, y;
 
         pair = xpost_array_get(ctx, poly, i);
+        if (xpost_object_get_type(pair) != arraytype)
+        {
+            points[i].x = SUBPATH_BREAK;
+            points[i].y = SUBPATH_BREAK;
+            continue;
+        }
         x = xpost_array_get(ctx, pair, 0);
         y = xpost_array_get(ctx, pair, 1);
         if (xpost_object_get_type(x) == integertype)
@@ -368,6 +378,8 @@ int _fillpoly(Xpost_Context *ctx,
     /* find bounding box */
     for (i = 0; i < poly.comp_.sz; i++)
     {
+        if (points[i].x == SUBPATH_BREAK)
+            continue;
         if (points[i].x < minx)
             minx = points[i].x;
         if (points[i].x > maxx)
@@ -392,6 +404,8 @@ int _fillpoly(Xpost_Context *ctx,
     {
         real rx, ry;
 
+        if (points[i].x == SUBPATH_BREAK || points[i+1].x == SUBPATH_BREAK)
+            continue;
         for (yscan = (real)(miny + 0.5); yscan < maxy; yscan += 1.0)
         {
             if (_intersect(points[i].x, points[i].y,
