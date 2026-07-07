@@ -141,7 +141,15 @@ disk_readch(Xpost_File *file)
     }
 #endif
 
+    /* the interpreter is single-threaded, so the unlocked fast path is safe;
+       unistd.h is present on mingw but does not declare getc_unlocked there */
+#if defined(_WIN32)
+    return _getc_nolock(df->file);
+#elif defined(HAVE_UNISTD_H)
+    return getc_unlocked(df->file);
+#else
     return fgetc(df->file);
+#endif
 }
 
 static int
