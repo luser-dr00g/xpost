@@ -330,35 +330,48 @@ int evalpush(Xpost_Context *ctx)
     return 0;
 }
 
-/* load executable name */
+/* load executable name:
+   search the dictionary stack for the topmost definition,
+   as per the load operator, then push the value on the
+   execution stack (if executable) or the operand stack (if literal) */
 static
 int evalload(Xpost_Context *ctx)
 {
-    int ret;
+    Xpost_Object n;
+    int i;
+    int z;
+
     if (_xpost_interpreter_is_tracing)
     {
         Xpost_Object s = xpost_name_get_string(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
         XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, xpost_string_get_pointer(ctx, s));
     }
 
-    if (!xpost_stack_push(ctx->lo, ctx->os,
-            xpost_stack_pop(ctx->lo, ctx->es)))
-        return stackoverflow;
-    assert(ctx->gl->base);
-    /*xpost_operator_exec(ctx, xpost_operator_cons(ctx, "load", NULL,0,0).mark_.padw); */
-    ret = xpost_operator_exec(ctx, ctx->opcode_shortcuts.load);
-    if (ret)
-        return ret;
-    if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0)))
+    n = xpost_stack_pop(ctx->lo, ctx->es);
+    if (xpost_object_get_type(n) == invalidtype)
+        return stackunderflow;
+
+    z = xpost_stack_count(ctx->lo, ctx->ds);
+    for (i = 0; i < z; i++)
     {
-        Xpost_Object q;
-        q = xpost_stack_pop(ctx->lo, ctx->os);
-        if (xpost_object_get_type(q) == invalidtype)
-            return undefined;
-        if (!xpost_stack_push(ctx->lo, ctx->es, q))
-            return ret;
+        Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
+        Xpost_Object x = xpost_dict_get(ctx, D, n);
+
+        if (xpost_object_get_type(x) == invalidtype)
+            continue;
+        if (xpost_object_is_exe(x))
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->es, x))
+                return execstackoverflow;
+        }
+        else
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->os, x))
+                return stackoverflow;
+        }
+        return 0;
     }
-    return 0;
+    return undefined;
 }
 
 /* execute operator */
