@@ -614,7 +614,9 @@ int xpost_operator_exec(Xpost_Context *ctx,
        that many the exact count (a full segment walk) is not needed */
     os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
     os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
-    ct = (os_top->top >= 8) ? 8 : xpost_stack_count(ctx->lo, ctx->os);
+    ct = (os_top->top >= 8) ? 8
+        : (os_top == os_root) ? (int)os_top->top
+        : xpost_stack_count(ctx->lo, ctx->os);
     if (op.n == 0)
     {
         XPOST_LOG_ERR("operator has no signatures");
