@@ -712,6 +712,48 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
                         goto next_element;
                     }
                 }
+                if (w == (unsigned int)ctx->opcode_shortcuts.optype && ot >= 1)
+                {
+                    Xpost_Object o_ = os_top->data[ot - 1];
+                    Xpost_Object_Type k_ = xpost_object_get_type(o_);
+                    if (k_ >= XPOST_OBJECT_NTYPES)
+                        k_ = invalidtype; /* as the operator normalises */
+                    if (xpost_object_get_type(ctx->typenames[k_]) != nametype)
+                    {
+                        ctx->typenames[k_] = xpost_object_cvx(
+                            xpost_name_cons(ctx, xpost_object_type_names[k_]));
+                        /* interning the name may grow (and so move) the
+                           memory file: re-derive the cached pointers */
+                        EVALARRAY_RECHECK_BASES();
+                        ot = os_top->top;
+                    }
+                    os_top->data[ot - 1] = ctx->typenames[k_];
+                    goto next_element;
+                }
+                if (ot >= 2 &&
+                    (w == (unsigned int)ctx->opcode_shortcuts.opeq ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opne))
+                {
+                    Xpost_Object x_ = os_top->data[ot - 2];
+                    Xpost_Object y_ = os_top->data[ot - 1];
+                    Xpost_Object_Type tx_ = xpost_object_get_type(x_);
+                    if (tx_ == xpost_object_get_type(y_) &&
+                        (tx_ == nametype || tx_ == booleantype))
+                    {
+                        int r_;
+                        if (tx_ == nametype)
+                            r_ = ((x_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ==
+                                  (y_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK)) &&
+                                 x_.mark_.padw == y_.mark_.padw;
+                        else
+                            r_ = x_.int_.val == y_.int_.val;
+                        if (w == (unsigned int)ctx->opcode_shortcuts.opne)
+                            r_ = !r_;
+                        --os_top->top;
+                        os_top->data[ot - 2] = xpost_bool_cons(r_);
+                        goto next_element;
+                    }
+                }
                 if (ot >= 2 &&
                     (w == (unsigned int)ctx->opcode_shortcuts.opeq ||
                      w == (unsigned int)ctx->opcode_shortcuts.opne ||
@@ -740,6 +782,30 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
                             r_ = x_.int_.val >= y_.int_.val;
                         --os_top->top;
                         os_top->data[ot - 2] = xpost_bool_cons(r_);
+                        goto next_element;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.oproll && ot >= 2)
+                {
+                    Xpost_Object j_ = os_top->data[ot - 1];
+                    Xpost_Object n_ = os_top->data[ot - 2];
+                    if (xpost_object_get_type(n_) == integertype &&
+                        xpost_object_get_type(j_) == integertype &&
+                        n_.int_.val > 0 && n_.int_.val <= 32 &&
+                        (unsigned int)n_.int_.val + 2 <= ot)
+                    {
+                        Xpost_Object tmp_[32];
+                        integer n = n_.int_.val;
+                        integer j = j_.int_.val % n;
+                        integer k;
+                        Xpost_Object *base_ = os_top->data + ot - 2 - n;
+                        if (j < 0)
+                            j += n;
+                        for (k = 0; k < n; k++)
+                            tmp_[(k + j) % n] = base_[k];
+                        for (k = 0; k < n; k++)
+                            base_[k] = tmp_[k];
+                        os_top->top -= 2;
                         goto next_element;
                     }
                 }

@@ -264,6 +264,7 @@ int xpost_oper_init_stack_ops(Xpost_Context *ctx,
     //xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     op = xpost_operator_cons(ctx, "roll", (Xpost_Op_Func)IIroll, 0, 2, integertype, integertype);
     INSTALL;
+    ctx->opcode_shortcuts.oproll = op.mark_.padw;
     op = xpost_operator_cons(ctx, "clear", (Xpost_Op_Func)Zclear, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "count", (Xpost_Op_Func)Zcount, 1, 0);
