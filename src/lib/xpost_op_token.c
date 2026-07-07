@@ -212,6 +212,29 @@ int grok(Xpost_Context *ctx,
     }
     s[ns] = '\0';  //fsm_check & xpost_name_cons  terminate on \0
 
+    { /* plain decimal integers dominate; scan them without the fsms */
+        char *p = s;
+        if (*p == '+' || *p == '-')
+            p++;
+        if (isdigit((unsigned char)*p))
+        {
+            do { p++; } while (isdigit((unsigned char)*p));
+            if (p - s == ns)
+            {
+                long num;
+                errno = 0;
+                num = strtol(s, NULL, 10);
+                if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
+                {
+                    XPOST_LOG_ERR("integer out of range");
+                    return limitcheck;
+                }
+                *retval = xpost_int_cons(num);
+                return 0;
+            }
+        }
+    }
+
     if (fsm_check(s, ns, fsm_dec, accept_dec))
     {
         long num;
