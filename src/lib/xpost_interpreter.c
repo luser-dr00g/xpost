@@ -339,7 +339,6 @@ static
 int evalload(Xpost_Context *ctx, Xpost_Object n)
 {
     int i;
-    int z;
 
     if (_xpost_interpreter_is_tracing)
     {
@@ -347,25 +346,34 @@ int evalload(Xpost_Context *ctx, Xpost_Object n)
         XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, xpost_string_get_pointer(ctx, s));
     }
 
-    z = xpost_stack_count(ctx->lo, ctx->ds);
-    for (i = 0; i < z; i++)
-    {
-        Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
-        Xpost_Object x = xpost_dict_get(ctx, D, n);
+    { /* walk the dictionary stack segments directly, topmost first */
+        Xpost_Stack *ds_root = (Xpost_Stack *)(ctx->lo->base + ctx->ds);
+        Xpost_Stack *seg = (Xpost_Stack *)(ctx->lo->base + ds_root->prevseg);
 
-        if (xpost_object_get_type(x) == invalidtype)
-            continue;
-        if (xpost_object_is_exe(x))
+        for (;;)
         {
-            if (!xpost_stack_push(ctx->lo, ctx->es, x))
-                return execstackoverflow;
+            for (i = seg->top; i--; )
+            {
+                Xpost_Object x = xpost_dict_get_name(ctx, seg->data[i], n);
+
+                if (xpost_object_get_type(x) == invalidtype)
+                    continue;
+                if (xpost_object_is_exe(x))
+                {
+                    if (!xpost_stack_push(ctx->lo, ctx->es, x))
+                        return execstackoverflow;
+                }
+                else
+                {
+                    if (!xpost_stack_push(ctx->lo, ctx->os, x))
+                        return stackoverflow;
+                }
+                return 0;
+            }
+            if (seg == ds_root)
+                break;
+            seg = (Xpost_Stack *)(ctx->lo->base + seg->prevseg);
         }
-        else
-        {
-            if (!xpost_stack_push(ctx->lo, ctx->os, x))
-                return stackoverflow;
-        }
-        return 0;
     }
     return undefined;
 }
@@ -506,6 +514,152 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
             unsigned int seen_top;
             int ret;
 
+            /* the hottest stack operators inline when their operands sit
+               in the top segment; any precondition failure falls through
+               to the generic invocation, keeping error behaviour identical */
+            if (btype == operatortype)
+            {
+                unsigned int w = b.mark_.padw;
+                unsigned int ot = os_top->top;
+
+                ctx->currentobject = b;
+                if (w == (unsigned int)ctx->opcode_shortcuts.oppop && ot >= 1)
+                {
+                    --os_top->top;
+                    goto next_element;
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opexch && ot >= 2)
+                {
+                    Xpost_Object t_ = os_top->data[ot - 1];
+                    os_top->data[ot - 1] = os_top->data[ot - 2];
+                    os_top->data[ot - 2] = t_;
+                    goto next_element;
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opdup && ot >= 1 &&
+                    ot < XPOST_STACK_SEGMENT_SIZE - 1)
+                {
+                    os_top->data[ot] = os_top->data[ot - 1];
+                    ++os_top->top;
+                    goto next_element;
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opindex && ot >= 2)
+                {
+                    Xpost_Object n_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(n_) == integertype &&
+                        n_.int_.val >= 0 && n_.int_.val <= (integer)ot - 2)
+                    {
+                        os_top->data[ot - 1] = os_top->data[ot - 2 - n_.int_.val];
+                        goto next_element;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opget && ot >= 2)
+                {
+                    Xpost_Object a_ = os_top->data[ot - 2];
+                    Xpost_Object i_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(a_) == arraytype &&
+                        xpost_object_get_type(i_) == integertype &&
+                        i_.int_.val >= 0)
+                    {
+                        Xpost_Object t_ = xpost_array_get(ctx, a_, i_.int_.val);
+                        if (xpost_object_get_type(t_) != invalidtype)
+                        {
+                            --os_top->top;
+                            os_top->data[ot - 2] = t_;
+                            goto next_element;
+                        }
+                    }
+                }
+                if (ot >= 2 &&
+                    (w == (unsigned int)ctx->opcode_shortcuts.opadd ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opsub ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opmul))
+                {
+                    Xpost_Object x_ = os_top->data[ot - 2];
+                    Xpost_Object y_ = os_top->data[ot - 1];
+                    integer r_;
+                    if (xpost_object_get_type(x_) == integertype &&
+                        xpost_object_get_type(y_) == integertype &&
+                        !(w == (unsigned int)ctx->opcode_shortcuts.opadd
+                            ? __builtin_add_overflow(x_.int_.val, y_.int_.val, &r_)
+                            : w == (unsigned int)ctx->opcode_shortcuts.opsub
+                            ? __builtin_sub_overflow(x_.int_.val, y_.int_.val, &r_)
+                            : __builtin_mul_overflow(x_.int_.val, y_.int_.val, &r_)))
+                    {
+                        --os_top->top;
+                        os_top->data[ot - 2] = xpost_int_cons(r_);
+                        goto next_element;
+                    }
+                }
+                if (ot >= 2 &&
+                    (w == (unsigned int)ctx->opcode_shortcuts.opeq ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opne ||
+                     w == (unsigned int)ctx->opcode_shortcuts.oplt ||
+                     w == (unsigned int)ctx->opcode_shortcuts.ople ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opgt ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opge))
+                {
+                    Xpost_Object x_ = os_top->data[ot - 2];
+                    Xpost_Object y_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(x_) == integertype &&
+                        xpost_object_get_type(y_) == integertype)
+                    {
+                        int r_;
+                        if (w == (unsigned int)ctx->opcode_shortcuts.opeq)
+                            r_ = x_.int_.val == y_.int_.val;
+                        else if (w == (unsigned int)ctx->opcode_shortcuts.opne)
+                            r_ = x_.int_.val != y_.int_.val;
+                        else if (w == (unsigned int)ctx->opcode_shortcuts.oplt)
+                            r_ = x_.int_.val < y_.int_.val;
+                        else if (w == (unsigned int)ctx->opcode_shortcuts.ople)
+                            r_ = x_.int_.val <= y_.int_.val;
+                        else if (w == (unsigned int)ctx->opcode_shortcuts.opgt)
+                            r_ = x_.int_.val > y_.int_.val;
+                        else
+                            r_ = x_.int_.val >= y_.int_.val;
+                        --os_top->top;
+                        os_top->data[ot - 2] = xpost_bool_cons(r_);
+                        goto next_element;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opif && ot >= 2)
+                {
+                    Xpost_Object p_ = os_top->data[ot - 1];
+                    Xpost_Object b_ = os_top->data[ot - 2];
+                    if (xpost_object_get_type(b_) == booleantype &&
+                        xpost_object_get_type(p_) == arraytype &&
+                        xpost_object_is_exe(p_))
+                    {
+                        os_top->top -= 2;
+                        if (!b_.int_.val)
+                            goto next_element;
+                        /* the procedure continues in this loop; the current
+                           interval stays behind on the execution stack */
+                        have_tail = 0;
+                        a = p_;
+                        EVALARRAY_RESOLVE_ABASE();
+                        continue;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opifelse && ot >= 3)
+                {
+                    Xpost_Object p2_ = os_top->data[ot - 1];
+                    Xpost_Object p1_ = os_top->data[ot - 2];
+                    Xpost_Object b_ = os_top->data[ot - 3];
+                    if (xpost_object_get_type(b_) == booleantype &&
+                        xpost_object_get_type(p1_) == arraytype &&
+                        xpost_object_is_exe(p1_) &&
+                        xpost_object_get_type(p2_) == arraytype &&
+                        xpost_object_is_exe(p2_))
+                    {
+                        os_top->top -= 3;
+                        have_tail = 0;
+                        a = b_.int_.val ? p1_ : p2_;
+                        EVALARRAY_RESOLVE_ABASE();
+                        continue;
+                    }
+                }
+            }
+
             /* remember the execution stack position of our interval */
             seen_seg = es_root->prevseg;
             seen_top = es_top->top;
@@ -558,6 +712,7 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
             return 0;
         }
 
+      next_element:
         if (a.comp_.sz == 1)
             return 0;
         a = tail;

@@ -430,14 +430,17 @@ int xpost_oper_init_math_ops (Xpost_Context *ctx,
     //RAD_PER_DEG = PI / 180.0;
 
     op = xpost_operator_cons(ctx, "add", (Xpost_Op_Func)Iadd, 1, 2, integertype, integertype);
+    ctx->opcode_shortcuts.opadd = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "add", (Xpost_Op_Func)Radd, 1, 2, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "sub", (Xpost_Op_Func)Isub, 1, 2, integertype, integertype);
+    ctx->opcode_shortcuts.opsub = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "sub", (Xpost_Op_Func)Rsub, 1, 2, floattype, floattype);
     INSTALL;
     op = xpost_operator_cons(ctx, "mul", (Xpost_Op_Func)Imul, 1, 2, integertype, integertype);
+    ctx->opcode_shortcuts.opmul = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "mul", (Xpost_Op_Func)Rmul, 1, 2, floattype, floattype);
     INSTALL;
