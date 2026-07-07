@@ -536,11 +536,24 @@ Xpost_Object clean_key (Xpost_Context *ctx,
     return k;
 }
 
+/* keys are overwhelmingly names: equal iff same bank and name index.
+   decided inline to spare a function call per probe */
+static inline int
+_keys_equal(Xpost_Context *ctx, Xpost_Object a, Xpost_Object b)
+{
+    if (xpost_object_get_type(a) == nametype &&
+        xpost_object_get_type(b) == nametype)
+        return ((a.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ==
+                (b.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK)) &&
+               a.mark_.padw == b.mark_.padw;
+    return xpost_dict_compare_objects(ctx, a, b) == 0;
+}
+
 /* repeated loop body from the lookup function */
 #define RETURN_TAB_I_IF_EQ_K_OR_NULL    \
     if (xpost_object_get_type(tp[i].key) == nulltype \
         || (hashval == tp[i].hash \
-            && xpost_dict_compare_objects(ctx, tp[i].key, k) == 0)) \
+            && _keys_equal(ctx, tp[i].key, k))) \
         return tp + i
 
 static dicrec invalidrec[] = {{ 0, {0}, {0}}};
