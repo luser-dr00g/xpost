@@ -346,7 +346,29 @@ int evalload(Xpost_Context *ctx, Xpost_Object n)
         XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, xpost_string_get_pointer(ctx, s));
     }
 
-    { /* walk the dictionary stack segments directly, topmost first */
+    { /* consult the cache of resolutions against the dict stack */
+        unsigned int key = ((unsigned int)n.mark_.padw << 1) |
+            ((n.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ? 1 : 0);
+
+        if (key < ctx->namecache_size &&
+            ctx->namecache_gen[key] == ctx->namebind_gen)
+        {
+            Xpost_Object x = ctx->namecache_val[key];
+            if (xpost_object_is_exe(x))
+            {
+                if (!xpost_stack_push(ctx->lo, ctx->es, x))
+                    return execstackoverflow;
+            }
+            else
+            {
+                if (!xpost_stack_push(ctx->lo, ctx->os, x))
+                    return stackoverflow;
+            }
+            return 0;
+        }
+
+        /* walk the dictionary stack segments directly, topmost first */
+        {
         Xpost_Stack *ds_root = (Xpost_Stack *)(ctx->lo->base + ctx->ds);
         Xpost_Stack *seg = (Xpost_Stack *)(ctx->lo->base + ds_root->prevseg);
 
@@ -358,6 +380,32 @@ int evalload(Xpost_Context *ctx, Xpost_Object n)
 
                 if (xpost_object_get_type(x) == invalidtype)
                     continue;
+
+                if (key >= ctx->namecache_size)
+                {
+                    unsigned int nsz = ctx->namecache_size ? ctx->namecache_size : 4096;
+                    while (nsz <= key) nsz *= 2;
+                    unsigned int *ngen = realloc(ctx->namecache_gen,
+                                                 nsz * sizeof(unsigned int));
+                    Xpost_Object *nval = realloc(ctx->namecache_val,
+                                                 nsz * sizeof(Xpost_Object));
+                    if (ngen)
+                        ctx->namecache_gen = ngen;
+                    if (nval)
+                        ctx->namecache_val = nval;
+                    if (ngen && nval)
+                    {
+                        memset(ctx->namecache_gen + ctx->namecache_size, 0,
+                               (nsz - ctx->namecache_size) * sizeof(unsigned int));
+                        ctx->namecache_size = nsz;
+                    }
+                }
+                if (key < ctx->namecache_size)
+                {
+                    ctx->namecache_gen[key] = ctx->namebind_gen;
+                    ctx->namecache_val[key] = x;
+                }
+
                 if (xpost_object_is_exe(x))
                 {
                     if (!xpost_stack_push(ctx->lo, ctx->es, x))
@@ -374,6 +422,7 @@ int evalload(Xpost_Context *ctx, Xpost_Object n)
                 break;
             seg = (Xpost_Stack *)(ctx->lo->base + seg->prevseg);
         }
+        }
     }
     return undefined;
 }
@@ -389,16 +438,16 @@ int evaloperator(Xpost_Context *ctx, Xpost_Object op)
 
 /* extract head (&tail) of array.
    steps successive elements of the procedure without re-entering the
-   interpreter loop, maintaining the remaining interval in the top slot
-   of the execution stack. returns to the interpreter loop whenever an
-   element changes the execution stack (a procedure call, exec, a loop
-   setup, exit, stop, ...), since anything it pushed must execute
-   before the remaining interval. */
+   interpreter loop. the remaining interval is kept in the top slot of
+   the execution stack, written lazily: literal elements cannot observe
+   it, so it is brought up to date only before an element executes or
+   the function returns. the loop returns to the interpreter whenever
+   an element changes the execution stack, since anything it pushed
+   must execute before the remaining interval. */
 static
 int evalarray(Xpost_Context *ctx, Xpost_Object a)
 {
     Xpost_Object b;
-    Xpost_Object tail;
     const Xpost_Object *abase;
     Xpost_Stack *es_root;
     Xpost_Stack *es_top;
@@ -406,7 +455,10 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
     Xpost_Stack *os_top;
     unsigned char *seen_lo_base = ctx->lo->base;
     unsigned char *seen_gl_base = ctx->gl->base;
-    int have_tail = 0;
+    unsigned int off = a.comp_.off;
+    unsigned int remaining = a.comp_.sz;
+    int have_tail = 0;      /* a slot for the interval exists on es */
+    unsigned int slot_off = 0; /* the interval offset currently in the slot */
 
     /* resolve the array's storage once; elements are then direct reads.
        re-derived after any fused call, which may move the memory file. */
@@ -423,8 +475,6 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
             abase = NULL; \
     } while (0)
 
-    /* stack segment pointers are cached across elements and re-derived
-       only after a fused call or a segment transition */
 #define EVALARRAY_RESOLVE_STACKS() \
     do { \
         es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es); \
@@ -432,6 +482,93 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
         os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os); \
         os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg); \
     } while (0)
+
+    /* a stack push can allocate a fresh segment, growing (and so
+       relocating) the memory file: re-derive every cached pointer,
+       abase included, whenever a base has moved */
+#define EVALARRAY_RECHECK_BASES() \
+    do { \
+        if (ctx->lo->base != seen_lo_base || ctx->gl->base != seen_gl_base) \
+        { \
+            seen_lo_base = ctx->lo->base; \
+            seen_gl_base = ctx->gl->base; \
+            EVALARRAY_RESOLVE_ABASE(); \
+        } \
+        EVALARRAY_RESOLVE_STACKS(); \
+    } while (0)
+
+    /* write the remaining interval (elements from off+1) into the es
+       slot, or drop the slot when this is the last element */
+#define EVALARRAY_SYNC_SLOT() \
+    do { \
+        if (remaining > 1) \
+        { \
+            if (!have_tail || slot_off != off + 1) \
+            { \
+                Xpost_Object tail_ = a; \
+                tail_.comp_.off = off + 1; \
+                tail_.comp_.sz = remaining - 1; \
+                if (have_tail && es_top->top > 0) \
+                    es_top->data[es_top->top - 1] = tail_; \
+                else if (es_top->top < XPOST_STACK_SEGMENT_SIZE - 1) \
+                { \
+                    es_top->data[es_top->top++] = tail_; \
+                    have_tail = 1; \
+                } \
+                else \
+                { \
+                    if (!xpost_stack_push(ctx->lo, ctx->es, tail_)) \
+                        return execstackoverflow; \
+                    EVALARRAY_RECHECK_BASES(); \
+                    have_tail = 1; \
+                } \
+                slot_off = off + 1; \
+            } \
+        } \
+        else if (have_tail) \
+        { \
+            if (es_top->top > 0) \
+            { \
+                --es_top->top; \
+                if (es_top->top == 0 && \
+                    (unsigned char *)es_top != ctx->lo->base + ctx->es) \
+                    es_root->prevseg = es_top->prevseg; \
+            } \
+            else \
+                (void)xpost_stack_pop(ctx->lo, ctx->es); \
+            have_tail = 0; \
+        } \
+    } while (0)
+
+    /* like SYNC_SLOT but roots the current element together with the rest, so
+       the array's storage stays anchored across a collection even when this is
+       the last element (SYNC_SLOT would drop the slot there). The normal slot
+       sync corrects it to the tail, or drops it, before the element executes,
+       so tail-call flattening is preserved. */
+#define EVALARRAY_ROOT_CURRENT() \
+    do { \
+        Xpost_Object cur_ = a; \
+        cur_.comp_.off = off; \
+        cur_.comp_.sz = remaining; \
+        if (have_tail && es_top->top > 0) \
+            es_top->data[es_top->top - 1] = cur_; \
+        else if (es_top->top < XPOST_STACK_SEGMENT_SIZE - 1) \
+        { \
+            es_top->data[es_top->top++] = cur_; \
+            have_tail = 1; \
+        } \
+        else \
+        { \
+            if (!xpost_stack_push(ctx->lo, ctx->es, cur_)) \
+                return execstackoverflow; \
+            EVALARRAY_RECHECK_BASES(); \
+            have_tail = 1; \
+        } \
+        slot_off = off; \
+    } while (0)
+
+    if (remaining == 0)
+        return 0;
 
     EVALARRAY_RESOLVE_ABASE();
     EVALARRAY_RESOLVE_STACKS();
@@ -441,59 +578,42 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
         Xpost_Object_Type btype;
 
         if (ctx->quit)
+        {
+            EVALARRAY_SYNC_SLOT();
             return 0;
-
-        /* keep the remaining interval in the execution stack's top slot */
-        if (a.comp_.sz > 1)
-        {
-            tail = a;
-            ++tail.comp_.off;
-            --tail.comp_.sz;
-            if (have_tail && es_top->top > 0)
-                es_top->data[es_top->top - 1] = tail;
-            else if (es_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
-            {
-                es_top->data[es_top->top++] = tail;
-                have_tail = 1;
-            }
-            else
-            {
-                /* segment boundary: push generically, which may move to
-                   another segment, and re-derive the top segment */
-                if (!xpost_stack_push(ctx->lo, ctx->es, tail))
-                    return execstackoverflow;
-                EVALARRAY_RESOLVE_STACKS();
-                have_tail = 1;
-            }
-        }
-        else
-        {
-            tail = invalid;
-            if (have_tail)
-            {
-                if (es_top->top > 0)
-                {
-                    --es_top->top; /* last element: drop the interval */
-                    if (es_top->top == 0 &&
-                        (unsigned char *)es_top != ctx->lo->base + ctx->es)
-                        es_root->prevseg = es_top->prevseg; /* retreat eagerly */
-                }
-                else
-                    (void)xpost_stack_pop(ctx->lo, ctx->es);
-                have_tail = 0;
-            }
         }
 
-        if (a.comp_.sz == 0)
-            return 0;
+        /* between elements is a safe point just like the interpreter
+           loop: a requested collection must not starve while a fused
+           procedure runs through a long allocation-heavy stretch */
+        if (ctx->lo->garbage_collect_pending)
+        {
+            ctx->lo->garbage_collect_pending = 0;
+            /* anchor the current element (not just the tail) so an unrooted
+               anonymous procedure is not swept while its last element runs */
+            EVALARRAY_ROOT_CURRENT();
+            if (ctx->lo->garbage_collect_is_installed)
+                (void)ctx->lo->garbage_collect(ctx->lo, 1, 1);
+            EVALARRAY_RECHECK_BASES();
+        }
+
+
 
         if (abase)
-            b = abase[a.comp_.off];
+            b = abase[off];
         else
-            b = xpost_array_get(ctx, a, 0);
+        {
+            Xpost_Object cur_ = a;
+            cur_.comp_.off = off;
+            cur_.comp_.sz = remaining;
+            b = xpost_array_get(ctx, cur_, 0);
+        }
         btype = xpost_object_get_type(b);
         if (btype == invalidtype || btype >= XPOST_OBJECT_NTYPES)
+        {
+            EVALARRAY_SYNC_SLOT();
             return unregistered;
+        }
 
         if (btype == arraytype || !xpost_object_is_exe(b))
         {
@@ -503,9 +623,10 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
                 os_top->data[os_top->top++] = b;
             else
             {
+                EVALARRAY_SYNC_SLOT();
                 if (!xpost_stack_push(ctx->lo, ctx->os, b))
                     return stackoverflow;
-                EVALARRAY_RESOLVE_STACKS();
+                EVALARRAY_RECHECK_BASES();
             }
         }
         else if (btype == operatortype || btype == nametype)
@@ -514,9 +635,10 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
             unsigned int seen_top;
             int ret;
 
-            /* the hottest stack operators inline when their operands sit
-               in the top segment; any precondition failure falls through
-               to the generic invocation, keeping error behaviour identical */
+            /* the hottest operators inline when their operands sit in
+               the top segment; any precondition failure falls through
+               to the generic invocation, keeping error behaviour
+               identical */
             if (btype == operatortype)
             {
                 unsigned int w = b.mark_.padw;
@@ -621,6 +743,79 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
                         goto next_element;
                     }
                 }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opdef && ot >= 2)
+                {
+                    Xpost_Object k_ = os_top->data[ot - 2];
+                    Xpost_Object v_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(k_) == nametype)
+                    {
+                        Xpost_Stack *ds_root = (Xpost_Stack *)(ctx->lo->base + ctx->ds);
+                        Xpost_Stack *ds_top = (Xpost_Stack *)(ctx->lo->base + ds_root->prevseg);
+                        if (ds_top->top > 0)
+                        {
+                            Xpost_Object d_ = ds_top->data[ds_top->top - 1];
+                            Xpost_Memory_File *dmem_ = xpost_context_select_memory(ctx, d_);
+                            if (!(dmem_ == ctx->gl &&
+                                  xpost_object_is_composite(v_) &&
+                                  dmem_ != xpost_context_select_memory(ctx, v_)))
+                            {
+                                /* the operands stay on the stack through the
+                                   put, keeping them visible to the collector
+                                   if the dictionary grows */
+                                int ret_ = xpost_dict_put_memory(ctx, dmem_, d_, k_, v_);
+                                if (ret_ == 0)
+                                {
+                                    unsigned int key_ = ((unsigned int)k_.mark_.padw << 1) |
+                                        ((k_.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ? 1 : 0);
+                                    if (ctx->lo->base != seen_lo_base ||
+                                        ctx->gl->base != seen_gl_base)
+                                    {
+                                        seen_lo_base = ctx->lo->base;
+                                        seen_gl_base = ctx->gl->base;
+                                        EVALARRAY_RESOLVE_ABASE();
+                                        EVALARRAY_RESOLVE_STACKS();
+                                    }
+                                    os_top->top -= 2;
+                                    if (key_ < ctx->namecache_size)
+                                    {
+                                        ctx->namecache_gen[key_] = ctx->namebind_gen;
+                                        ctx->namecache_val[key_] = v_;
+                                    }
+                                    goto next_element;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opput && ot >= 3)
+                {
+                    Xpost_Object a_ = os_top->data[ot - 3];
+                    Xpost_Object i_ = os_top->data[ot - 2];
+                    Xpost_Object v_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(a_) == arraytype &&
+                        xpost_object_get_type(i_) == integertype &&
+                        i_.int_.val >= 0)
+                    {
+                        /* operands stay on the stack through the put (a
+                           saved array copies on first write) */
+                        int ret_ = xpost_array_put(ctx, a_, i_.int_.val, v_);
+                        if (ret_ == 0)
+                        {
+                            if (ctx->lo->base != seen_lo_base ||
+                                ctx->gl->base != seen_gl_base)
+                            {
+                                seen_lo_base = ctx->lo->base;
+                                seen_gl_base = ctx->gl->base;
+                                EVALARRAY_RESOLVE_ABASE();
+                                EVALARRAY_RESOLVE_STACKS();
+                            }
+                            os_top->top -= 3;
+                            goto next_element;
+                        }
+                        /* on failure fall through: the generic path
+                           re-executes the put for the exact protocol */
+                    }
+                }
                 if (w == (unsigned int)ctx->opcode_shortcuts.opif && ot >= 2)
                 {
                     Xpost_Object p_ = os_top->data[ot - 1];
@@ -632,10 +827,13 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
                         os_top->top -= 2;
                         if (!b_.int_.val)
                             goto next_element;
-                        /* the procedure continues in this loop; the current
-                           interval stays behind on the execution stack */
+                        EVALARRAY_SYNC_SLOT();
                         have_tail = 0;
                         a = p_;
+                        off = a.comp_.off;
+                        remaining = a.comp_.sz;
+                        if (remaining == 0)
+                            return 0;
                         EVALARRAY_RESOLVE_ABASE();
                         continue;
                     }
@@ -652,16 +850,68 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
                         xpost_object_is_exe(p2_))
                     {
                         os_top->top -= 3;
+                        EVALARRAY_SYNC_SLOT();
                         have_tail = 0;
                         a = b_.int_.val ? p1_ : p2_;
+                        off = a.comp_.off;
+                        remaining = a.comp_.sz;
+                        if (remaining == 0)
+                            return 0;
                         EVALARRAY_RESOLVE_ABASE();
                         continue;
                     }
                 }
             }
 
+            if (btype == nametype)
+            {
+                /* resolve via the name cache without leaving the loop */
+                unsigned int key = ((unsigned int)b.mark_.padw << 1) |
+                    ((b.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ? 1 : 0);
+                if (key < ctx->namecache_size &&
+                    ctx->namecache_gen[key] == ctx->namebind_gen)
+                {
+                    Xpost_Object x = ctx->namecache_val[key];
+                    if (!xpost_object_is_exe(x))
+                    {
+                        if (os_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+                        {
+                            os_top->data[os_top->top++] = x;
+                            goto next_element;
+                        }
+                    }
+                    else if (xpost_object_get_type(x) == operatortype)
+                    {
+                        /* execute the bound operator via the generic
+                           machinery below, sparing the es round-trip */
+                        b = x;
+                        btype = operatortype;
+                        ctx->currentobject = b;
+                        goto generic_operator;
+                    }
+                    else if (xpost_object_get_type(x) == arraytype)
+                    {
+                        /* a procedure call: continue stepping it here,
+                           leaving the current interval behind on es */
+                        EVALARRAY_SYNC_SLOT();
+                        have_tail = 0;
+                        a = x;
+                        off = a.comp_.off;
+                        remaining = a.comp_.sz;
+                        if (remaining == 0)
+                            return 0;
+                        EVALARRAY_RESOLVE_ABASE();
+                        continue;
+                    }
+                }
+            }
+
+          generic_operator:
+            EVALARRAY_SYNC_SLOT();
+
             /* remember the execution stack position of our interval */
             seen_seg = es_root->prevseg;
+            es_top = (Xpost_Stack *)(ctx->lo->base + seen_seg);
             seen_top = es_top->top;
 
             ctx->currentobject = b;
@@ -689,15 +939,14 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
             if (have_tail)
             {
                 Xpost_Object slot = es_top->data[seen_top - 1];
-                if (slot.tag != tail.tag ||
-                    slot.comp_.sz != tail.comp_.sz ||
-                    slot.comp_.off != tail.comp_.off ||
-                    xpost_object_get_ent(slot) != xpost_object_get_ent(tail))
+                if (slot.tag != a.comp_.tag ||
+                    slot.comp_.sz != remaining - 1 ||
+                    slot.comp_.off != off + 1 ||
+                    xpost_object_get_ent(slot) != xpost_object_get_ent(a))
                     return 0;
             }
             if (ctx->lo->base != seen_lo_base || ctx->gl->base != seen_gl_base)
             {
-                /* an allocation moved a memory file: re-derive */
                 seen_lo_base = ctx->lo->base;
                 seen_gl_base = ctx->gl->base;
                 EVALARRAY_RESOLVE_ABASE();
@@ -707,18 +956,27 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
         else
         {
             /* rarer executable types resume via the interpreter loop */
+            EVALARRAY_SYNC_SLOT();
             if (!xpost_stack_push(ctx->lo, ctx->es, b))
                 return execstackoverflow;
             return 0;
         }
 
       next_element:
-        if (a.comp_.sz == 1)
+        if (remaining == 1)
+        {
+            /* the slot, if any, still holds off+1..; it must not
+               survive: it was consumed by this call */
+            EVALARRAY_SYNC_SLOT();
             return 0;
-        a = tail;
+        }
+        ++off;
+        --remaining;
     }
 #undef EVALARRAY_RESOLVE_ABASE
 #undef EVALARRAY_RESOLVE_STACKS
+#undef EVALARRAY_SYNC_SLOT
+#undef EVALARRAY_ROOT_CURRENT
 }
 
 /* extract token from string */

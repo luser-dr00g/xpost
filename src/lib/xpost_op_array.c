@@ -363,6 +363,7 @@ int xpost_oper_init_array_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "put", (Xpost_Op_Func)xpost_op_array_int_any_put, 0, 3,
             arraytype, integertype, anytype);
     INSTALL;
+    ctx->opcode_shortcuts.opput = op.mark_.padw;
     op = xpost_operator_cons(ctx, "getinterval", (Xpost_Op_Func)xpost_op_array_int_int_getinterval, 1, 3,
             arraytype, integertype, integertype);
     INSTALL;
