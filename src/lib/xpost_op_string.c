@@ -267,33 +267,54 @@ int Sforall(Xpost_Context *ctx,
 
     if (S.comp_.sz == 0) return 0;
     assert(ctx->gl->base);
-    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "forall", NULL,0,0));
+    (void)interval;
+    (void)val;
+    (void)ret;
+    /* loop frame, as for the array forall */
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
-        return execstackoverflow;
-    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
-    interval = xpost_object_get_interval(S, 1, S.comp_.sz-1);
-    if (xpost_object_get_type(interval) == invalidtype)
-        return rangecheck;
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(interval)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(S)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                xpost_operator_cons_opcode(ctx->opcode_shortcuts.stringforallcont)))
         return execstackoverflow;
-    if (!xpost_object_is_exe(S))
-    {
-        //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0));
-        if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
-            return execstackoverflow;
-    }
+    return 0;
+}
 
+/* continue a string forall: es holds (from the top) the remaining
+   interval, the literal proc, and the sentinel */
+int xpost_op_string_forall_iterate(Xpost_Context *ctx)
+{
+    Xpost_Object S, P;
+    integer val;
+    int ret;
+
+    S = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    P = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 1);
+    if (xpost_object_get_type(S) == invalidtype)
+        return execstackunderflow;
+    if (S.comp_.sz == 0)
+    {
+        int k;
+        for (k = 0; k < 3; k++)
+            (void)xpost_stack_pop(ctx->lo, ctx->es);
+        return 0;
+    }
     ret = xpost_string_get(ctx, S, 0, &val);
     if (ret)
         return ret;
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(val)))
         return stackoverflow;
+    if (!xpost_stack_topdown_replace(ctx->lo, ctx->es, 0,
+            xpost_object_cvlit(xpost_object_get_interval(S, 1, S.comp_.sz - 1))))
+        return execstackunderflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                xpost_operator_cons_opcode(ctx->opcode_shortcuts.stringforallcont)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(P)))
+        return execstackoverflow;
     return 0;
 }
 
@@ -342,5 +363,7 @@ int xpost_oper_init_string_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "forall", (Xpost_Op_Func)Sforall, 0, 2,
                              stringtype, proctype);
     INSTALL;
+    op = xpost_operator_cons(ctx, "forall.string.iterate", (Xpost_Op_Func)xpost_op_string_forall_iterate, 0, 0);
+    ctx->opcode_shortcuts.stringforallcont = op.mark_.padw;
     return 0;
 }
