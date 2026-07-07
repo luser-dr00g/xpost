@@ -77,7 +77,7 @@ typedef struct Xpost_Magic_Pair
 /**
  * @brief yields the number of real entries in the table for a dict of size n
  */
-#define DICTABN(n) ((n)+1)
+#define DICTABN(n) (2*(n)+1)
 
 /**
  * @brief yields the size in bytes of the table for a dict of size n
