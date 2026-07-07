@@ -91,6 +91,8 @@ struct _Xpost_Context {
         int opifelse;
         int opdef;
         int opput;
+        int optype;
+        int oproll;
         int token;
         int transform;
         int itransform;
@@ -106,6 +108,9 @@ struct _Xpost_Context {
     Xpost_Object *namecache_val;   /**< cached resolution */
     unsigned int namecache_size;   /**< entries allocated */
     unsigned int namebind_gen;     /**< current binding generation */
+
+    Xpost_Object typenames[XPOST_OBJECT_NTYPES]; /**< executable name per type,
+                                                      populated on first use */
 
     /*@dependent@*/
     Xpost_Memory_File *gl; /**< global VM */
