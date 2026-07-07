@@ -379,75 +379,191 @@ int evaloperator(Xpost_Context *ctx, Xpost_Object op)
     return xpost_operator_exec(ctx, op.mark_.padw);
 }
 
-/* extract head (&tail) of array */
+/* extract head (&tail) of array.
+   steps successive elements of the procedure without re-entering the
+   interpreter loop, maintaining the remaining interval in the top slot
+   of the execution stack. returns to the interpreter loop whenever an
+   element changes the execution stack (a procedure call, exec, a loop
+   setup, exit, stop, ...), since anything it pushed must execute
+   before the remaining interval. */
 static
 int evalarray(Xpost_Context *ctx, Xpost_Object a)
 {
     Xpost_Object b;
+    Xpost_Object tail;
+    const Xpost_Object *abase;
+    Xpost_Stack *es_root;
+    Xpost_Stack *es_top;
+    Xpost_Stack *os_root;
+    Xpost_Stack *os_top;
+    unsigned char *seen_lo_base = ctx->lo->base;
+    unsigned char *seen_gl_base = ctx->gl->base;
+    int have_tail = 0;
 
-    if (a.comp_.sz > 1)
-    {
-        Xpost_Object interval;
-        interval = xpost_object_get_interval(a, 1, a.comp_.sz - 1);
-        if (xpost_object_get_type(interval) == invalidtype)
-            return rangecheck;
-        {
-            Xpost_Stack *es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
-            Xpost_Stack *es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
-            if (es_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
-                es_top->data[es_top->top++] = interval;
-            else if (!xpost_stack_push(ctx->lo, ctx->es, interval))
-                return execstackoverflow;
-        }
-    }
+    /* resolve the array's storage once; elements are then direct reads.
+       re-derived after any fused call, which may move the memory file. */
+#define EVALARRAY_RESOLVE_ABASE() \
+    do { \
+        Xpost_Memory_File *amem_ = xpost_context_select_memory(ctx, a); \
+        unsigned int aent_ = xpost_object_get_ent(a); \
+        if (aent_ < amem_->table.nextent && \
+            (a.comp_.off + (unsigned int)a.comp_.sz) * sizeof(Xpost_Object) \
+                <= amem_->table.tab[aent_].sz) \
+            abase = (const Xpost_Object *)(amem_->base \
+                    + amem_->table.tab[aent_].adr); \
+        else \
+            abase = NULL; \
+    } while (0)
 
-    if (a.comp_.sz >= 1)
+    /* stack segment pointers are cached across elements and re-derived
+       only after a fused call or a segment transition */
+#define EVALARRAY_RESOLVE_STACKS() \
+    do { \
+        es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es); \
+        es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg); \
+        os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os); \
+        os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg); \
+    } while (0)
+
+    EVALARRAY_RESOLVE_ABASE();
+    EVALARRAY_RESOLVE_STACKS();
+
+    for (;;)
     {
         Xpost_Object_Type btype;
 
-        { /* read the element directly from the array's storage */
-            Xpost_Memory_File *amem = xpost_context_select_memory(ctx, a);
-            unsigned int aent = xpost_object_get_ent(a);
-            if (aent < amem->table.nextent &&
-                (a.comp_.off + 1u) * sizeof(Xpost_Object) <= amem->table.tab[aent].sz)
-                b = *(Xpost_Object *)(amem->base + amem->table.tab[aent].adr
-                                      + a.comp_.off * sizeof(Xpost_Object));
+        if (ctx->quit)
+            return 0;
+
+        /* keep the remaining interval in the execution stack's top slot */
+        if (a.comp_.sz > 1)
+        {
+            tail = a;
+            ++tail.comp_.off;
+            --tail.comp_.sz;
+            if (have_tail && es_top->top > 0)
+                es_top->data[es_top->top - 1] = tail;
+            else if (es_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+            {
+                es_top->data[es_top->top++] = tail;
+                have_tail = 1;
+            }
             else
-                b = xpost_array_get(ctx, a, 0);
+            {
+                /* segment boundary: push generically, which may move to
+                   another segment, and re-derive the top segment */
+                if (!xpost_stack_push(ctx->lo, ctx->es, tail))
+                    return execstackoverflow;
+                EVALARRAY_RESOLVE_STACKS();
+                have_tail = 1;
+            }
         }
+        else
+        {
+            tail = invalid;
+            if (have_tail)
+            {
+                if (es_top->top > 0)
+                {
+                    --es_top->top; /* last element: drop the interval */
+                    if (es_top->top == 0 &&
+                        (unsigned char *)es_top != ctx->lo->base + ctx->es)
+                        es_root->prevseg = es_top->prevseg; /* retreat eagerly */
+                }
+                else
+                    (void)xpost_stack_pop(ctx->lo, ctx->es);
+                have_tail = 0;
+            }
+        }
+
+        if (a.comp_.sz == 0)
+            return 0;
+
+        if (abase)
+            b = abase[a.comp_.off];
+        else
+            b = xpost_array_get(ctx, a, 0);
         btype = xpost_object_get_type(b);
         if (btype == invalidtype || btype >= XPOST_OBJECT_NTYPES)
             return unregistered;
+
         if (btype == arraytype || !xpost_object_is_exe(b))
         {
             /* the interpreter cycle would only move it to the operand
                stack; do so directly */
-            Xpost_Stack *os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
-            Xpost_Stack *os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
             if (os_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
                 os_top->data[os_top->top++] = b;
-            else if (!xpost_stack_push(ctx->lo, ctx->os, b))
-                return stackoverflow;
+            else
+            {
+                if (!xpost_stack_push(ctx->lo, ctx->os, b))
+                    return stackoverflow;
+                EVALARRAY_RESOLVE_STACKS();
+            }
         }
-        else if (btype == operatortype)
+        else if (btype == operatortype || btype == nametype)
         {
+            unsigned int seen_seg;
+            unsigned int seen_top;
+            int ret;
+
+            /* remember the execution stack position of our interval */
+            seen_seg = es_root->prevseg;
+            seen_top = es_top->top;
+
             ctx->currentobject = b;
-            if (_xpost_interpreter_is_tracing)
-                xpost_operator_dump(ctx, b.mark_.padw);
-            return xpost_operator_exec(ctx, b.mark_.padw);
-        }
-        else if (btype == nametype)
-        {
-            ctx->currentobject = b;
-            return evalload(ctx, b);
+            if (btype == operatortype)
+            {
+                if (_xpost_interpreter_is_tracing)
+                    xpost_operator_dump(ctx, b.mark_.padw);
+                ret = xpost_operator_exec(ctx, b.mark_.padw);
+            }
+            else
+                ret = evalload(ctx, b);
+            if (ret)
+                return ret;
+            if (ctx->quit)
+                return 0;
+
+            /* if the execution stack changed, what was pushed (or the
+               unwound state) takes precedence: resume via the loop */
+            es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+            if (es_root->prevseg != seen_seg)
+                return 0;
+            es_top = (Xpost_Stack *)(ctx->lo->base + seen_seg);
+            if (es_top->top != seen_top)
+                return 0;
+            if (have_tail)
+            {
+                Xpost_Object slot = es_top->data[seen_top - 1];
+                if (slot.tag != tail.tag ||
+                    slot.comp_.sz != tail.comp_.sz ||
+                    slot.comp_.off != tail.comp_.off ||
+                    xpost_object_get_ent(slot) != xpost_object_get_ent(tail))
+                    return 0;
+            }
+            if (ctx->lo->base != seen_lo_base || ctx->gl->base != seen_gl_base)
+            {
+                /* an allocation moved a memory file: re-derive */
+                seen_lo_base = ctx->lo->base;
+                seen_gl_base = ctx->gl->base;
+                EVALARRAY_RESOLVE_ABASE();
+            }
+            EVALARRAY_RESOLVE_STACKS();
         }
         else
         {
+            /* rarer executable types resume via the interpreter loop */
             if (!xpost_stack_push(ctx->lo, ctx->es, b))
                 return execstackoverflow;
+            return 0;
         }
+
+        if (a.comp_.sz == 1)
+            return 0;
+        a = tail;
     }
-    return 0;
+#undef EVALARRAY_RESOLVE_ABASE
+#undef EVALARRAY_RESOLVE_STACKS
 }
 
 /* extract token from string */
