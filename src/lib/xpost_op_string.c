@@ -290,6 +290,47 @@ int xpost_op_string_forall_iterate(Xpost_Context *ctx)
     Xpost_Object S, P;
     integer val;
     int ret;
+    Xpost_Stack *es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+    Xpost_Stack *es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+
+    /* frame in the top segment, with room for the two pushes */
+    if (es_top->top >= 3 && es_top->top < XPOST_STACK_SEGMENT_SIZE - 2)
+    {
+        Xpost_Stack *os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
+        Xpost_Stack *os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
+
+        S = es_top->data[es_top->top - 1];
+        P = es_top->data[es_top->top - 2];
+        if (S.comp_.sz == 0)
+        {
+            es_top->top -= 3; /* drop the frame */
+            if (es_top->top == 0 &&
+                (unsigned char *)es_top != ctx->lo->base + ctx->es)
+                es_root->prevseg = es_top->prevseg;
+            return 0;
+        }
+        ret = xpost_string_get(ctx, S, 0, &val);
+        if (ret)
+            return ret;
+        if (os_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+            os_top->data[os_top->top++] = xpost_int_cons(val);
+        else
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(val)))
+                return stackoverflow;
+            /* the push may grow the memory file and move its base:
+               re-derive the frame pointers before writing through them */
+            es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+            es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+        }
+        es_top->data[es_top->top - 1] =
+            xpost_object_cvlit(xpost_object_get_interval(S, 1, S.comp_.sz - 1));
+        es_top->data[es_top->top] =
+            xpost_operator_cons_opcode(ctx->opcode_shortcuts.stringforallcont);
+        es_top->data[es_top->top + 1] = xpost_object_cvx(P);
+        es_top->top += 2;
+        return 0;
+    }
 
     S = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
     P = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 1);
