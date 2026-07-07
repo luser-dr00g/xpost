@@ -305,6 +305,47 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
 int xpost_op_array_forall_iterate(Xpost_Context *ctx)
 {
     Xpost_Object A, P, element;
+    Xpost_Stack *es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+    Xpost_Stack *es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+
+    /* frame in the top segment, with room for the two pushes */
+    if (es_top->top >= 3 && es_top->top < XPOST_STACK_SEGMENT_SIZE - 2)
+    {
+        Xpost_Stack *os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
+        Xpost_Stack *os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
+
+        A = es_top->data[es_top->top - 1];
+        P = es_top->data[es_top->top - 2];
+        if (A.comp_.sz == 0)
+        {
+            es_top->top -= 3; /* drop the frame */
+            if (es_top->top == 0 &&
+                (unsigned char *)es_top != ctx->lo->base + ctx->es)
+                es_root->prevseg = es_top->prevseg;
+            return 0;
+        }
+        element = xpost_array_get(ctx, A, 0);
+        if (xpost_object_get_type(element) == invalidtype)
+            return rangecheck;
+        if (os_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+            os_top->data[os_top->top++] = element;
+        else
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->os, element))
+                return stackoverflow;
+            /* the push may grow the memory file and move its base:
+               re-derive the frame pointers before writing through them */
+            es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+            es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+        }
+        es_top->data[es_top->top - 1] =
+            xpost_object_cvlit(xpost_object_get_interval(A, 1, A.comp_.sz - 1));
+        es_top->data[es_top->top] =
+            xpost_operator_cons_opcode(ctx->opcode_shortcuts.arrayforallcont);
+        es_top->data[es_top->top + 1] = xpost_object_cvx(P);
+        es_top->top += 2;
+        return 0;
+    }
 
     A = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
     P = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 1);
