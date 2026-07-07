@@ -299,33 +299,34 @@ void xpost_interpreter_exit(Xpost_Interpreter *itpptr)
  *
  */
 
-/* function type for interpreter action pointers */
+/* function type for interpreter action pointers.
+   eval() has already popped the object from the execution stack. */
 typedef
-int evalfunc(Xpost_Context *ctx);
+int evalfunc(Xpost_Context *ctx, Xpost_Object t);
 
 /* quit the interpreter */
 static
-int evalquit(Xpost_Context *ctx)
+int evalquit(Xpost_Context *ctx, Xpost_Object t)
 {
+    (void)t;
     ++ctx->quit;
     return 0;
 }
 
-/* pop the execution stack */
+/* discard the object */
 static
-int evalpop(Xpost_Context *ctx)
+int evalpop(Xpost_Context *ctx, Xpost_Object t)
 {
-    if (!xpost_object_get_type(xpost_stack_pop(ctx->lo, ctx->es)) == invalidtype)
-        return stackunderflow;
+    (void)ctx;
+    (void)t;
     return 0;
 }
 
-/* pop the execution stack onto the operand stack */
+/* push the object on the operand stack */
 static
-int evalpush(Xpost_Context *ctx)
+int evalpush(Xpost_Context *ctx, Xpost_Object t)
 {
-    if (!xpost_stack_push(ctx->lo, ctx->os,
-            xpost_stack_pop(ctx->lo, ctx->es)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, t))
         return stackoverflow;
     return 0;
 }
@@ -335,21 +336,16 @@ int evalpush(Xpost_Context *ctx)
    as per the load operator, then push the value on the
    execution stack (if executable) or the operand stack (if literal) */
 static
-int evalload(Xpost_Context *ctx)
+int evalload(Xpost_Context *ctx, Xpost_Object n)
 {
-    Xpost_Object n;
     int i;
     int z;
 
     if (_xpost_interpreter_is_tracing)
     {
-        Xpost_Object s = xpost_name_get_string(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
+        Xpost_Object s = xpost_name_get_string(ctx, n);
         XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, xpost_string_get_pointer(ctx, s));
     }
-
-    n = xpost_stack_pop(ctx->lo, ctx->es);
-    if (xpost_object_get_type(n) == invalidtype)
-        return stackunderflow;
 
     z = xpost_stack_count(ctx->lo, ctx->ds);
     for (i = 0; i < z; i++)
@@ -376,68 +372,53 @@ int evalload(Xpost_Context *ctx)
 
 /* execute operator */
 static
-int evaloperator(Xpost_Context *ctx)
+int evaloperator(Xpost_Context *ctx, Xpost_Object op)
 {
-    int ret;
-    Xpost_Object op = xpost_stack_pop(ctx->lo, ctx->es);
-    if (xpost_object_get_type(op) == invalidtype)
-        return stackunderflow;
-
     if (_xpost_interpreter_is_tracing)
         xpost_operator_dump(ctx, op.mark_.padw);
-    ret = xpost_operator_exec(ctx, op.mark_.padw);
-    if (ret)
-        return ret;
-    return 0;
+    return xpost_operator_exec(ctx, op.mark_.padw);
 }
 
 /* extract head (&tail) of array */
 static
-int evalarray(Xpost_Context *ctx)
+int evalarray(Xpost_Context *ctx, Xpost_Object a)
 {
-    Xpost_Object a = xpost_stack_pop(ctx->lo, ctx->es);
     Xpost_Object b;
 
-    if (xpost_object_get_type(a) == invalidtype)
-        return stackunderflow;
-
-    switch (a.comp_.sz)
+    if (a.comp_.sz > 1)
     {
-        default /* > 1 */:
+        Xpost_Object interval;
+        interval = xpost_object_get_interval(a, 1, a.comp_.sz - 1);
+        if (xpost_object_get_type(interval) == invalidtype)
+            return rangecheck;
+        if (!xpost_stack_push(ctx->lo, ctx->es, interval))
+            return execstackoverflow;
+    }
+
+    if (a.comp_.sz >= 1)
+    {
+        b = xpost_array_get(ctx, a, 0);
+        if (xpost_object_get_type(b) == arraytype)
         {
-            Xpost_Object interval;
-            interval = xpost_object_get_interval(a, 1, a.comp_.sz - 1);
-            if (xpost_object_get_type(interval) == invalidtype)
-                return rangecheck;
-            xpost_stack_push(ctx->lo, ctx->es, interval);
+            if (!xpost_stack_push(ctx->lo, ctx->os, b))
+                return stackoverflow;
         }
-        /*@fallthrough@*/
-        case 1:
-            b = xpost_array_get(ctx, a, 0);
-            if (xpost_object_get_type(b) == arraytype)
-            {
-                if (!xpost_stack_push(ctx->lo, ctx->os, b))
-                    return stackoverflow;
-            }
-            else
-            {
-                if (!xpost_stack_push(ctx->lo, ctx->es, b))
-                    return execstackoverflow;
-            }
-            /*@fallthrough@*/
-        case 0: /* drop */;
+        else
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->es, b))
+                return execstackoverflow;
+        }
     }
     return 0;
 }
 
 /* extract token from string */
 static
-int evalstring(Xpost_Context *ctx)
+int evalstring(Xpost_Context *ctx, Xpost_Object s)
 {
-    Xpost_Object b,t,s;
+    Xpost_Object b,t;
     int ret;
 
-    s = xpost_stack_pop(ctx->lo, ctx->es);
     if (!xpost_stack_push(ctx->lo, ctx->os, s))
         return stackoverflow;
     assert(ctx->gl->base);
@@ -474,12 +455,11 @@ int evalstring(Xpost_Context *ctx)
 
 /* extract token from file */
 static
-int evalfile(Xpost_Context *ctx)
+int evalfile(Xpost_Context *ctx, Xpost_Object f)
 {
-    Xpost_Object b,f,t;
+    Xpost_Object b,t;
     int ret;
 
-    f = xpost_stack_pop(ctx->lo, ctx->es);
     if (!xpost_stack_push(ctx->lo, ctx->os, f))
         return stackoverflow;
     assert(ctx->gl->base);
@@ -620,7 +600,21 @@ int validate_context(Xpost_Context *ctx)
 int eval(Xpost_Context *ctx)
 {
     int ret;
-    Xpost_Object t = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    Xpost_Object t;
+    Xpost_Stack *es_root;
+    Xpost_Stack *es_top;
+    Xpost_Object_Type type;
+
+    if (!validate_context(ctx))
+        return unregistered;
+
+    /* pop the next object, directly off the top segment when possible */
+    es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+    es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+    if (es_top->top > 0)
+        t = es_top->data[--es_top->top];
+    else
+        t = xpost_stack_pop(ctx->lo, ctx->es);
 
     ctx->currentobject = t; /* for _onerror to determine if hold stack contents are restoreable.
                                if opexec(opcode) discovers opcode != ctx->currentobject.mark_.padw
@@ -629,9 +623,6 @@ int eval(Xpost_Context *ctx)
                                if an error is encountered, currentobject is reported as the
                                errant object since it is the "entry point" to the interpreter.
                              */
-
-    if (!validate_context(ctx))
-        return unregistered;
 
     if (_xpost_interpreter_is_tracing)
     {
@@ -652,15 +643,28 @@ int eval(Xpost_Context *ctx)
             return ret;
     }
 
-    { /* check object for sanity before using jump table */
-        Xpost_Object_Type type = xpost_object_get_type(t);
-        if (type == invalidtype || type >= XPOST_OBJECT_NTYPES)
-            return unregistered;
-    }
+    /* check object for sanity before using jump table */
+    type = xpost_object_get_type(t);
+    if (type == invalidtype || type >= XPOST_OBJECT_NTYPES)
+        return unregistered;
+
     if ( xpost_object_is_exe(t) ) /* if executable */
-        ret = evaltype[xpost_object_get_type(t)](ctx);
+    {
+        /* dispatch the common types with predictable direct calls;
+           the jump table's indirect branch mispredicts heavily */
+        switch (type)
+        {
+            case operatortype: ret = evaloperator(ctx, t); break;
+            case arraytype:    ret = evalarray(ctx, t);    break;
+            case nametype:     ret = evalload(ctx, t);     break;
+            case integertype:  /*@fallthrough@*/
+            case realtype:     /*@fallthrough@*/
+            case booleantype:  ret = evalpush(ctx, t);     break;
+            default:           ret = evaltype[type](ctx, t);
+        }
+    }
     else
-        ret = evalpush(ctx);
+        ret = evalpush(ctx, t);
 
     return ret;
 }
