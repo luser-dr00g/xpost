@@ -295,8 +295,13 @@ int xpost_op_stop(Xpost_Context *ctx)
             return 0;
         }
     }
+    /* PLRM: stop with no enclosing stopped context prints a message
+       and executes quit.  Returning an error here would re-enter
+       errordict, whose handlers themselves finish with `stop`,
+       recursing without bound. */
     XPOST_LOG_ERR("no stopped context in 'stop'");
-    return unregistered;
+    ctx->quit = 1;
+    return 0;
 }
 
 /* any  stopped  bool

@@ -65,10 +65,24 @@ errordict begin
                 (; OffendingCommand: ) print
                 /command load //=print exec
                 (]%%\n) print
-                (Stack:\n) print
-                ostack { == } forall
-                (ExecStack:\n) print
-                estack { == } forall
+                % a program may raise an error by setting newerror,
+                % errorname and errorinfo in $error directly and then
+                % executing stop, without passing through .error: the
+                % stack snapshots are absent in that case
+                currentdict /errorinfo known {
+                    errorinfo null ne {
+                        (Additional information: ) print
+                        errorinfo ==
+                    } if
+                } if
+                currentdict /ostack known {
+                    (Stack:\n) print
+                    ostack { == } forall
+                } if
+                currentdict /estack known {
+                    (ExecStack:\n) print
+                    estack { == } forall
+                } if
                 flush
             } if
         end
