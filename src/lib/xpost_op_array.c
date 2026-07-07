@@ -359,6 +359,7 @@ int xpost_oper_init_array_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "get", (Xpost_Op_Func)xpost_op_array_int_get, 1, 2,
             arraytype, integertype);
     INSTALL;
+    ctx->opcode_shortcuts.opget = op.mark_.padw;
     op = xpost_operator_cons(ctx, "put", (Xpost_Op_Func)xpost_op_array_int_any_put, 0, 3,
             arraytype, integertype, anytype);
     INSTALL;

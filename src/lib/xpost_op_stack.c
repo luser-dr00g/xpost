@@ -248,14 +248,18 @@ int xpost_oper_init_stack_ops(Xpost_Context *ctx,
     //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     //optab = (void *)(ctx->gl->base + optadr);
     op = xpost_operator_cons(ctx, "pop", (Xpost_Op_Func)Apop, 0, 1, anytype);
+    ctx->opcode_shortcuts.oppop = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "exch", (Xpost_Op_Func)AAexch, 2, 2, anytype, anytype);
+    ctx->opcode_shortcuts.opexch = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "dup", (Xpost_Op_Func)Adup, 2, 1, anytype);
+    ctx->opcode_shortcuts.opdup = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "copy", (Xpost_Op_Func)Icopy, 0, 1, integertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "index", (Xpost_Op_Func)Iindex, 1, 1, integertype);
+    ctx->opcode_shortcuts.opindex = op.mark_.padw;
     INSTALL;
     //xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
     op = xpost_operator_cons(ctx, "roll", (Xpost_Op_Func)IIroll, 0, 2, integertype, integertype);
