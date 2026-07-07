@@ -211,6 +211,11 @@ unsigned int hash(Xpost_Object k)
         + (xpost_object_get_ent(k) << 7)
         + (k.comp_.off << 5);
     /* h = xpost_object_get_type(k); /\* test collisions. *\/ */
+    /* mix bits so the modulo by (often even) table sizes spreads keys
+       across all slots: name keys otherwise contribute only multiples
+       of 128, colliding into gcd(128,sz)-strided clusters */
+    h *= 2654435761u; /* Knuth multiplicative hash (golden ratio) */
+    h ^= h >> 16;
 #ifdef DEBUGDIC
     printf("\nhash(");
     xpost_object_dump(k);
