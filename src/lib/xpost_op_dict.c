@@ -346,10 +346,13 @@ int xpost_op_any_where(Xpost_Context *ctx,
 {
     int i;
     int z = xpost_stack_count(ctx->lo, ctx->ds);
+    int isname = xpost_object_get_type(K) == nametype;
     for (i = 0; i < z; i++)
     {
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
-        if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K))
+        if (isname
+                ? xpost_object_get_type(xpost_dict_get_name(ctx, D, K)) != invalidtype
+                : xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K))
         {
             xpost_stack_push(ctx->lo, ctx->os, D);
             xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));

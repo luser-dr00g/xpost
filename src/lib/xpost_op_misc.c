@@ -79,13 +79,14 @@ Xpost_Object bind(Xpost_Context *ctx,
                 z = xpost_stack_count(ctx->lo, ctx->ds);
                 for (j = 0; j < z; j++) {
                     d = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, j);
-                    if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx,d), d, t)) {
-                        t = xpost_dict_get(ctx, d, t);
+                    t = xpost_dict_get_name(ctx, d, t);
+                    if (xpost_object_get_type(t) != invalidtype) {
                         if (xpost_object_get_type(t) == operatortype) {
                             xpost_array_put(ctx, p, i, t);
                         }
                         break;
                     }
+                    t = xpost_array_get(ctx, p, i); /* keep searching for the name */
                 }
                 break;
             case arraytype:
