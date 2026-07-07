@@ -376,7 +376,7 @@ int xpost_op_dict_proc_forall (Xpost_Context *ctx,
     Xpost_Memory_File *mem = xpost_context_select_memory(ctx, D);
     assert(mem->base);
     D.comp_.sz = xpost_dict_max_length_memory (mem, D); // cache size locally
-    if (D.comp_.off <= D.comp_.sz) // FIXME: not finished?
+    if (D.comp_.off < DICTABN(D.comp_.sz)) // resume unless cursor is past the table
     {
         unsigned ad;
         dicrec *tp; /* dict Table Pointer */
