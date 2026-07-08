@@ -178,6 +178,10 @@ def
 %       receiving new polygon.
 % convert polygon array back to path structure
 /doclip {
+    % when the clip region is an axis-aligned rectangle that already
+    % contains the whole path, clipping passes every point through
+    % unchanged: skip the polygon-clipping machinery
+    .cliptrivial not {
 	%DICT
 	20 dict
 	begin
@@ -329,7 +333,8 @@ def
         } ifelse
     } forall
 
-end }
+end
+    } if }
 %dup 0 10 dict put
 bind
 def
