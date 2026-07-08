@@ -83,116 +83,81 @@ def
     add add
 } bind def
 
+% hodgman-sutherland keeps the half-plane to the left of each directed
+% clip edge, so a clip polygon's interior must lie to the left of its
+% edges: a positive signed area, the winding initclip produces. A user
+% clip path can arrive in the opposite device-space winding (e.g. after
+% the y-flip), which would keep the exterior and clip everything away.
+% Reverse such a polygon so its winding always matches.
+/normclipwind { % poly  .  poly'
+    8 dict begin
+    /poly exch def
+    /a2 0.0 def
+    0 1 poly length 2 sub {
+        /i exch def
+        poly i get aload pop /yi exch def /xi exch def
+        poly i 1 add get aload pop /yj exch def /xj exch def
+        /a2 a2 xi yj mul xj yi mul sub add def
+    } for
+    a2 0 lt {
+        [ poly length 1 sub -1 0 { poly exch get } for ]
+    }{
+        poly
+    } ifelse
+    end
+} bind def
+
 % polygon [A B C]  .  new-polygon
+% Canonical Sutherland-Hodgman: clip the closed polygon (points array,
+% first point repeated at the end) against the half-plane where the clip
+% line evaluates <= 0. For each edge P->Q emit Q when it lies inside, and
+% emit the edge's crossing point wherever the edge enters or leaves the
+% half-plane. Correct for any convex clip window and any edge orientation.
 /hodgman-sutherland {
 	DICT
-	%10 dict
 	begin
     /f exch def
     /p exch def
-    /n p length 1 sub def
-    /DEBUGCLIP where { pop
-        (n=)print n =
-    } if
-    n 0 gt { % else nothing to do.
-
-    % P = p[n-1] to start !!No. our poly has a duplicate point at the end
-    %/P p n 1 sub get def
-    %/d P length 1 sub def
-    /P p 0 get def
-    /fP P aload pop f evaluate def
-    /starting true def
-    /first null def
-    [
-        p 1 1 index length 1 sub getinterval {
-            /Q exch def
-            /fQ Q aload pop f evaluate def
-            /DEBUGCLIP where { pop
-                (P=)print P ==
-                (Q=)print Q ==
-                (fP=)print fP ==
-                (fQ=)print fQ ==
-            } if
-            fP 0 le {
-                counttomark 0 eq {
-                    P
-                    /DEBUGCLIP where { pop
-                        (P)=
-                    } if
-                } if
+    /n p length 1 sub def   % edge count (p carries a duplicated closing point)
+    /DEBUGCLIP where { pop (n=)print n = } if
+    n 0 gt {
+        /out [
+            0 1 n 1 sub {
+                /i exch def
+                /P p i get def
+                /Q p i 1 add get def
+                /fP P aload pop f evaluate def
+                /fQ Q aload pop f evaluate def
                 fQ 0 le {
-                    Q
-                    /DEBUGCLIP where { pop
-                        (Q)=
-                    } if
-                }{
-                    fP 0 lt {
+                    fP 0 le not {          % P outside, Q inside: entering crossing
                         /QP fQ fP sub def
                         [
                             fQ P 0 get mul fP Q 0 get mul sub QP div
                             fQ P 1 get mul fP Q 1 get mul sub QP div
                         ]
-                        %dup /P exch def
-                        %/dup /Q exch def
-                        %/fQ -1 def
-                        %dup aload pop f evaluate /fQ exch def
-                        /DEBUGCLIP where { pop
-                            (I)=
-                        } if
+                    } if
+                    Q                      % Q inside
+                }{
+                    fP 0 le {              % P inside, Q outside: leaving crossing
+                        /QP fQ fP sub def
+                        [
+                            fQ P 0 get mul fP Q 0 get mul sub QP div
+                            fQ P 1 get mul fP Q 1 get mul sub QP div
+                        ]
                     } if
                 } ifelse
-            }{
-                fQ 0 le {
-                    fQ 0 lt {
-                        /QP fQ fP sub def
-                        [
-                            fQ P 0 get mul fP Q 0 get mul sub QP div
-                            fQ P 1 get mul fP Q 1 get mul sub QP div
-                        ]
-                        %dup /P exch def
-                        %/dup /Q exch def
-                        %/fQ -1 def
-                        %dup aload pop f evaluate /fQ exch def
-                        starting {
-                            /first 1 index
-                                %pstack()=
-                                2 array copy
-                                def  % first point was clipped
-                        } if
-                        /DEBUGCLIP where { pop
-                            (I)=
-                        } if
-                    } if
-                    Q
-                    /DEBUGCLIP where { pop
-                        (Q)=
-                    } if
-                } if
-            } ifelse
-            /P Q def
-            /fP fQ def
-            /starting false def
-        } forall
-        first type /nulltype ne { % if first point was clipped and path was closed, add final intersection
-            fQ 0 gt {
-                Q aload pop  % Qx Qy
-                p 0 get aload pop  % Qx Qy Px Py
-                3 2 roll eq 3 1 roll eq and { % Qx==Px&&Qy==Py
-                    first %2 array copy
-                } if
-            } if
-        } if
-    ]
-    /DEBUGCLIP where { pop
-        dup ==
-    } if
-
-    }{ % n==0
+            } for
+        ] def
+        out length 0 gt {                  % re-close: repeat the first vertex
+            [ out aload pop out 0 get ]
+        }{
+            out
+        } ifelse
+    }{
         p
     } ifelse
-
 end }
-dup 0 10 dict put
+dup 0 16 dict put
 bind
 def
 
@@ -267,7 +232,7 @@ def
 	dup length 0 eq {
 	    pop
 	}{
-	    
+	    normclipwind
 	    dup 0 get
 	    /U exch def
 	    1 1 index length 1 sub getinterval
