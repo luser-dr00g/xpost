@@ -646,6 +646,13 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
         if (!xpost_object_is_writeable(ctx, d))
             return invalidaccess;
 
+    /* canonicalise the key first: converting a new string key to a name
+       allocates, which can collect or move the memory file; every
+       pointer derived before that point would be stale */
+    k = clean_key(ctx, k);
+    if (xpost_object_get_type(k) == invalidtype)
+        return VMerror;
+
     if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
             return VMerror;
@@ -690,10 +697,8 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
         xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
         dp = (void *)(mem->base + ad);
         ++ dp->nused;
-        r->key = clean_key(ctx, k);
-        r->hash = hash(r->key);
-        if (xpost_object_get_type(r->key) == invalidtype)
-            return VMerror;
+        r->key = k; /* canonicalised above */
+        r->hash = hash(k);
     }
     else if (xpost_object_get_type(r->value) == magictype)
     {
@@ -763,13 +768,13 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
             return VMerror;
 
+    k = clean_key(ctx, k); /* may allocate: derive pointers after */
+    if (xpost_object_get_type(k) == invalidtype)
+        return VMerror;
+
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
-
-    k = clean_key(ctx, k);
-    if (xpost_object_get_type(k) == invalidtype)
-        return VMerror;
 
     e = diclookup(ctx, mem, d, k); /*find slot for key */
     if (e == NULL || e == invalidrec || xpost_object_get_type(e->key) == nulltype)
