@@ -457,15 +457,29 @@ int _get_current_point (Xpost_Context *ctx,
     path = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currpath"));
     if (xpost_object_get_type(path) != stringtype)
         return nocurrentpoint;
-    p = xpost_string_get_pointer(ctx, path);
-    memcpy(&used, p, sizeof used);
-    if (used <= 16)
-        return nocurrentpoint;
-    memcpy(&last, p + 8, sizeof last);
-    n = p[last] == 2 ? 6 : 2; /* curve carries three points */
-    memcpy(co, p + last + 1, n * sizeof(real));
-    *xpos = co[n - 2];
-    *ypos = co[n - 1];
+    /* currpath sits in a program-reachable dictionary, so its header may be
+       forged; bound the extent and the last-element offset against the
+       string's own allocation before dereferencing them */
+    {
+        Xpost_Memory_File *mem = xpost_context_select_memory(ctx, path);
+        unsigned int ent = xpost_object_get_ent(path);
+        unsigned int entsz = mem->table.tab[ent].sz;
+        unsigned int avail = path.comp_.off < entsz ? entsz - path.comp_.off : 0;
+
+        if (avail < 16)
+            return nocurrentpoint;
+        p = xpost_string_get_pointer(ctx, path);
+        memcpy(&used, p, sizeof used);
+        if (used <= 16 || used > avail)
+            return nocurrentpoint;
+        memcpy(&last, p + 8, sizeof last);
+        n = last < used && p[last] == 2 ? 6 : 2; /* curve carries three points */
+        if (last >= used || last + 1 + n * sizeof(real) > used)
+            return nocurrentpoint;
+        memcpy(co, p + last + 1, n * sizeof(real));
+        *xpos = co[n - 2];
+        *ypos = co[n - 1];
+    }
     XPOST_LOG_INFO("currentpoint: %f %f", *xpos, *ypos);
 
     return 0;

@@ -110,19 +110,15 @@ static Xpost_Object namecurve;
 static Xpost_Object nameclose;
 static Xpost_Object nameclipregion;
 static Xpost_Object nameflat;
+static Xpost_Object namecurrmatrix;
 
 /*opcodes*/
 static unsigned int _currentpoint_opcode;
 static unsigned int _moveto_opcode;
-static unsigned int _moveto_cont_opcode;
 static unsigned int _rmoveto_cont_opcode;
 static unsigned int _lineto_opcode;
-static unsigned int _lineto_cont_opcode;
 static unsigned int _rlineto_cont_opcode;
 static unsigned int _curveto_opcode;
-static unsigned int _curveto_cont1_opcode;
-static unsigned int _curveto_cont2_opcode;
-static unsigned int _curveto_cont3_opcode;
 static unsigned int _rcurveto_cont_opcode;
 
 /*matrices*/
@@ -176,6 +172,43 @@ _path_avail(Xpost_Context *ctx, Xpost_Object path)
     unsigned int off = path.comp_.off;
 
     return off < entsz ? entsz - off : 0;
+}
+
+/* True when a path string's header and element chain lie within its own
+   allocation. The current path lives in a program-reachable dictionary and
+   can be replaced with a forged string, so a reader that trusts the packed
+   layout (extent at offset 0, last-element offset at offset 8, an element
+   chain from PATH_HDR) validates it first. */
+static int
+_path_ok(Xpost_Context *ctx, Xpost_Object path)
+{
+    unsigned int avail, used, last, o;
+    const char *p;
+
+    if (xpost_object_get_type(path) != stringtype)
+        return 0;
+    avail = _path_avail(ctx, path);
+    if (avail < PATH_HDR)
+        return 0;
+    p = xpost_string_get_pointer(ctx, path);
+    used = _path_get_u32(p, 0);
+    if (used < PATH_HDR || used > avail)
+        return 0;
+    for (o = PATH_HDR; o < used; )
+    {
+        unsigned int esz;
+
+        if (p[o] < PATH_CMD_MOVE || p[o] > PATH_CMD_CLOSE)
+            return 0;
+        esz = _path_elem_size(p[o]);
+        if (esz > used - o)   /* the element must fit the declared content */
+            return 0;
+        o += esz;
+    }
+    last = _path_get_u32(p, 8);
+    if (used > PATH_HDR && (last < PATH_HDR || last >= used))
+        return 0;   /* offset 8 must name an element start within content */
+    return 1;
 }
 
 /* paths always live in local VM: the graphics state dictionary is
@@ -251,12 +284,25 @@ _path_append(Xpost_Context *ctx, Xpost_Object gstate, Xpost_Object *pathp,
     p = xpost_string_get_pointer(ctx, *pathp);
     used = _path_get_u32(p, 0);
     esz = 1 + ncoords * sizeof(real);
+    /* the path lives in a program-reachable dictionary; reject a forged
+       header before it drives an out-of-bounds append or a grow loop that
+       never terminates (a zero capacity doubles to itself) */
+    {
+        unsigned int avail = _path_avail(ctx, *pathp);
+        unsigned int cap;
+
+        if (avail < PATH_HDR)
+            return rangecheck;
+        cap = _path_get_u32(p, 12);
+        if (used < PATH_HDR || used > cap || cap > avail)
+            return rangecheck;
+    }
 
     /* merge a move into an immediately preceding move */
     if (cmd == PATH_CMD_MOVE && used > PATH_HDR)
     {
         unsigned int last = _path_get_u32(p, 8);
-        if (p[last] == PATH_CMD_MOVE)
+        if (last >= PATH_HDR && last <= used - esz && p[last] == PATH_CMD_MOVE)
         {
             memcpy(p + last + 1, co, ncoords * sizeof(real));
             return 0;
@@ -309,6 +355,26 @@ Xpost_Object _gstate(Xpost_Context *ctx)
     return xpost_dict_get(ctx, gd, namecurrgstate);
 }
 
+/* read the CTM's six coefficients, promoting integer entries,
+   with arithmetic identical to the transform operator's */
+static
+int _path_ctm(Xpost_Context *ctx, Xpost_Object gstate, real *m)
+{
+    Xpost_Object psm;
+    Xpost_Object arr[6];
+    int i;
+
+    psm = xpost_dict_get(ctx, gstate, namecurrmatrix);
+    if (xpost_object_get_type(psm) != arraytype)
+        return undefined;
+    xpost_memory_get(xpost_context_select_memory(ctx, psm),
+                     xpost_object_get_ent(psm), 0, sizeof arr, arr);
+    for (i = 0; i < 6; i++)
+        m[i] = xpost_object_get_type(arr[i]) == integertype
+             ? (real)arr[i].int_.val : arr[i].real_.val;
+    return 0;
+}
+
 static
 int _newpath(Xpost_Context *ctx)
 {
@@ -352,6 +418,10 @@ Xpost_Object _cpath(Xpost_Context *ctx)
     if (xpost_object_get_type(gstate) == invalidtype)
         return invalid;
     path = xpost_dict_get(ctx, gstate, namecurrpath);
+    /* the readers below trust the packed layout, so a forged current path
+       must not reach them */
+    if (xpost_object_get_type(path) == stringtype && !_path_ok(ctx, path))
+        return invalid;
     return path;
 }
 
@@ -384,27 +454,22 @@ int _currentpoint(Xpost_Context *ctx)
 static
 int _moveto(Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, x);
-    xpost_stack_push(ctx->lo, ctx->os, y);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_moveto_cont_opcode));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
-    return 0;
-}
-
-static
-int _moveto_cont(Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
-{
     Xpost_Object gstate, path;
+    real m[6];
     real co[2];
+    int ret;
 
     gstate = _gstate(ctx);
     if (xpost_object_get_type(gstate) == invalidtype)
         return undefined;
+    ret = _path_ctm(ctx, gstate, m);
+    if (ret)
+        return ret;
     path = xpost_dict_get(ctx, gstate, namecurrpath);
     if (xpost_object_get_type(path) != stringtype)
         return unregistered;
-    co[0] = NUM(x);
-    co[1] = NUM(y);
+    co[0] = m[0] * x.real_.val + m[2] * y.real_.val + m[4];
+    co[1] = m[1] * x.real_.val + m[3] * y.real_.val + m[5];
     return _path_append(ctx, gstate, &path, PATH_CMD_MOVE, co, 2);
 }
 
@@ -431,31 +496,26 @@ int _rmoveto_cont(Xpost_Context *ctx,
 static
 int _lineto(Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
 {
-    xpost_stack_push(ctx->lo, ctx->os, x);
-    xpost_stack_push(ctx->lo, ctx->os, y);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_lineto_cont_opcode));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
-    return 0;
-}
-
-static
-int _lineto_cont(Xpost_Context *ctx, Xpost_Object x, Xpost_Object y)
-{
     Xpost_Object gstate, path;
     char *p;
+    real m[6];
     real co[2];
+    int ret;
 
     gstate = _gstate(ctx);
     if (xpost_object_get_type(gstate) == invalidtype)
         return undefined;
+    ret = _path_ctm(ctx, gstate, m);
+    if (ret)
+        return ret;
     path = xpost_dict_get(ctx, gstate, namecurrpath);
     if (xpost_object_get_type(path) != stringtype)
         return unregistered;
     p = xpost_string_get_pointer(ctx, path);
     if (_path_get_u32(p, 0) <= PATH_HDR)
         return nocurrentpoint;
-    co[0] = NUM(x);
-    co[1] = NUM(y);
+    co[0] = m[0] * x.real_.val + m[2] * y.real_.val + m[4];
+    co[1] = m[1] * x.real_.val + m[3] * y.real_.val + m[5];
     return _path_append(ctx, gstate, &path, PATH_CMD_LINE, co, 2);
 }
 
@@ -485,76 +545,30 @@ int _curveto(Xpost_Context *ctx,
              Xpost_Object x2, Xpost_Object y2,
              Xpost_Object x3, Xpost_Object y3)
 {
-    xpost_stack_push(ctx->lo, ctx->os, x1);
-    xpost_stack_push(ctx->lo, ctx->os, y1);
-    xpost_stack_push(ctx->lo, ctx->os, x2);
-    xpost_stack_push(ctx->lo, ctx->os, y2);
-    xpost_stack_push(ctx->lo, ctx->os, x3);
-    xpost_stack_push(ctx->lo, ctx->os, y3);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_cont1_opcode));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
-    return 0;
-}
-
-static
-int _curveto_cont1(Xpost_Context *ctx,
-                   Xpost_Object x1, Xpost_Object y1,
-                   Xpost_Object x2, Xpost_Object y2,
-                   Xpost_Object X3, Xpost_Object Y3)
-{
-    xpost_stack_push(ctx->lo, ctx->os, X3);
-    xpost_stack_push(ctx->lo, ctx->os, Y3);
-    xpost_stack_push(ctx->lo, ctx->os, x1);
-    xpost_stack_push(ctx->lo, ctx->os, y1);
-    xpost_stack_push(ctx->lo, ctx->os, x2);
-    xpost_stack_push(ctx->lo, ctx->os, y2);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_cont2_opcode));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
-    return 0;
-}
-
-static
-int _curveto_cont2(Xpost_Context *ctx,
-                   Xpost_Object X3, Xpost_Object Y3,
-                   Xpost_Object x1, Xpost_Object y1,
-                   Xpost_Object X2, Xpost_Object Y2)
-{
-    xpost_stack_push(ctx->lo, ctx->os, X2);
-    xpost_stack_push(ctx->lo, ctx->os, Y2);
-    xpost_stack_push(ctx->lo, ctx->os, X3);
-    xpost_stack_push(ctx->lo, ctx->os, Y3);
-    xpost_stack_push(ctx->lo, ctx->os, x1);
-    xpost_stack_push(ctx->lo, ctx->os, y1);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_cont3_opcode));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.transform));
-    return 0;
-}
-
-static
-int _curveto_cont3(Xpost_Context *ctx,
-                   Xpost_Object X2, Xpost_Object Y2,
-                   Xpost_Object X3, Xpost_Object Y3,
-                   Xpost_Object X1, Xpost_Object Y1)
-{
     Xpost_Object gstate, path;
     char *p;
+    real m[6];
     real co[6];
+    int ret;
 
     gstate = _gstate(ctx);
     if (xpost_object_get_type(gstate) == invalidtype)
         return undefined;
+    ret = _path_ctm(ctx, gstate, m);
+    if (ret)
+        return ret;
     path = xpost_dict_get(ctx, gstate, namecurrpath);
     if (xpost_object_get_type(path) != stringtype)
         return unregistered;
     p = xpost_string_get_pointer(ctx, path);
     if (_path_get_u32(p, 0) <= PATH_HDR)
         return nocurrentpoint;
-    co[0] = NUM(X1);
-    co[1] = NUM(Y1);
-    co[2] = NUM(X2);
-    co[3] = NUM(Y2);
-    co[4] = NUM(X3);
-    co[5] = NUM(Y3);
+    co[0] = m[0] * x1.real_.val + m[2] * y1.real_.val + m[4];
+    co[1] = m[1] * x1.real_.val + m[3] * y1.real_.val + m[5];
+    co[2] = m[0] * x2.real_.val + m[2] * y2.real_.val + m[4];
+    co[3] = m[1] * x2.real_.val + m[3] * y2.real_.val + m[5];
+    co[4] = m[0] * x3.real_.val + m[2] * y3.real_.val + m[4];
+    co[5] = m[1] * x3.real_.val + m[3] * y3.real_.val + m[5];
     return _path_append(ctx, gstate, &path, PATH_CMD_CURVE, co, 6);
 }
 
@@ -1425,6 +1439,8 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
         return VMerror;
     if (xpost_object_get_type((nameflat = xpost_name_cons(ctx, "flat"))) == invalidtype)
         return VMerror;
+    if (xpost_object_get_type((namecurrmatrix = xpost_name_cons(ctx, "currmatrix"))) == invalidtype)
+        return VMerror;
 
     _mat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
     _mat1 = xpost_object_cvlit(xpost_array_cons(ctx, 6));
@@ -1435,11 +1451,9 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     _currentpoint_opcode = op.mark_.padw;
     INSTALL;
 
-    op = xpost_operator_cons(ctx, "moveto", (Xpost_Op_Func)_moveto, 0, 2, numbertype, numbertype);
+    op = xpost_operator_cons(ctx, "moveto", (Xpost_Op_Func)_moveto, 0, 2, floattype, floattype);
     _moveto_opcode = op.mark_.padw;
     INSTALL;
-    op = xpost_operator_cons(ctx, "moveto_cont", (Xpost_Op_Func)_moveto_cont, 0, 2, numbertype, numbertype);
-    _moveto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "rmoveto", (Xpost_Op_Func)_rmoveto, 0, 2, floattype, floattype);
     INSTALL;
@@ -1447,11 +1461,9 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
                              floattype, floattype, floattype, floattype);
     _rmoveto_cont_opcode = op.mark_.padw;
 
-    op = xpost_operator_cons(ctx, "lineto", (Xpost_Op_Func)_lineto, 0, 2, numbertype, numbertype);
+    op = xpost_operator_cons(ctx, "lineto", (Xpost_Op_Func)_lineto, 0, 2, floattype, floattype);
     _lineto_opcode = op.mark_.padw;
     INSTALL;
-    op = xpost_operator_cons(ctx, "lineto_cont", (Xpost_Op_Func)_lineto_cont, 0, 2, numbertype, numbertype);
-    _lineto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "rlineto", (Xpost_Op_Func)_rlineto, 0, 2, floattype, floattype);
     INSTALL;
@@ -1460,20 +1472,9 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     _rlineto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "curveto", (Xpost_Op_Func)_curveto, 0, 6,
-                             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
+                             floattype, floattype, floattype, floattype, floattype, floattype);
     _curveto_opcode = op.mark_.padw;
     INSTALL;
-    op = xpost_operator_cons(ctx, "curveto_cont1", (Xpost_Op_Func)_curveto_cont1, 0, 6,
-                             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
-    _curveto_cont1_opcode = op.mark_.padw;
-
-    op = xpost_operator_cons(ctx, "curveto_cont2", (Xpost_Op_Func)_curveto_cont2, 0, 6,
-                             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
-    _curveto_cont2_opcode = op.mark_.padw;
-
-    op = xpost_operator_cons(ctx, "curveto_cont3", (Xpost_Op_Func)_curveto_cont3, 0, 6,
-                             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype);
-    _curveto_cont3_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "rcurveto", (Xpost_Op_Func)_rcurveto, 0, 6,
                              floattype, floattype, floattype, floattype, floattype, floattype);
