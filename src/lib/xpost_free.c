@@ -250,7 +250,6 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     if (!mem->interpreter_get_initializing())
     {
 #ifdef XPOST_USE_THRESHOLD
-        //(void)period;
         if ((mem->threshold -= sz) <= 0)
         {
             mem->threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
@@ -303,8 +302,11 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
             unsigned int ent;
             unsigned int ad;
 
-            /* if this ent is too big */
-            if (tsz * XPOST_FREE_ACCEPT_DENOM > sz * XPOST_FREE_ACCEPT_OVERSIZE)
+            /* if this ent is too big. a small absolute amount of waste
+               is always acceptable: rejecting all reuse for small
+               allocations grows the entity table without bound */
+            if (tsz - sz > 32 &&
+                tsz * XPOST_FREE_ACCEPT_DENOM > sz * XPOST_FREE_ACCEPT_OVERSIZE)
             {
                 return 0; /* early exit to _new allocator since free list is sorted */
             }
