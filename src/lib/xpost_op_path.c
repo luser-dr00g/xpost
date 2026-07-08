@@ -1032,6 +1032,38 @@ int _flattenpath (Xpost_Context *ctx)
 
     path = _cpath(ctx);
     pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
+
+    /* a path without curves is already flat: leave it untouched
+       rather than rebuild an identical copy */
+    {
+        int curved = 0;
+        for (i = 0; i < pathlen && !curved; i++)
+        {
+            Xpost_Object subpath;
+            int subpathlen, j;
+
+            subpath = xpost_dict_get(ctx, path, xpost_int_cons(i));
+            if (xpost_object_get_type(subpath) != dicttype)
+                break;
+            subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
+            for (j = 0; j < subpathlen; j++)
+            {
+                Xpost_Object elem, cmdo;
+                elem = xpost_dict_get(ctx, subpath, xpost_int_cons(j));
+                if (xpost_object_get_type(elem) != dicttype)
+                    break;
+                cmdo = xpost_dict_get(ctx, elem, namecmd);
+                if (cmdo.mark_.padw == namecurve.mark_.padw)
+                {
+                    curved = 1;
+                    break;
+                }
+            }
+        }
+        if (!curved)
+            return 0;
+    }
+
     xpost_stack_push(ctx->lo, ctx->hold, path);
     ret = _newpath(ctx);
     if (ret)
