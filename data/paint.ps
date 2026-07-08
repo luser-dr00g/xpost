@@ -33,40 +33,14 @@
     closepath
     flattenpath
     doclip
-    %[ { 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall ]
-    [
-        [ % mark
-        {
-            2 array astore % ... mark ... [x0 y0]
-            counttomark 1 ne {
-                counttomark 1 add 1 roll % ... [x0 y0] mark ...
-                ] exch % ... [ ... ] [x0 y0]
-                [ exch % ... [ ... ] [ [x0 y0]
-            } if % ... +++ mark [x0 y0]
-        }
-        { 2 array astore } % ... mark [x0 y0] ... [xN yN]
-        {}
-        { counttomark dup 0 ne { 1 sub index } if } % ... mark [x0 y0] ... [x0 y0]
-        .devpathforall
-        ]
-        dup length 0 eq {pop} if
-    ]
+    % subpaths merged into one point list, separated by null, so that
+    % FillPoly scans them together and interior subpaths produce holes
+    .fillpolyargs
     /DEBUGFILL where { pop
         (fill)=
         pstack()=
         hook
     } if
-    % merge the subpaths, separated by null, so that FillPoly scans
-    % them together and interior subpaths produce holes
-    [ exch
-    {
-        dup length 2 gt {
-            aload pop null
-        }{
-            pop
-        } ifelse
-    } forall
-    ]
 
     dup length 2 gt {
         [ currentcolordict DEVICE /nativecolorspace get get exec
