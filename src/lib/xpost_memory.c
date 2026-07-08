@@ -580,12 +580,15 @@ _xpost_memory_table_alloc_new(Xpost_Memory_File *mem,
     }
 
     ent = mem->table.nextent;
-    ++mem->table.nextent;
     if (ent > XPOST_OBJECT_COMP_MAX_ENT)
     {
-        XPOST_LOG_ERR("Warning: ent number %u exceeds object extended-ent-field max %u",
-                ent, XPOST_OBJECT_COMP_MAX_ENT);
+        /* an ent number beyond the object field width would be silently
+           truncated when stored in an object, aliasing another entity */
+        XPOST_LOG_ERR("%d entity numbers exhausted (max %u)",
+                VMerror, XPOST_OBJECT_COMP_MAX_ENT);
+        return 0;
     }
+    ++mem->table.nextent;
 
     if (!xpost_memory_file_alloc(mem, sz, &adr))
     {
