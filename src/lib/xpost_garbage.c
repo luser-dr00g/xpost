@@ -798,6 +798,10 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
 #endif
             if (!_xpost_garbage_mark_object(ctx, mem, ctx->window_device, markall))
                 return -1;
+
+            /* the object being executed may exist only here */
+            if (!_xpost_garbage_mark_object(ctx, mem, ctx->currentobject, markall))
+                return -1;
 #if 0
 #ifdef DEBUG_GC
             printf("marking event handler\n");
@@ -826,7 +830,7 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
         }
     }
 
-    printf("collect recovered %u bytes\n", sz);
+    XPOST_LOG_INFO("collect recovered %u bytes", sz);
     return sz;
 }
 
