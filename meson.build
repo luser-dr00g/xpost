@@ -233,6 +233,15 @@ subdir('data')
 if get_option('doc')
   subdir('doc')
 endif
+
+# Core-interpreter conformance: run the PLRM operator-example suite through
+# the built interpreter and require its failcount to reach zero. The build-tree
+# binary is not installed, so point it at the source data via XPOST_DATA_DIR.
+test('interpreter',
+  find_program('tests/run-ps-test.sh'),
+  args: [ xpost_exe, files('data/test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' },
+  timeout: 120)
 #if get_option('nls') == true
 #  subdir('po')
 #endif

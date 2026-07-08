@@ -15,6 +15,10 @@
     //fail
     ifelse
 } def
+% tolerance compare for transcendental results: real math is inexact
+% (and reals are single-precision here), so comparing atan/cos/exp/ln
+% output against a decimal literal with eq is unreliable.
+/nearly { sub abs 0.001 lt } def
 
 %(test: loading graphics...)=
 %flush
@@ -98,14 +102,14 @@ false false and false eq check
 (a) (bcd) (ef) 3 array astore type /arraytype eq check
 
 (atan)=
-(1: 0 1 atan 0.0 eq check) ==
-0 1 atan 0.0 eq check
-(2: 1 0 atan 90.0 eq check) ==
-1 0 atan 90.0 eq check
-(3: -100 0 atan 270.0 eq check) ==
--100 0 atan 270.0 eq check
-(4: 4 4 atan 45.0 eq check) ==
-4 4 atan 45.0 eq check
+(1: 0 1 atan 0.0 nearly check) ==
+0 1 atan 0.0 nearly check
+(2: 1 0 atan 90.0 nearly check) ==
+1 0 atan 90.0 nearly check
+(3: -100 0 atan 270.0 nearly check) ==
+-100 0 atan 270.0 nearly check
+(4: 4 4 atan 45.0 nearly check) ==
+4 4 atan 45.0 nearly check
 
 %awidthshow
 %banddevice
@@ -182,8 +186,8 @@ a1 dup length array copy aload pop
 %copypage
 
 (cos)=
-0 cos 1.0 eq check
-90 cos 0.0 eq check
+0 cos 1.0 nearly check
+90 cos 0.0 nearly check
 
 (count)=
 clear count 0 eq check
@@ -369,10 +373,10 @@ errordict type /dicttype eq check
 {exit false check}loop
 
 (exp)=
-(1: 9 0.5 exp 3.0 eq check)=
-9 0.5 exp 3.0 eq check
-(2: -9 -1 exp -0.111111 eq check)=
--9 -1 exp -0.111111 eq check
+(1: 9 0.5 exp 3.0 nearly check)=
+9 0.5 exp 3.0 nearly check
+(2: -9 -1 exp -0.111111 nearly check)=
+-9 -1 exp -0.111111 nearly check
 
 (false)=
 false not check
@@ -550,16 +554,16 @@ mydict length 1 eq check
 %lineto
 
 (ln)=
-10 ln 2.30259 eq check
-100 ln 4.60517 eq check
+10 ln 2.30259 nearly check
+100 ln 4.60517 nearly check
 
 (load)=
 /avg {add 2 div} def
 /avg load 1 get 2 eq check
 
 (log)=
-10 log 1.0 eq check
-100 log 2.0 eq check
+10 log 1.0 nearly check
+100 log 2.0 nearly check
 
 %(loop)=
 %(lt)=
