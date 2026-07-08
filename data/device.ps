@@ -21,10 +21,13 @@ newdefaultdevice % defined in xpost_interpreter.c:setlocalconfig()
 DEVICE begin
     /defaultmatrix [ 1 0 0 -1 0 height ] def
 
-    % override ps fillpoly with operator
-    %/FillPoly load type /operatortype ne { % unless already overridden.
+    % override the class's scanline FillPoly with the compiled
+    % rasterizer, except where the device declares it draws nothing:
+    % rasterizing into the null device would burn the whole render
+    % cost of a page to discard every span
+    currentdict /NoOutput known not {
         /FillPoly /.fillpoly load def
-    %} if
+    } if
 end
 
 /flushpage {
