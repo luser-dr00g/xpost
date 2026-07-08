@@ -34,6 +34,7 @@
 
 #define _USE_MATH_DEFINES /* needed for M_PI with Visual Studio */
 #include <assert.h>
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -65,11 +66,15 @@
    graphics state, avoiding a dictionary and an array allocation per
    path element:
 
-       header (16 bytes):
+       header (32 bytes):
            u32 used       total bytes in use, including this header
            u32 sp_start   offset of the current subpath's move element
            u32 last_elem  offset of the most recent element
            u32 cap        allocated capacity in bytes
+           f32 bbox[4]    running minx miny maxx maxy over every point
+                          appended (conservative: it may retain points
+                          later overwritten by a move-onto-move merge,
+                          and it spans curve control hulls)
        element:
            u8  cmd        0 move, 1 line, 2 curve, 3 close
            f32 coords     one point (move, line); three points (curve);
@@ -127,7 +132,7 @@ static Xpost_Object _mat1;
 
 #define NUM(x) (xpost_object_get_type(x)==realtype?x.real_.val:(real)x.int_.val)
 
-#define PATH_HDR 16
+#define PATH_HDR 32
 #define PATH_CMD_MOVE 0
 #define PATH_CMD_LINE 1
 #define PATH_CMD_CURVE 2
@@ -143,6 +148,20 @@ _path_get_u32(const char *p, unsigned int off)
 
 static void
 _path_set_u32(char *p, unsigned int off, unsigned int v)
+{
+    memcpy(p + off, &v, sizeof v);
+}
+
+static real
+_path_get_f32(const char *p, unsigned int off)
+{
+    real v;
+    memcpy(&v, p + off, sizeof v);
+    return v;
+}
+
+static void
+_path_set_f32(char *p, unsigned int off, real v)
 {
     memcpy(p + off, &v, sizeof v);
 }
@@ -249,6 +268,10 @@ _path_cons(Xpost_Context *ctx, unsigned int cap)
     _path_set_u32(p, 4, 0);
     _path_set_u32(p, 8, 0);
     _path_set_u32(p, 12, cap);
+    _path_set_f32(p, 16, FLT_MAX);
+    _path_set_f32(p, 20, FLT_MAX);
+    _path_set_f32(p, 24, -FLT_MAX);
+    _path_set_f32(p, 28, -FLT_MAX);
     return s;
 }
 
@@ -338,21 +361,47 @@ _path_append(Xpost_Context *ctx, Xpost_Object gstate, Xpost_Object *pathp,
         _path_set_u32(p, 4, used);
     _path_set_u32(p, 8, used);
     _path_set_u32(p, 0, used + esz);
+    {
+        int k;
+        for (k = 0; k + 1 < ncoords; k += 2)
+        {
+            if (co[k] < _path_get_f32(p, 16)) _path_set_f32(p, 16, co[k]);
+            if (co[k + 1] < _path_get_f32(p, 20)) _path_set_f32(p, 20, co[k + 1]);
+            if (co[k] > _path_get_f32(p, 24)) _path_set_f32(p, 24, co[k]);
+            if (co[k + 1] > _path_get_f32(p, 28)) _path_set_f32(p, 28, co[k + 1]);
+        }
+    }
     return 0;
 }
+
+/* currgstate is created once when the graphics subsystem loads and is
+   only ever mutated in place (setgstate, grestore and gstatecopy copy
+   into it, never rebind it), so the resolved dictionary can be cached
+   after the first lookup instead of searching the dictionary stack on
+   every path operator */
+static Xpost_Object _gstate_cache;
+static int _gstate_cached = 0;
 
 static
 Xpost_Object _gstate(Xpost_Context *ctx)
 {
-    Xpost_Object gd;
+    Xpost_Object gd, gs;
     int ret;
 
+    if (_gstate_cached)
+        return _gstate_cache;
     ret = xpost_op_any_load(ctx, namegraphicsdict);
     if (ret) return invalid;
     gd = xpost_stack_pop(ctx->lo, ctx->os);
     if (xpost_object_get_type(gd) == invalidtype)
         return invalid;
-    return xpost_dict_get(ctx, gd, namecurrgstate);
+    gs = xpost_dict_get(ctx, gd, namecurrgstate);
+    if (xpost_object_get_type(gs) == dicttype)
+    {
+        _gstate_cache = gs;
+        _gstate_cached = 1;
+    }
+    return gs;
 }
 
 /* read the CTM's six coefficients, promoting integer entries,
@@ -720,22 +769,52 @@ int _path_is_rect(Xpost_Context *ctx, Xpost_Object path,
     return *maxx > *minx && *maxy > *miny;
 }
 
-/* build the polygon argument for the device FillPoly procedure in a
-   single traversal: a flat array of [x y] point pairs with subpaths
-   separated (and terminated) by null. A close element repeats the
-   subpath's first point object. Subpaths of fewer than three points
+/* allocate an uninitialised array: the caller fills every slot
+   directly, so the null prefill and per-put save checks of the
+   ordinary constructor are wasted work */
+static Xpost_Object
+_rawarray_cons(Xpost_Context *ctx, unsigned int sz, Xpost_Object **payload)
+{
+    Xpost_Memory_File *mem = ctx->lo;
+    unsigned int ent, vs, cnt, adr;
+    Xpost_Object o;
+
+    if (!xpost_memory_table_alloc(mem, sz * sizeof(Xpost_Object), arraytype, &ent))
+        return invalid;
+    /* stamp as saved at the current level, as the constructor would */
+    xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
+    cnt = xpost_stack_count(mem, vs);
+    mem->table.tab[ent].mark =
+        (cnt << XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET) |
+        (cnt << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);
+    o.tag = arraytype |
+        (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    o.comp_.sz = sz;
+    o.comp_.off = 0;
+    o = xpost_object_set_ent(o, ent);
+    o = xpost_object_cvlit(o);
+    xpost_memory_table_get_addr(mem, ent, &adr);
+    *payload = (Xpost_Object *)(mem->base + adr);
+    return o;
+}
+
+/* build the polygon argument for the device FillPoly procedure: a flat
+   array of [x y] point pairs with subpaths separated (and terminated)
+   by null. All pairs are two-object views into one backing array, so
+   the whole argument costs two allocations. A close element repeats
+   the subpath's first point. Subpaths of fewer than three points
    cannot enclose area and are dropped. */
 static
 int _fillpolyargs(Xpost_Context *ctx)
 {
-    Xpost_Object path;
-    Xpost_Object result;
-    Xpost_Object *pts = NULL;
-    int npts = 0, cappts = 0;
-    int start = 0;
+    Xpost_Object path, backing, result;
+    Xpost_Object *bk, *rs;
     char *p;
     unsigned int used, o;
-    int i;
+    unsigned int npts = 0, nsp = 0;
+    unsigned int bi, ri, spbi, spri;
+    int cmd, n, k;
+    real co[6];
 
     path = _cpath(ctx);
     if (xpost_object_get_type(path) != stringtype)
@@ -743,76 +822,96 @@ int _fillpolyargs(Xpost_Context *ctx)
     p = xpost_string_get_pointer(ctx, path);
     used = _path_get_u32(p, 0);
 
+    /* first pass: count every point and subpath; area-less subpaths
+       are dropped in the second pass after their points are written,
+       so the buffers are sized before the drop rule is applied */
     for (o = PATH_HDR; o < used; o += _path_elem_size(p[o]))
     {
-        int cmd = p[o];
-        int n, k;
-        real co[6];
+        cmd = p[o];
+        if (cmd == PATH_CMD_MOVE)
+            nsp++;
+        if (cmd == PATH_CMD_CLOSE)
+            npts += npts ? 1 : 0;
+        else
+            npts += cmd == PATH_CMD_CURVE ? 3 : 1;
+    }
 
-        if (npts + 5 > cappts)
+    if (npts == 0 || 2 * npts > 65535)
+    {
+        /* nothing to fill, or too large for a single backing array
+           (the object size field is 16 bits): an oversized fill would
+           already have overflowed the polygon array before this
+           representation existed */
+        result = xpost_object_cvlit(xpost_array_cons(ctx, 0));
+        xpost_stack_push(ctx->lo, ctx->os, result);
+        return npts == 0 ? 0 : limitcheck;
+    }
+
+    backing = _rawarray_cons(ctx, 2 * npts, &bk);
+    if (xpost_object_get_type(backing) == invalidtype)
+        return VMerror;
+    xpost_stack_push(ctx->lo, ctx->hold, backing);
+    result = _rawarray_cons(ctx, npts + nsp, &rs);
+    if (xpost_object_get_type(result) == invalidtype)
+        return VMerror;
+    xpost_stack_push(ctx->lo, ctx->hold, result);
+    /* allocations can move the memory file */
+    p = xpost_string_get_pointer(ctx, path);
+    {
+        unsigned int adr;
+        xpost_memory_table_get_addr(ctx->lo, xpost_object_get_ent(backing), &adr);
+        bk = (Xpost_Object *)(ctx->lo->base + adr);
+    }
+
+    /* second pass: fill the backing coordinates and the pair views,
+       rolling an area-less subpath back where it ended */
+    bi = ri = spbi = spri = 0;
+    for (o = PATH_HDR; o < used; o += _path_elem_size(p[o]))
+    {
+        cmd = p[o];
+        if (cmd == PATH_CMD_MOVE && bi > spbi)
         {
-            Xpost_Object *npts_;
-            cappts = cappts ? cappts * 2 : 64;
-            npts_ = realloc(pts, cappts * sizeof *pts);
-            if (!npts_)
-            {
-                free(pts);
-                return VMerror;
-            }
-            pts = npts_;
-        }
-        if (cmd == PATH_CMD_MOVE && npts > start)
-        {
-            /* flush the finished subpath */
-            if (npts - start < 3)
-                npts = start;
-            else
-                pts[npts++] = null;
-            start = npts;
+            if (bi - spbi >= 6) rs[ri++] = null;
+            else { bi = spbi; ri = spri; }
+            spbi = bi;
+            spri = ri;
         }
         if (cmd == PATH_CMD_CLOSE)
         {
-            /* repeat the first point of this subpath */
-            if (npts > start)
-                pts[npts++] = pts[start];
+            if (bi > spbi)
+            {
+                Xpost_Object v = backing;
+                v.comp_.off = spbi;
+                v.comp_.sz = 2;
+                rs[ri++] = v;
+                /* keep the backing fully initialised and count the
+                   repeat toward the size rule */
+                bk[bi] = bk[spbi];
+                bk[bi + 1] = bk[spbi + 1];
+                bi += 2;
+            }
             continue;
         }
         n = cmd == PATH_CMD_CURVE ? 6 : 2;
         _path_get_coords(p, o, co, n);
         for (k = 0; k + 1 < n; k += 2)
         {
-            Xpost_Object pair;
-            pair = xpost_object_cvlit(xpost_array_cons(ctx, 2));
-            if (xpost_object_get_type(pair) == invalidtype)
-            {
-                free(pts);
-                return VMerror;
-            }
-            xpost_array_put(ctx, pair, 0, xpost_real_cons(co[k]));
-            xpost_array_put(ctx, pair, 1, xpost_real_cons(co[k + 1]));
-            /* the string may have moved if array allocation grew the file */
-            p = xpost_string_get_pointer(ctx, path);
-            pts[npts++] = pair;
+            Xpost_Object v = backing;
+            bk[bi] = xpost_real_cons(co[k]);
+            bk[bi + 1] = xpost_real_cons(co[k + 1]);
+            v.comp_.off = bi;
+            v.comp_.sz = 2;
+            rs[ri++] = v;
+            bi += 2;
         }
     }
-    if (npts > start)
+    if (bi > spbi)
     {
-        if (npts - start < 3)
-            npts = start;
-        else
-            pts[npts++] = null;
+        if (bi - spbi >= 6) rs[ri++] = null;
+        else ri = spri;
     }
 
-    result = xpost_object_cvlit(xpost_array_cons(ctx, npts));
-    if (xpost_object_get_type(result) == invalidtype)
-    {
-        free(pts);
-        return VMerror;
-    }
-    for (i = 0; i < npts; i++)
-        xpost_array_put(ctx, result, i, pts[i]);
-    free(pts);
-
+    result.comp_.sz = ri; /* dropped subpaths shrink the view */
     xpost_stack_push(ctx->lo, ctx->os, result);
     return 0;
 }
@@ -828,7 +927,7 @@ int _cliptrivial(Xpost_Context *ctx)
     Xpost_Object gstate, path, clipregion;
     real cminx, cminy, cmaxx, cmaxy;
     real pminx, pminy, pmaxx, pmaxy;
-    int accept = 0, ret;
+    int accept = 0;
 
     gstate = _gstate(ctx);
     if (xpost_object_get_type(gstate) == invalidtype)
@@ -836,13 +935,19 @@ int _cliptrivial(Xpost_Context *ctx)
     path = xpost_dict_get(ctx, gstate, namecurrpath);
     clipregion = xpost_dict_get(ctx, gstate, nameclipregion);
 
-    if (_path_is_rect(ctx, clipregion, &cminx, &cminy, &cmaxx, &cmaxy))
+    if (xpost_object_get_type(path) == stringtype &&
+        _path_is_rect(ctx, clipregion, &cminx, &cminy, &cmaxx, &cmaxy))
     {
-        ret = _path_walk_bbox(ctx, path, 0, &pminx, &pminy, &pmaxx, &pmaxy);
-        /* an empty path is accepted: there is nothing to clip */
-        accept = ret == 2 ||
-                 (ret == 1 &&
-                  pminx >= cminx && pmaxx <= cmaxx &&
+        /* the header maintains a conservative bounding box (curve
+           control hulls contain their curves); an empty path is
+           accepted, there being nothing to clip */
+        char *p = xpost_string_get_pointer(ctx, path);
+        pminx = _path_get_f32(p, 16);
+        pminy = _path_get_f32(p, 20);
+        pmaxx = _path_get_f32(p, 24);
+        pmaxy = _path_get_f32(p, 28);
+        accept = _path_get_u32(p, 0) <= PATH_HDR ||
+                 (pminx >= cminx && pmaxx <= cmaxx &&
                   pminy >= cminy && pmaxy <= cmaxy);
     }
 
@@ -1414,6 +1519,8 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     unsigned int optadr;
 
     assert(ctx->gl->base);
+
+    _gstate_cached = 0;
     //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     //optab = (void *)(ctx->gl->base + optadr);
 
