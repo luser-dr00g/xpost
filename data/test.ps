@@ -20,6 +20,10 @@
 % output against a decimal literal with eq is unreliable.
 /nearly { sub abs 0.001 lt } def
 
+% breakhere is an xpost debugger breakpoint; stub it as a no-op on
+% interpreters that lack it so the suite is portable
+/breakhere where { pop }{ /breakhere { } def } ifelse
+
 %(test: loading graphics...)=
 %flush
 %(*){=}128 string filenameforall
@@ -693,9 +697,14 @@ abc
 (1:)= pstack
  check (abc) eq check
 
-DATA_DIR(/readstring.ps)strcat run
-(2:)= pstack
- not check 0 3 getinterval (abc) eq check
+/DATA_DIR where {
+    pop
+    DATA_DIR(/readstring.ps)strcat run
+    (2:)= pstack
+     not check 0 3 getinterval (abc) eq check
+}{
+    (readstring-from-file test skipped: no DATA_DIR)=
+} ifelse
 
 %renderbands
 
