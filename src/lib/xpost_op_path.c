@@ -457,6 +457,177 @@ int _rcurveto_cont(Xpost_Context *ctx,
     return _curveto(ctx, x1, y1, x2, y2, x3, y3);
 }
 
+/* clip trivial-accept test.
+   Push true when the clip region is an axis-aligned rectangle and the
+   current path lies entirely inside it: clipping the path against such
+   a region passes every point through unchanged, so the caller can skip
+   the polygon-clipping machinery. Push false in every uncertain case. */
+
+#define CLIPTRIVIAL_NUM(o) \
+    (xpost_object_get_type(o) == realtype ? (o).real_.val : (real)(o).int_.val)
+
+/* accumulate the bounding box of every data point in a path;
+   returns 0 on malformed structure or when a curve is present
+   and curves are not accepted */
+static
+int _path_points_bbox(Xpost_Context *ctx, Xpost_Object path,
+                      int accept_curves,
+                      real *minx, real *miny, real *maxx, real *maxy)
+{
+    int pathlen, i;
+
+    pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
+    for (i = 0; i < pathlen; i++)
+    {
+        Xpost_Object subpath;
+        int subpathlen, j;
+
+        subpath = xpost_dict_get(ctx, path, xpost_int_cons(i));
+        if (xpost_object_get_type(subpath) != dicttype)
+            return 0;
+        subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
+        for (j = 0; j < subpathlen; j++)
+        {
+            Xpost_Object elem, cmd, data;
+            int datalen, k;
+
+            elem = xpost_dict_get(ctx, subpath, xpost_int_cons(j));
+            if (xpost_object_get_type(elem) != dicttype)
+                return 0;
+            cmd = xpost_dict_get(ctx, elem, namecmd);
+            if (!accept_curves && cmd.mark_.padw == namecurve.mark_.padw)
+                return 0;
+            data = xpost_dict_get(ctx, elem, namedata);
+            if (xpost_object_get_type(data) != arraytype)
+                return 0;
+            datalen = data.comp_.sz;
+            for (k = 0; k + 1 < datalen; k += 2)
+            {
+                Xpost_Object numx, numy;
+                real x, y;
+                numx = xpost_array_get(ctx, data, k);
+                numy = xpost_array_get(ctx, data, k + 1);
+                x = CLIPTRIVIAL_NUM(numx);
+                y = CLIPTRIVIAL_NUM(numy);
+                if (x < *minx) *minx = x;
+                if (x > *maxx) *maxx = x;
+                if (y < *miny) *miny = y;
+                if (y > *maxy) *maxy = y;
+            }
+        }
+    }
+    return 1;
+}
+
+/* test whether a path is a single closed axis-aligned rectangle
+   and return its bounds */
+static
+int _path_is_rect(Xpost_Context *ctx, Xpost_Object path,
+                  real *minx, real *miny, real *maxx, real *maxy)
+{
+    Xpost_Object subpath;
+    real px[5], py[5];
+    int npts = 0;
+    int subpathlen, j;
+
+    if (xpost_object_get_type(path) != dicttype)
+        return 0;
+    if (xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path) != 1)
+        return 0;
+    subpath = xpost_dict_get(ctx, path, xpost_int_cons(0));
+    if (xpost_object_get_type(subpath) != dicttype)
+        return 0;
+    subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
+    for (j = 0; j < subpathlen; j++)
+    {
+        Xpost_Object elem, cmd, data, numx, numy;
+
+        elem = xpost_dict_get(ctx, subpath, xpost_int_cons(j));
+        if (xpost_object_get_type(elem) != dicttype)
+            return 0;
+        cmd = xpost_dict_get(ctx, elem, namecmd);
+        if (cmd.mark_.padw == nameclose.mark_.padw)
+            continue; /* close repeats the start point */
+        if (j == 0)
+        {
+            if (cmd.mark_.padw != namemove.mark_.padw)
+                return 0;
+        }
+        else if (cmd.mark_.padw != nameline.mark_.padw)
+            return 0;
+        data = xpost_dict_get(ctx, elem, namedata);
+        if (xpost_object_get_type(data) != arraytype || data.comp_.sz != 2)
+            return 0;
+        numx = xpost_array_get(ctx, data, 0);
+        numy = xpost_array_get(ctx, data, 1);
+        if (npts >= 5)
+            return 0;
+        px[npts] = CLIPTRIVIAL_NUM(numx);
+        py[npts] = CLIPTRIVIAL_NUM(numy);
+        npts++;
+    }
+    /* an explicitly repeated start point is equivalent to closure */
+    if (npts == 5)
+    {
+        if (px[4] != px[0] || py[4] != py[0])
+            return 0;
+        npts = 4;
+    }
+    if (npts != 4)
+        return 0;
+    /* every side, including the closing one, must be axis-parallel */
+    for (j = 0; j < 4; j++)
+    {
+        int n = (j + 1) & 3;
+        if (px[j] != px[n] && py[j] != py[n])
+            return 0;
+    }
+    *minx = *maxx = px[0];
+    *miny = *maxy = py[0];
+    for (j = 1; j < 4; j++)
+    {
+        if (px[j] < *minx) *minx = px[j];
+        if (px[j] > *maxx) *maxx = px[j];
+        if (py[j] < *miny) *miny = py[j];
+        if (py[j] > *maxy) *maxy = py[j];
+    }
+    return *maxx > *minx && *maxy > *miny;
+}
+
+static
+int _cliptrivial(Xpost_Context *ctx)
+{
+    Xpost_Object gd, gstate, path, clipregion;
+    real cminx, cminy, cmaxx, cmaxy;
+    real pminx, pminy, pmaxx, pmaxy;
+    int ret, accept = 0;
+
+    ret = xpost_op_any_load(ctx, namegraphicsdict);
+    if (ret) return ret;
+    gd = xpost_stack_pop(ctx->lo, ctx->os);
+    gstate = xpost_dict_get(ctx, gd, namecurrgstate);
+    path = xpost_dict_get(ctx, gstate, namecurrpath);
+    clipregion = xpost_dict_get(ctx, gstate, xpost_name_cons(ctx, "clipregion"));
+
+    if (xpost_object_get_type(path) == dicttype &&
+        _path_is_rect(ctx, clipregion, &cminx, &cminy, &cmaxx, &cmaxy))
+    {
+        pminx = pminy = XPOST_OBJECT_COMP_MAX_ENT; /* any large sentinel */
+        pmaxx = pmaxy = -pminx;
+        if (_path_points_bbox(ctx, path, 0, &pminx, &pminy, &pmaxx, &pmaxy))
+        {
+            /* an empty path yields an untouched sentinel bbox: accept,
+               there is nothing to clip */
+            accept = pminx > pmaxx ||
+                     (pminx >= cminx && pmaxx <= cmaxx &&
+                      pminy >= cminy && pmaxy <= cmaxy);
+        }
+    }
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(accept));
+    return 0;
+}
+
 static
 int _closepath(Xpost_Context *ctx)
 {
@@ -931,6 +1102,9 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     _rcurveto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "closepath", (Xpost_Op_Func)_closepath, 0, 0);
+    INSTALL;
+
+    op = xpost_operator_cons(ctx, ".cliptrivial", (Xpost_Op_Func)_cliptrivial, 1, 0);
     INSTALL;
 
     op = xpost_operator_cons(ctx, "arc", (Xpost_Op_Func)_arc, 0, 5,
