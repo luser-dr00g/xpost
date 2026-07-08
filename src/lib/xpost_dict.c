@@ -182,9 +182,18 @@ cont:
                                 && xpost_object_get_ent(L) == xpost_object_get_ent(R)
                                 && L.comp_.off == R.comp_.off ); /* 0 if all eq */
 
-        case stringtype: return L.comp_.sz == R.comp_.sz ?
-                                memcmp(xpost_string_get_pointer(ctx, L), xpost_string_get_pointer(ctx, R), L.comp_.sz) :
-                                L.comp_.sz - R.comp_.sz;
+        case stringtype:
+        {
+            /* strings compare lexicographically, element by element;
+               where one is a prefix of the other the shorter is less
+               (PLRM, gt/ge/lt/le). Comparing by length alone is wrong:
+               (abc) is less than (d), not greater. */
+            unsigned int ln = L.comp_.sz, rn = R.comp_.sz;
+            unsigned int n = ln < rn ? ln : rn;
+            int c = memcmp(xpost_string_get_pointer(ctx, L),
+                           xpost_string_get_pointer(ctx, R), n);
+            return c != 0 ? c : (int)ln - (int)rn;
+        }
         case filetype: return xpost_file_get_file_pointer(ctx->lo, L) == xpost_file_get_file_pointer(ctx->lo, R);
     }
 }
