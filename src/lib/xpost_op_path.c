@@ -594,6 +594,112 @@ int _path_is_rect(Xpost_Context *ctx, Xpost_Object path,
     return *maxx > *minx && *maxy > *miny;
 }
 
+/* build the polygon argument for the device FillPoly procedure in a
+   single traversal: a flat array of [x y] point pairs with subpaths
+   separated (and terminated) by null. A close element repeats the
+   subpath's first point object. Subpaths of fewer than three points
+   cannot enclose area and are dropped. */
+static
+int _fillpolyargs(Xpost_Context *ctx)
+{
+    Xpost_Object path;
+    Xpost_Object result;
+    Xpost_Object *pts = NULL;
+    int npts = 0, cappts = 0;
+    int pathlen, i;
+    int total = 0;
+
+    path = _cpath(ctx);
+    if (xpost_object_get_type(path) != dicttype)
+        return unregistered;
+    pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
+
+    /* gather [x y] pairs per subpath, then flush each subpath into a
+       counted list of objects destined for one result array */
+    for (i = 0; i < pathlen; i++)
+    {
+        Xpost_Object subpath;
+        int subpathlen, j;
+        int start = npts;
+
+        subpath = xpost_dict_get(ctx, path, xpost_int_cons(i));
+        if (xpost_object_get_type(subpath) != dicttype)
+        {
+            free(pts);
+            return unregistered;
+        }
+        subpathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, subpath), subpath);
+        for (j = 0; j < subpathlen; j++)
+        {
+            Xpost_Object elem, cmd, data, pair;
+            int datalen, k;
+
+            elem = xpost_dict_get(ctx, subpath, xpost_int_cons(j));
+            cmd = xpost_dict_get(ctx, elem, namecmd);
+            if (npts + 4 > cappts)
+            {
+                Xpost_Object *npts_;
+                cappts = cappts ? cappts * 2 : 64;
+                npts_ = realloc(pts, cappts * sizeof *pts);
+                if (!npts_)
+                {
+                    free(pts);
+                    return VMerror;
+                }
+                pts = npts_;
+            }
+            if (cmd.mark_.padw == nameclose.mark_.padw)
+            {
+                /* repeat the first point of this subpath */
+                if (npts > start)
+                    pts[npts++] = pts[start];
+                continue;
+            }
+            data = xpost_dict_get(ctx, elem, namedata);
+            if (xpost_object_get_type(data) != arraytype)
+            {
+                free(pts);
+                return unregistered;
+            }
+            datalen = data.comp_.sz;
+            /* a flattened path holds only two-point elements, but pair
+               any longer data (curve controls) like the enumerator would */
+            for (k = 0; k + 1 < datalen; k += 2)
+            {
+                pair = xpost_object_cvlit(xpost_array_cons(ctx, 2));
+                if (xpost_object_get_type(pair) == invalidtype)
+                {
+                    free(pts);
+                    return VMerror;
+                }
+                xpost_array_put(ctx, pair, 0, xpost_array_get(ctx, data, k));
+                xpost_array_put(ctx, pair, 1, xpost_array_get(ctx, data, k + 1));
+                pts[npts++] = pair;
+            }
+        }
+        if (npts - start < 3)
+            npts = start; /* drop area-less subpath */
+        else
+        {
+            pts[npts++] = null; /* subpath separator/terminator */
+        }
+    }
+
+    total = npts;
+    result = xpost_object_cvlit(xpost_array_cons(ctx, total));
+    if (xpost_object_get_type(result) == invalidtype)
+    {
+        free(pts);
+        return VMerror;
+    }
+    for (i = 0; i < total; i++)
+        xpost_array_put(ctx, result, i, pts[i]);
+    free(pts);
+
+    xpost_stack_push(ctx->lo, ctx->os, result);
+    return 0;
+}
+
 static
 int _cliptrivial(Xpost_Context *ctx)
 {
@@ -1105,6 +1211,9 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     INSTALL;
 
     op = xpost_operator_cons(ctx, ".cliptrivial", (Xpost_Op_Func)_cliptrivial, 1, 0);
+    INSTALL;
+
+    op = xpost_operator_cons(ctx, ".fillpolyargs", (Xpost_Op_Func)_fillpolyargs, 1, 0);
     INSTALL;
 
     op = xpost_operator_cons(ctx, "arc", (Xpost_Op_Func)_arc, 0, 5,
