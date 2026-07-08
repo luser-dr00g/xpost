@@ -41,7 +41,7 @@ clear
 { = } stopped { $error /errorname get /stackunderflow eq check }{ fail } ifelse
 
 /== cvx ==
-{ == } stopped { end $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
+{ == } stopped { $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
 
 (abs)=
 4.5 abs 4.5 eq check
