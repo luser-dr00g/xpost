@@ -122,6 +122,11 @@ unsigned xpost_dict_length_memory(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_
 unsigned xpost_dict_max_length_memory(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
 
 /**
+ * @brief the nominal capacity the dict was requested with (for maxlength)
+ */
+unsigned xpost_dict_requested_length_memory(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);
+
+/**
    investigate if size == maximum size.
  */
 int xpost_dict_is_full_memory(/*@dependent@*/ Xpost_Memory_File *mem, Xpost_Object d);

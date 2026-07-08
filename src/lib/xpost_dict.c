@@ -241,6 +241,8 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     unsigned int ent;
     unsigned int hashnull;
 
+    unsigned int reqsz = sz; /* nominal capacity, as maxlength reports it */
+
     if (sz < 8) sz = 8;
     sz = (unsigned int)ceil((double)sz * 1.25);
 
@@ -270,7 +272,7 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     dp->tag = d.tag;
     dp->sz = sz;
     dp->nused = 0;
-    dp->pad = 0;
+    dp->pad = reqsz; /* remember the requested capacity for maxlength */
 
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* clear table */
     hashnull = hash(null);
@@ -315,7 +317,8 @@ unsigned int xpost_dict_length_memory (Xpost_Memory_File *mem,
     return dp->nused;
 }
 
-/* get the sz field from the dichead */
+/* get the sz field from the dichead: the internal hash-table size,
+   used to decide when the dict is full and how large to grow it */
 unsigned int xpost_dict_max_length_memory (Xpost_Memory_File *mem,
                       Xpost_Object d)
 {
@@ -324,6 +327,19 @@ unsigned int xpost_dict_max_length_memory (Xpost_Memory_File *mem,
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &da);
     dp = (void *)(mem->base + da);
     return dp->sz;
+}
+
+/* the nominal capacity the dict was created with, which maxlength must
+   report; the internal size above is over-allocated (min 8, x1.25) and
+   would over-report */
+unsigned int xpost_dict_requested_length_memory (Xpost_Memory_File *mem,
+                      Xpost_Object d)
+{
+    unsigned int da;
+    dichead *dp;
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &da);
+    dp = (void *)(mem->base + da);
+    return dp->pad;
 }
 
 /*

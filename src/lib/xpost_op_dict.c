@@ -136,7 +136,7 @@ int xpost_op_dict_maxlength(Xpost_Context *ctx,
                             Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-                     xpost_int_cons(xpost_dict_max_length_memory(xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
+                     xpost_int_cons(xpost_dict_requested_length_memory(xpost_context_select_memory(ctx, D),
                                                                  D)));
     return 0;
 }
