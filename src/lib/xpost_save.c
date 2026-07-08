@@ -142,8 +142,19 @@ unsigned xpost_save_ent_is_saved(Xpost_Memory_File *mem,
     llev = (tab->tab[ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_MASK)
         >> XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET;
 
-    return llev < sav.save_.lev ?
-        tlev == sav.save_.lev : 1;
+    /* An object must be backed up at the current save if it was born
+       before that save established its level and has not been backed up
+       here yet. create_snapshot_object records .lev as the stack count
+       taken *before* the save pushes itself, so an object whose birth
+       count llev equals sav.lev was created just before this save and
+       still needs protecting: the test is llev <= sav.lev, not < (the
+       missing boundary was the off-by-one that left a top-level
+       save/restore from reverting anything). Backups stamp tlev with
+       sav.lev + 1 (see save_save_ent) so the "already backed up" marker
+       cannot be confused with an object's birth stamp, which equals its
+       birth count and is therefore <= sav.lev for anything protectable. */
+    return llev <= sav.save_.lev ?
+        (tlev == sav.save_.lev + 1) : 1;
 }
 
 /* make a clone of ent, return new ent */
@@ -218,7 +229,9 @@ int xpost_save_save_ent(Xpost_Memory_File *mem,
         XPOST_LOG_ERR("cannot find table for ent %u", ent);
         return 0;
     }
-    tlev = sav.save_.lev;
+    tlev = sav.save_.lev + 1; /* +1 keeps this "backed up here" marker
+                                 distinct from a birth stamp; see the note
+                                 in xpost_save_ent_is_saved */
     tab->tab[ent].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK; // clear TLEV field
     tab->tab[ent].mark |= (tlev << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);  // set TLEV field
 
@@ -285,6 +298,19 @@ void xpost_save_restore_snapshot(Xpost_Memory_File *mem)
         hold = tab->tab[sent].adr;                 // tmp = src
         tab->tab[sent].adr = tab->tab[cent].adr;  // src = cpy
         tab->tab[cent].adr = hold;                 // cpy = tmp
+
+        /* the object is back to its pre-save contents, so clear its
+           "backed up here" marker (reset tlev to its birth level llev).
+           Otherwise a later save that reuses this now-vacated level
+           would see the stale marker and skip the backup, and its
+           restore would not revert the object. */
+        {
+            unsigned int llv =
+                (tab->tab[sent].mark & XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_MASK)
+                >> XPOST_MEMORY_TABLE_MARK_DATA_LOWLEVEL_OFFSET;
+            tab->tab[sent].mark &= ~XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_MASK;
+            tab->tab[sent].mark |= (llv << XPOST_MEMORY_TABLE_MARK_DATA_TOPLEVEL_OFFSET);
+        }
     }
     //xpost_stack_free(mem, sav.save_.stk);
 }
