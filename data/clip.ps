@@ -312,22 +312,18 @@ def
 
     PA {
         dup length 0 gt {
-            dup 0 get << /data 3 2 roll /cmd /move >> cpath addtopath
-            1 1 index length 1 sub getinterval {
-                << /data 3 2 roll /cmd /line >> cpath addtopath
+            dup 0 get aload pop .devmoveto
+            dup 1 1 index length 1 sub getinterval {
+                aload pop .devlineto
             } forall
 
-            cpath dup length 1 sub get
-            dup 0 get /data get
-            exch dup length 1 sub get /data get
-            aload pop 3 2 roll aload pop % x0 y0 xN yN
-            exch 4 1 roll % xN x0 y0 yN
+            dup dup length 1 sub get aload pop % P xN yN
+            2 index 0 get aload pop % P xN yN x0 y0
+            exch 4 1 roll % P x0 xN yN y0
             eq 3 1 roll eq and {
-                %closepath
-                cpath dup length 1 sub get
-                dup length 1 sub get
-                /cmd /close put
+                .retagclose
             } if
+            pop
         }{
             pop
         } ifelse

@@ -447,35 +447,25 @@ int _get_current_point (Xpost_Context *ctx,
                         real *ypos)
 {
     Xpost_Object path;
-    Xpost_Object subpath;
-    Xpost_Object pathelem;
-    Xpost_Object pathelemdata;
-    Xpost_Object datax, datay;
+    char *p;
+    unsigned int used, last;
+    real co[6];
+    int n;
 
-    /* get the current pen position */
-    /*FIXME if any of these calls fail, should return nocurrentpoint; */
+    /* get the current pen position from the packed path string
+       (device coordinates; layout as described in xpost_op_path.c) */
     path = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currpath"));
-    subpath = xpost_dict_get(ctx,
-                             path,
-                             xpost_int_cons(xpost_dict_length_memory(xpost_context_select_memory(ctx,path), path) - 1));
-    if (xpost_object_get_type(subpath) == invalidtype)
+    if (xpost_object_get_type(path) != stringtype)
         return nocurrentpoint;
-    pathelem = xpost_dict_get(ctx,
-                              subpath, xpost_int_cons(xpost_dict_length_memory(xpost_context_select_memory(ctx,subpath), subpath) - 1));
-    if (xpost_object_get_type(pathelem) == invalidtype)
+    p = xpost_string_get_pointer(ctx, path);
+    memcpy(&used, p, sizeof used);
+    if (used <= 16)
         return nocurrentpoint;
-    pathelemdata = xpost_dict_get(ctx, pathelem, xpost_name_cons(ctx, "data"));
-    if (xpost_object_get_type(pathelemdata) == invalidtype)
-        return nocurrentpoint;
-
-    datax = xpost_array_get(ctx, pathelemdata, pathelemdata.comp_.sz - 2);
-    datay = xpost_array_get(ctx, pathelemdata, pathelemdata.comp_.sz - 1);
-    if (xpost_object_get_type(datax) == integertype)
-        datax = xpost_real_cons((real)datax.int_.val);
-    if (xpost_object_get_type(datay) == integertype)
-        datay = xpost_real_cons((real)datay.int_.val);
-    *xpos = datax.real_.val;
-    *ypos = datay.real_.val;
+    memcpy(&last, p + 8, sizeof last);
+    n = p[last] == 2 ? 6 : 2; /* curve carries three points */
+    memcpy(co, p + last + 1, n * sizeof(real));
+    *xpos = co[n - 2];
+    *ypos = co[n - 1];
     XPOST_LOG_INFO("currentpoint: %f %f", *xpos, *ypos);
 
     return 0;

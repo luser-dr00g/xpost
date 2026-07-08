@@ -13,8 +13,8 @@
     %/currmatrix DEVICE /defaultmatrix get matrix copy
     %/currmatrix [ 1 0 0 1 0 0 ]
     %/scratchmatrix [ 1 0 0 1 0 0 ] % ??
-    /currpath 1 dict
-    /clipregion 1 dict
+    /currpath .newpathstr
+    /clipregion .newpathstr
     /flat 1
     /linewidth 1
     /linecap 0
@@ -99,7 +99,7 @@ graphicsdict begin
     /gptr gptr 1 add def
     gptr gstackarray length ge { /gsave cvx /limitcheck signalerror } if
     gstackarray gptr gstate currentgstate put % push copy on stack
-    currgstate /currpath 2 copy get 1 dict deepcopy put % make a new working copy of path
+    currgstate /currpath 2 copy get .copypath put % make a new working copy of path
 end
 } def
 
