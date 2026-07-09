@@ -75,6 +75,15 @@ lcov-report:
 
 endif
 
+# PLRM operator-example conformance suite (data/test.ps) run through the built
+# interpreter -- the real interpreter test, run by `make check` regardless of
+# --with-tests (it needs only the xpost binary). XPOST_DATA_DIR points the
+# uninstalled binary at the source data. Mirrors the meson test('interpreter').
+XPOST_PS_CONFORMANCE = \
+	XPOST_DATA_DIR=$(top_srcdir)/data \
+	$(top_srcdir)/tests/run-ps-test.sh \
+	$(top_builddir)/src/bin/xpost$(EXEEXT) $(top_srcdir)/data/test.ps
+
 if XPOST_ENABLE_TESTS
 
 include src/tests/Makefile.mk
@@ -93,12 +102,13 @@ if XPOST_ENABLE_COVERAGE
 endif
 
 check-local:
+	$(XPOST_PS_CONFORMANCE)
 	$(XPOST_VALGRIND) $(top_builddir)/src/tests/xpost_suite$(EXEEXT)
 
 else
 
 check-local:
-	@echo "reconfigure with --enable-tests"
+	$(XPOST_PS_CONFORMANCE)
 
 endif
 
@@ -107,6 +117,7 @@ COMPLIANCE \
 autogen.sh \
 xpost.pc.in \
 m4/xpost.m4 \
+tests/run-ps-test.sh \
 valgrind_wrapper.sh \
 glibc.supp \
 visual_studio/vc10/xpost.sln \
