@@ -406,11 +406,22 @@ int _fillpoly(Xpost_Context *ctx,
     /* intersect polygon edges with scanlines */
     for (i = 0, j = 0; i < poly.comp_.sz - 1; i++)
     {
-        real rx, ry;
+        real rx, ry, eylo, eyhi, ybase;
+        integer k;
 
         if (points[i].x == SUBPATH_BREAK || points[i+1].x == SUBPATH_BREAK)
             continue;
-        for (yscan = (real)(miny + 0.5); yscan < maxy; yscan += 1.0)
+
+        /* An edge only crosses the scanlines spanning its own y-range, so
+           restrict the sweep to that band instead of the whole page (a ±1
+           scanline margin keeps this exactly equivalent across floating-point
+           boundaries: the extra scanlines simply miss). Makes the fill cost
+           proportional to total edge height rather than edges x page height. */
+        eylo = points[i].y < points[i+1].y ? points[i].y : points[i+1].y;
+        eyhi = points[i].y < points[i+1].y ? points[i+1].y : points[i].y;
+        ybase = (real)(miny + 0.5);
+        k = (eylo - 1.0 > ybase) ? (integer)(eylo - 1.0 - ybase) : 0;
+        for (yscan = ybase + (real)k; yscan < maxy && yscan <= eyhi + 1.0; yscan += 1.0)
         {
             if (_intersect(points[i].x, points[i].y,
                            points[i+1].x, points[i+1].y,
