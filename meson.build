@@ -42,6 +42,24 @@ config_h = configuration_data()
 
 cc = meson.get_compiler('c')
 
+# Release builds enable link-time optimization by default: it inlines the hot
+# cross-translation-unit interpreter accessors and is the single largest
+# speedup. debug and debugoptimized builds stay LTO-free for fast compiles, so
+# a release build is the way to opt in and any other buildtype opts out.
+if get_option('buildtype') == 'release'
+  lto_flags = cc.get_supported_arguments('-flto=auto')
+  if lto_flags.length() == 0
+    lto_flags = cc.get_supported_arguments('-flto')
+  endif
+  # Without -fno-semantic-interposition a shared library assumes its own global
+  # functions may be interposed at runtime, so the optimizer cannot inline calls
+  # to them across translation units even under LTO -- which is exactly the
+  # inlining of the hot object accessors we want.
+  lto_flags += cc.get_supported_arguments('-fno-semantic-interposition')
+  add_project_arguments(lto_flags, language: 'c')
+  add_project_link_arguments(lto_flags, language: 'c')
+endif
+
 splint = find_program('splint', required: false)
 
 if splint.found()
