@@ -274,6 +274,12 @@ test('graphics-regression',
   find_program('tests/run-ps-test.sh'),
   args: [ xpost_exe, files('tests/graphics_regression_test.ps') ],
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# Bounding-box device: render a known fill through -d bbox and check the box.
+test('bbox-device',
+  find_program('tests/run-bbox-test.sh'),
+  args: [ xpost_exe, files('tests/bbox_test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 #if get_option('nls') == true
 #  subdir('po')
 #endif

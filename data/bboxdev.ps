@@ -1,0 +1,135 @@
+/QUIET where { pop }{ (loading bboxdev.ps...)print } ifelse
+
+/newbboxdevice { % width height  .  IMAGE-device-dict
+    BBOX dup /Create get exec
+} def
+
+% BBOX computes the bounding box of all marks, like Ghostscript's
+% -sDEVICE=bbox, and prints it on Emit -- without rasterizing (NoOutput).
+% Coordinates arrive in device space; Emit reports them in default user space
+% (y-up) to match Ghostscript's bbox device.
+%
+% Methods are as for the other devices (see nulldev.ps), except the marking
+% methods accumulate a box rather than discarding their arguments. FillRect is
+% left a no-op on purpose: its only caller is erasepage (a page clear), which --
+% as in Ghostscript's bbox device -- must not contribute to the bounding box.
+
+/BBOX <<
+    /nativecolorspace /DeviceGray
+    /dimensions [0 0]
+    /NoOutput true  % accumulate coordinates only; never rasterize
+
+    /.copydict {
+        dup length dict copy
+        dup /width known {
+            dup begin
+                /dimensions [width height] def
+            end
+        } if
+    }
+
+    /Create { % width height IMAGE  .  IMAGE'
+        begin {/height /width}{exch def}forall
+        currentdict end
+        dup /.copydict get exec
+        begin
+            /minx 1e30 def   % empty box: min > max
+            /miny 1e30 def
+            /maxx -1e30 def
+            /maxy -1e30 def
+        currentdict
+        end
+    }
+
+    /Destroy { % IMAGE  .  -
+        pop
+    }
+
+    % expand the box to include a device-space point
+    /.maxmin { % x y  .  -
+        2 copy
+        dup maxy gt { /maxy exch def }{ pop } ifelse
+        dup maxx gt { /maxx exch def }{ pop } ifelse
+        dup miny lt { /miny exch def }{ pop } ifelse
+        dup minx lt { /minx exch def }{ pop } ifelse
+    }
+
+    /PutPix { % val x y IMAGE  .  -
+        begin .maxmin pop end
+    }
+
+    /GetPix { % x y IMAGE  .  val
+        pop pop pop  0
+    }
+
+    /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
+        begin {y2 x2 y1 x1 val}{exch def}forall
+            x1 y1 .maxmin
+            x2 y2 .maxmin
+        end
+    }
+
+    /DrawRect { % val x y w h IMAGE  .  -
+        begin {h w y x val}{exch def}forall
+            x y .maxmin
+            x w add  y h add  .maxmin
+        end
+    }
+
+    % page clear (erasepage); not a mark, so ignore -- matches gs bbox
+    /FillRect { % val x y w h IMAGE  .  -
+        pop pop pop pop pop pop
+    }
+
+    /FillPoly { % val polygon IMAGE  .  -
+        begin
+            exch pop  % drop colour value, keep the polygon
+            {
+                dup type /arraytype eq {
+                    dup length 2 eq { aload pop .maxmin }{ pop } ifelse
+                }{ pop } ifelse  % null subpath separators fall here
+            } forall
+        end
+    }
+
+    /Emit { % IMAGE  .  -
+        begin
+            minx maxx gt {  % nothing was marked
+                (%%BoundingBox: 0 0 0 0\n) print
+                (%%HiResBoundingBox: 0 0 0 0\n) print
+            }{
+                % device -> default user space (y-up): y' = height - y
+                /uxmin minx def
+                /uxmax maxx def
+                /uymin height maxy sub def
+                /uymax height miny sub def
+                (%%BoundingBox: ) print
+                uxmin floor cvi 20 string cvs print ( ) print
+                uymin floor cvi 20 string cvs print ( ) print
+                uxmax ceiling cvi 20 string cvs print ( ) print
+                uymax ceiling cvi 20 string cvs print (\n) print
+                (%%HiResBoundingBox: ) print
+                uxmin 30 string cvs print ( ) print
+                uymin 30 string cvs print ( ) print
+                uxmax 30 string cvs print ( ) print
+                uymax 30 string cvs print (\n) print
+            } ifelse
+        end
+    }
+>> def
+
+/TESTGRAPHICS where {pop
+    (TESTGRAPHICS bboxdev)=
+    /dev 100 100 newbboxdevice def
+    % a filled triangle spanning device x[10,30] y[20,40]
+    0 [ [10 20] [30 20] [30 40] ] dev dup /FillPoly get exec
+    % erasepage-style full-page FillRect must NOT affect the box
+    0 0 0 100 100 dev dup /FillRect get exec
+    dev begin
+        minx 10 eq maxx 30 eq and  miny 20 eq maxy 40 eq and  and
+        { (bboxdev accumulate PASS)= }{ (bboxdev accumulate FAIL)= } ifelse
+    end
+    dev dup /Emit get exec  % user space: y' = 100 - y -> BoundingBox 10 60 30 80
+} if
+
+/QUIET where { pop }{ (eof bboxdev.ps\n)print } ifelse

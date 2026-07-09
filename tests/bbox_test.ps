@@ -1,0 +1,13 @@
+% Bounding-box device test input, run through `xpost -d bbox`.
+% A single filled rectangle from (10,10) to (50,60) in default user space;
+% run-bbox-test.sh checks that Emit reports exactly this box, which exercises
+% device selection, fill -> FillPoly accumulation, and the device->user y-flip.
+newpath
+10 10 moveto
+50 10 lineto
+50 60 lineto
+10 60 lineto
+closepath
+fill
+showpage
+quit

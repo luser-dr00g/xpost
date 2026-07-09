@@ -9,6 +9,7 @@ data/image.ps \
 data/pgmimage.ps \
 data/ppmimage.ps \
 data/nulldev.ps \
+data/bboxdev.ps \
 data/pdfwrite.ps \
 data/gstate.ps \
 data/matrix.ps \
@@ -47,6 +48,7 @@ data/image.ps \
 data/pgmimage.ps \
 data/ppmimage.ps \
 data/nulldev.ps \
+data/bboxdev.ps \
 data/pdfwrite.ps \
 data/gstate.ps \
 data/matrix.ps \

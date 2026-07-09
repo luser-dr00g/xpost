@@ -84,6 +84,12 @@ XPOST_PS_CONFORMANCE = \
 	$(top_srcdir)/tests/run-ps-test.sh \
 	$(top_builddir)/src/bin/xpost$(EXEEXT) $(top_srcdir)/data/test.ps
 
+# Bounding-box device: render a known fill through -d bbox and check the box.
+XPOST_BBOX_TEST = \
+	XPOST_DATA_DIR=$(top_srcdir)/data \
+	$(top_srcdir)/tests/run-bbox-test.sh \
+	$(top_builddir)/src/bin/xpost$(EXEEXT) $(top_srcdir)/tests/bbox_test.ps
+
 if XPOST_ENABLE_TESTS
 
 include src/tests/Makefile.mk
@@ -103,12 +109,14 @@ endif
 
 check-local:
 	$(XPOST_PS_CONFORMANCE)
+	$(XPOST_BBOX_TEST)
 	$(XPOST_VALGRIND) $(top_builddir)/src/tests/xpost_suite$(EXEEXT)
 
 else
 
 check-local:
 	$(XPOST_PS_CONFORMANCE)
+	$(XPOST_BBOX_TEST)
 
 endif
 
@@ -118,6 +126,8 @@ autogen.sh \
 xpost.pc.in \
 m4/xpost.m4 \
 tests/run-ps-test.sh \
+tests/run-bbox-test.sh \
+tests/bbox_test.ps \
 valgrind_wrapper.sh \
 glibc.supp \
 visual_studio/vc10/xpost.sln \
