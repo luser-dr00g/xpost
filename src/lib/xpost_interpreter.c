@@ -1044,9 +1044,10 @@ void loadinitps(Xpost_Context *ctx)
     if ((path = getenv("XPOST_DATA_DIR")))
         XPOST_PATH_INIT;
 
-    /* directory of the shared library */
-    path = (char *)xpost_data_dir_get(); /* always well-defined */
-    XPOST_PATH_INIT;
+    /* directory of the shared library (absent for an uninstalled build) */
+    path = (char *)xpost_data_dir_get();
+    if (path)
+        XPOST_PATH_INIT;
 
 #ifdef PACKAGE_DATA_DIR
     {
