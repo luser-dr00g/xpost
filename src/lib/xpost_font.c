@@ -231,7 +231,7 @@ void
 xpost_font_face_scale(void *face, real scale)
 {
 #ifdef HAVE_FREETYPE2
-    FT_Set_Char_Size((FT_Face)face, 0, (FT_F26Dot6)(scale * 64), 96, 96);
+    FT_Set_Char_Size((FT_Face)face, 0, (FT_F26Dot6)(scale * 64), 72, 72);
 #else
     (void)face;
     (void)scale;
