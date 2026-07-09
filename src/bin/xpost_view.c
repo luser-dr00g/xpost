@@ -156,15 +156,27 @@ _xpost_view_options_read(int argc, char *argv[], Xpost_Output_Message *msg, cons
 static void
 _xpost_view_page_set(void)
 {
-    xpost_run(ctx, XPOST_INPUT_STRING,
-              (void *)(xpost_dsc_file_base_get(file) + dsc->pages[page_num].section.start),
-              dsc->pages[page_num].section.end - dsc->pages[page_num].section.start);
+    const unsigned char *base = xpost_dsc_file_base_get(file);
+    ptrdiff_t start;
+    ptrdiff_t end;
+
+    if (dsc->pages && (dsc->header.pages > 0))
+    {
+        start = dsc->pages[page_num].section.start;
+        end = dsc->pages[page_num].section.end;
+    }
+    else
+    {
+        /* no DSC page structure: run the whole file as a single page */
+        start = 0;
+        end = (ptrdiff_t)xpost_dsc_file_length_get(file);
+    }
+
+    xpost_run(ctx, XPOST_INPUT_STRING, (void *)(base + start), end - start);
 
     xpost_view_page_display(win, buffer);
 
-    xpost_run(ctx, XPOST_INPUT_RESUME,
-              (void *)(xpost_dsc_file_base_get(file) + dsc->pages[page_num].section.start),
-              dsc->pages[page_num].section.end - dsc->pages[page_num].section.start);
+    xpost_run(ctx, XPOST_INPUT_RESUME, (void *)(base + start), end - start);
 }
 
 void xpost_view_page_change(int i)
