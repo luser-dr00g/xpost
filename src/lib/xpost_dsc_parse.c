@@ -693,7 +693,10 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
         {
             XPOST_LOG_INFO("Trailer.");
             XPOST_DSC_ERROR_TEST(!in_script, "Trailer comment not in script");
-            if (page_idx > 0)
+            /* page_idx counts %%Page comments even when they could not be
+               recorded (no %%Pages header, so dsc->pages is NULL, or more
+               pages than declared), so guard against a null/overrun access. */
+            if (dsc->pages && page_idx > 0 && page_idx <= dsc->header.pages)
                 dsc->pages[page_idx - 1].section.end = ctx->cur_loc - ctx->base;
 
             in_trailer = 1;
