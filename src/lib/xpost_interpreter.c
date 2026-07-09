@@ -34,7 +34,6 @@
 #endif
 
 #include <assert.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -938,6 +937,7 @@ void setlocalconfig(Xpost_Context *ctx,
     char *devstr;
     char *subdevice;
     char *dimensions;
+    char dimensions_buf[48]; /* holds "%d %d" for any int width/height */
 
     ctx->vmmode = GLOBAL;
 
@@ -961,8 +961,8 @@ void setlocalconfig(Xpost_Context *ctx,
         }
     }
     if (set_size == XPOST_USE_SIZE){
-        dimensions = malloc(2 + (int)ceil(log10(width)) + (int)ceil(log10(height)));
-        sprintf(dimensions, "%d %d", width, height);
+        snprintf(dimensions_buf, sizeof(dimensions_buf), "%d %d", width, height);
+        dimensions = dimensions_buf;
     } else {
         static char x[] = "612 792";
         dimensions = x;
