@@ -9,6 +9,7 @@ xpost_data_src = files([
   'pgmimage.ps',
   'ppmimage.ps',
   'nulldev.ps',
+  'bboxdev.ps',
   'pdfwrite.ps',
   'gstate.ps',
   'matrix.ps',
