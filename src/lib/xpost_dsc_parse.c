@@ -114,7 +114,8 @@
     (*(iter) == ' ') || (((vmaj) > 1) && (*(iter) == '\t'))
 
 #define XPOST_CMT_LINE_IS_CONTINUED(iter) \
-    ((*((iter) + 0) && (*((iter) + 0) == '%')) && \
+    ((iter) && \
+     (*((iter) + 0) && (*((iter) + 0) == '%')) && \
      (*((iter) + 1) && (*((iter) + 1) == '%')) && \
      (*((iter) + 2) && (*((iter) + 2) == '+')) && \
      (*((iter) + 3) && (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, (iter) + 3))))
@@ -151,7 +152,10 @@
 #define XPOST_DSC_HEADER_ERROR_TEST(cmt) \
     XPOST_DSC_ERROR_TEST(!in_header, cmt " comment not in header")
 
-#define XPOST_DSC_EOL(iter) ((*iter == '\r') || (*iter == '\n'))
+/* Treat NUL as end-of-line so scans that look only for CR/LF cannot run past
+   the end of the mapped file (its tail is zero-filled) on input that lacks a
+   trailing newline. */
+#define XPOST_DSC_EOL(iter) ((*iter == '\0') || (*iter == '\r') || (*iter == '\n'))
 
 /* casting to size_t below is harmless, as cur always > ctx->base */
 #define XPOST_DSC_EOF(cur) ((size_t)(cur - ctx->base) >= ctx->length)
@@ -310,12 +314,16 @@ _xpost_dsc_integer_get(int vmaj, const unsigned char *cur_loc, int *val)
     unsigned char buf[20];
     const unsigned char *iter;
 
+    if (!cur_loc)  /* a caller chaining these may pass on a prior NULL result */
+        return NULL;
     iter = cur_loc;
     while ((*iter >= '0') && (*iter <= '9'))
         iter++;
     if ((!XPOST_CMT_IS_SPACE(vmaj, iter)) && (!XPOST_DSC_EOL(iter)))
         return NULL;
 
+    if ((size_t)(iter - cur_loc) >= sizeof(buf))  /* too many digits for an int */
+        return NULL;
     memcpy(buf, cur_loc, iter - cur_loc);
     buf[iter - cur_loc] = '\0';
 
@@ -637,6 +645,12 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
 
     while (1)
     {
+        /* A previous line was the last one (its successor was EOF), so
+           cur_loc was advanced to a null next; stop rather than dereference
+           it in the comment checks below. */
+        if (!ctx->cur_loc)
+            break;
+
         next = _xpost_dsc_line_get(ctx, &end, &sz);
 
         if ((dsc->ps_vmaj > 1) && (sz > 255))
@@ -776,10 +790,17 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                     if (XPOST_CMT_IS_SPACE(dsc->ps_vmaj, iter))
                         iter++;
 
-                    if (_xpost_dsc_integer_get(dsc->ps_vmaj, iter, &val))
+                    /* Bound the declared page count by the file length -- a
+                       file cannot contain more %%Page comments than bytes --
+                       so a bogus count cannot request a huge allocation, and
+                       only record the count if the allocation succeeded so
+                       header.pages and pages stay consistent for cleanup. */
+                    if (_xpost_dsc_integer_get(dsc->ps_vmaj, iter, &val) &&
+                        val > 0 && (size_t)val <= ctx->length)
                     {
-                        dsc->header.pages = val;
                         dsc->pages = (Xpost_Dsc_Page *)calloc(val, sizeof(Xpost_Dsc_Page));
+                        if (dsc->pages)
+                            dsc->header.pages = val;
                     }
                     ctx->HEADER_PAGES = 1;
                 }
@@ -1090,7 +1111,8 @@ _xpost_dsc_parse(Xpost_Dsc_Ctx *ctx, Xpost_Dsc *dsc)
                     break;
                 }
 
-                dsc->fonts[page_idx].section.end = ctx->cur_loc - ctx->base;
+                if (dsc->fonts && (font_idx < dsc->header.document_fonts.nbr))
+                    dsc->fonts[font_idx].section.end = ctx->cur_loc - ctx->base;
 
                 in_font = 0;
                 font_idx++;
