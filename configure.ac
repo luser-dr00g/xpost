@@ -434,6 +434,8 @@ xpost_lib_ldflags="-fdata-sections -ffunction-sections"
 
 if test "x${enable_release}" = "xno" ; then
    xpost_lib_cflags="${xpost_lib_cflags} -g3 -ggdb3 -O2"
+else
+   xpost_lib_cflags="${xpost_lib_cflags} -O3"
 fi
 
 AC_SUBST([XPOST_TEST_CPPFLAGS])
@@ -442,6 +444,17 @@ if test "x${no_cflags}" = "xyes" ; then
    XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [${xpost_lib_cflags}])
 fi
 XPOST_CHECK_LINKER_FLAGS([XPOST_LIB], [${xpost_lib_ldflags}])
+
+# Release builds enable link-time optimization. The flags are checked on their
+# own (as a literal list, so an unsupported one degrades per-flag rather than
+# dropping the base flags above) and only when the user has not supplied CFLAGS,
+# which would otherwise mean the user controls optimization. The interpreter
+# lives in the library, so LTO there is what matters; -fno-semantic-interposition
+# lets the optimizer inline calls to the library's own globals across units.
+if test "x${enable_release}" = "xyes" && test "x${no_cflags}" = "xyes" ; then
+   XPOST_CHECK_C_COMPILER_FLAGS([XPOST_LIB], [-flto -fno-semantic-interposition])
+   XPOST_CHECK_LINKER_FLAGS([XPOST_LIB], [-flto -fno-semantic-interposition])
+fi
 
 if test "x${no_cflags}" = "xyes" ; then
    XPOST_CHECK_C_COMPILER_FLAGS([XPOST_BIN], [-std=c99 -pedantic-errors -Wall -Wextra -Wshadow -Wdeclaration-after-statement -Wmissing-prototypes -Wstrict-prototypes -Wpointer-arith -Wno-missing-field-initializers -Winline])
