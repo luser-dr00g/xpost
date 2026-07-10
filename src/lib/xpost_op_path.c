@@ -587,12 +587,14 @@ int _rcurveto_cont(Xpost_Context *ctx,
 
 /* walk a packed path accumulating the bounding box of every stored
    coordinate pair (curve controls and close repeats included, matching
-   the behaviour of the dictionary-walking predecessors); returns 0 on
+   the behaviour of the dictionary-walking predecessors); when inv is
+   non-NULL it is an affine matrix (PostScript [a b c d tx ty] layout)
+   applied to each stored point before accumulation; returns 0 on
    a malformed path or when a curve is present and curves are not
    accepted, 2 on an empty path */
 static
 int _path_walk_bbox(Xpost_Context *ctx, Xpost_Object path,
-                    int accept_curves,
+                    int accept_curves, const real *inv,
                     real *minx, real *miny, real *maxx, real *maxy)
 {
     char *p;
@@ -617,18 +619,25 @@ int _path_walk_bbox(Xpost_Context *ctx, Xpost_Object path,
         _path_get_coords(p, o, co, n);
         for (k = 0; k + 1 < n; k += 2)
         {
+            real x = co[k], y = co[k + 1];
+            if (inv)
+            {
+                real x_ = inv[0] * x + inv[2] * y + inv[4];
+                y = inv[1] * x + inv[3] * y + inv[5];
+                x = x_;
+            }
             if (!any)
             {
-                *minx = *maxx = co[k];
-                *miny = *maxy = co[k + 1];
+                *minx = *maxx = x;
+                *miny = *maxy = y;
                 any = 1;
             }
             else
             {
-                if (co[k] < *minx) *minx = co[k];
-                if (co[k] > *maxx) *maxx = co[k];
-                if (co[k + 1] < *miny) *miny = co[k + 1];
-                if (co[k + 1] > *maxy) *maxy = co[k + 1];
+                if (x < *minx) *minx = x;
+                if (x > *maxx) *maxx = x;
+                if (y < *miny) *miny = y;
+                if (y > *maxy) *maxy = y;
             }
         }
     }
@@ -1101,20 +1110,50 @@ int _pathnext(Xpost_Context *ctx, Xpost_Object str, Xpost_Object off)
 }
 
 /* -  pathbbox  llx lly urx ury
-   bounding box of the current path in device coordinates (matching
-   the behaviour of its PostScript predecessor, which did not undo
-   the CTM); an empty path yields four zeros */
+   bounding box of the current path in user space (PLRM): the stored
+   device-space points are mapped back through the inverse CTM before
+   accumulation; an empty path yields four zeros */
 static
 int _pathbbox(Xpost_Context *ctx)
 {
     Xpost_Object path;
+    Xpost_Object userdict, gd, gs, psmat;
+    real m[6], inv[6], det;
+    const real *invp = NULL;
     real minx = 0, miny = 0, maxx = 0, maxy = 0;
-    int ret;
+    int i, ret;
+
+    /* fetch the CTM and build its inverse; on any irregularity fall
+       back to the raw device-space box rather than erroring */
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    psmat = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currmatrix"));
+    if (xpost_object_get_type(psmat) == arraytype && psmat.comp_.sz == 6)
+    {
+        for (i = 0; i < 6; i++)
+        {
+            Xpost_Object e = xpost_array_get(ctx, psmat, i);
+            m[i] = xpost_object_get_type(e) == realtype ? e.real_.val
+                 : (real)e.int_.val;
+        }
+        det = m[0] * m[3] - m[1] * m[2];
+        if (det != 0)
+        {
+            inv[0] = m[3] / det;
+            inv[1] = -m[1] / det;
+            inv[2] = -m[2] / det;
+            inv[3] = m[0] / det;
+            inv[4] = (m[2] * m[5] - m[3] * m[4]) / det;
+            inv[5] = (m[1] * m[4] - m[0] * m[5]) / det;
+            invp = inv;
+        }
+    }
 
     path = _cpath(ctx);
     if (xpost_object_get_type(path) != stringtype)
         return unregistered;
-    ret = _path_walk_bbox(ctx, path, 1, &minx, &miny, &maxx, &maxy);
+    ret = _path_walk_bbox(ctx, path, 1, invp, &minx, &miny, &maxx, &maxy);
     if (ret == 1)
     {
         xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(minx));
