@@ -649,6 +649,8 @@ xpost_memory_table_alloc(Xpost_Memory_File *mem,
         }
     }
     ret = _xpost_memory_table_alloc_new(mem, sz, tag, entity);
+    if (!ret)
+        return 0; /* *entity is not valid on failure */
     //XPOST_LOG_INFO("allocated %u(%u) bytes with tag %u as ent %u at %u in %s", sz, mem->table.tab[*entity].sz, tag, *entity, mem->table.tab[*entity].adr, mem->fname);
     mem->table.tab[*entity].used = sz;
     return ret;
