@@ -633,6 +633,7 @@ xpost_memory_table_alloc(Xpost_Memory_File *mem,
         ret = mem->free_list_alloc(mem, sz, tag, entity);
         if (ret == 1)
         {
+            mem->table.tab[*entity].used = sz;
             return 1;
         }
         else if (ret == 2)
