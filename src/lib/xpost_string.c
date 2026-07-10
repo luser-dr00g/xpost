@@ -133,6 +133,8 @@ int xpost_string_put_memory(Xpost_Memory_File *mem,
     byte b = c;
     int ret;
 
+    if (i < 0 || i >= s.comp_.sz)
+        return rangecheck;
     ret = xpost_memory_put(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
@@ -162,6 +164,8 @@ int xpost_string_get_memory(Xpost_Memory_File *mem,
     byte b;
     int ret;
 
+    if (i < 0 || i >= s.comp_.sz)
+        return rangecheck;
     ret = xpost_memory_get(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
