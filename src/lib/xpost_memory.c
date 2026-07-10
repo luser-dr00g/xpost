@@ -779,6 +779,7 @@ xpost_memory_get(Xpost_Memory_File *mem,
     {
         XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
                 offset, sz, mem->table.tab[ent].sz);
+        if (getenv("XPOST_TRAP_OOB")) abort(); /* P0 TEMP */
         return 0;
     }
 
