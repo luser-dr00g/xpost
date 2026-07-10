@@ -47,6 +47,21 @@
    initialize the free-list in the memory file.
    free list head is in slot zero
    sz is 0 so gc will ignore it */
+/* collection threshold in allocated bytes; overridable for testing
+   and for embedders that want more frequent collections */
+static int _xpost_free_gc_threshold(void)
+{
+    static int v = -1;
+    if (v < 0)
+    {
+        const char *e = getenv("XPOST_GC_THRESHOLD");
+        v = e ? atoi(e) : 0;
+        if (v <= 0)
+            v = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+    }
+    return v;
+}
+
 int xpost_free_init(Xpost_Memory_File *mem)
 {
     unsigned int ent;
@@ -83,7 +98,7 @@ int xpost_free_init(Xpost_Memory_File *mem)
     /* make free list available for general memory allocations */
     (void) xpost_memory_register_free_list_alloc_function(mem, xpost_free_alloc);
     mem->period = XPOST_GARBAGE_COLLECTION_PERIOD;
-    mem->threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+    mem->threshold = _xpost_free_gc_threshold();
 
     return 1;
 }
@@ -252,7 +267,7 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
 #ifdef XPOST_USE_THRESHOLD
         if ((mem->threshold -= sz) <= 0)
         {
-            mem->threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+            mem->threshold = _xpost_free_gc_threshold();
             return 2;
         }
 #else
