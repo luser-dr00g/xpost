@@ -283,13 +283,51 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx,
 XPAPI void xpost_job_snapshots_set(Xpost_Context *ctx, int enable);
 
 /**
+ * @brief Outcome of executing a program with xpost_run().
+ *
+ * A context that reports #XPOST_RUN_COMPLETE, #XPOST_RUN_YIELDED or
+ * #XPOST_RUN_ERRORED remains usable for further runs; after
+ * #XPOST_RUN_FAILED it must be destroyed. When a run reports
+ * #XPOST_RUN_ERRORED, xpost_error_name_get() identifies the
+ * PostScript error that ended it.
+ */
+typedef enum {
+    XPOST_RUN_COMPLETE = 0, /**< the program ran to completion */
+    XPOST_RUN_YIELDED,      /**< showpage returned control to the caller
+                                 (#XPOST_SHOWPAGE_RETURN); pass
+                                 #XPOST_INPUT_RESUME to continue */
+    XPOST_RUN_ERRORED,      /**< an uncaught PostScript error ended the
+                                 program; the context has been tidied
+                                 and accepts further runs */
+    XPOST_RUN_FAILED        /**< the run could not be scheduled or the
+                                 interpreter is no longer coherent */
+} Xpost_Run_Status;
+
+/**
+ * @brief Name of the PostScript error that ended the last run.
+ *
+ * Valid after xpost_run() returns #XPOST_RUN_ERRORED, until the next
+ * run on the same context; the empty string otherwise. The name is the
+ * standard error name, e.g. "typecheck" or "undefined".
+ */
+XPAPI const char *xpost_error_name_get(Xpost_Context *ctx);
+
+/**
+ * @brief Additional information for the error that ended the last run.
+ *
+ * The errorinfo detail recorded alongside the error, when the program
+ * supplied one; the empty string otherwise.
+ */
+XPAPI const char *xpost_error_info_get(Xpost_Context *ctx);
+
+/**
  * @brief Execute ps program.
  *
  * @param ctx The context to run.
  * @param input_type The input type to use.
  * @param inputptr The pointer passed to the interpreter.
  * @param size The size of the memory passed to the interpreter.
- * @return
+ * @return The run's outcome as an #Xpost_Run_Status.
  *
  * This function executes a ps program until quit, fall-through to quit,
  * #XPOST_SHOWPAGE_RETURN semantic, or error (default action: message,
@@ -327,7 +365,7 @@ XPAPI void xpost_job_snapshots_set(Xpost_Context *ctx, int enable);
  *
  * @see #Xpost_Input_Type
  */
-XPAPI int xpost_run(Xpost_Context *ctx,
+XPAPI Xpost_Run_Status xpost_run(Xpost_Context *ctx,
                     Xpost_Input_Type input_type,
                     const void *inputptr,
                     size_t size);

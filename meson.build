@@ -266,6 +266,18 @@ test('interpreter',
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' },
   timeout: 120)
 
+# Embedding contract: run-status outcomes and error identity across a
+# persistent context.
+run_status_exe = executable('run_status_test',
+  'tests/run_status_test.c',
+  c_args: '-DHAVE_CONFIG_H',
+  dependencies: libxpost_dep,
+  include_directories: [ config_dir, include_directories('src/lib') ],
+  install: false)
+test('run-status',
+  run_status_exe,
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
 # Object semantics: file-object comparison and user-space pathbbox.
 test('semantics',
   find_program('tests/run-ps-test.sh'),
