@@ -295,15 +295,14 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
                     XPOST_LOG_ERR("cannot retrieve tag for array ent %u", ent);
                     return 0;
                 }
-                if (o.comp_.sz != objmem->table.tab[ent].used/sizeof(Xpost_Object))
-                {
-                    XPOST_LOG_INFO("o.comp_.sz %u != tab[ent].used/obj %u",
-                            o.comp_.sz, objmem->table.tab[ent].used/sizeof(Xpost_Object));
-                }
+                /* subarray views share the entity: descend over the whole
+                   underlying allocation, not the view window, so elements
+                   reachable only through another view stay marked (the
+                   ent-level marked flag makes the first view visited the
+                   only one descended) */
                 if (!_xpost_garbage_mark_array(ctx, objmem, ad,
-                            //mem->table.tab[ent].used/sizeof(Xpost_Object)
-                            o.comp_.sz
-                            , markall))
+                            objmem->table.tab[ent].used/sizeof(Xpost_Object),
+                            markall))
                     return 0;
             }
             break;
