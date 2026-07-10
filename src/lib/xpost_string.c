@@ -76,6 +76,14 @@ Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
             return null;
         }
     }
+    else
+    {
+        /* the PLRM specifies zero-initialized strings; storage reused
+           from the free list still holds the previous tenant's bytes */
+        unsigned int adr;
+        if (xpost_memory_table_get_addr(mem, ent, &adr))
+            memset(mem->base + adr, 0, sz);
+    }
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;
     //o.comp_.ent = ent;
