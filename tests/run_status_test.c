@@ -13,6 +13,33 @@
 
 static int failures = 0;
 
+static char out_buf[256];
+static size_t out_len = 0;
+static char err_buf[256];
+static size_t err_len = 0;
+
+static size_t out_sink(void *user, const char *buf, size_t len)
+{
+    (void)user;
+    if (out_len + len < sizeof out_buf)
+    {
+        memcpy(out_buf + out_len, buf, len);
+        out_len += len;
+    }
+    return len;
+}
+
+static size_t err_sink(void *user, const char *buf, size_t len)
+{
+    (void)user;
+    if (err_len + len < sizeof err_buf)
+    {
+        memcpy(err_buf + err_len, buf, len);
+        err_len += len;
+    }
+    return len;
+}
+
 static void check(int cond, const char *what)
 {
     if (!cond)
@@ -75,6 +102,25 @@ int main(void)
     check(st == XPOST_RUN_COMPLETE, "caught error still completes");
     check(xpost_error_name_get(ctx)[0] == '\0',
           "no error name when the program caught it");
+
+    /* text-output handlers capture print and %stderr writes */
+    xpost_stdout_handler_set(ctx, out_sink, NULL);
+    xpost_stderr_handler_set(ctx, err_sink, NULL);
+    st = xpost_run(ctx, XPOST_INPUT_STRING,
+        "(to-out) print (%stderr) (w) file (to-err) writestring", 0);
+    check(st == XPOST_RUN_COMPLETE, "handler run completes");
+    out_buf[out_len] = '\0';
+    err_buf[err_len] = '\0';
+    check(strcmp(out_buf, "to-out") == 0, "stdout handler received print");
+    check(strcmp(err_buf, "to-err") == 0, "stderr handler received writestring");
+
+    /* clearing the handlers restores the default routing */
+    xpost_stdout_handler_set(ctx, NULL, NULL);
+    xpost_stderr_handler_set(ctx, NULL, NULL);
+    out_len = 0;
+    st = xpost_run(ctx, XPOST_INPUT_STRING, "(direct) print flush", 0);
+    check(st == XPOST_RUN_COMPLETE, "post-handler run completes");
+    check(out_len == 0, "cleared handler no longer receives output");
 
     /* the context stays healthy across all of the above */
     st = xpost_run(ctx, XPOST_INPUT_STRING,

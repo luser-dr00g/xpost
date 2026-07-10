@@ -247,6 +247,14 @@ xpost_diskfile_open(const FILE *fp)
 }
 
 
+/* the underlying stdio stream of a disk-backed file, or NULL */
+FILE *xpost_file_stdio_stream_get(Xpost_File *f)
+{
+    if (f && f->methods == &disk_methods)
+        return ((Xpost_DiskFile *)f)->file;
+    return NULL;
+}
+
 static int
 memory_readch(Xpost_File *f)
 {
