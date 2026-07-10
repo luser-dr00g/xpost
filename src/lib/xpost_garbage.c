@@ -424,7 +424,7 @@ next:
         if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         {
             if (s->nextseg == 0)
-                return 0;
+                return 1; /* final segment exactly full: walk complete */
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             start = 0;
             goto next;
@@ -464,7 +464,7 @@ next:
         if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         {
             if (s->nextseg == 0)
-                return 0;
+                return 1; /* final segment exactly full: walk complete */
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             goto next;
         }
@@ -555,6 +555,8 @@ next:
         }
         if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         {
+            if (s->nextseg == 0)
+                return 1; /* final segment exactly full: walk complete */
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             goto next;
         }
@@ -588,6 +590,8 @@ int _xpost_garbage_mark_save(Xpost_Context *ctx,
         }
         if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         {
+            if (s->nextseg == 0)
+                return 1; /* final segment exactly full: walk complete */
             s = (void *)(mem->base + s->nextseg);
             goto next;
         }
@@ -649,6 +653,7 @@ unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
 
     return sz;
 }
+
 
 /*
    determine GLOBAL/LOCAL
