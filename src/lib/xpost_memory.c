@@ -630,6 +630,18 @@ xpost_memory_table_alloc(Xpost_Memory_File *mem,
 
     if (mem->free_list_alloc_is_installed)
     {
+        /* entity numbers are a fixed budget independent of the byte
+           threshold: collect well before the table saturates, or
+           allocation fails outright once it does */
+        if (mem->garbage_collect_is_installed &&
+            !mem->interpreter_get_initializing() &&
+            mem->table.nextent > XPOST_OBJECT_COMP_MAX_ENT / 2 &&
+            mem->table.nextent >= mem->gc_trigger_nextent)
+        {
+            mem->garbage_collect_pending = 1;
+            mem->gc_trigger_nextent = mem->table.nextent + 65536;
+        }
+
         ret = mem->free_list_alloc(mem, sz, tag, entity);
         if (ret == 1)
         {
