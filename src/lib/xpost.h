@@ -273,6 +273,16 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx,
                                 char *defs[]);
 
 /**
+ * @brief Enable or disable per-job VM snapshots for a context.
+ *
+ * By default each xpost_run() job takes virtual-memory snapshots that
+ * the quit path restores. A persistent context that serves many runs
+ * accumulates one save level per run, pinning each run's garbage
+ * against collection; disable the snapshots for such use.
+ */
+XPAPI void xpost_job_snapshots_set(Xpost_Context *ctx, int enable);
+
+/**
  * @brief Execute ps program.
  *
  * @param ctx The context to run.

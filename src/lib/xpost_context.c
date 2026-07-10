@@ -298,6 +298,7 @@ int xpost_context_init(Xpost_Context *ctx,
     }
     ctx->event_handler = null;
     ctx->ignoreinvalidaccess = 0;
+    ctx->job_snapshots = 1;
     ctx->xpost_interpreter_cid_init = xpost_interpreter_cid_init;
     ctx->xpost_interpreter_alloc_local_memory = xpost_interpreter_alloc_local_memory;
     ctx->xpost_interpreter_alloc_global_memory = xpost_interpreter_alloc_global_memory;
