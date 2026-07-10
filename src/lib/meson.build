@@ -72,6 +72,7 @@ libxpost_deps = [
   freetype_dep,
   jpeg_dep,
   libpng_dep,
+  zlib_dep,
   xcb_dep
 ]
 

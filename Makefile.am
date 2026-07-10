@@ -90,6 +90,12 @@ XPOST_BBOX_TEST = \
 	$(top_srcdir)/tests/run-bbox-test.sh \
 	$(top_builddir)/src/bin/xpost$(EXEEXT) $(top_srcdir)/tests/bbox_test.ps
 
+# PDF device: write a PDF, check its structure, round-trip via gs when present.
+XPOST_PDF_TEST = \
+	XPOST_DATA_DIR=$(top_srcdir)/data \
+	$(top_srcdir)/tests/run-pdf-test.sh \
+	$(top_builddir)/src/bin/xpost$(EXEEXT) $(top_srcdir)/tests/pdf_bigfill_test.ps
+
 if XPOST_ENABLE_TESTS
 
 include src/tests/Makefile.mk
@@ -110,6 +116,7 @@ endif
 check-local:
 	$(XPOST_PS_CONFORMANCE)
 	$(XPOST_BBOX_TEST)
+	$(XPOST_PDF_TEST)
 	$(XPOST_VALGRIND) $(top_builddir)/src/tests/xpost_suite$(EXEEXT)
 
 else
@@ -117,6 +124,7 @@ else
 check-local:
 	$(XPOST_PS_CONFORMANCE)
 	$(XPOST_BBOX_TEST)
+	$(XPOST_PDF_TEST)
 
 endif
 
@@ -127,7 +135,9 @@ xpost.pc.in \
 m4/xpost.m4 \
 tests/run-ps-test.sh \
 tests/run-bbox-test.sh \
+tests/run-pdf-test.sh \
 tests/bbox_test.ps \
+tests/pdf_bigfill_test.ps \
 valgrind_wrapper.sh \
 glibc.supp \
 visual_studio/vc10/xpost.sln \

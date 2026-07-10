@@ -139,6 +139,11 @@ if libpng_dep.found()
   config_h.set('HAVE_LIBPNG', 1)
 endif
 
+zlib_dep = dependency('zlib', required: false)
+if zlib_dep.found()
+  config_h.set('HAVE_ZLIB', 1)
+endif
+
 xcb_dep = dependency('xcb-image xcb-icccm xcb xcb-aux', required: false)
 if xcb_dep.found()
   config_h.set('HAVE_XCB', 1)
@@ -279,6 +284,14 @@ test('graphics-regression',
 test('bbox-device',
   find_program('tests/run-bbox-test.sh'),
   args: [ xpost_exe, files('tests/bbox_test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# PDF device: write a PDF and check its structure; round-trip via gs when
+# present. The input is a single fill large enough to overflow the content
+# buffer, exercising the flush path.
+test('pdf-device',
+  find_program('tests/run-pdf-test.sh'),
+  args: [ xpost_exe, files('tests/pdf_bigfill_test.ps') ],
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 #if get_option('nls') == true
 #  subdir('po')
