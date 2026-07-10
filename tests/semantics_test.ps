@@ -1,0 +1,46 @@
+% Object-semantics regression checks, run through `xpost -d null` by
+% run-ps-test.sh: prints SUCCESS iff every assertion holds.
+%
+% Covers:
+%   - eq/ne on file objects compare the underlying stream (distinct
+%     streams are ne; an object is eq to itself)
+%   - pathbbox reports the current path in user space, undoing the CTM
+
+/failcount 0 def
+/assert { % bool (name) . -
+    exch { pop } { (FAIL: ) print print (\n) print /failcount failcount 1 add def } ifelse
+} def
+/assertnear { % val expected (name) . -
+    3 1 roll sub abs 0.001 lt exch assert
+} def
+
+% --- file object comparison ---
+/tmpf (%stdout) (w) file def
+/diskf (semantics.diskf) (w) file def  % a real disk file (portable: not /dev/null)
+diskf tmpf ne (disk file vs stdout are distinct) assert
+diskf dup eq (file object equals itself) assert
+tmpf dup ne not (stdout object not-ne itself) assert
+
+% --- pathbbox in user space ---
+% pathbbox leaves llx lly urx ury; consume top-down
+newpath 10 10 moveto 50 10 lineto 50 60 lineto 10 60 lineto closepath
+pathbbox
+60 (pathbbox ury) assertnear
+50 (pathbbox urx) assertnear
+10 (pathbbox lly) assertnear
+10 (pathbbox llx) assertnear
+
+% under a translated CTM the box must stay in (translated) user space
+gsave
+100 200 translate
+newpath 0 0 moveto 10 0 lineto 10 5 lineto closepath
+pathbbox
+5 (translated ury) assertnear
+10 (translated urx) assertnear
+0 (translated lly) assertnear
+0 (translated llx) assertnear
+grestore
+
+failcount 0 eq { (SUCCESS\n) print } { (FAILURES: ) print failcount 20 string cvs print (\n) print } ifelse
+flush
+quit
