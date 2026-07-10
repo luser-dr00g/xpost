@@ -91,8 +91,36 @@ int _findfont(Xpost_Context *ctx,
     xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "Private"), privatestr);
     xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontName"), fontname);
 
-    /* initialize font data, with x-scale and y-scale set to 1 */
-    data.face = xpost_font_face_new_from_name(fname);
+    /* initialize font data, with x-scale and y-scale set to 1.
+       Faces are cached per name: each face maps the font file and
+       holds FreeType state, so creating one per findfont grows the
+       process by a mapping per lookup. The face is shared between
+       font dictionaries exactly as a FontDirectory-cached dictionary
+       already shares it. */
+    {
+        static struct { char *name; void *face; } face_cache[32];
+        static int face_cache_n = 0;
+        int fi;
+        data.face = NULL;
+        for (fi = 0; fi < face_cache_n; fi++)
+        {
+            if (strcmp(face_cache[fi].name, fname) == 0)
+            {
+                data.face = face_cache[fi].face;
+                break;
+            }
+        }
+        if (data.face == NULL)
+        {
+            data.face = xpost_font_face_new_from_name(fname);
+            if (data.face != NULL && face_cache_n < 32)
+            {
+                face_cache[face_cache_n].name = strdup(fname);
+                face_cache[face_cache_n].face = data.face;
+                face_cache_n++;
+            }
+        }
+    }
     if (data.face == NULL){
         free(fname);
         return invalidfont;
