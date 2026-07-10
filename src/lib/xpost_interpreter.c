@@ -2024,8 +2024,11 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
             xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "startstdin")));
     }
 
-    (void) xpost_save_create_snapshot_object(ctx->gl);
-    lsav = xpost_save_create_snapshot_object(ctx->lo);
+    if (ctx->job_snapshots)
+    {
+        (void) xpost_save_create_snapshot_object(ctx->gl);
+        lsav = xpost_save_create_snapshot_object(ctx->lo);
+    }
 
     /* Run! */
 run:
@@ -2081,7 +2084,8 @@ run:
 	}
     }
 
-    xpost_save_restore_snapshot(ctx->gl);
+    if (ctx->job_snapshots)
+        xpost_save_restore_snapshot(ctx->gl);
     xpost_memory_table_get_addr(ctx->lo,
                                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     if (xpost_object_get_type(lsav) == savetype)
@@ -2095,6 +2099,12 @@ run:
     }
 
     return noerror;
+}
+
+/* enable or disable per-job VM snapshots for a context */
+XPAPI void xpost_job_snapshots_set(Xpost_Context *ctx, int enable)
+{
+    ctx->job_snapshots = enable;
 }
 
 /*
