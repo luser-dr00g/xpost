@@ -21,6 +21,10 @@ diskf tmpf ne (disk file vs stdout are distinct) assert
 diskf dup eq (file object equals itself) assert
 tmpf dup ne not (stdout object not-ne itself) assert
 
+% --- %stderr is writable ---
+{ (%stderr) (w) file (semantics_test: stderr probe\n) writestring true } stopped
+{ pop false } if (writestring to %stderr) assert
+
 % --- pathbbox in user space ---
 % pathbbox leaves llx lly urx ury; consume top-down
 newpath 10 10 moveto 50 10 lineto 50 60 lineto 10 60 lineto closepath

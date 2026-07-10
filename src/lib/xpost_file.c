@@ -665,6 +665,8 @@ int xpost_file_open(Xpost_Memory_File *mem,
             return invalidfileaccess;
         }
         f = xpost_file_cons(mem, stderr);
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     }
     else if (strcmp(fn, "%lineedit") == 0)
     {
