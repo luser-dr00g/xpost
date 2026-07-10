@@ -194,7 +194,8 @@ cont:
                            xpost_string_get_pointer(ctx, R), n);
             return c != 0 ? c : (int)ln - (int)rn;
         }
-        case filetype: return xpost_file_get_file_pointer(ctx->lo, L) == xpost_file_get_file_pointer(ctx->lo, R);
+        /* equal underlying streams compare equal (0), like every case above */
+        case filetype: return xpost_file_get_file_pointer(ctx->lo, L) != xpost_file_get_file_pointer(ctx->lo, R);
     }
 }
 
