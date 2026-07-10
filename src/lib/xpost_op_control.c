@@ -300,6 +300,7 @@ int xpost_op_stop(Xpost_Context *ctx)
        errordict, whose handlers themselves finish with `stop`,
        recursing without bound. */
     XPOST_LOG_ERR("no stopped context in 'stop'");
+    if (getenv("XPOST_TRAP_NOSTOP")) abort(); /* P0 TEMP */
     ctx->quit = 1;
     return 0;
 }
