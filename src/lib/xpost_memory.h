@@ -164,6 +164,12 @@ typedef struct Xpost_Memory_File
                            unsigned int *entity);
 
     int garbage_collect_is_installed;
+    unsigned int gc_trigger_nextent; /**< entity-pressure trigger: re-arms
+                                           only after the table grows past
+                                           this point (the count is
+                                           monotonic, so a level trigger
+                                           would re-request on every
+                                           allocation) */
     int garbage_collect_pending; /**< a collection is due; performed at the
                                       interpreter's safe point rather than
                                       inside the triggering allocation, so
