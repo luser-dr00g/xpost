@@ -131,6 +131,11 @@ struct _Xpost_Context {
 
     int ignoreinvalidaccess; //briefly allow invalid access to put userdict in systemdict (per PLRM)
 
+    size_t (*stdout_fn)(void *, const char *, size_t); /**< divert %stdout text */
+    void *stdout_user;
+    size_t (*stderr_fn)(void *, const char *, size_t); /**< divert %stderr text */
+    void *stderr_user;
+
     char run_error_name[48];  /**< error that ended the last run ("" if none) */
     char run_error_info[128]; /**< errorinfo detail for the same ("" if none) */
     int run_uncaught;         /**< an error unwound past every stopped context */

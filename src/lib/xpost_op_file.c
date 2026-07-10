@@ -136,6 +136,22 @@ int xpost_op_file_read(Xpost_Context *ctx,
     return 0;
 }
 
+/* pass the bytes to a registered handler when the file is the
+   process's standard output or error stream; returns 1 when the
+   write was diverted, -1 when the handler refused it, 0 when the
+   write should proceed normally */
+static
+int _divert_output(Xpost_Context *ctx, Xpost_File *f,
+                   const char *buf, size_t len)
+{
+    FILE *stream = xpost_file_stdio_stream_get(f);
+    if (stream == stdout && ctx->stdout_fn)
+        return ctx->stdout_fn(ctx->stdout_user, buf, len) == len ? 1 : -1;
+    if (stream == stderr && ctx->stderr_fn)
+        return ctx->stderr_fn(ctx->stderr_user, buf, len) == len ? 1 : -1;
+    return 0;
+}
+
 /* file int  write  -
    write a byte to file */
 static
@@ -146,6 +162,13 @@ int xpost_op_file_write (Xpost_Context *ctx,
     int ret;
     if (!xpost_object_is_writeable(ctx, f))
         return invalidaccess;
+    {
+        char c = (char)i.int_.val;
+        int d = _divert_output(ctx,
+                xpost_file_get_file_pointer(ctx->lo, f), &c, 1);
+        if (d < 0) return ioerror;
+        if (d) return 0;
+    }
     ret = xpost_file_write_byte(ctx->lo, f, i);
     if (ret)
         return ret;
@@ -221,9 +244,16 @@ int xpost_op_file_writehexstring (Xpost_Context *ctx,
 
     for (n = 0; n < S.comp_.sz; n++)
     {
-        if (xpost_file_putc(f, hex[s[n] / 16]) == EOF)
+        char h[2];
+        int d;
+        h[0] = hex[s[n] / 16];
+        h[1] = hex[s[n] % 16];
+        d = _divert_output(ctx, f, h, 2);
+        if (d < 0) return ioerror;
+        if (d) continue;
+        if (xpost_file_putc(f, h[0]) == EOF)
             return ioerror;
-        if (xpost_file_putc(f, hex[s[n] % 16]) == EOF)
+        if (xpost_file_putc(f, h[1]) == EOF)
             return ioerror;
     }
     return 0;
@@ -276,6 +306,11 @@ int xpost_op_file_writestring (Xpost_Context *ctx,
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
+    {
+        int d = _divert_output(ctx, f, s, S.comp_.sz);
+        if (d < 0) return ioerror;
+        if (d) return 0;
+    }
     if (xpost_file_write(s, 1, S.comp_.sz, f) != S.comp_.sz)
         return ioerror;
     return 0;
@@ -594,6 +629,12 @@ int xpost_op_string_print (Xpost_Context *ctx,
     size_t ret;
     char *s;
     s = xpost_string_get_pointer(ctx, S);
+    if (ctx->stdout_fn)
+    {
+        if (ctx->stdout_fn(ctx->stdout_user, s, S.comp_.sz) != S.comp_.sz)
+            return ioerror;
+        return 0;
+    }
     ret = fwrite(s, 1, S.comp_.sz, stdout);
     if (ret != S.comp_.sz)
         return ioerror;

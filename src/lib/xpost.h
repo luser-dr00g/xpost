@@ -273,6 +273,37 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx,
                                 char *defs[]);
 
 /**
+ * @brief Receives text output from the interpreter.
+ *
+ * @param user The pointer registered alongside the handler.
+ * @param buf The bytes written by the program.
+ * @param len The number of bytes.
+ * @return The number of bytes accepted; a short count is an error.
+ */
+typedef size_t (*Xpost_Output_Fn)(void *user, const char *buf, size_t len);
+
+/**
+ * @brief Divert the program's standard-output text to a handler.
+ *
+ * Everything a program writes to its standard output -- print, = and
+ * writes to the %stdout file -- is passed to @p fn instead of the
+ * process's stdout. Device output (files, buffers) is not affected.
+ * Pass NULL to restore the default.
+ */
+XPAPI void xpost_stdout_handler_set(Xpost_Context *ctx,
+                                    Xpost_Output_Fn fn,
+                                    void *user);
+
+/**
+ * @brief Divert the program's standard-error text to a handler.
+ *
+ * As xpost_stdout_handler_set(), for writes to the %stderr file.
+ */
+XPAPI void xpost_stderr_handler_set(Xpost_Context *ctx,
+                                    Xpost_Output_Fn fn,
+                                    void *user);
+
+/**
  * @brief Enable or disable per-job VM snapshots for a context.
  *
  * By default each xpost_run() job takes virtual-memory snapshots that

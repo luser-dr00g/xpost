@@ -2150,6 +2150,22 @@ XPAPI void xpost_job_snapshots_set(Xpost_Context *ctx, int enable)
     ctx->job_snapshots = enable;
 }
 
+XPAPI void xpost_stdout_handler_set(Xpost_Context *ctx,
+                                    Xpost_Output_Fn fn,
+                                    void *user)
+{
+    ctx->stdout_fn = fn;
+    ctx->stdout_user = user;
+}
+
+XPAPI void xpost_stderr_handler_set(Xpost_Context *ctx,
+                                    Xpost_Output_Fn fn,
+                                    void *user)
+{
+    ctx->stderr_fn = fn;
+    ctx->stderr_user = user;
+}
+
 /*
    destroy the given context and associated memory files (if not in use by a shared context)
    exit interpreter if all contexts are destroyed.
