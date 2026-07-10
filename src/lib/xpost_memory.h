@@ -164,6 +164,11 @@ typedef struct Xpost_Memory_File
                            unsigned int *entity);
 
     int garbage_collect_is_installed;
+    int garbage_collect_pending; /**< a collection is due; performed at the
+                                      interpreter's safe point rather than
+                                      inside the triggering allocation, so
+                                      operator-internal intermediates held
+                                      only in C variables cannot be swept */
     int (*garbage_collect)(struct Xpost_Memory_File *mem,
                            int dosweep,
                            int markall);

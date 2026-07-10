@@ -809,6 +809,15 @@ ctxswitch:
 
     while(!ctx->quit)
     {
+        /* safe point: between evaluation steps every live object is
+           reachable from the stacks, so a requested collection cannot
+           sweep an operator's C-held intermediates */
+        if (ctx->lo->garbage_collect_pending)
+        {
+            ctx->lo->garbage_collect_pending = 0;
+            if (ctx->lo->garbage_collect_is_installed)
+                (void)ctx->lo->garbage_collect(ctx->lo, 1, 1);
+        }
         ret = eval(ctx);
         if (ret)
             switch (ret)

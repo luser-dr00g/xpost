@@ -637,23 +637,14 @@ xpost_memory_table_alloc(Xpost_Memory_File *mem,
         }
         else if (ret == 2)
         {
+            /* collection is due, but running it here would sweep any
+               object the current operator holds only in C variables
+               (invisible to the root set). Record the request; the
+               interpreter collects at its safe point between operator
+               executions, where the stacks are the complete roots. */
             if (mem->garbage_collect_is_installed &&
                     !mem->interpreter_get_initializing())
-            {
-                int sz_reclaimed;
-
-                sz_reclaimed = mem->garbage_collect(mem, 1, 1);
-                if (sz_reclaimed == -1)
-                    return 0;
-                if (sz_reclaimed > (int)sz)
-                {
-                    ret = mem->free_list_alloc(mem, sz, tag, entity);
-                    if (ret == 1)
-                    {
-                        return 1;
-                    }
-                }
-            }
+                mem->garbage_collect_pending = 1;
         }
     }
     ret = _xpost_memory_table_alloc_new(mem, sz, tag, entity);
