@@ -1994,6 +1994,7 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
        and if it ever gets to the bottom, it quits.
        These procedures are all defined in data/init.ps
      */
+    ctx->es_run_base = xpost_stack_count(ctx->lo, ctx->es);
     xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
     /*
        if ps_file is NULL:
@@ -2040,7 +2041,20 @@ run:
                   xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
                   xpost_name_cons(ctx, "ShowpageSemantics"));
     if (semantic.int_.val == XPOST_SHOWPAGE_RETURN)
+    {
+        if (ret != 1)
+        {
+            /* the run stops at its quit operator, leaving the frames
+               beneath it -- the run's own scheduling tail -- on the
+               exec stack. A persistent context serving many runs
+               accumulates them, and an error unwind can later walk
+               down into a stale frame and execute it out of context.
+               Discard everything this run left behind. */
+            while (xpost_stack_count(ctx->lo, ctx->es) > (int)ctx->es_run_base)
+                (void)xpost_stack_pop(ctx->lo, ctx->es);
+        }
         return ret == 1 ? yieldtocaller : 0;
+    }
 
     XPOST_LOG_INFO("destroying device");
     device = xpost_dict_get(ctx,

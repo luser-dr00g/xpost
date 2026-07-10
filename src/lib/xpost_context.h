@@ -131,6 +131,10 @@ struct _Xpost_Context {
 
     int ignoreinvalidaccess; //briefly allow invalid access to put userdict in systemdict (per PLRM)
 
+    unsigned int es_run_base; /**< exec-stack depth at xpost_run entry;
+                                    a completed run is truncated back to
+                                    this depth so its scheduling frames
+                                    cannot accumulate across jobs */
     int job_snapshots; /**< take VM snapshots around each xpost_run job
                             (restored on the quit path); disable for a
                             persistent context serving many runs, where
