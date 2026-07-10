@@ -32,6 +32,7 @@
 # include <config.h>
 #endif
 
+#include <stdio.h>
 #include <stdlib.h> /* size_t */
 #include <string.h> /* memcpy */
 
