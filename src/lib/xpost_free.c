@@ -293,11 +293,19 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     while (e) /* e is not zero */
     {
         unsigned int tsz;
-        if (e > XPOST_OBJECT_COMP_MAX_ENT)
+        /* The links live inside the freed entities' data, where a stale
+           write can turn one into an arbitrary number. Handing out an
+           entity that is not actually free aliases two owners onto one
+           allocation, so validate every node: freed entities carry a
+           zero tag. On any inconsistency discard the list and request
+           a collection to rebuild it. */
+        if (e > XPOST_OBJECT_COMP_MAX_ENT ||
+            e >= mem->table.nextent ||
+            mem->table.tab[e].tag != 0)
         {
             unsigned int zero = 0;
-            XPOST_LOG_ERR("ent number %u exceeds object storage max %u",
-                    e, XPOST_OBJECT_COMP_MAX_ENT);
+            XPOST_LOG_ERR("free list corrupt at ent %u (tag %u): discarding",
+                    e, e < mem->table.nextent ? mem->table.tab[e].tag : 0);
             /* bad element found: discard free list */
             xpost_memory_put(mem, 0, 0, sizeof zero, &zero);
             return 2; /* request collection to fill the list */
