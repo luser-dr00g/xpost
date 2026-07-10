@@ -157,26 +157,16 @@ static void
 _xpost_view_page_set(void)
 {
     const unsigned char *base = xpost_dsc_file_base_get(file);
-    ptrdiff_t start;
-    ptrdiff_t end;
+    size_t len = xpost_dsc_file_length_get(file);
 
-    if (dsc->pages && (dsc->header.pages > 0))
-    {
-        start = dsc->pages[page_num].section.start;
-        end = dsc->pages[page_num].section.end;
-    }
-    else
-    {
-        /* no DSC page structure: run the whole file as a single page */
-        start = 0;
-        end = (ptrdiff_t)xpost_dsc_file_length_get(file);
-    }
-
-    xpost_run(ctx, XPOST_INPUT_STRING, (void *)(base + start), end - start);
-
+    /* Run the whole file as one program. Splitting the DSC prolog and page
+       into separate xpost_run calls does not preserve interpreter state
+       between them, and a file's showpage -- which the buffer device needs in
+       order to emit the rendered page -- may live in the trailer rather than
+       the page body, so the entire file has to run as a unit. */
+    xpost_run(ctx, XPOST_INPUT_STRING, (void *)base, len);
     xpost_view_page_display(win, buffer);
-
-    xpost_run(ctx, XPOST_INPUT_RESUME, (void *)(base + start), end - start);
+    xpost_run(ctx, XPOST_INPUT_RESUME, (void *)base, len);
 }
 
 void xpost_view_page_change(int i)
@@ -264,15 +254,8 @@ int main(int argc, char *argv[])
         goto destroy_context;
     }
 
-    /* Prolog */
-    printf("begin prolog : %d\n", (int)(dsc->prolog.end - dsc->prolog.start));
-    ret = xpost_run(ctx, XPOST_INPUT_STRING,
-                    (void *)(xpost_dsc_file_base_get(file) + dsc->prolog.start),
-                    dsc->prolog.end - dsc->prolog.start);
-    printf("end prolog %d\n", ret);
-
-    /* FIXME: manage the case where there is no DSC */
-    /* get buffer for the first page */
+    /* Render the first page. The prolog is run together with the page inside
+       _xpost_view_page_set so the prolog's definitions are in scope. */
     _xpost_view_page_set();
 
     xpost_view_main_loop(win);
