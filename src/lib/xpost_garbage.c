@@ -605,6 +605,20 @@ int _xpost_garbage_mark_save(Xpost_Context *ctx,
             free it.
    return reclaimed size
  */
+/* free list bucket helpers shared with xpost_free.c */
+#define XPOST_FREE_NBUCKETS 16
+static unsigned int _sweep_bucket(unsigned int sz)
+{
+    unsigned int b = 0;
+    unsigned int s = sz >> 5;
+    while (s && b < XPOST_FREE_NBUCKETS - 1)
+    {
+        s >>= 1;
+        b++;
+    }
+    return b;
+}
+
 static
 unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
 {
@@ -620,46 +634,48 @@ unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
     if (getenv("XPOST_GC_NO_REUSE"))
         return 0;
 
-    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list head */
+    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list heads */
     if (!ret)
     {
         XPOST_LOG_ERR("cannot load free list head");
         return 0;
     }
 
-    memcpy(mem->base+z, &zero, sizeof(unsigned int)); /* discard list */
-    /* *(unsigned int *)(mem->base+z) = 0; */
+    /* discard the lists; previously-freed entities are gathered again */
+    for (i = 0; i < XPOST_FREE_NBUCKETS; i++)
+        memcpy(mem->base + z + i * sizeof(unsigned int), &zero, sizeof zero);
 
-#ifdef DEBUG_GC
-    printf("freeing ");
-#endif
-    /* scan table */
+    {
+    unsigned int bstat[XPOST_FREE_NBUCKETS] = {0};
     for (i = mem->start; i < mem->table.nextent; i++)
     {
         if (((mem->table.tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0) &&
             (mem->table.tab[i].sz != 0))
         {
-#ifdef DEBUG_GC
-            printf("%u ", i);
-#endif
+            unsigned int bz;
+            unsigned int b;
             if (mem->table.tab[i].tag == filetype)
                 continue;
-            ret = xpost_free_memory_ent(mem, i);
-            if (ret < 0)
-            {
-                XPOST_LOG_ERR("cannot free ent");
-                return sz;
-            }
-            sz += (unsigned int)ret;
+            mem->table.tab[i].tag = 0;
+            b = _sweep_bucket(mem->table.tab[i].sz);
+            bstat[b]++;
+            bz = z + b * sizeof(unsigned int);
+            memcpy(mem->base + mem->table.tab[i].adr, mem->base + bz, sizeof(unsigned int));
+            memcpy(mem->base + bz, &i, sizeof(unsigned int));
+            sz += mem->table.tab[i].sz;
         }
     }
-#ifdef DEBUG_GC
-    printf("\n");
-#endif
+    if (getenv("XPOST_GC_BUCKETSTAT"))
+    {
+        fprintf(stderr, "BUCKETS:");
+        for (i = 0; i < XPOST_FREE_NBUCKETS; i++)
+            fprintf(stderr, " %u", bstat[i]);
+        fprintf(stderr, "\n");
+    }
+    }
 
     return sz;
 }
-
 
 /* P0 diagnostic: independent reachability verifier. BFS from the same
    roots with a private visited set and unconditional full descent;
