@@ -69,7 +69,9 @@ DATA_DIR(/qsort.ps)strcat run
     begin
         {
             .to-int exch .to-int exch
+            dup 0 lt { stop } if
             dup height ge { stop } if
+            1 index 0 lt { stop } if
             1 index width ge { stop } if
             ImgData exch get 3 1 roll exch
             255 mul cvi

@@ -81,7 +81,9 @@ DATA_DIR(/qsort.ps)strcat run
     begin
         {
             .to-int exch .to-int exch
+            dup 0 lt { stop } if
             dup height ge { stop } if
+            1 index 0 lt { stop } if
             1 index width ge { stop } if
             ImgData exch get exch % r g b img(y) x
             5 2 roll % img(y) x r g b
