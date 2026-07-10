@@ -968,6 +968,32 @@ int _stringwidth(Xpost_Context *ctx,
 
     }
 
+    /* the advances accumulate in device space (the face is sized through
+       the CTM); stringwidth must report the distance in user space, so
+       map it back through the inverse of the CTM's linear part */
+    {
+        Xpost_Object psmat = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currmatrix"));
+        if (xpost_object_get_type(psmat) == arraytype && psmat.comp_.sz == 6)
+        {
+            real m[4], det;
+            int i;
+            for (i = 0; i < 4; i++)
+            {
+                Xpost_Object el = xpost_array_get(ctx, psmat, i);
+                m[i] = xpost_object_get_type(el) == realtype ? el.real_.val
+                     : (real)el.int_.val;
+            }
+            det = m[0] * m[3] - m[1] * m[2];
+            if (det != 0)
+            {
+                real ux = (m[3] * xpos - m[2] * ypos) / det;
+                real uy = (-m[1] * xpos + m[0] * ypos) / det;
+                xpos = ux;
+                ypos = uy;
+            }
+        }
+    }
+
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xpos));
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(ypos));
 
