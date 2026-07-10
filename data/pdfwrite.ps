@@ -1,41 +1,29 @@
 /QUIET where { pop }{ (loading pdfwrite.ps...)print } ifelse
 
-DATA_DIR(/qsort.ps)strcat run
-
 /newPDFWRITEdevice { % width height  .  IMAGE-device-dict
     PDFWRITE dup /Create get exec
 } def
 
-% PPMIMAGE device handles 24bit rgb images.
+% PDFWRITE writes a single-page vector PDF: the marking methods append
+% content-stream operators and Emit wraps them in the PDF file structure.
+% This is a clean-room implementation from the published PDF format (operators
+% rg/RG/m/l/re/f*/S/cm and the object/xref/trailer layout); no rasterizing.
 %
-% It uses the full range 0-255 of values and does not calculate
-% the actual maximum value in the data before transmitting. MaxVal
-% is always 255.
+% Coordinates arrive in device space (y-down); the content stream is prefixed
+% with the device matrix (1 0 0 -1 0 height cm) so device coordinates map to
+% PDF's y-up user space -- the same flip the raster devices apply, done once.
 %
-% In the list of procedures below, PPMIMAGE is the Class dictionary,
-% IMAGE is an instance returned by Create.
-%
-% procedures:
-%           width height PPMIMAGE  Create  ->  IMAGE
-%                 r g b x y IMAGE  PutPix  ->  -
-%                       x y IMAGE  GetPix  ->  r g b
-%         r g b x1 y1 x2 y2 IMAGE  DrawLine  ->  -
-%    r g b x y width height IMAGE  DrawRect  ->  -
-%    r g b x y width height IMAGE  FillRect  ->  -
-%             r g b polygon IMAGE  FillPoly  ->  -
-%                           IMAGE  Emit  ->  -
-%                           IMAGE  Destroy  ->  -
-%                           dict1  .copydict  dict2
-% eg:
-% PS> /dev 40 20 newPPMIMAGEdevice def
-% PS> 55 1 1 38 17 dev dup /DrawLine get exec
-% PS> 77 9 14 3 3 dev dup /FillRect get exec
-% PS> dev dup /Emit get exec
-%
+% Content is accumulated in a growable buffer held outside virtual memory -- via
+% the device's /Private string, like the raster devices' pixel buffer -- so that
+% it survives a `restore` the job may execute before showpage (the current
+% page's marks are not part of VM). Emit splits it into <=65500-byte strings
+% (the PostScript string limit) and deflate-compresses it, falling back to
+% uncompressed without zlib.
 
 /PDFWRITE <<
     /nativecolorspace /DeviceRGB
     /dimensions [0 0]
+    /NoOutput true  % keep this device's own vector FillPoly (no rasterizing)
 
     /.copydict {
         dup length dict copy
@@ -48,461 +36,134 @@ DATA_DIR(/qsort.ps)strcat run
             /OutputFileName exch 1 index get
             3 copy put pop pop
         } if
-        %dup /defaultmatrix known {
-        %    dup /defaultmatrix 2 copy get matrix copy put
-        %} if
     } bind
+
     /Create { % width height IMAGE  .  IMAGE'
     begin {/height /width}{exch def}forall
     currentdict end
     dup /.copydict get exec
     begin
-        /ImgData height array def
-        0 1 height 1 sub {
-            ImgData exch width array
-            0 1 width 1 sub {
-                2 copy 0 put pop
-            } for
-            put
-        } for
+        currentdict .pdfinit    % create the content accumulator (outside VM)
+        % first content op: the device matrix mapping device coords to PDF
+        % user space (y-up). Part of the content so it compresses with the rest.
+        (1 0 0 -1 0 ) .put height cvi 20 string cvs .put ( cm\n) .put
     currentdict
     end } bind
 
     /Destroy { % IMAGE  .  -
-        dup /.outputpdf get exec
-    }  bind
+        dup .pdffree pop
+    } bind
 
-    /.to-int { floor cvi } bind
+    /.zeros (0000000000) def
+
+    % append a string to the content accumulator (held outside VM via /Private)
+    /.put { % str  .  -
+        currentdict .pdfput
+    } bind
+
+    % append a number in PDF syntax (integer, or two decimals; never
+    % exponential). round(n*100) avoids binary-float print noise.
+    /.pdfnum { % num  .  -
+        dup truncate 1 index eq {
+            cvi 20 string cvs .put
+        }{
+            100 mul round cvi
+            dup 0 lt { (-) .put neg } if
+            dup 100 idiv 20 string cvs .put
+            (.) .put
+            100 mod
+            dup 10 lt { (0) .put } if
+            20 string cvs .put
+        } ifelse
+    } bind
+
     /PutPix { % r g b x y IMAGE  .  -
-        %6 copy pop
-        %exch =only ( )print =only (   )print
-        %3 2 roll =only ( )print exch =only ( )print =only ( )print
-        %(PutPix\n) print
-    begin
-        {
-            .to-int exch .to-int exch
-            dup height ge { stop } if
-            1 index width ge { stop } if
-            ImgData exch get exch % r g b img(y) x
-            5 2 roll % img(y) x r g b
-            255 mul cvi exch % img(y) x r int(b) g
-            255 mul cvi 8 bitshift or exch % img(y) x int(b)|int(g<<8) r
-            255 mul cvi 16 bitshift or % img(y) x r<<16|g<<8|b
-            put
-        } stopped {
-            pop pop pop pop pop
-        } if
-    end } bind
+    begin {y x b g r}{exch def}forall
+        r .pdfnum ( ) .put g .pdfnum ( ) .put b .pdfnum ( rg\n) .put
+        x .pdfnum ( ) .put y .pdfnum ( 1 1 re\nf\n) .put
+    end }
 
     /GetPix { % x y IMAGE  .  r g b
-    begin
-        .to-int exch .to-int exch
-        ImgData exch get exch get
-        dup -16 bitshift exch
-        dup -8 bitshift 16#ff and exch
-        16#ff and
-    end } bind
-
-
-    /.sign { dup 0 le { 0 lt { -1 }{ 0 } ifelse }{ pop 1 } ifelse } bind
+        pop pop pop  0 0 0
+    }
 
     /DrawLine { % r g b x1 y1 x2 y2 IMAGE  .  -
-        %(DrawLine\n) print flush
-        %5 copy pop 4 3 roll =only ( )print 3 2 roll =only ( )print exch =only ( )print =
     begin {y2 x2 y1 x1 b g r}{exch def}forall
-        x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect
-			{ {y1 x1}{exch def}forall } if } if
-        x2 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect
-			{ {y2 x2}{exch def}forall } if } if
-        y1 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect
-			{ {y1 x1}{exch def}forall } if } if
-        y2 0 lt{ x1 y1 x2 y2 0 0 width 0 .intersect
-			{ {y2 x2}{exch def}forall } if } if
-        x1 width ge { x1 y1 x2 y2 width 0 width height .intersect
-			{ {y1 x1}{exch def}forall } if } if
-        x2 width ge { x1 y1 x2 y2 width 0 width height .intersect
-			{ {y2 x2}{exch def}forall } if } if
-        y1 height ge { x1 y1 x2 y2 0 height width height .intersect
-			{ {y1 x1}{exch def}forall } if } if
-        y2 height ge { x1 y1 x2 y2 0 height width height .intersect
-			{ {y2 x2}{exch def}forall } if } if
-        %(intersected\n) print
-        /xx x1 def
-        /yy y1 def
-        x2 x1 sub  dup abs /dx exch def
-            .sign /s1 exch def
-        y2 y1 sub  dup abs /dy exch def
-            .sign /s2 exch def
-        /interchange dy dx gt def
-        interchange { /dx dy /dy dx def def } if
-        /e 2 dy mul dx sub def
-        1 1 dx { pop
-            r g b xx yy currentdict PutPix
-            {
-                e 0 ge not {exit} if
-                interchange {
-                    /xx xx s1 add def
-                }{
-                    /yy yy s2 add def
-                } ifelse
-                /e e 2 dx mul sub def
-            } loop
-            interchange {
-                /yy yy s2 add def
-            }{
-                /xx xx s1 add def
-            } ifelse
-            /e e 2 dy mul add def
-        } for
-    end } bind
+        r .pdfnum ( ) .put g .pdfnum ( ) .put b .pdfnum ( RG\n) .put
+        x1 .pdfnum ( ) .put y1 .pdfnum ( m\n) .put
+        x2 .pdfnum ( ) .put y2 .pdfnum ( l\nS\n) .put
+    end }
 
-    %  -----|
-    %  |    |
-    %  |    |
-    %  |-----
     /DrawRect { % r g b x y w h IMAGE  .  -
     begin {h w y x b g r}{exch def}forall
-        0 1 h 1 sub {
-            x 2 copy % h x h x
-            exch y add r g b 5 3 roll currentdict PutPix
-            w add
-            exch y add 1 add r g b 5 3 roll currentdict PutPix
-        } for
-        1 1 w {
-            x add y 2 copy % x+w y x+w y
-            r g b 5 3 roll currentdict PutPix
-            h add exch 1 sub exch
-            r g b 5 3 roll currentdict PutPix
-        } for
-    end } bind
+        r .pdfnum ( ) .put g .pdfnum ( ) .put b .pdfnum ( RG\n) .put
+        x .pdfnum ( ) .put y .pdfnum ( ) .put
+        w .pdfnum ( ) .put h .pdfnum ( re\nS\n) .put
+    end }
 
     /FillRect { % r g b x y w h IMAGE  .  -
-        %(FillRect\n) print
-        %5 copy pop 4 3 roll =only ( )print 3 2 roll =only ( )print exch =only ( )print =
-        %dup /ImgData get length =
-        %dup /ImgData get ==
     begin {h w y x b g r}{exch def}forall
-        %ImgData length =only ( )print ImgData 0 get length =
-        %r g b 0 1 h { y add  % r g b y
-        %    0 1 w { x add  % r g b y x
-        %        5 copy exch % r g b y x r g b x y
-        %        currentdict  % r g b y x r g b x y IMAGE
-        %        PutPix  % r g b y x
-        %        pop  % r g b y
-        %    } for
-        %    pop % r g b
-        %} for
-        %pop pop pop % -
-		w 0 lt { /w w abs def /x x w sub def } if
-		h 0 lt { /h h abs def /y y h sub def } if
-
-		/h h y add def
-		/w w x add def
-
-        {
-            /USEDRAWLINE where { pop
-                USEDRAWLINE {
-                    %(Using DrawLine\n) print
-                    y 1 h {
-                        %dup =only ( )print
-                        r g b 4 3 roll
-                        x exch w 1 index
-                        currentdict DrawLine
-                    } for
-                    exit
-                } if
-            } if
-
-            r g b
-            y 1 h { % r g b y
-                x 1 w { % r g b y x
-                    5 copy exch % r g b y x r g b x y
-                    currentdict PutPix % r g b y x
-                    pop % r g b y
-                } for
-                pop % r g b
-            } for
-            pop pop pop
-
-        exit } loop
-
-    end } bind
-
-
-    /.maxmin { % x y
-        2 copy
-        dup maxy gt { /maxy exch def }{ pop } ifelse
-        dup maxx gt { /maxx exch def }{ pop } ifelse
-        dup miny lt { /miny exch def }{ pop } ifelse
-        dup minx lt { /minx exch def }{ pop } ifelse
-    } bind
-
-    % x1 y1 x2 y2 x3 y3 x4 y4  .  x5 y5 true
-    %                             false
-    % inspired by the code at http: / / alienryderflex.com/intersect/
-    /.intersect {
-		DICT
-		%8 dict
-		begin
-        {Dy Dx Cy Cx By Bx Ay Ax}{exch def}forall
-
-        %[ Ax Ay Bx By Cx Cy Dx Dy ]{=only( )=only} forall
-
-        { %stopped
-            % reject degenerate line
-            Ax Bx eq Ay By eq and
-            Cx Dx eq Cy Dy eq and or {stop} if
-
-            % reject coinciding endpoints
-            Ax Cx eq Ay Cy eq and
-            Bx Cx eq By Cy eq and or
-            Ax Dx eq Ay Dy eq and or
-            Bx Dx eq By Dy eq and or {stop} if
-
-            % translate by -Ax,-Ay
-            /Bx Bx Ax sub def /By By Ay sub def
-            /Cx Cx Ax sub def /Cy Cy Ay sub def
-            /Dx Dx Ax sub def /Dy Dy Ay sub def
-
-            % length of AB
-            /distAB Bx Bx mul By By mul add sqrt def
-
-            % rotate AB to x-axis
-            /theCos Bx distAB div def
-            /theSin By distAB div def
-            /newX Cx theCos mul Cy theSin mul add def
-            /Cy   Cy theCos mul Cx theSin mul sub def /Cx newX def
-            /newX Dx theCos mul Dy theSin mul add def
-            /Dy   Dy theCos mul Dx theSin mul sub def /Dx newX def
-
-            % no intersection
-            Cy 0 lt Dy 0 lt and Cy 0 ge Dy 0 ge and or {stop} if
-
-            /ABpos Dx Cx Dx sub Dy mul Dy Cy sub div add def
-            ABpos 0 lt
-            ABpos distAB gt or {stop} if % intersection not on segment
-
-            Ax ABpos theCos mul add
-            Ay ABpos theSin mul add
-        } stopped not
-
-        %dup { 3 copy =only( )=only exch =only( )=only =only } if ()=
-
+        r .pdfnum ( ) .put g .pdfnum ( ) .put b .pdfnum ( rg\n) .put
+        x .pdfnum ( ) .put y .pdfnum ( ) .put
+        w .pdfnum ( ) .put h .pdfnum ( re\nf\n) .put
     end }
-	dup 0 16 dict put
-	bind
 
-    %nb. this implementation is overridden by device.ps
-    %after calling `newdefaultdevice`
-    %see xpost_dev_generic.c:_fillpoly(ctx,poly,dev) for the 
-    %implementation in current use (10/8/2014)
-    
-    /FillPoly { % r g b polygon IMAGE  .  -
-    begin {poly b g r}{exch def}forall
+    % r g b polygon IMAGE . -  ; append "r g b rg", the subpath moveto/lineto/
+    % closepath, and an even-odd fill. The per-coordinate formatting is the hot
+    % loop, so it is done in C (.pdffillpoly), appending to the accumulator.
+    /FillPoly { .pdffillpoly } bind
 
-        /DEBUGFILL where { pop
-            (\nFillPoly)=
-            r =only( )=only g =only( )=only b =only( )=only poly ==
-        } if
-        %hook
-
-        /minx 16#7ffffff def
-        /miny minx def
-        /maxx minx neg def
-        /maxy maxx def
-        poly {
-            dup type /arraytype eq {
-                dup length 2 eq {
-                    aload pop .maxmin
-                }{
-                    pop
-                } ifelse
-            }{
-                pop
-            } ifelse
-        } forall
-
-        /x_max width .5 add def
-
-        /DEBUGFILL where { pop
-            (FillPoly:<intersect polygon edges with scanlines>)=
-        } if
-        /P poly poly length 1 sub get def
-        [
-        poly {
-            /Q exch def
-            /DEBUGFILL where { pop
-                (P=)=only P ==
-                (Q=)=only Q ==
-            } if
-            x_max miny floor cvi .5 add % [ x_max miny+.5
-            1                           % [ x_max miny+.5 1
-            maxy ceiling cvi .5 sub     % [ x_max miny+.5 1 maxy-.5
-            {                           % [ ... x_max y
-                1 index exch            % [ ... x_max x_max y
-                -.5 1 index               % [ ... x_max x_max y -.5 y
-                4 2 roll
-                P aload pop Q aload pop % [ ... x_max  x_max y  -.5 y  Px Py  Qx Qy
-                .intersect {
-                    2 array astore exch % [ ... [x y] x_max
-                } if
-            } for
-            pop
-            /P Q def
-        } forall
-        ]        % [list-of-x/y-intersections
-        /DEBUGFILL where { pop
-            dup ==()=
-        } if
-
-        /DEBUGFILL where { pop
-            (FillPoly:<sort scanline intersection list>)=
-        } if
-        {
-        dup { % comparitor  % [x1 y1] [x2 y2] . bool
-            1 index 1 get
-            1 index 1 get
-            eq {            % y1 == y2
-                exch 0 get
-                exch 0 get
-                lt             % (x1 < x2)
-            }{              % y1 != y2
-                exch 1 get
-                exch 1 get
-                lt             % (y1 < y2)
-            } ifelse
-        } qsort   % [sorted-list-of-intersections]
-        } pop
-        dup .yxsort
-        /DEBUGFILL where { pop
-            dup ==()=
-        } if
-
-        %(%lineedit)(r)file pop %pause
-
-        /DEBUGFILL where { pop
-            (FillPoly:<set pixels on each scanline>)=
-        } if
-        aload length 2 idiv { % repeat
-            exch aload pop
-            3 2 roll aload pop
-
-            {
-                /USEDRAWLINE where { pop
-                    USEDRAWLINE {
-                        r g b 7 3 roll
-                        currentdict DrawLine
-                        exit
-                    } if
-                } if
-
-                pop                        % xa ya xb
-                3 2 roll                   % ya xb xa
-                exch 1 exch                % ya xa 1 xb
-                dup width ge { pop width 1 sub } if
-                { % for                    % ya x
-                    r g b 4 3 roll               % ya r g b x
-                    2 index                % ya r g b x ya 
-                    currentdict PutPix
-                } for
-                pop
-            exit } loop
-
-        } repeat
-
-    end } bind %FillPoly
-
-    /.printppm { % dump PGM format to stdout
-        (P3\n)=only
-        dup 0 get length =only %w
-        ( )=only
-        dup length =only %h
-        (\n)=only
-        (255\n)=only %max
-        {
-            {
-                dup -16 bitshift =only( )=only
-                dup -8 bitshift 16#ff and =only( )=only
-                dup 16#ff and =only( )=only
-            }forall
-            (\n)=only
-        }forall %data
-        (\n)=only
-    } bind
-
-    /.writeppm { % img (filename)
-        2 dict begin
-        {/f /a}{exch def}forall
-        f (P3\n) writestring
-        f a 0 get length =string cvs writestring
-        f ( ) writestring
-        f a length =string cvs writestring
-        f (\n255\n) writestring
-        a {
-            {
-                dup -16 bitshift
-                =string cvs dup length exch
-                    f exch writestring
-                    neg 4 add { f ( ) writestring } repeat
-                dup -8 bitshift 16#ff and
-                =string cvs dup length exch
-                    f exch writestring
-                    neg 4 add { f ( ) writestring } repeat
-                dup 16#ff and
-                =string cvs dup length exch
-                    f exch writestring
-                    neg 4 add { f ( ) writestring } repeat
-            } forall
-            f (\n) writestring
-        } forall
-        f (%stdout)(w) file ne {
-            f closefile
-        } if
-        end
-    } bind
-
-    /.writepdf { % (filename)
-	2 dict begin
-	    /f exch def
-	    f (%PDF-1.3\n\n) writestring
-	    
-	    f (1 0 Object\n)       writestring
-	    f (<<\n)               writestring
-	    f (  /Type /Catalog\n) writestring
-	    f (  /Pages 1 0 R\n)   writestring
-	    f (>>\n)               writestring
-	    f (endobj\n\n)         writestring
-	    
-	end
-    } bind
-
-    /.outputpdf {
+    /Emit { % IMAGE  .  -
     begin
-        /OutputFileName where { pop
-%            ImgData  OutputFileName (w) file  .writeppm
-	     OutputFileName (w) file  .writepdf
-        }{
-%            ImgData       (%stdout) (w) file  .writeppm
-	          (%stdout) (w) file  .writepdf
-        } ifelse
-    end
-    } bind
+        /Chunks currentdict .pdfchunks def
+        % deflate the content stream (falls back to uncompressed without zlib)
+        Chunks .flatecompress /flated exch def /Chunks exch def
+        /F /OutputFileName where { pop OutputFileName (w) file }{ (%stdout) (w) file } ifelse def
+        /BytePos 0 def
 
-    /Emit {
-    begin
-	(Emit!) =
-    end
-    } bind
+        /hs height cvi 20 string cvs def
+        /ws width cvi 20 string cvs def
+        /clen 0 def
+        Chunks { length /clen exch clen add def } forall
+
+        % write a string to F and advance the byte counter
+        /.w { dup F exch writestring length /BytePos BytePos 3 -1 roll add def } def
+        % write a 10-digit zero-padded offset
+        /.woff { 20 string cvs /n exch def
+                 .zeros 0 10 n length sub getinterval .w  n .w } def
+
+        (%PDF-1.4\n) .w
+        /off1 BytePos def
+        (1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n) .w
+        /off2 BytePos def
+        (2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n) .w
+        /off3 BytePos def
+        (3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ) .w ws .w ( ) .w hs .w
+        (] /Contents 4 0 R /Resources << >> >>\nendobj\n) .w
+        /off4 BytePos def
+        (4 0 obj\n<< /Length ) .w clen 20 string cvs .w
+        flated { ( /Filter /FlateDecode) .w } if
+        ( >>\nstream\n) .w
+        Chunks { .w } forall
+        (\nendstream\nendobj\n) .w
+        /xoff BytePos def
+        (xref\n0 5\n0000000000 65535 f \n) .w
+        off1 .woff ( 00000 n \n) .w
+        off2 .woff ( 00000 n \n) .w
+        off3 .woff ( 00000 n \n) .w
+        off4 .woff ( 00000 n \n) .w
+        (trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n) .w xoff 20 string cvs .w (\n%%EOF\n) .w
+
+        F (%stdout) (w) file ne { F closefile } if
+    end }
 >> def
 
 /TESTGRAPHICS where {pop
     (TESTGRAPHICS pdfwrite)=
-    /dev 40 20 newPPMIMAGEdevice def
-    .5 .5 .5 1 1 38 17 dev dup /DrawLine get exec
-    .5 .5 .5 9 14 3 3 dev dup /FillRect get exec
-    dev dup /Emit get exec
-    pstack()=
-
+    /dev 200 200 newPDFWRITEdevice def
+    0 0 0 [ [20 20] [80 20] [80 80] [20 80] ] dev dup /FillPoly get exec
+    dev .pdfchunks 0 get length 0 gt { (pdfwrite content PASS)= }{ (pdfwrite content FAIL)= } ifelse
+    dev dup /Destroy get exec
 } if
 
-/QUIET where { pop }{ (eof ppmimage.ps\n)print } ifelse
+/QUIET where { pop }{ (eof pdfwrite.ps\n)print } ifelse

@@ -1,0 +1,21 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 20 20 498 498
+%%Pages: 1
+%%EndComments
+%%Page: 1 1
+% One fill with thousands of subpaths: its formatted content far exceeds the
+% device's content-buffer size, exercising the buffer-flush path. Integer
+% coordinates so the ink bounding box is exact. No save/restore.
+0 0 0 setrgbcolor
+newpath
+0 1 79 {
+  6 mul 20 add /gx exch def
+  0 1 79 {
+    6 mul 20 add /gy exch def
+    gx gy moveto 4 0 rlineto 0 4 rlineto -4 0 rlineto closepath
+  } for
+} for
+fill
+showpage
+%%Trailer
+%%EOF

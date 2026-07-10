@@ -247,6 +247,15 @@ PKG_CHECK_EXISTS([libpng],
    ],
    [have_libpng="no"])
 
+# zlib (for the FlateEncode compression used by the pdfwrite device)
+PKG_CHECK_EXISTS([zlib],
+   [
+    have_zlib="yes"
+    xpost_requirements_lib_pc="${xpost_requirements_lib_pc} zlib"
+    AC_DEFINE([HAVE_ZLIB], [1], [Define to 1 if zlib is detected])
+   ],
+   [have_zlib="no"])
+
 # libxcb
 PKG_CHECK_EXISTS([xcb-image xcb-icccm xcb],
    [

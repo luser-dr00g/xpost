@@ -39,6 +39,10 @@
 #include <math.h>
 #include <string.h>
 
+#ifdef HAVE_ZLIB
+# include <zlib.h>
+#endif
+
 #include "xpost.h"
 #include "xpost_log.h"
 #include "xpost_memory.h" /* access memory */
@@ -78,6 +82,7 @@ static Xpost_Object namecvx;
 static Xpost_Object nameRbracket;
 static Xpost_Object nameImgData;
 static Xpost_Object nameFillRect;
+static Xpost_Object namepdfPrivate;
 
 char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
 {
@@ -676,6 +681,324 @@ int _fillrectgray(Xpost_Context *ctx,
     return 0;
 }
 
+/* Deflate the concatenation of an array of strings, returning the result as an
+   array of <=65535-byte strings (the PostScript string limit) plus a boolean
+   that is true when compression happened. Used by the pdfwrite device to write
+   a FlateDecode content stream. Without zlib the input is returned unchanged
+   with false, so the caller falls back to uncompressed output. */
+static
+int _flatecompress(Xpost_Context *ctx, Xpost_Object arr)
+{
+#ifdef HAVE_ZLIB
+    z_stream strm;
+    unsigned char *out = NULL;
+    size_t outlen = 0, outcap = 0;
+    unsigned char buf[16384];
+    Xpost_Object result;
+    int i, n, ret;
+
+    memset(&strm, 0, sizeof strm);
+    if (deflateInit(&strm, Z_DEFAULT_COMPRESSION) != Z_OK)
+        return unregistered;
+
+    n = arr.comp_.sz;
+    for (i = 0; i <= n; i++)   /* the final pass (i == n) flushes */
+    {
+        int flush = (i == n) ? Z_FINISH : Z_NO_FLUSH;
+        if (i < n)
+        {
+            Xpost_Object s = xpost_array_get(ctx, arr, i);
+            strm.next_in = (unsigned char *)xpost_string_get_pointer(ctx, s);
+            strm.avail_in = s.comp_.sz;
+        }
+        else
+        {
+            strm.next_in = NULL;
+            strm.avail_in = 0;
+        }
+        do
+        {
+            size_t have;
+            strm.next_out = buf;
+            strm.avail_out = sizeof buf;
+            ret = deflate(&strm, flush);
+            if (ret == Z_STREAM_ERROR)
+            {
+                free(out);
+                deflateEnd(&strm);
+                return unregistered;
+            }
+            have = sizeof buf - strm.avail_out;
+            if (outlen + have > outcap)
+            {
+                unsigned char *tmp;
+                outcap = (outlen + have) * 2 + 64;
+                tmp = realloc(out, outcap);
+                if (!tmp)
+                {
+                    free(out);
+                    deflateEnd(&strm);
+                    return VMerror;
+                }
+                out = tmp;
+            }
+            memcpy(out + outlen, buf, have);
+            outlen += have;
+        } while (strm.avail_out == 0);
+    }
+    deflateEnd(&strm);
+
+    {
+        size_t pos = 0;
+        int nchunks = (int)((outlen + 65534) / 65535);
+        if (nchunks == 0)
+            nchunks = 1;
+        result = xpost_object_cvlit(xpost_array_cons(ctx, nchunks));
+        for (i = 0; i < nchunks; i++)
+        {
+            size_t chunk = outlen - pos;
+            if (chunk > 65535)
+                chunk = 65535;
+            /* cvlit: strings and arrays are executable by default, and this
+               binary content must be written, not executed */
+            xpost_array_put(ctx, result, i,
+                            xpost_object_cvlit(
+                                xpost_string_cons(ctx, chunk, (char *)(out + pos))));
+            pos += chunk;
+        }
+    }
+    free(out);
+    xpost_stack_push(ctx->lo, ctx->os, result);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
+    return 0;
+#else
+    xpost_stack_push(ctx->lo, ctx->os, arr);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+    return 0;
+#endif
+}
+
+/* write a decimal integer, returning its length */
+static int _pdf_fmt_long(char *o, long v)
+{
+    char t[24];
+    int n = 0, neg = 0, len = 0;
+    if (v < 0) { neg = 1; v = -v; }
+    if (v == 0) t[n++] = '0';
+    while (v) { t[n++] = (char)('0' + (v % 10)); v /= 10; }
+    if (neg) o[len++] = '-';
+    while (n) o[len++] = t[--n];
+    return len;
+}
+
+/* write a PDF number: an integer when integral, else two decimals (never
+   exponential). round(v*100) avoids binary-float print noise. Matches the
+   .pdfnum PostScript helper used by the other pdfwrite methods. */
+static int _pdf_fmt_num(char *o, double v)
+{
+    if (v == trunc(v))
+        return _pdf_fmt_long(o, (long)v);
+    else
+    {
+        long m = (long)round(v * 100.0);
+        long ip, fp;
+        int len = 0;
+        if (m < 0) { o[len++] = '-'; m = -m; }
+        ip = m / 100;
+        fp = m % 100;
+        len += _pdf_fmt_long(o + len, ip);
+        o[len++] = '.';
+        o[len++] = (char)('0' + fp / 10);
+        o[len++] = (char)('0' + fp % 10);
+        return len;
+    }
+}
+
+/* pdfwrite content accumulator. Held in the device's /Private string and grown
+   with malloc/realloc, so the accumulated content lives outside the
+   save/restore-managed memory file (like the raster device's pixel buffer) and
+   survives a `restore` executed by the job before showpage/Emit. The current
+   page's marks are not part of virtual memory, so `restore` must not discard
+   them; storing them in the device dict would let it. */
+typedef struct
+{
+    char *data;
+    size_t len;
+    size_t cap;
+} Pdf_Acc;
+
+static int _pdf_acc_append(Pdf_Acc *a, const char *s, size_t n)
+{
+    if (a->len + n > a->cap)
+    {
+        size_t nc = a->cap ? a->cap : 4096;
+        char *nd;
+        while (nc < a->len + n)
+            nc *= 2;
+        nd = (char *)realloc(a->data, nc);
+        if (!nd)
+            return 0;
+        a->data = nd;
+        a->cap = nc;
+    }
+    memcpy(a->data + a->len, s, n);
+    a->len += n;
+    return 1;
+}
+
+/* Load/store the accumulator struct via the device's /Private string. The raw
+   memory accessors record no save/restore backup, so neither the struct nor the
+   malloc'd buffer it points at is reverted by `restore`; the pointer is set once
+   at device creation and never re-homed into virtual memory. */
+static int _pdf_acc_get(Xpost_Context *ctx, Xpost_Object devdic,
+                        Xpost_Object *priv, Pdf_Acc *a)
+{
+    *priv = xpost_dict_get(ctx, devdic, namepdfPrivate);
+    if (xpost_object_get_type(*priv) != stringtype)
+        return 0;
+    xpost_memory_get(xpost_context_select_memory(ctx, *priv),
+                     xpost_object_get_ent(*priv), 0, sizeof(*a), a);
+    return 1;
+}
+
+static void _pdf_acc_put(Xpost_Context *ctx, Xpost_Object priv, Pdf_Acc *a)
+{
+    xpost_memory_put(xpost_context_select_memory(ctx, priv),
+                     xpost_object_get_ent(priv), 0, sizeof(*a), a);
+}
+
+/* Create the content accumulator and stash it in the device's /Private. Called
+   from the device Create method, before any user save/restore. */
+static int _pdfinit(Xpost_Context *ctx, Xpost_Object devdic)
+{
+    Pdf_Acc a;
+    Xpost_Object priv;
+
+    a.data = (char *)malloc(4096);
+    a.len = 0;
+    a.cap = a.data ? 4096 : 0;
+    priv = xpost_object_cvlit(xpost_string_cons(ctx, sizeof(a), NULL));
+    _pdf_acc_put(ctx, priv, &a);
+    xpost_dict_put(ctx, devdic, namepdfPrivate, priv);
+    return 0;
+}
+
+/* append a string's bytes to the accumulator (the marking methods' .put) */
+static int _pdfput(Xpost_Context *ctx, Xpost_Object str, Xpost_Object devdic)
+{
+    Pdf_Acc a;
+    Xpost_Object priv;
+
+    if (!_pdf_acc_get(ctx, devdic, &priv, &a))
+        return undefined;
+    if (!_pdf_acc_append(&a, (char *)xpost_string_get_pointer(ctx, str), str.comp_.sz))
+        return VMerror;
+    _pdf_acc_put(ctx, priv, &a);
+    return 0;
+}
+
+/* Emit the content-stream operators for a filled path into the accumulator: the
+   colour ("r g b rg"), the flattened subpaths ("x y m" / "x y l", closed with
+   "h"), and an even-odd fill ("f*"). This is the per-coordinate hot loop of the
+   pdfwrite FillPoly, in C. */
+static int _pdffillpoly(Xpost_Context *ctx,
+                        Xpost_Object r, Xpost_Object g, Xpost_Object b,
+                        Xpost_Object poly, Xpost_Object devdic)
+{
+#define PDFNUMVAL(o) (xpost_object_get_type(o) == realtype ? (o).real_.val \
+                                                           : (double)(o).int_.val)
+    Pdf_Acc a;
+    Xpost_Object priv;
+    char tmp[96];
+    int i, n, len, needmove = 1;
+
+    if (!_pdf_acc_get(ctx, devdic, &priv, &a))
+        return undefined;
+
+    len = 0;
+    len += _pdf_fmt_num(tmp + len, PDFNUMVAL(r)); tmp[len++] = ' ';
+    len += _pdf_fmt_num(tmp + len, PDFNUMVAL(g)); tmp[len++] = ' ';
+    len += _pdf_fmt_num(tmp + len, PDFNUMVAL(b));
+    memcpy(tmp + len, " rg\n", 4); len += 4;
+    _pdf_acc_append(&a, tmp, len);
+
+    n = poly.comp_.sz;
+    for (i = 0; i < n; i++)
+    {
+        Xpost_Object e = xpost_array_get(ctx, poly, i);
+        if (xpost_object_get_type(e) == arraytype && e.comp_.sz == 2)
+        {
+            double x = PDFNUMVAL(xpost_array_get(ctx, e, 0));
+            double y = PDFNUMVAL(xpost_array_get(ctx, e, 1));
+            len = 0;
+            len += _pdf_fmt_num(tmp + len, x); tmp[len++] = ' ';
+            len += _pdf_fmt_num(tmp + len, y); tmp[len++] = ' ';
+            tmp[len++] = needmove ? 'm' : 'l';
+            tmp[len++] = '\n';
+            needmove = 0;
+            _pdf_acc_append(&a, tmp, len);
+        }
+        else if (!needmove)   /* null subpath separator: close the subpath */
+        {
+            _pdf_acc_append(&a, "h\n", 2);
+            needmove = 1;
+        }
+    }
+    if (!needmove)
+        _pdf_acc_append(&a, "h\n", 2);
+    _pdf_acc_append(&a, "f*\n", 3);
+
+    _pdf_acc_put(ctx, priv, &a);
+    return 0;
+#undef PDFNUMVAL
+}
+
+/* Return the accumulated content as an array of <=65535-byte strings (the
+   PostScript string limit) for the Emit method to compress and write. The
+   malloc'd source buffer is stable across the string allocations. */
+static int _pdfchunks(Xpost_Context *ctx, Xpost_Object devdic)
+{
+    Pdf_Acc a;
+    Xpost_Object priv, result;
+    size_t pos = 0;
+    int nchunks, i;
+
+    if (!_pdf_acc_get(ctx, devdic, &priv, &a))
+        return undefined;
+    nchunks = (int)((a.len + 65534) / 65535);
+    if (nchunks == 0)
+        nchunks = 1;
+    result = xpost_object_cvlit(xpost_array_cons(ctx, nchunks));
+    for (i = 0; i < nchunks; i++)
+    {
+        size_t chunk = a.len - pos;
+        if (chunk > 65535)
+            chunk = 65535;
+        xpost_array_put(ctx, result, i,
+                        xpost_object_cvlit(
+                            xpost_string_cons(ctx, chunk, a.data + pos)));
+        pos += chunk;
+    }
+    xpost_stack_push(ctx->lo, ctx->os, result);
+    return 0;
+}
+
+/* free the accumulator's malloc'd buffer (device Destroy) */
+static int _pdffree(Xpost_Context *ctx, Xpost_Object devdic)
+{
+    Pdf_Acc a;
+    Xpost_Object priv;
+
+    if (!_pdf_acc_get(ctx, devdic, &priv, &a))
+        return 0;
+    free(a.data);
+    a.data = NULL;
+    a.len = 0;
+    a.cap = 0;
+    _pdf_acc_put(ctx, priv, &a);
+    return 0;
+}
+
 int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
                                        Xpost_Object sd)
 {
@@ -692,11 +1015,20 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".fillpoly", (Xpost_Op_Func)_fillpoly, 0, 2, arraytype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillrectgray", (Xpost_Op_Func)_fillrectgray, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".flatecompress", (Xpost_Op_Func)_flatecompress, 2, 1, arraytype); INSTALL;
+    op = xpost_operator_cons(ctx, ".pdffillpoly", (Xpost_Op_Func)_pdffillpoly, 0, 5,
+            numbertype, numbertype, numbertype, arraytype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".pdfinit", (Xpost_Op_Func)_pdfinit, 0, 1, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".pdfput", (Xpost_Op_Func)_pdfput, 0, 2, stringtype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".pdfchunks", (Xpost_Op_Func)_pdfchunks, 1, 1, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".pdffree", (Xpost_Op_Func)_pdffree, 0, 1, dicttype); INSTALL;
     if (xpost_object_get_type((namewidth = xpost_name_cons(ctx, "width"))) == invalidtype)
         return VMerror;
     if (xpost_object_get_type((nameImgData = xpost_name_cons(ctx, "ImgData"))) == invalidtype)
         return VMerror;
     if (xpost_object_get_type((nameFillRect = xpost_name_cons(ctx, "FillRect"))) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type((namepdfPrivate = xpost_name_cons(ctx, "Private"))) == invalidtype)
         return VMerror;
     if (xpost_object_get_type((namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace"))) == invalidtype)
         return VMerror;
