@@ -89,7 +89,9 @@ def
 % clip path can arrive in the opposite device-space winding (e.g. after
 % the y-flip), which would keep the exterior and clip everything away.
 % Reverse such a polygon so its winding always matches.
-/normclipwind { % poly  .  poly'
+% doubled signed area of a closed polygon (first point repeated at the
+% end); positive when wound counter-clockwise in device space
+/polyarea2 { % poly  .  a2
     8 dict begin
     /poly exch def
     /a2 0.0 def
@@ -99,12 +101,17 @@ def
         poly i 1 add get aload pop /yj exch def /xj exch def
         /a2 a2 xi yj mul xj yi mul sub add def
     } for
-    a2 0 lt {
-        [ poly length 1 sub -1 0 { poly exch get } for ]
-    }{
-        poly
-    } ifelse
+    a2
     end
+} bind def
+
+/normclipwind { % poly  .  poly'
+    dup polyarea2 0 lt {
+        4 dict begin
+        /poly exch def
+        [ poly length 1 sub -1 0 { poly exch get } for ]
+        end
+    } if
 } bind def
 
 % polygon [A B C]  .  new-polygon
@@ -172,7 +179,7 @@ def
 % convert polygon array back to path structure
 /doclip {
 	%DICT
-	10 dict
+	20 dict
 	begin
 
     %/isclosed 
@@ -227,11 +234,21 @@ def
         %hook
     } if
 
+    % A clip path may carry several subpaths: the first is the clip
+    % window, and any later subpath wound the opposite way is a hole
+    % cut out of it (the nonzero-rule idiom for clipping around a
+    % reserved area). Later subpaths with the window's winding are
+    % treated as further windows to intersect, as before.
+    /wsign 0 def
     CR { % one clipping polygon
-        %dup dup length 2 sub get % polygon final-point
 	dup length 0 eq {
 	    pop
 	}{
+	    dup polyarea2 0 lt { -1 }{ 1 } ifelse /psign exch def
+	    wsign 0 eq { /wsign psign def } if
+	    psign wsign eq {
+
+	    % intersect the subject polygons with the (convex) window
 	    normclipwind
 	    dup 0 get
 	    /U exch def
@@ -251,6 +268,36 @@ def
 		/U V def
 	    } forall
 
+	    }{
+
+	    % subtract the (convex) hole: the difference decomposes into
+	    % one piece per hole edge - the part beyond that edge,
+	    % limited by the edges before it
+	    normclipwind
+	    /HP exch def
+	    /HL [
+		HP 0 get /U exch def
+		HP 1 HP length 1 sub getinterval {
+		    /V exch def
+		    [ U aload pop V aload pop p2abc ]
+		    /U V def
+		} forall
+	    ] def
+	    /PA [
+		PA {
+		    /SP exch def
+		    0 1 HL length 1 sub {
+			/hi exch def
+			/piece SP [ HL hi get { neg } forall ] hodgman-sutherland def
+			0 1 hi 1 sub {
+			    /piece piece 3 -1 roll HL exch get hodgman-sutherland def
+			} for
+			piece length 3 gt { piece } if
+		    } for
+		} forall
+	    ] def
+
+	    } ifelse
 	} ifelse
     } forall
     newpath
