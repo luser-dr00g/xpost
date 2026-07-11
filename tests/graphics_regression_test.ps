@@ -232,6 +232,44 @@ newpath 5 5 moveto 20 12.5 lineto stroke
 grestore
 25 17.5 inknear (a scaled diagonal stroke marks pixels) assert
 
+% --- text rendering: sharp threshold by default, coverage blending
+%     under TextAlphaBits. Skipped when no host font resolves
+%     (headless build without fonts). ---
+/countmid { % - . n  (pixels neither background nor ink: blended edges)
+    0
+    0 1 63 {
+        DEV /ImgData get exch get
+        { dup 10 gt exch 245 lt and { 1 add } if } forall
+    } for
+} bind def
+
+/basefont null def
+{ /Helvetica findfont } stopped not count 0 gt and {
+    dup type /dicttype eq { /basefont exch def } { pop } ifelse
+} if
+
+basefont null ne {
+    % sharp text by default: ink but no intermediate values
+    erasepage
+    basefont 20 scalefont setfont
+    2 24 moveto (Ag) show
+    countink 20 ge (text marks pixels) assert
+    countmid 0 eq (text is sharp without TextAlphaBits) assert
+
+    % anti-aliased text: TextAlphaBits + BlendPix blend glyph edges
+    DEV /TextAlphaBits 4 put
+    DEV /BlendPix /.blendpixgray load put
+    erasepage
+    2 24 moveto (Ag) show
+    countmid 0 gt (TextAlphaBits blends glyph edges) assert
+    countink 10 ge (anti-aliased text keeps solid cores) assert
+    DEV /TextAlphaBits 1 put
+    erasepage
+    2 24 moveto (Ag) show
+    countmid 0 eq (TextAlphaBits 1 disables blending) assert
+
+} if
+
 count 0 eq (operand stack is balanced) assert
 faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse
 flush

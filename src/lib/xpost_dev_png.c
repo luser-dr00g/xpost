@@ -322,6 +322,51 @@ int _putpix(Xpost_Context *ctx,
     return 0;
 }
 
+/* Blend a coverage-weighted pixel: each channel moves toward the colour
+   by cov/255. The text operators use this for glyph edge pixels when the
+   device renders anti-aliased text. */
+static
+int _blendpix(Xpost_Context *ctx,
+              Xpost_Object red,
+              Xpost_Object green,
+              Xpost_Object blue,
+              Xpost_Object cov,
+              Xpost_Object x,
+              Xpost_Object y,
+              Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    int r, g, b, c, ix, iy;
+
+    r = (int)((xpost_object_get_type(red)   == realtype ? red.real_.val   * 255.0 : red.int_.val   * 255));
+    g = (int)((xpost_object_get_type(green) == realtype ? green.real_.val * 255.0 : green.int_.val * 255));
+    b = (int)((xpost_object_get_type(blue)  == realtype ? blue.real_.val  * 255.0 : blue.int_.val  * 255));
+    c = xpost_object_get_type(cov) == realtype ? (int)cov.real_.val : cov.int_.val;
+    ix = xpost_object_get_type(x) == realtype ? (int)x.real_.val : x.int_.val;
+    iy = xpost_object_get_type(y) == realtype ? (int)y.real_.val : y.int_.val;
+
+    privatestr = xpost_dict_get(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
+
+    if ((ix < 0) || (ix >= private.width) ||
+        (iy < 0) || (iy >= private.height))
+        return 0;
+
+    {
+        Xpost_Png_Pixel *p = &private.buf->data[iy * private.width + ix];
+        p->red   = (unsigned char)(p->red   + ((r - p->red)   * c + 127) / 255);
+        p->green = (unsigned char)(p->green + ((g - p->green) * c + 127) / 255);
+        p->blue  = (unsigned char)(p->blue  + ((b - p->blue)  * c + 127) / 255);
+    }
+
+    return 0;
+}
+
 /* C fast-path for the base-class PS FillRect: fills the buffer directly
    rather than looping over PutPix per pixel. The only caller is erasepage
    (full-page clear), which dominates page-emission time when done in PS. */
@@ -555,6 +600,14 @@ int loadpngdevicecont(Xpost_Context *ctx,
             numbertype, numbertype, numbertype, numbertype,
             dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "FillRect"), op);
+    if (ret)
+        return ret;
+
+    op = xpost_operator_cons(ctx, "pngBlendPix", (Xpost_Op_Func)_blendpix, 0, 7,
+            numbertype, numbertype, numbertype,
+            numbertype, numbertype, numbertype,
+            dicttype);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "BlendPix"), op);
     if (ret)
         return ret;
 
