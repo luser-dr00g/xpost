@@ -514,6 +514,9 @@ int _fillpoly(Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, y2);
     */
 
+    /*the loop body and continuation are built from operator objects,
+     not executable names, so a user definition of /roll or /repeat on
+     the dict stack cannot capture them mid-fill */
     /*then we'll use a repeat loop to call DrawLine
      on each set of 4 numbers. But in order to treat the color space
      generically, we construct the loop body dynamically. */
@@ -547,7 +550,7 @@ int _fillpoly(Xpost_Context *ctx,
             xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(3)); /* color components to move */
             break;
     }
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvx( nameroll));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_operator_cons(ctx, "roll", NULL, 0, 0));
 
       /*at this point (in constructing the (color-space-generic) loop-body) we have the desired stack picture:
 
@@ -571,7 +574,7 @@ int _fillpoly(Xpost_Context *ctx,
 
         /*if drawline is a procedure, we also need to call exec */
         if (xpost_object_get_type(drawline) == arraytype)
-            xpost_stack_push(ctx->lo, ctx->os, nameexec);
+            xpost_stack_push(ctx->lo, ctx->os, xpost_operator_cons(ctx, "exec", NULL, 0, 0));
     }
 
     /*--the rest of the code here calls-back to postscript (by "continuation")
@@ -606,9 +609,9 @@ int _fillpoly(Xpost_Context *ctx,
       So the sequence in C is:
      */
 
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( namerepeat));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( namecvx));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx( nameRbracket));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "repeat", NULL, 0, 0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL, 0, 0));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "]", NULL, 0, 0));
 
     /*performance could be increased by factoring-out calls to xpost_name_cons()  ... DONE!
       or using opcode shortcuts for Rbracket & cvx (or just the arrtomark() function) and repeat.

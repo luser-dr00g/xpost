@@ -225,7 +225,9 @@ int _default_matrix(Xpost_Context *ctx,
 
     xpost_stack_push(ctx->lo, ctx->os, defmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "copy")));
+    /* schedule the operator itself: a name would resolve through the
+       dict stack and could be captured by a user definition */
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "copy", NULL, 0, 0));
     return 0;
 }
 
@@ -239,7 +241,9 @@ int _current_matrix(Xpost_Context *ctx,
     ctm = _get_ctm(ctx);
     xpost_stack_push(ctx->lo, ctx->os, ctm);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "copy")));
+    /* schedule the operator itself: a name would resolve through the
+       dict stack and could be captured by a user definition */
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "copy", NULL, 0, 0));
     return 0;
 }
 
@@ -253,8 +257,12 @@ int _set_matrix(Xpost_Context *ctx,
     ctm = _get_ctm(ctx);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
     xpost_stack_push(ctx->lo, ctx->os, ctm);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "pop")));
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "copy")));
+    /* schedule the operator itself: a name would resolve through the
+       dict stack and could be captured by a user definition */
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "pop", NULL, 0, 0));
+    /* schedule the operator itself: a name would resolve through the
+       dict stack and could be captured by a user definition */
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "copy", NULL, 0, 0));
     return 0;
 }
 
@@ -271,7 +279,9 @@ int _translate(Xpost_Context *ctx,
     xpost_matrix_translate(&mat, xt.real_.val, yt.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "concat")));
+    /* schedule the operator itself: a name would resolve through the
+       dict stack and could be captured by a user definition */
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "concat", NULL, 0, 0));
     return 0;
 }
 
@@ -303,7 +313,9 @@ int _scale(Xpost_Context *ctx,
     xpost_matrix_scale(&mat, xs.real_.val, ys.real_.val);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "concat")));
+    /* schedule the operator itself: a name would resolve through the
+       dict stack and could be captured by a user definition */
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "concat", NULL, 0, 0));
     return 0;
 }
 
@@ -334,7 +346,9 @@ int _rotate(Xpost_Context *ctx,
     xpost_matrix_rotate(&mat, angle.real_.val * RAD_PER_DEG);
     _xmat2psmat(ctx, &mat, psmat);
     xpost_stack_push(ctx->lo, ctx->os, psmat);
-    xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "concat")));
+    /* schedule the operator itself: a name would resolve through the
+       dict stack and could be captured by a user definition */
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "concat", NULL, 0, 0));
     return 0;
 }
 
