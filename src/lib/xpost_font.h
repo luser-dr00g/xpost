@@ -179,6 +179,40 @@ unsigned int xpost_font_face_glyph_index_get(void *face, char c);
 unsigned int xpost_font_face_glyph_name_index_get(void *face, const char *name);
 
 /**
+ * @typedef Xpost_Font_Outline_Sink
+ * Callbacks receiving a glyph outline decomposed into path segments.
+ *
+ * Coordinates are in pixels (26.6 fixed point divided out), y-up,
+ * relative to the pen position. Quadratic segments are converted so
+ * only cubic curves are delivered. Each callback returns 0 to
+ * continue, non-zero to abort the decomposition.
+ */
+typedef struct
+{
+    int (*moveto)(void *user, double x, double y);
+    int (*lineto)(void *user, double x, double y);
+    int (*curveto)(void *user, double x1, double y1, double x2, double y2, double x3, double y3);
+    int (*closepath)(void *user);
+    void *user;
+} Xpost_Font_Outline_Sink;
+
+/**
+ * @brief Decompose a glyph's outline into path segments.
+ *
+ * @param[in] face The font face.
+ * @param[in] glyph_index The glyph index.
+ * @param[in] sink The segment callbacks.
+ * @param[out] advance_x The horizontal advance (26.6 fixed point).
+ * @param[out] advance_y The vertical advance (26.6 fixed point).
+ * @return 1 on success, 0 otherwise (e.g. a bitmap-only glyph).
+ *
+ * The glyph is loaded without rendering; the face's size and
+ * transform apply to the outline and the advance exactly as they do
+ * to the rendered bitmap.
+ */
+int xpost_font_face_glyph_outline(void *face, unsigned int glyph_index, const Xpost_Font_Outline_Sink *sink, long *advance_x, long *advance_y);
+
+/**
  * @brief render the given glyph of the given face.
  * font.
  *

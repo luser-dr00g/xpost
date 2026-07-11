@@ -67,6 +67,24 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
                                        Xpost_Object sd);
 
 /**
+ * @brief append bytes to the pdfwrite device's content accumulator
+ *
+ * For the text operators, which emit glyph outlines as content-stream
+ * path fragments. Returns 1 on success, 0 when the device carries no
+ * accumulator or memory is exhausted.
+ */
+int xpost_dev_pdf_append(Xpost_Context *ctx, Xpost_Object devdic,
+                         const char *s, size_t n);
+
+/**
+ * @brief format a number in PDF content-stream syntax
+ *
+ * Writes an integer when integral, else two decimals (never
+ * exponential). Returns the number of bytes written.
+ */
+int xpost_dev_pdf_fmt_num(char *o, double v);
+
+/**
  * @}
  */
 

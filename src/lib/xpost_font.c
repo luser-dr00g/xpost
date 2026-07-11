@@ -44,6 +44,7 @@
 #ifdef HAVE_FREETYPE2
 # include <ft2build.h>
 # include FT_FREETYPE_H
+# include FT_OUTLINE_H
 #endif
 
 #include "xpost.h"
@@ -645,6 +646,136 @@ xpost_font_face_glyph_name_index_get(void *face, const char *name)
 #else
     (void)face;
     (void)name;
+    return 0;
+#endif
+}
+
+#ifdef HAVE_FREETYPE2
+/* FT_Outline_Decompose adapter: track the current point, divide the
+   26.6 fixed-point coordinates out to pixels, and raise quadratic
+   segments to the equivalent cubics so the sink sees one curve form.
+   The decomposition starts each contour with a moveto and leaves it
+   implicitly closed, so a closepath is synthesized before the next
+   contour and after the last. */
+struct _outline_walk
+{
+    const Xpost_Font_Outline_Sink *sink;
+    double x, y;
+    int open;
+};
+
+static int
+_outline_moveto(const FT_Vector *to, void *user)
+{
+    struct _outline_walk *w = user;
+
+    if (w->open)
+    {
+        int ret = w->sink->closepath(w->sink->user);
+        if (ret)
+            return ret;
+    }
+    w->open = 1;
+    w->x = to->x / 64.0;
+    w->y = to->y / 64.0;
+    return w->sink->moveto(w->sink->user, w->x, w->y);
+}
+
+static int
+_outline_lineto(const FT_Vector *to, void *user)
+{
+    struct _outline_walk *w = user;
+
+    w->x = to->x / 64.0;
+    w->y = to->y / 64.0;
+    return w->sink->lineto(w->sink->user, w->x, w->y);
+}
+
+static int
+_outline_conicto(const FT_Vector *control, const FT_Vector *to, void *user)
+{
+    struct _outline_walk *w = user;
+    double cx = control->x / 64.0;
+    double cy = control->y / 64.0;
+    double ex = to->x / 64.0;
+    double ey = to->y / 64.0;
+    /* a quadratic's control point pulls each cubic control 2/3 of the
+       way from the respective endpoint */
+    double c1x = w->x + (cx - w->x) * (2.0 / 3.0);
+    double c1y = w->y + (cy - w->y) * (2.0 / 3.0);
+    double c2x = ex + (cx - ex) * (2.0 / 3.0);
+    double c2y = ey + (cy - ey) * (2.0 / 3.0);
+
+    w->x = ex;
+    w->y = ey;
+    return w->sink->curveto(w->sink->user, c1x, c1y, c2x, c2y, ex, ey);
+}
+
+static int
+_outline_cubicto(const FT_Vector *control1, const FT_Vector *control2, const FT_Vector *to, void *user)
+{
+    struct _outline_walk *w = user;
+
+    w->x = to->x / 64.0;
+    w->y = to->y / 64.0;
+    return w->sink->curveto(w->sink->user,
+                            control1->x / 64.0, control1->y / 64.0,
+                            control2->x / 64.0, control2->y / 64.0,
+                            w->x, w->y);
+}
+#endif
+
+int
+xpost_font_face_glyph_outline(void *face, unsigned int glyph_index, const Xpost_Font_Outline_Sink *sink, long *advance_x, long *advance_y)
+{
+#ifdef HAVE_FREETYPE2
+    FT_GlyphSlot slot;
+    FT_Outline *outline;
+    FT_Error err;
+    struct _outline_walk w;
+
+    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP);
+    if (err)
+    {
+        XPOST_LOG_ERR("Can not load glyph (error : %d)", err);
+        return 0;
+    }
+    slot = ((FT_Face)face)->glyph;
+    *advance_x = slot->advance.x;
+    *advance_y = slot->advance.y;
+    if (slot->format != FT_GLYPH_FORMAT_OUTLINE)
+    {
+        XPOST_LOG_ERR("glyph has no outline");
+        return 0;
+    }
+    outline = &slot->outline;
+
+    w.sink = sink;
+    w.x = 0;
+    w.y = 0;
+    w.open = 0;
+    {
+        FT_Outline_Funcs funcs;
+
+        funcs.move_to = _outline_moveto;
+        funcs.line_to = _outline_lineto;
+        funcs.conic_to = _outline_conicto;
+        funcs.cubic_to = _outline_cubicto;
+        funcs.shift = 0;
+        funcs.delta = 0;
+        err = FT_Outline_Decompose(outline, &funcs, &w);
+        if (err)
+            return 0;
+    }
+    if (w.open && sink->closepath(sink->user))
+        return 0;
+    return 1;
+#else
+    (void)face;
+    (void)glyph_index;
+    (void)sink;
+    (void)advance_x;
+    (void)advance_y;
     return 0;
 #endif
 }

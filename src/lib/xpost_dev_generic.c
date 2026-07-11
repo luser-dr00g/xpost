@@ -937,6 +937,29 @@ static int _pdfput(Xpost_Context *ctx, Xpost_Object str, Xpost_Object devdic)
     return 0;
 }
 
+/* Exported accumulator access for the text operators: they build a
+   complete content-stream fragment per glyph outline and append it in
+   one call. Returns 1 on success. */
+int xpost_dev_pdf_append(Xpost_Context *ctx, Xpost_Object devdic,
+                         const char *s, size_t n)
+{
+    Pdf_Acc a;
+    Xpost_Object priv;
+
+    if (!_pdf_acc_get(ctx, devdic, &priv, &a))
+        return 0;
+    if (!_pdf_acc_append(&a, s, n))
+        return 0;
+    _pdf_acc_put(ctx, priv, &a);
+    return 1;
+}
+
+/* Exported PDF number formatter (see _pdf_fmt_num) */
+int xpost_dev_pdf_fmt_num(char *o, double v)
+{
+    return _pdf_fmt_num(o, v);
+}
+
 /* Emit the content-stream operators for a filled path into the accumulator: the
    colour ("r g b rg"), the flattened subpaths ("x y m" / "x y l", closed with
    "h"), and an even-odd fill ("f*"). This is the per-coordinate hot loop of the
