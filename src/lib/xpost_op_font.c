@@ -66,12 +66,14 @@
 typedef struct fontdata
 {
     void *face;
+    void *program;  /* malloc'd font program backing a memory face (Type 42) */
 } fontdata;
 
 /* per-text-operator rendering configuration, gathered once from the
    font dictionary and the device dictionary */
 typedef struct textstate
 {
+    Xpost_Object encoding;  /* the font's /Encoding array, or invalid */
     Xpost_Object blendpix;  /* the device's BlendPix method, or invalid */
     int blend;              /* anti-alias: TextAlphaBits > 1 and BlendPix present */
 } textstate;
@@ -111,6 +113,7 @@ int _findfont(Xpost_Context *ctx,
         static int face_cache_n = 0;
         int fi;
         data.face = NULL;
+        data.program = NULL;
         for (fi = 0; fi < face_cache_n; fi++)
         {
             if (strcmp(face_cache[fi].name, fname) == 0)
@@ -150,6 +153,76 @@ int _findfont(Xpost_Context *ctx,
 #else
     (void)ctx;
     (void)fontname;
+    return invalidfont;
+#endif
+}
+
+/* Load a Type 42 font program: reassemble the /sfnts strings into one
+   malloc'd buffer, open it as a memory face, and stash the face in the
+   dict's /Private exactly as findfont does for a file face. The buffer
+   backs the face for the face's lifetime; like the findfont face cache,
+   defined fonts live for the process. */
+static
+int _loadfont42(Xpost_Context *ctx,
+                Xpost_Object fontdict)
+{
+#ifdef HAVE_FREETYPE2
+    Xpost_Object sfnts;
+    Xpost_Object privatestr;
+    Xpost_Object fontbbox;
+    Xpost_Object fontbboxarray[4];
+    struct fontdata data;
+    unsigned char *buf;
+    size_t total;
+    int i;
+
+    sfnts = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "sfnts"));
+    if (xpost_object_get_type(sfnts) != arraytype)
+        return invalidfont;
+    total = 0;
+    for (i = 0; i < sfnts.comp_.sz; i++)
+    {
+        Xpost_Object s = xpost_array_get(ctx, sfnts, i);
+        if (xpost_object_get_type(s) != stringtype)
+            return invalidfont;
+        total += s.comp_.sz;
+    }
+    if (total == 0)
+        return invalidfont;
+    buf = malloc(total);
+    if (!buf)
+        return VMerror;
+    total = 0;
+    for (i = 0; i < sfnts.comp_.sz; i++)
+    {
+        Xpost_Object s = xpost_array_get(ctx, sfnts, i);
+        memcpy(buf + total, xpost_string_get_pointer(ctx, s), s.comp_.sz);
+        total += s.comp_.sz;
+    }
+
+    data.face = xpost_font_face_new_from_memory(buf, total);
+    data.program = buf;
+    if (data.face == NULL)
+    {
+        free(buf);
+        return invalidfont;
+    }
+
+    fontbbox = xpost_array_cons(ctx, 4);
+    xpost_font_face_get_bbox(data.face, fontbboxarray);
+    xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
+                     xpost_object_get_ent(fontbbox),
+                     0, 4 * sizeof(Xpost_Object), fontbboxarray);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontBBox"), fontbbox);
+
+    privatestr = xpost_string_cons(ctx, sizeof data, NULL);
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "Private"), privatestr);
+    return 0;
+#else
+    (void)ctx;
+    (void)fontdict;
     return invalidfont;
 #endif
 }
@@ -267,8 +340,7 @@ textstate _text_state_get(Xpost_Context *ctx,
     textstate ts;
     Xpost_Object tab;
 
-    (void)fontdict;
-
+    ts.encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
     ts.blendpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "BlendPix"));
     tab = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "TextAlphaBits"));
     ts.blend = xpost_object_get_type(ts.blendpix) == operatortype
@@ -277,6 +349,43 @@ textstate _text_state_get(Xpost_Context *ctx,
     return ts;
 }
 
+/* Map a character code to a glyph index. When the font carries an
+   /Encoding array with a glyph name at this code, the name selects the
+   glyph; codes whose entry is not a name (the findfont wrapper fills
+   /Encoding with nulls), or whose name the face does not know, fall
+   back to the face's character map, preserving the plain-text
+   behaviour of an unencoded font. */
+static
+unsigned int _glyph_index_for_char(Xpost_Context *ctx,
+                                   Xpost_Object encoding,
+                                   void *face,
+                                   unsigned int ch)
+{
+    if (xpost_object_get_type(encoding) == arraytype
+     && ch < (unsigned int)encoding.comp_.sz)
+    {
+        Xpost_Object en = xpost_array_get(ctx, encoding, ch);
+        if (xpost_object_get_type(en) == nametype)
+        {
+            Xpost_Object str = xpost_name_get_string(ctx, en);
+            char *cname = xpost_string_allocate_cstring(ctx, str);
+            unsigned int gi = 0;
+            if (cname)
+            {
+                if (strcmp(cname, ".notdef") == 0)
+                {
+                    free(cname);
+                    return 0;
+                }
+                gi = xpost_font_face_glyph_name_index_get(face, cname);
+                free(cname);
+            }
+            if (gi)
+                return gi;
+        }
+    }
+    return xpost_font_face_glyph_index_get(face, (char)ch);
+}
 
 #ifdef HAVE_FREETYPE2
 /* Give the face the current orientation before using it. The pixel
@@ -438,7 +547,7 @@ int _show_char(Xpost_Context *ctx,
     long advance_x;
     long advance_y;
 
-    glyph_index = xpost_font_face_glyph_index_get(data.face, ch);
+    glyph_index = _glyph_index_for_char(ctx, ts->encoding, data.face, ch);
     //TODO check fontdict's /AutoKern bool
     if (has_kerning && *glyph_previous && (glyph_index > 0))
     {
@@ -630,7 +739,7 @@ int _show(Xpost_Context *ctx,
     has_kerning = xpost_font_face_kerning_has(data.face);
     glyph_previous = 0;
     for (ch = cstr; *ch; ch++) {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous, has_kerning,
                 ncomp, comp1, comp2, comp3);
     }
 
@@ -745,7 +854,7 @@ int _ashow(Xpost_Context *ctx,
     glyph_previous = 0;
     for (ch = cstr; *ch; ch++)
     {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous, has_kerning,
                    ncomp, comp1, comp2, comp3);
         xpos += dx.real_.val;
         ypos += dy.real_.val;
@@ -863,7 +972,7 @@ int _widthshow(Xpost_Context *ctx,
     glyph_previous = 0;
     for (ch = cstr; *ch; ch++)
     {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous, has_kerning,
                    ncomp, comp1, comp2, comp3);
         if (*ch == charcode.int_.val)
         {
@@ -986,7 +1095,7 @@ int _awidthshow(Xpost_Context *ctx,
     glyph_previous = 0;
     for (ch = cstr; *ch; ch++)
     {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous, has_kerning,
                 ncomp, comp1, comp2, comp3);
         xpos += dx.real_.val;
         ypos += dy.real_.val;
@@ -1018,6 +1127,7 @@ int _stringwidth(Xpost_Context *ctx,
     char *cstr;
     real xpos = 0, ypos = 0;
     char *ch;
+    Xpost_Object encoding;
 
     int has_kerning;
     unsigned int glyph_previous;
@@ -1045,6 +1155,7 @@ int _stringwidth(Xpost_Context *ctx,
         return invalidfont;
     }
     _face_transform_from_ctm(ctx, gs, data.face);
+    encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -1072,7 +1183,7 @@ int _stringwidth(Xpost_Context *ctx,
         long advance_x;
         long advance_y;
 
-        glyph_index = xpost_font_face_glyph_index_get(data.face, *ch);
+        glyph_index = _glyph_index_for_char(ctx, encoding, data.face, (unsigned char)*ch);
         if (has_kerning && glyph_previous && (glyph_index > 0))
         {
             long delta_x;
@@ -1239,7 +1350,7 @@ int _kshow(Xpost_Context *ctx,
     glyph_previous = 0;
     for (ch = cstr; *ch; ch++)
     {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous, has_kerning,
                 ncomp, comp1, comp2, comp3);
     }
 
@@ -1265,6 +1376,8 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "findfont", (Xpost_Op_Func)_findfont, 1, 1, nametype);
     INSTALL;
     op = xpost_operator_cons(ctx, "findfont", (Xpost_Op_Func)_findfont, 1, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".loadfont42", (Xpost_Op_Func)_loadfont42, 0, 1, dicttype);
     INSTALL;
     op = xpost_operator_cons(ctx, "scalefont", (Xpost_Op_Func)_scalefont, 1, 2, dicttype, floattype);
     INSTALL;

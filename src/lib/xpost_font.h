@@ -100,6 +100,20 @@ void xpost_font_quit(void);
 void *xpost_font_face_new_from_name(const char *name);
 
 /**
+ * @brief Return a font face from a font program held in memory.
+ *
+ * @param[in] data The font program bytes (TrueType/OpenType sfnt).
+ * @param[in] len The number of bytes.
+ * @return The font face, or @c NULL on error.
+ *
+ * The buffer must remain valid for the lifetime of the face; the
+ * caller retains ownership.
+ *
+ * @see xpost_font_face_new_from_name()
+ */
+void *xpost_font_face_new_from_memory(const unsigned char *data, size_t len);
+
+/**
  * @brief Return bounding box from a font face.
  *
  */
@@ -151,6 +165,18 @@ void xpost_font_face_transform(void *face, float *mat);
  * see xpost_font_face_glyph_render()
  */
 unsigned int xpost_font_face_glyph_index_get(void *face, char c);
+
+/**
+ * @brief Return the glyph index for a glyph name in the given font.
+ *
+ * @param[in] face The font face.
+ * @param[in] name The glyph name (e.g. "zero").
+ * @return The glyph index, or 0 when the face has no glyph by that
+ * name (or carries no glyph names at all).
+ *
+ * @see xpost_font_face_glyph_index_get()
+ */
+unsigned int xpost_font_face_glyph_name_index_get(void *face, const char *name);
 
 /**
  * @brief render the given glyph of the given face.

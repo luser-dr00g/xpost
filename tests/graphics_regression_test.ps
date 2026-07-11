@@ -233,14 +233,26 @@ grestore
 25 17.5 inknear (a scaled diagonal stroke marks pixels) assert
 
 % --- text rendering: sharp threshold by default, coverage blending
-%     under TextAlphaBits. Skipped when no host font resolves
-%     (headless build without fonts). ---
+%     under TextAlphaBits, /Encoding vectors honored, Type 42 font
+%     programs accepted by definefont. All skipped when no host font
+%     resolves (headless build without fonts). ---
 /countmid { % - . n  (pixels neither background nor ink: blended edges)
     0
     0 1 63 {
         DEV /ImgData get exch get
         { dup 10 gt exch 245 lt and { 1 add } if } forall
     } for
+} bind def
+/snapshot { % - . array of row copies
+    [ 0 1 63 { DEV /ImgData get exch get dup length string copy } for ]
+} bind def
+/snapeq { % snapA snapB . bool
+    4 dict begin
+    /sb exch def /sa exch def
+    /same true def
+    0 1 63 { /i exch def sa i get sb i get eq not { /same false def } if } for
+    same
+    end
 } bind def
 
 /basefont null def
@@ -268,7 +280,48 @@ basefont null ne {
     2 24 moveto (Ag) show
     countmid 0 eq (TextAlphaBits 1 disables blending) assert
 
+    % /Encoding: a re-encoded copy renders the named glyph
+    erasepage
+    2 24 moveto (0) show
+    /wantsnap snapshot def
+    basefont dup length dict copy
+    dup /Encoding 256 array put
+    dup /Encoding get 65 /zero put
+    /ReencTest exch definefont 20 scalefont setfont
+    erasepage
+    2 24 moveto (A) show
+    /gotsnap snapshot def
+    wantsnap gotsnap snapeq (re-encoded code renders the named glyph) assert
+    basefont 20 scalefont setfont
+    erasepage
+    2 24 moveto (A) show
+    wantsnap snapshot snapeq not (the base font still renders its own glyph) assert
 } if
+
+% Type 42: a TrueType program supplied through /sfnts renders
+/t42file (/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf) def
+{ t42file (r) file } stopped {
+    pop pop  % font file absent on this host: discard the leftover path and mode strings
+} {
+    /f exch def
+    /sfntsarr [ { f 65000 string readstring not { exit } if } loop
+                dup length 0 gt { } { pop } ifelse ] def
+    f closefile
+    12 dict begin
+        /FontType 42 def
+        /FontMatrix [1 0 0 1 0 0] def
+        /Encoding ISOLatin1Encoding def
+        /sfnts sfntsarr def
+    currentdict end
+    { /Type42Test exch definefont } stopped
+    dup (definefont accepts a Type 42 program) exch not exch assert
+    not {
+        20 scalefont setfont
+        erasepage
+        2 24 moveto (Ag1) show
+        countink 20 ge (a Type 42 face renders glyphs) assert
+    } if
+} ifelse
 
 count 0 eq (operand stack is balanced) assert
 faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse
