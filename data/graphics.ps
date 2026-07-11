@@ -33,6 +33,28 @@ userdict begin
 graphicsdict /currgstate get /device DEVICE put
 /DEVICE { graphicsdict /currgstate get /device get } def
 
+% The graphics machinery is implemented in PostScript and runs in the
+% middle of user programs, whose dictionaries are then on the dict
+% stack: an unbound operator name in these procedures can be captured
+% by an unrelated definition in a user dictionary (a variable named
+% /type or /copy, for example). Bind every procedure - including the
+% methods of device class dictionaries and the procedures the boot
+% files left in systemdict - so operator references are resolved now.
+% Names that resolve to procedures are left dynamic, so wrappers still
+% dispatch through the dict stack.
+[ currentdict systemdict ] {
+    {
+        exch pop
+        dup type /dicttype eq {
+            { exch pop
+              dup type /arraytype eq 1 index xcheck and { bind } if pop
+            } forall
+        }{
+            dup type /arraytype eq 1 index xcheck and { bind } if pop
+        } ifelse
+    } forall
+} forall
+
 end %userdict
 
 /QUIET where { pop }{ (eof graphics.ps\n)print } ifelse
