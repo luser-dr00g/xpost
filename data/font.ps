@@ -10,19 +10,44 @@
 
 /QUIET where { pop }{ (loading font.ps...)print } ifelse
 
+% Type 3 fonts render through their BuildChar procedure; Type 42 fonts
+% carry a TrueType program in /sfnts, reassembled and opened as a
+% memory face by .loadfont42 so the C text operators use it exactly
+% like a findfont face.
 /definefont { % /fontname -dict-
     dup type /dicttype ne
     2 index type /nulltype eq or {
         /definefont cvx /typecheck signalerror
     } if
-    {
-        dup /FontType known not {stop} if
-        dup /FontMatrix known not {stop} if
-        dup /Encoding known not {stop} if
-        dup /BuildChar known not {stop} if
-    } stopped {
-        /definefont cvx /invalidfont signalerror
-    } if
+    dup /FontType 2 copy known { get }{ pop pop -1 } ifelse
+    dup 42 eq {
+        pop
+        {
+            dup /FontMatrix known not {stop} if
+            dup /Encoding known not {stop} if
+            dup /sfnts known not {stop} if
+        } stopped {
+            /definefont cvx /invalidfont signalerror
+        } if
+        dup .loadfont42
+    }{
+        3 eq {
+            {
+                dup /FontMatrix known not {stop} if
+                dup /Encoding known not {stop} if
+                dup /BuildChar known not {stop} if
+            } stopped {
+                /definefont cvx /invalidfont signalerror
+            } if
+        }{
+            % other FontTypes carry no program to load here: accept when
+            % the dictionary already holds a working face (a re-encoded
+            % copy of a findfont dictionary shares its /Private face)
+            dup /Private known not {
+                /definefont cvx /invalidfont signalerror
+            } if
+        } ifelse
+    } ifelse
     dup /FontName known not {
         dup /FontName 3 index put
     } if
