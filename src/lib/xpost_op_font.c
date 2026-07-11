@@ -36,6 +36,7 @@
 #include <stddef.h>
 
 #include <assert.h>
+#include <math.h> /* sqrt */
 #include <stdio.h>
 #include <string.h>
 
@@ -251,6 +252,46 @@ int _setfont(Xpost_Context *ctx,
 }
 
 #ifdef HAVE_FREETYPE2
+/* Give the face the current orientation before using it. The pixel
+   size set by scalefont carries the CTM's magnitude (the scalefont
+   wrapper in font.ps measures the size through dtransform), so glyphs
+   come out the right size but always upright. Rotation, shear and
+   anisotropy live in the CTM's linear part: normalize the magnitude
+   out and conjugate by the y flip that relates FreeType's y-up glyph
+   space to the device's y-down raster, and install the result as the
+   face's transform. The face is shared through the font cache and the
+   transform is sticky, so each text operator refreshes it from the
+   graphics state it runs under. */
+static
+void _face_transform_from_ctm(Xpost_Context *ctx,
+                              Xpost_Object gs,
+                              void *face)
+{
+    Xpost_Object psmat;
+    real m[4];
+    real q;
+    float mat[6] = { 0 };
+    int i;
+
+    psmat = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currmatrix"));
+    if (xpost_object_get_type(psmat) != arraytype || psmat.comp_.sz != 6)
+        return;
+    for (i = 0; i < 4; i++)
+    {
+        Xpost_Object el = xpost_array_get(ctx, psmat, i);
+        m[i] = xpost_object_get_type(el) == realtype ? el.real_.val
+             : (real)el.int_.val;
+    }
+    q = (real)sqrt(m[0] * m[0] + m[1] * m[1]);
+    if (q == 0)
+        return;
+    mat[0] = (float)( m[0] / q);   /* xx */
+    mat[1] = (float)( m[2] / q);   /* xy */
+    mat[2] = (float)(-m[1] / q);   /* yx */
+    mat[3] = (float)(-m[3] / q);   /* yy */
+    xpost_font_face_transform(face, mat);
+}
+
 static
 void _draw_bitmap(Xpost_Context *ctx,
                   Xpost_Object devdic,
@@ -376,8 +417,10 @@ int _show_char(Xpost_Context *ctx,
                  buffer, rows, width, pitch, pixel_mode,
                  *xpos + left, *ypos - top,
                  ncomp, comp1, comp2, comp3);
+    /* the face transform leaves the advance in y-up glyph space;
+       the pen advances in y-down device space */
     *xpos += advance_x >> 6;
-    *ypos += advance_y >> 6;
+    *ypos -= advance_y >> 6;
     *glyph_previous = glyph_index;
 #else
     (void)ctx;
@@ -489,6 +532,7 @@ int _show(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
+    _face_transform_from_ctm(ctx, gs, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -600,6 +644,7 @@ int _ashow(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
+    _face_transform_from_ctm(ctx, gs, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -715,6 +760,7 @@ int _widthshow(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
+    _face_transform_from_ctm(ctx, gs, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -835,6 +881,7 @@ int _awidthshow(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
+    _face_transform_from_ctm(ctx, gs, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -940,6 +987,7 @@ int _stringwidth(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
+    _face_transform_from_ctm(ctx, gs, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -996,9 +1044,11 @@ int _stringwidth(Xpost_Context *ctx,
 
     }
 
-    /* the advances accumulate in device space (the face is sized through
-       the CTM); stringwidth must report the distance in user space, so
-       map it back through the inverse of the CTM's linear part */
+    /* the advances accumulate in the face's y-up glyph space, sized and
+       oriented through the CTM; stringwidth must report the distance in
+       user space, so flip to the device's y-down convention and map back
+       through the inverse of the CTM's linear part */
+    ypos = -ypos;
     {
         Xpost_Object psmat = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currmatrix"));
         if (xpost_object_get_type(psmat) == arraytype && psmat.comp_.sz == 6)
@@ -1082,6 +1132,7 @@ int _kshow(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
+    _face_transform_from_ctm(ctx, gs, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
