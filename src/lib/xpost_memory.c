@@ -405,6 +405,19 @@ xpost_memory_file_grow(Xpost_Memory_File *mem,
 #else
     /* initialize mem (valgrind) */
     memset(mem->base + mem->used, 0, mem->max - mem->used);
+    if (getenv("XPOST_GROW_MOVES"))
+    {
+        /* debug: force every grow to relocate, so a stale pointer into
+           the old buffer is a use-after-free that ASan reports */
+        tmp = malloc(sz);
+        if (tmp != NULL)
+        {
+            memcpy(tmp, mem->base, mem->used);
+            memset((unsigned char *)tmp + mem->used, 0, sz - mem->used);
+            free(mem->base);
+        }
+    }
+    else
     tmp = realloc(mem->base, sz);
     if (tmp == NULL)
     { /* hanging error case */
@@ -781,7 +794,7 @@ xpost_memory_get(Xpost_Memory_File *mem,
 {
     CHECK_VALID_ENT(ent,mem,0)
 
-    if (offset * sz > mem->table.tab[ent].sz)
+    if (offset * sz + sz > mem->table.tab[ent].sz)
     {
         XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
                 offset, sz, mem->table.tab[ent].sz);
@@ -803,7 +816,7 @@ xpost_memory_put(Xpost_Memory_File *mem,
 {
     CHECK_VALID_ENT(ent,mem,0)
 
-    if (offset * sz > mem->table.tab[ent].sz)
+    if (offset * sz + sz > mem->table.tab[ent].sz)
     {
         XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
                 offset, sz, mem->table.tab[ent].sz);
