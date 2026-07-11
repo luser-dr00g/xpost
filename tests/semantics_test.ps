@@ -45,12 +45,38 @@ pathbbox
 0 (translated llx) assertnear
 grestore
 
+% --- binary tokens (PLRM 3.14.2): every encoding a packaged program
+%     body uses, plus the sibling byte orders ---
+<8820> cvx exec 32 eq (int8) assert
+<88E0> cvx exec -32 eq (int8 negative) assert
+<860100> cvx exec 256 eq (int16 high order) assert
+<870001> cvx exec 256 eq (int16 low order) assert
+<8400010000> cvx exec 65536 eq (int32 high order) assert
+<8500000100> cvx exec 65536 eq (int32 low order) assert
+<84FFFFFFFF> cvx exec -1 eq (int32 negative) assert
+<8A3F800000> cvx exec 1.0 eq (real IEEE high order) assert
+<8B0000803F> cvx exec 1.0 eq (real IEEE low order) assert
+<8D01> cvx exec true eq (boolean) assert
+<8E03414243> cvx exec (ABC) eq (string, 1-byte length) assert
+<8F0003414243> cvx exec (ABC) eq (string, 2-byte length) assert
+<9100> cvx exec /abs eq (literal system name) assert
+-5 <9200> cvx exec 5 eq (executable system name executes) assert
+% a binary token byte delimits the token it follows
+<747275658820> cvx exec 32 eq exch true eq and (binary byte delimits a name token) assert
+% inside a deferred procedure body
+<7B20880A203320616464207D> cvx exec exec 13 eq (binary token inside a procedure) assert
+
 % --- ASCII85Decode filter over the executing file: the program resumes
 %     after the end-of-data marker, as packaged bodies require ---
 currentfile /ASCII85Decode filter cvx exec
 04?gtE,ol+AKY282BXt<+?))!3%uI70O5f3AS)8~>
 a85probe length 5 eq (filtered definition arrived) assert
 a85probe 0 get 66 eq (filtered content decodes) assert
+% and a binary token delivered through the filter
+currentfile /ASCII85Decode filter cvx exec
+04?gt@VK_%DegJO.Ni85AdS~>
+a85bintok 42 eq (binary token through the filter) assert
+
 failcount 0 eq { (SUCCESS\n) print } { (FAILURES: ) print failcount 20 string cvs print (\n) print } ifelse
 flush
 quit
