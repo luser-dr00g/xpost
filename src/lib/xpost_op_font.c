@@ -57,6 +57,7 @@
 //#include "xpost_interpreter.h"
 #include "xpost_operator.h"
 #include "xpost_op_font.h"
+#include "xpost_dev_generic.h" /* pdfwrite accumulator access for glyph outlines */
 
 /*
  * FIXME: check if we can factorize show, ashow and kshow a bit.
@@ -76,6 +77,7 @@ typedef struct textstate
     Xpost_Object encoding;  /* the font's /Encoding array, or invalid */
     Xpost_Object blendpix;  /* the device's BlendPix method, or invalid */
     int blend;              /* anti-alias: TextAlphaBits > 1 and BlendPix present */
+    int vector;             /* the device consumes glyph outlines, not bitmaps */
 } textstate;
 
 static
@@ -338,7 +340,7 @@ textstate _text_state_get(Xpost_Context *ctx,
                           Xpost_Object devdic)
 {
     textstate ts;
-    Xpost_Object tab;
+    Xpost_Object tab, vec;
 
     ts.encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
     ts.blendpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "BlendPix"));
@@ -346,6 +348,8 @@ textstate _text_state_get(Xpost_Context *ctx,
     ts.blend = xpost_object_get_type(ts.blendpix) == operatortype
             && xpost_object_get_type(tab) == integertype
             && tab.int_.val > 1;
+    vec = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "VectorGlyphs"));
+    ts.vector = xpost_object_get_type(vec) == booleantype && vec.int_.val;
     return ts;
 }
 
@@ -517,6 +521,140 @@ void _draw_bitmap(Xpost_Context *ctx,
     }
 }
 
+/* Emit one glyph's outline into the pdfwrite device's content
+   accumulator as filled path segments: "r g b rg", the contours as
+   m/l/c/h operators, and a nonzero-winding fill. Coordinates arrive
+   from the face in y-up pixels relative to the pen and are placed at
+   the y-down device pen position, exactly where the bitmap path puts
+   the rendered glyph. */
+typedef struct glyphfrag
+{
+    char *d;
+    size_t len, cap;
+    double px, py;
+    int has;   /* any contour emitted */
+    int oom;
+} glyphfrag;
+
+static int _frag_put(glyphfrag *f, const char *s, size_t n)
+{
+    if (f->len + n > f->cap)
+    {
+        size_t nc = f->cap ? f->cap * 2 : 256;
+        char *nd;
+        while (nc < f->len + n)
+            nc *= 2;
+        nd = realloc(f->d, nc);
+        if (!nd)
+        {
+            f->oom = 1;
+            return 1;
+        }
+        f->d = nd;
+        f->cap = nc;
+    }
+    memcpy(f->d + f->len, s, n);
+    f->len += n;
+    return 0;
+}
+
+static int _frag_xy(glyphfrag *f, double x, double y)
+{
+    char t[64];
+    int n;
+
+    n = xpost_dev_pdf_fmt_num(t, f->px + x);
+    t[n++] = ' ';
+    n += xpost_dev_pdf_fmt_num(t + n, f->py - y);
+    t[n++] = ' ';
+    return _frag_put(f, t, n);
+}
+
+static int _frag_moveto(void *user, double x, double y)
+{
+    glyphfrag *f = user;
+    f->has = 1;
+    return _frag_xy(f, x, y) || _frag_put(f, "m\n", 2);
+}
+
+static int _frag_lineto(void *user, double x, double y)
+{
+    glyphfrag *f = user;
+    return _frag_xy(f, x, y) || _frag_put(f, "l\n", 2);
+}
+
+static int _frag_curveto(void *user, double x1, double y1, double x2, double y2, double x3, double y3)
+{
+    glyphfrag *f = user;
+    return _frag_xy(f, x1, y1) || _frag_xy(f, x2, y2) || _frag_xy(f, x3, y3)
+        || _frag_put(f, "c\n", 2);
+}
+
+static int _frag_closepath(void *user)
+{
+    glyphfrag *f = user;
+    return _frag_put(f, "h\n", 2);
+}
+
+#define COMPVAL(o) (xpost_object_get_type(o) == realtype ? (o).real_.val \
+                                                         : (double)(o).int_.val)
+
+static
+int _show_char_outline(Xpost_Context *ctx,
+                       Xpost_Object devdic,
+                       void *face,
+                       unsigned int glyph_index,
+                       real xpos,
+                       real ypos,
+                       int ncomp,
+                       Xpost_Object comp1,
+                       Xpost_Object comp2,
+                       Xpost_Object comp3,
+                       long *advance_x,
+                       long *advance_y)
+{
+    glyphfrag f;
+    Xpost_Font_Outline_Sink sink;
+    double r, g, b;
+    char t[96];
+    int n;
+
+    memset(&f, 0, sizeof f);
+    f.px = xpos;
+    f.py = ypos;
+
+    r = COMPVAL(comp1);
+    g = ncomp == 3 ? COMPVAL(comp2) : r;
+    b = ncomp == 3 ? COMPVAL(comp3) : r;
+    n = xpost_dev_pdf_fmt_num(t, r);
+    t[n++] = ' ';
+    n += xpost_dev_pdf_fmt_num(t + n, g);
+    t[n++] = ' ';
+    n += xpost_dev_pdf_fmt_num(t + n, b);
+    memcpy(t + n, " rg\n", 4);
+    n += 4;
+    _frag_put(&f, t, n);
+
+    sink.moveto = _frag_moveto;
+    sink.lineto = _frag_lineto;
+    sink.curveto = _frag_curveto;
+    sink.closepath = _frag_closepath;
+    sink.user = &f;
+    if (!xpost_font_face_glyph_outline(face, glyph_index, &sink, advance_x, advance_y))
+    {
+        free(f.d);
+        return 0;
+    }
+    /* a blank glyph (e.g. space) decomposes to nothing: advance only */
+    if (f.has && !f.oom)
+    {
+        _frag_put(&f, "f\n", 2);
+        if (!f.oom)
+            xpost_dev_pdf_append(ctx, devdic, f.d, f.len);
+    }
+    free(f.d);
+    return 1;
+}
 #endif
 
 static
@@ -561,15 +699,25 @@ int _show_char(Xpost_Context *ctx,
             *ypos += delta_y >> 6;
         }
     }
-    if (!xpost_font_face_glyph_render(data.face, glyph_index))
-        return 0;
-    xpost_font_face_glyph_buffer_get(data.face,
-                                     &buffer, &rows, &width, &pitch, &pixel_mode,
-                                     &left, &top, &advance_x, &advance_y);
-    _draw_bitmap(ctx, devdic, putpix, ts,
-                 buffer, rows, width, pitch, pixel_mode,
-                 *xpos + left, *ypos - top,
-                 ncomp, comp1, comp2, comp3);
+    if (ts->vector)
+    {
+        if (!_show_char_outline(ctx, devdic, data.face, glyph_index,
+                                *xpos, *ypos, ncomp, comp1, comp2, comp3,
+                                &advance_x, &advance_y))
+            return 0;
+    }
+    else
+    {
+        if (!xpost_font_face_glyph_render(data.face, glyph_index))
+            return 0;
+        xpost_font_face_glyph_buffer_get(data.face,
+                                         &buffer, &rows, &width, &pitch, &pixel_mode,
+                                         &left, &top, &advance_x, &advance_y);
+        _draw_bitmap(ctx, devdic, putpix, ts,
+                     buffer, rows, width, pitch, pixel_mode,
+                     *xpos + left, *ypos - top,
+                     ncomp, comp1, comp2, comp3);
+    }
     /* the face transform leaves the advance in y-up glyph space;
        the pen advances in y-down device space */
     *xpos += advance_x >> 6;
