@@ -80,6 +80,7 @@ typedef struct
     png_infop           info_ptr;
     Xpost_Png_Buffer *buf;
     unsigned int interlaced : 1;
+    unsigned int emitted : 1;
 } PrivateData;
 
 static Xpost_Object namePrivate;
@@ -149,6 +150,7 @@ int _create_cont(Xpost_Context *ctx,
 
     private.width = width;
     private.height = height;
+    private.emitted = 0;
 
     /*
      *
@@ -339,6 +341,11 @@ int _emit(Xpost_Context *ctx,
     xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof private, &private);
 
+    /* libpng reports errors by longjmp: aim it at this call, not at
+       the long-gone frame that created the device */
+    if (setjmp(png_jmpbuf(private.png_ptr)))
+        return ioerror;
+
 #ifdef PNG_WRITE_INTERLACING_SUPPORTED
     num_passes = png_set_interlace_handling(private.png_ptr);
 #endif
@@ -353,6 +360,11 @@ int _emit(Xpost_Context *ctx,
             data += 3 * private.width;
         }
     }
+
+    private.emitted = 1;
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
 
     /* pass data back to client application */
     {
@@ -386,7 +398,16 @@ int _destroy(Xpost_Context *ctx,
                      sizeof(private), &private);
 
     free(private.buf);
-    png_write_end(private.png_ptr, private.info_ptr);
+    /* a device destroyed without a page emitted (an error ended the
+       job first) has no image to finalise, and libpng would reject the
+       trailer; aim its longjmp here either way, so a write error while
+       finalising cannot jump into the dead frame that created the
+       device */
+    if (setjmp(png_jmpbuf(private.png_ptr)) == 0)
+    {
+        if (private.emitted)
+            png_write_end(private.png_ptr, private.info_ptr);
+    }
     png_destroy_write_struct(&private.png_ptr, (png_infopp) & private.info_ptr);
     png_destroy_info_struct(private.png_ptr, (png_infopp) & private.info_ptr);
     fclose(private.f);
