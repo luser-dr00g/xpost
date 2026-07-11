@@ -607,7 +607,8 @@ int Snext(Xpost_Context *ctx,
 {
     int ret;
     if (S->comp_.sz == 0) return EOF;
-    ret = xpost_string_get_pointer(ctx, *S)[0];
+    /* the byte must not sign-extend into EOF */
+    ret = (unsigned char)xpost_string_get_pointer(ctx, *S)[0];
     ++S->comp_.off;
     --S->comp_.sz;
     return ret;
