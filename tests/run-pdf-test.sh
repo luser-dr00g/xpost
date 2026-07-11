@@ -9,6 +9,10 @@
 set -u
 xpost=$1
 script=$2
+# Temp files below are created only inside the Ghostscript-oracle blocks;
+# predeclare them so the EXIT trap cleanup stays valid under set -u when a
+# block is skipped (gs absent).
+textps= textpdf= strokeps= strokepdf= ra= rb= infops= infopdf=
 pdf=$(mktemp)
 trap 'rm -f "$pdf"' EXIT
 
@@ -64,6 +68,34 @@ EOF
     else
         echo "FAIL: text left no marks"; exit 1
     fi
+
+    # vector strokes: a bent polyline must reach the PDF as one path with
+    # the requested width and the graphics state's join, not as separate
+    # butt-capped segments at the consumer's default width. The defect is
+    # sub-pixel at screen resolution, so rasterize our PDF and the original
+    # drawing through gs at 288dpi and require near-identical rasters (a
+    # small byte budget absorbs coordinate rounding at 1/100 point).
+    strokeps=$(mktemp)
+    strokepdf=$(mktemp)
+    ra=$(mktemp)
+    rb=$(mktemp)
+    trap 'rm -f "$pdf" "$textps" "$textpdf" "$strokeps" "$strokepdf" "$ra" "$rb"' EXIT
+    cat > "$strokeps" <<'EOF'
+0.75 setlinewidth
+100 100 moveto 105 103.5 lineto 100 107 lineto
+120 100 moveto 130 110 lineto 140 100 lineto
+stroke
+showpage
+EOF
+    "$xpost" -q -d pdfwrite -o "$strokepdf" "$strokeps" </dev/null >/dev/null 2>&1
+    gsr() { gs -q -dNOSAFER -dNOPAUSE -dBATCH -sDEVICE=pbmraw -g2448x3168 -r288 -o "$2" "$1" 2>/dev/null; }
+    gsr "$strokepdf" "$ra"
+    gsr "$strokeps" "$rb"
+    diffbytes=$(cmp -l "$ra" "$rb" 2>/dev/null | wc -l)
+    echo "stroke raster diff: $diffbytes bytes"
+    [ -s "$ra" ] && grep -q '[^\o000]' "$ra" || { echo "FAIL: stroke left no marks"; exit 1; }
+    [ "$diffbytes" -le 8 ] || { echo "FAIL: stroked joints diverge from the original drawing"; exit 1; }
+    echo "gs stroke round-trip OK"
 else
     echo "gs not found: skipping round-trip check"
 fi
