@@ -436,9 +436,12 @@ bind def
     3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
 } bind def
 
-% return currentlinewidth unless too small, otherwise 1
+% The stroke outline is constructed in device coordinates (strokepath
+% switches to the identity matrix), so its width is the line width as
+% transformed by the CTM. strokepath stashes that while the CTM is
+% still live; clamp to one pixel so thin strokes stay visible.
 /minlinewidth {
-    currentlinewidth
+    strokedict /devlinewidth get
     dup 1 lt { pop 1 } if
 } bind def
 
@@ -662,6 +665,10 @@ bind def
 /strokepath {
     flattenpath          % convert all curve segments to line approximations
     dashpath             % apply dashing effect
+    strokedict /devlinewidth    % device-space width, while the CTM is live
+        currentlinewidth 0 dtransform
+        dup mul exch dup mul add sqrt
+    put
     matrix currentmatrix % stash matrix on stack
     matrix setmatrix     % use identity matrix
     .pathempty not {
