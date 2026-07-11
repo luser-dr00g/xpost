@@ -112,7 +112,9 @@ int isdel(int c)
 static
 int isreg(int c)
 {
-    return (c != EOF) && (!isspace(c)) && (!isdel(c));
+    /* bytes in the binary-token range delimit the token they follow,
+       exactly as whitespace or a delimiter would (PLRM 3.14.2) */
+    return (c != EOF) && (c < 128) && (!isspace(c)) && (!isdel(c));
 }
 
 //int isxdigit (int c) { return strchr("0123456789ABCDEFabcdef", c) != NULL; }
@@ -551,6 +553,217 @@ int puff(Xpost_Context *ctx,
 }
 
 
+/* Binary tokens (PLRM 3.14.2): a byte in 128..159 read where a token
+   is expected introduces a fixed-format encoded object rather than
+   ASCII syntax. Packaged program bodies are written almost entirely
+   in these. Only the single-object token forms appear in such
+   bodies; binary object sequences (128..131) and the composite forms
+   are not accepted. */
+
+/* The standard system name table (PLRM 3rd ed. Appendix F):
+   binary name tokens carry an index into this table. Entries
+   match the encoding emitted by Level 2 producers; unassigned
+   indices are NULL. */
+static const char * const _bin_sysname[256] =
+{
+    "abs", "add", "aload", "anchorsearch",
+    "and", "arc", "arcn", "arct",
+    "arcto", "array", "ashow", "astore",
+    "awidthshow", "begin", "bind", "bitshift",
+    "ceiling", "charpath", "clear", "cleartomark",
+    "clip", "clippath", "closepath", "concat",
+    "concatmatrix", "copy", "count", "counttomark",
+    "currentcmykcolor", "currentdash", "currentdict", "currentfile",
+    "currentfont", "currentgray", "currentgstate", "currenthsbcolor",
+    "currentlinecap", "currentlinejoin", "currentlinewidth", "currentmatrix",
+    "currentpoint", "currentrgbcolor", "currentshared", "curveto",
+    "cvi", "cvlit", "cvn", "cvr",
+    "cvrs", "cvs", "cvx", "def",
+    "defineusername", "dict", "div", "dtransform",
+    "dup", "end", "eoclip", "eofill",
+    "eoviewclip", "eq", "exch", "exec",
+    "exit", "file", "fill", "findfont",
+    "flattenpath", "floor", "flush", "flushfile",
+    "for", "forall", "ge", "get",
+    "getinterval", "grestore", "gsave", "gstate",
+    "gt", "identmatrix", "idiv", "idtransform",
+    "if", "ifelse", "image", "imagemask",
+    "index", "ineofill", "infill", "initviewclip",
+    "inueofill", "inufill", "invertmatrix", "itransform",
+    "known", "le", "length", "lineto",
+    "load", "loop", "lt", "makefont",
+    "matrix", "maxlength", "mod", "moveto",
+    "mul", "ne", "neg", "newpath",
+    "not", "null", "or", "pathbbox",
+    "pathforall", "pop", "print", "printobject",
+    "put", "putinterval", "rcurveto", "read",
+    "readhexstring", "readline", "readstring", "rectclip",
+    "rectfill", "rectstroke", "rectviewclip", "repeat",
+    "restore", "rlineto", "rmoveto", "roll",
+    "rotate", "round", "save", "scale",
+    "scalefont", "search", "selectfont", "setbbox",
+    "setcachedevice", "setcachedevice2", "setcharwidth", "setcmykcolor",
+    "setdash", "setfont", "setgray", "setgstate",
+    "sethsbcolor", "setlinecap", "setlinejoin", "setlinewidth",
+    "setmatrix", "setrgbcolor", "setshared", "shareddict",
+    "show", "showpage", "stop", "stopped",
+    "store", "string", "stringwidth", "stroke",
+    "strokepath", "sub", "systemdict", "token",
+    "transform", "translate", "truncate", "type",
+    "uappend", "ucache", "ueofill", "ufill",
+    "undef", "upath", "userdict", "ustroke",
+    "viewclip", "viewclippath", "where", "widthshow",
+    "write", "writehexstring", "writeobject", "writestring",
+    "wtranslation", "xor", "xshow", "xyshow",
+    "yshow", "FontDirectory", "SharedFontDirectory", "Courier",
+    "Courier-Bold", "Courier-BoldOblique", "Courier-Oblique", "Helvetica",
+    "Helvetica-Bold", "Helvetica-BoldOblique", "Helvetica-Oblique", "Symbol",
+    "Times-Bold", "Times-BoldItalic", "Times-Italic", "Times-Roman",
+    "execuserobject", "currentcolor", "currentcolorspace", "currentglobal",
+    "execform", "filter", "findresource", "globaldict",
+    "makepattern", "setcolor", "setcolorspace", "setglobal",
+    "setpagedevice", "setpattern", NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL
+};
+
+/* read n payload bytes, failing on end of input */
+static
+int bt_read(Xpost_Context *ctx,
+            Xpost_Object *src,
+            int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+            unsigned char *p,
+            int n)
+{
+    int i, c;
+
+    for (i = 0; i < n; i++)
+    {
+        c = next(ctx, src);
+        if (c == EOF)
+            return 0;
+        p[i] = (unsigned char)c;
+    }
+    return 1;
+}
+
+static
+int binary_token(Xpost_Context *ctx,
+                 unsigned int t,
+                 Xpost_Object *src,
+                 int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+                 Xpost_Object *retval)
+{
+    unsigned char p[4];
+
+    switch (t)
+    {
+        case 132: case 133:  /* 32-bit integer, high/low order */
+            if (!bt_read(ctx, src, next, p, 4))
+                return syntaxerror;
+            {
+                unsigned int v = t == 132
+                    ? ((unsigned int)p[0] << 24) | ((unsigned int)p[1] << 16) | ((unsigned int)p[2] << 8) | p[3]
+                    : ((unsigned int)p[3] << 24) | ((unsigned int)p[2] << 16) | ((unsigned int)p[1] << 8) | p[0];
+                *retval = xpost_int_cons((integer)(int)v);
+            }
+            return 0;
+        case 134: case 135:  /* 16-bit integer, high/low order */
+            if (!bt_read(ctx, src, next, p, 2))
+                return syntaxerror;
+            {
+                unsigned short v = t == 134
+                    ? (unsigned short)((p[0] << 8) | p[1])
+                    : (unsigned short)((p[1] << 8) | p[0]);
+                *retval = xpost_int_cons((short)v);
+            }
+            return 0;
+        case 136:  /* 8-bit integer */
+            if (!bt_read(ctx, src, next, p, 1))
+                return syntaxerror;
+            *retval = xpost_int_cons((signed char)p[0]);
+            return 0;
+        case 138: case 139: case 140:  /* 32-bit real: IEEE high/low, native */
+            if (!bt_read(ctx, src, next, p, 4))
+                return syntaxerror;
+            {
+                unsigned int v;
+                float r;
+                if (t == 139)
+                    v = ((unsigned int)p[3] << 24) | ((unsigned int)p[2] << 16) | ((unsigned int)p[1] << 8) | p[0];
+                else if (t == 138)
+                    v = ((unsigned int)p[0] << 24) | ((unsigned int)p[1] << 16) | ((unsigned int)p[2] << 8) | p[3];
+                else
+                    memcpy(&v, p, 4);
+                memcpy(&r, &v, 4);
+                *retval = xpost_real_cons((real)r);
+            }
+            return 0;
+        case 141:  /* boolean */
+            if (!bt_read(ctx, src, next, p, 1))
+                return syntaxerror;
+            *retval = xpost_bool_cons(p[0] != 0);
+            return 0;
+        case 142: case 143: case 144:  /* string: 1-byte, 2-byte high/low length */
+            {
+                unsigned int len;
+                unsigned char *buf;
+                Xpost_Object obj;
+
+                if (t == 142)
+                {
+                    if (!bt_read(ctx, src, next, p, 1))
+                        return syntaxerror;
+                    len = p[0];
+                }
+                else
+                {
+                    if (!bt_read(ctx, src, next, p, 2))
+                        return syntaxerror;
+                    len = t == 143 ? (unsigned int)((p[0] << 8) | p[1])
+                                   : (unsigned int)((p[1] << 8) | p[0]);
+                }
+                buf = malloc(len ? len : 1);
+                if (!buf)
+                    return VMerror;
+                if (!bt_read(ctx, src, next, buf, (int)len))
+                {
+                    free(buf);
+                    return syntaxerror;
+                }
+                obj = xpost_string_cons(ctx, len, (char *)buf);
+                free(buf);
+                if (xpost_object_get_type(obj) == nulltype)
+                    return VMerror;
+                *retval = xpost_object_cvlit(obj);
+            }
+            return 0;
+        case 145: case 146:  /* literal/executable system name */
+            if (!bt_read(ctx, src, next, p, 1))
+                return syntaxerror;
+            if (_bin_sysname[p[0]] == NULL)
+            {
+                XPOST_LOG_ERR("system name index %d unassigned", p[0]);
+                return undefined;
+            }
+            {
+                Xpost_Object n = xpost_name_cons(ctx, (char *)_bin_sysname[p[0]]);
+                if (xpost_object_get_type(n) == invalidtype)
+                    return VMerror;
+                *retval = t == 145 ? xpost_object_cvlit(n) : xpost_object_cvx(n);
+            }
+            return 0;
+        default:
+            XPOST_LOG_ERR("unsupported binary token type %u", t);
+            return syntaxerror;
+    }
+}
+
 static
 int toke(Xpost_Context *ctx,
          Xpost_Object *src,
@@ -575,6 +788,8 @@ int toke(Xpost_Context *ctx,
         *retval = null;
         return 0;
     }
+    if ((unsigned char)buf[0] >= 128)
+        return binary_token(ctx, (unsigned char)buf[0], src, next, retval);
     if (!isdel(*buf))
         sta += puff(ctx, buf + 1, NBUF - 1, src, next, back);
     ret = grok(ctx, buf, sta, src, next, back, &o);
