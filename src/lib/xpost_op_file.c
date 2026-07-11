@@ -98,6 +98,41 @@ int xpost_op_string_mode_file (Xpost_Context *ctx,
     return 0;
 }
 
+/* file /FilterName  filter  file'
+   layer a decoding filter over a readable file. ASCII85Decode is the
+   one filter packaged program bodies use. */
+static
+int xpost_op_file_filter (Xpost_Context *ctx,
+                          Xpost_Object F,
+                          Xpost_Object name)
+{
+    Xpost_Object namestr;
+    char *cname;
+    int is_a85;
+    Xpost_Object f;
+
+    if (!xpost_object_is_readable(ctx, F))
+        return invalidaccess;
+    namestr = xpost_name_get_string(ctx, name);
+    cname = xpost_string_allocate_cstring(ctx, namestr);
+    if (!cname)
+        return VMerror;
+    is_a85 = strcmp(cname, "ASCII85Decode") == 0;
+    if (!is_a85)
+        XPOST_LOG_ERR("unsupported filter %s", cname);
+    free(cname);
+    if (!is_a85)
+        return undefined;
+
+    f = xpost_file_cons_filter_a85(ctx->lo, F);
+    if (xpost_object_get_type(f) == invalidtype)
+        return ioerror;
+    f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    return 0;
+}
+
 /* file  closefile  -
    close file object */
 static
@@ -669,7 +704,8 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, "file", (Xpost_Op_Func)xpost_op_string_mode_file, 1, 2, stringtype, stringtype);
     INSTALL;
-    /* filter */
+    op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter, 1, 2, filetype, nametype);
+    INSTALL;
     op = xpost_operator_cons(ctx, "closefile", (Xpost_Op_Func)xpost_op_file_closefile, 0, 1, filetype);
     INSTALL;
     op = xpost_operator_cons(ctx, "read", (Xpost_Op_Func)xpost_op_file_read, 1, 1, filetype);

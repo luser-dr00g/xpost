@@ -172,6 +172,15 @@ Xpost_Object xpost_file_cons_readbuffer(Xpost_Memory_File *mem, unsigned char *s
 Xpost_Object xpost_file_cons_writebuffer(Xpost_Memory_File *mem);
 
 /**
+ * @brief Construct an ASCII85Decode filter file over a source file object.
+ *
+ * The source file is not owned: closing the filter leaves it open,
+ * positioned just after the "~>" end-of-data marker once the filter
+ * has been read to end of file.
+ */
+Xpost_Object xpost_file_cons_filter_a85(Xpost_Memory_File *mem, Xpost_Object src);
+
+/**
  * @brief Open and construct a file object given filename and mode.
  */
 int xpost_file_open(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);
