@@ -685,6 +685,41 @@ int _fillrectgray(Xpost_Context *ctx,
     return 0;
 }
 
+/* Blend a coverage-weighted pixel for grayscale array-of-strings devices:
+   dst += (val - dst) * cov / 255. The text operators use this for glyph
+   edge pixels when the device renders anti-aliased text. */
+static
+int _blendpixgray(Xpost_Context *ctx,
+                  Xpost_Object val,
+                  Xpost_Object cov,
+                  Xpost_Object x,
+                  Xpost_Object y,
+                  Xpost_Object devdic)
+{
+    Xpost_Object imgdata, row;
+    int ix, iy, c;
+    int src, dst;
+    unsigned char *p;
+
+    imgdata = xpost_dict_get(ctx, devdic, nameImgData);
+    if (xpost_object_get_type(imgdata) != arraytype)
+        return undefined;
+    ix = xpost_object_get_type(x) == realtype ? (int)floor(x.real_.val) : x.int_.val;
+    iy = xpost_object_get_type(y) == realtype ? (int)floor(y.real_.val) : y.int_.val;
+    c = xpost_object_get_type(cov) == realtype ? (int)cov.real_.val : cov.int_.val;
+    if (iy < 0 || iy >= imgdata.comp_.sz)
+        return 0;
+    row = xpost_array_get(ctx, imgdata, iy);
+    if (ix < 0 || ix >= row.comp_.sz)
+        return 0;
+    src = (int)((xpost_object_get_type(val) == realtype
+                 ? val.real_.val : (double)val.int_.val) * 255.0);
+    p = (unsigned char *)xpost_string_get_pointer(ctx, row) + ix;
+    dst = *p;
+    *p = (unsigned char)(dst + ((src - dst) * c + 127) / 255);
+    return 0;
+}
+
 /* Deflate the concatenation of an array of strings, returning the result as an
    array of <=65535-byte strings (the PostScript string limit) plus a boolean
    that is true when compression happened. Used by the pdfwrite device to write
@@ -1020,6 +1055,8 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".fillpoly", (Xpost_Op_Func)_fillpoly, 0, 2, arraytype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillrectgray", (Xpost_Op_Func)_fillrectgray, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".blendpixgray", (Xpost_Op_Func)_blendpixgray, 0, 5,
+            numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".flatecompress", (Xpost_Op_Func)_flatecompress, 2, 1, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".pdffillpoly", (Xpost_Op_Func)_pdffillpoly, 0, 5,
             numbertype, numbertype, numbertype, arraytype, dicttype); INSTALL;
