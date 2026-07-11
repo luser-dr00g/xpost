@@ -468,9 +468,9 @@ int _mat_itransform(Xpost_Context *ctx,
     if (disc == 0)
         return undefinedresult;
     invdet = 1 / disc;
-    xres = (mat.yy * x.real_.val - mat.yx * y.real_.val +
-            mat.xy * mat.xz - mat.yy * mat.xz) * invdet;
-    yres = (-mat.xy * x.real_.val + mat.xx * y.real_.val +
+    xres = (mat.yy * x.real_.val - mat.xy * y.real_.val +
+            mat.xy * mat.yz - mat.yy * mat.xz) * invdet;
+    yres = (-mat.yx * x.real_.val + mat.xx * y.real_.val +
             mat.yx * mat.xz - mat.xx * mat.yz) * invdet;
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xres));
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(yres));
@@ -507,8 +507,8 @@ int _mat_idtransform(Xpost_Context *ctx,
     if (disc == 0)
         return undefinedresult;
     invdet = 1 / disc;
-    xres = (mat.yy * x.real_.val - mat.yx * y.real_.val) * invdet;
-    yres = ( -mat.xy * x.real_.val + mat.xx * y.real_.val) * invdet;
+    xres = (mat.yy * x.real_.val - mat.xy * y.real_.val) * invdet;
+    yres = ( -mat.yx * x.real_.val + mat.xx * y.real_.val) * invdet;
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(xres));
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(yres));
     return 0;
