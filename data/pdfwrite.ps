@@ -114,6 +114,42 @@
     % loop, so it is done in C (.pdffillpoly), appending to the accumulator.
     /FillPoly { .pdffillpoly } bind
 
+    % r g b IMAGE . -  ; stroke the current path as one content-stream
+    % path with the device-space line width and the graphics state's
+    % cap, join and miter limit, so joints between segments are drawn
+    % by the consumer rather than lost to per-segment strokes. The
+    % path is collected first (the walker runs in its own dictionary,
+    % away from this device's methods) and emitted afterwards.
+    /StrokePath { % r g b IMAGE  .  -
+    begin {spb spg spr}{exch def}forall
+        /spelems [ { /m } { /l } { /c } { /h } .devpathforall ] def
+        spelems length 0 gt {
+            spr .pdfnum ( ) .put spg .pdfnum ( ) .put spb .pdfnum ( RG\n) .put
+            currentlinewidth 0 dtransform dup mul exch dup mul add sqrt
+            .pdfnum ( w\n) .put
+            currentlinecap 20 string cvs .put ( J\n) .put
+            currentlinejoin 20 string cvs .put ( j\n) .put
+            currentmiterlimit .pdfnum ( M\n) .put
+            spelems {
+                dup type /nametype eq {
+                    dup /h eq { pop (h\n) .put }{
+                    /spcmd exch def
+                    spcmd /c eq {
+                        {spy3 spx3 spy2 spx2 spy1 spx1}{exch def}forall
+                        spx1 .pdfnum ( ) .put spy1 .pdfnum ( ) .put
+                        spx2 .pdfnum ( ) .put spy2 .pdfnum ( ) .put
+                        spx3 .pdfnum ( ) .put spy3 .pdfnum ( ) .put
+                        (c\n) .put
+                    }{
+                        exch .pdfnum ( ) .put .pdfnum ( ) .put
+                        spcmd /m eq { (m\n) }{ (l\n) } ifelse .put
+                    } ifelse } ifelse
+                } if
+            } forall
+            (S\n) .put
+        } if
+    end }
+
     /Emit { % IMAGE  .  -
     begin
         /Chunks currentdict .pdfchunks def

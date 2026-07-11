@@ -67,7 +67,22 @@
 
 % -  stroke  -
 % draw line along current path
+% A device with a StrokePath method consumes the whole path itself
+% (vector devices stroke with true joins, caps and width); raster
+% devices take the hairline DrawLine walk when the device-space width
+% is within a pixel, else the stroked outline is filled.
 /stroke {
+    DEVICE /StrokePath known {
+        flattenpath
+        dashpath
+        doclip
+        [ currentcolordict DEVICE /nativecolorspace get get exec
+        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        DEVICE dup /StrokePath get exec
+        pop
+        flushpage
+        newpath
+    }{
     currentlinewidth 0 dtransform
     dup mul exch dup mul exch add sqrt
         1 le {
@@ -110,6 +125,7 @@
     } ifelse
 
     newpath
+    } ifelse
 } bind def
 
 /bitsdict <<
