@@ -45,6 +45,12 @@ pathbbox
 0 (translated llx) assertnear
 grestore
 
+% --- ASCII85Decode filter over the executing file: the program resumes
+%     after the end-of-data marker, as packaged bodies require ---
+currentfile /ASCII85Decode filter cvx exec
+04?gtE,ol+AKY282BXt<+?))!3%uI70O5f3AS)8~>
+a85probe length 5 eq (filtered definition arrived) assert
+a85probe 0 get 66 eq (filtered content decodes) assert
 failcount 0 eq { (SUCCESS\n) print } { (FAILURES: ) print failcount 20 string cvs print (\n) print } ifelse
 flush
 quit

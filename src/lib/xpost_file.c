@@ -34,6 +34,7 @@
 
 #include <stdlib.h>
 #include <stddef.h>
+#include <ctype.h>
 
 #include <errno.h>
 #include <limits.h>
@@ -407,6 +408,203 @@ xpost_memoryfile_open_write(void)
     return &mf->methods;
 }
 
+/* ASCII85Decode filter: a read file decoding an ASCII base-85 stream
+   from an underlying file. Whitespace between coded characters is
+   ignored (a stream's layout carries no data), 'z' abbreviates four
+   zero bytes, and the "~>" marker ends the data with the underlying
+   file positioned just after it, so a program executing
+   "currentfile /ASCII85Decode filter cvx exec" resumes cleanly at
+   end of data. The source file is not owned: closing the filter
+   leaves it open. */
+typedef struct Xpost_FilterFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    unsigned char out[4];
+    int outn, outi;    /* decoded bytes pending */
+    int pushback;      /* one unread byte, or -1 */
+    int eod;
+    long count;        /* decoded bytes delivered (tell) */
+} Xpost_FilterFile;
+
+static int
+a85_readch(Xpost_File *f)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+    unsigned int grp[5];
+    int n, c;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->outi < ff->outn)
+    {
+        ff->count++;
+        return ff->out[ff->outi++];
+    }
+    if (ff->eod)
+        return EOF;
+
+    /* gather the next coded group */
+    n = 0;
+    for (;;)
+    {
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+        {
+            ff->eod = 1;
+            break;
+        }
+        if (isspace(c))
+            continue;
+        if (c == '~')
+        {
+            /* end of data: consume the closing '>' */
+            do
+            {
+                c = xpost_file_getc(ff->source);
+            } while (c != EOF && isspace(c));
+            if (c != '>' && c != EOF)
+                xpost_file_ungetc(ff->source, c);
+            ff->eod = 1;
+            break;
+        }
+        if (c == 'z' && n == 0)
+        {
+            ff->out[0] = ff->out[1] = ff->out[2] = ff->out[3] = 0;
+            ff->outn = 4;
+            ff->outi = 1;
+            ff->count++;
+            return 0;
+        }
+        if (c < '!' || c > 'u')
+        {
+            XPOST_LOG_ERR("character %d in ASCII85Decode stream", c);
+            ff->eod = 1;
+            break;
+        }
+        grp[n++] = c - '!';
+        if (n == 5)
+            break;
+    }
+
+    if (n <= 1)   /* nothing, or a dangling single character */
+        return EOF;
+
+    {
+        unsigned int tuple = 0;
+        int i, nbytes = n - 1;
+
+        for (i = 0; i < 5; i++)
+            tuple = tuple * 85 + (i < n ? grp[i] : 84);  /* pad with 'u' */
+        ff->out[0] = (tuple >> 24) & 0xff;
+        ff->out[1] = (tuple >> 16) & 0xff;
+        ff->out[2] = (tuple >> 8) & 0xff;
+        ff->out[3] = tuple & 0xff;
+        ff->outn = nbytes;
+        ff->outi = 1;
+        ff->count++;
+        return ff->out[0];
+    }
+}
+
+static int
+a85_writech(Xpost_File *f, int c)
+{
+    (void)f;
+    (void)c;
+    return EOF;
+}
+
+static int
+a85_close(Xpost_File *f)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+
+    /* the source stays open; just stop producing */
+    ff->eod = 1;
+    ff->outi = ff->outn = 0;
+    ff->pushback = -1;
+    return 0;
+}
+
+static int
+a85_flush(Xpost_File *f)
+{
+    (void)f;
+    return 0;
+}
+
+static void
+a85_purge(Xpost_File *f)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+
+    ff->eod = 1;
+    ff->outi = ff->outn = 0;
+    ff->pushback = -1;
+}
+
+static int
+a85_unreadch(Xpost_File *f, int c)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+
+    if (ff->pushback >= 0)
+        return EOF;
+    ff->pushback = c;
+    return 0;
+}
+
+static long
+a85_tell(Xpost_File *f)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+
+    return ff->count;
+}
+
+static int
+a85_seek(Xpost_File *f, long offset)
+{
+    (void)f;
+    (void)offset;
+    return -1;
+}
+
+struct Xpost_File_Methods a85_methods =
+{
+    a85_readch,
+    a85_writech,
+    a85_close,
+    a85_flush,
+    a85_purge,
+    a85_unreadch,
+    a85_tell,
+    a85_seek
+};
+
+static Xpost_File *
+xpost_filterfile_open_a85(Xpost_File *source)
+{
+    Xpost_FilterFile *ff = malloc(sizeof *ff);
+
+    if (ff)
+    {
+        ff->methods.methods = &a85_methods;
+        ff->source = source;
+        ff->outn = ff->outi = 0;
+        ff->pushback = -1;
+        ff->eod = 0;
+        ff->count = 0;
+    }
+
+    return &ff->methods;
+}
+
 /* filetype objects use a slightly different interpretation
    of the access field.
    It uses two flags rather than a 2-bit number.
@@ -501,6 +699,38 @@ Xpost_Object xpost_file_cons_writebuffer(Xpost_Memory_File *mem)
     {
         XPOST_LOG_ERR("cannot save file pointer in VM");
 	return invalid;
+    }
+    return f;
+}
+
+/* construct an ASCII85Decode filter file over a source file object */
+Xpost_Object xpost_file_cons_filter_a85(Xpost_Memory_File *mem,
+                                        Xpost_Object src)
+{
+    Xpost_Object f;
+    unsigned int ent;
+    int ret;
+    Xpost_File *source, *ff;
+
+    source = xpost_file_get_file_pointer(mem, src);
+    if (!source)
+        return invalid;
+
+    f.tag = filetype;
+    ff = xpost_filterfile_open_a85(source);
+    if (!ff)
+        return invalid;
+    if (!xpost_memory_table_alloc(mem, sizeof ff, filetype, &ent))
+    {
+        XPOST_LOG_ERR("cannot allocate file record");
+        return invalid;
+    }
+    f.mark_.padw = ent;
+    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof ff, &ff);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot save file pointer in VM");
+        return invalid;
     }
     return f;
 }
