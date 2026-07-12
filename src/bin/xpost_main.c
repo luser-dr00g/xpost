@@ -104,6 +104,7 @@ static const char *_xpost_main_devices[] =
     "pdfwrite",
 #ifdef HAVE_LIBPNG
     "png",
+    "pngalpha",
 #endif
 #ifdef HAVE_LIBJPEG
     "jpeg",

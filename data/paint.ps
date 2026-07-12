@@ -5,26 +5,23 @@
 % -  erasepage  -
 % paint current page white
 /erasepage {
-    %(erasepage)=
-    %gsave
-    %    initclip
-    %    1 setgray
-    %    clippath fill
-    %grestore
+    % a device with an Erase method resets the page itself (the alpha
+    % device clears to transparent); otherwise paint the page white
+    DEVICE /Erase known {
+        DEVICE dup /Erase get exec
+        flushpage
+    }{
     gsave
-        %(1 setgray\n) print
         1 setgray
         [ currentcolordict DEVICE /nativecolorspace get
-        %dup =
         get exec
         counttomark { currenttransfer exec counttomark 1 roll } repeat
-        %(FillRect\n) print
         0 0 DEVICE /dimensions get aload pop
         DEVICE dup /FillRect get exec
         pop
-        %(flushpage\n) print
         flushpage
     grestore
+    } ifelse
 } bind def
 
 % -  fill  -
