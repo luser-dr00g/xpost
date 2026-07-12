@@ -59,7 +59,7 @@
 
 typedef struct
 {
-    unsigned char red, green, blue;
+    unsigned char red, green, blue, alpha;
 } Xpost_Png_Pixel;
 
 typedef struct
@@ -81,6 +81,7 @@ typedef struct
     Xpost_Png_Buffer *buf;
     unsigned int interlaced : 1;
     unsigned int emitted : 1;
+    unsigned int alpha : 1;
 } PrivateData;
 
 static Xpost_Object namePrivate;
@@ -151,6 +152,12 @@ int _create_cont(Xpost_Context *ctx,
     private.width = width;
     private.height = height;
     private.emitted = 0;
+    {
+        Xpost_Object alpha_o = xpost_dict_get(ctx, devdic,
+                                              xpost_name_cons(ctx, "AlphaChannel"));
+        private.alpha = xpost_object_get_type(alpha_o) == booleantype
+                     && alpha_o.int_.val;
+    }
 
     /*
      *
@@ -224,10 +231,24 @@ int _create_cont(Xpost_Context *ctx,
         goto destroy_info;
     }
 
+    /* the page starts opaque white; the alpha device starts fully
+       transparent, so only marks made by the job carry opacity and an
+       erased page is see-through */
+    {
+        int i;
+        Xpost_Png_Pixel init;
+
+        init.red = init.green = init.blue = 255;
+        init.alpha = private.alpha ? 0 : 255;
+        for (i = 0; i < width * height; i++)
+            private.buf->data[i] = init;
+    }
+
 	png_init_io(private.png_ptr, private.f);
 	png_set_IHDR(private.png_ptr, private.info_ptr,
                  private.width, private.height, 8,
-                 PNG_COLOR_TYPE_RGB, private.interlaced,
+                 private.alpha ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_RGB,
+                 private.interlaced,
                  PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
     sig_bit.red = 8;
@@ -240,6 +261,9 @@ int _create_cont(Xpost_Context *ctx,
     png_write_info(private.png_ptr, private.info_ptr);
     png_set_shift(private.png_ptr, &sig_bit);
     png_set_packing(private.png_ptr);
+    if (!private.alpha)
+        /* rows carry a fourth byte per pixel; skip it when writing RGB */
+        png_set_filler(private.png_ptr, 0, PNG_FILLER_AFTER);
 
     /* save private data struct in string */
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
@@ -311,6 +335,7 @@ int _putpix(Xpost_Context *ctx,
         pixel.blue = blue.int_.val;
         pixel.green = green.int_.val;
         pixel.red = red.int_.val;
+        pixel.alpha = 255;
         private.buf->data[y.int_.val * private.width + x.int_.val] = pixel;
     }
 
@@ -359,9 +384,17 @@ int _blendpix(Xpost_Context *ctx,
 
     {
         Xpost_Png_Pixel *p = &private.buf->data[iy * private.width + ix];
-        p->red   = (unsigned char)(p->red   + ((r - p->red)   * c + 127) / 255);
-        p->green = (unsigned char)(p->green + ((g - p->green) * c + 127) / 255);
-        p->blue  = (unsigned char)(p->blue  + ((b - p->blue)  * c + 127) / 255);
+        int da = p->alpha;
+        int oa = c + (da * (255 - c) + 127) / 255;
+
+        if (oa == 0)
+            return 0;
+        /* source over: the ink contributes c, the ground its own
+           opacity of what c leaves uncovered */
+        p->red   = (unsigned char)((r * c + p->red   * da * (255 - c) / 255 + oa / 2) / oa);
+        p->green = (unsigned char)((g * c + p->green * da * (255 - c) / 255 + oa / 2) / oa);
+        p->blue  = (unsigned char)((b * c + p->blue  * da * (255 - c) / 255 + oa / 2) / oa);
+        p->alpha = (unsigned char)oa;
     }
 
     return 0;
@@ -390,6 +423,7 @@ int _fillrect(Xpost_Context *ctx,
     pixel.red   = (unsigned char)((xpost_object_get_type(red)   == realtype ? red.real_.val   * 255.0 : red.int_.val   * 255));
     pixel.green = (unsigned char)((xpost_object_get_type(green) == realtype ? green.real_.val * 255.0 : green.int_.val * 255));
     pixel.blue  = (unsigned char)((xpost_object_get_type(blue)  == realtype ? blue.real_.val  * 255.0 : blue.int_.val  * 255));
+    pixel.alpha = 255;
     x0 = xpost_object_get_type(x) == realtype ? (int)x.real_.val : x.int_.val;
     y0 = xpost_object_get_type(y) == realtype ? (int)y.real_.val : y.int_.val;
     x1 = xpost_object_get_type(w) == realtype ? (int)w.real_.val : w.int_.val;
@@ -459,7 +493,7 @@ int _emit(Xpost_Context *ctx,
         {
             row_ptr = (png_bytep)data;
             png_write_rows(private.png_ptr, &row_ptr, 1);
-            data += 3 * private.width;
+            data += 4 * private.width;
         }
     }
 
@@ -480,6 +514,32 @@ int _emit(Xpost_Context *ctx,
             *outbuf = (unsigned char *)private.buf->data;
         }
     }
+
+    return 0;
+}
+
+/* clear the page to fully transparent: the alpha device's erasepage.
+   An explicit white fill stays opaque; only the page reset is clear. */
+static
+int _erase(Xpost_Context *ctx,
+           Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    int i;
+    Xpost_Png_Pixel init;
+
+    privatestr = xpost_dict_get(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
+
+    init.red = init.green = init.blue = 255;
+    init.alpha = 0;
+    for (i = 0; i < private.width * private.height; i++)
+        private.buf->data[i] = init;
 
     return 0;
 }
@@ -541,7 +601,29 @@ int newpngdevice(Xpost_Context *ctx,
 }
 
 static
+int newpngalphadevice(Xpost_Context *ctx,
+                      Xpost_Object width,
+                      Xpost_Object height)
+{
+    Xpost_Object classdic;
+    int ret;
+
+    xpost_stack_push(ctx->lo, ctx->os, width);
+    xpost_stack_push(ctx->lo, ctx->os, height);
+    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "pngalphaDEVICE"));
+    if (ret)
+        return ret;
+    classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, xpost_name_cons(ctx, "Create"))))
+        return execstackoverflow;
+
+    return 0;
+}
+
+static
 unsigned int _loadpngdevicecont_opcode;
+static
+unsigned int _loadpngalphadevicecont_opcode;
 
 /* Specializes or sub-classes the PPMIMAGE device class.
    load PPMIMAGE
@@ -566,13 +648,32 @@ int loadpngdevice(Xpost_Context *ctx)
     return 0;
 }
 
-/* replace procedures in the class with newly created special operators.
-   defines the device class pngDEVICE in userdict.
-   defines a new operator in userdict: newpngdevice
- */
 static
-int loadpngdevicecont(Xpost_Context *ctx,
-                      Xpost_Object classdic)
+int loadpngalphadevice(Xpost_Context *ctx)
+{
+    Xpost_Object classdic;
+    int ret;
+
+    ret = xpost_op_any_load(ctx, xpost_name_cons(ctx, "PPMIMAGE"));
+    if (ret)
+        return ret;
+    classdic = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0);
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_loadpngalphadevicecont_opcode)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_dict_get(ctx, classdic, namedotcopydict)))
+        return execstackoverflow;
+
+    return 0;
+}
+
+/* replace procedures in the class with newly created special operators.
+   defines the device class (pngDEVICE or pngalphaDEVICE) in userdict
+   and the matching newXXXdevice operator. The alpha class carries
+   /AlphaChannel for Create and an /Erase method for erasepage. */
+static
+int _loaddevicecont_common(Xpost_Context *ctx,
+                           Xpost_Object classdic,
+                           int alpha)
 {
     Xpost_Object userdict;
     Xpost_Object op;
@@ -621,18 +722,50 @@ int loadpngdevicecont(Xpost_Context *ctx,
     if (ret)
         return ret;
 
+    if (alpha)
+    {
+        ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "AlphaChannel"), xpost_bool_cons(1));
+        if (ret)
+            return ret;
+        op = xpost_operator_cons(ctx, "pngErase", (Xpost_Op_Func)_erase, 0, 1, dicttype);
+        ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "Erase"), op);
+        if (ret)
+            return ret;
+    }
+
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
 
-    ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "pngDEVICE"), classdic);
+    ret = xpost_dict_put(ctx, userdict,
+                         xpost_name_cons(ctx, alpha ? "pngalphaDEVICE" : "pngDEVICE"),
+                         classdic);
     if (ret)
         return ret;
 
-    op = xpost_operator_cons(ctx, "newpngdevice", (Xpost_Op_Func)newpngdevice, 1, 2, integertype, integertype);
-    ret = xpost_dict_put(ctx, userdict, xpost_name_cons(ctx, "newpngdevice"), op);
+    if (alpha)
+        op = xpost_operator_cons(ctx, "newpngalphadevice", (Xpost_Op_Func)newpngalphadevice, 1, 2, integertype, integertype);
+    else
+        op = xpost_operator_cons(ctx, "newpngdevice", (Xpost_Op_Func)newpngdevice, 1, 2, integertype, integertype);
+    ret = xpost_dict_put(ctx, userdict,
+                         xpost_name_cons(ctx, alpha ? "newpngalphadevice" : "newpngdevice"),
+                         op);
     if (ret)
         return ret;
 
     return 0;
+}
+
+static
+int loadpngdevicecont(Xpost_Context *ctx,
+                      Xpost_Object classdic)
+{
+    return _loaddevicecont_common(ctx, classdic, 0);
+}
+
+static
+int loadpngalphadevicecont(Xpost_Context *ctx,
+                           Xpost_Object classdic)
+{
+    return _loaddevicecont_common(ctx, classdic, 1);
 }
 
 /*
@@ -667,6 +800,9 @@ int xpost_oper_init_png_device_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "loadpngdevice", (Xpost_Op_Func)loadpngdevice, 1, 0); INSTALL;
     op = xpost_operator_cons(ctx, "loadpngdevicecont", (Xpost_Op_Func)loadpngdevicecont, 1, 1, dicttype);
     _loadpngdevicecont_opcode = op.mark_.padw;
+    op = xpost_operator_cons(ctx, "loadpngalphadevice", (Xpost_Op_Func)loadpngalphadevice, 1, 0); INSTALL;
+    op = xpost_operator_cons(ctx, "loadpngalphadevicecont", (Xpost_Op_Func)loadpngalphadevicecont, 1, 1, dicttype);
+    _loadpngalphadevicecont_opcode = op.mark_.padw;
 
     return 0;
 }

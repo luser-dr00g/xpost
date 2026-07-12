@@ -315,6 +315,13 @@ test('binary-tokens',
           files('tests/binary_token_test.ps'),
           files('tests/binary_token_test.expected') ],
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# pngalpha device: RGBA output where the erased page is transparent and
+# marks (including explicit white) are opaque; png stays RGB.
+test('pngalpha-device',
+  find_program('tests/run-pngalpha-test.sh'),
+  args: [ xpost_exe ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 #if get_option('nls') == true
 #  subdir('po')
 #endif
