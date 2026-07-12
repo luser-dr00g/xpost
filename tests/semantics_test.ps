@@ -56,6 +56,24 @@ dup /Category /st.private put
 /st.key /st.private findresource /v get 42 eq (findresource retrieves the instance) assert
 /st.key /st.private resourcestatus { pop pop true } { false } ifelse (resourcestatus finds it) assert
 /st.other /st.private resourcestatus { pop pop false } { true } ifelse (resourcestatus rejects the unknown) assert
+/st.aa 1 /st.private defineresource pop
+/st.ab 2 /st.private defineresource pop
+/st.bb 3 /st.private defineresource pop
+[ (*) { dup length string copy } 32 string /st.private resourceforall ]
+length 4 eq (resourceforall enumerates every instance) assert
+[ (st.a*) { dup length string copy } 32 string /st.private resourceforall ]
+length 2 eq (resourceforall filters by a star template) assert
+[ (st.?b) { dup length string copy } 32 string /st.private resourceforall ]
+length 2 eq (a ? in the template matches any one character) assert
+[ (st.key) { dup length string copy } 32 string /st.private resourceforall ]
+length 1 eq (a literal template matches exactly one) assert
+[ (none*) { dup length string copy } 32 string /st.private resourceforall ]
+length 0 eq (an unmatched template enumerates nothing) assert
+[ (st.priv*) { dup length string copy } 32 string /Category resourceforall ]
+length 1 eq (resourceforall enumerates categories) assert
+/st.aa /st.private undefineresource
+/st.ab /st.private undefineresource
+/st.bb /st.private undefineresource
 /st.key /st.private undefineresource
 /st.key /st.private resourcestatus { pop pop false } { true } ifelse (undefineresource removes it) assert
 count /st.d0 exch def
