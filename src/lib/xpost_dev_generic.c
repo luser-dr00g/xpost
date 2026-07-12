@@ -983,8 +983,10 @@ int xpost_dev_pdf_fmt_num(char *o, double v)
 }
 
 /* Emit the content-stream operators for a filled path into the accumulator:
-   the flattened subpaths ("x y m" / "x y l", closed with "h") and an even-odd
-   fill ("f*"). This is the per-coordinate hot loop of the pdfwrite FillPoly,
+   the flattened subpaths ("x y m" / "x y l", closed with "h") and a
+   nonzero-winding fill ("f") -- the rule the fill operator has: overlapping
+   subpaths union, and hole subpaths are counter-wound by their producers.
+   This is the per-coordinate hot loop of the pdfwrite FillPoly,
    in C; the fill colour is the device's business, emitted beforehand. */
 static int _pdffillpoly(Xpost_Context *ctx,
                         Xpost_Object poly, Xpost_Object devdic)
@@ -1023,7 +1025,7 @@ static int _pdffillpoly(Xpost_Context *ctx,
     }
     if (!needmove)
         _pdf_acc_append(&a, "h\n", 2);
-    _pdf_acc_append(&a, "f*\n", 3);
+    _pdf_acc_append(&a, "f\n", 2);
 
     _pdf_acc_put(ctx, priv, &a);
     return 0;
@@ -1032,8 +1034,8 @@ static int _pdffillpoly(Xpost_Context *ctx,
 #undef PDFNUMVAL
 
 /* The svgwrite FillPoly hot loop: emit one SVG path element for a filled
-   path into the accumulator -- the fill colour as percentages, an even-odd
-   fill rule (matching the raster devices' fill), and the flattened subpaths
+   path into the accumulator -- the fill colour as percentages, a
+   nonzero-winding fill rule (the fill operator's), and the flattened subpaths
    as M/L commands, each closed with Z. Device coordinates are y-down, as
    SVG's are, so they pass through unchanged. */
 static int _svgfillpoly(Xpost_Context *ctx,
@@ -1055,7 +1057,7 @@ static int _svgfillpoly(Xpost_Context *ctx,
     len += _pdf_fmt_num(tmp + len, PDFNUMVAL(r) * 100); tmp[len++] = '%'; tmp[len++] = ',';
     len += _pdf_fmt_num(tmp + len, PDFNUMVAL(g) * 100); tmp[len++] = '%'; tmp[len++] = ',';
     len += _pdf_fmt_num(tmp + len, PDFNUMVAL(b) * 100); tmp[len++] = '%';
-    memcpy(tmp + len, ")\" fill-rule=\"evenodd\" d=\"", 26); len += 26;
+    memcpy(tmp + len, ")\" fill-rule=\"nonzero\" d=\"", 26); len += 26;
     _pdf_acc_append(&a, tmp, len);
 
     n = poly.comp_.sz;

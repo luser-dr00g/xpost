@@ -930,7 +930,7 @@ int _fillpath_emit(Xpost_Context *ctx,
         n += xpost_dev_pdf_fmt_num(tmp + n, comp[0] * 100); tmp[n++] = '%'; tmp[n++] = ',';
         n += xpost_dev_pdf_fmt_num(tmp + n, comp[1] * 100); tmp[n++] = '%'; tmp[n++] = ',';
         n += xpost_dev_pdf_fmt_num(tmp + n, comp[2] * 100); tmp[n++] = '%';
-        memcpy(tmp + n, ")\" fill-rule=\"evenodd\" d=\"", 26); n += 26;
+        memcpy(tmp + n, ")\" fill-rule=\"nonzero\" d=\"", 26); n += 26;
         if (!xpost_dev_pdf_append(ctx, devdic, tmp, n))
             return undefined;
     }
@@ -979,7 +979,7 @@ int _fillpath_emit(Xpost_Context *ctx,
     }
 
     if (!xpost_dev_pdf_append(ctx, devdic,
-                              svg ? "\"/>\n" : "f*\n", svg ? 4 : 3))
+                              svg ? "\"/>\n" : "f\n", svg ? 4 : 2))
         return undefined;
     return 0;
 }

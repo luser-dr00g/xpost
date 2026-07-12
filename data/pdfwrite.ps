@@ -7,7 +7,7 @@
 % PDFWRITE writes a single-page vector PDF: the marking methods append
 % content-stream operators and Emit wraps them in the PDF file structure.
 % This is a clean-room implementation from the published PDF format (operators
-% rg/RG/m/l/re/f*/S/cm and the object/xref/trailer layout); no rasterizing.
+% rg/RG/m/l/re/f/S/cm and the object/xref/trailer layout); no rasterizing.
 %
 % Separation colour spaces are preserved: the interpreter delivers each
 % (tint, space) pair to .registersep, which files the space in a registry
@@ -311,7 +311,7 @@
     end }
 
     % c1..cN polygon IMAGE . -  ; append the fill colour, the subpath
-    % moveto/lineto/closepath, and an even-odd fill. The per-coordinate
+    % moveto/lineto/closepath, and a nonzero-winding fill. The per-coordinate
     % formatting is the hot loop, so it is done in C (.pdffillpoly),
     % appending to the accumulator; the colour is emitted here, where
     % separations are the device's business.
@@ -346,8 +346,8 @@
 
     % c1..cN IMAGE . -  ; fill the current path as one content-stream
     % path with curves preserved (the flattening fill goes through
-    % FillPoly instead), subpaths closed implicitly by the even-odd
-    % fill -- the rule the flattening fill applies. The per-element
+    % FillPoly instead), subpaths closed implicitly by the fill,
+    % which winds nonzero as the fill operator does. The per-element
     % formatting walks the path in C (.pdffillpath), appending to the
     % accumulator, so subpath count costs no operand stack; the colour
     % is emitted here, where separations are the device's business.
