@@ -117,11 +117,18 @@
                 (%%BoundingBox: 0 0 0 0\n) print
                 (%%HiResBoundingBox: 0 0 0 0\n) print
             }{
-                % device -> default user space (y-up): y' = height - y
-                /uxmin minx def
-                /uxmax maxx def
-                /uymin height maxy sub def
-                /uymax height miny sub def
+                % device -> default user space (points, y-up): unscale by
+                % the device resolution and flip. The defaultmatrix fixup
+                % applied after construction carries the scale; a raw
+                % device is 1:1
+                /sx 1 def /sy 1 def
+                currentdict /defaultmatrix 2 copy known {
+                    get dup 0 get /sx exch def 3 get neg /sy exch def
+                }{ pop pop } ifelse
+                /uxmin minx sx div def
+                /uxmax maxx sx div def
+                /uymin height maxy sub sy div def
+                /uymax height miny sub sy div def
                 (%%BoundingBox: ) print
                 uxmin floor cvi 20 string cvs print ( ) print
                 uymin floor cvi 20 string cvs print ( ) print
