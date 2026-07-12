@@ -4,7 +4,8 @@
 # structural landmarks of the produced document -- the svg root sized in
 # points with a device-unit viewBox, the filled rectangle's path with its
 # exact coordinates, a stroked path carrying the graphics-state attributes,
-# and at least one glyph outline path with curve commands. A second page at
+# at least one glyph outline path with curve commands, and a circle fill
+# whose curves are preserved. A second page at
 # 144dpi must report the same point size with a doubled viewBox.
 #   $1  path to the built xpost binary
 set -u
@@ -20,6 +21,7 @@ cat > "$tmp/t.ps" <<PSEOF
 0 0 1 setrgbcolor newpath 20 20 moveto 60 0 rlineto 0 40 rlineto -60 0 rlineto closepath fill
 1 0 0 setrgbcolor 2 setlinewidth 1 setlinejoin newpath 100 20 moveto 40 30 rlineto 40 -30 rlineto stroke
 0 setgray /Courier findfont 18 scalefont setfont 20 80 moveto (Og) show
+0 1 0 setrgbcolor newpath 160 70 15 0 360 arc closepath fill
 showpage
 << /HWResolution [144 144] /OutputFile ($tmp/b.svg) >> setpagedevice
 0 0 1 setrgbcolor newpath 20 20 moveto 60 0 rlineto 0 40 rlineto -60 0 rlineto closepath fill
@@ -33,11 +35,12 @@ fail() { echo "FAIL: $1"; exit 1; }
 a=$tmp/a.svg; b=$tmp/b.svg
 [ -s "$a" ] || fail "no output"
 grep -q '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="200pt" height="100pt" viewBox="0 0 200 100">' "$a" || fail "svg root"
-grep -q '<path fill="rgb(0%,0%,100%)" fill-rule="evenodd" d="M20 80L80 80L80 40L20 40L20 80Z"/>' "$a" || fail "filled rect path"
+grep -q '<path fill="rgb(0%,0%,100%)" fill-rule="evenodd" d="M20 80L80 80L80 40L20 40Z"/>' "$a" || fail "filled rect path"
 grep -q '<path fill="none" stroke="rgb(100%,0%,0%)" stroke-width="2" stroke-linecap="butt" stroke-linejoin="round" stroke-miterlimit="10" d="M100 80L140 50L180 80"/>' "$a" || fail "stroked path"
 grep -q '<path fill="rgb(0%,0%,0%)" d="M[0-9.]* [0-9.]* C' "$a" || fail "glyph outline"
+grep -q '<path fill="rgb(0%,100%,0%)" fill-rule="evenodd" d="M175 30.00C' "$a" || fail "curve-preserving circle fill"
 grep -q '</svg>' "$a" || fail "closing tag"
 grep -q 'width="200pt" height="100pt" viewBox="0 0 400 200"' "$b" || fail "144dpi page in points"
-grep -q 'd="M40 160L160 160L160 80L40 80L40 160Z"' "$b" || fail "144dpi coordinates"
+grep -q 'd="M40 160L160 160L160 80L40 80Z"' "$b" || fail "144dpi coordinates"
 echo SUCCESS
 exit 0

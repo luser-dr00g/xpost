@@ -115,6 +115,35 @@
     % done in C (.svgfillpoly), appending to the accumulator.
     /FillPoly { .svgfillpoly } bind
 
+    % append collected path elements (coordinates then a /m /l /c /h
+    % name each, from the .devpathforall walker) as SVG path commands
+    /.putelems { % elems  .  -
+        {
+            dup type /nametype eq {
+                dup /h eq { pop (Z) .put }{
+                /spcmd exch def
+                spcmd /c eq {
+                    {spy3 spx3 spy2 spx2 spy1 spx1}{exch def}forall
+                    (C) .put
+                    spx1 .svgnum ( ) .put spy1 .svgnum ( ) .put
+                    spx2 .svgnum ( ) .put spy2 .svgnum ( ) .put
+                    spx3 .svgnum ( ) .put spy3 .svgnum
+                }{
+                    spcmd /m eq { (M) }{ (L) } ifelse .put
+                    exch .svgnum ( ) .put .svgnum
+                } ifelse } ifelse
+            } if
+        } forall
+    } bind
+
+    % r g b IMAGE . -  ; fill the current path as one path element with
+    % curves preserved (the flattening fill goes through FillPoly
+    % instead), subpaths closed implicitly by the even-odd fill rule --
+    % the rule the flattening fill applies. The per-element formatting
+    % walks the path in C (.svgfillpath), appending to the accumulator,
+    % so subpath count costs no operand stack.
+    /FillPath { .svgfillpath } bind
+
     % r g b IMAGE . -  ; stroke the current path as one path element with
     % the device-space line width and the graphics state's cap, join and
     % miter limit, so joints between segments are drawn by the consumer
@@ -136,22 +165,7 @@
             (" stroke-miterlimit=") .put
             currentmiterlimit .svgnum
             (" d=") .put
-            spelems {
-                dup type /nametype eq {
-                    dup /h eq { pop (Z) .put }{
-                    /spcmd exch def
-                    spcmd /c eq {
-                        {spy3 spx3 spy2 spx2 spy1 spx1}{exch def}forall
-                        (C) .put
-                        spx1 .svgnum ( ) .put spy1 .svgnum ( ) .put
-                        spx2 .svgnum ( ) .put spy2 .svgnum ( ) .put
-                        spx3 .svgnum ( ) .put spy3 .svgnum
-                    }{
-                        spcmd /m eq { (M) }{ (L) } ifelse .put
-                        exch .svgnum ( ) .put .svgnum
-                    } ifelse } ifelse
-                } if
-            } forall
+            spelems .putelems
             ("/>\n) .put
         } if
     end }

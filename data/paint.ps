@@ -26,8 +26,20 @@
 
 % -  fill  -
 % fill current path with current color
+% A device with a FillPath method consumes the whole path itself
+% (vector devices fill with curves preserved). The path must lie
+% inside a rectangular clip: a non-trivial clip region is cut by the
+% polygon machinery below, at the cost of flattening.
 /fill {
     closepath
+    DEVICE /FillPath known .cliptrivial and {
+        [ currentcolordict DEVICE /nativecolorspace get get exec
+        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        DEVICE dup /FillPath get exec
+        pop
+        flushpage
+        newpath
+    }{
     flattenpath
     doclip
     % subpaths merged into one point list, separated by null, so that
@@ -52,6 +64,7 @@
 
     flushpage
     newpath
+    } ifelse
 } bind def
 
 % -  eofill  -
@@ -70,9 +83,14 @@
 % is within a pixel, else the stroked outline is filled.
 /stroke {
     DEVICE /StrokePath known {
-        flattenpath
-        dashpath
-        doclip
+        % dashing and non-rectangular clipping consume line segments;
+        % with neither active the path passes through unflattened, so
+        % curves reach the device
+        currentdash pop length 0 eq .cliptrivial and not {
+            flattenpath
+            dashpath
+            doclip
+        } if
         [ currentcolordict DEVICE /nativecolorspace get get exec
         counttomark { currenttransfer exec counttomark 1 roll } repeat
         DEVICE dup /StrokePath get exec
