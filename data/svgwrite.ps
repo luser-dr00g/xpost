@@ -194,6 +194,11 @@
 
         (</svg>\n) .w
         F (%stdout) (w) file ne { F closefile } if
+
+        % start the next page fresh: showpage's page clear and later
+        % marks must not stack on the emitted content (a later Emit
+        % rewrites the output with the then-current page)
+        currentdict .pdfreset
     end }
 >> def
 
