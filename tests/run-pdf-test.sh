@@ -96,6 +96,22 @@ EOF
     [ -s "$ra" ] && grep -q '[^\o000]' "$ra" || { echo "FAIL: stroke left no marks"; exit 1; }
     [ "$diffbytes" -le 8 ] || { echo "FAIL: stroked joints diverge from the original drawing"; exit 1; }
     echo "gs stroke round-trip OK"
+
+    # document metadata: a DOCINFO pdfmark must land in the trailer's
+    # Info dictionary, readable by the consumer
+    infops=$(mktemp)
+    infopdf=$(mktemp)
+    trap 'rm -f "$pdf" "$textps" "$textpdf" "$strokeps" "$strokepdf" "$ra" "$rb" "$infops" "$infopdf"' EXIT
+    cat > "$infops" <<'EOF'
+[ /Creator (pdf-device check) /DOCINFO pdfmark
+100 100 moveto 200 100 lineto 200 200 lineto closepath fill
+showpage
+EOF
+    "$xpost" -q -d pdfwrite -o "$infopdf" "$infops" </dev/null >/dev/null 2>&1
+    grep -aq '/Info 5 0 R' "$infopdf" || { echo "FAIL: no Info reference in trailer"; exit 1; }
+    creator=$(gs -q -dNODISPLAY -dPDFINFO -dBATCH -dNOPAUSE "$infopdf" </dev/null 2>&1 | grep '^Creator:')
+    [ "$creator" = "Creator: pdf-device check" ] || { echo "FAIL: gs reads Creator as '$creator'"; exit 1; }
+    echo "gs DOCINFO round-trip OK"
 else
     echo "gs not found: skipping round-trip check"
 fi

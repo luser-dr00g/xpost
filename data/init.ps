@@ -548,6 +548,22 @@ end % userdict
     } ifelse
 } def
 
+% mark key value ... /TYPE  pdfmark  -
+% Route document metadata to a device that can carry it (the pdfwrite
+% device collects DOCINFO into its trailer); every other mark type,
+% and marks on devices without metadata, are consumed without effect.
+/pdfmark {
+    counttomark 0 gt {
+        dup /DOCINFO eq DEVICE /.docinfo known and {
+            pop
+            counttomark 2 idiv {
+                DEVICE /.docinfo get 3 1 roll put
+            } repeat
+        } if
+    } if
+    cleartomark
+} bind def
+
 %   /fontname size  selectfont  -
 % /fontname matrix  selectfont  -
 /selectfont {
