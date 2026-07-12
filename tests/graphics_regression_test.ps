@@ -365,6 +365,66 @@ countink dup
 900 ge (circular clip covers the disk) assert
 1600 le (circular clip stays within the disk) assert
 
+% --- arc semantics: sweep direction, current point, segmentation ---
+% arc sweeps counterclockwise from angle1 to angle2 and leaves the
+% current point at angle2; arcn mirrors. Probed through pathforall,
+% independent of any device.
+/apd 8 dict def
+newpath 30 30 10 0 90 arc
+currentpoint
+40 (arc leaves the current point at angle2, y) assertnear
+30 (arc leaves the current point at angle2, x) assertnear
+newpath 30 30 10 90 0 arcn
+currentpoint
+30 (arcn leaves the current point at angle2, y) assertnear
+40 (arcn leaves the current point at angle2, x) assertnear
+
+% counterclockwise from (40,30): the first control point leads upward
+apd /c1y null put
+newpath 30 30 10 0 90 arc
+{ pop pop } { pop pop }
+{ pop pop pop pop exch pop
+  apd /c1y get null eq { apd /c1y 3 -1 roll put }{ pop } ifelse }
+{} pathforall
+apd /c1y get 30 gt (arc sweeps counterclockwise) assert
+
+% a full circle is one moveto and four quadrant curves, nothing else
+apd /m 0 put apd /l 0 put apd /c 0 put
+newpath 40 40 12 0 360 arc
+{ pop pop apd /m 2 copy get 1 add put }
+{ pop pop apd /l 2 copy get 1 add put }
+{ pop pop pop pop pop pop apd /c 2 copy get 1 add put }
+{} pathforall
+apd /m get 1 eq (a full circle starts with one moveto) assert
+apd /l get 0 eq (a full circle has no linetos) assert
+apd /c get 4 eq (a full circle is four quadrant curves) assert
+
+% a partial arc splits at the quadrant boundaries it crosses
+apd /c 0 put
+newpath 40 40 12 45 200 arc
+{ pop pop } { pop pop }
+{ pop pop pop pop pop pop apd /c 2 copy get 1 add put }
+{} pathforall
+apd /c get 3 eq (a partial arc splits at quadrant boundaries) assert
+
+% pen advances scale linearly: a run of one character is as wide as
+% the sum of its parts (the hinter must not round each step)
+/Courier findfont 13 scalefont setfont
+(iiiiiiiiiiiiiiiiiiii) stringwidth pop
+(i) stringwidth pop 20 mul
+sub abs 0.01 lt (advances accumulate without per-glyph rounding) assert
+
+% the PostScript style-variant names reach a styled face: bold covers
+% more area than regular at the same size
+erasepage
+/Helvetica findfont 24 scalefont setfont
+newpath 4 20 moveto (HHHH) show
+countink /apreg exch def
+erasepage
+/Helvetica-Bold findfont 24 scalefont setfont
+newpath 4 20 moveto (HHHH) show
+countink apreg gt (Helvetica-Bold resolves to a bold face) assert
+
 % an annulus clip built the standard way: the closepath's point bridges
 % into the inner subpath by a straight line, so the region arrives as
 % one keyhole path; the clipper must split it at the close, peel the
