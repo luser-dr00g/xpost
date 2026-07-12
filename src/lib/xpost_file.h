@@ -181,6 +181,17 @@ Xpost_Object xpost_file_cons_writebuffer(Xpost_Memory_File *mem);
 Xpost_Object xpost_file_cons_filter_a85(Xpost_Memory_File *mem, Xpost_Object src);
 
 /**
+ * @brief The remaining decode filter constructors: hexadecimal,
+ * run-length, byte-range/delimited subfiles, and (with zlib) flate.
+ * All follow the ASCII85Decode contract: read filters over an
+ * unowned source.
+ */
+Xpost_Object xpost_file_cons_filter_hex(Xpost_Memory_File *mem, Xpost_Object src);
+Xpost_Object xpost_file_cons_filter_rle(Xpost_Memory_File *mem, Xpost_Object src);
+Xpost_Object xpost_file_cons_filter_subfile(Xpost_Memory_File *mem, Xpost_Object src, int count, const char *eod, int eodlen);
+Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object src);
+
+/**
  * @brief Open and construct a file object given filename and mode.
  */
 int xpost_file_open(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);

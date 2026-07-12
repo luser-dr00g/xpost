@@ -99,8 +99,7 @@ int xpost_op_string_mode_file (Xpost_Context *ctx,
 }
 
 /* file /FilterName  filter  file'
-   layer a decoding filter over a readable file. ASCII85Decode is the
-   one filter packaged program bodies use. */
+   layer a decoding filter over a readable file */
 static
 int xpost_op_file_filter (Xpost_Context *ctx,
                           Xpost_Object F,
@@ -108,7 +107,6 @@ int xpost_op_file_filter (Xpost_Context *ctx,
 {
     Xpost_Object namestr;
     char *cname;
-    int is_a85;
     Xpost_Object f;
 
     if (!xpost_object_is_readable(ctx, F))
@@ -117,14 +115,64 @@ int xpost_op_file_filter (Xpost_Context *ctx,
     cname = xpost_string_allocate_cstring(ctx, namestr);
     if (!cname)
         return VMerror;
-    is_a85 = strcmp(cname, "ASCII85Decode") == 0;
-    if (!is_a85)
+    if (strcmp(cname, "ASCII85Decode") == 0)
+        f = xpost_file_cons_filter_a85(ctx->lo, F);
+    else if (strcmp(cname, "ASCIIHexDecode") == 0)
+        f = xpost_file_cons_filter_hex(ctx->lo, F);
+    else if (strcmp(cname, "RunLengthDecode") == 0)
+        f = xpost_file_cons_filter_rle(ctx->lo, F);
+#ifdef HAVE_ZLIB
+    else if (strcmp(cname, "FlateDecode") == 0)
+        f = xpost_file_cons_filter_flate(ctx->lo, F);
+#endif
+    else
+    {
         XPOST_LOG_ERR("unsupported filter %s", cname);
-    free(cname);
-    if (!is_a85)
+        free(cname);
         return undefined;
+    }
+    free(cname);
+    if (xpost_object_get_type(f) == invalidtype)
+        return ioerror;
+    f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    return 0;
+}
 
-    f = xpost_file_cons_filter_a85(ctx->lo, F);
+/* file count string /SubFileDecode  filter  file'
+   pass bytes through until the delimiter string has occurred count
+   times (an empty string makes count a plain byte count) */
+static
+int xpost_op_file_filter_subfile (Xpost_Context *ctx,
+                                  Xpost_Object F,
+                                  Xpost_Object count,
+                                  Xpost_Object eod,
+                                  Xpost_Object name)
+{
+    Xpost_Object namestr;
+    char *cname;
+    int match;
+    Xpost_Object f;
+    char eodbuf[64];
+
+    if (!xpost_object_is_readable(ctx, F))
+        return invalidaccess;
+    namestr = xpost_name_get_string(ctx, name);
+    cname = xpost_string_allocate_cstring(ctx, namestr);
+    if (!cname)
+        return VMerror;
+    match = strcmp(cname, "SubFileDecode") == 0;
+    if (!match)
+        XPOST_LOG_ERR("unsupported filter %s with count and string", cname);
+    free(cname);
+    if (!match)
+        return undefined;
+    if (eod.comp_.sz > sizeof(eodbuf))
+        return rangecheck;
+    memcpy(eodbuf, xpost_string_get_pointer(ctx, eod), eod.comp_.sz);
+
+    f = xpost_file_cons_filter_subfile(ctx->lo, F, count.int_.val, eodbuf, (int)eod.comp_.sz);
     if (xpost_object_get_type(f) == invalidtype)
         return ioerror;
     f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
@@ -705,6 +753,9 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "file", (Xpost_Op_Func)xpost_op_string_mode_file, 1, 2, stringtype, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter, 1, 2, filetype, nametype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter_subfile, 1, 4,
+            filetype, integertype, stringtype, nametype);
     INSTALL;
     op = xpost_operator_cons(ctx, "closefile", (Xpost_Op_Func)xpost_op_file_closefile, 0, 1, filetype);
     INSTALL;
