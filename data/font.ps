@@ -280,14 +280,43 @@
     } ifelse
 } def
 
+%   str bool  charpath  -
+% Append the text's glyph outlines to the current path. The segments
+% arrive from .stringoutline in the face's y-up glyph space relative
+% to the pen (device-magnitude pixels, oriented by the face
+% transform), so each point is flipped to a device offset and mapped
+% to user space about the current point. Type 3 fonts only advance
+% the pen by the text's width.
 /charpath {
-    %currentfont /FontName get ==
     pop
-    stringwidth
-    currentpoint
-    currentpoint currentfont /FontMatrix get 0 get .5 mul 1 index add exch
-    0 360 arc
-    moveto rmoveto
+    graphicsdict /currgstate get /currfont get
+    dup /FontType known { /FontType get 3 eq }{ pop false } ifelse {
+        stringwidth rmoveto
+    }{
+        12 dict begin
+        /cpstr exch def
+        currentpoint /cy exch def /cx exch def
+        % a glyph-space point on the stack becomes a user-space point
+        /cpt { % x y . X Y
+            neg idtransform exch cx add exch cy add
+        } def
+        cpstr .stringoutline {
+            dup type /nametype eq {
+                dup /h eq { pop closepath }{
+                /cpcmd exch def
+                cpcmd /c eq {
+                    {cpy3 cpx3 cpy2 cpx2 cpy1 cpx1}{exch def}forall
+                    cpx1 cpy1 cpt cpx2 cpy2 cpt cpx3 cpy3 cpt curveto
+                }{
+                    cpt
+                    cpcmd /m eq { moveto }{ lineto } ifelse
+                } ifelse } ifelse
+            } if
+        } forall
+        cx cy moveto
+        cpstr stringwidth rmoveto
+        end
+    } ifelse
 } def
 
 /ISOLatin1Encoding [
