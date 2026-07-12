@@ -1358,6 +1358,180 @@ int _stringwidth(Xpost_Context *ctx,
     return 0;
 }
 
+/* str  .stringoutline  array
+   the string's glyph outlines as a flat array of path segments in the
+   face's y-up glyph space (device-magnitude pixels, oriented by the
+   face transform), relative to the pen start: coordinates followed by
+   a tag, /m /l /c (cubic) or /h. charpath (in font.ps) maps each
+   point to user space about the current point and appends it to the
+   current path. Blank glyphs contribute advance only. */
+typedef struct outlinecollect
+{
+    Xpost_Context *ctx;
+    Xpost_Object *objs;
+    size_t len, cap;
+    double px, py;
+    int err;
+    Xpost_Object nm, nl, nc, nh;
+} outlinecollect;
+
+static
+int _oc_push(outlinecollect *oc, Xpost_Object o)
+{
+    if (oc->len == oc->cap)
+    {
+        Xpost_Object *tmp;
+        size_t ncap = oc->cap ? oc->cap * 2 : 256;
+
+        tmp = realloc(oc->objs, ncap * sizeof *tmp);
+        if (!tmp)
+        {
+            oc->err = VMerror;
+            return 1;
+        }
+        oc->objs = tmp;
+        oc->cap = ncap;
+    }
+    oc->objs[oc->len++] = o;
+    return 0;
+}
+
+static
+int _oc_xy(outlinecollect *oc, double x, double y)
+{
+    return _oc_push(oc, xpost_real_cons((real)(oc->px + x)))
+        || _oc_push(oc, xpost_real_cons((real)(oc->py + y)));
+}
+
+static
+int _oc_moveto(void *user, double x, double y)
+{
+    outlinecollect *oc = user;
+    return _oc_xy(oc, x, y) || _oc_push(oc, oc->nm);
+}
+
+static
+int _oc_lineto(void *user, double x, double y)
+{
+    outlinecollect *oc = user;
+    return _oc_xy(oc, x, y) || _oc_push(oc, oc->nl);
+}
+
+static
+int _oc_curveto(void *user, double x1, double y1, double x2, double y2, double x3, double y3)
+{
+    outlinecollect *oc = user;
+    return _oc_xy(oc, x1, y1) || _oc_xy(oc, x2, y2) || _oc_xy(oc, x3, y3)
+        || _oc_push(oc, oc->nc);
+}
+
+static
+int _oc_closepath(void *user)
+{
+    outlinecollect *oc = user;
+    return _oc_push(oc, oc->nh);
+}
+
+static
+int _stringoutline(Xpost_Context *ctx,
+                   Xpost_Object str)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    Xpost_Object encoding;
+    char *cstr;
+    char *ch;
+    outlinecollect oc;
+    Xpost_Object arr;
+    size_t i;
+
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    _face_transform_from_ctm(ctx, gs, data.face);
+    encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
+
+    cstr = xpost_string_allocate_cstring(ctx, str);
+    if (!cstr)
+        return VMerror;
+
+    memset(&oc, 0, sizeof oc);
+    oc.ctx = ctx;
+    oc.nm = xpost_object_cvlit(xpost_name_cons(ctx, "m"));
+    oc.nl = xpost_object_cvlit(xpost_name_cons(ctx, "l"));
+    oc.nc = xpost_object_cvlit(xpost_name_cons(ctx, "c"));
+    oc.nh = xpost_object_cvlit(xpost_name_cons(ctx, "h"));
+
+    for (ch = cstr; *ch; ch++)
+    {
+#ifdef HAVE_FREETYPE2
+        unsigned int glyph_index;
+        long advance_x, advance_y;
+        Xpost_Font_Outline_Sink sink;
+
+        glyph_index = _glyph_index_for_char(ctx, encoding, data.face, (unsigned char)*ch);
+        sink.moveto = _oc_moveto;
+        sink.lineto = _oc_lineto;
+        sink.curveto = _oc_curveto;
+        sink.closepath = _oc_closepath;
+        sink.user = &oc;
+        if (!xpost_font_face_glyph_outline(data.face, glyph_index, &sink, &advance_x, &advance_y))
+        {
+            /* a glyph without an outline leaves no path; skip it */
+            free(oc.objs);
+            free(cstr);
+            return invalidfont;
+        }
+        if (oc.err)
+        {
+            free(oc.objs);
+            free(cstr);
+            return oc.err;
+        }
+        oc.px += (double)advance_x / 64;
+        oc.py += (double)advance_y / 64;
+#endif
+    }
+    free(cstr);
+
+    if (oc.len > 65535)
+    {
+        free(oc.objs);
+        return limitcheck;
+    }
+    arr = xpost_object_cvlit(xpost_array_cons(ctx, (unsigned int)oc.len));
+    if (xpost_object_get_type(arr) == nulltype)
+    {
+        free(oc.objs);
+        return VMerror;
+    }
+    for (i = 0; i < oc.len; i++)
+        xpost_array_put(ctx, arr, (integer)i, oc.objs[i]);
+    free(oc.objs);
+    xpost_stack_push(ctx->lo, ctx->os, arr);
+    return 0;
+}
+
 static
 int _kshow(Xpost_Context *ctx,
            Xpost_Object proc,
@@ -1508,6 +1682,8 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
         floattype, floattype, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "stringwidth", (Xpost_Op_Func)_stringwidth, 2, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".stringoutline", (Xpost_Op_Func)_stringoutline, 1, 1, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "kshow", (Xpost_Op_Func)_kshow, 0, 2, proctype, stringtype);
     INSTALL;
