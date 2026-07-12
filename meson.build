@@ -306,6 +306,14 @@ test('pdf-device',
   args: [ xpost_exe, files('tests/pdf_bigfill_test.ps') ],
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 
+# SVG device: render fills, strokes and glyph outlines through
+# setpagedevice and require the document's structural landmarks,
+# including resolution-independent point sizing.
+test('svg-device',
+  find_program('tests/run-svg-test.sh'),
+  args: [ xpost_exe ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
 # Binary tokens (PLRM 3.14): the conformance corpus against a golden
 # record generated from the reference interpreter, which revalidates
 # the golden when gs is present.

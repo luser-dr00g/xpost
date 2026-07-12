@@ -534,6 +534,7 @@ typedef struct glyphfrag
     double px, py;
     int has;   /* any contour emitted */
     int oom;
+    int svg;   /* emit SVG path commands instead of PDF operators */
 } glyphfrag;
 
 static int _frag_put(glyphfrag *f, const char *s, size_t n)
@@ -570,22 +571,34 @@ static int _frag_xy(glyphfrag *f, double x, double y)
     return _frag_put(f, t, n);
 }
 
+/* PDF and SVG spell the same commands differently: PDF postfixes the
+   operator ("x y m"), SVG prefixes it ("M x y"). */
+static int _frag_cmd_xy(glyphfrag *f, const char *pdfop, const char *svgop, double x, double y)
+{
+    if (f->svg)
+        return _frag_put(f, svgop, 1) || _frag_xy(f, x, y);
+    return _frag_xy(f, x, y) || _frag_put(f, pdfop, 2);
+}
+
 static int _frag_moveto(void *user, double x, double y)
 {
     glyphfrag *f = user;
     f->has = 1;
-    return _frag_xy(f, x, y) || _frag_put(f, "m\n", 2);
+    return _frag_cmd_xy(f, "m\n", "M", x, y);
 }
 
 static int _frag_lineto(void *user, double x, double y)
 {
     glyphfrag *f = user;
-    return _frag_xy(f, x, y) || _frag_put(f, "l\n", 2);
+    return _frag_cmd_xy(f, "l\n", "L", x, y);
 }
 
 static int _frag_curveto(void *user, double x1, double y1, double x2, double y2, double x3, double y3)
 {
     glyphfrag *f = user;
+    if (f->svg)
+        return _frag_put(f, "C", 1)
+            || _frag_xy(f, x1, y1) || _frag_xy(f, x2, y2) || _frag_xy(f, x3, y3);
     return _frag_xy(f, x1, y1) || _frag_xy(f, x2, y2) || _frag_xy(f, x3, y3)
         || _frag_put(f, "c\n", 2);
 }
@@ -593,6 +606,8 @@ static int _frag_curveto(void *user, double x1, double y1, double x2, double y2,
 static int _frag_closepath(void *user)
 {
     glyphfrag *f = user;
+    if (f->svg)
+        return _frag_put(f, "Z", 1);
     return _frag_put(f, "h\n", 2);
 }
 
@@ -623,16 +638,39 @@ int _show_char_outline(Xpost_Context *ctx,
     f.px = xpos;
     f.py = ypos;
 
+    /* the target syntax is the device's choice: PDF operators unless the
+       device declares /VectorSyntax /svg */
+    {
+        Xpost_Object syn = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "VectorSyntax"));
+        if (xpost_object_get_type(syn) == nametype)
+        {
+            Xpost_Object ss = xpost_name_get_string(ctx, syn);
+            f.svg = ss.comp_.sz == 3
+                 && memcmp(xpost_string_get_pointer(ctx, ss), "svg", 3) == 0;
+        }
+    }
+
     r = COMPVAL(comp1);
     g = ncomp == 3 ? COMPVAL(comp2) : r;
     b = ncomp == 3 ? COMPVAL(comp3) : r;
-    n = xpost_dev_pdf_fmt_num(t, r);
-    t[n++] = ' ';
-    n += xpost_dev_pdf_fmt_num(t + n, g);
-    t[n++] = ' ';
-    n += xpost_dev_pdf_fmt_num(t + n, b);
-    memcpy(t + n, " rg\n", 4);
-    n += 4;
+    if (f.svg)
+    {
+        memcpy(t, "<path fill=\"rgb(", 16); n = 16;
+        n += xpost_dev_pdf_fmt_num(t + n, r * 100); t[n++] = '%'; t[n++] = ',';
+        n += xpost_dev_pdf_fmt_num(t + n, g * 100); t[n++] = '%'; t[n++] = ',';
+        n += xpost_dev_pdf_fmt_num(t + n, b * 100); t[n++] = '%';
+        memcpy(t + n, ")\" d=\"", 6); n += 6;
+    }
+    else
+    {
+        n = xpost_dev_pdf_fmt_num(t, r);
+        t[n++] = ' ';
+        n += xpost_dev_pdf_fmt_num(t + n, g);
+        t[n++] = ' ';
+        n += xpost_dev_pdf_fmt_num(t + n, b);
+        memcpy(t + n, " rg\n", 4);
+        n += 4;
+    }
     _frag_put(&f, t, n);
 
     sink.moveto = _frag_moveto;
@@ -648,7 +686,10 @@ int _show_char_outline(Xpost_Context *ctx,
     /* a blank glyph (e.g. space) decomposes to nothing: advance only */
     if (f.has && !f.oom)
     {
-        _frag_put(&f, "f\n", 2);
+        if (f.svg)
+            _frag_put(&f, "\"/>\n", 4);   /* glyphs fill nonzero: SVG's default rule */
+        else
+            _frag_put(&f, "f\n", 2);
         if (!f.oom)
             xpost_dev_pdf_append(ctx, devdic, f.d, f.len);
     }
