@@ -45,6 +45,16 @@
         pop
     }
 
+    % does this colour mark the box? Pure white marks only when the
+    % device carries /WhiteIsOpaque true; the default is false (white
+    % ignored), matching Ghostscript's bbox device, whose crop-style
+    % boxes exclude painted white. Anything else always marks.
+    /.opaque { % val  .  bool
+        1 lt
+        currentdict /WhiteIsOpaque 2 copy known { get }{ pop pop false } ifelse
+        or
+    }
+
     % expand the box to include a device-space point
     /.maxmin { % x y  .  -
         2 copy
@@ -55,7 +65,9 @@
     }
 
     /PutPix { % val x y IMAGE  .  -
-        begin .maxmin pop end
+        begin
+            3 -1 roll .opaque { .maxmin }{ pop pop } ifelse
+        end
     }
 
     /GetPix { % x y IMAGE  .  val
@@ -64,15 +76,19 @@
 
     /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
         begin {y2 x2 y1 x1 val}{exch def}forall
-            x1 y1 .maxmin
-            x2 y2 .maxmin
+            val .opaque {
+                x1 y1 .maxmin
+                x2 y2 .maxmin
+            } if
         end
     }
 
     /DrawRect { % val x y w h IMAGE  .  -
         begin {h w y x val}{exch def}forall
-            x y .maxmin
-            x w add  y h add  .maxmin
+            val .opaque {
+                x y .maxmin
+                x w add  y h add  .maxmin
+            } if
         end
     }
 
@@ -83,12 +99,15 @@
 
     /FillPoly { % val polygon IMAGE  .  -
         begin
-            exch pop  % drop colour value, keep the polygon
-            {
-                dup type /arraytype eq {
-                    dup length 2 eq { aload pop .maxmin }{ pop } ifelse
-                }{ pop } ifelse  % null subpath separators fall here
-            } forall
+            exch .opaque {
+                {
+                    dup type /arraytype eq {
+                        dup length 2 eq { aload pop .maxmin }{ pop } ifelse
+                    }{ pop } ifelse  % null subpath separators fall here
+                } forall
+            }{
+                pop
+            } ifelse
         end
     }
 
