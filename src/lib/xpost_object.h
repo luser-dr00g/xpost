@@ -458,7 +458,10 @@ Xpost_Object xpost_real_cons(real r);
  * This function returns the type of the object @p obj, that is the tag
  * with flags masked-off : obj.tag & #XPOST_OBJECT_TAG_DATA_TYPEMASK
  */
-XPCHECKAPI Xpost_Object_Type xpost_object_get_type(Xpost_Object obj);
+static inline Xpost_Object_Type xpost_object_get_type(Xpost_Object obj)
+{
+    return (Xpost_Object_Type)(obj.tag & XPOST_OBJECT_TAG_DATA_TYPE_MASK);
+}
 
 /**
  * @brief Determine whether the object is composite or not (ie. simple).

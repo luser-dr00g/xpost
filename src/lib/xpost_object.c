@@ -134,11 +134,6 @@ Xpost_Object xpost_real_cons (real r)
    Type and Tag Manipulation
 */
 
-XPCHECKAPI Xpost_Object_Type xpost_object_get_type (Xpost_Object obj)
-{
-    return (Xpost_Object_Type)(obj.tag & XPOST_OBJECT_TAG_DATA_TYPE_MASK);
-}
-
 int xpost_object_is_composite (Xpost_Object obj)
 {
     switch (xpost_object_get_type(obj))
