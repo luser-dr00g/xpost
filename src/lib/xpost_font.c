@@ -34,6 +34,8 @@
 #endif
 
 #include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 #ifdef HAVE_FONTCONFIG
 # include <fontconfig/fontconfig.h>
@@ -104,34 +106,135 @@ xpost_font_quit(void)
 }
 
 #ifdef HAVE_FREETYPE2
-static char *
-_xpost_font_face_filename_and_index_get(const char *name, int *idx)
-{
 # ifdef HAVE_FONTCONFIG
+/* case- and blank-insensitive name comparison, as fontconfig applies
+   to family names */
+static int
+_fc_name_eq(const char *a, const char *b)
+{
+    while (*a || *b)
+    {
+        while (*a == ' ') a++;
+        while (*b == ' ') b++;
+        if (tolower((unsigned char)*a) != tolower((unsigned char)*b))
+            return 0;
+        if (*a) a++;
+        if (*b) b++;
+    }
+    return 1;
+}
+
+/* does the matched font actually carry the requested name (as family
+   or PostScript name)? A fuzzy fontconfig match always returns some
+   face, so this distinguishes a real hit from a fallback. */
+static int
+_fc_match_is_exact(FcPattern *match, const char *name)
+{
+    char *s;
+    int i;
+
+    for (i = 0; FcPatternGetString(match, FC_FAMILY, i, (FcChar8 **)&s) == FcResultMatch; i++)
+        if (_fc_name_eq(s, name))
+            return 1;
+    for (i = 0; FcPatternGetString(match, FC_POSTSCRIPT_NAME, i, (FcChar8 **)&s) == FcResultMatch; i++)
+        if (_fc_name_eq(s, name))
+            return 1;
+    return 0;
+}
+
+/* PostScript style-variant suffixes translated to fontconfig style
+   flags, so that e.g. Helvetica-Bold reaches the bold face of the
+   family Helvetica is aliased to */
+static const struct { const char *suffix; const char *flags; } _ps_style_suffix[] = {
+    { "-BoldItalic",  ":bold:italic" },
+    { "-BoldOblique", ":bold:italic" },
+    { "-Bold",        ":bold" },
+    { "-Italic",      ":italic" },
+    { "-Oblique",     ":italic" },
+    { "-Roman",       "" },
+    { "-Regular",     "" },
+};
+
+static FcPattern *
+_fc_match_name(const char *name)
+{
     FcPattern *pattern;
     FcPattern *match;
-    char *file;
-    char *filename;
     FcResult result;
-
-    /* FIXME: parse name first ? */
 
     pattern = FcNameParse((const FcChar8 *)name);
     if (!pattern)
         return NULL;
 
     if (!FcConfigSubstitute (_xpost_font_fc_config, pattern, FcMatchPattern))
-        goto destroy_pattern;
+    {
+        FcPatternDestroy(pattern);
+        return NULL;
+    }
 
     FcDefaultSubstitute(pattern);
     match = FcFontMatch(_xpost_font_fc_config, pattern, &result);
-    //if (result != FcResultMatch) goto destroy_pattern;
+    FcPatternDestroy(pattern);
     switch (result) {
         case FcResultMatch: break;
-        case FcResultNoMatch: goto destroy_pattern;
+        case FcResultNoMatch: goto destroy_match;
         case FcResultTypeMismatch: break;
         case FcResultNoId: break;
-        case FcResultOutOfMemory: goto destroy_pattern;
+        case FcResultOutOfMemory: goto destroy_match;
+    }
+    return match;
+
+  destroy_match:
+    if (match)
+        FcPatternDestroy(match);
+    return NULL;
+}
+# endif
+
+static char *
+_xpost_font_face_filename_and_index_get(const char *name, int *idx)
+{
+# ifdef HAVE_FONTCONFIG
+    FcPattern *match;
+    char *file;
+    char *filename;
+    FcResult result;
+
+    match = _fc_match_name(name);
+    if (!match)
+        return NULL;
+
+    /* a fallback match for a PostScript style-variant name loses the
+       style (fontconfig reads the whole name as a family); requery as
+       family plus style flags so the alias family's styled face wins */
+    if (!_fc_match_is_exact(match, name))
+    {
+        size_t i;
+
+        for (i = 0; i < sizeof(_ps_style_suffix)/sizeof(*_ps_style_suffix); i++)
+        {
+            const char *sfx = _ps_style_suffix[i].suffix;
+            size_t nlen = strlen(name), slen = strlen(sfx);
+
+            if (nlen > slen && strcmp(name + nlen - slen, sfx) == 0)
+            {
+                char *styled = malloc(nlen + strlen(_ps_style_suffix[i].flags) + 1);
+                FcPattern *restyled;
+
+                if (!styled)
+                    break;
+                memcpy(styled, name, nlen - slen);
+                strcpy(styled + nlen - slen, _ps_style_suffix[i].flags);
+                restyled = _fc_match_name(styled);
+                free(styled);
+                if (restyled)
+                {
+                    FcPatternDestroy(match);
+                    match = restyled;
+                }
+                break;
+            }
+        }
     }
 
     result = FcPatternGetString(match, FC_FILE, 0, (FcChar8 **)&file);
@@ -149,14 +252,11 @@ _xpost_font_face_filename_and_index_get(const char *name, int *idx)
     filename = strdup(file);
 
     FcPatternDestroy(match);
-    FcPatternDestroy(pattern);
 
     return filename;
 
   destroy_match:
     FcPatternDestroy(match);
-  destroy_pattern:
-    FcPatternDestroy(pattern);
 # endif
 
     return NULL;
