@@ -1334,33 +1334,38 @@ static
 Xpost_Object _arc_start_proc;
 
 static
-int _arcbez(Xpost_Context *ctx,
-            Xpost_Object x, Xpost_Object y, Xpost_Object r,
-            Xpost_Object angle1, Xpost_Object angle2)
+Xpost_Object _arc_start_proc;
+
+/* Push one circular-arc segment's cubic Bezier onto the operand stack in
+   user-space coordinates, forward: the four points run from the angle1
+   end to the angle2 end (negative da sweeps clockwise). Push order is
+   x1 y1 x2 y2 x3 y3, ready for the curveto the caller schedules; the
+   control offsets follow the standard circular approximation. */
+static
+void _arcbezseg(Xpost_Context *ctx,
+                double cx, double cy, double r,
+                double a1, double a2)
 {
     Xpost_Matrix mat1, mat2, mat3;
     real da_2, sin_a, cos_a;
-    real x0, y0, x1, y1, x2, y2, x3, y3;
+    real x1, y1, x2, y2, x3, y3;
 
-    xpost_matrix_scale(&mat1, r.real_.val, r.real_.val);
-    xpost_matrix_translate(&mat2, x.real_.val, y.real_.val);
+    xpost_matrix_scale(&mat1, (real)r, (real)r);
+    xpost_matrix_translate(&mat2, (real)cx, (real)cy);
     xpost_matrix_mult(&mat2, &mat1, &mat3);
-    xpost_matrix_rotate(&mat2, (real)(((angle1.real_.val + angle2.real_.val) / 2.0) * RAD_PER_DEG));
+    xpost_matrix_rotate(&mat2, (real)(((a1 + a2) / 2.0) * RAD_PER_DEG));
     xpost_matrix_mult(&mat3, &mat2, &mat1);
 
-    da_2 = (real)(((angle2.real_.val - angle1.real_.val) / 2.0) * RAD_PER_DEG);
+    da_2 = (real)(((a2 - a1) / 2.0) * RAD_PER_DEG);
     sin_a = (real)sin(da_2);
     cos_a = (real)cos(da_2);
-    x0 = cos_a;
-    y0 = sin_a;
     x1 = (real)((4 - cos_a) / 3.0);
-    //y1 = - (((1 - cos_a) * (cos_a - 3)) / (3 * sin_a));
     y1 = (1 - x1*cos_a) / sin_a;
     x2 = x1;
-    y2 = -y1;
     x3 = cos_a;
-    y3 = -sin_a;
-    _transform(mat1, x0, y0, &x0, &y0);
+    y2 = y1;
+    y1 = -y1;
+    y3 = sin_a;
     _transform(mat1, x1, y1, &x1, &y1);
     _transform(mat1, x2, y2, &x2, &y2);
     _transform(mat1, x3, y3, &x3, &y3);
@@ -1370,8 +1375,63 @@ int _arcbez(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(y2));
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(x3));
     xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(y3));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(x0));
-    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(y0));
+}
+
+/* Append a circular arc counterclockwise (dir=1) or clockwise (dir=-1)
+   from a1 to a2, split at the quadrant boundaries as the reference
+   interpreter splits, emitted forward: the first point (at a1) reaches
+   the path through moveto-or-lineto and each segment through curveto,
+   leaving the current point at a2 as the language requires. The
+   scheduled operators transform the user-space coordinates through the
+   CTM as they run; the exec stack runs last-pushed first, so segments
+   are pushed in reverse. */
+static
+int _arc_append(Xpost_Context *ctx,
+                Xpost_Object x, Xpost_Object y, Xpost_Object r,
+                Xpost_Object angle1, Xpost_Object angle2, int dir)
+{
+    double cx = x.real_.val;
+    double cy = y.real_.val;
+    double rr = r.real_.val;
+    double a1 = angle1.real_.val;
+    double a2 = angle2.real_.val;
+    double segs[66][2];
+    double cur, b;
+    int n = 0, i;
+    real sx, sy;
+
+    if (dir > 0)
+        while (a2 < a1) a2 += 360;
+    else
+        while (a2 > a1) a2 -= 360;
+    /* a runaway sweep would otherwise fill the operand stack a segment
+       at a time; sixteen revolutions is beyond any drawing's use */
+    if (fabs(a2 - a1) > 5760)
+        a2 = a1 + dir * 5760;
+
+    cur = a1;
+    b = dir > 0 ? (floor(a1 / 90) + 1) * 90 : (ceil(a1 / 90) - 1) * 90;
+    while (n < 65 && (dir > 0 ? b < a2 : b > a2))
+    {
+        segs[n][0] = cur; segs[n][1] = b; n++;
+        cur = b;
+        b += dir * 90;
+    }
+    if (fabs(a2 - cur) > 1e-9)
+    {
+        segs[n][0] = cur; segs[n][1] = a2; n++;
+    }
+
+    for (i = n; i-- > 0; )
+        _arcbezseg(ctx, cx, cy, rr, segs[i][0], segs[i][1]);
+    sx = (real)(cx + rr * cos(a1 * RAD_PER_DEG));
+    sy = (real)(cy + rr * sin(a1 * RAD_PER_DEG));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(sx));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(sy));
+
+    for (i = 0; i < n; i++)
+        xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
+    xpost_stack_push(ctx->lo, ctx->es, _arc_start_proc);
     return 0;
 }
 
@@ -1380,34 +1440,7 @@ int _arc(Xpost_Context *ctx,
          Xpost_Object x, Xpost_Object y, Xpost_Object r,
          Xpost_Object angle1, Xpost_Object angle2)
 {
-    double a1 = angle1.real_.val;
-    double a2 = angle2.real_.val;
-    while (a2 < a1)
-    {
-        double t;
-        t = a2 + 360;
-        a2 = t;
-    }
-    if ((a2 - a1) > 90)
-    {
-        _arc(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons((real)(a2 - ((a2 - a1)/2.0))));
-        _arc(ctx, x, y, r, xpost_real_cons((real)(a1 + ((a2 - a1)/2.0))), xpost_real_cons(a2));
-    }
-    else
-    {
-        //Xpost_Object path = _cpath(ctx);
-        //int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
-        _arcbez(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2));
-        xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
-        xpost_stack_push(ctx->lo, ctx->es, _arc_start_proc);
-        /*
-        if (pathlen)
-            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_lineto_opcode));
-        else
-            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_moveto_opcode));
-            */
-    }
-    return 0;
+    return _arc_append(ctx, x, y, r, angle1, angle2, 1);
 }
 
 static
@@ -1415,34 +1448,7 @@ int _arcn(Xpost_Context *ctx,
           Xpost_Object x, Xpost_Object y, Xpost_Object r,
           Xpost_Object angle1, Xpost_Object angle2)
 {
-    real a1 = angle1.real_.val;
-    real a2 = angle2.real_.val;
-    while (a2 > a1)
-    {
-        double t;
-        t = a2 - 360;
-        a2 = t;
-    }
-    if ((a1 - a2) > 90)
-    {
-        _arcn(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2 + (real)((a1 - a2)/2.0)));
-        _arcn(ctx, x, y, r, xpost_real_cons(a1 - (real)((a1 - a2)/2.0)), xpost_real_cons(a2));
-    }
-    else
-    {
-        //Xpost_Object path = _cpath(ctx);
-        //int pathlen = xpost_dict_length_memory(xpost_context_select_memory(ctx, path), path);
-        _arcbez(ctx, x, y, r, xpost_real_cons(a1), xpost_real_cons(a2));
-        xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_curveto_opcode));
-        xpost_stack_push(ctx->lo, ctx->es, _arc_start_proc);
-        /*
-        if (pathlen)
-            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_lineto_opcode));
-        else
-            xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_moveto_opcode));
-            */
-    }
-    return 0;
+    return _arc_append(ctx, x, y, r, angle1, angle2, -1);
 }
 
 /* destination for flattening: appends must be able to re-seat

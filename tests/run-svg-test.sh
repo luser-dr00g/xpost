@@ -38,7 +38,7 @@ grep -q '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="200pt" hei
 grep -q '<path fill="rgb(0%,0%,100%)" fill-rule="evenodd" d="M20 80L80 80L80 40L20 40Z"/>' "$a" || fail "filled rect path"
 grep -q '<path fill="none" stroke="rgb(100%,0%,0%)" stroke-width="2" stroke-linecap="butt" stroke-linejoin="round" stroke-miterlimit="10" d="M100 80L140 50L180 80"/>' "$a" || fail "stroked path"
 grep -q '<path fill="rgb(0%,0%,0%)" d="M[0-9.]* [0-9.]* C' "$a" || fail "glyph outline"
-grep -q '<path fill="rgb(0%,100%,0%)" fill-rule="evenodd" d="M175 30.00C' "$a" || fail "curve-preserving circle fill"
+grep -q '<path fill="rgb(0%,100%,0%)" fill-rule="evenodd" d="M175 30C' "$a" || fail "curve-preserving circle fill"
 grep -q '</svg>' "$a" || fail "closing tag"
 grep -q 'width="200pt" height="100pt" viewBox="0 0 400 200"' "$b" || fail "144dpi page in points"
 grep -q 'd="M40 160L160 160L160 80L40 80Z"' "$b" || fail "144dpi coordinates"
