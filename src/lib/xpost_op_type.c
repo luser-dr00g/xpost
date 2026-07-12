@@ -467,19 +467,25 @@ int AScvs (Xpost_Context *ctx,
         break;
         case integertype:
         {
-            //n = conv_rad(any.int_.val, 10, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+            /* write digits from the integer itself: a detour through
+               real drops bits past the float mantissa, and negating
+               the most negative integer does not exist */
             char *s = xpost_string_get_pointer(ctx, str);
-            int sz = str.comp_.sz;
-            n = 0;
-            if (any.int_.val < 0)
-            {
-                s[n++] = '-';
-                any.int_.val = abs(any.int_.val);
-                --sz;
-            }
-            n += conv_integ((real)any.int_.val, s + n, sz);
-            if (n == -1)
+            char t[24];
+            unsigned int u;
+            int neg = any.int_.val < 0;
+            int len = 0;
+
+            u = neg ? -(unsigned int)any.int_.val : (unsigned int)any.int_.val;
+            do { t[len++] = (char)(0x30 + u % 10); u /= 10; } while (u);
+            n = neg + len;
+            if (n > (int)str.comp_.sz)
                 return rangecheck;
+            {
+                int i = 0;
+                if (neg) s[i++] = 0x2d;
+                while (len) s[i++] = t[--len];
+            }
             if (n < str.comp_.sz) str.comp_.sz = n;
             break;
         }
