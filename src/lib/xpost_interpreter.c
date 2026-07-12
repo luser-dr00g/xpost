@@ -1597,6 +1597,7 @@ void setlocalconfig(Xpost_Context *ctx,
     };
     const char *strtemplate = "currentglobal false setglobal "
                         "%s userdict /DEVICE %s %s put "
+                        "userdict /.outputdevice /%s put "
                         "setglobal";
     Xpost_Object namenewdev;
     Xpost_Object newdevstr;
@@ -1635,13 +1636,15 @@ void setlocalconfig(Xpost_Context *ctx,
         dimensions = x;
     }
     newdevstr = xpost_string_cons(ctx,
-                                  strlen(strtemplate) - 6
+                                  strlen(strtemplate) - 8
                                   + strlen(device_strings[i][1])
                                   + strlen(dimensions)
-                                  + strlen(device_strings[i][2]) + 1,
+                                  + strlen(device_strings[i][2])
+                                  + strlen(device_strings[i][0]) + 1,
                                   NULL);
     sprintf(xpost_string_get_pointer(ctx, newdevstr), strtemplate,
-            device_strings[i][1], dimensions, device_strings[i][2]);
+            device_strings[i][1], dimensions, device_strings[i][2],
+            device_strings[i][0]);
     --newdevstr.comp_.sz; /* trim the '\0' */
 
     namenewdev = xpost_name_cons(ctx, "newdefaultdevice");

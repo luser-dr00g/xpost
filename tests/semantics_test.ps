@@ -97,6 +97,22 @@ currentfile /ASCII85Decode filter cvx exec
 04?gt@VK_%DegJO.Ni85AdS~>
 a85bintok 42 eq (binary token through the filter) assert
 
+% --- setpagedevice (last: it replaces the device) ---
+<< /OutputDevice /pgm /PageSize [50 25] /HWResolution [144 144] /TextAlphaBits 3 >> setpagedevice
+DEVICE /dimensions get dup 0 get 100 eq exch 1 get 50 eq and
+    (setpagedevice sizes the device from PageSize and HWResolution) assert
+DEVICE /TextAlphaBits get 3 eq (device features land on the device) assert
+currentpagedevice /HWResolution get 0 get 144 eq (currentpagedevice reports the request) assert
+1 0 dtransform pop 2 sub abs 0.01 lt (the device matrix carries the resolution) assert
+<< /PageSize [25 25] >> setpagedevice
+DEVICE /dimensions get 0 get 50 eq (a partial request merges over the previous one) assert
+DEVICE /TextAlphaBits get 3 eq (merged features persist) assert
+<< /OutputDevice /null /PageSize [10 10] >> setpagedevice
+currentpagedevice /TextAlphaBits known not
+    (switching OutputDevice discards the accumulated parameters) assert
+currentpagedevice /HWResolution known not
+    (a device switch reverts unstated parameters to defaults) assert
+
 failcount 0 eq { (SUCCESS\n) print } { (FAILURES: ) print failcount 20 string cvs print (\n) print } ifelse
 flush
 quit
