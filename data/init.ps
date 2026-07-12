@@ -555,8 +555,13 @@ end % userdict
         /off merged /PageOffset 2 copy known { get }{ pop pop [0 0] } ifelse def
         /sx res 0 get 72 div def
         /sy res 1 get 72 div def
-        /pw size 0 get sx mul ceiling cvi def
-        /ph size 1 get sy mul ceiling cvi def
+        % raster buffers need whole pixels, but the page itself need not
+        % be integral: a vector device adopts the exact dimensions (its
+        % width and height are points, written into its output syntax)
+        /pwf size 0 get sx mul def
+        /phf size 1 get sy mul def
+        /pw pwf ceiling cvi def
+        /ph phf ceiling cvi def
 
         % device constructors read /OutputFileName via where
         merged /OutputFile 2 copy known {
@@ -574,10 +579,15 @@ end % userdict
             } if
         } if
 
+        userdict /.exactpagedims [pwf phf] put
         userdict /DEVICE pw ph .devicemakers dev get exec put
+        userdict /.exactpagedims undef
 
-        % post-construction fixups, as the initial device receives
-        DEVICE /defaultmatrix [ sx 0 0 sy neg 0 ph ] put
+        % post-construction fixups, as the initial device receives.
+        % The flip translate must match the height the device adopted,
+        % or marks sit offset within a fractional page.
+        DEVICE /defaultmatrix
+            [ sx 0 0 sy neg 0 DEVICE /height 2 copy known { get }{ pop pop ph } ifelse ] put
         DEVICE /NoOutput known not {
             DEVICE /FillPoly /.fillpoly load put
             DEVICE /nativecolorspace get /DeviceGray eq {
