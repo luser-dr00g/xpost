@@ -296,17 +296,6 @@ end
 /currentsystemparams {
 } def
 
-/setpagedevice {
-    dup type /dicttype ne {
-        /setpagedevice cvx /typecheck signalerror
-    } if
-    pop
-} def
-/currentpagedevice {
-    <<
-	/PageSize [ DEVICE /dimensions get aload pop ]
-    >>
-} def
 
 
 end % systemdict
@@ -503,6 +492,127 @@ end % userdict
 /loadgraphics {
     /GRAPHICS_LOADED where { pop }{
         DATA_DIR (/graphics.ps) strcat run
+
+    % Page device selection and configuration. Keys:
+    %   /OutputDevice   name from the device table (defaults to the
+    %                   device the interpreter started with)
+    %   /PageSize       [w h] points (default 612x792)
+    %   /HWResolution   [rx ry] dots per inch (default [72 72])
+    %   /OutputFile     output path for the device
+    %   /PageOffset     [x y] points, translated after initgraphics
+    % Every other key is stored on the device dictionary, which is how
+    % device features (TextAlphaBits, WhiteIsOpaque, ...) are reached.
+    % Same-device requests merge over the previous ones, so a partial
+    % dictionary adjusts the page; switching OutputDevice starts from
+    % the new device's defaults. The outgoing device is destroyed (a
+    % vector device finalises its output), the new device is installed
+    % in the graphics state template, and the page is reinitialised.
+    /.devicemakers <<
+        /pgm { newPGMIMAGEdevice }
+        /ppm { newPPMIMAGEdevice }
+        /null { newnulldevice }
+        /bbox { newbboxdevice }
+        /pdfwrite { newPDFWRITEdevice }
+        /png { /newpngdevice where { pop }{ loadpngdevice } ifelse newpngdevice }
+        /pngalpha { /newpngalphadevice where { pop }{ loadpngalphadevice } ifelse newpngalphadevice }
+        /jpeg { /newjpegdevice where { pop }{ loadjpegdevice } ifelse newjpegdevice }
+    >> def
+
+    % pagedevicedict  setpagedevice  -
+    /setpagedevice {
+        dup type /dicttype ne {
+            /setpagedevice cvx /typecheck signalerror
+        } if
+        16 dict begin
+        /pd exch def
+        % requests merge with the accumulated parameters, except that
+        % switching OutputDevice reinstalls the new device's defaults:
+        % nothing carries across a device change (matching the
+        % reference interpreter's page device semantics)
+        /merged
+        pd /OutputDevice 2 copy known {
+            get /.pagedevice where {
+                pop .pagedevice /OutputDevice 2 copy known
+                    { get }{ pop pop null } ifelse
+            }{ null } ifelse ne
+        }{ pop pop false } ifelse
+            { pd length 8 add dict }
+            { /.pagedevice where
+                { pop .pagedevice dup length pd length add dict copy }
+                { pd length 8 add dict }
+            ifelse }
+        ifelse def
+        pd { merged 3 1 roll put } forall
+        /dev merged /OutputDevice 2 copy known { get }{ pop pop
+            /.outputdevice where { pop .outputdevice }{ /pgm } ifelse
+        } ifelse def
+        .devicemakers dev known not {
+            end /setpagedevice cvx /rangecheck signalerror
+        } if
+        /res merged /HWResolution 2 copy known { get }{ pop pop [72 72] } ifelse def
+        /size merged /PageSize 2 copy known { get }{ pop pop [612 792] } ifelse def
+        /off merged /PageOffset 2 copy known { get }{ pop pop [0 0] } ifelse def
+        /sx res 0 get 72 div def
+        /sy res 1 get 72 div def
+        /pw size 0 get sx mul ceiling cvi def
+        /ph size 1 get sy mul ceiling cvi def
+
+        % device constructors read /OutputFileName via where
+        merged /OutputFile 2 copy known {
+            get userdict /OutputFileName 3 -1 roll put
+        }{
+            pop pop
+            userdict /OutputFileName known { userdict /OutputFileName undef } if
+        } ifelse
+
+        % retire the outgoing device (a vector device writes its
+        % trailer on Destroy)
+        /DEVICE where { pop
+            DEVICE type /dicttype eq {
+                DEVICE dup /Destroy 2 copy known { get exec }{ pop pop pop } ifelse
+            } if
+        } if
+
+        userdict /DEVICE pw ph .devicemakers dev get exec put
+
+        % post-construction fixups, as the initial device receives
+        DEVICE /defaultmatrix [ sx 0 0 sy neg 0 ph ] put
+        DEVICE /NoOutput known not {
+            DEVICE /FillPoly /.fillpoly load put
+            DEVICE /nativecolorspace get /DeviceGray eq {
+                DEVICE /FillRect /.fillrectgray load put
+            } if
+        } if
+
+        % remaining keys are device features
+        merged { % key value
+            1 index /OutputDevice eq
+            2 index /PageSize eq or
+            2 index /HWResolution eq or
+            2 index /OutputFile eq or
+            2 index /PageOffset eq or
+            { pop pop }{ DEVICE 3 1 roll put } ifelse
+        } forall
+        merged /OutputDevice dev put
+        userdict /.pagedevice merged put
+
+        % the template and the live gstate carry the device; painting
+        % and the defaultmatrix operator resolve it through them
+        gstatetemplate /device DEVICE put
+        graphicsdict /currgstate get /device DEVICE put
+        initgraphics
+        off aload pop translate
+        end
+    } def
+
+    % -  currentpagedevice  dict
+    /currentpagedevice {
+        /.pagedevice where { pop
+            .pagedevice dup length 1 add dict copy
+        }{
+            << /PageSize [ DEVICE /dimensions get aload pop ] >>
+        } ifelse
+    } def
         userdict /GRAPHICS_LOADED true put
         /QUIET where { pop }{ (graphics loaded, calling initgraphics\n)print } ifelse
         userdict /USEDRAWLINE true put
