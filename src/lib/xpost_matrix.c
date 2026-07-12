@@ -39,49 +39,6 @@
 #include "xpost_object.h"
 #include "xpost_matrix.h"
 
-#ifdef WANT_LARGE_OBJECT
-# define XPOST_ABS(x) fabs(x)
-# define XPOST_MOD(x,y) fmod(x, y)
-#else
-# define XPOST_ABS(x) fabsf(x)
-# define XPOST_MOD(x, y) fmodf(x, y)
-#endif
-
-/*
- * Fast sinus / cosinus computation :
- * http://devmaster.net/posts/9648/fast-and-accurate-sine-cosine
- */
-
-#define XPOST_EXTRA_PRECISION
-static real _sinus(real x)
-{
-    const real B = (real)(2.0 * M_2_PI);
-    const real C = (real)(-M_2_PI * M_2_PI);
-
-    real y = B * x + C * x * XPOST_ABS(x);
-
-#ifdef XPOST_EXTRA_PRECISION
-    /* const real Q = 0.775; */
-    const real P = 0.225f;
-
-    y = P * (y * XPOST_ABS(y) - y) + y;   /* Q * y + P * y * fabs(y) */
-#endif
-
-    return y;
-}
-
-static real _cosinus(real x)
-{
-    x += (real)M_PI_2;
-
-    if (x > M_PI)   /* Original x > pi/2 */
-    {
-        x -= (real)(2.0 * M_PI);   /* Wrap: cos(x) = cos(x - 2 pi) */
-    }
-
-    return _sinus(x);
-}
-
 void xpost_matrix_identity(Xpost_Matrix *m)
 {
     m->xx = 1.0;
@@ -120,9 +77,10 @@ void xpost_matrix_rotate(Xpost_Matrix *m, real rad)
     real c;
     real s;
 
-    rad = (real)XPOST_MOD(rad + M_PI, 2.0 * M_PI) - M_PI;
-    c = _cosinus(rad);
-    s = _sinus(rad);
+    /* the rotation lands in every subsequent coordinate: it must be
+       trigonometrically exact, not approximated */
+    c = (real)cos(rad);
+    s = (real)sin(rad);
 
     m->xx = c;
     m->xy = -s;
