@@ -116,7 +116,7 @@
     end }
 
     % r g b polygon IMAGE . -  ; append one path element: the fill colour,
-    % the subpaths as M/L commands each closed with Z, and an even-odd
+    % the subpaths as M/L commands each closed with Z, and a nonzero
     % fill rule. The per-coordinate formatting is the hot loop, so it is
     % done in C (.svgfillpoly), appending to the accumulator.
     /FillPoly { .svgfillpoly } bind
@@ -144,7 +144,7 @@
 
     % r g b IMAGE . -  ; fill the current path as one path element with
     % curves preserved (the flattening fill goes through FillPoly
-    % instead), subpaths closed implicitly by the even-odd fill rule --
+    % instead), subpaths closed implicitly by the nonzero fill rule --
     % the rule the flattening fill applies. The per-element formatting
     % walks the path in C (.svgfillpath), appending to the accumulator,
     % so subpath count costs no operand stack.

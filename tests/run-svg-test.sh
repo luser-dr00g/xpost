@@ -37,10 +37,10 @@ fail() { echo "FAIL: $1"; exit 1; }
 a=$tmp/a.svg; b=$tmp/b.svg
 [ -s "$a" ] || fail "no output"
 grep -q '<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="200pt" height="100pt" viewBox="0 0 200 100">' "$a" || fail "svg root"
-grep -q '<path fill="rgb(0%,0%,100%)" fill-rule="evenodd" d="M20 80L80 80L80 40L20 40Z"/>' "$a" || fail "filled rect path"
+grep -q '<path fill="rgb(0%,0%,100%)" fill-rule="nonzero" d="M20 80L80 80L80 40L20 40Z"/>' "$a" || fail "filled rect path"
 grep -q '<path fill="none" stroke="rgb(100%,0%,0%)" stroke-width="2" stroke-linecap="butt" stroke-linejoin="round" stroke-miterlimit="10" d="M100 80L140 50L180 80"/>' "$a" || fail "stroked path"
 grep -q '<path fill="rgb(0%,0%,0%)" d="M[0-9.]* [0-9.]* C' "$a" || fail "glyph outline"
-grep -q '<path fill="rgb(0%,100%,0%)" fill-rule="evenodd" d="M175 30C' "$a" || fail "curve-preserving circle fill"
+grep -q '<path fill="rgb(0%,100%,0%)" fill-rule="nonzero" d="M175 30C' "$a" || fail "curve-preserving circle fill"
 grep -q 'stroke-width="1"[^>]*d="M140 70C' "$a" || fail "curve-preserving stroke"
 grep -q 'd="M10.1235 95L15.1235 95L15.1235 93L10.1235 93Z"' "$a" || fail "four-decimal coordinates"
 grep -q '</svg>' "$a" || fail "closing tag"
