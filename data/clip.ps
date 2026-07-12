@@ -175,6 +175,23 @@ bind
 def
 
 
+% A subpath split off at a closepath enters through the bridge the
+% path walked from the closing point: its leading edge doubles its
+% trailing edge. Peel such pairs until the polygon walks only its own
+% boundary; what remains classifies as a window or hole by winding.
+/despike { % poly  .  poly'
+    2 dict begin
+    /p exch def
+    { % loop
+        p length 4 lt { exit } if
+        p 1 get aload pop p p length 2 sub get aload pop
+        exch 4 -1 roll eq 3 1 roll eq and not { exit } if
+        /p p 1 p length 2 sub getinterval def
+    } loop
+    p
+    end
+} bind def
+
 %clip the current path by the clipregion
 % convert the path to an array of polygons (arrays of points)
 % convert clipregion to array of polygons
@@ -217,6 +234,11 @@ def
         ]  % /PA mark [...] [...] [...] 
     ] def
 
+    % A closepath ends a clip subpath, but need not be followed by a
+    % moveto: a segment operator may continue from the closing point
+    % (the straight line arc appends is the common case, building a
+    % ring as one keyhole path). Split polygons at the close as well
+    % as at movetos, so each ring boundary classifies separately.
     /CR                         % Clip Region   clippath array
     clippath [
         %{ 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall
@@ -230,7 +252,7 @@ def
         }
         { 2 array astore }
         {}
-        { counttomark 1 sub index }
+        { counttomark 1 sub index ] [ }
         .devpathforall
         ]
     ]
@@ -251,6 +273,7 @@ def
     % treated as further windows to intersect, as before.
     /wsign 0 def
     CR { % one clipping polygon
+	despike
 	% fewer than three points bound no area (e.g. the bare pen
 	% moveto charpath leaves after its outlines)
 	dup length 3 lt {
