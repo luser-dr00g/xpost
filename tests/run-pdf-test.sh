@@ -148,3 +148,64 @@ printf '%s\n' "$out" | grep -q 'MISSING' && { printf '%s\n' "$out" | grep MISSIN
 n=$(printf '%s\n' "$out" | grep -c '^ok ')
 [ "$n" = 4 ] || { echo "FAIL: expected 4 CMYK probes, saw $n"; exit 1; }
 echo "CMYK process colour model OK"
+
+# separation colour spaces: a [/Separation name alt tint] space set through
+# setcolorspace/setcolor paints as /CS<i> cs t scn (CS/SCN for strokes) with
+# the space preserved in the page's /ColorSpace resources and the tint
+# transform embedded as a function -- Type 4 calculator source when the
+# procedure stays within that operator set, sampled Type 0 otherwise (the
+# second space's procedure reads a variable). Registration survives an
+# intervening restore, and a gsave/grestore round-trip re-selects the
+# separation after a process-colour interlude.
+sepps=$(mktemp)
+# A relative path resolves to the same file for the shell and for the
+# interpreter, which is embedded in the program below and need not share the
+# shell's view of an absolute path (e.g. a native binary under a POSIX shell).
+seppdf=./sep-$$.pdf
+trap 'rm -f "$pdf" "$textps" "$textpdf" "$strokeps" "$strokepdf" "$ra" "$rb" "$infops" "$infopdf" "$sepps" "$seppdf"' EXIT
+cat > "$sepps" <<EOF
+<< /OutputDevice /pdfwrite /OutputFile ($seppdf) /PageSize [100 100] >> setpagedevice
+[/Separation (Spot A) /DeviceCMYK {dup 0 exch dup 0.5 mul exch 0.25 mul}] setcolorspace
+0.8 setcolor
+newpath 10 10 moveto 20 0 rlineto 0 20 rlineto -20 0 rlineto closepath fill
+2 setlinewidth newpath 10 50 moveto 60 70 lineto stroke
+gsave 0 setgray newpath 70 40 moveto 10 0 rlineto 0 10 rlineto -10 0 rlineto closepath fill grestore
+newpath 40 10 moveto 10 0 rlineto 0 10 rlineto -10 0 rlineto closepath fill
+/half 0.5 def
+[/Separation /SpotB /DeviceGray {half mul 1 exch sub}] setcolorspace
+save 1.0 setcolor newpath 50 50 moveto 20 0 rlineto 0 20 rlineto -20 0 rlineto closepath fill restore
+/probe { % (needle) (name)  .  -
+    exch DEVICE .pdfchunks 0 get exch search
+    { pop pop pop (ok ) print print (\n) print }
+    { pop (MISSING ) print print (\n) print } ifelse
+} def
+(/CS0 cs 0.8 scn\n) (fill in the separation) probe
+(/CS0 CS 0.8 SCN\n) (stroke in the separation) probe
+(0 0 0 rg\n) (process interlude inside gsave) probe
+(/CS1 cs 1 scn\n) (registration survives restore) probe
+showpage
+<< /OutputDevice /null >> setpagedevice
+quit
+EOF
+out=$("$xpost" -q -d null -o /dev/null "$sepps" </dev/null 2>&1)
+rm -f "$sepps"
+printf '%s\n' "$out" | grep -q 'MISSING' && { printf '%s\n' "$out" | grep MISSING; echo "FAIL: separation content probes"; exit 1; }
+n=$(printf '%s\n' "$out" | grep -c '^ok ')
+[ "$n" = 4 ] || { echo "FAIL: expected 4 separation probes, saw $n"; exit 1; }
+sepdump() { echo "  seppdf=$seppdf ($(wc -c < "$seppdf" 2>/dev/null) bytes)"; grep -an 'Separation\|FunctionType\|0 obj' "$seppdf" 2>/dev/null | head -20; }
+grep -aq '/CS0 \[/Separation /Spot#20A /DeviceCMYK 5 0 R\]' "$seppdf" || { echo "FAIL: no escaped Spot A colour space resource"; sepdump; exit 1; }
+grep -aq '/CS1 \[/Separation /SpotB /DeviceGray 6 0 R\]' "$seppdf"   || { echo "FAIL: no SpotB colour space resource"; sepdump; exit 1; }
+grep -aq '/FunctionType 4' "$seppdf" || { echo "FAIL: no Type 4 tint transform"; sepdump; exit 1; }
+grep -aq '/FunctionType 0' "$seppdf" || { echo "FAIL: no sampled Type 0 tint transform"; sepdump; exit 1; }
+echo "separation colour spaces OK"
+
+# independent oracle: a separating consumer must image each separation as
+# its own plate, named as given
+if command -v gs >/dev/null 2>&1; then
+    platedir=$(mktemp -d)
+    gs -q -dNOSAFER -dNOPAUSE -dBATCH -sDEVICE=tiffsep -o "$platedir/p%d.tif" "$seppdf" >/dev/null 2>&1
+    [ -f "$platedir/p1(Spot A).tif" ] || { ls "$platedir"; rm -rf "$platedir"; echo "FAIL: no Spot A plate"; exit 1; }
+    [ -f "$platedir/p1(SpotB).tif" ]  || { ls "$platedir"; rm -rf "$platedir"; echo "FAIL: no SpotB plate"; exit 1; }
+    rm -rf "$platedir"
+    echo "gs separation plates OK"
+fi

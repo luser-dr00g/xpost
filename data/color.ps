@@ -8,6 +8,7 @@
     graphicsdict /currgstate get /colorcomp2 0.0 put
     graphicsdict /currgstate get /colorcomp3 0.0 put
     graphicsdict /currgstate get /colorcomp4 0.0 put
+    graphicsdict /currgstate get /sepindex null put
     %exec pop
 } bind def
 
@@ -27,9 +28,26 @@
     {
         % [/Separation name alt tint] or [/DeviceN names alt tint]:
         % switch to the alternative space and convert via the tint transform
-        dup 2 get setcolorspace
-        3 get exec
-        setcolor
+        dup 0 get /Separation eq { DEVICE /.registersep known } { false } ifelse {
+            % a device that preserves separations also receives the
+            % (tint, space) pair: convert first (the device-space
+            % setters clear the gstate's separation record), then
+            % register with the device and record its index and the
+            % tint for the marking methods
+            2 copy dup 2 get setcolorspace 3 get exec setcolor
+            1 index exch                       % tint tint space
+            DEVICE dup /.registersep get exec  % tint index true | tint false
+            {
+                graphicsdict /currgstate get exch /sepindex exch put
+                graphicsdict /currgstate get exch /septint exch put
+            }{
+                pop
+            } ifelse
+        }{
+            dup 2 get setcolorspace
+            3 get exec
+            setcolor
+        } ifelse
     } {
         //setcolordict exch get exec
     } ifelse
@@ -130,6 +148,7 @@
 /setgray {
     graphicsdict /currgstate get /colorspace /DeviceGray put
     graphicsdict /currgstate get exch /colorcomp1 exch put
+    graphicsdict /currgstate get /sepindex null put
 } bind def
 
 /currentgray {
@@ -143,6 +162,7 @@
     graphicsdict /currgstate get exch /colorcomp3 exch put
     graphicsdict /currgstate get exch /colorcomp2 exch put
     graphicsdict /currgstate get exch /colorcomp1 exch put
+    graphicsdict /currgstate get /sepindex null put
 } bind def
 
 /currentrgbcolor {
@@ -156,6 +176,7 @@
     graphicsdict /currgstate get exch /colorcomp3 exch put
     graphicsdict /currgstate get exch /colorcomp2 exch put
     graphicsdict /currgstate get exch /colorcomp1 exch put
+    graphicsdict /currgstate get /sepindex null put
 } bind def
 
 /currenthsbcolor {
@@ -170,6 +191,7 @@
     graphicsdict /currgstate get exch /colorcomp3 exch put
     graphicsdict /currgstate get exch /colorcomp2 exch put
     graphicsdict /currgstate get exch /colorcomp1 exch put
+    graphicsdict /currgstate get /sepindex null put
 } bind def
 
 /currentcmykcolor {

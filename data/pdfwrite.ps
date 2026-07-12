@@ -9,6 +9,13 @@
 % This is a clean-room implementation from the published PDF format (operators
 % rg/RG/m/l/re/f*/S/cm and the object/xref/trailer layout); no rasterizing.
 %
+% Separation colour spaces are preserved: the interpreter delivers each
+% (tint, space) pair to .registersep, which files the space in a registry
+% beside the content accumulator, and marks paint as /CS<i> cs t scn. Emit
+% writes the /ColorSpace resources with the tint transforms embedded as
+% functions, so a downstream workflow can image each separation as its own
+% plate.
+%
 % Coordinates arrive in device space (y-down); the content stream is prefixed
 % with the device matrix (1 0 0 -1 0 height cm) so device coordinates map to
 % PDF's y-up user space -- the same flip the raster devices apply, done once.
@@ -83,24 +90,188 @@
         } ifelse
     } bind
 
-    % append a fill or stroke colour in the device's process model:
-    % three components as rg/RG, four as k/K
+    % append a fill or stroke colour: a separation registered with this
+    % device paints in its /CS<i> resource space at the recorded tint,
+    % dropping the process components the marking pipeline supplies;
+    % otherwise the process model applies -- three components as rg/RG,
+    % four as k/K
+    % colour components format at the accumulator's full precision
+    % (.pdfnumstr), not the coordinate formatter's two decimals: two
+    % decimals cannot represent 8-bit colour levels
     /.pdffillcolor { % c1 .. cN  .  -
-        nativecolorspace /DeviceCMYK eq {
-            4 3 roll .pdfnum ( ) .put 3 2 roll .pdfnum ( ) .put
-            exch .pdfnum ( ) .put .pdfnum ( k\n) .put
+        graphicsdict /currgstate get /sepindex 2 copy known { get }{ pop pop null } ifelse
+        dup null ne {
+            exch pop exch pop exch pop
+            nativecolorspace /DeviceCMYK eq { exch pop } if
+            (/CS) .put 20 string cvs .put ( cs ) .put
+            graphicsdict /currgstate get /septint get .pdfnumstr .put ( scn\n) .put
         }{
-            3 2 roll .pdfnum ( ) .put exch .pdfnum ( ) .put .pdfnum ( rg\n) .put
+            pop
+            nativecolorspace /DeviceCMYK eq {
+                4 3 roll .pdfnumstr .put ( ) .put 3 2 roll .pdfnumstr .put ( ) .put
+                exch .pdfnumstr .put ( ) .put .pdfnumstr .put ( k\n) .put
+            }{
+                3 2 roll .pdfnumstr .put ( ) .put exch .pdfnumstr .put ( ) .put
+                .pdfnumstr .put ( rg\n) .put
+            } ifelse
         } ifelse
     } bind
     /.pdfstrokecolor { % c1 .. cN  .  -
-        nativecolorspace /DeviceCMYK eq {
-            4 3 roll .pdfnum ( ) .put 3 2 roll .pdfnum ( ) .put
-            exch .pdfnum ( ) .put .pdfnum ( K\n) .put
+        graphicsdict /currgstate get /sepindex 2 copy known { get }{ pop pop null } ifelse
+        dup null ne {
+            exch pop exch pop exch pop
+            nativecolorspace /DeviceCMYK eq { exch pop } if
+            (/CS) .put 20 string cvs .put ( CS ) .put
+            graphicsdict /currgstate get /septint get .pdfnumstr .put ( SCN\n) .put
         }{
-            3 2 roll .pdfnum ( ) .put exch .pdfnum ( ) .put .pdfnum ( RG\n) .put
+            pop
+            nativecolorspace /DeviceCMYK eq {
+                4 3 roll .pdfnumstr .put ( ) .put 3 2 roll .pdfnumstr .put ( ) .put
+                exch .pdfnumstr .put ( ) .put .pdfnumstr .put ( K\n) .put
+            }{
+                3 2 roll .pdfnumstr .put ( ) .put exch .pdfnumstr .put ( ) .put
+                .pdfnumstr .put ( RG\n) .put
+            } ifelse
         } ifelse
     } bind
+
+    % concatenate two strings into a new one (registration-time only)
+    /.strcat { % a b  .  ab
+        /.cb exch def /.ca exch def
+        .ca length .cb length add string
+        dup 0 .ca putinterval
+        dup .ca length .cb putinterval
+    } bind
+
+    % escape a separation name into PDF name syntax: regular characters
+    % pass, delimiters and characters outside 33..126 become #xx
+    /.escname { % string  .  string'
+        /.esrc exch def
+        /.eout .esrc length 3 mul string def
+        /.epos 0 def
+        .esrc {
+            /.ec exch def
+            .ec 33 ge .ec 126 le and
+            .ec 35 eq .ec 37 eq or .ec 40 eq or .ec 41 eq or .ec 47 eq or
+            .ec 60 eq or .ec 62 eq or .ec 91 eq or .ec 93 eq or
+            .ec 123 eq or .ec 125 eq or not and {
+                .eout .epos .ec put /.epos .epos 1 add def
+            }{
+                .eout .epos 35 put
+                .eout .epos 1 add (0123456789ABCDEF) .ec -4 bitshift get put
+                .eout .epos 2 add (0123456789ABCDEF) .ec 15 and get put
+                /.epos .epos 3 add def
+            } ifelse
+        } forall
+        .eout 0 .epos getinterval
+    } bind
+
+    % the PDF Type 4 (calculator) function operator set
+    /.t4ops <<
+        /abs true /add true /atan true /ceiling true /cos true /cvi true
+        /cvr true /div true /exp true /floor true /idiv true /ln true
+        /log true /mod true /mul true /neg true /round true /sin true
+        /sqrt true /sub true /truncate true
+        /and true /bitshift true /eq true /false true /ge true /gt true
+        /le true /lt true /ne true /not true /or true /true true /xor true
+        /if true /ifelse true
+        /copy true /dup true /exch true /index true /pop true /roll true
+    >>
+
+    % serialise a tint transform procedure as Type 4 calculator source:
+    % numbers, operator names within the Type 4 set and nested
+    % procedures pass; anything else (a bound operator, a literal name,
+    % a string) disqualifies the procedure and sampling takes over
+    /.t4build { % proc  .  string true | false
+        /.t4ok true def
+        ({ )
+        exch {  % str elem
+            .t4ok not { pop exit } if
+            dup type /integertype eq 1 index type /realtype eq or {
+                .pdfnumstr .strcat ( ) .strcat
+            }{
+            dup type /nametype eq 1 index xcheck and {
+                dup .t4ops exch known {
+                    31 string cvs .strcat ( ) .strcat
+                }{
+                    pop /.t4ok false def
+                } ifelse
+            }{
+            dup type /arraytype eq 1 index xcheck and {
+                .t4build {
+                    .strcat ( ) .strcat
+                }{
+                    /.t4ok false def
+                } ifelse
+            }{
+                pop /.t4ok false def
+            } ifelse } ifelse } ifelse
+        } forall
+        .t4ok { (}) .strcat true }{ pop false } ifelse
+    } bind
+
+    % sample the tint transform at 256 points into 8-bit Type 0 data
+    /.t0build { % -  .  string
+        256 .sepnout mul string /.smp exch def
+        0 1 255 {
+            /.si exch def
+            .si 255 div .sepspace 3 get exec
+            .sepnout 1 sub -1 0 {
+                /.sj exch def
+                dup 0 lt { pop 0 } if dup 1 gt { pop 1 } if
+                255 mul round cvi
+                .smp .si .sepnout mul .sj add 3 -1 roll put
+            } for
+        } for
+        .smp
+    } bind
+
+    % Register a separation colour space with the device: dedup by name
+    % in the registry beside the content accumulator, serialise the tint
+    % transform as a PDF function -- Type 4 calculator source when the
+    % procedure stays within that operator set, else sampled Type 0 --
+    % and file the colour-space body for Emit's /ColorSpace resources.
+    % Returns false (no registration) when the alternate space is not a
+    % device space the syntax can name; painting then falls back to the
+    % tint-transformed process colour.
+    /.registersep { % tint space IMAGE  .  index true | false
+    begin
+        /.sepspace exch def
+        pop  % the tint: the caller records it per-gstate
+        /.sepnout .sepspace 2 get
+            dup /DeviceGray eq { pop 1 }{
+            dup /DeviceRGB  eq { pop 3 }{
+            dup /DeviceCMYK eq { pop 4 }{
+            pop 0 } ifelse } ifelse } ifelse def
+        .sepnout 0 eq {
+            false
+        }{
+            /.sepname .sepspace 1 get dup type /stringtype ne { 127 string cvs } if def
+            .sepname currentdict .pdffindsep {
+                true
+            }{
+                (/Separation /) .sepname .escname .strcat ( /) .strcat
+                .sepspace 2 get 31 string cvs .strcat
+                /.rangetext .sepnout 1 eq { (0 1) }{
+                    .sepnout 3 eq { (0 1 0 1 0 1) }{ (0 1 0 1 0 1 0 1) } ifelse
+                } ifelse def
+                .sepspace 3 get .t4build {
+                    /.fbody exch def
+                    (<< /FunctionType 4 /Domain [0 1] /Range [) .rangetext .strcat
+                    (] /Length ) .strcat .fbody length 20 string cvs .strcat
+                    ( >>\nstream\n) .strcat .fbody .strcat (\nendstream) .strcat
+                }{
+                    .t0build /.fbody exch def
+                    (<< /FunctionType 0 /Domain [0 1] /Range [) .rangetext .strcat
+                    (] /Size [256] /BitsPerSample 8 /Length ) .strcat
+                    .fbody length 20 string cvs .strcat
+                    ( >>\nstream\n) .strcat .fbody .strcat (\nendstream) .strcat
+                } ifelse
+                .sepname 3 1 roll currentdict .pdfregsep
+                true
+            } ifelse
+        } ifelse
+    end }
 
     /PutPix { % c1..cN x y IMAGE  .  -
     begin {y x}{exch def}forall
@@ -133,13 +304,17 @@
         w .pdfnum ( ) .put h .pdfnum ( re\nf\n) .put
     end }
 
-    % r g b polygon IMAGE . -  ; append "r g b rg", the subpath moveto/lineto/
-    % closepath, and an even-odd fill. The per-coordinate formatting is the hot
-    % loop, so it is done in C (.pdffillpoly), appending to the accumulator.
+    % c1..cN polygon IMAGE . -  ; append the fill colour, the subpath
+    % moveto/lineto/closepath, and an even-odd fill. The per-coordinate
+    % formatting is the hot loop, so it is done in C (.pdffillpoly),
+    % appending to the accumulator; the colour is emitted here, where
+    % separations are the device's business.
     /FillPoly { % c1..cN polygon IMAGE  .  -
-        dup /nativecolorspace get /DeviceCMYK eq
-            { .pdffillpolycmyk }{ .pdffillpoly } ifelse
-    } bind
+    begin
+        /.polyarg exch def
+        .pdffillcolor
+        .polyarg currentdict .pdffillpoly
+    end }
 
     % append collected path elements (coordinates then a /m /l /c /h
     % name each, from the .devpathforall walker) as content-stream
@@ -163,16 +338,18 @@
         } forall
     } bind
 
-    % r g b IMAGE . -  ; fill the current path as one content-stream
+    % c1..cN IMAGE . -  ; fill the current path as one content-stream
     % path with curves preserved (the flattening fill goes through
     % FillPoly instead), subpaths closed implicitly by the even-odd
     % fill -- the rule the flattening fill applies. The per-element
     % formatting walks the path in C (.pdffillpath), appending to the
-    % accumulator, so subpath count costs no operand stack.
+    % accumulator, so subpath count costs no operand stack; the colour
+    % is emitted here, where separations are the device's business.
     /FillPath { % c1..cN IMAGE  .  -
-        dup /nativecolorspace get /DeviceCMYK eq
-            { .pdffillpathcmyk }{ .pdffillpath } ifelse
-    } bind
+    begin
+        .pdffillcolor
+        currentdict .pdffillpath
+    end }
 
     % r g b IMAGE . -  ; stroke the current path as one content-stream
     % path with the device-space line width and the graphics state's
@@ -218,6 +395,12 @@
         /.woff { 20 string cvs /n exch def
                  .zeros 0 10 n length sub getinterval .w  n .w } def
 
+        % objects 1-4 are fixed; the separations' function objects
+        % follow the content as 5..4+n, and Info comes last
+        /nseps currentdict .pdfsepcount def
+        /haveinfo .docinfo length 0 gt def
+        /nobj 4 nseps add haveinfo { 1 add } if def
+
         (%PDF-1.4\n) .w
         /off1 BytePos def
         (1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n) .w
@@ -225,17 +408,35 @@
         (2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n) .w
         /off3 BytePos def
         (3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ) .w ws .w ( ) .w hs .w
-        (] /Contents 4 0 R /Resources << >> >>\nendobj\n) .w
+        (] /Contents 4 0 R /Resources <<) .w
+        nseps 0 gt {
+            ( /ColorSpace <<) .w
+            0 1 nseps 1 sub {
+                /.sepi exch def
+                ( /CS) .w .sepi 20 string cvs .w ( [) .w
+                .sepi currentdict .pdfsepget pop .w
+                ( ) .w .sepi 5 add 20 string cvs .w ( 0 R]) .w
+            } for
+            ( >>) .w
+        } if
+        ( >> >>\nendobj\n) .w
         /off4 BytePos def
         (4 0 obj\n<< /Length ) .w clen 20 string cvs .w
         flated { ( /Filter /FlateDecode) .w } if
         ( >>\nstream\n) .w
         Chunks { .w } forall
         (\nendstream\nendobj\n) .w
-        /haveinfo .docinfo length 0 gt def
+        /offfuncs nseps array def
+        0 1 nseps 1 sub {
+            /.sepi exch def
+            offfuncs .sepi BytePos put
+            .sepi 5 add 20 string cvs .w ( 0 obj\n) .w
+            .sepi currentdict .pdfsepget exch pop .w
+            (\nendobj\n) .w
+        } for
         haveinfo {
-            /off5 BytePos def
-            (5 0 obj\n<<) .w
+            /offinfo BytePos def
+            nobj 20 string cvs .w ( 0 obj\n<<) .w
             .docinfo {
                 exch ( /) .w 127 string cvs .w ( ) .w
                 dup type /stringtype eq {
@@ -252,15 +453,16 @@
             ( >>\nendobj\n) .w
         } if
         /xoff BytePos def
-        (xref\n0 ) .w haveinfo { (6) }{ (5) } ifelse .w (\n0000000000 65535 f \n) .w
+        (xref\n0 ) .w nobj 1 add 20 string cvs .w (\n0000000000 65535 f \n) .w
         off1 .woff ( 00000 n \n) .w
         off2 .woff ( 00000 n \n) .w
         off3 .woff ( 00000 n \n) .w
         off4 .woff ( 00000 n \n) .w
-        haveinfo { off5 .woff ( 00000 n \n) .w } if
-        (trailer\n<< /Size ) .w haveinfo { (6) }{ (5) } ifelse .w
+        offfuncs { .woff ( 00000 n \n) .w } forall
+        haveinfo { offinfo .woff ( 00000 n \n) .w } if
+        (trailer\n<< /Size ) .w nobj 1 add 20 string cvs .w
         ( /Root 1 0 R) .w
-        haveinfo { ( /Info 5 0 R) .w } if
+        haveinfo { ( /Info ) .w nobj 20 string cvs .w ( 0 R) .w } if
         ( >>\nstartxref\n) .w xoff 20 string cvs .w (\n%%EOF\n) .w
 
         F (%stdout) (w) file ne { F closefile } if
