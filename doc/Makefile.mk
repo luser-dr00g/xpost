@@ -28,6 +28,7 @@ doc: all
 endif
 
 EXTRA_DIST += \
+doc/COMPAT \
 doc/INTERNALS \
 doc/NEWINTERNALS \
 doc/MANUAL \

@@ -1,0 +1,69 @@
+Provenance of the interface vocabulary
+======================================
+
+Xpost's user-visible names come from three places, kept deliberately
+distinct. This note records which is which, and why the third group
+exists, so the interoperability intent is documented rather than
+implicit.
+
+
+== 1. Adobe-published specifications ==
+
+The default vocabulary. Wherever a published language specification
+names a concept, that name is used:
+
+  - The PostScript Language Reference Manual (3rd ed.): setpagedevice
+    and its parameters /PageSize, /HWResolution, /PageOffset and
+    /ProcessColorModel (PLRM3 section 6.2; /ProcessColorModel appears
+    among the colour-separation page device parameters alongside
+    /Separations and /SeparationColorNames); the /Separation and
+    /DeviceN colour spaces; the %stdout special file.
+
+  - The PDF specification (ISO 32000): the content-stream operators
+    the pdfwrite device emits (cs/scn, k/K, rg/RG, path operators),
+    the FunctionType 0 and 4 function dictionaries, the Type 4
+    calculator operator subset, and #xx name escaping.
+
+  - Adobe's pdfmark Reference: the /DOCINFO pdfmark.
+
+Future separating raster output should follow the same rule: PLRM3
+defines /Separations and /SeparationColorNames, so a separating device
+builds on those rather than adopting another implementation's device
+name or output-file naming scheme.
+
+
+== 2. Xpost's own names ==
+
+Everything internal is original to xpost or its contributors and
+resembles no other implementation's API: the device method protocol
+(Create, Destroy, Emit, PutPix, GetPix, DrawLine, DrawRect, FillRect,
+FillPoly, FillPath, StrokePath, BlendPix, Erase), the device keys
+/nativecolorspace, /dimensions, /VectorGlyphs, /VectorSyntax,
+/.colormodels, /.registersep and /Private, the dot-prefixed internal
+operators, and the device dictionary key /OutputFileName (original to
+xpost, 2013).
+
+Devices whose names are xpost's own choices: null, svgwrite, pgm, ppm.
+
+
+== 3. Deliberate compatibility names ==
+
+A small set of names is adopted from the vocabulary that existing
+PostScript job streams in the field actually use, so that such jobs
+run unmodified. Each is functionally required for that purpose; the
+set is kept minimal and confined to the job-stream boundary (nothing
+internal mirrors another implementation):
+
+  - /OutputDevice     setpagedevice key selecting the device
+  - /OutputFile       setpagedevice key naming the output path
+                      (mapped at the boundary onto xpost's own
+                      /OutputFileName)
+  - /TextAlphaBits    device feature enabling anti-aliased text
+  - /WhiteIsOpaque    device feature making white marks opaque on the
+                      transparent-page device
+  - pdfwrite, pngalpha, bbox    device names job streams select
+
+Additions to this group should name the job-stream requirement that
+forces them and should stay out of internal interfaces; anything a
+published Adobe specification already names belongs in group 1
+instead.
