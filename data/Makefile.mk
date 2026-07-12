@@ -15,6 +15,7 @@ data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
 data/paint.ps \
+data/resource.ps \
 data/pattern.ps \
 data/font.ps \
 data/init.ps \
@@ -54,6 +55,7 @@ data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
 data/paint.ps \
+data/resource.ps \
 data/pattern.ps \
 data/font.ps \
 data/init.ps \
