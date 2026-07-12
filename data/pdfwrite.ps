@@ -44,6 +44,7 @@
     currentdict end
     dup /.copydict get exec
     begin
+        /.docinfo 8 dict def    % document metadata from DOCINFO pdfmarks
         currentdict .pdfinit    % create the content accumulator (outside VM)
         % first content op: the device matrix mapping device coords to PDF
         % user space (y-up). Part of the content so it compresses with the rest.
@@ -183,13 +184,36 @@
         ( >>\nstream\n) .w
         Chunks { .w } forall
         (\nendstream\nendobj\n) .w
+        /haveinfo .docinfo length 0 gt def
+        haveinfo {
+            /off5 BytePos def
+            (5 0 obj\n<<) .w
+            .docinfo {
+                exch ( /) .w 127 string cvs .w ( ) .w
+                dup type /stringtype eq {
+                    (\() .w
+                    { % escape the string delimiters and the escape itself
+                        dup 40 eq 1 index 41 eq or 1 index 92 eq or { (\\) .w } if
+                        1 string dup 0 4 -1 roll put .w
+                    } forall
+                    (\)) .w
+                }{
+                    127 string cvs .w
+                } ifelse
+            } forall
+            ( >>\nendobj\n) .w
+        } if
         /xoff BytePos def
-        (xref\n0 5\n0000000000 65535 f \n) .w
+        (xref\n0 ) .w haveinfo { (6) }{ (5) } ifelse .w (\n0000000000 65535 f \n) .w
         off1 .woff ( 00000 n \n) .w
         off2 .woff ( 00000 n \n) .w
         off3 .woff ( 00000 n \n) .w
         off4 .woff ( 00000 n \n) .w
-        (trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n) .w xoff 20 string cvs .w (\n%%EOF\n) .w
+        haveinfo { off5 .woff ( 00000 n \n) .w } if
+        (trailer\n<< /Size ) .w haveinfo { (6) }{ (5) } ifelse .w
+        ( /Root 1 0 R) .w
+        haveinfo { ( /Info 5 0 R) .w } if
+        ( >>\nstartxref\n) .w xoff 20 string cvs .w (\n%%EOF\n) .w
 
         F (%stdout) (w) file ne { F closefile } if
     end }
