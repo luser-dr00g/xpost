@@ -1345,7 +1345,7 @@ int _chopcurve(Xpost_Context *ctx, _flatten_dst *dst,
                real x1, real y1,
                real x2, real y2,
                real x3, real y3,
-               Xpost_Object flat)
+               real tol)
 {
     real x01, y01, x12, y12, x23, y23,
          x012, y012, x123, y123,
@@ -1368,7 +1368,7 @@ int _chopcurve(Xpost_Context *ctx, _flatten_dst *dst,
 #define DIST(xA, yA, xB, yB) \
     sqrt((xB-xA)*(xB-xA) + (yB-yA)*(yB-yA))
 
-    if (DIST(x03, y03, x0123, y0123) < NUM(flat))
+    if (DIST(x03, y03, x0123, y0123) < tol)
     {
         real co[2];
         co[0] = x3;
@@ -1378,10 +1378,10 @@ int _chopcurve(Xpost_Context *ctx, _flatten_dst *dst,
     else
     {
         int ret;
-        ret = _chopcurve(ctx, dst, x0, y0, x01, y01, x012, y012, x0123, y0123, flat);
+        ret = _chopcurve(ctx, dst, x0, y0, x01, y01, x012, y012, x0123, y0123, tol);
         if (ret)
             return ret;
-        return _chopcurve(ctx, dst, x0123, y0123, x123, y123, x23, y23, x3, y3, flat);
+        return _chopcurve(ctx, dst, x0123, y0123, x123, y123, x23, y23, x3, y3, tol);
     }
 }
 
@@ -1394,6 +1394,7 @@ int _flattenpath (Xpost_Context *ctx)
     char *p;
     unsigned int used, o;
     real cp[2] = { 0, 0 };
+    real tol;
     int curved = 0;
     int ret;
 
@@ -1401,6 +1402,10 @@ int _flattenpath (Xpost_Context *ctx)
     if (xpost_object_get_type(gstate) == invalidtype)
         return undefined;
     flat = xpost_dict_get(ctx, gstate, nameflat);
+    /* the flatness value bounds the error in device pixels; subdivide
+       well inside it so a curve's polygonization classifies the same
+       boundary pixels as a renderer that meets the bound exactly */
+    tol = NUM(flat) * 0.25;
 
     path = xpost_dict_get(ctx, gstate, namecurrpath);
     if (xpost_object_get_type(path) != stringtype)
@@ -1445,7 +1450,7 @@ int _flattenpath (Xpost_Context *ctx)
             ret = _chopcurve(ctx, &dst,
                              cp[0], cp[1],
                              co[0], co[1], co[2], co[3], co[4], co[5],
-                             flat);
+                             tol);
             if (ret)
                 return ret;
             cp[0] = co[4];
