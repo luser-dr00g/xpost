@@ -597,6 +597,17 @@ end % userdict
         merged /OutputDevice dev put
         userdict /.pagedevice merged put
 
+        % a device declaring support for the requested process colour
+        % model adopts it as its native space; the colour pipeline then
+        % delivers that model's components to the marking methods
+        DEVICE /ProcessColorModel 2 copy known {
+            get DEVICE /.colormodels 2 copy known {
+                get 1 index known {
+                    DEVICE /nativecolorspace 3 -1 roll put
+                }{ pop } ifelse
+            }{ pop pop pop } ifelse
+        }{ pop pop } ifelse
+
         % the template and the live gstate carry the device; painting
         % and the defaultmatrix operator resolve it through them
         gstatetemplate /device DEVICE put
