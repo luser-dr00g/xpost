@@ -831,25 +831,31 @@ static int _pdf_fmt_long(char *o, long v)
     return len;
 }
 
-/* write a PDF number: an integer when integral, else two decimals (never
-   exponential). round(v*100) avoids binary-float print noise. Matches the
-   .pdfnum PostScript helper used by the other pdfwrite methods. */
+/* write a PDF number: an integer when integral, else up to four decimals
+   with trailing zeros trimmed (never exponential). round(v*10000) avoids
+   binary-float print noise; 0.0001pt is finer than any raster grid the
+   consumer will draw on. */
 static int _pdf_fmt_num(char *o, double v)
 {
     if (v == trunc(v))
         return _pdf_fmt_long(o, (long)v);
     else
     {
-        long m = (long)round(v * 100.0);
+        long m = (long)round(v * 10000.0);
         long ip, fp;
-        int len = 0;
+        int len = 0, digits = 4;
         if (m < 0) { o[len++] = '-'; m = -m; }
-        ip = m / 100;
-        fp = m % 100;
+        ip = m / 10000;
+        fp = m % 10000;
         len += _pdf_fmt_long(o + len, ip);
-        o[len++] = '.';
-        o[len++] = (char)('0' + fp / 10);
-        o[len++] = (char)('0' + fp % 10);
+        if (fp)
+        {
+            while (fp % 10 == 0) { fp /= 10; digits--; }
+            o[len++] = '.';
+            len += digits;
+            { int i = len; while (fp) { o[--i] = (char)('0' + fp % 10); fp /= 10; }
+              while (i > len - digits) o[--i] = '0'; }
+        }
         return len;
     }
 }
