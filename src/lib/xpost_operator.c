@@ -405,7 +405,10 @@ Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
 
     vmmode=ctx->vmmode;
     ctx->vmmode = GLOBAL;
-    nm = xpost_name_cons(ctx, name);
+    /* the optab records names by their global index: a locally
+       interned name with the same numeric index would alias a
+       different operator entirely */
+    nm = xpost_name_cons_global(ctx, name);
     if (xpost_object_get_type(nm) == invalidtype)
         return invalid;
     ctx->vmmode = vmmode;

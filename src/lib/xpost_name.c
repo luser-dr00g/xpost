@@ -306,6 +306,45 @@ Xpost_Object xpost_name_cons(Xpost_Context *ctx,
     return o;
 }
 
+/* construct a name object in global VM regardless of the current
+   allocation mode, ignoring any local interning of the same string.
+   The operator table records names by their global index; resolving
+   an operator name through the local tree can alias a different
+   global name with the same numeric index. */
+Xpost_Object xpost_name_cons_global(Xpost_Context *ctx,
+                                    const char *s)
+{
+    unsigned int u;
+    unsigned int t;
+    Xpost_Object o;
+    unsigned int tstk;
+    int ret;
+
+    xpost_memory_table_get_addr(ctx->gl,
+            XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE, &tstk);
+    u = tstsearch(ctx->gl, tstk, s);
+    if (!u) {
+        unsigned int vmmode = ctx->vmmode;
+        Xpost_Memory_Table *tab = &ctx->gl->table;
+
+        ctx->vmmode = GLOBAL;
+        ret = tstinsert(ctx->gl, tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr, s, &t);
+        if (ret)
+        {
+            ctx->vmmode = vmmode;
+            return invalid;
+        }
+        tab = &ctx->gl->table; //recalc pointer
+        tab->tab[XPOST_MEMORY_TABLE_SPECIAL_NAME_TREE].adr = t;
+        u = addname(ctx, s);
+        ctx->vmmode = vmmode;
+    }
+    o.mark_.tag = nametype | XPOST_OBJECT_TAG_DATA_FLAG_BANK;
+    o.mark_.pad0 = 0;
+    o.mark_.padw = u;
+    return o;
+}
+
 /* yield the string object from the name string stack
     */
 Xpost_Object xpost_name_get_string(Xpost_Context *ctx,
