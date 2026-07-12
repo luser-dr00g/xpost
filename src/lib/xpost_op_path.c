@@ -57,6 +57,7 @@
 #include "xpost_operator.h"
 #include "xpost_op_dict.h"
 #include "xpost_op_path.h"
+#include "xpost_dev_generic.h"  /* the vector devices' content accumulator */
 
 #undef y0
 #undef y1
@@ -964,6 +965,119 @@ int _cliptrivial(Xpost_Context *ctx)
     return 0;
 }
 
+/* Emit the current path into a vector device's content accumulator with
+   curves preserved -- the FillPath hot loop, walking the path string
+   directly so arbitrarily many subpaths cost no operand stack. The
+   syntax is the device's: PDF path operators or SVG path commands. */
+static
+int _fillpath_emit(Xpost_Context *ctx,
+                   Xpost_Object r, Xpost_Object g, Xpost_Object b,
+                   Xpost_Object devdic, int svg)
+{
+#define FPNUMVAL(o) (xpost_object_get_type(o) == realtype ? (o).real_.val \
+                                                          : (double)(o).int_.val)
+    Xpost_Object gstate, path;
+    char *p;
+    unsigned int used, o;
+    char tmp[192];
+    int n, i;
+
+    gstate = _gstate(ctx);
+    if (xpost_object_get_type(gstate) == invalidtype)
+        return undefined;
+    path = xpost_dict_get(ctx, gstate, namecurrpath);
+    if (xpost_object_get_type(path) != stringtype)
+        return unregistered;
+    p = xpost_string_get_pointer(ctx, path);
+    used = _path_get_u32(p, 0);
+    if (used <= PATH_HDR)
+        return 0;
+
+    n = 0;
+    if (svg)
+    {
+        memcpy(tmp + n, "<path fill=\"rgb(", 16); n += 16;
+        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(r) * 100); tmp[n++] = '%'; tmp[n++] = ',';
+        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(g) * 100); tmp[n++] = '%'; tmp[n++] = ',';
+        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(b) * 100); tmp[n++] = '%';
+        memcpy(tmp + n, ")\" fill-rule=\"evenodd\" d=\"", 26); n += 26;
+    }
+    else
+    {
+        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(r)); tmp[n++] = ' ';
+        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(g)); tmp[n++] = ' ';
+        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(b));
+        memcpy(tmp + n, " rg\n", 4); n += 4;
+    }
+    if (!xpost_dev_pdf_append(ctx, devdic, tmp, n))
+        return undefined;
+
+    for (o = PATH_HDR; o < used; o += _path_elem_size(p[o]))
+    {
+        int cmd = p[o];
+        int nco = cmd == PATH_CMD_CURVE ? 6 : 2;
+        real co[6];
+
+        if (cmd < PATH_CMD_MOVE || cmd > PATH_CMD_CLOSE)
+            return unregistered;
+        _path_get_coords(p, o, co, nco);
+        n = 0;
+        if (cmd == PATH_CMD_CLOSE)
+        {
+            /* the stored coordinates repeat the subpath start */
+            if (svg)
+                tmp[n++] = 'Z';
+            else
+                { tmp[n++] = 'h'; tmp[n++] = '\n'; }
+        }
+        else if (svg)
+        {
+            tmp[n++] = cmd == PATH_CMD_MOVE ? 'M'
+                     : cmd == PATH_CMD_LINE ? 'L' : 'C';
+            for (i = 0; i < nco; i++)
+            {
+                if (i) tmp[n++] = ' ';
+                n += xpost_dev_pdf_fmt_num(tmp + n, co[i]);
+            }
+        }
+        else
+        {
+            for (i = 0; i < nco; i++)
+            {
+                n += xpost_dev_pdf_fmt_num(tmp + n, co[i]);
+                tmp[n++] = ' ';
+            }
+            tmp[n++] = cmd == PATH_CMD_MOVE ? 'm'
+                     : cmd == PATH_CMD_LINE ? 'l' : 'c';
+            tmp[n++] = '\n';
+        }
+        if (n && !xpost_dev_pdf_append(ctx, devdic, tmp, n))
+            return undefined;
+    }
+
+    if (!xpost_dev_pdf_append(ctx, devdic,
+                              svg ? "\"/>\n" : "f*\n", svg ? 4 : 3))
+        return undefined;
+    return 0;
+#undef FPNUMVAL
+}
+
+static
+int _pdffillpath(Xpost_Context *ctx,
+                 Xpost_Object r, Xpost_Object g, Xpost_Object b,
+                 Xpost_Object devdic)
+{
+    return _fillpath_emit(ctx, r, g, b, devdic, 0);
+}
+
+static
+int _svgfillpath(Xpost_Context *ctx,
+                 Xpost_Object r, Xpost_Object g, Xpost_Object b,
+                 Xpost_Object devdic)
+{
+    return _fillpath_emit(ctx, r, g, b, devdic, 1);
+}
+
 static
 int _closepath(Xpost_Context *ctx)
 {
@@ -1671,6 +1785,13 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     INSTALL;
 
     op = xpost_operator_cons(ctx, "flattenpath", (Xpost_Op_Func)_flattenpath, 0, 0);
+    INSTALL;
+
+    op = xpost_operator_cons(ctx, ".pdffillpath", (Xpost_Op_Func)_pdffillpath, 0, 4,
+            numbertype, numbertype, numbertype, dicttype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".svgfillpath", (Xpost_Op_Func)_svgfillpath, 0, 4,
+            numbertype, numbertype, numbertype, dicttype);
     INSTALL;
 
     _arc_start_proc = xpost_array_cons(ctx, 4);
