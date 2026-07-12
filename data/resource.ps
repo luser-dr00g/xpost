@@ -1,0 +1,61 @@
+/QUIET where { pop }{ (loading resource.ps...)print } ifelse
+
+% Level 2 resource machinery: named instances per category, held in
+% global VM. /Category is itself a category whose instances are
+% category implementation dictionaries: defining an instance there
+% brings a new category into existence, which is how programs register
+% private categories (typically copying /Generic as a starting point).
+% resourceforall and on-disk resource storage are not implemented.
+
+currentglobal true setglobal
+
+/.resources 32 dict def
+.resources /Category 32 dict put
+% the Generic category implementation: programs copy it to seed their
+% own categories, so it need only exist and name itself
+.resources /Category get /Generic << /Category /Generic >> put
+
+setglobal
+
+% category  .instof  instances
+/.instof {
+    //.resources exch 2 copy known not {
+        pop pop /findresource cvx /undefinedresource signalerror
+    } if
+    get
+} bind def
+
+% key instance category  defineresource  instance
+/defineresource {
+    dup /Category eq {
+        % a new category comes into being with an empty instance table
+        2 index //.resources exch 2 copy known not
+            { 32 dict put }{ pop pop } ifelse
+    } if
+    .instof 2 index 2 index put exch pop
+} bind def
+
+% key category  findresource  instance
+/findresource {
+    .instof exch  % instances key
+    2 copy known not {
+        pop pop /findresource cvx /undefinedresource signalerror
+    } if
+    get
+} bind def
+
+% key category  resourcestatus  status size true | false
+/resourcestatus {
+    //.resources exch 2 copy known not {
+        pop pop pop false
+    }{
+        get exch known { 0 0 true }{ false } ifelse
+    } ifelse
+} bind def
+
+% key category  undefineresource  -
+/undefineresource {
+    .instof exch undef
+} bind def
+
+/QUIET where { pop }{ (eof resource.ps\n)print } ifelse

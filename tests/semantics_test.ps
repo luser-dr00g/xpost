@@ -45,6 +45,26 @@ pathbbox
 0 (translated llx) assertnear
 grestore
 
+% --- resource machinery: instances per category, private categories
+%     registered by defining into /Category ---
+currentglobal true setglobal
+/Generic /Category findresource type /dicttype eq (Generic category exists) assert
+/Generic /Category findresource dup length 1 add dict copy
+dup /Category /st.private put
+/st.private exch /Category defineresource pop
+/st.key << /v 42 >> /st.private defineresource /v get 42 eq (defineresource returns the instance) assert
+/st.key /st.private findresource /v get 42 eq (findresource retrieves the instance) assert
+/st.key /st.private resourcestatus { pop pop true } { false } ifelse (resourcestatus finds it) assert
+/st.other /st.private resourcestatus { pop pop false } { true } ifelse (resourcestatus rejects the unknown) assert
+/st.key /st.private undefineresource
+/st.key /st.private resourcestatus { pop pop false } { true } ifelse (undefineresource removes it) assert
+count /st.d0 exch def
+{ /st.key /st.ghost findresource } stopped
+{ count st.d0 sub { pop } repeat $error /errorname get /undefinedresource eq }
+{ count st.d0 sub { pop } repeat false } ifelse
+(a missing category reports undefinedresource) assert
+setglobal
+
 % --- binary tokens (PLRM 3.14.2): every encoding a packaged program
 %     body uses, plus the sibling byte orders ---
 <8820> cvx exec 32 eq (int8) assert
