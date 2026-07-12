@@ -1105,6 +1105,19 @@ static int _pdfchunks(Xpost_Context *ctx, Xpost_Object devdic)
 }
 
 /* free the accumulator's malloc'd buffer (device Destroy) */
+/* truncate the accumulator for the next page, keeping the buffer */
+static int _pdfreset(Xpost_Context *ctx, Xpost_Object devdic)
+{
+    Pdf_Acc a;
+    Xpost_Object priv;
+
+    if (!_pdf_acc_get(ctx, devdic, &priv, &a))
+        return 0;
+    a.len = 0;
+    _pdf_acc_put(ctx, priv, &a);
+    return 0;
+}
+
 static int _pdffree(Xpost_Context *ctx, Xpost_Object devdic)
 {
     Pdf_Acc a;
@@ -1147,6 +1160,7 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".pdfput", (Xpost_Op_Func)_pdfput, 0, 2, stringtype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".pdfchunks", (Xpost_Op_Func)_pdfchunks, 1, 1, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".pdffree", (Xpost_Op_Func)_pdffree, 0, 1, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".pdfreset", (Xpost_Op_Func)_pdfreset, 0, 1, dicttype); INSTALL;
     if (xpost_object_get_type((namewidth = xpost_name_cons(ctx, "width"))) == invalidtype)
         return VMerror;
     if (xpost_object_get_type((nameImgData = xpost_name_cons(ctx, "ImgData"))) == invalidtype)

@@ -231,6 +231,12 @@
         ( >>\nstartxref\n) .w xoff 20 string cvs .w (\n%%EOF\n) .w
 
         F (%stdout) (w) file ne { F closefile } if
+
+        % start the next page fresh: showpage's page clear and later
+        % marks must not stack on the emitted content (a later Emit
+        % rewrites the output with the then-current page)
+        currentdict .pdfreset
+        (1 0 0 -1 0 ) .put height cvi 20 string cvs .put ( cm\n) .put
     end }
 >> def
 
