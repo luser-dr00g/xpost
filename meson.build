@@ -305,6 +305,16 @@ test('pdf-device',
   find_program('tests/run-pdf-test.sh'),
   args: [ xpost_exe, files('tests/pdf_bigfill_test.ps') ],
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# Binary tokens (PLRM 3.14): the conformance corpus against a golden
+# record generated from the reference interpreter, which revalidates
+# the golden when gs is present.
+test('binary-tokens',
+  find_program('tests/run-bintok-test.sh'),
+  args: [ xpost_exe,
+          files('tests/binary_token_test.ps'),
+          files('tests/binary_token_test.expected') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 #if get_option('nls') == true
 #  subdir('po')
 #endif

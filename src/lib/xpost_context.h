@@ -131,6 +131,11 @@ struct _Xpost_Context {
 
     int ignoreinvalidaccess; //briefly allow invalid access to put userdict in systemdict (per PLRM)
 
+    int scanner_defer; /**< the token just scanned is a brace procedure:
+                            the interpreter pushes it as data rather than
+                            executing it. A binary object sequence also
+                            scans to an executable array but executes. */
+
     size_t (*stdout_fn)(void *, const char *, size_t); /**< divert %stdout text */
     void *stdout_user;
     size_t (*stderr_fn)(void *, const char *, size_t); /**< divert %stderr text */
