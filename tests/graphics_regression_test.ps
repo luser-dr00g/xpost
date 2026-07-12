@@ -323,6 +323,48 @@ basefont null ne {
     } if
 } ifelse
 
+% --- charpath appends glyph outlines: the path carries curves, fills
+%     with its counters intact, and clips like any other path ---
+basefont null ne {
+    /cpd 4 dict def
+    cpd /nc 0 put cpd /nm 0 put
+    erasepage
+    basefont 40 scalefont setfont
+    newpath 8 20 moveto (O) false charpath
+    { pop pop cpd /nm 2 copy get 1 add put }
+    { pop pop }
+    { 6 { pop } repeat cpd /nc 2 copy get 1 add put }
+    { }
+    pathforall
+    cpd /nm get 2 ge (charpath makes a contour per boundary) assert
+    cpd /nc get 8 ge (charpath carries curve segments) assert
+    fill
+    countink 20 ge (charpath fills) assert
+    % the counter must stay clear: probe the middle of the O
+    23 34 inkat not (charpath fill keeps the counter open) assert
+    10 34 inkat (charpath fill marks the ring) assert
+
+    erasepage
+    gsave
+    newpath 8 20 moveto (O) false charpath clip
+    newpath 0 0 moveto 64 0 lineto 64 64 lineto 0 64 lineto closepath fill
+    grestore
+    23 34 inkat not (charpath clip keeps the counter open) assert
+    10 34 inknear (charpath clip admits the ring) assert
+} if
+
+% a many-segment convex clip window (a closed contour ends on its own
+% start; the degenerate closing edge must not poison the half-planes)
+erasepage
+gsave
+newpath 32 32 20 0 360 arc closepath clip
+newpath 0 0 moveto 64 0 lineto 64 64 lineto 0 64 lineto closepath fill
+grestore
+32 32 inkat (a circular clip window admits its centre) assert
+countink dup
+900 ge (circular clip covers the disk) assert
+1600 le (circular clip stays within the disk) assert
+
 count 0 eq (operand stack is balanced) assert
 faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse
 flush

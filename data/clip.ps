@@ -54,10 +54,16 @@ def
 
 
 /clip {
+    % the clip machinery consumes line segments, so the region is cut
+    % from a flattened working copy; the caller's path is kept aside
+    % and put back, undisturbed by flattening or the intersection
+    graphicsdict /currgstate get /currpath get
+    dup length string copy
+    flattenpath
     doclip
     graphicsdict /currgstate get
     dup /currpath get /clipregion exch put
-    %newpath %NO! clip does not disturb the current path.
+    graphicsdict /currgstate get /currpath 3 -1 roll put
 } def
 
 
@@ -245,7 +251,9 @@ def
     % treated as further windows to intersect, as before.
     /wsign 0 def
     CR { % one clipping polygon
-	dup length 0 eq {
+	% fewer than three points bound no area (e.g. the bare pen
+	% moveto charpath leaves after its outlines)
+	dup length 3 lt {
 	    pop
 	}{
 	    dup polyarea2 0 lt { -1 }{ 1 } ifelse /psign exch def
@@ -259,15 +267,20 @@ def
 	    1 1 index length 1 sub getinterval
 	    {
 		/V exch def
-		[ U aload pop V aload pop p2abc ]  % clip-line
-		/CL exch def
-		/DEBUGCLIP where { pop
-		    CL ==
-		} if
+		U 0 get V 0 get sub abs U 1 get V 1 get sub abs add 0.001 lt {
+		    % a degenerate edge (a contour closing on its own start,
+		    % exactly or within float noise) has no usable half-plane
+		}{
+		    [ U aload pop V aload pop p2abc ]  % clip-line
+		    /CL exch def
+		    /DEBUGCLIP where { pop
+			CL ==
+		    } if
 
-		/PA [ PA { % one subject polygon
-		    CL hodgman-sutherland
-		} forall ] def
+		    /PA [ PA { % one subject polygon
+			CL hodgman-sutherland
+		    } forall ] def
+		} ifelse
 
 		/U V def
 	    } forall
@@ -283,7 +296,9 @@ def
 		HP 0 get /U exch def
 		HP 1 HP length 1 sub getinterval {
 		    /V exch def
-		    [ U aload pop V aload pop p2abc ]
+		    U 0 get V 0 get sub abs U 1 get V 1 get sub abs add 0.001 ge {
+			[ U aload pop V aload pop p2abc ]
+		    } if
 		    /U V def
 		} forall
 	    ] def
