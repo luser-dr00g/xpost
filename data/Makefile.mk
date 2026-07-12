@@ -11,6 +11,7 @@ data/ppmimage.ps \
 data/nulldev.ps \
 data/bboxdev.ps \
 data/pdfwrite.ps \
+data/svgwrite.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \
@@ -51,6 +52,7 @@ data/ppmimage.ps \
 data/nulldev.ps \
 data/bboxdev.ps \
 data/pdfwrite.ps \
+data/svgwrite.ps \
 data/gstate.ps \
 data/matrix.ps \
 data/path.ps \

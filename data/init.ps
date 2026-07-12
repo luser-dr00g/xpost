@@ -513,6 +513,7 @@ end % userdict
         /null { newnulldevice }
         /bbox { newbboxdevice }
         /pdfwrite { newPDFWRITEdevice }
+        /svgwrite { newSVGWRITEdevice }
         /png { /newpngdevice where { pop }{ loadpngdevice } ifelse newpngdevice }
         /pngalpha { /newpngalphadevice where { pop }{ loadpngalphadevice } ifelse newpngalphadevice }
         /jpeg { /newjpegdevice where { pop }{ loadjpegdevice } ifelse newjpegdevice }

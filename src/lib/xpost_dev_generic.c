@@ -1016,6 +1016,63 @@ static int _pdffillpoly(Xpost_Context *ctx,
 #undef PDFNUMVAL
 }
 
+/* The svgwrite FillPoly hot loop: emit one SVG path element for a filled
+   path into the accumulator -- the fill colour as percentages, an even-odd
+   fill rule (matching the raster devices' fill), and the flattened subpaths
+   as M/L commands, each closed with Z. Device coordinates are y-down, as
+   SVG's are, so they pass through unchanged. */
+static int _svgfillpoly(Xpost_Context *ctx,
+                        Xpost_Object r, Xpost_Object g, Xpost_Object b,
+                        Xpost_Object poly, Xpost_Object devdic)
+{
+#define PDFNUMVAL(o) (xpost_object_get_type(o) == realtype ? (o).real_.val \
+                                                           : (double)(o).int_.val)
+    Pdf_Acc a;
+    Xpost_Object priv;
+    char tmp[128];
+    int i, n, len, needmove = 1;
+
+    if (!_pdf_acc_get(ctx, devdic, &priv, &a))
+        return undefined;
+
+    len = 0;
+    memcpy(tmp + len, "<path fill=\"rgb(", 16); len += 16;
+    len += _pdf_fmt_num(tmp + len, PDFNUMVAL(r) * 100); tmp[len++] = '%'; tmp[len++] = ',';
+    len += _pdf_fmt_num(tmp + len, PDFNUMVAL(g) * 100); tmp[len++] = '%'; tmp[len++] = ',';
+    len += _pdf_fmt_num(tmp + len, PDFNUMVAL(b) * 100); tmp[len++] = '%';
+    memcpy(tmp + len, ")\" fill-rule=\"evenodd\" d=\"", 26); len += 26;
+    _pdf_acc_append(&a, tmp, len);
+
+    n = poly.comp_.sz;
+    for (i = 0; i < n; i++)
+    {
+        Xpost_Object e = xpost_array_get(ctx, poly, i);
+        if (xpost_object_get_type(e) == arraytype && e.comp_.sz == 2)
+        {
+            double x = PDFNUMVAL(xpost_array_get(ctx, e, 0));
+            double y = PDFNUMVAL(xpost_array_get(ctx, e, 1));
+            len = 0;
+            tmp[len++] = needmove ? 'M' : 'L';
+            len += _pdf_fmt_num(tmp + len, x); tmp[len++] = ' ';
+            len += _pdf_fmt_num(tmp + len, y);
+            needmove = 0;
+            _pdf_acc_append(&a, tmp, len);
+        }
+        else if (!needmove)   /* null subpath separator: close the subpath */
+        {
+            _pdf_acc_append(&a, "Z", 1);
+            needmove = 1;
+        }
+    }
+    if (!needmove)
+        _pdf_acc_append(&a, "Z", 1);
+    _pdf_acc_append(&a, "\"/>\n", 4);
+
+    _pdf_acc_put(ctx, priv, &a);
+    return 0;
+#undef PDFNUMVAL
+}
+
 /* Return the accumulated content as an array of <=65535-byte strings (the
    PostScript string limit) for the Emit method to compress and write. The
    malloc'd source buffer is stable across the string allocations. */
@@ -1082,6 +1139,8 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
             numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".flatecompress", (Xpost_Op_Func)_flatecompress, 2, 1, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".pdffillpoly", (Xpost_Op_Func)_pdffillpoly, 0, 5,
+            numbertype, numbertype, numbertype, arraytype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".svgfillpoly", (Xpost_Op_Func)_svgfillpoly, 0, 5,
             numbertype, numbertype, numbertype, arraytype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".pdfinit", (Xpost_Op_Func)_pdfinit, 0, 1, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".pdfput", (Xpost_Op_Func)_pdfput, 0, 2, stringtype, dicttype); INSTALL;
