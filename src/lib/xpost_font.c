@@ -725,6 +725,32 @@ _outline_cubicto(const FT_Vector *control1, const FT_Vector *control2, const FT_
 }
 #endif
 
+
+#ifdef HAVE_FREETYPE2
+/* The hinter rounds slot->advance to whole pixels and the rounding
+   accumulates as horizontal drift across a string. Derive the pen
+   advance from the unhinted linear width instead, applied through the
+   face's current transform (identity when none is set). Bitmap-only
+   glyphs carry no linear width; those keep the slot advance. */
+static void
+_glyph_linear_advance(FT_Face face, long *advance_x, long *advance_y)
+{
+    FT_GlyphSlot slot = face->glyph;
+    FT_Fixed lin = slot->linearHoriAdvance;   /* 16.16 pixels */
+    FT_Matrix m;
+
+    if (lin == 0)
+    {
+        *advance_x = slot->advance.x;
+        *advance_y = slot->advance.y;
+        return;
+    }
+    FT_Get_Transform(face, &m, NULL);
+    *advance_x = FT_MulFix(m.xx, lin) >> 10;  /* 16.16 -> 26.6 */
+    *advance_y = FT_MulFix(m.yx, lin) >> 10;
+}
+#endif
+
 int
 xpost_font_face_glyph_outline(void *face, unsigned int glyph_index, const Xpost_Font_Outline_Sink *sink, long *advance_x, long *advance_y)
 {
@@ -741,8 +767,7 @@ xpost_font_face_glyph_outline(void *face, unsigned int glyph_index, const Xpost_
         return 0;
     }
     slot = ((FT_Face)face)->glyph;
-    *advance_x = slot->advance.x;
-    *advance_y = slot->advance.y;
+    _glyph_linear_advance((FT_Face)face, advance_x, advance_y);
     if (slot->format != FT_GLYPH_FORMAT_OUTLINE)
     {
         XPOST_LOG_ERR("glyph has no outline");
@@ -828,8 +853,7 @@ xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, 
     *pixel_mode = ((FT_Face)face)->glyph->bitmap.pixel_mode;
     *left = ((FT_Face)face)->glyph->bitmap_left;
     *top = ((FT_Face)face)->glyph->bitmap_top;
-    *advance_x = ((FT_Face)face)->glyph->advance.x;
-    *advance_y = ((FT_Face)face)->glyph->advance.y;
+    _glyph_linear_advance((FT_Face)face, advance_x, advance_y);
 #else
     (void)face;
     (void)buffer;
