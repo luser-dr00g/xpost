@@ -365,6 +365,22 @@ countink dup
 900 ge (circular clip covers the disk) assert
 1600 le (circular clip stays within the disk) assert
 
+% an annulus clip built the standard way: the closepath's point bridges
+% into the inner subpath by a straight line, so the region arrives as
+% one keyhole path; the clipper must split it at the close, peel the
+% doubled bridge edge, and subtract the opposite-wound inner ring
+erasepage
+gsave
+newpath 32 32 24 0 360 arc closepath
+        32 32 12 360 0 arcn closepath
+clip
+newpath 0 0 moveto 64 0 lineto 64 64 lineto 0 64 lineto closepath fill
+grestore
+32 14 inkat (ring clip admits the band) assert
+14 32 inkat (ring clip admits the band on the other axis) assert
+32 32 inkat not (ring clip excludes the hole) assert
+32 4 inkat not (ring clip excludes outside the outer circle) assert
+
 count 0 eq (operand stack is balanced) assert
 faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse
 flush
