@@ -115,3 +115,36 @@ EOF
 else
     echo "gs not found: skipping round-trip check"
 fi
+
+# process colour model: under /ProcessColorModel /DeviceCMYK every mark
+# separates in CMYK -- default black (a DeviceGray source) and RGB black
+# as pure K, explicit CMYK passed through, strokes as K, glyphs as k.
+# Probed through the uncompressed accumulator, no consumer needed.
+cmykps=$(mktemp)
+cat > "$cmykps" <<'EOF'
+<< /OutputDevice /pdfwrite /OutputFile (/dev/null) /PageSize [100 100] /ProcessColorModel /DeviceCMYK >> setpagedevice
+newpath 10 10 moveto 20 0 rlineto 0 20 rlineto -20 0 rlineto closepath fill
+1 0 0 setrgbcolor newpath 40 10 moveto 20 0 rlineto 0 20 rlineto -20 0 rlineto closepath fill
+0 setgray 2 setlinewidth newpath 10 50 moveto 60 70 lineto stroke
+/Courier findfont 12 scalefont setfont 10 80 moveto (K) show
+/probe { % (needle) (name)  .  -
+    exch DEVICE .pdfchunks 0 get exch search
+    { pop pop pop (ok ) print print (\n) print }
+    { pop (MISSING ) print print (\n) print } ifelse
+} def
+(0 0 0 1 k\n) (gray-black fill as pure K) probe
+(0 1 1 0 k\n) (rgb red converted with undercolor removal) probe
+(0 0 0 1 K\n) (stroke in CMYK) probe
+( rg\n) (no RGB operators remain) exch DEVICE .pdfchunks 0 get exch search
+    { pop pop pop (MISSING ) print print (\n) print }
+    { pop (ok ) print print (\n) print } ifelse
+showpage
+<< /OutputDevice /null >> setpagedevice
+quit
+EOF
+out=$("$xpost" -q -d null -o /dev/null "$cmykps" </dev/null 2>&1)
+rm -f "$cmykps"
+printf '%s\n' "$out" | grep -q 'MISSING' && { printf '%s\n' "$out" | grep MISSING; echo "FAIL: CMYK separation probes"; exit 1; }
+n=$(printf '%s\n' "$out" | grep -c '^ok ')
+[ "$n" = 4 ] || { echo "FAIL: expected 4 CMYK probes, saw $n"; exit 1; }
+echo "CMYK process colour model OK"

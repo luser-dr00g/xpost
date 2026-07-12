@@ -971,11 +971,9 @@ int _cliptrivial(Xpost_Context *ctx)
    syntax is the device's: PDF path operators or SVG path commands. */
 static
 int _fillpath_emit(Xpost_Context *ctx,
-                   Xpost_Object r, Xpost_Object g, Xpost_Object b,
+                   const double *comp, int ncomp,
                    Xpost_Object devdic, int svg)
 {
-#define FPNUMVAL(o) (xpost_object_get_type(o) == realtype ? (o).real_.val \
-                                                          : (double)(o).int_.val)
     Xpost_Object gstate, path;
     char *p;
     unsigned int used, o;
@@ -997,17 +995,20 @@ int _fillpath_emit(Xpost_Context *ctx,
     if (svg)
     {
         memcpy(tmp + n, "<path fill=\"rgb(", 16); n += 16;
-        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(r) * 100); tmp[n++] = '%'; tmp[n++] = ',';
-        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(g) * 100); tmp[n++] = '%'; tmp[n++] = ',';
-        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(b) * 100); tmp[n++] = '%';
+        n += xpost_dev_pdf_fmt_num(tmp + n, comp[0] * 100); tmp[n++] = '%'; tmp[n++] = ',';
+        n += xpost_dev_pdf_fmt_num(tmp + n, comp[1] * 100); tmp[n++] = '%'; tmp[n++] = ',';
+        n += xpost_dev_pdf_fmt_num(tmp + n, comp[2] * 100); tmp[n++] = '%';
         memcpy(tmp + n, ")\" fill-rule=\"evenodd\" d=\"", 26); n += 26;
     }
     else
     {
-        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(r)); tmp[n++] = ' ';
-        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(g)); tmp[n++] = ' ';
-        n += xpost_dev_pdf_fmt_num(tmp + n, FPNUMVAL(b));
-        memcpy(tmp + n, " rg\n", 4); n += 4;
+        for (i = 0; i < ncomp; i++)
+        {
+            n += xpost_dev_pdf_fmt_num(tmp + n, comp[i]);
+            tmp[n++] = ' ';
+        }
+        memcpy(tmp + n, ncomp == 4 ? "k\n" : "rg\n", ncomp == 4 ? 2 : 3);
+        n += ncomp == 4 ? 2 : 3;
     }
     if (!xpost_dev_pdf_append(ctx, devdic, tmp, n))
         return undefined;
@@ -1059,15 +1060,29 @@ int _fillpath_emit(Xpost_Context *ctx,
                               svg ? "\"/>\n" : "f*\n", svg ? 4 : 3))
         return undefined;
     return 0;
-#undef FPNUMVAL
 }
 
+#define FPNUMVAL(o) (xpost_object_get_type(o) == realtype ? (o).real_.val \
+                                                          : (double)(o).int_.val)
 static
 int _pdffillpath(Xpost_Context *ctx,
                  Xpost_Object r, Xpost_Object g, Xpost_Object b,
                  Xpost_Object devdic)
 {
-    return _fillpath_emit(ctx, r, g, b, devdic, 0);
+    double comp[3];
+    comp[0] = FPNUMVAL(r); comp[1] = FPNUMVAL(g); comp[2] = FPNUMVAL(b);
+    return _fillpath_emit(ctx, comp, 3, devdic, 0);
+}
+
+static
+int _pdffillpathcmyk(Xpost_Context *ctx,
+                     Xpost_Object c, Xpost_Object m, Xpost_Object y, Xpost_Object k,
+                     Xpost_Object devdic)
+{
+    double comp[4];
+    comp[0] = FPNUMVAL(c); comp[1] = FPNUMVAL(m);
+    comp[2] = FPNUMVAL(y); comp[3] = FPNUMVAL(k);
+    return _fillpath_emit(ctx, comp, 4, devdic, 0);
 }
 
 static
@@ -1075,8 +1090,11 @@ int _svgfillpath(Xpost_Context *ctx,
                  Xpost_Object r, Xpost_Object g, Xpost_Object b,
                  Xpost_Object devdic)
 {
-    return _fillpath_emit(ctx, r, g, b, devdic, 1);
+    double comp[3];
+    comp[0] = FPNUMVAL(r); comp[1] = FPNUMVAL(g); comp[2] = FPNUMVAL(b);
+    return _fillpath_emit(ctx, comp, 3, devdic, 1);
 }
+#undef FPNUMVAL
 
 static
 int _closepath(Xpost_Context *ctx)
@@ -1795,6 +1813,9 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, ".pdffillpath", (Xpost_Op_Func)_pdffillpath, 0, 4,
             numbertype, numbertype, numbertype, dicttype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".pdffillpathcmyk", (Xpost_Op_Func)_pdffillpathcmyk, 0, 5,
+            numbertype, numbertype, numbertype, numbertype, dicttype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".svgfillpath", (Xpost_Op_Func)_svgfillpath, 0, 4,
             numbertype, numbertype, numbertype, dicttype);
