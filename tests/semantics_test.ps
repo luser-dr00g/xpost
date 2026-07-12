@@ -97,6 +97,27 @@ currentfile /ASCII85Decode filter cvx exec
 04?gt@VK_%DegJO.Ni85AdS~>
 a85bintok 42 eq (binary token through the filter) assert
 
+% --- decode filters ---
+currentfile /ASCIIHexDecode filter cvx exec
+2F73742E68657876616C2034322064656620>
+st.hexval 42 eq (ASCIIHexDecode delivers and the file resumes after the marker) assert
+currentfile 1 (*EOD*) /SubFileDecode filter cvx exec
+/st.sub 7 def *EOD*
+st.sub 7 eq (SubFileDecode ends at the delimiter and the file resumes after it) assert
+/st.f (semantics.scratch) (w) file def
+st.f <014142FD4380> writestring st.f closefile
+(semantics.scratch) (r) file /RunLengthDecode filter
+16 string readstring pop (ABCCCC) eq (RunLengthDecode expands runs) assert
+[ (squeeze me please, twenty-six letters and then some more) ] .flatecompress {
+    /st.chunks exch def
+    /st.f (semantics.scratch) (w) file def
+    st.chunks { st.f exch writestring } forall st.f closefile
+    (semantics.scratch) (r) file /FlateDecode filter
+    64 string readstring pop
+    (squeeze me please, twenty-six letters and then some more) eq
+    (FlateDecode round-trips the compressor) assert
+}{ pop } ifelse
+
 % --- setpagedevice (last: it replaces the device) ---
 << /OutputDevice /pgm /PageSize [50 25] /HWResolution [144 144] /TextAlphaBits 3 >> setpagedevice
 DEVICE /dimensions get dup 0 get 100 eq exch 1 get 50 eq and

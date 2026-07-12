@@ -36,6 +36,10 @@
 #include <stddef.h>
 #include <ctype.h>
 
+#ifdef HAVE_ZLIB
+# include <zlib.h>
+#endif
+
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
@@ -702,6 +706,542 @@ Xpost_Object xpost_file_cons_writebuffer(Xpost_Memory_File *mem)
     }
     return f;
 }
+
+/* ASCIIHexDecode filter: hexadecimal digit pairs to bytes, whitespace
+   ignored, '>' ends the data (an odd final digit is padded with 0). */
+typedef struct Xpost_HexFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+} Xpost_HexFile;
+
+static int
+_hexval(int c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
+
+static int
+hex_readch(Xpost_File *f)
+{
+    Xpost_HexFile *ff = (Xpost_HexFile *)f;
+    int c, hi, lo;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->eod)
+        return EOF;
+    do
+    {
+        c = xpost_file_getc(ff->source);
+    } while (c != EOF && isspace(c));
+    if (c == EOF || c == '>')
+    {
+        ff->eod = 1;
+        return EOF;
+    }
+    hi = _hexval(c);
+    if (hi < 0)
+    {
+        XPOST_LOG_ERR("character %d in ASCIIHexDecode stream", c);
+        ff->eod = 1;
+        return EOF;
+    }
+    do
+    {
+        c = xpost_file_getc(ff->source);
+    } while (c != EOF && isspace(c));
+    if (c == EOF || c == '>')
+    {
+        ff->eod = 1;
+        lo = 0;
+    }
+    else
+    {
+        lo = _hexval(c);
+        if (lo < 0)
+        {
+            XPOST_LOG_ERR("character %d in ASCIIHexDecode stream", c);
+            ff->eod = 1;
+            lo = 0;
+        }
+    }
+    return (hi << 4) | lo;
+}
+
+/* RunLengthDecode filter: a length byte 0..127 copies that many plus
+   one literal bytes; 129..255 repeats the next byte 257 minus the
+   length times; 128 ends the data. */
+typedef struct Xpost_RleFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    int litrun;   /* literal bytes still to copy */
+    int reprun;   /* repetitions still to emit */
+    int repbyte;
+} Xpost_RleFile;
+
+static int
+rle_readch(Xpost_File *f)
+{
+    Xpost_RleFile *ff = (Xpost_RleFile *)f;
+    int c;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->reprun > 0)
+    {
+        ff->reprun--;
+        return ff->repbyte;
+    }
+    if (ff->litrun > 0)
+    {
+        ff->litrun--;
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+            ff->eod = 1;
+        return c;
+    }
+    if (ff->eod)
+        return EOF;
+    c = xpost_file_getc(ff->source);
+    if (c == EOF || c == 128)
+    {
+        ff->eod = 1;
+        return EOF;
+    }
+    if (c < 128)
+    {
+        ff->litrun = c;   /* this byte plus litrun more */
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+            ff->eod = 1;
+        return c;
+    }
+    ff->repbyte = xpost_file_getc(ff->source);
+    if (ff->repbyte == EOF)
+    {
+        ff->eod = 1;
+        return EOF;
+    }
+    ff->reprun = 257 - c - 1;   /* this byte plus reprun more */
+    return ff->repbyte;
+}
+
+/* SubFileDecode filter: pass bytes through until the EOD string has
+   been seen count times; the final occurrence is consumed but not
+   delivered, leaving the source just after it. A count of zero with
+   a non-empty string ends at the first occurrence; an empty string
+   makes count a plain byte count. */
+typedef struct Xpost_SubFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    int count;
+    unsigned char eodstr[64];
+    int eodlen;
+    unsigned char pend[64];   /* partially matched prefix to re-emit */
+    int pendn, pendi;
+} Xpost_SubFile;
+
+static int
+subfile_readch(Xpost_File *f)
+{
+    Xpost_SubFile *ff = (Xpost_SubFile *)f;
+    int c;
+    int matched;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->pendi < ff->pendn)
+        return ff->pend[ff->pendi++];
+    if (ff->eod)
+        return EOF;
+
+    if (ff->eodlen == 0)
+    {
+        /* byte count mode */
+        if (ff->count <= 0)
+        {
+            ff->eod = 1;
+            return EOF;
+        }
+        ff->count--;
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+            ff->eod = 1;
+        return c;
+    }
+
+    /* match the EOD string; on a partial mismatch the consumed prefix
+       replays from the pending buffer (the string may not contain a
+       repeated prefix hazard longer than itself, so rescanning from
+       the second byte is not needed for the delimiters in use) */
+    matched = 0;
+    for (;;)
+    {
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+        {
+            ff->eod = 1;
+            if (matched)
+            {
+                memcpy(ff->pend, ff->eodstr, matched);
+                ff->pendn = matched;
+                ff->pendi = 1;
+                return ff->pend[0];
+            }
+            return EOF;
+        }
+        if ((unsigned char)c == ff->eodstr[matched])
+        {
+            matched++;
+            if (matched == ff->eodlen)
+            {
+                if (ff->count > 1)
+                {
+                    /* deliver this occurrence and keep going */
+                    ff->count--;
+                    memcpy(ff->pend, ff->eodstr, matched);
+                    ff->pendn = matched;
+                    ff->pendi = 1;
+                    return ff->pend[0];
+                }
+                ff->eod = 1;
+                return EOF;
+            }
+            continue;
+        }
+        if (matched)
+        {
+            /* replay the matched prefix, then this byte */
+            memcpy(ff->pend, ff->eodstr, matched);
+            ff->pend[matched] = (unsigned char)c;
+            ff->pendn = matched + 1;
+            ff->pendi = 1;
+            return ff->pend[0];
+        }
+        return c;
+    }
+}
+
+#ifdef HAVE_ZLIB
+/* FlateDecode filter: a zlib stream inflated from the source, which
+   is left positioned just after the compressed data. */
+typedef struct Xpost_FlateFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    z_stream strm;
+    unsigned char in[1];
+    unsigned char out[4096];
+    int outn, outi;
+} Xpost_FlateFile;
+
+static int
+flate_readch(Xpost_File *f)
+{
+    Xpost_FlateFile *ff = (Xpost_FlateFile *)f;
+    int c, ret;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->outi < ff->outn)
+        return ff->out[ff->outi++];
+    if (ff->eod)
+        return EOF;
+
+    ff->strm.next_out = ff->out;
+    ff->strm.avail_out = sizeof(ff->out);
+    while (ff->strm.avail_out == sizeof(ff->out))
+    {
+        if (ff->strm.avail_in == 0)
+        {
+            c = xpost_file_getc(ff->source);
+            if (c == EOF)
+            {
+                ff->eod = 1;
+                break;
+            }
+            ff->in[0] = (unsigned char)c;
+            ff->strm.next_in = ff->in;
+            ff->strm.avail_in = 1;
+        }
+        ret = inflate(&ff->strm, Z_NO_FLUSH);
+        if (ret == Z_STREAM_END)
+        {
+            ff->eod = 1;
+            break;
+        }
+        if (ret != Z_OK && ret != Z_BUF_ERROR)
+        {
+            XPOST_LOG_ERR("FlateDecode error %d", ret);
+            ff->eod = 1;
+            break;
+        }
+    }
+    ff->outn = (int)(sizeof(ff->out) - ff->strm.avail_out);
+    ff->outi = 0;
+    if (ff->outi < ff->outn)
+    {
+        ff->outi = 1;
+        return ff->out[0];
+    }
+    return EOF;
+}
+#endif
+
+/* method boilerplate shared by the decode filters: they are read-only
+   streams over an unowned source with one byte of pushback */
+typedef struct Xpost_FilterBase
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+} Xpost_FilterBase;
+
+static int
+filter_writech(Xpost_File *f, int c)
+{
+    (void)f;
+    (void)c;
+    return EOF;
+}
+
+static int
+filter_close(Xpost_File *f)
+{
+    Xpost_FilterBase *ff = (Xpost_FilterBase *)f;
+
+    ff->eod = 1;
+    ff->pushback = -1;
+    return 0;
+}
+
+static int
+filter_flush(Xpost_File *f)
+{
+    (void)f;
+    return 0;
+}
+
+static void
+filter_purge(Xpost_File *f)
+{
+    Xpost_FilterBase *ff = (Xpost_FilterBase *)f;
+
+    ff->eod = 1;
+    ff->pushback = -1;
+}
+
+static int
+filter_unreadch(Xpost_File *f, int c)
+{
+    Xpost_FilterBase *ff = (Xpost_FilterBase *)f;
+
+    if (ff->pushback >= 0)
+        return EOF;
+    ff->pushback = c;
+    return 0;
+}
+
+static long
+filter_tell(Xpost_File *f)
+{
+    (void)f;
+    return 0;
+}
+
+static int
+filter_seek(Xpost_File *f, long offset)
+{
+    (void)f;
+    (void)offset;
+    return -1;
+}
+
+struct Xpost_File_Methods hex_methods =
+{
+    hex_readch, filter_writech, filter_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+struct Xpost_File_Methods rle_methods =
+{
+    rle_readch, filter_writech, filter_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+struct Xpost_File_Methods subfile_methods =
+{
+    subfile_readch, filter_writech, filter_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+#ifdef HAVE_ZLIB
+static int
+flate_close(Xpost_File *f)
+{
+    Xpost_FlateFile *ff = (Xpost_FlateFile *)f;
+
+    inflateEnd(&ff->strm);
+    ff->eod = 1;
+    ff->pushback = -1;
+    return 0;
+}
+
+struct Xpost_File_Methods flate_methods =
+{
+    flate_readch, filter_writech, flate_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+#endif
+
+/* wrap a malloc'd filter struct in a filetype object */
+static Xpost_Object
+_filter_object_cons(Xpost_Memory_File *mem, Xpost_File *ff)
+{
+    Xpost_Object f;
+    unsigned int ent;
+    int ret;
+
+    if (!ff)
+        return invalid;
+    f.tag = filetype;
+    if (!xpost_memory_table_alloc(mem, sizeof ff, filetype, &ent))
+    {
+        XPOST_LOG_ERR("cannot allocate file record");
+        return invalid;
+    }
+    f.mark_.padw = ent;
+    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof ff, &ff);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot save file pointer in VM");
+        return invalid;
+    }
+    return f;
+}
+
+Xpost_Object xpost_file_cons_filter_hex(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_HexFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = malloc(sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &hex_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->eod = 0;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
+Xpost_Object xpost_file_cons_filter_rle(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_RleFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = malloc(sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &rle_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->eod = 0;
+        ff->litrun = 0;
+        ff->reprun = 0;
+        ff->repbyte = 0;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
+Xpost_Object xpost_file_cons_filter_subfile(Xpost_Memory_File *mem, Xpost_Object src,
+                                            int count, const char *eod, int eodlen)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_SubFile *ff;
+
+    if (!source || eodlen < 0 || eodlen > 64)
+        return invalid;
+    ff = malloc(sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &subfile_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->eod = 0;
+        ff->count = count;
+        memcpy(ff->eodstr, eod, eodlen);
+        ff->eodlen = eodlen;
+        ff->pendn = ff->pendi = 0;
+        /* count 0 with a delimiter behaves as a single occurrence */
+        if (eodlen > 0 && ff->count < 1)
+            ff->count = 1;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
+#ifdef HAVE_ZLIB
+Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_FlateFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = malloc(sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &flate_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->eod = 0;
+        memset(&ff->strm, 0, sizeof ff->strm);
+        if (inflateInit(&ff->strm) != Z_OK)
+        {
+            free(ff);
+            return invalid;
+        }
+        ff->outn = ff->outi = 0;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+#endif
 
 /* construct an ASCII85Decode filter file over a source file object */
 Xpost_Object xpost_file_cons_filter_a85(Xpost_Memory_File *mem,
