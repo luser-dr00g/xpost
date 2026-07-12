@@ -1,0 +1,261 @@
+% Binary token conformance corpus (PLRM 3.14): every encoded form,
+% scanned through both the string path (cvx exec) and the file path
+% (written to SCRATCH and executed), with the resulting objects dumped
+% in a canonical form and errors reported by name.
+%
+% The expected output is generated from Ghostscript, which serves as
+% the reference implementation:
+%
+%   { echo "/SCRATCH (/tmp/bt.scratch) def"; cat binary_token_test.ps; } \
+%     | gs -q -dNOSAFER -dNOPAUSE -dBATCH -sDEVICE=nullpage - \
+%     > binary_token_test.expected
+%
+% run-bintok-test.sh compares both interpreters against that golden
+% record, so any divergence -- either implementation drifting, or the
+% golden going stale -- fails the check.
+
+% SCRATCH must be defined by the caller (a writable scratch path)
+
+% --- canonical object dump: own formatting, shared verbatim by both
+%     interpreters ---
+/dumpdict 16 dict def
+/dump { % obj . -
+    dumpdict begin
+    /o exch def
+    o xcheck { (x) print } if
+    o type /integertype eq {
+        (i) print o 24 string cvs print
+    } {
+    o type /realtype eq {
+        % reals as micro-units, avoiding formatter differences
+        (r) print o 1000000 mul round cvi 24 string cvs print
+    } {
+    o type /booleantype eq {
+        (b) print o { (t) } { (f) } ifelse print
+    } {
+    o type /stringtype eq {
+        (s\() print
+        o { dumpdict begin /c exch def
+            c 16 lt { (0) print } if
+            c 16 24 string cvrs print end } forall
+        (\)) print
+    } {
+    o type /nametype eq {
+        (n/) print o 127 string cvs print
+    } {
+    o type /arraytype eq {
+        ([) print
+        o { dump ( ) print } forall
+        (]) print
+    } {
+    o type /nulltype eq {
+        (null) print
+    } {
+    o type /marktype eq {
+        (mark) print
+    } {
+        (?) print o type 24 string cvs print
+    } ifelse } ifelse } ifelse } ifelse } ifelse } ifelse } ifelse } ifelse
+    end
+} def
+
+/casedict 8 dict def
+
+% dump the objects an execution produced above a recorded depth (a
+% pushed mark object must not be mistaken for a stack sentinel)
+/scanreport { % n . -
+    dup 0 eq {
+        pop (-) print
+    } {
+        array astore { dump ( ) print } forall
+    } ifelse
+} def
+
+/errreport { % depthbefore . -
+    count 1 sub exch sub dup 0 gt { { pop } repeat } { pop } ifelse
+    (ERR/) print $error /errorname get 127 string cvs print
+} def
+
+/btstring { % (bytes) . -
+    casedict begin
+    count 1 sub /d0 exch def   % depth beneath the bytes operand
+    { cvx exec } stopped {
+        d0 errreport
+    } {
+        count d0 sub scanreport
+    } ifelse
+    end
+} def
+
+/btfile { % (bytes) . -
+    casedict begin
+    SCRATCH (w) file dup 3 -1 roll writestring closefile
+    count /d0 exch def
+    { SCRATCH (r) file cvx exec } stopped {
+        d0 errreport
+    } {
+        count d0 sub scanreport
+    } ifelse
+    end
+} def
+
+/case { % (label) (bytes) . -
+    casedict begin /bts exch def
+    print (: S=) print
+    bts btstring
+    ( F=) print
+    bts btfile
+    (\n) print
+    end
+} def
+
+% --- integers: all five encodings, signed edges ---
+(int8 zero)  <8800> case
+(int8 max)   <887F> case
+(int8 min)   <8880> case
+(int16 be)   <860102> case
+(int16 le)   <870201> case
+(int16 be neg) <86FFFE> case
+(int32 be)   <8401020304> case
+(int32 le)   <8504030201> case
+(int32 be min) <8480000000> case
+(int32 be neg1) <84FFFFFFFF> case
+
+% --- reals ---
+(real ieee be 1.0)   <8A3F800000> case
+(real ieee le 1.0)   <8B0000803F> case
+(real ieee be -0.5)  <8ABF000000> case
+(real native 1.0 le-host) <8C0000803F> case
+
+% --- fixed point 137: rep = width, scale, byte order ---
+(fixed 32be scale0)  <890001020304> case
+(fixed 32be scale5)  <890500000120> case
+(fixed 32be scale31) <891F40000000> case
+(fixed 16be scale0)  <89200102> case
+(fixed 16be scale1)  <89210102> case
+(fixed 16be neg)     <8921FFFE> case
+(fixed 16be scale15) <892F4000> case
+(fixed 32le scale0)  <898001020304> case
+(fixed 16le scale0)  <89A00102> case
+(fixed ieee be)      <89303F800000> case
+(fixed native)       <89310000803F> case
+(fixed ieee le)      <89B00000803F> case
+(fixed bad rep)      <893201> case
+
+% --- booleans ---
+(bool false) <8D00> case
+(bool true)  <8D01> case
+(bool other) <8DFF> case
+
+% --- strings ---
+(string empty)   <8E00> case
+(string abc)     <8E03616263> case
+(string binary)  <8E0300FF80> case
+(string len2 be) <8F0003616263> case
+(string len2 le) <900300616263> case
+
+% --- system names: spot values, then the exhaustive table sweep ---
+(sysname lit 0)     <9100> case
+(sysname exec 17)   <9211> case
+(sysname lit 223)   <91DF> case
+(sysname unassigned) <91E2> case
+(exec sysname abs: ) print
+    casedict begin count /d0 exch def end
+    -7 <9200> { cvx exec } stopped
+    { casedict /d0 get errreport } { count casedict /d0 get sub scanreport } ifelse (\n) print
+
+% --- user names: no table exists to index ---
+(username lit)  <9300> case
+(username exec) <9400> case
+
+% --- homogeneous number arrays 149 ---
+(hna empty)        <95200000> case
+(hna 16be scale0)  <9520000300010002FFFE> case
+(hna 16be scale2)  <95220001 0006> case
+(hna 32be scale0)  <9500000200000001FFFFFFFF> case
+(hna 32be scale4)  <9504000100000030> case
+(hna 16le scale0)  <95A0020001000200> case
+(hna 32le scale0)  <9580010005000000> case
+(hna ieee be)      <953000023F800000BF000000> case
+(hna ieee le)      <95B001000000803F> case
+(hna native)       <953100010000803F> case
+(hna bad rep)      <95320001 0000> case
+
+% --- binary object sequences 128..131 ---
+(bseq one int)      <8001000C 01000000 00000005> case
+(bseq exec int)     <8001000C 81000000 00000005> case
+(bseq exec real)    <8001000C 82000000 3F800000> case
+(bseq exec bool)    <8001000C 84000000 00000001> case
+(bseq two ints)     <80020014 01000000 00000001 01000000 00000002> case
+(bseq null)         <8001000C 00000000 00000000> case
+(bseq null nonzero) <8001000C 00000000 00000001> case
+(bseq mark)         <8001000C 0A000000 00000000> case
+(bseq bool)         <8001000C 04000000 00000001> case
+% a boolean record value other than 0 or 1 is outside the encoding;
+% the reference implementation's response is not meaningful, so the
+% corner stays unprobed
+(bseq real ieee be) <8001000C 02000000 3F800000> case
+(bseq int le)       <8101 0C00 01000000 05000000> case
+(bseq real native le-host) <8301 0C00 02000000 0000803F> case
+% composite bodies (text, elements) are addressed relative to the
+% object records and are only defined for the low-order forms; the
+% high-order forms must reject them
+(bseq lit name be)  <80010011 03000500 00000008 6162636465> case
+(bseq string be)    <80010010 05000400 00000008 61626364> case
+(bseq array be)     <8001001C 09000200 00000008 01000000 00000007 04000000 00000001> case
+(bseq lit name le)  <8101 1100 03000500 08000000 6162636465> case
+(bseq name len0 user) <8001000C 03000000 00000000> case
+(bseq string le)    <8101 1000 05000400 08000000 61626364> case
+(bseq exec string le) <8101 1000 85000400 08000000 61626364> case
+(bseq empty string) <8101 0C00 05000000 00000000> case
+(bseq array le)     <8101 1C00 09000200 08000000 01000000 07000000 04000000 01000000> case
+(bseq exec array le) <8101 1C00 89000200 08000000 01000000 07000000 01000000 08000000> case
+(bseq exec name executes: ) print
+    casedict begin count /d0 exch def end
+    -9 <8101 0F00 83000300 08000000 616273>
+    { cvx exec } stopped
+    { casedict /d0 get errreport } { count casedict /d0 get sub scanreport } ifelse (\n) print
+/btsix 77 def
+(bseq eval name t6)  <8101 1100 06000500 08000000 6274736978> case
+(bseq eval name exec t6) <8101 1100 86000500 08000000 6274736978> case
+(bseq bad type)     <8001000C 07000000 00000000> case
+(bseq short len)    <80010008 01000000 00000005> case
+(bseq int 16le hdr) <81010C00 01000000 05000000> case
+
+% --- extended header: count byte 0, then 2-byte count, 4-byte length ---
+(bseq ext hdr one int) <80000001 00000010 01000000 00000005> case
+
+% --- token delimiting: binary bytes end the preceding token ---
+(delimit name)   <747275658800> case
+(delimit number) <31328821> case
+
+% --- truncation: every proper prefix of a representative of each
+%     form must fail cleanly ---
+/truncsweep { % (label) (bytes)
+    casedict begin /bts exch def /lbl exch def
+    1 1 bts length 1 sub {
+        lbl print ( cut ) print dup 24 string cvs print (: ) print
+        bts 0 3 -1 roll getinterval btstring
+        (\n) print
+    } for
+    end
+} def
+(int32)  <8401020304> truncsweep
+(fixed)  <89200102> truncsweep
+(string) <8E03616263> truncsweep
+(hna)    <952000010001> truncsweep
+(bseq)   <8001000C 01000000 00000005> truncsweep
+
+% --- the exhaustive system name table sweep: index 0..255, literal
+%     form; the assigned entries and the error behaviour of the
+%     unassigned range are both part of the contract ---
+0 1 255 {
+    casedict begin /i exch def
+    (sysname ) print i 24 string cvs print (: ) print
+    <9100> dup 1 i put btstring
+    (\n) print
+    end
+} for
+
+(BINARY-TOKEN-CORPUS-DONE\n) print
+flush

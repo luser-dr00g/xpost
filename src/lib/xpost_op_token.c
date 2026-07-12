@@ -652,6 +652,297 @@ int bt_read(Xpost_Context *ctx,
     return 1;
 }
 
+/* Number representation byte, shared by the fixed-point token (137)
+   and homogeneous number arrays (149): the low bits select width and
+   scale, bit 7 selects byte order.
+     0..31    32-bit fixed point, scale 0..31
+     32..47   16-bit fixed point, scale 0..15
+     48       32-bit IEEE real
+     49       32-bit native real
+   A scale of zero yields an integer; any other scale divides the
+   signed fixed value by 2^scale into a real. */
+static
+int bt_rep_size(unsigned int rep)
+{
+    unsigned int r = rep & 127;
+
+    if (r <= 31 || r == 48 || r == 49)
+        return 4;
+    if (r <= 47)
+        return 2;
+    return 0;
+}
+
+static
+int bt_rep_number(unsigned int rep, const unsigned char *p, Xpost_Object *retval)
+{
+    unsigned int r = rep & 127;
+    int le = rep >= 128;
+
+    if (r == 48 || r == 49)
+    {
+        unsigned int v;
+        float f;
+
+        if (r == 49)
+            memcpy(&v, p, 4);      /* native order */
+        else if (le)
+            v = ((unsigned int)p[3] << 24) | ((unsigned int)p[2] << 16) | ((unsigned int)p[1] << 8) | p[0];
+        else
+            v = ((unsigned int)p[0] << 24) | ((unsigned int)p[1] << 16) | ((unsigned int)p[2] << 8) | p[3];
+        memcpy(&f, &v, 4);
+        *retval = xpost_real_cons((real)f);
+        return 0;
+    }
+    if (r <= 31)
+    {
+        unsigned int v = le
+            ? ((unsigned int)p[3] << 24) | ((unsigned int)p[2] << 16) | ((unsigned int)p[1] << 8) | p[0]
+            : ((unsigned int)p[0] << 24) | ((unsigned int)p[1] << 16) | ((unsigned int)p[2] << 8) | p[3];
+        int i = (int)v;
+
+        if (r == 0)
+            *retval = xpost_int_cons(i);
+        else
+            *retval = xpost_real_cons((real)(i / (double)(1u << r)));
+        return 0;
+    }
+    if (r <= 47)
+    {
+        unsigned short v = le ? (unsigned short)((p[1] << 8) | p[0])
+                              : (unsigned short)((p[0] << 8) | p[1]);
+        short i = (short)v;
+        unsigned int scale = r - 32;
+
+        if (scale == 0)
+            *retval = xpost_int_cons(i);
+        else
+            *retval = xpost_real_cons((real)(i / (double)(1u << scale)));
+        return 0;
+    }
+    return syntaxerror;
+}
+
+/* Binary object sequence (PLRM 3.14.1): a self-delimiting block of
+   encoded objects. The header carries the top-level count and total
+   length; each object is an 8-byte record, with composite bodies
+   (array element records, string and name text) at record-relative
+   offsets in the remainder. The whole sequence scans to one
+   executable array of the top-level objects, which the interpreter
+   executes (unlike a brace procedure, which it defers). */
+static
+int bt_seq_object(Xpost_Context *ctx,
+                  const unsigned char *buf,
+                  unsigned int buflen,
+                  unsigned int base,
+                  unsigned int recoff,
+                  int le,
+                  int natreal,
+                  int depth,
+                  Xpost_Object *retval)
+{
+    const unsigned char *p;
+    unsigned int type, xflag, length, value;
+    Xpost_Object obj;
+
+    if (depth > 32 || recoff + 8 > buflen)
+        return syntaxerror;
+    p = buf + recoff;
+    xflag = p[0] & 0x80;
+    type = p[0] & 0x7f;
+    length = le ? (unsigned int)((p[3] << 8) | p[2])
+                : (unsigned int)((p[2] << 8) | p[3]);
+    value = le
+        ? ((unsigned int)p[7] << 24) | ((unsigned int)p[6] << 16) | ((unsigned int)p[5] << 8) | p[4]
+        : ((unsigned int)p[4] << 24) | ((unsigned int)p[5] << 16) | ((unsigned int)p[6] << 8) | p[7];
+
+    /* records that use the value as an offset (string and name text,
+       array elements) are only defined for the low-order header
+       forms; offsets are relative to the start of the object records */
+    switch (type)
+    {
+        case 0:  /* null: no other content is valid */
+            if (length != 0 || value != 0)
+                return syntaxerror;
+            obj = null;
+            break;
+        case 1:  /* integer */
+            obj = xpost_int_cons((integer)(int)value);
+            break;
+        case 2:  /* real */
+            {
+                float f;
+
+                if (natreal)
+                    /* native reals travel in the native byte order,
+                       independent of the header order */
+                    memcpy(&f, p + 4, 4);
+                else
+                    memcpy(&f, &value, 4);
+                obj = xpost_real_cons((real)f);
+            }
+            break;
+        case 3:  /* name: text at offset, or a user name table index */
+        case 6:  /* as 3, but the value replaces the name at scan time */
+            if (length == 0)
+            {
+                /* no operator populates the user name table */
+                XPOST_LOG_ERR("user name index %d: no user name table", (int)value);
+                return undefined;
+            }
+            else
+            {
+                char *nm;
+                if (!le || length > 127
+                 || base + value + length > buflen)
+                    return syntaxerror;
+                nm = malloc(length + 1);
+                if (!nm)
+                    return VMerror;
+                memcpy(nm, buf + base + value, length);
+                nm[length] = '\0';
+                obj = xpost_name_cons(ctx, nm);
+                free(nm);
+            }
+            if (xpost_object_get_type(obj) == invalidtype)
+                return VMerror;
+            if (type == 6)
+            {
+                int ret = xpost_op_any_load(ctx, xpost_object_cvx(obj));
+                if (ret)
+                    return ret;
+                obj = xpost_stack_pop(ctx->lo, ctx->os);
+                *retval = obj;
+                return 0;
+            }
+            break;
+        case 4:  /* boolean */
+            if (value > 1)
+                return syntaxerror;
+            obj = xpost_bool_cons(value != 0);
+            break;
+        case 5:  /* string */
+            if (length && (!le || base + value + length > buflen))
+                return syntaxerror;
+            obj = xpost_string_cons(ctx, length, (char *)(buf + base + value));
+            if (xpost_object_get_type(obj) == nulltype)
+                return VMerror;
+            break;
+        case 9:  /* array: length records at the offset */
+            {
+                unsigned int i;
+                int ret;
+
+                if (length && (!le || base + value + (unsigned int)length * 8 > buflen))
+                    return syntaxerror;
+                obj = xpost_array_cons(ctx, length);
+                if (xpost_object_get_type(obj) == nulltype)
+                    return VMerror;
+                for (i = 0; i < length; i++)
+                {
+                    Xpost_Object el;
+
+                    ret = bt_seq_object(ctx, buf, buflen, base, base + value + i * 8, le, natreal, depth + 1, &el);
+                    if (ret)
+                        return ret;
+                    xpost_array_put(ctx, obj, i, el);
+                }
+            }
+            break;
+        case 10: /* mark */
+            if (length != 0 || value != 0)
+                return syntaxerror;
+            obj = mark;
+            break;
+        default:
+            XPOST_LOG_ERR("unsupported type %u in binary object sequence", type);
+            return syntaxerror;
+    }
+    /* the executable attribute is meaningful for names, strings and
+       arrays; scalar records carry it without effect */
+    if (type == 3 || type == 5 || type == 9)
+        *retval = xflag ? xpost_object_cvx(obj) : xpost_object_cvlit(obj);
+    else
+        *retval = xpost_object_cvlit(obj);
+    return 0;
+}
+
+static
+int bt_sequence(Xpost_Context *ctx,
+                unsigned int t,
+                Xpost_Object *src,
+                int (*next)(Xpost_Context *ctx, Xpost_Object *src),
+                Xpost_Object *retval)
+{
+    int le = (t == 129) || (t == 131);
+    int natreal = (t == 130) || (t == 131);
+    unsigned char hdr[8];
+    unsigned int count, length, hdrlen;
+    unsigned char *buf;
+    Xpost_Object arr;
+    unsigned int i;
+    int ret;
+
+    if (!bt_read(ctx, src, next, hdr + 1, 3))
+        return syntaxerror;
+    if (hdr[1] != 0)
+    {
+        count = hdr[1];
+        length = le ? (unsigned int)((hdr[3] << 8) | hdr[2])
+                    : (unsigned int)((hdr[2] << 8) | hdr[3]);
+        hdrlen = 4;
+    }
+    else
+    {
+        /* extended header: 2-byte count and 4-byte length follow */
+        if (!bt_read(ctx, src, next, hdr + 4, 4))
+            return syntaxerror;
+        count = le ? (unsigned int)((hdr[3] << 8) | hdr[2])
+                   : (unsigned int)((hdr[2] << 8) | hdr[3]);
+        length = le
+            ? ((unsigned int)hdr[7] << 24) | ((unsigned int)hdr[6] << 16) | ((unsigned int)hdr[5] << 8) | hdr[4]
+            : ((unsigned int)hdr[4] << 24) | ((unsigned int)hdr[5] << 16) | ((unsigned int)hdr[6] << 8) | hdr[7];
+        hdrlen = 8;
+    }
+    if (length < hdrlen + count * 8u || length > 1u << 20)
+        return syntaxerror;
+
+    /* buffer the whole sequence; record offsets address into it */
+    buf = malloc(length);
+    if (!buf)
+        return VMerror;
+    memset(buf, 0, hdrlen);
+    if (!bt_read(ctx, src, next, buf + hdrlen, (int)(length - hdrlen)))
+    {
+        free(buf);
+        return syntaxerror;
+    }
+
+    arr = xpost_array_cons(ctx, count);
+    if (xpost_object_get_type(arr) == nulltype)
+    {
+        free(buf);
+        return VMerror;
+    }
+    for (i = 0; i < count; i++)
+    {
+        Xpost_Object el;
+
+        ret = bt_seq_object(ctx, buf, length, hdrlen, hdrlen + i * 8, le, natreal, 0, &el);
+        if (ret)
+        {
+            free(buf);
+            return ret;
+        }
+        xpost_array_put(ctx, arr, i, el);
+    }
+    free(buf);
+    /* the sequence executes; only brace procedures defer */
+    ctx->scanner_defer = 0;
+    *retval = xpost_object_cvx(arr);
+    return 0;
+}
+
 static
 int binary_token(Xpost_Context *ctx,
                  unsigned int t,
@@ -663,6 +954,71 @@ int binary_token(Xpost_Context *ctx,
 
     switch (t)
     {
+        case 128: case 129: case 130: case 131:  /* binary object sequence */
+            return bt_sequence(ctx, t, src, next, retval);
+        case 137:  /* fixed-point number: representation byte, then value */
+            {
+                unsigned char q[4];
+                int sz;
+
+                if (!bt_read(ctx, src, next, p, 1))
+                    return syntaxerror;
+                sz = bt_rep_size(p[0]);
+                if (sz == 0)
+                    return syntaxerror;
+                if (!bt_read(ctx, src, next, q, sz))
+                    return syntaxerror;
+                return bt_rep_number(p[0], q, retval);
+            }
+        case 147: case 148:  /* user name table: nothing populates it */
+            if (!bt_read(ctx, src, next, p, 1))
+                return syntaxerror;
+            XPOST_LOG_ERR("user name index %d: no user name table", p[0]);
+            return undefined;
+        case 149:  /* homogeneous number array */
+            {
+                unsigned int rep, count, i;
+                int sz;
+                unsigned char *buf;
+                Xpost_Object arr;
+
+                if (!bt_read(ctx, src, next, p, 3))
+                    return syntaxerror;
+                rep = p[0];
+                count = rep >= 128 ? (unsigned int)((p[2] << 8) | p[1])
+                                   : (unsigned int)((p[1] << 8) | p[2]);
+                sz = bt_rep_size(rep);
+                if (sz == 0)
+                    return syntaxerror;
+                buf = malloc((size_t)count * sz + 1);
+                if (!buf)
+                    return VMerror;
+                if (!bt_read(ctx, src, next, buf, (int)(count * sz)))
+                {
+                    free(buf);
+                    return syntaxerror;
+                }
+                arr = xpost_array_cons(ctx, count);
+                if (xpost_object_get_type(arr) == nulltype)
+                {
+                    free(buf);
+                    return VMerror;
+                }
+                for (i = 0; i < count; i++)
+                {
+                    Xpost_Object el;
+                    int ret = bt_rep_number(rep, buf + (size_t)i * sz, &el);
+                    if (ret)
+                    {
+                        free(buf);
+                        return ret;
+                    }
+                    xpost_array_put(ctx, arr, i, el);
+                }
+                free(buf);
+                *retval = xpost_object_cvlit(arr);
+            }
+            return 0;
         case 132: case 133:  /* 32-bit integer, high/low order */
             if (!bt_read(ctx, src, next, p, 4))
                 return syntaxerror;
@@ -706,6 +1062,8 @@ int binary_token(Xpost_Context *ctx,
             return 0;
         case 141:  /* boolean */
             if (!bt_read(ctx, src, next, p, 1))
+                return syntaxerror;
+            if (p[0] > 1)
                 return syntaxerror;
             *retval = xpost_bool_cons(p[0] != 0);
             return 0;
@@ -782,6 +1140,7 @@ int toke(Xpost_Context *ctx,
         return unregistered;
     }
 
+    ctx->scanner_defer = 1;
     sta = snip(ctx, buf, src, next);
     if (!sta)
     {

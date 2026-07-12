@@ -1072,7 +1072,7 @@ int evalstring(Xpost_Context *ctx, Xpost_Object s)
             return stackunderflow;
         if (!xpost_stack_push(ctx->lo, ctx->es, s))
             return execstackoverflow;
-        if (xpost_object_get_type(t)==arraytype)
+        if (xpost_object_get_type(t)==arraytype && ctx->scanner_defer)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os , t))
                 return stackoverflow;
@@ -1106,7 +1106,7 @@ int evalfile(Xpost_Context *ctx, Xpost_Object f)
         t = xpost_stack_pop(ctx->lo, ctx->os);
         if (!xpost_stack_push(ctx->lo, ctx->es, f))
             return execstackoverflow;
-        if (xpost_object_get_type(t)==arraytype)
+        if (xpost_object_get_type(t)==arraytype && ctx->scanner_defer)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os, t))
                 return stackoverflow;

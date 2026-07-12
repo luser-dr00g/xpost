@@ -1,0 +1,368 @@
+int8 zero: S=i0  F=i0 
+int8 max: S=i127  F=i127 
+int8 min: S=i-128  F=i-128 
+int16 be: S=i258  F=i258 
+int16 le: S=i258  F=i258 
+int16 be neg: S=i-2  F=i-2 
+int32 be: S=i16909060  F=i16909060 
+int32 le: S=i16909060  F=i16909060 
+int32 be min: S=i-2147483648  F=i-2147483648 
+int32 be neg1: S=i-1  F=i-1 
+real ieee be 1.0: S=r1000000  F=r1000000 
+real ieee le 1.0: S=r1000000  F=r1000000 
+real ieee be -0.5: S=r-500000  F=r-500000 
+real native 1.0 le-host: S=r1000000  F=r1000000 
+fixed 32be scale0: S=i16909060  F=i16909060 
+fixed 32be scale5: S=r9000000  F=r9000000 
+fixed 32be scale31: S=r500000  F=r500000 
+fixed 16be scale0: S=i258  F=i258 
+fixed 16be scale1: S=r129000000  F=r129000000 
+fixed 16be neg: S=r-1000000  F=r-1000000 
+fixed 16be scale15: S=r500000  F=r500000 
+fixed 32le scale0: S=i67305985  F=i67305985 
+fixed 16le scale0: S=i513  F=i513 
+fixed ieee be: S=r1000000  F=r1000000 
+fixed native: S=r1000000  F=r1000000 
+fixed ieee le: S=r1000000  F=r1000000 
+fixed bad rep: S=ERR/syntaxerror F=ERR/syntaxerror
+bool false: S=bf  F=bf 
+bool true: S=bt  F=bt 
+bool other: S=ERR/syntaxerror F=ERR/syntaxerror
+string empty: S=s()  F=s() 
+string abc: S=s(616263)  F=s(616263) 
+string binary: S=s(00FF80)  F=s(00FF80) 
+string len2 be: S=s(616263)  F=s(616263) 
+string len2 le: S=s(616263)  F=s(616263) 
+sysname lit 0: S=n/abs  F=n/abs 
+sysname exec 17: S=ERR/stackunderflow F=ERR/stackunderflow
+sysname lit 223: S=n/setglobal  F=n/setglobal 
+sysname unassigned: S=ERR/undefined F=ERR/undefined
+exec sysname abs: i7 
+username lit: S=ERR/undefined F=ERR/undefined
+username exec: S=ERR/undefined F=ERR/undefined
+hna empty: S=[]  F=[] 
+hna 16be scale0: S=[i1 i2 i-2 ]  F=[i1 i2 i-2 ] 
+hna 16be scale2: S=[r1500000 ]  F=[r1500000 ] 
+hna 32be scale0: S=[i1 i-1 ]  F=[i1 i-1 ] 
+hna 32be scale4: S=[r3000000 ]  F=[r3000000 ] 
+hna 16le scale0: S=[i1 i2 ]  F=[i1 i2 ] 
+hna 32le scale0: S=[i5 ]  F=[i5 ] 
+hna ieee be: S=[r1000000 r-500000 ]  F=[r1000000 r-500000 ] 
+hna ieee le: S=[r1000000 ]  F=[r1000000 ] 
+hna native: S=[r1000000 ]  F=[r1000000 ] 
+hna bad rep: S=ERR/syntaxerror F=ERR/syntaxerror
+bseq one int: S=i5  F=i5 
+bseq exec int: S=i5  F=i5 
+bseq exec real: S=r1000000  F=r1000000 
+bseq exec bool: S=bt  F=bt 
+bseq two ints: S=i1 i2  F=i1 i2 
+bseq null: S=null  F=null 
+bseq null nonzero: S=ERR/syntaxerror F=ERR/syntaxerror
+bseq mark: S=mark  F=mark 
+bseq bool: S=bt  F=bt 
+bseq real ieee be: S=r1000000  F=r1000000 
+bseq int le: S=i5  F=i5 
+bseq real native le-host: S=r1000000  F=r1000000 
+bseq lit name be: S=ERR/syntaxerror F=ERR/syntaxerror
+bseq string be: S=ERR/syntaxerror F=ERR/syntaxerror
+bseq array be: S=ERR/syntaxerror F=ERR/syntaxerror
+bseq lit name le: S=n/abcde  F=n/abcde 
+bseq name len0 user: S=ERR/undefined F=ERR/undefined
+bseq string le: S=s(61626364)  F=s(61626364) 
+bseq exec string le: S=ERR/undefined F=ERR/undefined
+bseq empty string: S=s()  F=s() 
+bseq array le: S=[i7 bt ]  F=[i7 bt ] 
+bseq exec array le: S=i8  F=i8 
+bseq exec name executes: i9 
+bseq eval name t6: S=i77  F=i77 
+bseq eval name exec t6: S=i77  F=i77 
+bseq bad type: S=ERR/syntaxerror F=ERR/syntaxerror
+bseq short len: S=ERR/syntaxerror F=ERR/syntaxerror
+bseq int 16le hdr: S=i5  F=i5 
+bseq ext hdr one int: S=i5  F=i5 
+delimit name: S=bt i0  F=bt i0 
+delimit number: S=i12 i33  F=i12 i33 
+int32 cut 1: ERR/syntaxerror
+int32 cut 2: ERR/syntaxerror
+int32 cut 3: ERR/syntaxerror
+int32 cut 4: ERR/syntaxerror
+fixed cut 1: ERR/syntaxerror
+fixed cut 2: ERR/syntaxerror
+fixed cut 3: ERR/syntaxerror
+string cut 1: ERR/syntaxerror
+string cut 2: ERR/syntaxerror
+string cut 3: ERR/syntaxerror
+string cut 4: ERR/syntaxerror
+hna cut 1: ERR/syntaxerror
+hna cut 2: ERR/syntaxerror
+hna cut 3: ERR/syntaxerror
+hna cut 4: ERR/syntaxerror
+hna cut 5: ERR/syntaxerror
+bseq cut 1: ERR/syntaxerror
+bseq cut 2: ERR/syntaxerror
+bseq cut 3: ERR/syntaxerror
+bseq cut 4: ERR/syntaxerror
+bseq cut 5: ERR/syntaxerror
+bseq cut 6: ERR/syntaxerror
+bseq cut 7: ERR/syntaxerror
+bseq cut 8: ERR/syntaxerror
+bseq cut 9: ERR/syntaxerror
+bseq cut 10: ERR/syntaxerror
+bseq cut 11: ERR/syntaxerror
+sysname 0: n/abs 
+sysname 1: n/add 
+sysname 2: n/aload 
+sysname 3: n/anchorsearch 
+sysname 4: n/and 
+sysname 5: n/arc 
+sysname 6: n/arcn 
+sysname 7: n/arct 
+sysname 8: n/arcto 
+sysname 9: n/array 
+sysname 10: n/ashow 
+sysname 11: n/astore 
+sysname 12: n/awidthshow 
+sysname 13: n/begin 
+sysname 14: n/bind 
+sysname 15: n/bitshift 
+sysname 16: n/ceiling 
+sysname 17: n/charpath 
+sysname 18: n/clear 
+sysname 19: n/cleartomark 
+sysname 20: n/clip 
+sysname 21: n/clippath 
+sysname 22: n/closepath 
+sysname 23: n/concat 
+sysname 24: n/concatmatrix 
+sysname 25: n/copy 
+sysname 26: n/count 
+sysname 27: n/counttomark 
+sysname 28: n/currentcmykcolor 
+sysname 29: n/currentdash 
+sysname 30: n/currentdict 
+sysname 31: n/currentfile 
+sysname 32: n/currentfont 
+sysname 33: n/currentgray 
+sysname 34: n/currentgstate 
+sysname 35: n/currenthsbcolor 
+sysname 36: n/currentlinecap 
+sysname 37: n/currentlinejoin 
+sysname 38: n/currentlinewidth 
+sysname 39: n/currentmatrix 
+sysname 40: n/currentpoint 
+sysname 41: n/currentrgbcolor 
+sysname 42: n/currentshared 
+sysname 43: n/curveto 
+sysname 44: n/cvi 
+sysname 45: n/cvlit 
+sysname 46: n/cvn 
+sysname 47: n/cvr 
+sysname 48: n/cvrs 
+sysname 49: n/cvs 
+sysname 50: n/cvx 
+sysname 51: n/def 
+sysname 52: n/defineusername 
+sysname 53: n/dict 
+sysname 54: n/div 
+sysname 55: n/dtransform 
+sysname 56: n/dup 
+sysname 57: n/end 
+sysname 58: n/eoclip 
+sysname 59: n/eofill 
+sysname 60: n/eoviewclip 
+sysname 61: n/eq 
+sysname 62: n/exch 
+sysname 63: n/exec 
+sysname 64: n/exit 
+sysname 65: n/file 
+sysname 66: n/fill 
+sysname 67: n/findfont 
+sysname 68: n/flattenpath 
+sysname 69: n/floor 
+sysname 70: n/flush 
+sysname 71: n/flushfile 
+sysname 72: n/for 
+sysname 73: n/forall 
+sysname 74: n/ge 
+sysname 75: n/get 
+sysname 76: n/getinterval 
+sysname 77: n/grestore 
+sysname 78: n/gsave 
+sysname 79: n/gstate 
+sysname 80: n/gt 
+sysname 81: n/identmatrix 
+sysname 82: n/idiv 
+sysname 83: n/idtransform 
+sysname 84: n/if 
+sysname 85: n/ifelse 
+sysname 86: n/image 
+sysname 87: n/imagemask 
+sysname 88: n/index 
+sysname 89: n/ineofill 
+sysname 90: n/infill 
+sysname 91: n/initviewclip 
+sysname 92: n/inueofill 
+sysname 93: n/inufill 
+sysname 94: n/invertmatrix 
+sysname 95: n/itransform 
+sysname 96: n/known 
+sysname 97: n/le 
+sysname 98: n/length 
+sysname 99: n/lineto 
+sysname 100: n/load 
+sysname 101: n/loop 
+sysname 102: n/lt 
+sysname 103: n/makefont 
+sysname 104: n/matrix 
+sysname 105: n/maxlength 
+sysname 106: n/mod 
+sysname 107: n/moveto 
+sysname 108: n/mul 
+sysname 109: n/ne 
+sysname 110: n/neg 
+sysname 111: n/newpath 
+sysname 112: n/not 
+sysname 113: n/null 
+sysname 114: n/or 
+sysname 115: n/pathbbox 
+sysname 116: n/pathforall 
+sysname 117: n/pop 
+sysname 118: n/print 
+sysname 119: n/printobject 
+sysname 120: n/put 
+sysname 121: n/putinterval 
+sysname 122: n/rcurveto 
+sysname 123: n/read 
+sysname 124: n/readhexstring 
+sysname 125: n/readline 
+sysname 126: n/readstring 
+sysname 127: n/rectclip 
+sysname 128: n/rectfill 
+sysname 129: n/rectstroke 
+sysname 130: n/rectviewclip 
+sysname 131: n/repeat 
+sysname 132: n/restore 
+sysname 133: n/rlineto 
+sysname 134: n/rmoveto 
+sysname 135: n/roll 
+sysname 136: n/rotate 
+sysname 137: n/round 
+sysname 138: n/save 
+sysname 139: n/scale 
+sysname 140: n/scalefont 
+sysname 141: n/search 
+sysname 142: n/selectfont 
+sysname 143: n/setbbox 
+sysname 144: n/setcachedevice 
+sysname 145: n/setcachedevice2 
+sysname 146: n/setcharwidth 
+sysname 147: n/setcmykcolor 
+sysname 148: n/setdash 
+sysname 149: n/setfont 
+sysname 150: n/setgray 
+sysname 151: n/setgstate 
+sysname 152: n/sethsbcolor 
+sysname 153: n/setlinecap 
+sysname 154: n/setlinejoin 
+sysname 155: n/setlinewidth 
+sysname 156: n/setmatrix 
+sysname 157: n/setrgbcolor 
+sysname 158: n/setshared 
+sysname 159: n/shareddict 
+sysname 160: n/show 
+sysname 161: n/showpage 
+sysname 162: n/stop 
+sysname 163: n/stopped 
+sysname 164: n/store 
+sysname 165: n/string 
+sysname 166: n/stringwidth 
+sysname 167: n/stroke 
+sysname 168: n/strokepath 
+sysname 169: n/sub 
+sysname 170: n/systemdict 
+sysname 171: n/token 
+sysname 172: n/transform 
+sysname 173: n/translate 
+sysname 174: n/truncate 
+sysname 175: n/type 
+sysname 176: n/uappend 
+sysname 177: n/ucache 
+sysname 178: n/ueofill 
+sysname 179: n/ufill 
+sysname 180: n/undef 
+sysname 181: n/upath 
+sysname 182: n/userdict 
+sysname 183: n/ustroke 
+sysname 184: n/viewclip 
+sysname 185: n/viewclippath 
+sysname 186: n/where 
+sysname 187: n/widthshow 
+sysname 188: n/write 
+sysname 189: n/writehexstring 
+sysname 190: n/writeobject 
+sysname 191: n/writestring 
+sysname 192: n/wtranslation 
+sysname 193: n/xor 
+sysname 194: n/xshow 
+sysname 195: n/xyshow 
+sysname 196: n/yshow 
+sysname 197: n/FontDirectory 
+sysname 198: n/SharedFontDirectory 
+sysname 199: n/Courier 
+sysname 200: n/Courier-Bold 
+sysname 201: n/Courier-BoldOblique 
+sysname 202: n/Courier-Oblique 
+sysname 203: n/Helvetica 
+sysname 204: n/Helvetica-Bold 
+sysname 205: n/Helvetica-BoldOblique 
+sysname 206: n/Helvetica-Oblique 
+sysname 207: n/Symbol 
+sysname 208: n/Times-Bold 
+sysname 209: n/Times-BoldItalic 
+sysname 210: n/Times-Italic 
+sysname 211: n/Times-Roman 
+sysname 212: n/execuserobject 
+sysname 213: n/currentcolor 
+sysname 214: n/currentcolorspace 
+sysname 215: n/currentglobal 
+sysname 216: n/execform 
+sysname 217: n/filter 
+sysname 218: n/findresource 
+sysname 219: n/globaldict 
+sysname 220: n/makepattern 
+sysname 221: n/setcolor 
+sysname 222: n/setcolorspace 
+sysname 223: n/setglobal 
+sysname 224: n/setpagedevice 
+sysname 225: n/setpattern 
+sysname 226: ERR/undefined
+sysname 227: ERR/undefined
+sysname 228: ERR/undefined
+sysname 229: ERR/undefined
+sysname 230: ERR/undefined
+sysname 231: ERR/undefined
+sysname 232: ERR/undefined
+sysname 233: ERR/undefined
+sysname 234: ERR/undefined
+sysname 235: ERR/undefined
+sysname 236: ERR/undefined
+sysname 237: ERR/undefined
+sysname 238: ERR/undefined
+sysname 239: ERR/undefined
+sysname 240: ERR/undefined
+sysname 241: ERR/undefined
+sysname 242: ERR/undefined
+sysname 243: ERR/undefined
+sysname 244: ERR/undefined
+sysname 245: ERR/undefined
+sysname 246: ERR/undefined
+sysname 247: ERR/undefined
+sysname 248: ERR/undefined
+sysname 249: ERR/undefined
+sysname 250: ERR/undefined
+sysname 251: ERR/undefined
+sysname 252: ERR/undefined
+sysname 253: ERR/undefined
+sysname 254: ERR/undefined
+sysname 255: ERR/undefined
+BINARY-TOKEN-CORPUS-DONE
