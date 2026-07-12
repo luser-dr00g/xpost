@@ -98,17 +98,25 @@
     >>
     /DeviceCMYK <<
         /DeviceGray {
-            O
+            0
             0
             0
             1 graphicsdict /currgstate get /colorcomp1 get sub
         } bind
         /DeviceRGB {
-            1 graphicsdict /currgstate get /colorcomp1 get sub % c
-            1 graphicsdict /currgstate get /colorcomp2 get sub % c m
-            1 graphicsdict /currgstate get /colorcomp3 get sub % c m y
-            3 copy .min .min % c m y k
-            %FIXME invoke undercolorremoval and blackgeneration
+            % full black generation and undercolor removal: the common
+            % component moves entirely into the black channel, so black
+            % separates as pure K rather than four inks
+            1 graphicsdict /currgstate get /colorcomp1 get sub
+            1 graphicsdict /currgstate get /colorcomp2 get sub .min
+            1 graphicsdict /currgstate get /colorcomp3 get sub .min  % k
+            dup dup dup                                              % k k k k
+            1 graphicsdict /currgstate get /colorcomp1 get sub exch sub % k k k c'
+            4 1 roll                                                 % c' k k k
+            1 graphicsdict /currgstate get /colorcomp2 get sub exch sub % c' k k m'
+            3 1 roll                                                 % c' m' k k
+            1 graphicsdict /currgstate get /colorcomp3 get sub exch sub % c' m' k y'
+            exch                                                     % c' m' y' k
         } bind
         /DeviceCMYK {
             graphicsdict /currgstate get /colorcomp1 get
