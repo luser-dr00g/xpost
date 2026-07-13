@@ -526,9 +526,10 @@ int main(int argc, char *argv[])
 
     /* confine the program to its working area unless --no-sandbox: the
        current and temporary directories, the input file's directory
-       (read) and the output file's directory (write). The interpreter's
-       own start-up files have already loaded, and -I resource loading is
-       separately confined, so neither needs permitting here. */
+       (read) and the output file's directory (write). The interpreter
+       permits its own data directory (init.ps, graphics.ps) during
+       start-up, and -I resource loading is separately confined, so
+       neither needs permitting here. */
     if (!no_sandbox)
     {
         const char *tmp = getenv("TMPDIR");
