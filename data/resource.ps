@@ -16,6 +16,11 @@ currentglobal true setglobal
 % own categories, so it need only exist and name itself
 .resources /Category get /Generic << /Category /Generic >> put
 
+% Directories searched, in order, when findresource misses in VM. Empty
+% by default; the host adds entries (as strings). A redefinition in an
+% enclosing dictionary overrides this default.
+/.resourcepath [] def
+
 setglobal
 
 % category  .instof  instances
@@ -36,13 +41,51 @@ setglobal
     .instof 2 index 2 index put exch pop
 } bind def
 
+% key category  ,loadresource  bool
+% On a findresource miss, try to load the named instance from the search
+% path. Each directory is tried in order; the first file found is run in
+% global VM -- so its defineresource lands in the shared instance table
+% and persists across restore -- and the search stops. Returns whether a
+% file was run.
+/,loadresource {
+    2 dict begin
+    /category exch def
+    /key exch def
+    /loaded false def
+    .resourcepath {
+        % dir
+        category 128 string cvs
+        key 128 string cvs
+        .resourcefileopen {
+            % execute the already-opened, confined file directly; running it
+            % by name would reopen it outside the confined path
+            currentglobal exch true setglobal cvx exec setglobal
+            /loaded true def
+            exit
+        } if
+    } forall
+    loaded
+    end
+} bind def
+
 % key category  findresource  instance
 /findresource {
-    .instof exch  % instances key
-    2 copy known not {
-        pop pop /findresource cvx /undefinedresource signalerror
+    dup .instof             % key category instances (.instof errors here if the
+                            % category is unknown, before any scratch dict)
+    2 dict begin
+    /instances exch def
+    /category exch def
+    /key exch def
+    instances key known not {
+        % miss: attempt to load from the search path. The instance table is
+        % shared, so a successful defineresource populates //instances.
+        key category ,loadresource not
+        { end /findresource cvx /undefinedresource signalerror } if
+        instances key known not
+        { end /findresource cvx /undefinedresource signalerror } if
     } if
-    get
+    instances key get
+    end
 } bind def
 
 % key category  resourcestatus  status size true | false
