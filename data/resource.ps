@@ -70,15 +70,22 @@ setglobal
 
 % key category  findresource  instance
 /findresource {
-    dup .instof             % key category instances (.instof errors here if the
-                            % category is unknown, before any scratch dict)
     2 dict begin
-    /instances exch def
     /category exch def
     /key exch def
+    % ensure the category is defined. A category is itself an instance of
+    % /Category, stored under Category/<name> in the resource layout, so a
+    % reference to an as-yet-unloaded category loads its implementation.
+    //.resources category known not {
+        category /Category ,loadresource pop
+    } if
+    //.resources category known not {
+        end /findresource cvx /undefinedresource signalerror
+    } if
+    category .instof /instances exch def
     instances key known not {
-        % miss: attempt to load from the search path. The instance table is
-        % shared, so a successful defineresource populates //instances.
+        % miss: load the instance from the search path. The instance table
+        % is shared, so a successful defineresource populates instances.
         key category ,loadresource not
         { end /findresource cvx /undefinedresource signalerror } if
         instances key known not
