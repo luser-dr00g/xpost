@@ -108,12 +108,6 @@
 static Xpost_Object namegraphicsdict;
 static Xpost_Object namecurrgstate;
 static Xpost_Object namecurrpath;
-static Xpost_Object namecmd;
-static Xpost_Object namedata;
-static Xpost_Object namemove;
-static Xpost_Object nameline;
-static Xpost_Object namecurve;
-static Xpost_Object nameclose;
 static Xpost_Object nameclipregion;
 static Xpost_Object nameflat;
 static Xpost_Object namecurrmatrix;
@@ -128,8 +122,6 @@ static unsigned int _curveto_opcode;
 static unsigned int _rcurveto_cont_opcode;
 
 /*matrices*/
-static Xpost_Object _mat;
-static Xpost_Object _mat1;
 
 #define NUM(x) (xpost_object_get_type(x)==realtype?x.real_.val:(real)x.int_.val)
 
@@ -846,16 +838,16 @@ int _fillpolyargs(Xpost_Context *ctx)
             npts += cmd == PATH_CMD_CURVE ? 3 : 1;
     }
 
-    if (npts == 0 || 2 * npts > 65535)
+    if (npts == 0)
     {
-        /* nothing to fill, or too large for a single backing array
-           (the object size field is 16 bits): an oversized fill would
-           already have overflowed the polygon array before this
-           representation existed */
         result = xpost_object_cvlit(xpost_array_cons(ctx, 0));
         xpost_stack_push(ctx->lo, ctx->os, result);
-        return npts == 0 ? 0 : limitcheck;
+        return 0;
     }
+    if (2 * npts > 65535)
+        /* too large for a single backing array (the object size field
+           is 16 bits) */
+        return limitcheck;
 
     backing = _rawarray_cons(ctx, 2 * npts, &bk);
     if (xpost_object_get_type(backing) == invalidtype)
@@ -1363,43 +1355,6 @@ int _pathbbox(Xpost_Context *ctx)
     return 0;
 }
 
-/*
-% packs the center-point, radius and center-angle in a matrix
-% then performs the simpler task of calculating a bezier
-% for the arc that is symmetrical about the x-axis
-% formula derived from http://www.tinaja.com/glib/bezarc1.pdf
-/arcbez { % draw single bezier % x y r angle1 angle2  .  x1 y1 x2 y2 x3 y3 x0 y0
-    DICT
-    %5 dict
-    begin
-    %/mat matrix def
-    5 3 roll mat translate pop                         % r angle1 angle2
-    3 2 roll dup mat1 scale mat mat concatmatrix pop % angle1 angle2
-    2 copy exch sub /da exch def                       % da=a2-a1
-    add 2 div mat1 rotate mat mat concatmatrix pop
-    /da_2 da 2 div def
-    /sin_a da_2 sin def
-    /cos_a da_2 cos def
-    4 cos_a sub 3 div % x1
-    1 cos_a sub cos_a 3 sub mul
-    3 sin_a mul div   % x1 y1
-    neg
-    1 index           % x1 y1 x2(==x1)
-    1 index neg       % x1 y1 x2 y2(==-y1)
-    cos_a sin_a neg   % x1 y1 x2 y2 x3 y3
-    cos_a sin_a       %               ... x0 y0
-    4 { 8 2 roll mat transform } repeat
-    %pstack()=
-    end
-}
-dup 0 10 dict
-    dup /mat matrix put
-    dup /mat1 matrix put
-put
-bind
-def
-*/
-
 
 static
 void _transform(Xpost_Matrix mat, real x, real y, real *xres, real *yres)
@@ -1407,9 +1362,6 @@ void _transform(Xpost_Matrix mat, real x, real y, real *xres, real *yres)
     *xres = mat.xx * x + mat.xy * y + mat.xz;
     *yres = mat.yx * x + mat.yy * y + mat.yz;
 }
-
-static
-Xpost_Object _arc_start_proc;
 
 static
 Xpost_Object _arc_start_proc;
@@ -1689,18 +1641,6 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
         return VMerror;
     if (xpost_object_get_type((namecurrpath = xpost_name_cons(ctx, "currpath"))) == invalidtype)
         return VMerror;
-    if (xpost_object_get_type((namecmd = xpost_name_cons(ctx, "cmd"))) == invalidtype)
-        return VMerror;
-    if (xpost_object_get_type((namedata = xpost_name_cons(ctx, "data"))) == invalidtype)
-        return VMerror;
-    if (xpost_object_get_type((namemove = xpost_name_cons(ctx, "move"))) == invalidtype)
-        return VMerror;
-    if (xpost_object_get_type((nameline = xpost_name_cons(ctx, "line"))) == invalidtype)
-        return VMerror;
-    if (xpost_object_get_type((namecurve = xpost_name_cons(ctx, "curve"))) == invalidtype)
-        return VMerror;
-    if (xpost_object_get_type((nameclose = xpost_name_cons(ctx, "close"))) == invalidtype)
-        return VMerror;
     if (xpost_object_get_type((nameclipregion = xpost_name_cons(ctx, "clipregion"))) == invalidtype)
         return VMerror;
     if (xpost_object_get_type((nameflat = xpost_name_cons(ctx, "flat"))) == invalidtype)
@@ -1708,8 +1648,6 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     if (xpost_object_get_type((namecurrmatrix = xpost_name_cons(ctx, "currmatrix"))) == invalidtype)
         return VMerror;
 
-    _mat = xpost_object_cvlit(xpost_array_cons(ctx, 6));
-    _mat1 = xpost_object_cvlit(xpost_array_cons(ctx, 6));
 
     op = xpost_operator_cons(ctx, "newpath", (Xpost_Op_Func)_newpath, 0, 0);
     INSTALL;

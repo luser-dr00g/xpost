@@ -53,11 +53,6 @@ override%pop pop%bind def
 }
 override%pop pop%bind def
 
-/tan {
-    dup sin exch
-    cos exch div
-} def
-
 % packs the center-point, radius and center-angle in a matrix
 % then performs the simpler task of calculating a bezier
 % for the arc that is symmetrical about the x-axis
@@ -95,7 +90,6 @@ bind def%override%pop pop%bind def
 % x y r angle1 angle2  arc  -
 % append a counterclockwise circular arc to the current path
 /arc {
-    5 copy 5 -1 1 { -1 roll =only ( ) print } for (arc\n) print
     { 2 copy le { exit } if 360 add } loop
     %dup 0 lt { 360 add exch 360 add exch } if
     %1 index 0 lt { 360 add exch 360 add exch } if
@@ -123,7 +117,6 @@ bind def%override%pop pop%bind def
 override%pop pop%bind def
 
 /arcn {
-    5 copy 5 -1 1 { -1 roll =only ( ) print } for (arcn\n) print
     { 2 copy ge { exit } if 360 sub } loop
     %dup 0 lt { 360 add exch 360 add exch } if
     %1 index 0 lt { 360 add exch 360 add exch } if
@@ -151,12 +144,6 @@ override%pop pop%bind def
 override%pop pop%bind def
 
 %%-----------    above this line has be reimplemented in lib/xpost_op_path.c
-
-/dist { % P1 P2 = x1 y1 x2 y2
-    3 -1 roll sub dup mul % x1 x2 (y2-y1)^2
-    3 1 roll exch sub dup mul % (y2-y1)^2 (x2-x1)^2
-    add sqrt % dist
-} bind def
 
 % move line curve close  .devpathforall  -
 % enumerate current path in device coordinates: each element's points
