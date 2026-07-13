@@ -69,8 +69,9 @@
 
 % -  eofill  -
 % fill using even-odd rule
-% the scanline pairing in FillPoly is even-odd, so this
-% coincides with fill
+% Approximated by the nonzero fill: the two rules differ only for
+% self-overlapping or same-wound-hole paths, which the fill pipeline
+% here does not distinguish
 /eofill {
     fill
 } def

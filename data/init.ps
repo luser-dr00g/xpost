@@ -504,8 +504,9 @@ end % userdict
     % device features (TextAlphaBits, WhiteIsOpaque, ...) are reached.
     % Same-device requests merge over the previous ones, so a partial
     % dictionary adjusts the page; switching OutputDevice starts from
-    % the new device's defaults. The outgoing device is destroyed (a
-    % vector device finalises its output), the new device is installed
+    % the new device's defaults. The outgoing device is destroyed
+    % (freeing its buffers; a vector device's output was written by
+    % showpage's Emit), the new device is installed
     % in the graphics state template, and the page is reinitialised.
     /.devicemakers <<
         /pgm { newPGMIMAGEdevice }
@@ -571,8 +572,8 @@ end % userdict
             userdict /OutputFileName known { userdict /OutputFileName undef } if
         } ifelse
 
-        % retire the outgoing device (a vector device writes its
-        % trailer on Destroy)
+        % retire the outgoing device (Destroy frees its buffers; a
+        % vector device's output was written by showpage's Emit)
         /DEVICE where { pop
             DEVICE type /dicttype eq {
                 DEVICE dup /Destroy 2 copy known { get exec }{ pop pop pop } ifelse

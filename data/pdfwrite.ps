@@ -23,7 +23,7 @@
 % Content is accumulated in a growable buffer held outside virtual memory -- via
 % the device's /Private string, like the raster devices' pixel buffer -- so that
 % it survives a `restore` the job may execute before showpage (the current
-% page's marks are not part of VM). Emit splits it into <=65500-byte strings
+% page's marks are not part of VM). Emit splits it into <=65535-byte strings
 % (the PostScript string limit) and deflate-compresses it, falling back to
 % uncompressed without zlib.
 
