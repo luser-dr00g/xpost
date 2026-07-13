@@ -61,6 +61,138 @@
 #include "xpost_error.h"  /* file functions may throw errors */
 #include "xpost_file.h"  /* double-check prototypes */
 
+/* --- file-access sandbox -------------------------------------------------
+   A process-wide, one-way latch. Before engaging, disk access is
+   unrestricted; once engaged, an open by the running program is denied
+   unless the path resolves within a permitted directory. This is defence
+   in depth around the operating-system confinement of the host process,
+   not a substitute for it. Resource-file loading is separately confined
+   (see xpost_diskfile_fopen_beneath) and does not consult this. */
+
+#define XPOST_PATH_PERMIT_MAX 64
+
+static char *xpost_permit_read_dir[XPOST_PATH_PERMIT_MAX];
+static int xpost_permit_read_cnt = 0;
+static char *xpost_permit_write_dir[XPOST_PATH_PERMIT_MAX];
+static int xpost_permit_write_cnt = 0;
+static int xpost_path_control_engaged = 0;
+
+static int
+xpost_path_permit_add(char **tab, int *cnt, const char *dir)
+{
+    char *rp;
+
+    if (xpost_path_control_engaged) /* the permit set is frozen once engaged */
+        return 0;
+    if (*cnt >= XPOST_PATH_PERMIT_MAX)
+        return 0;
+    rp = xpost_realpath(dir);
+    if (!rp)
+        return 0;
+    tab[*cnt] = rp;
+    ++*cnt;
+    return 1;
+}
+
+int
+xpost_path_permit_read(const char *dir)
+{
+    return xpost_path_permit_add(xpost_permit_read_dir,
+                                 &xpost_permit_read_cnt, dir);
+}
+
+int
+xpost_path_permit_write(const char *dir)
+{
+    return xpost_path_permit_add(xpost_permit_write_dir,
+                                 &xpost_permit_write_cnt, dir);
+}
+
+void
+xpost_path_control_engage(void)
+{
+    xpost_path_control_engaged = 1;
+}
+
+/* does canon sit within one of the cnt permitted directories? */
+static int
+xpost_path_within(const char *canon, char *const *tab, int cnt)
+{
+    int i;
+
+    for (i = 0; i < cnt; i++)
+    {
+        size_t rl = strlen(tab[i]);
+
+#ifdef _WIN32
+        /* Windows paths are case-insensitive and GetFullPathName yields
+           backslash separators (mirrors the beneath-root check) */
+        if (_strnicmp(canon, tab[i], rl) == 0 &&
+            (canon[rl] == '\\' || canon[rl] == '/' || canon[rl] == '\0'))
+            return 1;
+#else
+        if (strncmp(canon, tab[i], rl) == 0 &&
+            (canon[rl] == '/' || canon[rl] == '\0'))
+            return 1;
+#endif
+    }
+    return 0;
+}
+
+/* Is opening `path` (for writing when `write`) permitted? Resolves the
+   path -- or, for a not-yet-existent write target, its parent directory
+   with the leaf reattached -- and checks it against the permit list. */
+static int
+xpost_path_permitted(const char *path, int write)
+{
+    char *canon = xpost_realpath(path);
+    int ok;
+
+    if (canon)
+    {
+        ok = write
+             ? xpost_path_within(canon, xpost_permit_write_dir, xpost_permit_write_cnt)
+             : xpost_path_within(canon, xpost_permit_read_dir, xpost_permit_read_cnt);
+        free(canon);
+        return ok;
+    }
+
+    /* the path does not resolve: only a create (write) is meaningful */
+    if (!write)
+        return 0;
+    {
+        char buf[XPOST_PATH_MAX];
+        char full[XPOST_PATH_MAX];
+        char *slash;
+        char *cdir;
+        const char *parent;
+        const char *base;
+
+        if (strlen(path) >= sizeof buf)
+            return 0;
+        strcpy(buf, path);
+        slash = strrchr(buf, '/');
+        if (slash)
+        {
+            *slash = '\0';
+            parent = buf[0] ? buf : "/";
+            base = slash + 1;
+        }
+        else
+        {
+            parent = ".";
+            base = buf;
+        }
+        cdir = xpost_realpath(parent);
+        if (!cdir)
+            return 0;
+        ok = (snprintf(full, sizeof full, "%s/%s", cdir, base) < (int)sizeof full) &&
+             xpost_path_within(full, xpost_permit_write_dir, xpost_permit_write_cnt);
+        free(cdir);
+        return ok;
+    }
+}
+
 /* The single path-to-stream opener for disk-backed files: every disk file
    the interpreter opens is created here, so file-access policy has one
    enforcement point. internal marks a trusted interpreter-managed path
@@ -72,7 +204,18 @@ xpost_diskfile_fopen(const char *path, const char *mode, int internal, int *err)
 {
     FILE *fp;
 
-    (void)internal;
+    /* a program-driven open under the engaged sandbox must lie within a
+       permitted directory; trusted interpreter-managed opens are exempt */
+    if (!internal && xpost_path_control_engaged)
+    {
+        int write = strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+');
+
+        if (!xpost_path_permitted(path, write))
+        {
+            *err = invalidfileaccess;
+            return NULL;
+        }
+    }
 
     fp = fopen(path, mode);
     if (!fp)
