@@ -97,7 +97,7 @@
 /gsave {
 graphicsdict begin
     /gptr gptr 1 add def
-    gptr gstackarray length ge { error } if
+    gptr gstackarray length ge { /gsave cvx /limitcheck signalerror } if
     gstackarray gptr gstate currentgstate put % push copy on stack
     currgstate /currpath 2 copy get 1 dict deepcopy put % make a new working copy of path
 end
