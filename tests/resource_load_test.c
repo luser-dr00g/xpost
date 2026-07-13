@@ -73,6 +73,28 @@ int main(void)
     fputs("/testinstance (RESOURCE-OK) /TestCategory defineresource pop\n", w);
     fclose(w);
 
+    /* a second category whose implementation and instance both live on
+       disk, exercising category-on-demand loading (the layout used by a
+       resource-tree distribution: Category/<name> and <name>/<instance>) */
+    snprintf(dir, sizeof dir, "%s/Category", root);
+    mkdir(dir, 0700);
+    snprintf(file, sizeof file, "%s/Category/DiskCat", root);
+    w = fopen(file, "wb");
+    if (w)
+    {
+        fputs("/DiskCat << /Category /DiskCat >> /Category defineresource pop\n", w);
+        fclose(w);
+    }
+    snprintf(dir, sizeof dir, "%s/DiskCat", root);
+    mkdir(dir, 0700);
+    snprintf(file, sizeof file, "%s/DiskCat/diskinst", root);
+    w = fopen(file, "wb");
+    if (w)
+    {
+        fputs("/diskinst (DISK-CAT-OK) /DiskCat defineresource pop\n", w);
+        fclose(w);
+    }
+
     if (!xpost_init())
     {
         printf("FAIL: xpost_init\n");
@@ -113,6 +135,14 @@ int main(void)
         "/testinstance /TestCategory findresource pop", 0);
     check(st == XPOST_RUN_COMPLETE, "second lookup is served from VM");
 
+    /* an unknown category is itself loaded on demand, then its instance */
+    out_len = 0;
+    st = xpost_run(ctx, XPOST_INPUT_STRING,
+        "/diskinst /DiskCat findresource print flush", 0);
+    check(st == XPOST_RUN_COMPLETE, "category-on-demand load completes");
+    out_buf[out_len] = '\0';
+    check(strcmp(out_buf, "DISK-CAT-OK") == 0, "on-demand category resolves");
+
     /* a non-leaf key cannot name a file: refused, reported undefinedresource */
     st = xpost_run(ctx, XPOST_INPUT_STRING,
         "(../../nonexistent) /TestCategory findresource", 0);
@@ -127,7 +157,7 @@ int main(void)
     check(strcmp(xpost_error_name_get(ctx), "undefinedresource") == 0,
           "absent instance is undefinedresource");
 
-    /* an unknown category still errors before any load attempt */
+    /* a category that is neither in VM nor on disk errors */
     st = xpost_run(ctx, XPOST_INPUT_STRING,
         "/x /NoSuchCategory findresource", 0);
     check(st == XPOST_RUN_ERRORED, "unknown category errors");
@@ -137,8 +167,12 @@ int main(void)
     xpost_destroy(ctx);
     xpost_quit();
 
-    unlink(file);
-    rmdir(dir);
+    snprintf(file, sizeof file, "%s/TestCategory/testinstance", root); unlink(file);
+    snprintf(file, sizeof file, "%s/Category/DiskCat", root); unlink(file);
+    snprintf(file, sizeof file, "%s/DiskCat/diskinst", root); unlink(file);
+    snprintf(dir, sizeof dir, "%s/TestCategory", root); rmdir(dir);
+    snprintf(dir, sizeof dir, "%s/Category", root); rmdir(dir);
+    snprintf(dir, sizeof dir, "%s/DiskCat", root); rmdir(dir);
     rmdir(root);
 
     if (failures)
