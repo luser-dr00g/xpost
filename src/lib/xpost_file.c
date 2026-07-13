@@ -89,6 +89,112 @@ xpost_diskfile_fopen(const char *path, const char *mode, int internal, int *err)
     return fp;
 }
 
+/* Is s[0..len) a safe single path component ("leaf")? Externally-derived
+   resource names are validated with this so they cannot express a path:
+   rejected are separators of either platform, ':' (drive letter / NTFS
+   stream), NUL and other control bytes, '.' and '..', a leading dot or
+   space, a trailing dot or space (which Windows strips), and the reserved
+   Windows device names. Bytes are otherwise restricted to [A-Za-z0-9._-].
+   Returns 1 if safe, 0 otherwise. */
+int
+xpost_path_safe_leaf(const char *s, size_t len)
+{
+    static const char *const reserved[] = {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    };
+    size_t i;
+    size_t stem;
+    size_t r;
+
+    if (len == 0)
+        return 0;
+    if (s[0] == '.' || s[0] == ' ')                 /* leading dot ('.', '..',
+                                                       hidden) or space */
+        return 0;
+    if (s[len - 1] == '.' || s[len - 1] == ' ')     /* trailing dot or space */
+        return 0;
+    for (i = 0; i < len; i++)
+    {
+        unsigned char c = (unsigned char)s[i];
+
+        if (c < 0x20 || c == 0x7f)                  /* NUL and control bytes */
+            return 0;
+        if (c == '/' || c == '\\' || c == ':')      /* separators, drive/ADS */
+            return 0;
+        if (!((c >= 'A' && c <= 'Z') ||
+              (c >= 'a' && c <= 'z') ||
+              (c >= '0' && c <= '9') ||
+              c == '.' || c == '_' || c == '-'))
+            return 0;
+    }
+    /* reserved device name: the stem before the first '.', case-insensitive */
+    for (stem = 0; stem < len && s[stem] != '.'; stem++)
+        ;
+    for (r = 0; r < sizeof reserved / sizeof reserved[0]; r++)
+    {
+        size_t rl = strlen(reserved[r]);
+        size_t k;
+
+        if (rl != stem)
+            continue;
+        for (k = 0; k < rl; k++)
+        {
+            unsigned char c = (unsigned char)s[k];
+
+            if (c >= 'a' && c <= 'z')
+                c = (unsigned char)(c - 32);
+            if (c != (unsigned char)reserved[r][k])
+                break;
+        }
+        if (k == rl)
+            return 0;
+    }
+    return 1;
+}
+
+/* Open rel for reading beneath root, with the OS confining resolution to
+   root (see xpost_open_beneath), mapping the failure to an error code.
+   rel should already be composed of xpost_path_safe_leaf components. */
+FILE *
+xpost_diskfile_fopen_beneath(const char *root, const char *rel, int *err)
+{
+    FILE *fp = xpost_open_beneath(root, rel);
+
+    if (!fp)
+    {
+        switch (errno)
+        {
+            case EACCES:
+            case EPERM:
+#ifdef ELOOP
+            case ELOOP:
+#endif
+#ifdef EXDEV
+            case EXDEV:
+#endif
+                *err = invalidfileaccess;
+                break;
+            case ENOENT:
+            case ENOTDIR:
+                *err = undefinedfilename;
+                break;
+#ifdef ENAMETOOLONG
+            case ENAMETOOLONG:
+                *err = limitcheck;
+                break;
+#endif
+            default:
+                *err = unregistered;
+                break;
+        }
+        return NULL;
+    }
+    *err = 0;
+    return fp;
+}
+
 #ifdef _WIN32
 /*
  * FIXME: maybe use a WIN32 API for all this. See FIXME in xpost_op_file.c

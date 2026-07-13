@@ -203,6 +203,25 @@ Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object s
 FILE *xpost_diskfile_fopen(const char *path, const char *mode, int internal, int *err);
 
 /**
+ * @brief Validate that s[0..len) is a safe single path component.
+ *
+ * Rejects path separators, ':' , NUL and control bytes, '.' and '..', a
+ * leading dot or space, a trailing dot or space, and reserved device
+ * names, so an externally-derived name cannot express a path. Returns 1
+ * if safe, 0 otherwise.
+ */
+int xpost_path_safe_leaf(const char *s, size_t len);
+
+/**
+ * @brief Open @p rel for reading beneath directory @p root.
+ *
+ * The operating system confines resolution to @p root (no escape via ".."
+ * or a symlink). @p rel should already be composed of safe leaves. Returns
+ * an open stream, or NULL with *err set.
+ */
+FILE *xpost_diskfile_fopen_beneath(const char *root, const char *rel, int *err);
+
+/**
  * @brief Open and construct a file object given filename and mode.
  */
 int xpost_file_open(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);
