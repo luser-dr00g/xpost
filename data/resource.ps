@@ -17,8 +17,7 @@ currentglobal true setglobal
 .resources /Category get /Generic << /Category /Generic >> put
 
 % Directories searched, in order, when findresource misses in VM. Empty
-% by default; the host adds entries (as strings). A redefinition in an
-% enclosing dictionary overrides this default.
+% by default; the host appends entries (xpost_add_resource_dir, -I).
 /.resourcepath [] def
 
 setglobal

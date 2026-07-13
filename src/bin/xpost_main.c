@@ -522,42 +522,11 @@ int main(int argc, char *argv[])
     /* seed the resource search path from -I directories */
     if (num_incs > 0)
     {
-        size_t sz = 32;
-        char *buf;
-
-        /* the definition must outlive the job that sets it, so this
-           one-shot run does not roll its virtual memory back */
-        xpost_job_snapshots_set(ctx, 0);
-
         for (i = 0; i < num_incs; i++)
-            sz += 2 * strlen(incs[i]) + 4;
-        buf = malloc(sz);
-        if (buf)
         {
-            char *q = buf;
-
-            q += sprintf(q, "/.resourcepath [ ");
-            for (i = 0; i < num_incs; i++)
-            {
-                const char *p;
-
-                *q++ = '(';
-                for (p = incs[i]; *p; p++)
-                {
-                    if (*p == '(' || *p == ')' || *p == '\\')
-                        *q++ = '\\';
-                    *q++ = *p;
-                }
-                *q++ = ')';
-                *q++ = ' ';
-            }
-            q += sprintf(q, "] def");
-            *q = '\0';
-            xpost_run(ctx, XPOST_INPUT_STRING, buf, 0);
-            free(buf);
-        }
-        for (i = 0; i < num_incs; i++)
+            xpost_add_resource_dir(ctx, incs[i]);
             free(incs[i]);
+        }
         free(incs);
         incs = NULL;
         num_incs = 0;
