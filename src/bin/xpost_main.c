@@ -140,6 +140,7 @@ _xpost_main_usage(const char *filename)
     printf("  -o, --output=[FILE]                output file\n");
     printf("  -d, --device=[STRING]              device name\n");
     printf("  -Dname=token, --define name=token  add definition to userdict\n");
+    printf("  -I[DIR], --include [DIR]           add a resource search directory\n");
     printf("  -g, --geometry=WxH{+-}X{+-}Y       geometry specification\n");
     printf("  -q, --quiet                        suppress interpreter messages (default)\n");
     printf("  -v, --verbose                      do not go quiet into that good night\n");
@@ -247,6 +248,8 @@ int main(int argc, char *argv[])
     const char *define = NULL;
     char **defs = NULL;
     int num_defs = 0;
+    char **incs = NULL;
+    int num_incs = 0;
     int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
     int have_device;
     int width = -1;
@@ -350,6 +353,35 @@ int main(int argc, char *argv[])
                 defs = realloc(defs, ++num_defs * sizeof *defs);
                 defs[num_defs-1] = strdup(define);
             }
+            else if ((!strncmp(argv[i], "-I", 2)) ||
+                     (!strcmp(argv[i], "--include")))
+            {
+                const char *inc;
+                if (argv[i][1] == 'I' && argv[i][2])
+                {
+                    inc = argv[i] + 2;
+                }
+                else if ((i + 1) < argc)
+                {
+                    inc = argv[++i];
+                }
+                else
+                {
+                    XPOST_LOG_ERR("missing option value");
+                    _xpost_main_usage(filename);
+                    goto quit_xpost;
+                }
+                {
+                    char **tmp = realloc(incs, (num_incs + 1) * sizeof *incs);
+                    if (!tmp)
+                    {
+                        XPOST_LOG_ERR("out of memory");
+                        goto quit_xpost;
+                    }
+                    incs = tmp;
+                    incs[num_incs++] = strdup(inc);
+                }
+            }
             else if ((!strcmp(argv[i], "-q")) ||
                      (!strcmp(argv[i], "--quiet")))
             {
@@ -452,6 +484,50 @@ int main(int argc, char *argv[])
         free(defs);
         defs = NULL;
         num_defs = 0;
+    }
+
+    /* seed the resource search path from -I directories */
+    if (num_incs > 0)
+    {
+        size_t sz = 32;
+        char *buf;
+
+        /* the definition must outlive the job that sets it, so this
+           one-shot run does not roll its virtual memory back */
+        xpost_job_snapshots_set(ctx, 0);
+
+        for (i = 0; i < num_incs; i++)
+            sz += 2 * strlen(incs[i]) + 4;
+        buf = malloc(sz);
+        if (buf)
+        {
+            char *q = buf;
+
+            q += sprintf(q, "/.resourcepath [ ");
+            for (i = 0; i < num_incs; i++)
+            {
+                const char *p;
+
+                *q++ = '(';
+                for (p = incs[i]; *p; p++)
+                {
+                    if (*p == '(' || *p == ')' || *p == '\\')
+                        *q++ = '\\';
+                    *q++ = *p;
+                }
+                *q++ = ')';
+                *q++ = ' ';
+            }
+            q += sprintf(q, "] def");
+            *q = '\0';
+            xpost_run(ctx, XPOST_INPUT_STRING, buf, 0);
+            free(buf);
+        }
+        for (i = 0; i < num_incs; i++)
+            free(incs[i]);
+        free(incs);
+        incs = NULL;
+        num_incs = 0;
     }
 
     xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file, 0);
