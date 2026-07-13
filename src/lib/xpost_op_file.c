@@ -810,6 +810,48 @@ int xpost_op_resourcefileopen (Xpost_Context *ctx,
     return 0;
 }
 
+/* string  .permitfileread  -
+   permit reading files within the directory tree; ignored once locked down */
+static
+int xpost_op_string_permitfileread (Xpost_Context *ctx,
+                                    Xpost_Object dir)
+{
+    char *d = xpost_string_allocate_cstring(ctx, dir);
+
+    if (!d)
+        return VMerror;
+    xpost_path_permit_read(d);
+    free(d);
+    return 0;
+}
+
+/* string  .permitfilewrite  -
+   permit writing files within the directory tree; ignored once locked down */
+static
+int xpost_op_string_permitfilewrite (Xpost_Context *ctx,
+                                     Xpost_Object dir)
+{
+    char *d = xpost_string_allocate_cstring(ctx, dir);
+
+    if (!d)
+        return VMerror;
+    xpost_path_permit_write(d);
+    free(d);
+    return 0;
+}
+
+/* -  .lockdown  -
+   engage the file-access sandbox: subsequent program-driven opens are
+   confined to the permitted directories. One-way -- a trusted prolog
+   permits what it needs and locks down before running untrusted input. */
+static
+int xpost_op_lockdown (Xpost_Context *ctx)
+{
+    (void)ctx;
+    xpost_path_control_engage();
+    return 0;
+}
+
 int xpost_oper_init_file_ops (Xpost_Context *ctx,
                               Xpost_Object sd)
 {
@@ -825,6 +867,12 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "file", (Xpost_Op_Func)xpost_op_string_mode_file, 1, 2, stringtype, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".resourcefileopen", (Xpost_Op_Func)xpost_op_resourcefileopen, 2, 3, stringtype, stringtype, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".permitfileread", (Xpost_Op_Func)xpost_op_string_permitfileread, 0, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".permitfilewrite", (Xpost_Op_Func)xpost_op_string_permitfilewrite, 0, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".lockdown", (Xpost_Op_Func)xpost_op_lockdown, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter, 1, 2, filetype, nametype);
     INSTALL;
