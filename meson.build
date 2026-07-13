@@ -374,6 +374,17 @@ test('sandbox',
   sandbox_exe,
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 
+# From-PostScript lockdown: .permitfileread/.permitfilewrite/.lockdown raise
+# the sandbox from within a program and freeze the permit set.
+lockdown_exe = executable('lockdown_test',
+  'tests/lockdown_test.c',
+  c_args: '-DHAVE_CONFIG_H',
+  dependencies: libxpost_dep,
+  include_directories: [ config_dir, include_directories('src/lib') ],
+  install: false)
+test('lockdown',
+  lockdown_exe,
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 #if get_option('nls') == true
 #  subdir('po')
 #endif
