@@ -159,6 +159,16 @@ unsigned char xpost_module_path_get(int (*fp)(void), char *buf, unsigned int siz
 
 char *xpost_realpath(const char *path);
 
+/*
+ * Open @p rel for reading beneath directory @p root, with the operating
+ * system confining name resolution to @p root: it refuses to escape via
+ * ".." or by following a symlink (POSIX openat2 RESOLVE_BENEATH, else a
+ * realpath prefix check; Windows verifies the opened handle's final path).
+ * @p rel should already be composed of validated path components. Returns
+ * an stdio stream, or NULL with errno set.
+ */
+FILE *xpost_open_beneath(const char *root, const char *rel);
+
 /**
  * @}
  */

@@ -29,6 +29,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if defined(__linux__)
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE /* O_PATH, syscall, openat2 */
+# endif
+#elif defined(__APPLE__)
+# ifndef _DARWIN_C_SOURCE
+#  define _DARWIN_C_SOURCE /* O_NOFOLLOW and other BSD extensions */
+# endif
+#endif
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -41,6 +51,13 @@
 #include <stdlib.h> /* free, malloc, mkstemp, realpath */
 #include <string.h> /* memcpy, strdup, strlen */
 #include <time.h> /* clock_gettime, time */
+#include <errno.h> /* errno */
+#include <fcntl.h> /* open, O_* */
+#include <unistd.h> /* close */
+#if defined(__linux__)
+# include <stdint.h> /* uint64_t */
+# include <sys/syscall.h> /* SYS_openat2 */
+#endif
 
 #if defined(__APPLE__) && defined(__MACH__)
 # include <mach/mach_time.h> /* mach_absolute_time */
@@ -242,6 +259,101 @@ xpost_realpath(const char *path)
 
     return resolved_path;
 #endif
+}
+
+/* struct open_how / RESOLVE_* may predate the installed kernel headers */
+#ifndef XPOST_RESOLVE_NO_SYMLINKS
+# define XPOST_RESOLVE_NO_SYMLINKS 0x04
+#endif
+#ifndef XPOST_RESOLVE_BENEATH
+# define XPOST_RESOLVE_BENEATH 0x08
+#endif
+/* the anchor dirfd needs no read access; fall back to a plain directory
+   open where O_PATH is unavailable */
+#ifndef O_PATH
+# define O_PATH 0
+#endif
+
+FILE *
+xpost_open_beneath(const char *root, const char *rel)
+{
+    int fd = -1;
+    int resolved = 0; /* the OS-confined path produced an fd or a real error */
+
+    if (!root || !rel || !*rel)
+    {
+        errno = ENOENT;
+        return NULL;
+    }
+
+#if defined(__linux__) && defined(SYS_openat2)
+    {
+        struct { uint64_t flags; uint64_t mode; uint64_t resolve; } how;
+        int rootfd = open(root, O_PATH | O_DIRECTORY | O_CLOEXEC);
+
+        if (rootfd >= 0)
+        {
+            how.flags = (uint64_t)(O_RDONLY | O_CLOEXEC);
+            how.mode = 0;
+            how.resolve = XPOST_RESOLVE_BENEATH | XPOST_RESOLVE_NO_SYMLINKS;
+            fd = (int)syscall(SYS_openat2, rootfd, rel, &how, sizeof how);
+            close(rootfd);
+            /* ENOSYS: kernel older than the syscall; use the portable check */
+            if (!(fd < 0 && errno == ENOSYS))
+                resolved = 1;
+        }
+    }
+#endif
+
+    if (!resolved)
+    {
+        char *root_real = xpost_realpath(root);
+        char *file_real;
+        char full[XPOST_PATH_MAX];
+        size_t rl;
+
+        if (!root_real)
+            return NULL; /* errno from realpath */
+        if (snprintf(full, sizeof full, "%s/%s", root_real, rel) >= (int)sizeof full)
+        {
+            free(root_real);
+            errno = ENAMETOOLONG;
+            return NULL;
+        }
+        file_real = xpost_realpath(full);
+        if (!file_real)
+        {
+            free(root_real);
+            return NULL; /* errno from realpath (ENOENT) */
+        }
+        /* the resolved file must sit strictly beneath the resolved root */
+        rl = strlen(root_real);
+        if (strncmp(file_real, root_real, rl) != 0 || file_real[rl] != '/')
+        {
+            free(root_real);
+            free(file_real);
+            errno = EACCES;
+            return NULL;
+        }
+        fd = open(file_real, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+        free(root_real);
+        free(file_real);
+    }
+
+    if (fd < 0)
+        return NULL; /* errno from open/openat2 */
+
+    {
+        FILE *fp = fdopen(fd, "rb");
+        if (!fp)
+        {
+            int e = errno;
+            close(fd);
+            errno = e;
+            return NULL;
+        }
+        return fp;
+    }
 }
 
 /*============================================================================*

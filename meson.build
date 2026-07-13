@@ -336,6 +336,19 @@ test('pngalpha-device',
 test('fopen-funnel',
   find_program('tests/check-fopen-funnel.sh'),
   args: [ meson.current_source_dir() / 'src' / 'lib' ])
+
+# Path-component validation and beneath-root confinement: traversal and
+# symlink-escape attempts are refused. POSIX-only: the escape probe builds
+# its test tree with symlink(), which the Windows CRT does not provide.
+if host_machine.system() != 'windows'
+  path_confine_exe = executable('path_confine_test',
+    'tests/path_confine_test.c',
+    c_args: '-DHAVE_CONFIG_H',
+    dependencies: libxpost_dep,
+    include_directories: [ config_dir, include_directories('src/lib') ],
+    install: false)
+  test('path-confine', path_confine_exe)
+endif
 #if get_option('nls') == true
 #  subdir('po')
 #endif
