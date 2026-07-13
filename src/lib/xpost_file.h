@@ -192,6 +192,17 @@ Xpost_Object xpost_file_cons_filter_subfile(Xpost_Memory_File *mem, Xpost_Object
 Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object src);
 
 /**
+ * @brief The single path-to-stream opener for disk-backed files.
+ *
+ * Every disk file the interpreter opens passes through here, so
+ * file-access policy has one enforcement point. Returns an open stream,
+ * or NULL with *err set to a suitable error code. @p internal marks a
+ * trusted interpreter-managed path (temporary scratch) rather than one
+ * derived from the running program.
+ */
+FILE *xpost_diskfile_fopen(const char *path, const char *mode, int internal, int *err);
+
+/**
  * @brief Open and construct a file object given filename and mode.
  */
 int xpost_file_open(Xpost_Memory_File *mem, char *fn, char *mode, Xpost_Object *retval);
