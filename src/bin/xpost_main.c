@@ -129,6 +129,33 @@ _xpost_main_version(const char *filename)
     printf("%s %d.%d.%d\n", filename, maj, min, mic);
 }
 
+/* permit the directory containing `path`, for writing when `forwrite` */
+static void
+_xpost_permit_file_dir(const char *path, int forwrite)
+{
+    char buf[4096];
+    char *slash;
+
+    if (!path || strlen(path) >= sizeof buf)
+        return;
+    strcpy(buf, path);
+    slash = strrchr(buf, '/');
+    if (slash)
+    {
+        *slash = '\0';
+        if (buf[0] == '\0')
+            strcpy(buf, "/");
+    }
+    else
+    {
+        strcpy(buf, ".");
+    }
+    if (forwrite)
+        xpost_path_permit_write(buf);
+    else
+        xpost_path_permit_read(buf);
+}
+
 static void
 _xpost_main_usage(const char *filename)
 {
@@ -141,6 +168,7 @@ _xpost_main_usage(const char *filename)
     printf("  -d, --device=[STRING]              device name\n");
     printf("  -Dname=token, --define name=token  add definition to userdict\n");
     printf("  -I[DIR], --include [DIR]           add a resource search directory\n");
+    printf("  --no-sandbox                       allow the program unrestricted file access\n");
     printf("  -g, --geometry=WxH{+-}X{+-}Y       geometry specification\n");
     printf("  -q, --quiet                        suppress interpreter messages (default)\n");
     printf("  -v, --verbose                      do not go quiet into that good night\n");
@@ -250,6 +278,7 @@ int main(int argc, char *argv[])
     int num_defs = 0;
     char **incs = NULL;
     int num_incs = 0;
+    int no_sandbox = 0;
     int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
     int have_device;
     int width = -1;
@@ -381,6 +410,10 @@ int main(int argc, char *argv[])
                     incs = tmp;
                     incs[num_incs++] = strdup(inc);
                 }
+            }
+            else if (!strcmp(argv[i], "--no-sandbox"))
+            {
+                no_sandbox = 1;
             }
             else if ((!strcmp(argv[i], "-q")) ||
                      (!strcmp(argv[i], "--quiet")))
@@ -528,6 +561,27 @@ int main(int argc, char *argv[])
         free(incs);
         incs = NULL;
         num_incs = 0;
+    }
+
+    /* confine the program to its working area unless --no-sandbox: the
+       current and temporary directories, the input file's directory
+       (read) and the output file's directory (write). The interpreter's
+       own start-up files have already loaded, and -I resource loading is
+       separately confined, so neither needs permitting here. */
+    if (!no_sandbox)
+    {
+        const char *tmp = getenv("TMPDIR");
+
+        if (!tmp || !*tmp)
+            tmp = "/tmp";
+        xpost_path_permit_read(".");
+        xpost_path_permit_write(".");
+        xpost_path_permit_read(tmp);
+        xpost_path_permit_write(tmp);
+        _xpost_permit_file_dir(ps_file, 0);
+        if (output_file)
+            _xpost_permit_file_dir(output_file, 1);
+        xpost_path_control_engage();
     }
 
     xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file, 0);
