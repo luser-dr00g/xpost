@@ -840,7 +840,6 @@ int _show_char(Xpost_Context *ctx,
                real *xpos,
                real *ypos,
                unsigned int ch,
-               unsigned int *glyph_previous,
                int ncomp,
                Xpost_Object comp1,
                Xpost_Object comp2,
@@ -932,7 +931,6 @@ int _show_char(Xpost_Context *ctx,
        (truncating each glyph's advance drifts the line's length) */
     *xpos += (real)advance_x / 64;
     *ypos -= (real)advance_y / 64;
-    *glyph_previous = glyph_index;
 #else
     (void)ctx;
     (void)devdic;
@@ -942,7 +940,6 @@ int _show_char(Xpost_Context *ctx,
     (void)xpos;
     (void)ypos;
     (void)ch;
-    (void)glyph_previous;
     (void)ncomp;
     (void)comp1;
     (void)comp2;
@@ -1004,7 +1001,6 @@ int _show(Xpost_Context *ctx,
     Xpost_Object finalize;
     int ret;
 
-    unsigned int glyph_previous;
 
     /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
@@ -1064,9 +1060,8 @@ int _show(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
-    glyph_previous = 0;
     for (ch = cstr; *ch; ch++) {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch,
                 ncomp, comp[0], comp[1], comp[2], comp[3]);
     }
 
@@ -1101,7 +1096,6 @@ int _ashow(Xpost_Context *ctx,
     Xpost_Object finalize;
     int ret;
 
-    unsigned int glyph_previous;
 
     /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
@@ -1161,10 +1155,9 @@ int _ashow(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
-    glyph_previous = 0;
     for (ch = cstr; *ch; ch++)
     {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch,
                    ncomp, comp[0], comp[1], comp[2], comp[3]);
         xpos += dx.real_.val;
         ypos += dy.real_.val;
@@ -1202,7 +1195,6 @@ int _widthshow(Xpost_Context *ctx,
     Xpost_Object finalize;
     int ret;
 
-    unsigned int glyph_previous;
 
     /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
@@ -1262,12 +1254,11 @@ int _widthshow(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
-    glyph_previous = 0;
     for (ch = cstr; *ch; ch++)
     {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch,
                    ncomp, comp[0], comp[1], comp[2], comp[3]);
-        if (*ch == charcode.int_.val)
+        if ((unsigned char)*ch == charcode.int_.val)
         {
             xpos += cx.real_.val;
             ypos += cy.real_.val;
@@ -1308,7 +1299,6 @@ int _awidthshow(Xpost_Context *ctx,
     Xpost_Object finalize;
     int ret;
 
-    unsigned int glyph_previous;
 
     /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
@@ -1368,14 +1358,13 @@ int _awidthshow(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
     /* render text in char *cstr  with font data  at pen position xpos ypos */
-    glyph_previous = 0;
     for (ch = cstr; *ch; ch++)
     {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous,
+        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch,
                 ncomp, comp[0], comp[1], comp[2], comp[3]);
         xpos += dx.real_.val;
         ypos += dy.real_.val;
-        if (*ch == charcode.int_.val)
+        if ((unsigned char)*ch == charcode.int_.val)
         {
             xpos += cx.real_.val;
             ypos += cy.real_.val;
@@ -1644,7 +1633,7 @@ int _stringoutline(Xpost_Context *ctx,
         sink.user = &oc;
         if (!xpost_font_face_glyph_outline(data.face, glyph_index, &sink, &advance_x, &advance_y))
         {
-            /* a glyph without an outline leaves no path; skip it */
+            /* a glyph without an outline cannot contribute a path */
             free(oc.objs);
             free(cstr);
             return invalidfont;
@@ -1676,104 +1665,6 @@ int _stringoutline(Xpost_Context *ctx,
         xpost_array_put(ctx, arr, (integer)i, oc.objs[i]);
     free(oc.objs);
     xpost_stack_push(ctx->lo, ctx->os, arr);
-    return 0;
-}
-
-static
-int _kshow(Xpost_Context *ctx,
-           Xpost_Object proc,
-           Xpost_Object str)
-{
-    Xpost_Object userdict;
-    Xpost_Object gd;
-    Xpost_Object gs;
-    Xpost_Object fontdict;
-    Xpost_Object privatestr;
-    struct fontdata data;
-    char *cstr;
-    real xpos, ypos;
-    char *ch;
-    Xpost_Object devdic;
-    Xpost_Object putpix;
-    textstate ts;
-    int ncomp;
-    Xpost_Object comp[4];
-    Xpost_Object finalize;
-    int ret;
-
-    unsigned int glyph_previous;
-
-    (void) &proc;
-    /* load the graphicsdict, current graphics state, and current font */
-    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    if (xpost_object_get_type(userdict) != dicttype)
-        return dictstackunderflow;
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
-    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
-    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
-    if (xpost_object_get_type(fontdict) == invalidtype)
-        return invalidfont;
-    XPOST_LOG_INFO("loaded graphicsdict, graphics state, and current font");
-
-    /* load the device and PutPix member function */
-    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
-    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
-    XPOST_LOG_INFO("loaded DEVICE and PutPix");
-    ts = _text_state_get(ctx, fontdict, devdic, gs);
-
-    /* get the font data from the font dict */
-    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
-    if (xpost_object_get_type(privatestr) == invalidtype)
-        return invalidfont;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
-    if (data.face == NULL)
-    {
-        XPOST_LOG_ERR("face is NULL");
-        return invalidfont;
-    }
-    _face_transform_from_ctm(ctx, gs, data.face);
-    XPOST_LOG_INFO("loaded font data from dict");
-
-    /* get a c-style nul-terminated string */
-    cstr = xpost_string_allocate_cstring(ctx, str);
-    XPOST_LOG_INFO("append nul to string");
-
-    ret = _get_current_point(ctx, gs, &xpos, &ypos);
-    if (ret){
-        free(cstr);
-        return ret;
-    }
-
-    if (_device_color(ctx, gs, devdic, &ncomp, comp))
-    {
-        free(cstr);
-        return unregistered;
-    }
-    XPOST_LOG_INFO("ncomp = %d", ncomp);
-
-    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
-    /* fill-in final pos before return */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
-    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
-    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
-    xpost_stack_push(ctx->lo, ctx->es, finalize);
-
-    /* render text in char *cstr  with font data  at pen position xpos ypos */
-    glyph_previous = 0;
-    for (ch = cstr; *ch; ch++)
-    {
-        _show_char(ctx, devdic, putpix, data, &ts, &xpos, &ypos, (unsigned char)*ch, &glyph_previous,
-                ncomp, comp[0], comp[1], comp[2], comp[3]);
-    }
-
-    /* update current position in the graphics state */
-    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
-    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
-
-    free(cstr);
     return 0;
 }
 
@@ -1816,8 +1707,6 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "stringwidth", (Xpost_Op_Func)_stringwidth, 2, 1, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".stringoutline", (Xpost_Op_Func)_stringoutline, 1, 1, stringtype);
-    INSTALL;
-    op = xpost_operator_cons(ctx, "kshow", (Xpost_Op_Func)_kshow, 0, 2, proctype, stringtype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
