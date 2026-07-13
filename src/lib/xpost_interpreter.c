@@ -1751,6 +1751,11 @@ void loadinitps(Xpost_Context *ctx)
     return;
 
   load_init_ps:
+    /* init.ps loads now and graphics.ps loads lazily from this same directory;
+       permit reading it so a later sandbox does not deny the interpreter its
+       own start-up files */
+    xpost_path_permit_read(path_init);
+
     /* backslashes are not supported in path because they are inserted in
     * PostScript files, and PostScript */
 #ifdef _WIN32
