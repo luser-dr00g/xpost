@@ -78,6 +78,8 @@ typedef struct textstate
     Xpost_Object blendpix;  /* the device's BlendPix method, or invalid */
     int blend;              /* anti-alias: TextAlphaBits > 1 and BlendPix present */
     int vector;             /* the device consumes glyph outlines, not bitmaps */
+    int extents;            /* the device consumes glyph ink extents, not marks */
+    Xpost_Object fillrect;  /* the device's FillRect, for extent reporting */
     int sepindex;           /* separation registered with the device, or -1 */
     double septint;         /* the separation's tint */
 } textstate;
@@ -353,6 +355,14 @@ textstate _text_state_get(Xpost_Context *ctx,
             && tab.int_.val > 1;
     vec = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "VectorGlyphs"));
     ts.vector = xpost_object_get_type(vec) == booleantype && vec.int_.val;
+    /* an extent-tracking device (the bbox device) needs no glyph
+       rasterization: each glyph contributes its ink box through the
+       device's FillRect instead */
+    vec = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "GlyphExtents"));
+    ts.extents = xpost_object_get_type(vec) == booleantype && vec.int_.val;
+    memset(&ts.fillrect, 0, sizeof ts.fillrect);  /* invalidtype */
+    if (ts.extents)
+        ts.fillrect = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "FillRect"));
     /* a separation the graphics state registered with the device:
        glyph outlines fill in the separation, not the process colour */
     ts.sepindex = -1;
@@ -848,6 +858,7 @@ int _show_char(Xpost_Context *ctx,
     int top;
     long advance_x;
     long advance_y;
+    long bx0, by0, bx1, by1;
 
     /* show does not kern: pair adjustment in PostScript is the
        program's business (kshow, ashow), and the reference
@@ -859,6 +870,50 @@ int _show_char(Xpost_Context *ctx,
                                 *xpos, *ypos, ncomp, comp1, comp2, comp3, comp4,
                                 &advance_x, &advance_y))
             return 0;
+    }
+    else if (ts->extents
+             && xpost_font_face_glyph_extents(data.face, glyph_index,
+                                              &bx0, &by0, &bx1, &by1,
+                                              &advance_x, &advance_y))
+    {
+        /* an extent-tracking device needs no glyph rasterization (whose
+           cost grows with the square of the resolution): the glyph
+           contributes its ink box through the device's FillRect. The
+           box is 26.6 glyph space, y-up around the pen; the device is
+           y-down. An empty box (a space) advances only. A glyph with
+           no outline takes the rendering path below instead. */
+        if (bx1 > bx0 && by1 > by0)
+        {
+            switch (ncomp)
+            {
+                case 4:
+                    xpost_stack_push(ctx->lo, ctx->os, comp1);
+                    xpost_stack_push(ctx->lo, ctx->os, comp2);
+                    xpost_stack_push(ctx->lo, ctx->os, comp3);
+                    xpost_stack_push(ctx->lo, ctx->os, comp4);
+                    break;
+                case 3:
+                    xpost_stack_push(ctx->lo, ctx->os, comp1);
+                    xpost_stack_push(ctx->lo, ctx->os, comp2);
+                    xpost_stack_push(ctx->lo, ctx->os, comp3);
+                    break;
+                default:
+                    xpost_stack_push(ctx->lo, ctx->os, comp1);
+                    break;
+            }
+            xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)(*xpos + bx0 / 64.0)));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)(*ypos - by1 / 64.0)));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)((bx1 - bx0) / 64.0)));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)((by1 - by0) / 64.0)));
+            xpost_stack_push(ctx->lo, ctx->os, devdic);
+            if (xpost_object_get_type(ts->fillrect) == operatortype)
+                xpost_stack_push(ctx->lo, ctx->es, ts->fillrect);
+            else
+            {
+                xpost_stack_push(ctx->lo, ctx->os, ts->fillrect);
+                xpost_stack_push(ctx->lo, ctx->es, xpost_name_cons(ctx, "exec"));
+            }
+        }
     }
     else
     {
@@ -1380,35 +1435,35 @@ int _stringwidth(Xpost_Context *ctx,
     cstr = xpost_string_allocate_cstring(ctx, str);
     XPOST_LOG_INFO("append nul to string");
 
-    /* do everything BUT
-       render text in char *cstr  with font data  at pen position xpos ypos */
+    /* accumulate the advances without rendering: the outline metrics
+       carry the advance; a glyph with no outline (a bitmap strike)
+       renders as a fallback */
     for (ch = cstr; *ch; ch++)
     {
-        /* _show_char(ctx, devdic, putpix, data, &xpos, &ypos, *ch, &glyph_previous, has_kerning,
-                ncomp, comp[0], comp[1], comp[2], comp[3]); */
-
 #ifdef HAVE_FREETYPE2
         unsigned int glyph_index;
-        unsigned char *buffer;
-        int rows;
-        int width;
-        int pitch;
-        char pixel_mode;
-        int left;
-        int top;
+        long bx0, by0, bx1, by1;
         long advance_x;
         long advance_y;
 
         glyph_index = _glyph_index_for_char(ctx, encoding, data.face, (unsigned char)*ch);
-        if (!xpost_font_face_glyph_render(data.face, glyph_index))
-            return unregistered;
-        xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width, &pitch, &pixel_mode, &left, &top, &advance_x, &advance_y);
-        /*
-        _draw_bitmap(ctx, devdic, putpix,
-                buffer, rows, width, pitch, pixel_mode,
-                *xpos + left, *ypos - top,
-                ncomp, comp[0], comp[1], comp[2], comp[3]);
-                */
+        if (!xpost_font_face_glyph_extents(data.face, glyph_index,
+                                           &bx0, &by0, &bx1, &by1,
+                                           &advance_x, &advance_y))
+        {
+            unsigned char *buffer;
+            int rows, width, pitch, left, top;
+            char pixel_mode;
+
+            if (!xpost_font_face_glyph_render(data.face, glyph_index))
+            {
+                free(cstr);
+                return unregistered;
+            }
+            xpost_font_face_glyph_buffer_get(data.face, &buffer, &rows, &width,
+                                             &pitch, &pixel_mode, &left, &top,
+                                             &advance_x, &advance_y);
+        }
         xpos += (real)advance_x / 64;
         ypos += (real)advance_y / 64;
 #endif

@@ -10,14 +10,19 @@
 % (y-up) to match Ghostscript's bbox device.
 %
 % Methods are as for the other devices (see nulldev.ps), except the marking
-% methods accumulate a box rather than discarding their arguments. FillRect is
-% left a no-op on purpose: its only caller is erasepage (a page clear), which --
-% as in Ghostscript's bbox device -- must not contribute to the bounding box.
+% methods accumulate a box rather than discarding their arguments. The page
+% clear must not contribute to the box, so the device carries an Erase no-op
+% and erasepage never reaches the marking methods.
+%
+% Glyphs need no rasterization here -- whose cost grows with the square of
+% the resolution -- so the device declares /GlyphExtents: each glyph
+% contributes its ink box through FillRect instead.
 
 /BBOX <<
     /nativecolorspace /DeviceGray
     /dimensions [0 0]
     /NoOutput true  % accumulate coordinates only; never rasterize
+    /GlyphExtents true  % text marks contribute outline ink boxes, not bitmaps
 
     /.copydict {
         dup length dict copy
@@ -92,9 +97,18 @@
         end
     }
 
-    % page clear (erasepage); not a mark, so ignore -- matches gs bbox
+    % the page clear (erasepage) is not a mark -- matches gs bbox
+    /Erase { % IMAGE  .  -
+        pop
+    }
+
     /FillRect { % val x y w h IMAGE  .  -
-        pop pop pop pop pop pop
+        begin {h w y x val}{exch def}forall
+            val .opaque {
+                x y .maxmin
+                x w add  y h add  .maxmin
+            } if
+        end
     }
 
     /FillPoly { % val polygon IMAGE  .  -
@@ -149,8 +163,12 @@
     /dev 100 100 newbboxdevice def
     % a filled triangle spanning device x[10,30] y[20,40]
     0 [ [10 20] [30 20] [30 40] ] dev dup /FillPoly get exec
-    % erasepage-style full-page FillRect must NOT affect the box
-    0 0 0 100 100 dev dup /FillRect get exec
+    % a white rect must not mark (WhiteIsOpaque unset), and the page
+    % clear reaches Erase, which never marks
+    1 0 0 100 100 dev dup /FillRect get exec
+    dev dup /Erase get exec
+    % a marking FillRect inside the triangle's box changes nothing
+    0 15 25 10 10 dev dup /FillRect get exec
     dev begin
         minx 10 eq maxx 30 eq and  miny 20 eq maxy 40 eq and  and
         { (bboxdev accumulate PASS)= }{ (bboxdev accumulate FAIL)= } ifelse

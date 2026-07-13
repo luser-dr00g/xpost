@@ -45,6 +45,7 @@
 # include <ft2build.h>
 # include FT_FREETYPE_H
 # include FT_OUTLINE_H
+# include FT_BBOX_H
 #endif
 
 #include "xpost.h"
@@ -799,6 +800,50 @@ xpost_font_face_glyph_outline(void *face, unsigned int glyph_index, const Xpost_
     (void)face;
     (void)glyph_index;
     (void)sink;
+    (void)advance_x;
+    (void)advance_y;
+    return 0;
+#endif
+}
+
+/* The ink extent of a glyph's outline in 26.6 glyph space (y-up around
+   the pen), without rasterizing. An empty outline (a space) reports a
+   degenerate box; a glyph with no outline at all (a bitmap strike)
+   reports failure so the caller can fall back to rendering. */
+int
+xpost_font_face_glyph_extents(void *face, unsigned int glyph_index,
+                              long *xmin, long *ymin, long *xmax, long *ymax,
+                              long *advance_x, long *advance_y)
+{
+#ifdef HAVE_FREETYPE2
+    FT_Error err;
+    FT_GlyphSlot slot;
+    FT_BBox box;
+
+    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP);
+    if (err)
+    {
+        XPOST_LOG_ERR("Can not load glyph (error : %d)", err);
+        return 0;
+    }
+    slot = ((FT_Face)face)->glyph;
+    if (slot->format != FT_GLYPH_FORMAT_OUTLINE)
+        return 0;
+    FT_Outline_Get_BBox(&slot->outline, &box);
+    *xmin = box.xMin;
+    *ymin = box.yMin;
+    *xmax = box.xMax;
+    *ymax = box.yMax;
+    *advance_x = slot->advance.x;
+    *advance_y = slot->advance.y;
+    return 1;
+#else
+    (void)face;
+    (void)glyph_index;
+    (void)xmin;
+    (void)ymin;
+    (void)xmax;
+    (void)ymax;
     (void)advance_x;
     (void)advance_y;
     return 0;
