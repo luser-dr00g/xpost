@@ -49,7 +49,6 @@ int main(void)
     char root[] = "/tmp/xpost_res_XXXXXX";
     char dir[512];
     char file[600];
-    char prog[1200];
     FILE *w;
 
     if (!mkdtemp(root))
@@ -111,15 +110,14 @@ int main(void)
     xpost_job_snapshots_set(ctx, 0);
     xpost_stdout_handler_set(ctx, out_sink, NULL);
 
-    /* create the category (in global VM, like the shared instance table)
-       and point the search path at the temporary tree */
-    snprintf(prog, sizeof prog,
+    /* point the search path at the temporary tree via the C API */
+    check(xpost_add_resource_dir(ctx, root) == 1, "add resource dir");
+
+    /* create the category (in global VM, like the shared instance table) */
+    st = xpost_run(ctx, XPOST_INPUT_STRING,
         "currentglobal true setglobal "
         "/TestCategory << /Category /TestCategory >> /Category defineresource pop "
-        "setglobal "
-        "/.resourcepath [ (%s) ] def",
-        root);
-    st = xpost_run(ctx, XPOST_INPUT_STRING, prog, 0);
+        "setglobal", 0);
     check(st == XPOST_RUN_COMPLETE, "setup completes");
 
     /* a miss loads the instance from disk, then resolves it */

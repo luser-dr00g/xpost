@@ -337,6 +337,16 @@ XPAPI int xpost_path_permit_write(const char *dir);
 XPAPI void xpost_path_control_engage(void);
 
 /**
+ * @brief Append a directory to the resource search path.
+ *
+ * findresource searches these directories, in the order added, when a
+ * resource is not already defined in virtual memory. Add directories
+ * before running the program that resolves resources. Returns 1 on
+ * success, 0 on failure.
+ */
+XPAPI int xpost_add_resource_dir(Xpost_Context *ctx, const char *dir);
+
+/**
  * @brief Outcome of executing a program with xpost_run().
  *
  * A context that reports #XPOST_RUN_COMPLETE, #XPOST_RUN_YIELDED or

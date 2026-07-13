@@ -1960,6 +1960,51 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx, int cnt, char *defs[])
     return 1;
 }
 
+XPAPI int xpost_add_resource_dir(Xpost_Context *ctx, const char *dir)
+{
+    Xpost_Object ud;
+    Xpost_Object key;
+    Xpost_Object rp;
+    Xpost_Object newrp;
+    Xpost_Object str;
+    unsigned int n;
+    unsigned int i;
+    unsigned int vmmode;
+
+    if (!ctx || !dir)
+        return 0;
+
+    key = xpost_name_cons(ctx, ".resourcepath");
+    ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+
+    /* extend any array already defined in userdict, else start empty */
+    rp = xpost_dict_get(ctx, ud, key);
+    n = (xpost_object_get_type(rp) == arraytype) ? rp.comp_.sz : 0;
+
+    /* userdict resides in global VM; the array and its strings must live
+       there too. They are data, not a procedure, so make them literal --
+       an executable array would be run, not read, when .resourcepath is
+       evaluated by name. */
+    vmmode = ctx->vmmode;
+    ctx->vmmode = GLOBAL;
+    str = xpost_object_cvlit(xpost_string_cons(ctx, (unsigned int)strlen(dir),
+                                               (char *)dir));
+    newrp = xpost_object_cvlit(xpost_array_cons(ctx, n + 1));
+    if (xpost_object_get_type(str) == invalidtype ||
+        xpost_object_get_type(newrp) == invalidtype)
+    {
+        ctx->vmmode = vmmode;
+        return 0;
+    }
+    for (i = 0; i < n; i++)
+        xpost_array_put(ctx, newrp, i, xpost_array_get(ctx, rp, i));
+    xpost_array_put(ctx, newrp, n, str);
+    ctx->vmmode = vmmode;
+
+    xpost_dict_put(ctx, ud, key, newrp);
+    return 1;
+}
+
 XPAPI const char *xpost_error_name_get(Xpost_Context *ctx)
 {
     return ctx->run_uncaught ? ctx->run_error_name : "";
