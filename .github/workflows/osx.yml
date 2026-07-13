@@ -19,3 +19,5 @@ jobs:
       run: meson setup builddir
     - name: make
       run: ninja -C builddir
+    - name: meson test
+      run: meson test -C builddir --print-errorlogs

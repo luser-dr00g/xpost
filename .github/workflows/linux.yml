@@ -20,6 +20,8 @@ jobs:
       run: meson setup builddir
     - name: ninja
       run: ninja -C builddir
+    - name: meson test
+      run: meson test -C builddir --print-errorlogs
     - name: configure
       run: autoreconf -vif && ./configure --with-tests=regular
     - name: make
