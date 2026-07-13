@@ -314,6 +314,29 @@ XPAPI void xpost_stderr_handler_set(Xpost_Context *ctx,
 XPAPI void xpost_job_snapshots_set(Xpost_Context *ctx, int enable);
 
 /**
+ * @brief File-access sandbox: permit directory trees, then engage.
+ *
+ * Before the sandbox is engaged, a program's disk access is
+ * unrestricted. xpost_path_permit_read() (xpost_path_permit_write())
+ * grants reading (writing) of files within a directory tree;
+ * xpost_path_control_engage() then denies every other disk open by the
+ * running program. Engaging is process-wide and one-way -- it cannot be
+ * reversed and the permit set is frozen -- so configure the permitted
+ * directories first and engage before running untrusted input.
+ * Resource-file loading is separately confined and is unaffected.
+ *
+ * The permit functions return 1 on success, or 0 when the directory
+ * cannot be resolved, the permit table is full, or the sandbox is
+ * already engaged.
+ *
+ * This is defence in depth: it complements, and does not replace,
+ * operating-system confinement of the host process.
+ */
+XPAPI int xpost_path_permit_read(const char *dir);
+XPAPI int xpost_path_permit_write(const char *dir);
+XPAPI void xpost_path_control_engage(void);
+
+/**
  * @brief Outcome of executing a program with xpost_run().
  *
  * A context that reports #XPOST_RUN_COMPLETE, #XPOST_RUN_YIELDED or
