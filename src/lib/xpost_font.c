@@ -386,7 +386,9 @@ unsigned int
 xpost_font_face_glyph_index_get(void *face, char c)
 {
 #ifdef HAVE_FREETYPE2
-    return FT_Get_Char_Index(face, c);
+    /* the character code is a byte value: keep 128-255 out of the
+       sign extension */
+    return FT_Get_Char_Index(face, (unsigned char)c);
 #else
     (void)face;
     (void)c;
@@ -913,45 +915,4 @@ xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, 
 #endif
 }
 
-int
-xpost_font_face_kerning_has(void *face)
-{
-#ifdef HAVE_FREETYPE2
-    if (!FT_HAS_KERNING(((FT_Face)face)))
-        return 1;
 
-    XPOST_LOG_INFO("Face has no kerning information");
-#else
-    (void)face;
-#endif
-
-    return 0;
-}
-
-int
-xpost_font_face_kerning_delta_get(void *face, unsigned int glyph_previous, unsigned int glyph_index, long *delta_x, long *delta_y)
-{
-#ifdef HAVE_FREETYPE2
-    FT_Vector delta;
-    FT_Error err;
-
-    err = FT_Get_Kerning((FT_Face)face, glyph_previous, glyph_index,
-                         FT_KERNING_DEFAULT, &delta);
-    if (!err)
-    {
-        *delta_x = delta.x;
-        *delta_y = delta.y;
-        return 1;
-    }
-
-    XPOST_LOG_INFO("Can not retrieve kerning (error : %d)", err);
-#else
-    (void)face;
-    (void)glyph_previous;
-    (void)glyph_index;
-    (void)delta_x;
-    (void)delta_y;
-#endif
-
-    return 0;
-}

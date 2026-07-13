@@ -241,35 +241,5 @@ int xpost_font_face_glyph_extents(void *face, unsigned int glyph_index,
 
 void xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, int *width, int *pitch, char *pixel_mode, int *left, int *top, long *advance_x, long *advance_y);
 
-/**
- * @brief Check if the given font has kerning feature.
- *
- * @param[in] face The font face.
- * @return 1 if the font has kerning feature, 0 otherwise.
- *
- * This function checks if @p face has kerning feature. It returns 1
- * if so, 0 otherwise.
- *
- * @see xpost_font_face_kerning_delta_get()
- */
-int xpost_font_face_kerning_has(void *face);
-
-/**
- * @brief Retrieve the kerning vector of the given glyph.
- *
- * @param[in] face The font face.
- * @param[in] glyph_previous The previous glyph.
- * @param[in] glyph_index The current glyph.
- * @param[out] delta_x The horizontal component of the kerning vector.
- * @param[out] delta_y The vertical component of the kerning vector.
- * @return 1 on success, 0 otherwise.
- *
- * This function stores the kerning vector of the glyph
- * @p glyph_index computed from @p glyph_previous  (in font @p face)
- * in @p delta_x and @p delta_y. It returns 1 on success, 0 otherwise.
- *
- * @see xpost_font_face_kerning_has()
- */
-int xpost_font_face_kerning_delta_get(void *face, unsigned int glyph_previous, unsigned int glyph_index, long *delta_x, long *delta_y);
 
 #endif
