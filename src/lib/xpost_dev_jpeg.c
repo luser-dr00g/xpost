@@ -52,6 +52,7 @@
 #include "xpost_stack.h"  /* push results on stack */
 #include "xpost_context.h" /* state */
 #include "xpost_error.h"
+#include "xpost_file.h" /* the checked disk-file opener */
 #include "xpost_dict.h" /* get/put values in dicts */
 #include "xpost_string.h" /* get/put values in strings */
 #include "xpost_array.h"
@@ -192,7 +193,10 @@ int _create_cont(Xpost_Context *ctx,
         return unregistered;
     }
 
-    private.f = fopen(filename, "wb");
+    {
+        int err;
+        private.f = xpost_diskfile_fopen(filename, "wb", 0, &err);
+    }
     free(filename);
     if (!private.f)
     {
