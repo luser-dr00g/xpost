@@ -1,9 +1,10 @@
 #!/bin/sh
 #
-# Guard the single-opener invariant: fopen() must appear only inside
-# xpost_diskfile_fopen(), so every disk file the interpreter opens passes
-# one enforcement point. A new call elsewhere (for example a device that
-# opens its own output) fails this check.
+# Guard the single-opener invariant: fopen() must appear only in xpost_file.c
+# (in xpost_raw_fopen, the one call the disk-open funnel delegates to), so
+# every disk file the interpreter opens passes one enforcement point. A new
+# call elsewhere (for example a device that opens its own output) fails this
+# check.
 #
 # Usage: check-fopen-funnel.sh <src/lib directory>
 
