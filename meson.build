@@ -166,6 +166,7 @@ else
 
 # clock_gettime
   if cc.has_function('clock_gettime', prefix: '#include <time.h>')
+    config_h.set10('HAVE_CLOCK_GETTIME', true)
     if cc.compiles(
       '''
       #include <time.h>

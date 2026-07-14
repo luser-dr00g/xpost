@@ -52,7 +52,9 @@ char *realpath(const char *restrict file_name, char *restrict resolved_name);
 // This prototype isn't visible under OS X
 int fpurge(FILE *);
 
+#include "xpost.h"
 #include "xpost_compat.h"
+#include "xpost_log.h"
 
 
 /*============================================================================*
@@ -90,8 +92,8 @@ xpost_compat_init(void)
         if (!clock_gettime(CLOCK_REALTIME, &_xpost_time_start))
         {
             // may go backwards
-            _ecore_time_clock_id = CLOCK_REALTIME;
-            XPOST_LOG_WRN("CLOCK_MONOTONIC not available. Fallback to CLOCK_REALTIME");
+            _xpost_time_clock_id = CLOCK_REALTIME;
+            XPOST_LOG_WARN("CLOCK_MONOTONIC not available. Fallback to CLOCK_REALTIME");
         }
         else
             return 0;
@@ -133,7 +135,7 @@ xpost_get_realtime_ms(void)
     struct timespec t;
 
     if (!clock_gettime(_xpost_time_clock_id, &t))
-        return (long long)t.tv_sec + (long long)t.tv_nsec / 1000000LL;
+        return (long long)(t.tv_sec - _xpost_time_start.tv_sec) * 1000 + (long long)(t.tv_nsec - _xpost_time_start.tv_nsec) / 1000000LL;
     /* very unlikely */
     else
         return 0;
@@ -157,7 +159,7 @@ xpost_get_usertime_ms(void)
     struct timespec t;
 
     if (!clock_gettime(_xpost_time_clock_id, &t))
-        return (long long)(t.tv_sec - _xpost_time_start.tv_sec) + (long long)(t.tv_nsec - _xpost_time_start.tv_nsec) / 1000000LL;
+        return (long long)(t.tv_sec - _xpost_time_start.tv_sec) * 1000 + (long long)(t.tv_nsec - _xpost_time_start.tv_nsec) / 1000000LL;
     /* very unlikely */
     else
         return 0;
