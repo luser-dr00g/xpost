@@ -53,7 +53,7 @@ int main(void)
 {
     Xpost_Context *ctx;
     Xpost_Run_Status st;
-    char root[] = "/tmp/xpost_res_XXXXXX";
+    char root[] = "xpost_res_XXXXXX";  /* relative: a native binary need not share /tmp */
     char dir[512];
     char file[600];
     FILE *w;
