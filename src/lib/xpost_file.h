@@ -203,6 +203,36 @@ Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object s
 FILE *xpost_diskfile_fopen(const char *path, const char *mode, int internal, int *err);
 
 /**
+ * @brief Delete @p path, subject to the file-access sandbox.
+ *
+ * A filesystem-control operation rather than a stream open. Under the
+ * engaged sandbox @p path must be write-permitted. Returns 0 on success,
+ * -1 with *err set otherwise.
+ */
+int xpost_diskfile_remove(const char *path, int *err);
+
+/**
+ * @brief Rename @p oldpath to @p newpath, subject to the sandbox.
+ *
+ * Under the engaged sandbox both paths must be write-permitted. Returns 0
+ * on success, -1 with *err set otherwise.
+ */
+int xpost_diskfile_rename(const char *oldpath, const char *newpath, int *err);
+
+/**
+ * @brief May the running program see @p path (to open or enumerate it)?
+ *
+ * True when the sandbox is not engaged or @p path is read-permitted. Used
+ * to filter directory enumeration to the visible files.
+ */
+int xpost_diskfile_readable(const char *path);
+
+/**
+ * @brief Has the file-access sandbox been engaged?
+ */
+int xpost_path_control_is_engaged(void);
+
+/**
  * @brief Validate that s[0..len) is a safe single path component.
  *
  * Rejects path separators, ':' , NUL and control bytes, '.' and '..', a
