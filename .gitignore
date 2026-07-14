@@ -56,3 +56,12 @@ visual_studio/vc14/xpost_client/x64/
 visual_studio/vc14/xpost_suite/Debug/
 visual_studio/vc14/xpost_suite/Release/
 visual_studio/vc14/xpost_suite/x64/
+
+# out-of-tree build, install-test and editor tooling cache directories
+/build*/
+/.cache/
+/at-inst/
+/at-build/
+/at-check/
+/at-rel/
+/xpost-inst-test/
