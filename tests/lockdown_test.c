@@ -102,11 +102,18 @@ int main(void)
     snprintf(prog, sizeof prog, "(%s/evil.txt) (w) file", root);
     check(refused(ctx, prog), "unpermitted write refused after lockdown");
 
-    /* the permit set is frozen: permitting more after lockdown has no effect */
-    snprintf(prog, sizeof prog, "(/tmp) .permitfileread");
-    check(completes(ctx, prog), ".permitfileread after lockdown is a no-op call");
+    /* lockdown removes the permit and control ops from systemdict, so a
+       program cannot name them afterwards (the known test runs the bad token
+       only if the name survives, failing the check) */
+    check(completes(ctx,
+              "systemdict /.permitfileread known { badtoken } if"),
+          ".permitfileread is undefined after lockdown");
+    check(completes(ctx,
+              "systemdict /.lockdown known { badtoken } if"),
+          ".lockdown is undefined after lockdown");
+    /* and the permit set stays frozen regardless */
     snprintf(prog, sizeof prog, "(%s) (r) file", outside);
-    check(refused(ctx, prog), "late permit does not grant access");
+    check(refused(ctx, prog), "late access does not open outside the set");
 
     xpost_destroy(ctx);
     xpost_quit();
