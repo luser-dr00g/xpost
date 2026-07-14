@@ -16,6 +16,13 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+/* the Windows CRT mkdir takes no mode argument */
+#ifdef _WIN32
+# define test_mkdir(p) mkdir(p)
+#else
+# define test_mkdir(p) mkdir((p), 0700)
+#endif
+
 #include "xpost.h"
 
 static int failures = 0;
@@ -57,7 +64,7 @@ int main(void)
         return 1;
     }
     snprintf(dir, sizeof dir, "%s/TestCategory", root);
-    if (mkdir(dir, 0700) != 0)
+    if (test_mkdir(dir) != 0)
     {
         printf("FAIL: mkdir\n");
         return 1;
@@ -76,7 +83,7 @@ int main(void)
        disk, exercising category-on-demand loading (the layout used by a
        resource-tree distribution: Category/<name> and <name>/<instance>) */
     snprintf(dir, sizeof dir, "%s/Category", root);
-    mkdir(dir, 0700);
+    test_mkdir(dir);
     snprintf(file, sizeof file, "%s/Category/DiskCat", root);
     w = fopen(file, "wb");
     if (w)
@@ -85,7 +92,7 @@ int main(void)
         fclose(w);
     }
     snprintf(dir, sizeof dir, "%s/DiskCat", root);
-    mkdir(dir, 0700);
+    test_mkdir(dir);
     snprintf(file, sizeof file, "%s/DiskCat/diskinst", root);
     w = fopen(file, "wb");
     if (w)

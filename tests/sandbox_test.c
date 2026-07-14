@@ -16,6 +16,13 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
+/* the Windows CRT mkdir takes no mode argument */
+#ifdef _WIN32
+# define test_mkdir(p) mkdir(p)
+#else
+# define test_mkdir(p) mkdir((p), 0700)
+#endif
+
 #include "xpost.h"
 
 static int failures = 0;
@@ -65,7 +72,7 @@ int main(void)
     w = fopen(readable, "wb");
     if (w) { fputs("DATA", w); fclose(w); }
     snprintf(wdir, sizeof wdir, "%s/wdir", root);
-    mkdir(wdir, 0700);
+    test_mkdir(wdir);
     snprintf(outside, sizeof outside, "%s.outside", root);
     w = fopen(outside, "wb");
     if (w) { fputs("SECRET", w); fclose(w); }
