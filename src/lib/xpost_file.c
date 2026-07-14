@@ -562,11 +562,21 @@ xpost_path_safe_leaf(const char *s, size_t len)
 
 /* Open rel for reading beneath root, with the OS confining resolution to
    root (see xpost_open_beneath), mapping the failure to an error code.
-   rel should already be composed of xpost_path_safe_leaf components. */
+   rel should already be composed of xpost_path_safe_leaf components. Under
+   the engaged sandbox root must be a read-permitted directory: it is caller-
+   supplied, so confinement beneath it is not itself a permit boundary. */
 FILE *
 xpost_diskfile_fopen_beneath(const char *root, const char *rel, int *err)
 {
-    FILE *fp = xpost_open_beneath(root, rel);
+    FILE *fp;
+
+    if (xpost_path_control_engaged && !xpost_path_permitted(root, 0))
+    {
+        *err = invalidfileaccess;
+        return NULL;
+    }
+
+    fp = xpost_open_beneath(root, rel);
 
     if (!fp)
     {
