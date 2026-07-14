@@ -525,6 +525,8 @@ int main(int argc, char *argv[])
         for (i = 0; i < num_incs; i++)
         {
             xpost_add_resource_dir(ctx, incs[i]);
+            /* resource files are read from beneath this directory */
+            xpost_path_permit_read(incs[i]);
             free(incs[i]);
         }
         free(incs);
@@ -536,8 +538,7 @@ int main(int argc, char *argv[])
        current and temporary directories, the input file's directory
        (read) and the output file's directory (write). The interpreter
        permits its own data directory (init.ps, graphics.ps) during
-       start-up, and -I resource loading is separately confined, so
-       neither needs permitting here. */
+       start-up; -I resource directories were read-permitted above. */
     if (!no_sandbox)
     {
         const char *tmp = getenv("TMPDIR");
