@@ -140,7 +140,15 @@ int main(void)
         "/testinstance /TestCategory findresource pop", 0);
     check(st == XPOST_RUN_COMPLETE, "second lookup is served from VM");
 
-    /* an unknown category is itself loaded on demand, then its instance */
+    /* removing the raw opener (as lockdown does) must not break disk loading:
+       findresource reaches .resourcefileopen only through the bound
+       ,loadresource, which still holds it */
+    st = xpost_run(ctx, XPOST_INPUT_STRING,
+        "systemdict /.resourcefileopen undef", 0);
+    check(st == XPOST_RUN_COMPLETE, "undef .resourcefileopen");
+
+    /* an unknown category is itself loaded on demand, then its instance --
+       from disk, with the opener name gone */
     out_len = 0;
     st = xpost_run(ctx, XPOST_INPUT_STRING,
         "/diskinst /DiskCat findresource print flush", 0);
