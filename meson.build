@@ -3,7 +3,8 @@ project('xpost', 'c',
   license         : 'BSD 3 clause',
   default_options : [
                       'buildtype=debug',
-                      'warning_level=2'
+                      'warning_level=2',
+                      'c_std=gnu99'
                     ],
   meson_version   : '>= 1.0.0',
 )
