@@ -543,17 +543,11 @@ int xpost_op_string_deletefile (Xpost_Context *ctx,
     int ret;
 
     sbuf = xpost_string_allocate_cstring(ctx, S);
-    ret = remove(sbuf);
-    if (ret != 0)
-        switch (errno)
-        {
-            case ENOENT:
-	      free(sbuf);
-	      return undefinedfilename;
-            default:
-	      free(sbuf);
-	      return ioerror;
-        }
+    if (xpost_diskfile_remove(sbuf, &ret) != 0)
+    {
+        free(sbuf);
+        return ret;
+    }
     free(sbuf);
     return 0;
 }
@@ -572,19 +566,12 @@ int xpost_op_string_renamefile (Xpost_Context *ctx,
 
     newbuf = xpost_string_allocate_cstring(ctx, New);
 
-    ret = rename(oldbuf, newbuf);
-    if (ret != 0)
-        switch(errno)
-        {
-            case ENOENT:
-	      free(oldbuf);
-	      free(newbuf);
-	      return undefinedfilename;
-            default:
-	      free(oldbuf);
-	      free(newbuf);
-	      return ioerror;
-        }
+    if (xpost_diskfile_rename(oldbuf, newbuf, &ret) != 0)
+    {
+        free(oldbuf);
+        free(newbuf);
+        return ret;
+    }
     free(oldbuf);
     free(newbuf);
     return 0;
@@ -606,6 +593,11 @@ int xpost_op_contfilenameforall (Xpost_Context *ctx,
     Xpost_Object interval;
 
     globbuf = oglob.glob_.ptr;
+    /* skip entries the engaged sandbox would not let the program open, so
+       a listing cannot disclose names outside the permitted set */
+    while (oglob.glob_.off < globbuf->gl_pathc
+           && !xpost_diskfile_readable(globbuf->gl_pathv[oglob.glob_.off]))
+        ++oglob.glob_.off;
     if (oglob.glob_.off < globbuf->gl_pathc)
     {
         /* xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "contfilenameforall", NULL,0,0)); */

@@ -232,6 +232,63 @@ xpost_diskfile_fopen(const char *path, const char *mode, int internal, int *err)
     return fp;
 }
 
+/* deletefile and renamefile modify the filesystem at the target path(s)
+   rather than opening a stream, so they do not pass through the opener
+   above; route them through the same policy. Under the engaged sandbox
+   each affected path must be write-permitted. */
+int
+xpost_diskfile_remove(const char *path, int *err)
+{
+    if (xpost_path_control_engaged && !xpost_path_permitted(path, 1))
+    {
+        *err = invalidfileaccess;
+        return -1;
+    }
+    if (remove(path) != 0)
+    {
+        *err = errno == ENOENT ? undefinedfilename : ioerror;
+        return -1;
+    }
+    *err = 0;
+    return 0;
+}
+
+int
+xpost_diskfile_rename(const char *oldpath, const char *newpath, int *err)
+{
+    if (xpost_path_control_engaged
+        && !(xpost_path_permitted(oldpath, 1) && xpost_path_permitted(newpath, 1)))
+    {
+        *err = invalidfileaccess;
+        return -1;
+    }
+    if (rename(oldpath, newpath) != 0)
+    {
+        *err = errno == ENOENT ? undefinedfilename : ioerror;
+        return -1;
+    }
+    *err = 0;
+    return 0;
+}
+
+/* May the running program see `path`? Directory enumeration is filtered to
+   the files it could actually open, so a listing does not disclose names
+   outside the permitted set. */
+int
+xpost_diskfile_readable(const char *path)
+{
+    return !xpost_path_control_engaged || xpost_path_permitted(path, 0);
+}
+
+/* Has the file-access sandbox been engaged? Environment access is refused
+   once it has, since the environment is neither read nor written through
+   the opener. */
+int
+xpost_path_control_is_engaged(void)
+{
+    return xpost_path_control_engaged;
+}
+
 /* Is s[0..len) a safe single path component ("leaf")? Externally-derived
    resource names are validated with this so they cannot express a path:
    rejected are separators of either platform, ':' (drive letter / NTFS

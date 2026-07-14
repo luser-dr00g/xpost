@@ -111,6 +111,27 @@ int main(void)
     snprintf(prog, sizeof prog, "(%s/evil.txt) (w) file", root);
     check(errors_with(ctx, prog, "invalidfileaccess"), "unpermitted write refused");
 
+    /* deletefile and renamefile are control operations, not opens: a target
+       outside the permitted set is refused rather than escaping the latch */
+    snprintf(prog, sizeof prog, "(%s) deletefile", outside);
+    check(errors_with(ctx, prog, "invalidfileaccess"), "outside deletefile refused");
+    snprintf(prog, sizeof prog, "(%s) (%s/moved) renamefile", outside, wdir);
+    check(errors_with(ctx, prog, "invalidfileaccess"), "outside renamefile refused");
+
+    /* deletefile within the permitted write dir succeeds */
+    snprintf(prog, sizeof prog, "(%s/out.txt) deletefile", wdir);
+    check(completes(ctx, prog), "permitted deletefile succeeds");
+
+    /* directory enumeration hides files the program could not open: the proc
+       (which would error) is never reached for an unpermitted match */
+    snprintf(prog, sizeof prog,
+             "(%s) { pop zzznotanop } 256 string filenameforall", outside);
+    check(completes(ctx, prog), "enumeration hides unpermitted files");
+
+    /* the environment is neither read nor written once engaged */
+    check(errors_with(ctx, "(PATH) getenv", "invalidaccess"), "getenv refused");
+    check(errors_with(ctx, "(X) (y) putenv", "invalidaccess"), "putenv refused");
+
     /* the latch is one-way: the permit set is frozen after engaging */
     check(xpost_path_permit_read("/") == 0, "permit refused after engage");
 
