@@ -60,7 +60,7 @@ static int errors_with(Xpost_Context *ctx, const char *prog, const char *name)
 int main(void)
 {
     Xpost_Context *ctx;
-    char root[] = "/tmp/xpost_sbx_XXXXXX";
+    char root[] = "xpost_sbx_XXXXXX";  /* relative: a native binary need not share /tmp */
     char wdir[512];
     char readable[600];
     char outside[600];

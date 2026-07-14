@@ -57,7 +57,7 @@ static int refused(Xpost_Context *ctx, const char *prog)
 int main(void)
 {
     Xpost_Context *ctx;
-    char root[] = "/tmp/xpost_lck_XXXXXX";
+    char root[] = "xpost_lck_XXXXXX";  /* relative: a native binary need not share /tmp */
     char wdir[512];
     char readable[600];
     char outside[600];
