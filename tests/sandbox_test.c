@@ -66,6 +66,11 @@ int main(void)
     char outside[600];
     char prog[900];
     FILE *w;
+#ifndef _WIN32
+    char escape[600];   /* a symlink inside the tree that points out of it */
+    char wescape[600];  /* the same, inside the writable subdirectory */
+    char aliasdir[600]; /* a symlink that reaches the tree from outside it */
+#endif
 
     if (!mkdtemp(root)) { printf("FAIL: mkdtemp\n"); return 1; }
     snprintf(readable, sizeof readable, "%s/readable", root);
@@ -76,6 +81,31 @@ int main(void)
     snprintf(outside, sizeof outside, "%s.outside", root);
     w = fopen(outside, "wb");
     if (w) { fputs("SECRET", w); fclose(w); }
+
+#ifndef _WIN32
+    /* symlinks (absolute targets, so they resolve from any directory):
+       two that escape the permitted tree, and one that reaches it */
+    {
+        char *root_abs = realpath(root, NULL);
+        char *outside_abs = realpath(outside, NULL);
+
+        if (root_abs && outside_abs)
+        {
+            snprintf(escape, sizeof escape, "%s/escape", root);
+            if (symlink(outside_abs, escape) != 0) escape[0] = '\0';
+            snprintf(wescape, sizeof wescape, "%s/wescape", wdir);
+            if (symlink(outside_abs, wescape) != 0) wescape[0] = '\0';
+            snprintf(aliasdir, sizeof aliasdir, "%s.alias", root);
+            if (symlink(root_abs, aliasdir) != 0) aliasdir[0] = '\0';
+        }
+        else
+        {
+            escape[0] = wescape[0] = aliasdir[0] = '\0';
+        }
+        free(root_abs);
+        free(outside_abs);
+    }
+#endif
 
     if (!xpost_init()) { printf("FAIL: xpost_init\n"); return 1; }
     ctx = xpost_create("null", XPOST_OUTPUT_DEFAULT, NULL,
@@ -132,6 +162,41 @@ int main(void)
     check(errors_with(ctx, "(PATH) getenv", "invalidaccess"), "getenv refused");
     check(errors_with(ctx, "(X) (y) putenv", "invalidaccess"), "putenv refused");
 
+#ifndef _WIN32
+    /* a symlink inside the tree that resolves outside it is refused: name
+       resolution is confined to the permitted directory, so a symlink cannot
+       be used to reach a file the sandbox would not open directly */
+    if (escape[0])
+    {
+        snprintf(prog, sizeof prog, "(%s) (r) file", escape);
+        check(errors_with(ctx, prog, "invalidfileaccess"),
+              "read through an escaping symlink refused");
+    }
+    if (wescape[0])
+    {
+        snprintf(prog, sizeof prog, "(%s) (w) file", wescape);
+        check(errors_with(ctx, prog, "invalidfileaccess"),
+              "write through an escaping symlink refused");
+        snprintf(prog, sizeof prog, "(%s) deletefile", wescape);
+        check(errors_with(ctx, prog, "invalidfileaccess"),
+              "delete through an escaping symlink refused");
+    }
+
+    /* reaching the tree through a symlinked access path still works: the
+       target canonicalises back inside the permitted directory (the case of
+       a platform where the permitted directory is itself under a symlink,
+       e.g. /tmp -> /private/tmp) */
+    if (aliasdir[0])
+    {
+        snprintf(prog, sizeof prog, "(%s/readable) (r) file closefile", aliasdir);
+        check(completes(ctx, prog), "read through a symlinked access path");
+        snprintf(prog, sizeof prog,
+                 "(%s/wdir/via_alias.txt) (w) file dup (hi) writestring closefile",
+                 aliasdir);
+        check(completes(ctx, prog), "write through a symlinked access path");
+    }
+#endif
+
     /* the latch is one-way: the permit set is frozen after engaging */
     check(xpost_path_permit_read("/") == 0, "permit refused after engage");
 
@@ -141,6 +206,13 @@ int main(void)
     /* cleanup (best effort) */
     snprintf(prog, sizeof prog, "%s/out.txt", wdir);
     unlink(prog);
+#ifndef _WIN32
+    snprintf(prog, sizeof prog, "%s/via_alias.txt", wdir);
+    unlink(prog);
+    if (escape[0]) unlink(escape);
+    if (wescape[0]) unlink(wescape);
+    if (aliasdir[0]) unlink(aliasdir);
+#endif
     unlink(readable);
     unlink(outside);
     rmdir(wdir);

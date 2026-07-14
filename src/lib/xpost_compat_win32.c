@@ -359,6 +359,78 @@ xpost_open_beneath(const char *root, const char *rel)
     return fp;
 }
 
+/* The atomic beneath-root primitives are Linux-specific (openat2). On Windows
+   they report themselves unsupported so the file layer applies its portable
+   name-based check instead. */
+
+FILE *
+xpost_openat2_beneath(const char *root, const char *rel, const char *mode,
+                      int access, int *supported)
+{
+    (void)root; (void)rel; (void)mode; (void)access;
+    *supported = 0;
+    errno = ENOSYS;
+    return NULL;
+}
+
+int
+xpost_fd_realpath(int fd, char *buf, size_t buflen)
+{
+    HANDLE h;
+    char tmp[XPOST_PATH_MAX];
+    DWORD n;
+
+    h = (HANDLE)_get_osfhandle(fd);
+    if (h == INVALID_HANDLE_VALUE)
+        return 0;
+    n = GetFinalPathNameByHandle(h, tmp, sizeof tmp, FILE_NAME_NORMALIZED);
+    if (n == 0UL || n >= sizeof tmp)
+        return 0;
+    /* GetFinalPathNameByHandle yields the \\?\ (or \\?\UNC\) prefixed form;
+       strip it so the result matches xpost_realpath (GetFullPathName), the
+       form the permit set is stored in */
+    if (_strnicmp(tmp, "\\\\?\\UNC\\", 8) == 0) /* \\?\UNC\server\share -> \\server\share */
+    {
+        if ((size_t)(2 + strlen(tmp + 8)) >= buflen)
+            return 0;
+        buf[0] = '\\';
+        buf[1] = '\\';
+        strcpy(buf + 2, tmp + 8);
+        return 1;
+    }
+    if (_strnicmp(tmp, "\\\\?\\", 4) == 0)
+    {
+        if (strlen(tmp + 4) >= buflen)
+            return 0;
+        strcpy(buf, tmp + 4);
+        return 1;
+    }
+    if (strlen(tmp) >= buflen)
+        return 0;
+    strcpy(buf, tmp);
+    return 1;
+}
+
+int
+xpost_unlinkat_beneath(const char *root, const char *rel, int *supported)
+{
+    (void)root; (void)rel;
+    *supported = 0;
+    errno = ENOSYS;
+    return -1;
+}
+
+int
+xpost_renameat_beneath(const char *oldroot, const char *oldrel,
+                       const char *newroot, const char *newrel,
+                       int *supported)
+{
+    (void)oldroot; (void)oldrel; (void)newroot; (void)newrel;
+    *supported = 0;
+    errno = ENOSYS;
+    return -1;
+}
+
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/
