@@ -80,7 +80,6 @@ int xpost_op_fork (Xpost_Context *ctx, Xpost_Object proc)
                               ctx->xpost_interpreter_alloc_global_memory,
                               ctx->garbage_collect_function);
     newctx = ctx->gl->interpreter_cid_get_context(cid);
-    printf("op_fork ctx->id %u, cid %u, newctx->id %u\n", ctx->id, cid, newctx->id);
 
     (void)xpost_op_counttomark(ctx);
     n = xpost_stack_pop(ctx->lo, ctx->os).int_.val;
@@ -107,7 +106,6 @@ static
 int _i_am_zombie_ (Xpost_Context *ctx)
 {
     ctx->state = C_ZOMB;
-    printf("I AM ZOMBIE\n");
     return contextswitch;
 }
 
@@ -115,7 +113,6 @@ static
 int _i_am_free_ (Xpost_Context *ctx)
 {
     ctx->state = C_FREE;
-    printf("I AM FREE\n");
     return contextswitch;
 }
 
@@ -130,7 +127,6 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context)
     Xpost_Context *child = ctx->gl->interpreter_cid_get_context(context.mark_.padw);
     if (child->state == C_ZOMB) {
         int i,n;
-        printf("found zombie child\n");
         xpost_stack_push(ctx->lo, ctx->os, mark);
         // Copy operand stack
         n = xpost_stack_count(child->lo, child->os);
@@ -143,7 +139,6 @@ int xpost_op_join (Xpost_Context *ctx, Xpost_Object context)
     }
 
     /* continue */
-    printf("waiting for child %u ==%u\n", context.mark_.padw, child->state);
     xpost_stack_push(ctx->lo, ctx->os, context);
     xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "join", NULL,0,0));
     ctx->state = C_WAIT;

@@ -462,7 +462,6 @@ unsigned int xpost_context_fork3(Xpost_Context *ctx,
 
     xpost_stack_push(newctx->lo, newctx->ds,
             xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)); // systemdict
-    printf("fork cid %u, ctx->id %u\n", newcid, newctx->id);
     return newcid;
 }
 
