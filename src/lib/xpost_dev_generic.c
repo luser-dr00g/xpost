@@ -169,142 +169,53 @@ int _yxsort (Xpost_Context *ctx, Xpost_Object arr)
     return 0;
 }
 
-/*
-   feq is applied to determine if two pixel coordinates
-   are "close enough" to be considered equal.
-   It is used to reject cases in _intersect,
-   and to control the checking of both coordinates
-   when sorting (x,y) pairs in a y|x sort.
-   These values are device-space points derived from user-input,
-   so they are ultimately quantized to integers to address the raster,
-   but here we consider them quantized to a small fraction of unity,
-   somewhere between 1 and the true floating-point epsilon.
- */
-#ifdef _WANT_LARGE_OBJECT
-# define PIXEL_TOLERANCE 0.0001
-#else
-# define PIXEL_TOLERANCE 0.0001f
-#endif
-
-static inline
-int feq(real dif)
+/* One boundary-chain passage through a pixel-row band: the x extent
+   [lo, hi] the chain covers within the band (row b covers device
+   b <= y < b+1) and the chain's y direction (+1 rising, -1 falling) */
+struct band_span
 {
-#ifdef _WANT_LARGE_OBJECT
-    if (fabs(dif) < PIXEL_TOLERANCE)
-        return 1;
-#else
-    if (fabsf(dif) < PIXEL_TOLERANCE)
-        return 1;
-#endif
+    int band;
+    int dirn;
+    real lo, hi;
+};
+
+static
+int _bandspancomp (const void *left, const void *right)
+{
+    const struct band_span *lt = left;
+    const struct band_span *rt = right;
+
+    if (lt->band != rt->band)
+        return lt->band < rt->band ? -1 : 1;
+    if (lt->lo != rt->lo)
+        return lt->lo < rt->lo ? -1 : 1;
+    if (lt->hi != rt->hi)
+        return lt->hi < rt->hi ? -1 : 1;
+    return lt->dirn - rt->dirn;
+}
+
+/* append a span, growing the array as needed; 0 on success */
+static
+int _span_push(struct band_span **spans, int *cap, int *n,
+               int band, int dirn, real lo, real hi)
+{
+    if (*n == *cap)
+    {
+        struct band_span *tmp;
+        int newcap = *cap ? *cap * 2 : 64;
+
+        tmp = realloc(*spans, newcap * sizeof *tmp);
+        if (!tmp)
+            return VMerror;
+        *spans = tmp;
+        *cap = newcap;
+    }
+    (*spans)[*n].band = band;
+    (*spans)[*n].dirn = dirn;
+    (*spans)[*n].lo = lo;
+    (*spans)[*n].hi = hi;
+    ++*n;
     return 0;
-}
-
-static
-int _intersect(real ax, real ay,  real bx, real by,
-               real cx, real cy,  real dx, real dy,
-               real *rx, real *ry)
-{
-    real distAB;
-    real theCos;
-    real theSin;
-    real newX;
-    real ABpos;
-
-    //printf("%f %f  %f %f  %f %f  %f %f\n",
-    //        ax, ay,  bx, by,  cx, cy,  dx, dy);
-
-    /* reject degenerate line */
-    if ((feq(ax - bx) && feq(ay - by)) ||
-        (feq(cx - dx) && feq(cy - dy)))
-    {
-        return 0;
-        /*
-        if (ax == cx && ay == cy && ax != 0.0 && ay != 0.0)
-        {
-            *rx = ax;
-            *ry = ay;
-            return 1;
-        }
-        */
-    }
-
-    /* reject coinciding endpoints */
-    if ((feq(ax - cx) && feq(ay - cy)) ||
-        (feq(bx - cx) && feq(by - cy)) ||
-        (feq(ax - dx) && feq(ay - dy)) ||
-        (feq(bx - dx) && feq(by - dy)))
-    {
-        return 0;
-        /*
-        *rx = ax;
-        *ry = ay;
-        return 1;
-        */
-    }
-
-    /* translate by -ax, -ay */
-    bx -= ax;  by -= ay;
-    cx -= ax;  cy -= ay;
-    dx -= ax;  dy -= ay;
-
-    distAB = (real)sqrt(bx * bx + by * by);
-
-    /* rotate AB to x-axis */
-    theCos = bx / distAB;
-    theSin = by / distAB;
-    newX = cx * theCos + cy * theSin;
-    cy = cy * theCos - cx * theSin;
-    cx = newX;
-    newX = dx * theCos + dy * theSin;
-    dy = dy * theCos - dx * theSin;
-    dx = newX;
-
-    /* no intersection */
-    if (((cy < 0) && (dy < 0)) || ((cy > 0) && (dy > 0)))
-        return 0;
-
-    if (feq(dy - cy)) return 0;
-
-    ABpos = dx + ((cx - dx) * dy) / (dy - cy);
-    if ((ABpos < 0) || (ABpos > distAB))
-        return 0;
-
-    *rx = ax + ABpos * theCos;
-    *ry = ay + ABpos * theSin;
-
-    XPOST_LOG_INFO(">< %f %f", *rx, *ry);
-
-    return 1;
-}
-
-static
-int _cyxcomp (const void *left, const void *right)
-{
-    const struct point *lt = left;
-    const struct point *rt = right;
-
-    if (feq(lt->y - rt->y))
-    {
-        if (lt->x < rt->x)
-        {
-            return 1;
-        }
-        else if (lt->x > rt->x)
-        {
-            return -1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-    else
-    {
-        if (lt->y < rt->y)
-            return -1;
-        else
-            return 1;
-    }
 }
 
 static
@@ -320,14 +231,10 @@ int _fillpoly(Xpost_Context *ctx,
     Xpost_Object drawline;
     Xpost_Object fillrect;
     int usefillrect;
-    struct point *points, *intersections, *tmp;
-    int i, j;
-    int cap;
-    real yscan;
-    real minx = (real)0x7ffffff;
-    real miny = minx;
-    real maxx = -minx;
-    real maxy = maxx;
+    struct point *points;
+    struct band_span *spans;
+    int nspans, spancap;
+    int i;
     //int width;
 
     //printf("_fillpoly\n");
@@ -355,6 +262,8 @@ int _fillpoly(Xpost_Context *ctx,
     /* extract polygon vertices from ps array;
        null elements separate subpaths */
     points = malloc(poly.comp_.sz * sizeof *points);
+    if (!points)
+        return VMerror;
     for (i = 0; i < poly.comp_.sz; i++)
     {
         Xpost_Object pair, x, y;
@@ -372,85 +281,156 @@ int _fillpoly(Xpost_Context *ctx,
             x = xpost_real_cons((real)x.int_.val);
         if (xpost_object_get_type(y) == integertype)
             y = xpost_real_cons((real)y.int_.val);
-
-        //points[i].x = x.real_.val;
-        //points[i].y = y.real_.val;
-        points[i].x = (real)floor(x.real_.val + 0.5);
-        points[i].y = (real)floor(y.real_.val + 0.5);
+        /* quantize to a 1/256 pixel device grid: geometry meant to lie
+           on a pixel boundary arrives with accumulated float noise, and
+           unsnapped it would classify to the wrong side of the boundary */
+        points[i].x = (real)(floor(x.real_.val * 256.0 + 0.5) / 256.0);
+        points[i].y = (real)(floor(y.real_.val * 256.0 + 0.5) / 256.0);
     }
 
-    /* find bounding box */
-    for (i = 0; i < poly.comp_.sz; i++)
+    /* Scan-convert under the any-part-of-pixel rule (PLRM 7.5): a
+       pixel is painted when the filled region meets its interior.
+       Device space divides into unit pixel-row bands (row b covers
+       b <= y < b+1). Each subpath boundary is cut into y-monotone
+       chains -- walking from a least-y vertex, so a chain never wraps
+       the start/end seam -- and each chain deposits, for every band it
+       passes through, the x extent of its passage tagged with its y
+       direction. Horizontal travel widens the open extent, except
+       travel exactly on a band boundary, which meets no band interior
+       (an integer-aligned bottom edge must not leak into the band
+       below). Sorting each band's extents by left edge and
+       accumulating winding numbers then yields the fill spans. */
+    spans = NULL;
+    nspans = 0;
+    spancap = 0;
+    i = 0;
+    for (;;)
     {
-        if (points[i].x == SUBPATH_BREAK)
-            continue;
-        if (points[i].x < minx)
-            minx = points[i].x;
-        if (points[i].x > maxx)
-            maxx = points[i].x;
-        if (points[i].y < miny)
-            miny = points[i].y;
-        if (points[i].y > maxy)
-            maxy = points[i].y;
-    }
+        int s0, nv, base, k;
+        int dirn, ib, code;
+        real lo, hi, submin, submax;
 
-    /* a complex polygon may cross a scanline many times; grow as needed */
-    cap = 4 * ((int)(maxy - miny) + 1);
-    intersections = calloc(cap, sizeof *intersections);
-    if (!intersections)
-    {
-        free(points);
-        return VMerror;
-    }
+        while (i < poly.comp_.sz && points[i].x == SUBPATH_BREAK)
+            i++;
+        if (i == poly.comp_.sz)
+            break;
+        s0 = i;
+        while (i < poly.comp_.sz && points[i].x != SUBPATH_BREAK)
+            i++;
+        nv = i - s0;
 
-    /* intersect polygon edges with scanlines */
-    for (i = 0, j = 0; i < poly.comp_.sz - 1; i++)
-    {
-        real rx, ry, eylo, eyhi, ybase;
-        integer k;
+        base = 0;
+        for (k = 1; k < nv; k++)
+            if (points[s0 + k].y < points[s0 + base].y)
+                base = k;
 
-        if (points[i].x == SUBPATH_BREAK || points[i+1].x == SUBPATH_BREAK)
-            continue;
+        /* chain state: the open extent, its band, and its direction
+           (0 until the first non-horizontal edge; starting at a
+           least-y vertex the first direction can only be upward) */
+        dirn = 0;
+        ib = (int)floor(points[s0 + base].y);
+        lo = hi = points[s0 + base].x;
+        submin = submax = lo;
+        code = 0;
 
-        /* An edge only crosses the scanlines spanning its own y-range, so
-           restrict the sweep to that band instead of the whole page (a ±1
-           scanline margin keeps this exactly equivalent across floating-point
-           boundaries: the extra scanlines simply miss). Makes the fill cost
-           proportional to total edge height rather than edges x page height. */
-        eylo = points[i].y < points[i+1].y ? points[i].y : points[i+1].y;
-        eyhi = points[i].y < points[i+1].y ? points[i+1].y : points[i].y;
-        ybase = (real)(miny + 0.5);
-        k = (eylo - 1.0 > ybase) ? (integer)(eylo - 1.0 - ybase) : 0;
-        for (yscan = ybase + (real)k; yscan < maxy && yscan <= eyhi + 1.0; yscan += 1.0)
+        for (k = 0; k < nv && code == 0; k++)
         {
-            if (_intersect(points[i].x, points[i].y,
-                           points[i+1].x, points[i+1].y,
-                           (real)(minx - 0.5), yscan,
-                           (real)(maxx + 0.5), yscan,
-                           &rx, &ry))
+            struct point P = points[s0 + (base + k) % nv];
+            struct point Q = points[s0 + (base + k + 1) % nv];
+            int d, eb;
+
+            if (Q.x < submin) submin = Q.x;
+            if (Q.x > submax) submax = Q.x;
+
+            if (P.y == Q.y)
             {
-                if (j == cap)
+                if (P.y == (real)floor(P.y))
                 {
-                    cap *= 2;
-                    tmp = realloc(intersections, cap * sizeof *intersections);
-                    if (!tmp)
-                    {
-                        free(points);
-                        free(intersections);
-                        return VMerror;
-                    }
-                    intersections = tmp;
+                    /* on a band boundary: deposits nothing; until the
+                       chain has a direction just track the position */
+                    if (dirn == 0)
+                        lo = hi = Q.x;
                 }
-                intersections[j].x = rx;
-                intersections[j].y = ry;
-                j++;
+                else
+                {
+                    if (Q.x < lo) lo = Q.x;
+                    if (Q.x > hi) hi = Q.x;
+                }
+                continue;
+            }
+
+            d = Q.y > P.y ? 1 : -1;
+            /* the band this edge starts in: a start exactly on a band
+               boundary belongs to the band ahead of travel */
+            eb = (int)floor(P.y);
+            if (d < 0 && (real)eb == P.y)
+                eb--;
+
+            if (d != dirn)
+            {
+                /* direction reversal: the vertex row holds two passages */
+                if (dirn != 0)
+                {
+                    code = _span_push(&spans, &spancap, &nspans, ib, dirn, lo, hi);
+                    lo = hi = P.x;
+                }
+                dirn = d;
+                ib = eb;
+            }
+            else if (eb != ib)
+            {
+                /* the previous edge ended exactly on our starting boundary */
+                code = _span_push(&spans, &spancap, &nspans, ib, dirn, lo, hi);
+                lo = hi = P.x;
+                ib = eb;
+            }
+
+            /* walk the edge band to band, cutting at each boundary */
+            while (code == 0)
+            {
+                real yb = (real)(d > 0 ? ib + 1 : ib);
+
+                if (d > 0 ? Q.y > yb : Q.y < yb)
+                {
+                    real xb = P.x + (Q.x - P.x) * ((yb - P.y) / (Q.y - P.y));
+
+                    if (xb < lo) lo = xb;
+                    if (xb > hi) hi = xb;
+                    code = _span_push(&spans, &spancap, &nspans, ib, dirn, lo, hi);
+                    ib += d;
+                    lo = hi = xb;
+                }
+                else
+                {
+                    if (Q.x < lo) lo = Q.x;
+                    if (Q.x > hi) hi = Q.x;
+                    break;
+                }
             }
         }
-    }
-    numlines = j / 2;
 
-    /* sort intersection points */
-    qsort(intersections, j, sizeof *intersections, _cyxcomp);
+        if (code == 0)
+        {
+            if (dirn != 0)
+                code = _span_push(&spans, &spancap, &nspans, ib, dirn, lo, hi);
+            else
+            {
+                /* no vertical travel at all: the subpath still meets its
+                   row; deposit a balanced pair over its whole x extent */
+                code = _span_push(&spans, &spancap, &nspans, ib, 1, submin, submax);
+                if (code == 0)
+                    code = _span_push(&spans, &spancap, &nspans, ib, -1, submin, submax);
+            }
+        }
+        if (code)
+        {
+            free(points);
+            free(spans);
+            return code;
+        }
+    }
+
+    qsort(spans, nspans, sizeof *spans, _bandspancomp);
 
     /* A fill scanline is a horizontal span. When the device provides a
        compiled FillRect, render each span through it (the per-pixel plotting
@@ -461,41 +441,53 @@ int _fillpoly(Xpost_Context *ctx,
     fillrect = xpost_dict_get(ctx, devdic, nameFillRect);
     usefillrect = xpost_object_get_type(fillrect) == operatortype;
 
-    if (usefillrect)
+    /* Walk each band accumulating winding: a span opens at the first
+       extent's left edge and closes where the winding count returns to
+       zero (or the band runs out), covering the rightmost extent seen.
+       Paint columns [floor(lo), ceil(hi)): every pixel whose interior
+       the span reaches, and exactly the geometry when the span lies on
+       pixel boundaries. FillRect fills the inclusive box [x, x+w] on
+       row y (a fill span is height 0); DrawLine plots from its first
+       point (included) toward its second (excluded); both therefore
+       cover [xlo, xhi-1]. */
+    numlines = 0;
     {
-        /* DrawLine plots a span from its first point (included) toward its
-           second (excluded), so it covers |x1-x2| pixels: [x1, x2-1] when
-           x1 < x2, or [x2+1, x1] when x1 > x2, and nothing when x1 == x2.
-           FillRect fills the inclusive box [x, x+w] on row y (a fill span is
-           height 0), so pass the low end as x and |x1-x2|-1 as w, dropping
-           empty spans, to match DrawLine's pixels exactly. */
-        int emitted = 0;
-        for (i = 0; i < numlines * 2; i += 2)
+        int s = 0;
+
+        while (s < nspans)
         {
-            integer x1 = (integer)floor(intersections[i].x);
-            integer y1 = (integer)floor(intersections[i].y);
-            integer x2 = (integer)floor(intersections[i+1].x);
-            integer xlo;
-            if (x1 == x2)
+            int b = spans[s].band;
+            int wind = 0;
+            real L = spans[s].lo, R = spans[s].hi;
+            integer xlo, xhi;
+
+            do
+            {
+                if (spans[s].hi > R)
+                    R = spans[s].hi;
+                wind += spans[s].dirn;
+                s++;
+            } while (wind != 0 && s < nspans && spans[s].band == b);
+
+            xlo = (integer)floor(L);
+            xhi = (integer)ceil(R);
+            if (xhi <= xlo)
                 continue;
-            xlo = x1 < x2 ? x1 : x2 + 1;
-            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xlo));
-            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(y1));
-            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((x1 < x2 ? x2 - x1 : x1 - x2) - 1)); /* w */
-            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(0));                                 /* h */
-            emitted++;
-        }
-        numlines = emitted;
-    }
-    else
-    {
-        /* arrange ((x1,y1),(x2,y2)) pairs */
-        for (i = 0; i < numlines * 2; i += 2)
-        {
-            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i].x)));
-            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i].y)));
-            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i+1].x)));
-            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((integer)floor(intersections[i+1].y)));
+            if (usefillrect)
+            {
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xlo));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xhi - xlo - 1));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(0)); /* h */
+            }
+            else
+            {
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xlo));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xhi));
+                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
+            }
+            numlines++;
         }
     }
 
@@ -617,7 +609,7 @@ int _fillpoly(Xpost_Context *ctx,
       or using opcode shortcuts for Rbracket & cvx (or just the arrtomark() function) and repeat.
      */
     free(points);
-    free(intersections);
+    free(spans);
     return 0;
 }
 
