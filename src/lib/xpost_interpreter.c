@@ -391,17 +391,55 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
         interval = xpost_object_get_interval(a, 1, a.comp_.sz - 1);
         if (xpost_object_get_type(interval) == invalidtype)
             return rangecheck;
-        if (!xpost_stack_push(ctx->lo, ctx->es, interval))
-            return execstackoverflow;
+        {
+            Xpost_Stack *es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+            Xpost_Stack *es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+            if (es_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+                es_top->data[es_top->top++] = interval;
+            else if (!xpost_stack_push(ctx->lo, ctx->es, interval))
+                return execstackoverflow;
+        }
     }
 
     if (a.comp_.sz >= 1)
     {
-        b = xpost_array_get(ctx, a, 0);
-        if (xpost_object_get_type(b) == arraytype)
+        Xpost_Object_Type btype;
+
+        { /* read the element directly from the array's storage */
+            Xpost_Memory_File *amem = xpost_context_select_memory(ctx, a);
+            unsigned int aent = xpost_object_get_ent(a);
+            if (aent < amem->table.nextent &&
+                (a.comp_.off + 1u) * sizeof(Xpost_Object) <= amem->table.tab[aent].sz)
+                b = *(Xpost_Object *)(amem->base + amem->table.tab[aent].adr
+                                      + a.comp_.off * sizeof(Xpost_Object));
+            else
+                b = xpost_array_get(ctx, a, 0);
+        }
+        btype = xpost_object_get_type(b);
+        if (btype == invalidtype || btype >= XPOST_OBJECT_NTYPES)
+            return unregistered;
+        if (btype == arraytype || !xpost_object_is_exe(b))
         {
-            if (!xpost_stack_push(ctx->lo, ctx->os, b))
+            /* the interpreter cycle would only move it to the operand
+               stack; do so directly */
+            Xpost_Stack *os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
+            Xpost_Stack *os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
+            if (os_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+                os_top->data[os_top->top++] = b;
+            else if (!xpost_stack_push(ctx->lo, ctx->os, b))
                 return stackoverflow;
+        }
+        else if (btype == operatortype)
+        {
+            ctx->currentobject = b;
+            if (_xpost_interpreter_is_tracing)
+                xpost_operator_dump(ctx, b.mark_.padw);
+            return xpost_operator_exec(ctx, b.mark_.padw);
+        }
+        else if (btype == nametype)
+        {
+            ctx->currentobject = b;
+            return evalload(ctx, b);
         }
         else
         {
