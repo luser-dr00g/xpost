@@ -266,6 +266,14 @@ test('semantics',
   find_program('tests/run-ps-test.sh'),
   args: [ xpost_exe, files('tests/semantics_test.ps') ],
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# Graphics regressions: inverse transforms under rotation, operator-name
+# capture by user dictionaries, sub-pixel fills, hole clipping, and
+# device-space stroke widths, asserted against a locally built raster device.
+test('graphics-regression',
+  find_program('tests/run-ps-test.sh'),
+  args: [ xpost_exe, files('tests/graphics_regression_test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 #if get_option('nls') == true
 #  subdir('po')
 #endif
