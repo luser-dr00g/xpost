@@ -356,7 +356,27 @@ void
 xpost_font_face_scale(void *face, real scale)
 {
 #ifdef HAVE_FREETYPE2
-    FT_Set_Char_Size((FT_Face)face, 0, (FT_F26Dot6)(scale * 64), 72, 72);
+    FT_Face f = face;
+
+    /* Request the scale directly (16.16 pixels per font unit) rather
+       than a nominal character size: a nominal request quantizes the
+       em to 1/64 pixel, which at the sub-pixel em sizes produced by a
+       small user-space size under a modest CTM is a metrics error of
+       whole percents. Fixed-size faces reject a scale request; they
+       keep the nominal path. */
+    if (f->units_per_EM > 0)
+    {
+        FT_Size_RequestRec req;
+
+        req.type = FT_SIZE_REQUEST_TYPE_SCALES;
+        req.width = req.height =
+            (FT_Long)(scale * 64.0 * 65536.0 / f->units_per_EM + 0.5);
+        req.horiResolution = 0;
+        req.vertResolution = 0;
+        if (FT_Request_Size(f, &req) == 0)
+            return;
+    }
+    FT_Set_Char_Size(f, 0, (FT_F26Dot6)(scale * 64 + 0.5), 72, 72);
 #else
     (void)face;
     (void)scale;
@@ -733,8 +753,11 @@ _outline_cubicto(const FT_Vector *control1, const FT_Vector *control2, const FT_
 /* The hinter rounds slot->advance to whole pixels and the rounding
    accumulates as horizontal drift across a string. Derive the pen
    advance from the unhinted linear width instead, applied through the
-   face's current transform (identity when none is set). Bitmap-only
-   glyphs carry no linear width; those keep the slot advance. */
+   face's current transform (identity when none is set), and report it
+   in 16.16 pixels: squeezing through the slot's 26.6 resolution costs
+   up to 1/64 pixel per glyph, a whole percent of a sub-pixel em.
+   Bitmap-only glyphs carry no linear width; those widen the slot
+   advance. */
 static void
 _glyph_linear_advance(FT_Face face, long *advance_x, long *advance_y)
 {
@@ -744,13 +767,13 @@ _glyph_linear_advance(FT_Face face, long *advance_x, long *advance_y)
 
     if (lin == 0)
     {
-        *advance_x = slot->advance.x;
-        *advance_y = slot->advance.y;
+        *advance_x = slot->advance.x << 10;   /* 26.6 -> 16.16 */
+        *advance_y = slot->advance.y << 10;
         return;
     }
     FT_Get_Transform(face, &m, NULL);
-    *advance_x = FT_MulFix(m.xx, lin) >> 10;  /* 16.16 -> 26.6 */
-    *advance_y = FT_MulFix(m.yx, lin) >> 10;
+    *advance_x = FT_MulFix(m.xx, lin);
+    *advance_y = FT_MulFix(m.yx, lin);
 }
 #endif
 
@@ -763,7 +786,7 @@ xpost_font_face_glyph_outline(void *face, unsigned int glyph_index, const Xpost_
     FT_Error err;
     struct _outline_walk w;
 
-    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP);
+    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
     if (err)
     {
         XPOST_LOG_ERR("Can not load glyph (error : %d)", err);
@@ -822,7 +845,7 @@ xpost_font_face_glyph_extents(void *face, unsigned int glyph_index,
     FT_GlyphSlot slot;
     FT_BBox box;
 
-    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP);
+    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING);
     if (err)
     {
         XPOST_LOG_ERR("Can not load glyph (error : %d)", err);
@@ -836,8 +859,7 @@ xpost_font_face_glyph_extents(void *face, unsigned int glyph_index,
     *ymin = box.yMin;
     *xmax = box.xMax;
     *ymax = box.yMax;
-    *advance_x = slot->advance.x;
-    *advance_y = slot->advance.y;
+    _glyph_linear_advance((FT_Face)face, advance_x, advance_y);
     return 1;
 #else
     (void)face;
@@ -858,7 +880,7 @@ xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
 #ifdef HAVE_FREETYPE2
     FT_Error err;
 
-    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT);
+    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_HINTING);
     if (!err)
     {
         if (((FT_Face)face)->glyph->format != FT_GLYPH_FORMAT_BITMAP)

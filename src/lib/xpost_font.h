@@ -202,8 +202,9 @@ typedef struct
  * @param[in] face The font face.
  * @param[in] glyph_index The glyph index.
  * @param[in] sink The segment callbacks.
- * @param[out] advance_x The horizontal advance (26.6 fixed point).
- * @param[out] advance_y The vertical advance (26.6 fixed point).
+ * @param[out] advance_x The horizontal advance (16.16 fixed point,
+ * unhinted linear width through the face transform).
+ * @param[out] advance_y The vertical advance (16.16 fixed point).
  * @return 1 on success, 0 otherwise (e.g. a bitmap-only glyph).
  *
  * The glyph is loaded without rendering; the face's size and

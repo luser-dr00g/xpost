@@ -929,8 +929,8 @@ int _show_char(Xpost_Context *ctx,
     /* the face transform leaves the advance in y-up glyph space; the
        pen advances in y-down device space, keeping the fractional part
        (truncating each glyph's advance drifts the line's length) */
-    *xpos += (real)advance_x / 64;
-    *ypos -= (real)advance_y / 64;
+    *xpos += (real)(advance_x / 65536.0);
+    *ypos -= (real)(advance_y / 65536.0);
 #else
     (void)ctx;
     (void)devdic;
@@ -1467,8 +1467,8 @@ int _stringwidth(Xpost_Context *ctx,
                                              &pitch, &pixel_mode, &left, &top,
                                              &advance_x, &advance_y);
         }
-        xpos += (real)advance_x / 64;
-        ypos += (real)advance_y / 64;
+        xpos += (real)(advance_x / 65536.0);
+        ypos += (real)(advance_y / 65536.0);
 #endif
 
     }
@@ -1658,8 +1658,8 @@ int _stringoutline(Xpost_Context *ctx,
             free(cstr);
             return oc.err;
         }
-        oc.px += (double)advance_x / 64;
-        oc.py += (double)advance_y / 64;
+        oc.px += advance_x / 65536.0;
+        oc.py += advance_y / 65536.0;
 #endif
     }
     free(cstr);

@@ -521,6 +521,28 @@ erasepage
 newpath 4 20 moveto (HHHH) show
 countink apreg gt (Helvetica-Bold resolves to a bold face) assert
 
+% --- text metrics: stringwidth reports the scaled glyph advances ---
+% a bold digit spans roughly half its em -- far from the rounded-to-a-
+% whole-pixel failure mode of one em per glyph -- and the reported
+% width scales linearly with the font size, including sub-unit sizes
+/Helvetica-Bold findfont 13 scalefont setfont
+(23) stringwidth pop /w13 exch def
+w13 13 div dup 0.8 gt exch 1.6 lt and ((23) width is a plausible em fraction) assert
+/Helvetica-Bold findfont 1 scalefont setfont
+(23) stringwidth pop 13 mul
+w13 (stringwidth scales linearly with the font size) assertnear
+/Helvetica-Bold findfont 0.62 scalefont setfont
+(23) stringwidth pop 13 mul 0.62 div
+w13 (a sub-unit font size scales the advances) assertnear
+
+% the pen moves by exactly the width stringwidth reports
+erasepage
+/Helvetica-Bold findfont 13 scalefont setfont
+(23) stringwidth pop /w13 exch def
+newpath 4 20 moveto (23) show
+currentpoint pop 4 sub
+w13 (show advances the pen by stringwidth) assertnear
+
 % an annulus clip built the standard way: the closepath's point bridges
 % into the inner subpath by a straight line, so the region arrives as
 % one keyhole path; the clipper must split it at the close, peel the
