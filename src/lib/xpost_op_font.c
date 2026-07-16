@@ -435,8 +435,11 @@ void _face_setup(Xpost_Context *ctx,
    table in color.ps (gray by NTSC luminosity, CMYK composed by
    additive complement, RGB to CMYK with full black generation and
    undercolor removal), so glyphs mark in exactly the colour a fill
-   under the same graphics state would. A source space the table does
-   not know passes its raw components through. Returns 0 on success. */
+   under the same graphics state would. A device with the /Process
+   native space takes each paint in the space it was set in, so the
+   source components pass through unconverted. A source space the
+   table does not know passes its raw components through. Returns 0 on
+   success. */
 static
 int _device_color(Xpost_Context *ctx,
                   Xpost_Object gs,
@@ -537,6 +540,31 @@ int _device_color(Xpost_Context *ctx,
         comp[1] = xpost_real_cons((real)m);
         comp[2] = xpost_real_cons((real)y);
         comp[3] = xpost_real_cons((real)k);
+    }
+    else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "Process")) == 0)
+    {
+        /* the device takes each paint in the space it was set in:
+           deliver the source components unconverted */
+        switch (src)
+        {
+            case SRC_GRAY:
+                *ncomp = 1;
+                comp[0] = xpost_real_cons((real)v[0]);
+                break;
+            case SRC_CMYK:
+                *ncomp = 4;
+                comp[0] = xpost_real_cons((real)v[0]);
+                comp[1] = xpost_real_cons((real)v[1]);
+                comp[2] = xpost_real_cons((real)v[2]);
+                comp[3] = xpost_real_cons((real)v[3]);
+                break;
+            default: /* RGB, or an unknown space's first three components */
+                *ncomp = 3;
+                comp[0] = xpost_real_cons((real)v[0]);
+                comp[1] = xpost_real_cons((real)v[1]);
+                comp[2] = xpost_real_cons((real)v[2]);
+                break;
+        }
     }
     else
     {
@@ -788,9 +816,16 @@ int _show_char_outline(Xpost_Context *ctx,
         n += xpost_dev_pdf_fmt_num(t + n, ts->septint);
         memcpy(t + n, " scn\n", 5); n += 5;
     }
+    else if (ncomp == 1 && !f.svg)
+    {
+        /* the paint's space is DeviceGray: the glyph fills in it */
+        n = xpost_dev_pdf_fmt_num(t, r);
+        memcpy(t + n, " g\n", 3);
+        n += 3;
+    }
     else if (ncomp == 4 && !f.svg)
     {
-        /* the device's process model is CMYK: the glyph fills in it */
+        /* the paint's space is DeviceCMYK: the glyph fills in it */
         n = xpost_dev_pdf_fmt_num(t, r);
         t[n++] = ' ';
         n += xpost_dev_pdf_fmt_num(t + n, g);

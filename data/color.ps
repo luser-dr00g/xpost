@@ -57,6 +57,10 @@
     /DeviceGray /currentgray cvx
     /DeviceRGB /currentrgbcolor cvx
     /DeviceCMYK /currentcmykcolor cvx
+    % a device with the /Process native space takes each paint in the
+    % space it was set in: deliver the current colour unconverted (one
+    % grey component, three RGB or four CMYK)
+    /Process /currentcolor cvx
 >> def
 /currentcolor {
     //currentcolordict currentcolorspace get exec

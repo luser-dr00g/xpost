@@ -144,6 +144,43 @@ else
     echo "gs not found: skipping round-trip check"
 fi
 
+# colour-space preservation: by default each paint reaches the content
+# stream in the space it was set in -- grey as g/G, RGB as rg, CMYK as
+# k -- for fills, strokes and glyphs alike, so a press workflow receives
+# pure-K ink as pure K rather than a converted black.
+# Probed through the uncompressed accumulator, no consumer needed.
+cspps=$(mktemp)
+cat > "$cspps" <<'EOF'
+<< /OutputDevice /pdfwrite /OutputFile (/dev/null) /PageSize [100 100] >> setpagedevice
+0.5 setgray newpath 10 10 moveto 20 0 rlineto 0 20 rlineto -20 0 rlineto closepath fill
+1 0 0 setrgbcolor newpath 40 10 moveto 20 0 rlineto 0 20 rlineto -20 0 rlineto closepath fill
+0 0 0 1 setcmykcolor newpath 70 10 moveto 20 0 rlineto 0 20 rlineto -20 0 rlineto closepath fill
+0 setgray 2 setlinewidth newpath 10 50 moveto 60 70 lineto stroke
+/Courier findfont 12 scalefont setfont
+0 1 0 0 setcmykcolor 10 80 moveto (K) show
+0.25 setgray 40 80 moveto (g) show
+/probe { % (needle) (name)  .  -
+    exch DEVICE .pdfchunks 0 get exch search
+    { pop pop pop (ok ) print print (\n) print }
+    { pop (MISSING ) print print (\n) print } ifelse
+} def
+(0.5 g\n) (grey fill preserved as g) probe
+(1 0 0 rg\n) (RGB fill preserved as rg) probe
+(0 0 0 1 k\n) (pure-K CMYK fill preserved as k) probe
+(0 G\n) (grey stroke preserved as G) probe
+(0 1 0 0 k\n) (CMYK glyph preserved as k) probe
+(0.25 g\n) (grey glyph preserved as g) probe
+showpage
+<< /OutputDevice /null >> setpagedevice
+quit
+EOF
+out=$("$xpost" -q -d null -o /dev/null "$cspps" </dev/null 2>&1)
+rm -f "$cspps"
+printf '%s\n' "$out" | grep -q 'MISSING' && { printf '%s\n' "$out" | grep MISSING; echo "FAIL: colour-space preservation probes"; exit 1; }
+n=$(printf '%s\n' "$out" | grep -c '^ok ')
+[ "$n" = 6 ] || { echo "FAIL: expected 6 preservation probes, saw $n"; exit 1; }
+echo "colour-space preservation OK"
+
 # process colour model: under /ProcessColorModel /DeviceCMYK every mark
 # separates in CMYK -- default black (a DeviceGray source) and RGB black
 # as pure K, explicit CMYK passed through, strokes as K, glyphs as k.
@@ -209,7 +246,7 @@ save 1.0 setcolor newpath 50 50 moveto 20 0 rlineto 0 20 rlineto -20 0 rlineto c
 } def
 (/CS0 cs 0.8 scn\n) (fill in the separation) probe
 (/CS0 CS 0.8 SCN\n) (stroke in the separation) probe
-(0 0 0 rg\n) (process interlude inside gsave) probe
+(0 g\n) (process interlude inside gsave) probe
 (/CS1 cs 1 scn\n) (registration survives restore) probe
 showpage
 << /OutputDevice /null >> setpagedevice

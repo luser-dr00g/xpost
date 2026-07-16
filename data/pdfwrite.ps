@@ -7,7 +7,8 @@
 % PDFWRITE writes a single-page vector PDF: the marking methods append
 % content-stream operators and Emit wraps them in the PDF file structure.
 % This is a clean-room implementation from the published PDF format (operators
-% rg/RG/m/l/re/f/S/cm and the object/xref/trailer layout); no rasterizing.
+% g/G/rg/RG/k/K/m/l/re/f/S/cm and the object/xref/trailer layout); no
+% rasterizing.
 %
 % Separation colour spaces are preserved: the interpreter delivers each
 % (tint, space) pair to .registersep, which files the space in a registry
@@ -28,11 +29,14 @@
 % uncompressed without zlib.
 
 /PDFWRITE <<
-    /nativecolorspace /DeviceRGB
-    % process colour models the device can adopt via setpagedevice
-    % /ProcessColorModel: CMYK selects press-style separations (k/K
-    % operators throughout; black arrives as pure K)
-    /.colormodels << /DeviceRGB true /DeviceCMYK true >>
+    % each paint reaches the content stream in the colour space it was
+    % set in -- grey as g/G, RGB as rg/RG, CMYK as k/K -- so a press
+    % workflow receives pure-K ink as pure K rather than a converted
+    % black. A single-space model can be adopted via setpagedevice
+    % /ProcessColorModel: CMYK converts every paint to press-style
+    % separations, RGB to display colour.
+    /nativecolorspace /Process
+    /.colormodels << /Process true /DeviceRGB true /DeviceCMYK true >>
     /dimensions [0 0]
     /NoOutput true  % keep this device's own vector FillPoly (no rasterizing)
     /VectorGlyphs true  % text operators emit glyph outlines, not bitmaps
@@ -96,47 +100,70 @@
         } ifelse
     } bind
 
+    % the number of components the colour pipeline delivered with the
+    % current paint: under the /Process native space each paint arrives
+    % in the space it was set in (one grey component, three RGB or four
+    % CMYK, read from the graphics state that produced it); a single
+    % adopted model is three or four wide throughout
+    /.ncomps { % -  .  n
+        nativecolorspace /Process eq {
+            graphicsdict /currgstate get /colorspace get
+            dup /DeviceGray eq { pop 1 }{
+            /DeviceCMYK eq { 4 }{ 3 } ifelse } ifelse
+        }{
+            nativecolorspace /DeviceCMYK eq { 4 }{ 3 } ifelse
+        } ifelse
+    } bind
+
     % append a fill or stroke colour: a separation registered with this
     % device paints in its /CS<i> resource space at the recorded tint,
     % dropping the process components the marking pipeline supplies;
-    % otherwise the process model applies -- three components as rg/RG,
-    % four as k/K
+    % otherwise the paint's space applies -- one component as g/G,
+    % three as rg/RG, four as k/K
     % colour components format at the accumulator's full precision
     % (.pdfnumstr), not the coordinate formatter's two decimals: two
     % decimals cannot represent 8-bit colour levels
     /.pdffillcolor { % c1 .. cN  .  -
         graphicsdict /currgstate get /sepindex 2 copy known { get }{ pop pop null } ifelse
         dup null ne {
-            exch pop exch pop exch pop
-            nativecolorspace /DeviceCMYK eq { exch pop } if
+            .ncomps { exch pop } repeat
             (/CS) .put 20 string cvs .put ( cs ) .put
             graphicsdict /currgstate get /septint get .pdfnumstr .put ( scn\n) .put
         }{
             pop
-            nativecolorspace /DeviceCMYK eq {
-                4 3 roll .pdfnumstr .put ( ) .put 3 2 roll .pdfnumstr .put ( ) .put
-                exch .pdfnumstr .put ( ) .put .pdfnumstr .put ( k\n) .put
+            .ncomps
+            dup 1 eq {
+                pop .pdfnumstr .put ( g\n) .put
             }{
-                3 2 roll .pdfnumstr .put ( ) .put exch .pdfnumstr .put ( ) .put
-                .pdfnumstr .put ( rg\n) .put
+                4 eq {
+                    4 3 roll .pdfnumstr .put ( ) .put 3 2 roll .pdfnumstr .put ( ) .put
+                    exch .pdfnumstr .put ( ) .put .pdfnumstr .put ( k\n) .put
+                }{
+                    3 2 roll .pdfnumstr .put ( ) .put exch .pdfnumstr .put ( ) .put
+                    .pdfnumstr .put ( rg\n) .put
+                } ifelse
             } ifelse
         } ifelse
     } bind
     /.pdfstrokecolor { % c1 .. cN  .  -
         graphicsdict /currgstate get /sepindex 2 copy known { get }{ pop pop null } ifelse
         dup null ne {
-            exch pop exch pop exch pop
-            nativecolorspace /DeviceCMYK eq { exch pop } if
+            .ncomps { exch pop } repeat
             (/CS) .put 20 string cvs .put ( CS ) .put
             graphicsdict /currgstate get /septint get .pdfnumstr .put ( SCN\n) .put
         }{
             pop
-            nativecolorspace /DeviceCMYK eq {
-                4 3 roll .pdfnumstr .put ( ) .put 3 2 roll .pdfnumstr .put ( ) .put
-                exch .pdfnumstr .put ( ) .put .pdfnumstr .put ( K\n) .put
+            .ncomps
+            dup 1 eq {
+                pop .pdfnumstr .put ( G\n) .put
             }{
-                3 2 roll .pdfnumstr .put ( ) .put exch .pdfnumstr .put ( ) .put
-                .pdfnumstr .put ( RG\n) .put
+                4 eq {
+                    4 3 roll .pdfnumstr .put ( ) .put 3 2 roll .pdfnumstr .put ( ) .put
+                    exch .pdfnumstr .put ( ) .put .pdfnumstr .put ( K\n) .put
+                }{
+                    3 2 roll .pdfnumstr .put ( ) .put exch .pdfnumstr .put ( ) .put
+                    .pdfnumstr .put ( RG\n) .put
+                } ifelse
             } ifelse
         } ifelse
     } bind
@@ -377,8 +404,7 @@
             (S\n) .put
         }{
             % an empty path strokes nothing: drop the unused colour
-            nativecolorspace /DeviceCMYK eq { pop }{ } ifelse
-            pop pop pop
+            .ncomps { pop } repeat
         } ifelse
     end }
 
