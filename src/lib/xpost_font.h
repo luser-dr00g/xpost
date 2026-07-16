@@ -138,7 +138,7 @@ void xpost_font_face_free(void *face);
  * This function scales the font @p face to size @p scale in point
  * unit.
  */
-void xpost_font_face_scale(void *face, real scale);
+real xpost_font_face_scale(void *face, real scale);
 
 /**
  * @brief Transform the given font.

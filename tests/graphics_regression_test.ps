@@ -617,6 +617,26 @@ countink smallink gt (the CTM at show time scales the marks) assert
 (23) stringwidth pop
 wa13 2 mul (makefont scales the advances by its x component) assertnear
 
+% a sub-pixel em is served exactly: FreeType cannot size a face below
+% a pixel, so the interpreter carries the residual scale itself; the
+% advances stay linear all the way down
+/Helvetica-Bold findfont 0.25 scalefont setfont
+(23) stringwidth pop 13 mul 0.25 div
+wa13 (a sub-pixel em scales the advances) assertnear
+
+% and a sub-pixel em under a magnifying CTM marks like the equivalent
+% point size: 0.3 em drawn at 40x covers the ink of 12 pt within a
+% rasterization tolerance
+erasepage
+/Helvetica-Bold findfont 12 scalefont setfont
+newpath 4 20 moveto (6) show
+countink /ink12 exch def
+erasepage
+/Helvetica-Bold findfont 0.3 scalefont setfont
+gsave 40 40 scale newpath 0.1 0.5 moveto (6) show grestore
+countink ink12 sub abs
+ink12 0.15 mul lt (a sub-pixel em under a magnifying CTM marks at full size) assert
+
 % an annulus clip built the standard way: the closepath's point bridges
 % into the inner subpath by a straight line, so the region arrives as
 % one keyhole path; the clipper must split it at the close, peel the

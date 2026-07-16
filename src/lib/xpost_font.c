@@ -352,7 +352,7 @@ xpost_font_face_free(void *face)
 #endif
 }
 
-void
+real
 xpost_font_face_scale(void *face, real scale)
 {
 #ifdef HAVE_FREETYPE2
@@ -362,24 +362,42 @@ xpost_font_face_scale(void *face, real scale)
        than a nominal character size: a nominal request quantizes the
        em to 1/64 pixel, which at the sub-pixel em sizes produced by a
        small user-space size under a modest CTM is a metrics error of
-       whole percents. Fixed-size faces reject a scale request; they
-       keep the nominal path. */
+       whole percents.
+
+       FreeType's size machinery is only dependable within a moderate
+       band of pixel sizes: a sub-pixel or enormous em makes the
+       request fail or degrade silently. Since every glyph is loaded
+       unhinted, geometry is linear in the scale, so an extreme
+       request is served at a clamped, well-conditioned size instead
+       and the caller folds the residual ratio into the face
+       transform. Returns the scale actually installed; fixed-size
+       faces keep the nominal path. */
     if (f->units_per_EM > 0)
     {
         FT_Size_RequestRec req;
+        real base = scale;
+
+        if (base < 8.0)
+            base = 8.0;
+        else if (base > 2048.0)
+            base = 2048.0;
 
         req.type = FT_SIZE_REQUEST_TYPE_SCALES;
         req.width = req.height =
-            (FT_Long)(scale * 64.0 * 65536.0 / f->units_per_EM + 0.5);
+            (FT_Long)(base * 64.0 * 65536.0 / f->units_per_EM + 0.5);
         req.horiResolution = 0;
         req.vertResolution = 0;
         if (FT_Request_Size(f, &req) == 0)
-            return;
+            return base;
+        if (FT_Set_Char_Size(f, 0, (FT_F26Dot6)(base * 64 + 0.5), 72, 72) == 0)
+            return base;
     }
     FT_Set_Char_Size(f, 0, (FT_F26Dot6)(scale * 64 + 0.5), 72, 72);
+    return scale;
 #else
     (void)face;
     (void)scale;
+    return scale;
 #endif
 }
 

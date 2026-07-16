@@ -377,6 +377,7 @@ void _face_setup(Xpost_Context *ctx,
     real cm[4];
     real e[4];
     real q;
+    real r;
     float mat[6] = { 0 };
     int i;
 
@@ -416,12 +417,16 @@ void _face_setup(Xpost_Context *ctx,
     if (q == 0)
         return;
 
-    xpost_font_face_scale(face, q);
+    /* the face serves a well-conditioned base size (an extreme em
+       would fail inside FreeType); the residual ratio to the true
+       size rides in the transform, which scales outlines, extents
+       and linear advances alike */
+    r = q / xpost_font_face_scale(face, q);
 
-    mat[0] = (float)( e[0] / q);   /* xx */
-    mat[1] = (float)( e[2] / q);   /* xy */
-    mat[2] = (float)(-e[1] / q);   /* yx */
-    mat[3] = (float)(-e[3] / q);   /* yy */
+    mat[0] = (float)( e[0] / q * r);   /* xx */
+    mat[1] = (float)( e[2] / q * r);   /* xy */
+    mat[2] = (float)(-e[1] / q * r);   /* yx */
+    mat[3] = (float)(-e[3] / q * r);   /* yy */
     xpost_font_face_transform(face, mat);
 }
 
