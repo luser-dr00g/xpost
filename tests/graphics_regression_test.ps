@@ -563,6 +563,60 @@ newpath 4 20 moveto (HHH) show
 countink 20 gt (full-black cmyk text marks the page) assert
 0 setgray
 
+% --- font identity: scalefont and makefont build dictionaries ---
+% scaling a font returns a new dictionary carrying the size in its
+% FontMatrix and leaves the operand font untouched
+/Helvetica-Bold findfont dup 13 scalefont
+2 copy eq not (scalefont returns a new dictionary) assert
+exch /FontMatrix get 0 get
+1 (scalefont leaves the operand font unscaled) assertnear
+/FontMatrix get 0 get
+13 (scalefont carries the size in the copy's FontMatrix) assertnear
+
+% two sizes of one face coexist: measuring through one dictionary must
+% not disturb the other
+/Helvetica-Bold findfont 13 scalefont /F13x exch def
+/Helvetica-Bold findfont 7 scalefont /F7x exch def
+F13x setfont (23) stringwidth pop /wa13 exch def
+F7x setfont (23) stringwidth pop /wa7 exch def
+F13x setfont (23) stringwidth pop
+wa13 (a font is unaffected by uses of its siblings) assertnear
+wa13 7 mul
+wa7 13 mul (two sizes of one face are in proportion) assertnear
+
+% rendered ink likewise: drawing small, then using the large font,
+% then drawing small again yields the same marks
+erasepage
+F7x setfont newpath 4 20 moveto (23) show
+countink /smallink exch def
+erasepage
+F13x setfont (23) stringwidth pop pop
+F7x setfont newpath 4 20 moveto (23) show
+countink smallink eq (a font's marks are unaffected by uses of its siblings) assert
+
+% the CTM applies when glyphs are marked, not when the font is scaled:
+% a font scaled under a magnified CTM is the same font...
+gsave 7 7 scale /Helvetica-Bold findfont 13 scalefont grestore
+setfont (23) stringwidth pop
+wa13 (scalefont does not bake the CTM of its moment) assertnear
+
+% ...stringwidth reports user space whatever the CTM...
+F13x setfont
+gsave 7 7 scale (23) stringwidth pop grestore
+wa13 (stringwidth is CTM-independent) assertnear
+
+% ...and the CTM in force at show time scales the marks
+erasepage
+F7x setfont
+gsave 2 2 scale newpath 4 12 moveto (23) show grestore
+countink smallink gt (the CTM at show time scales the marks) assert
+
+% makefont concatenates its matrix onto the FontMatrix: an anisotropic
+% matrix stretches the advances by its x component
+/Helvetica-Bold findfont [26 0 0 52 0 0] makefont setfont
+(23) stringwidth pop
+wa13 2 mul (makefont scales the advances by its x component) assertnear
+
 % an annulus clip built the standard way: the closepath's point bridges
 % into the inner subpath by a straight line, so the region arrives as
 % one keyhole path; the clipper must split it at the close, peel the

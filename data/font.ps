@@ -55,31 +55,27 @@
     findfont
 } def
 
-/scalefont {
-    1 index /FontType get 3 ne {
-        0 dtransform
-        dup mul exch dup mul add sqrt
-        //scalefont
-    }{
-        dup matrix scale makefont
-    } ifelse
+% scalefont and makefont build dictionaries and nothing else: each
+% returns a fresh copy of the font with the requested transform
+% concatenated onto its FontMatrix, leaving the operand font untouched.
+% The face itself is not resized here -- it is shared between every
+% dictionary made from the same findfont name, so its pixel scale is
+% derived from FontMatrix and the CTM by each text operator at use
+% time. This keeps fonts value-like (two sizes of one face coexist)
+% and makes the CTM matter where PostScript says it does: when the
+% glyphs are marked, not when the font is scaled.
+
+/scalefont { % font size  scalefont  font'
+    dup matrix scale makefont
 } def
 
-/makefont {
-    1 index /FontType get 3 ne { % font mat
-        dup aload pop % font mat a b c d e f
-        6 dict begin {/e/f/d/c/b/a}{exch def}forall % font mat
-            a a mul b b mul add sqrt % font mat scale
-            3 copy exch pop scalefont pop
-            1 exch div % font mat 1/scale
-            dup matrix scale % font mat invscalemat
-            matrix concatmatrix % font mat-scale
-        end % font mat
-        //makefont
-    }{
-        1 index /FontMatrix get dup concatmatrix pop
-        %pstack()=
-    } ifelse
+/makefont { % font mat  makefont  font'
+    exch dup length 2 add dict copy         % mat font'
+    dup /FontMatrix 2 copy known { get }{ pop pop matrix } ifelse
+                                            % mat font' oldfm
+    3 -1 roll exch                          % font' mat oldfm
+    matrix concatmatrix                     % font' newfm
+    1 index /FontMatrix 3 -1 roll put       % font'
 } def
 
 /setcharwidth {

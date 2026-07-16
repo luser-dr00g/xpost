@@ -151,6 +151,18 @@ int _findfont(Xpost_Context *ctx,
 		     0, 4 * sizeof(Xpost_Object), fontbboxarray);
     xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontBBox"), fontbbox);
 
+    /* the base font maps one em to one text-space unit: scalefont and
+       makefont concatenate onto this identity in dictionary copies,
+       and the text operators derive the face's pixel scale from it */
+    {
+        Xpost_Object fontmatrix = xpost_array_cons(ctx, 6);
+        int mi;
+        for (mi = 0; mi < 6; mi++)
+            xpost_array_put(ctx, fontmatrix, mi,
+                            xpost_real_cons(mi == 0 || mi == 3 ? 1.0f : 0.0f));
+        xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontMatrix"), fontmatrix);
+    }
+
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
     xpost_stack_push(ctx->lo, ctx->os, fontdict);
@@ -233,89 +245,11 @@ int _loadfont42(Xpost_Context *ctx,
 #endif
 }
 
-static int _scalefont(Xpost_Context *ctx, Xpost_Object fontdict, Xpost_Object size);
-
-
-static
-int _makefont(Xpost_Context *ctx,
-              Xpost_Object fontdict,
-              Xpost_Object psmat)
-{
-    Xpost_Object privatestr;
-    struct fontdata data;
-
-    //_scalefont(ctx, fontdict, xpost_real_cons(1.0));
-    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
-    if (xpost_object_get_type(privatestr) == invalidtype)
-        return undefined;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof(data), &data);
-
-    if (data.face == NULL)
-        return invalidfont;
-
-    /* apply linear transform from the matrix */
-    {
-        float mat[6];
-        int i;
-        for (i = 0; i < 6; i++)
-        {
-            Xpost_Object el;
-            el = xpost_array_get(ctx, psmat, i);
-            switch (xpost_object_get_type(el))
-            {
-                case integertype: mat[i] = (float)el.int_.val; break;
-                case realtype: mat[i] = el.real_.val; break;
-                default: return typecheck;
-            }
-        }
-        xpost_font_face_transform(data.face, mat);
-    }
-
-    xpost_stack_push(ctx->lo, ctx->os, fontdict);
-    return 0;
-}
-
-
-static
-int _scalefont(Xpost_Context *ctx,
-               Xpost_Object fontdict,
-               Xpost_Object size)
-{
-#if 1
-    Xpost_Object privatestr;
-    struct fontdata data;
-
-    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
-    if (xpost_object_get_type(privatestr) == invalidtype)
-        return undefined;
-    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
-                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
-
-    if (data.face == NULL)
-        return invalidfont;
-
-    /* scale x and y sizes by @p size */
-    xpost_font_face_scale(data.face, size.real_.val);
-
-    /* if face is really a pointer, there's nothing to save back to the string
-    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
-            xpost_object_get_ent(privatestr), 0, sizeof data, &data);
-            */
-    xpost_stack_push(ctx->lo, ctx->os, fontdict);
-    return 0;
-#else
-    Xpost_Object psmat;
-    psmat = xpost_array_cons(ctx, 6);
-    xpost_array_put(ctx, psmat, 0, size);
-    xpost_array_put(ctx, psmat, 1, xpost_real_cons(0.0));
-    xpost_array_put(ctx, psmat, 2, xpost_real_cons(0.0));
-    xpost_array_put(ctx, psmat, 3, size);
-    xpost_array_put(ctx, psmat, 4, xpost_real_cons(0.0));
-    xpost_array_put(ctx, psmat, 5, xpost_real_cons(0.0));
-    return _makefont(ctx, fontdict, psmat);
-#endif
-}
+/* scalefont and makefont are implemented in font.ps: each returns a
+   fresh dictionary with the requested transform concatenated onto the
+   font's FontMatrix. No operator mutates the shared face; the text
+   operators size it from FontMatrix and the CTM at use time
+   (_face_setup below). */
 
 
 
@@ -419,26 +353,45 @@ unsigned int _glyph_index_for_char(Xpost_Context *ctx,
 }
 
 #ifdef HAVE_FREETYPE2
-/* Give the face the current orientation before using it. The pixel
-   size set by scalefont carries the CTM's magnitude (the scalefont
-   wrapper in font.ps measures the size through dtransform), so glyphs
-   come out the right size but always upright. Rotation, shear and
-   anisotropy live in the CTM's linear part: normalize the magnitude
-   out and conjugate by the y flip that relates FreeType's y-up glyph
-   space to the device's y-down raster, and install the result as the
-   face's transform. The face is shared through the font cache and the
-   transform is sticky, so each text operator refreshes it from the
-   graphics state it runs under. */
+/* Prepare the shared face for use under the current graphics state.
+   The font dictionary's FontMatrix carries the size (and any rotation,
+   shear or anisotropy concatenated by makefont); the CTM carries the
+   device mapping. Neither is sticky on the font: scalefont and
+   makefont only build dictionaries, so two sizes of one face coexist
+   and the CTM matters when the glyphs are marked, not when the font
+   was scaled. Compose the two linear parts, split the result into a
+   pixel-per-em scale for the face and a unit-magnitude transform
+   (conjugated by the y flip that relates FreeType's y-up glyph space
+   to the device's y-down raster), and install both. The face is
+   shared through the findfont cache, so every text operator must call
+   this before touching glyphs. A missing or malformed FontMatrix
+   reads as the identity, serving font programs defined without one. */
 static
-void _face_transform_from_ctm(Xpost_Context *ctx,
-                              Xpost_Object gs,
-                              void *face)
+void _face_setup(Xpost_Context *ctx,
+                 Xpost_Object gs,
+                 Xpost_Object fontdict,
+                 void *face)
 {
     Xpost_Object psmat;
-    real m[4];
+    real fm[4] = { 1.0, 0.0, 0.0, 1.0 };
+    real cm[4];
+    real e[4];
     real q;
     float mat[6] = { 0 };
     int i;
+
+    psmat = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "FontMatrix"));
+    if (xpost_object_get_type(psmat) == arraytype && psmat.comp_.sz == 6)
+    {
+        for (i = 0; i < 4; i++)
+        {
+            Xpost_Object el = xpost_array_get(ctx, psmat, i);
+            if (xpost_object_get_type(el) == realtype)
+                fm[i] = el.real_.val;
+            else if (xpost_object_get_type(el) == integertype)
+                fm[i] = (real)el.int_.val;
+        }
+    }
 
     psmat = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currmatrix"));
     if (xpost_object_get_type(psmat) != arraytype || psmat.comp_.sz != 6)
@@ -446,16 +399,29 @@ void _face_transform_from_ctm(Xpost_Context *ctx,
     for (i = 0; i < 4; i++)
     {
         Xpost_Object el = xpost_array_get(ctx, psmat, i);
-        m[i] = xpost_object_get_type(el) == realtype ? el.real_.val
+        cm[i] = xpost_object_get_type(el) == realtype ? el.real_.val
              : (real)el.int_.val;
     }
-    q = (real)sqrt(m[0] * m[0] + m[1] * m[1]);
+
+    /* text space -> device space: FontMatrix then CTM
+       (row convention: x' = a x + c y, y' = b x + d y) */
+    e[0] = fm[0] * cm[0] + fm[1] * cm[2];
+    e[1] = fm[0] * cm[1] + fm[1] * cm[3];
+    e[2] = fm[2] * cm[0] + fm[3] * cm[2];
+    e[3] = fm[2] * cm[1] + fm[3] * cm[3];
+
+    q = (real)sqrt(e[0] * e[0] + e[1] * e[1]);
+    if (q == 0)
+        q = (real)sqrt(e[2] * e[2] + e[3] * e[3]);
     if (q == 0)
         return;
-    mat[0] = (float)( m[0] / q);   /* xx */
-    mat[1] = (float)( m[2] / q);   /* xy */
-    mat[2] = (float)(-m[1] / q);   /* yx */
-    mat[3] = (float)(-m[3] / q);   /* yy */
+
+    xpost_font_face_scale(face, q);
+
+    mat[0] = (float)( e[0] / q);   /* xx */
+    mat[1] = (float)( e[2] / q);   /* xy */
+    mat[2] = (float)(-e[1] / q);   /* yx */
+    mat[3] = (float)(-e[3] / q);   /* yy */
     xpost_font_face_transform(face, mat);
 }
 
@@ -1088,7 +1054,7 @@ int _show(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
-    _face_transform_from_ctm(ctx, gs, data.face);
+    _face_setup(ctx, gs, fontdict, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -1183,7 +1149,7 @@ int _ashow(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
-    _face_transform_from_ctm(ctx, gs, data.face);
+    _face_setup(ctx, gs, fontdict, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -1282,7 +1248,7 @@ int _widthshow(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
-    _face_transform_from_ctm(ctx, gs, data.face);
+    _face_setup(ctx, gs, fontdict, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -1386,7 +1352,7 @@ int _awidthshow(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
-    _face_transform_from_ctm(ctx, gs, data.face);
+    _face_setup(ctx, gs, fontdict, data.face);
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -1474,7 +1440,7 @@ int _stringwidth(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
-    _face_transform_from_ctm(ctx, gs, data.face);
+    _face_setup(ctx, gs, fontdict, data.face);
     encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
     XPOST_LOG_INFO("loaded font data from dict");
 
@@ -1662,7 +1628,7 @@ int _stringoutline(Xpost_Context *ctx,
         XPOST_LOG_ERR("face is NULL");
         return invalidfont;
     }
-    _face_transform_from_ctm(ctx, gs, data.face);
+    _face_setup(ctx, gs, fontdict, data.face);
     encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
 
     cstr = xpost_string_allocate_cstring(ctx, str);
@@ -1742,10 +1708,6 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "findfont", (Xpost_Op_Func)_findfont, 1, 1, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".loadfont42", (Xpost_Op_Func)_loadfont42, 0, 1, dicttype);
-    INSTALL;
-    op = xpost_operator_cons(ctx, "scalefont", (Xpost_Op_Func)_scalefont, 1, 2, dicttype, floattype);
-    INSTALL;
-    op = xpost_operator_cons(ctx, "makefont", (Xpost_Op_Func)_makefont, 1, 2, dicttype, arraytype);
     INSTALL;
     op = xpost_operator_cons(ctx, "setfont", (Xpost_Op_Func)_setfont, 1, 1, dicttype);
     INSTALL;
