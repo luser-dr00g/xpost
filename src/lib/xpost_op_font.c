@@ -459,13 +459,13 @@ void _face_transform_from_ctm(Xpost_Context *ctx,
     xpost_font_face_transform(face, mat);
 }
 
-/* Resolve the current colour into the device's native space. Gray and
-   RGB devices receive the raw graphics-state components, as the marking
-   pipeline has always supplied them. A CMYK device receives a proper
-   conversion from the colour's source space (matching the ColorConversion
-   table in color.ps, with full black generation and undercolor removal),
-   since the raw components are in whatever space the colour was set in.
-   Returns 0 on success. */
+/* Resolve the current colour into the device's native space, applying
+   the same source-to-destination conversions as the ColorConversion
+   table in color.ps (gray by NTSC luminosity, CMYK composed by
+   additive complement, RGB to CMYK with full black generation and
+   undercolor removal), so glyphs mark in exactly the colour a fill
+   under the same graphics state would. A source space the table does
+   not know passes its raw components through. Returns 0 on success. */
 static
 int _device_color(Xpost_Context *ctx,
                   Xpost_Object gs,
@@ -473,49 +473,93 @@ int _device_color(Xpost_Context *ctx,
                   int *ncomp,
                   Xpost_Object comp[4])
 {
-#define GSREAL(name) (xpost_dict_get(ctx, gs, xpost_name_cons(ctx, name)))
-#define OBJVAL(o) (xpost_object_get_type(o) == realtype ? (o).real_.val \
-                                                        : (double)(o).int_.val)
-    Xpost_Object colorspace;
+#define GSCOMP(name) (o = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, name)), \
+                      xpost_object_get_type(o) == realtype ? o.real_.val \
+                    : xpost_object_get_type(o) == integertype ? (double)o.int_.val \
+                    : 0.0)
+#define MIN1(x) ((x) < 1.0 ? (x) : 1.0)
+    Xpost_Object colorspace, srcspace, o;
+    enum { SRC_GRAY, SRC_RGB, SRC_CMYK, SRC_OTHER } src;
+    double v[4];
+
+    srcspace = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorspace"));
+    if (xpost_dict_compare_objects(ctx, srcspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
+        src = SRC_GRAY;
+    else if (xpost_dict_compare_objects(ctx, srcspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
+        src = SRC_RGB;
+    else if (xpost_dict_compare_objects(ctx, srcspace, xpost_name_cons(ctx, "DeviceCMYK")) == 0)
+        src = SRC_CMYK;
+    else
+        src = SRC_OTHER;
+    v[0] = GSCOMP("colorcomp1");
+    v[1] = GSCOMP("colorcomp2");
+    v[2] = GSCOMP("colorcomp3");
+    v[3] = GSCOMP("colorcomp4");
 
     colorspace = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "nativecolorspace"));
     if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceGray")) == 0)
     {
+        double g;
+
+        switch (src)
+        {
+            case SRC_RGB:
+                g = 0.3 * v[0] + 0.59 * v[1] + 0.11 * v[2];
+                break;
+            case SRC_CMYK:
+                g = 1.0 - MIN1(0.3 * v[0] + 0.59 * v[1] + 0.11 * v[2] + v[3]);
+                break;
+            default: /* gray, or an unknown space's first component */
+                g = v[0];
+                break;
+        }
         *ncomp = 1;
-        comp[0] = GSREAL("colorcomp1");
+        comp[0] = xpost_real_cons((real)g);
     }
     else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
     {
+        double r, g, b;
+
+        switch (src)
+        {
+            case SRC_GRAY:
+                r = g = b = v[0];
+                break;
+            case SRC_CMYK:
+                r = 1.0 - MIN1(v[0] + v[3]);
+                g = 1.0 - MIN1(v[1] + v[3]);
+                b = 1.0 - MIN1(v[2] + v[3]);
+                break;
+            default:
+                r = v[0]; g = v[1]; b = v[2];
+                break;
+        }
         *ncomp = 3;
-        comp[0] = GSREAL("colorcomp1");
-        comp[1] = GSREAL("colorcomp2");
-        comp[2] = GSREAL("colorcomp3");
+        comp[0] = xpost_real_cons((real)r);
+        comp[1] = xpost_real_cons((real)g);
+        comp[2] = xpost_real_cons((real)b);
     }
     else if (xpost_dict_compare_objects(ctx, colorspace, xpost_name_cons(ctx, "DeviceCMYK")) == 0)
     {
-        Xpost_Object srcspace = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "colorspace"));
         double c, m, y, k;
 
-        if (xpost_dict_compare_objects(ctx, srcspace, xpost_name_cons(ctx, "DeviceCMYK")) == 0)
+        switch (src)
         {
-            c = OBJVAL(GSREAL("colorcomp1"));
-            m = OBJVAL(GSREAL("colorcomp2"));
-            y = OBJVAL(GSREAL("colorcomp3"));
-            k = OBJVAL(GSREAL("colorcomp4"));
-        }
-        else if (xpost_dict_compare_objects(ctx, srcspace, xpost_name_cons(ctx, "DeviceRGB")) == 0)
-        {
-            c = 1 - OBJVAL(GSREAL("colorcomp1"));
-            m = 1 - OBJVAL(GSREAL("colorcomp2"));
-            y = 1 - OBJVAL(GSREAL("colorcomp3"));
-            k = c < m ? c : m;
-            if (y < k) k = y;
-            c -= k; m -= k; y -= k;
-        }
-        else /* DeviceGray */
-        {
-            c = m = y = 0;
-            k = 1 - OBJVAL(GSREAL("colorcomp1"));
+            case SRC_GRAY:
+                c = m = y = 0;
+                k = 1.0 - v[0];
+                break;
+            case SRC_RGB:
+                c = 1.0 - v[0];
+                m = 1.0 - v[1];
+                y = 1.0 - v[2];
+                k = c < m ? c : m;
+                if (y < k) k = y;
+                c -= k; m -= k; y -= k;
+                break;
+            default:
+                c = v[0]; m = v[1]; y = v[2]; k = v[3];
+                break;
         }
         *ncomp = 4;
         comp[0] = xpost_real_cons((real)c);
@@ -529,8 +573,8 @@ int _device_color(Xpost_Context *ctx,
         return unregistered;
     }
     return 0;
-#undef GSREAL
-#undef OBJVAL
+#undef GSCOMP
+#undef MIN1
 }
 
 /* Plot a rendered glyph bitmap through the device. An 8-bit coverage

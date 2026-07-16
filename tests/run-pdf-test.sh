@@ -13,6 +13,7 @@ script=$2
 # predeclare them so the EXIT trap cleanup stays valid under set -u when a
 # block is skipped (gs absent).
 textps= textpdf= strokeps= strokepdf= ra= rb= infops= infopdf=
+colorps= colorpdf= craster=
 pdf=$(mktemp)
 trap 'rm -f "$pdf"' EXIT
 
@@ -69,6 +70,33 @@ EOF
         echo "FAIL: text left no marks"; exit 1
     fi
 
+    # glyph colour: text must mark in the current colour, not
+    # unconditional black. White text over a black field must cut
+    # visible holes: the dark-pixel count of the consumer's raster
+    # falls measurably short of the untouched field.
+    colorps=$(mktemp)
+    colorpdf=$(mktemp)
+    craster=$(mktemp)
+    trap 'rm -f "$pdf" "$textps" "$textpdf" "$colorps" "$colorpdf" "$craster"' EXIT
+    cat > "$colorps" <<'EOF'
+0 setgray
+20 40 moveto 300 40 lineto 300 100 lineto 20 100 lineto closepath fill
+0 0 0 0 setcmykcolor
+/Helvetica findfont 40 scalefont setfont
+30 55 moveto (WHITE) show
+showpage
+EOF
+    "$xpost" -q -d pdfwrite -o "$colorpdf" "$colorps" </dev/null >/dev/null 2>&1
+    gs -q -dNOSAFER -dNOPAUSE -dBATCH -sDEVICE=pgmraw -g320x160 -r72 -o "$craster" "$colorpdf" 2>/dev/null
+    dark=$(tail -c 51200 "$craster" | od -An -v -tu1 \
+           | awk '{for(i=1;i<=NF;i++) if($i+0<128) n++} END{print n+0}')
+    echo "glyph colour dark pixels: $dark"
+    # the field alone is 280x60 = 16800 dark pixels: white glyphs must
+    # carve out well over a thousand of them, black glyphs none
+    [ "$dark" -ge 10000 ] && [ "$dark" -le 16000 ] \
+        || { echo "FAIL: text did not mark in the current colour"; exit 1; }
+    echo "gs glyph colour OK"
+
     # vector strokes: a bent polyline must reach the PDF as one path with
     # the requested width and the graphics state's join, not as separate
     # butt-capped segments at the consumer's default width. The defect is
@@ -79,7 +107,7 @@ EOF
     strokepdf=$(mktemp)
     ra=$(mktemp)
     rb=$(mktemp)
-    trap 'rm -f "$pdf" "$textps" "$textpdf" "$strokeps" "$strokepdf" "$ra" "$rb"' EXIT
+    trap 'rm -f "$pdf" "$textps" "$textpdf" "$colorps" "$colorpdf" "$craster" "$strokeps" "$strokepdf" "$ra" "$rb"' EXIT
     cat > "$strokeps" <<'EOF'
 0.75 setlinewidth
 100 100 moveto 105 103.5 lineto 100 107 lineto
@@ -101,7 +129,7 @@ EOF
     # Info dictionary, readable by the consumer
     infops=$(mktemp)
     infopdf=$(mktemp)
-    trap 'rm -f "$pdf" "$textps" "$textpdf" "$strokeps" "$strokepdf" "$ra" "$rb" "$infops" "$infopdf"' EXIT
+    trap 'rm -f "$pdf" "$textps" "$textpdf" "$colorps" "$colorpdf" "$craster" "$strokeps" "$strokepdf" "$ra" "$rb" "$infops" "$infopdf"' EXIT
     cat > "$infops" <<'EOF'
 [ /Creator (pdf-device check) /DOCINFO pdfmark
 100 100 moveto 200 100 lineto 200 200 lineto closepath fill

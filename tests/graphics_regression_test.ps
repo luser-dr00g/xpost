@@ -543,6 +543,26 @@ newpath 4 20 moveto (23) show
 currentpoint pop 4 sub
 w13 (show advances the pen by stringwidth) assertnear
 
+% --- text colour: glyphs mark in the current colour ---
+% white text knocks its ink out of a black field regardless of the
+% space the colour was set in, and composite black marks like any fill
+erasepage
+0 setgray newpath 0 0 moveto 64 0 lineto 64 64 lineto 0 64 lineto closepath fill
+countink /fieldink exch def
+0 0 0 0 setcmykcolor
+/Helvetica-Bold findfont 24 scalefont setfont
+newpath 4 20 moveto (HHH) show
+countink fieldink lt (white cmyk text cuts ink out of a black field) assert
+0 setgray newpath 0 0 moveto 64 0 lineto 64 64 lineto 0 64 lineto closepath fill
+1 1 1 setrgbcolor
+newpath 4 20 moveto (HHH) show
+countink fieldink lt (white rgb text cuts ink out of a black field) assert
+erasepage
+0 0 0 1 setcmykcolor
+newpath 4 20 moveto (HHH) show
+countink 20 gt (full-black cmyk text marks the page) assert
+0 setgray
+
 % an annulus clip built the standard way: the closepath's point bridges
 % into the inner subpath by a straight line, so the region arrives as
 % one keyhole path; the clipper must split it at the close, peel the
