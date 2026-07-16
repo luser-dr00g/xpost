@@ -13,7 +13,7 @@ Level 1 operators
 
  [X] setdash
  [X] currentdash
- [ ] arcto
+ [X] arcto
  [ ] fill with complex paths
  [ ] eofill
  [ ] clip with complex paths
@@ -200,6 +200,7 @@ Level 1 operators
  [X] rlineto
  [X] arc
  [X] arcn
+ [X] arcto
  [X] curveto
  [X] rcurveto
  [X] closepath
@@ -228,6 +229,7 @@ Level 1 operators
 Level 2 operators
 -----------------
 
+ [X] arct
  [ ] colorimage
  [ ] image with dict argument
  [ ] setcolortransfer

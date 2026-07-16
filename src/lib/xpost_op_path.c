@@ -120,6 +120,8 @@ static unsigned int _lineto_opcode;
 static unsigned int _rlineto_cont_opcode;
 static unsigned int _curveto_opcode;
 static unsigned int _rcurveto_cont_opcode;
+static unsigned int _arct_cont_opcode;
+static unsigned int _arcto_cont_opcode;
 
 /*matrices*/
 
@@ -1417,14 +1419,9 @@ void _arcbezseg(Xpost_Context *ctx,
    are pushed in reverse. */
 static
 int _arc_append(Xpost_Context *ctx,
-                Xpost_Object x, Xpost_Object y, Xpost_Object r,
-                Xpost_Object angle1, Xpost_Object angle2, int dir)
+                double cx, double cy, double rr,
+                double a1, double a2, int dir)
 {
-    double cx = x.real_.val;
-    double cy = y.real_.val;
-    double rr = r.real_.val;
-    double a1 = angle1.real_.val;
-    double a2 = angle2.real_.val;
     double segs[66][2];
     double cur, b;
     int n = 0, i;
@@ -1470,7 +1467,8 @@ int _arc(Xpost_Context *ctx,
          Xpost_Object x, Xpost_Object y, Xpost_Object r,
          Xpost_Object angle1, Xpost_Object angle2)
 {
-    return _arc_append(ctx, x, y, r, angle1, angle2, 1);
+    return _arc_append(ctx, x.real_.val, y.real_.val, r.real_.val,
+                       angle1.real_.val, angle2.real_.val, 1);
 }
 
 static
@@ -1478,7 +1476,140 @@ int _arcn(Xpost_Context *ctx,
           Xpost_Object x, Xpost_Object y, Xpost_Object r,
           Xpost_Object angle1, Xpost_Object angle2)
 {
-    return _arc_append(ctx, x, y, r, angle1, angle2, -1);
+    return _arc_append(ctx, x.real_.val, y.real_.val, r.real_.val,
+                       angle1.real_.val, angle2.real_.val, -1);
+}
+
+/* Shared arct/arcto continuation, entered with the five operands and
+   the current point, delivered in user space by the scheduled
+   currentpoint. The arc has radius r and is tangent to the ray from
+   the current point toward (x1,y1) and to the ray from (x1,y1) toward
+   (x2,y2): its centre sits on the corner's angle bisector at
+   r/sin(half-angle) and the tangent points at r*cos/sin(half-angle)
+   out along each ray, with the sweep direction given by the sign of
+   the rays' cross product. The straight segment from the current
+   point to the first tangent point falls out of _arc_append, whose
+   start proc linetos on a non-empty path. When report is set (arcto)
+   the four tangent coordinates are pushed before the arc's operands:
+   the scheduled arc consumes its own from above, leaving them as the
+   operator's results. */
+static
+int _arct_common(Xpost_Context *ctx,
+                 double x1, double y1, double x2, double y2, double r,
+                 double x0, double y0, int report)
+{
+    double dx0, dy0, dx2, dy2, sql0, sql2, cross;
+    double ux0, uy0, ux2, uy2, sinhalf, coshalf, tanlen, bx, by, blen;
+    double cx, cy, t1x, t1y, t2x, t2y, a1, a2;
+
+    if (r < 0)
+        return rangecheck;
+    dx0 = x0 - x1; dy0 = y0 - y1;
+    dx2 = x2 - x1; dy2 = y2 - y1;
+    sql0 = dx0 * dx0 + dy0 * dy0;
+    sql2 = dx2 * dx2 + dy2 * dy2;
+    if (sql0 == 0.0 || sql2 == 0.0)
+        return undefinedresult; /* a tangent ray has no direction */
+    cross = dx0 * dy2 - dy0 * dx2;
+    if (cross == 0.0 || r == 0.0)
+    {
+        /* collinear rays or a radius of zero: both tangent points
+           collapse onto the corner, the arc is empty and only the
+           straight segment survives */
+        if (report)
+        {
+            xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)x1));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)y1));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)x1));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)y1));
+        }
+        return _lineto(ctx, xpost_real_cons((real)x1), xpost_real_cons((real)y1));
+    }
+    ux0 = dx0 / sqrt(sql0); uy0 = dy0 / sqrt(sql0);
+    ux2 = dx2 / sqrt(sql2); uy2 = dy2 / sqrt(sql2);
+    /* half-angle identities on the rays' dot product; the clamps keep
+       rounding from pushing the square roots' arguments negative */
+    {
+        double cosq = ux0 * ux2 + uy0 * uy2;
+        if (cosq > 1.0) cosq = 1.0;
+        if (cosq < -1.0) cosq = -1.0;
+        sinhalf = sqrt((1.0 - cosq) / 2.0); /* nonzero: not collinear */
+        coshalf = sqrt((1.0 + cosq) / 2.0);
+    }
+    tanlen = r * coshalf / sinhalf;
+    /* the unnormalised bisector u0+u2 has length 2*cos(half-angle) */
+    bx = ux0 + ux2; by = uy0 + uy2;
+    blen = sqrt(bx * bx + by * by);
+    cx = x1 + bx / blen * (r / sinhalf);
+    cy = y1 + by / blen * (r / sinhalf);
+    t1x = x1 + ux0 * tanlen; t1y = y1 + uy0 * tanlen;
+    t2x = x1 + ux2 * tanlen; t2y = y1 + uy2 * tanlen;
+    a1 = atan2(t1y - cy, t1x - cx) / RAD_PER_DEG;
+    a2 = atan2(t2y - cy, t2x - cx) / RAD_PER_DEG;
+    if (report)
+    {
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)t1x));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)t1y));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)t2x));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)t2y));
+    }
+    return _arc_append(ctx, cx, cy, r, a1, a2, cross < 0.0 ? 1 : -1);
+}
+
+static
+int _arct(Xpost_Context *ctx,
+          Xpost_Object x1, Xpost_Object y1,
+          Xpost_Object x2, Xpost_Object y2,
+          Xpost_Object r)
+{
+    xpost_stack_push(ctx->lo, ctx->os, x1);
+    xpost_stack_push(ctx->lo, ctx->os, y1);
+    xpost_stack_push(ctx->lo, ctx->os, x2);
+    xpost_stack_push(ctx->lo, ctx->os, y2);
+    xpost_stack_push(ctx->lo, ctx->os, r);
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_arct_cont_opcode));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_currentpoint_opcode));
+    return 0;
+}
+
+static
+int _arct_cont(Xpost_Context *ctx,
+               Xpost_Object x1, Xpost_Object y1,
+               Xpost_Object x2, Xpost_Object y2,
+               Xpost_Object r,
+               Xpost_Object x0, Xpost_Object y0)
+{
+    return _arct_common(ctx, x1.real_.val, y1.real_.val,
+                        x2.real_.val, y2.real_.val, r.real_.val,
+                        x0.real_.val, y0.real_.val, 0);
+}
+
+static
+int _arcto(Xpost_Context *ctx,
+           Xpost_Object x1, Xpost_Object y1,
+           Xpost_Object x2, Xpost_Object y2,
+           Xpost_Object r)
+{
+    xpost_stack_push(ctx->lo, ctx->os, x1);
+    xpost_stack_push(ctx->lo, ctx->os, y1);
+    xpost_stack_push(ctx->lo, ctx->os, x2);
+    xpost_stack_push(ctx->lo, ctx->os, y2);
+    xpost_stack_push(ctx->lo, ctx->os, r);
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_arcto_cont_opcode));
+    xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(_currentpoint_opcode));
+    return 0;
+}
+
+static
+int _arcto_cont(Xpost_Context *ctx,
+                Xpost_Object x1, Xpost_Object y1,
+                Xpost_Object x2, Xpost_Object y2,
+                Xpost_Object r,
+                Xpost_Object x0, Xpost_Object y0)
+{
+    return _arct_common(ctx, x1.real_.val, y1.real_.val,
+                        x2.real_.val, y2.real_.val, r.real_.val,
+                        x0.real_.val, y0.real_.val, 1);
 }
 
 /* destination for flattening: appends must be able to re-seat
@@ -1722,6 +1853,20 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "arcn", (Xpost_Op_Func)_arcn, 0, 5,
                              floattype, floattype, floattype, floattype, floattype);
     INSTALL;
+
+    op = xpost_operator_cons(ctx, "arct", (Xpost_Op_Func)_arct, 0, 5,
+                             floattype, floattype, floattype, floattype, floattype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "arct_cont", (Xpost_Op_Func)_arct_cont, 0, 7,
+                             floattype, floattype, floattype, floattype, floattype, floattype, floattype);
+    _arct_cont_opcode = op.mark_.padw;
+
+    op = xpost_operator_cons(ctx, "arcto", (Xpost_Op_Func)_arcto, 4, 5,
+                             floattype, floattype, floattype, floattype, floattype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "arcto_cont", (Xpost_Op_Func)_arcto_cont, 4, 7,
+                             floattype, floattype, floattype, floattype, floattype, floattype, floattype);
+    _arcto_cont_opcode = op.mark_.padw;
 
     op = xpost_operator_cons(ctx, "flattenpath", (Xpost_Op_Func)_flattenpath, 0, 0);
     INSTALL;

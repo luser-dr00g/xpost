@@ -407,6 +407,102 @@ newpath 40 40 12 45 200 arc
 {} pathforall
 apd /c get 3 eq (a partial arc splits at quadrant boundaries) assert
 
+% --- arct/arcto: tangent geometry, degenerate forms, errors ---
+% arcto reports both tangent points and leaves the current point at
+% the second; the results arrive as xt1 yt1 xt2 yt2
+newpath 0 0 moveto 100 0 100 100 50 arcto
+50 (arcto second tangent point y) assertnear
+100 (arcto second tangent point x) assertnear
+0 (arcto first tangent point y) assertnear
+50 (arcto first tangent point x) assertnear
+currentpoint
+50 (arcto leaves the current point at the second tangent, y) assertnear
+100 (arcto leaves the current point at the second tangent, x) assertnear
+
+% arct builds the same path and reports nothing
+count /precount exch def
+newpath 0 0 moveto 100 0 100 100 50 arct
+count precount eq (arct leaves no results) assert
+currentpoint
+50 (arct leaves the current point at the second tangent, y) assertnear
+100 (arct leaves the current point at the second tangent, x) assertnear
+
+% one moveto, the straight tangent segment, one quadrant curve
+apd /m 0 put apd /l 0 put apd /c 0 put
+newpath 0 0 moveto 100 0 100 100 50 arct
+{ pop pop apd /m 2 copy get 1 add put }
+{ pop pop apd /l 2 copy get 1 add put }
+{ pop pop pop pop pop pop apd /c 2 copy get 1 add put }
+{} pathforall
+apd /m get 1 eq (arct starts from the existing current point) assert
+apd /l get 1 eq (arct appends the tangent line) assert
+apd /c get 1 eq (a 90-degree arct corner is one curve) assert
+
+% the arct path agrees with its explicit lineto+arc expansion (the
+% bounding box spans the curves' control hulls, so it checks the
+% control points too)
+newpath 0 0 moveto 100 0 100 100 50 arct
+pathbbox /aury exch def /aurx exch def /ally exch def /allx exch def
+newpath 0 0 moveto 50 0 lineto 50 50 50 -90 0 arc
+pathbbox
+aury (arct matches lineto+arc, ury) assertnear
+aurx (arct matches lineto+arc, urx) assertnear
+ally (arct matches lineto+arc, lly) assertnear
+allx (arct matches lineto+arc, llx) assertnear
+
+% a right-hand turn sweeps the corner clockwise
+newpath 0 0 moveto 100 0 100 -100 50 arct
+currentpoint
+-50 (clockwise arct current point y) assertnear
+100 (clockwise arct current point x) assertnear
+
+% collinear rays degenerate to the straight segment, both tangent
+% points collapsing onto the corner
+newpath 0 0 moveto 50 0 100 0 25 arcto
+0 (collinear arcto yt2) assertnear
+50 (collinear arcto xt2) assertnear
+0 (collinear arcto yt1) assertnear
+50 (collinear arcto xt1) assertnear
+apd /l 0 put apd /c 0 put
+newpath 0 0 moveto 50 0 100 0 25 arct
+{ pop pop } { pop pop apd /l 2 copy get 1 add put }
+{ pop pop pop pop pop pop apd /c 2 copy get 1 add put }
+{} pathforall
+apd /l get 1 eq (collinear arct is a line) assert
+apd /c get 0 eq (collinear arct has no curve) assert
+
+% errors: a missing current point, a directionless tangent ray, a
+% negative radius (a caught continuation leaves its operands: mark
+% and clear around each)
+mark newpath { 1 2 3 4 5 arct } stopped
+/caught exch def cleartomark
+caught (arct without a current point is caught) assert
+$error /errorname get /nocurrentpoint eq (arct raises nocurrentpoint) assert
+mark newpath 0 0 moveto { 0 0 10 10 5 arct } stopped
+/caught exch def cleartomark
+caught (arct on a degenerate ray is caught) assert
+$error /errorname get /undefinedresult eq (arct raises undefinedresult) assert
+mark newpath 0 0 moveto { 100 0 100 100 -5 arcto } stopped
+/caught exch def cleartomark
+caught (arcto with a negative radius is caught) assert
+$error /errorname get /rangecheck eq (arcto raises rangecheck) assert
+$error /newerror false put
+
+% a rounded rectangle built from four arct corners: filled inside,
+% clipped away at the square corner
+erasepage
+newpath 32 8 moveto
+56 8 56 32 16 arct
+56 56 32 56 16 arct
+8 56 8 32 16 arct
+8 8 32 8 16 arct
+closepath fill
+32 32 inkat (rounded rectangle fills its centre) assert
+32 10 inkat (rounded rectangle fills its edge midpoints) assert
+10 10 inkat not (rounded rectangle excludes the square corner) assert
+54 54 inkat not (rounded rectangle excludes the opposite corner) assert
+2 32 inkat not (rounded rectangle stays inside its frame) assert
+
 % pen advances scale linearly: a run of one character is as wide as
 % the sum of its parts (the hinter must not round each step)
 /Courier findfont 13 scalefont setfont
