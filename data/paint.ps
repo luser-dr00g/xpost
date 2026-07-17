@@ -41,10 +41,16 @@
         newpath
     }{
     flattenpath
-    doclip
     % subpaths merged into one point list, separated by null, so that
-    % FillPoly scans them together and interior subpaths produce holes
+    % FillPoly scans them together and interior subpaths produce holes.
+    % A non-trivial clip region intersects span-by-span in the same
+    % scan-conversion the fill itself uses: exact for any region the
+    % nonzero rule can describe (disjoint windows, concave boundaries,
+    % counters), where the half-plane clipper serves only convex ones
     .fillpolyargs
+    .cliptrivial not {
+        .clippolyargs .clipfillpoly
+    } if
     /DEBUGFILL where { pop
         (fill)=
         pstack()=

@@ -223,46 +223,55 @@ int _span_push(struct band_span **spans, int *cap, int *n,
     return 0;
 }
 
-static
-int _fillpoly(Xpost_Context *ctx,
-              Xpost_Object poly,
-              Xpost_Object devdic)
+/* a winding-resolved fill span: the x extent the region covers within
+   one pixel-row band, still in real device coordinates */
+struct rspan
 {
-    Xpost_Object colorspace;
-    int ncomp;
-    Xpost_Object comp1, comp2, comp3;
-    int numlines;
-    /* Xpost_Object x1, y1, x2, y2; */
-    Xpost_Object drawline;
-    Xpost_Object fillrect;
-    int usefillrect;
+    int band;
+    real lo, hi;
+};
+
+static
+int _rspan_push(struct rspan **rsp, int *cap, int *n,
+                int band, real lo, real hi)
+{
+    if (*n == *cap)
+    {
+        struct rspan *tmp;
+        int newcap = *cap ? *cap * 2 : 64;
+
+        tmp = realloc(*rsp, newcap * sizeof *tmp);
+        if (!tmp)
+            return VMerror;
+        *rsp = tmp;
+        *cap = newcap;
+    }
+    (*rsp)[*n].band = band;
+    (*rsp)[*n].lo = lo;
+    (*rsp)[*n].hi = hi;
+    ++*n;
+    return 0;
+}
+
+/* Scan-convert a null-separated polygon array to winding-resolved
+   band spans (the shared middle of the fill pipeline: vertices in,
+   sorted boundary passages accumulated to nonzero-rule extents out).
+   The caller owns the returned buffer. 0 on success. */
+static
+int _poly_resolved_spans(Xpost_Context *ctx,
+                         Xpost_Object poly,
+                         struct rspan **out,
+                         int *nout)
+{
     struct point *points;
     struct band_span *spans;
     int nspans, spancap;
+    struct rspan *rsp;
+    int nrsp, rspcap;
     int i;
-    //int width;
 
-    //printf("_fillpoly\n");
-
-    //width = xpost_dict_get(ctx, devdic, namewidth).int_.val;
-    colorspace = xpost_dict_get(ctx, devdic, namenativecolorspace);
-    if (xpost_dict_compare_objects(ctx, colorspace, nameDeviceGray) == 0)
-    {
-        ncomp = 1;
-        comp1 = xpost_stack_pop(ctx->lo, ctx->os);
-    }
-    else if (xpost_dict_compare_objects(ctx, colorspace, nameDeviceRGB) == 0)
-    {
-        ncomp = 3;
-        comp3 = xpost_stack_pop(ctx->lo, ctx->os);
-        comp2 = xpost_stack_pop(ctx->lo, ctx->os);
-        comp1 = xpost_stack_pop(ctx->lo, ctx->os);
-    }
-    else
-    {
-        XPOST_LOG_ERR("unimplemented device color space");
-        return unregistered;
-    }
+    *out = NULL;
+    *nout = 0;
 
     /* extract polygon vertices from ps array;
        null elements separate subpaths */
@@ -434,12 +443,100 @@ int _fillpoly(Xpost_Context *ctx,
             return code;
         }
     }
+    free(points);
 
     /* nspans can be zero for a degenerate row, leaving spans NULL; passing a
        null pointer to qsort is undefined even for a zero count, and there is
        nothing to order below two spans anyway */
     if (nspans > 1)
         qsort(spans, nspans, sizeof *spans, _bandspancomp);
+
+    /* Walk each band accumulating winding: a span opens at the first
+       extent's left edge and closes where the winding count returns to
+       zero (or the band runs out), covering the rightmost extent seen. */
+    rsp = NULL;
+    nrsp = 0;
+    rspcap = 0;
+    {
+        int s = 0;
+
+        while (s < nspans)
+        {
+            int b = spans[s].band;
+            int wind = 0;
+            real L = spans[s].lo, R = spans[s].hi;
+            int code;
+
+            do
+            {
+                if (spans[s].hi > R)
+                    R = spans[s].hi;
+                wind += spans[s].dirn;
+                s++;
+            } while (wind != 0 && s < nspans && spans[s].band == b);
+
+            code = _rspan_push(&rsp, &rspcap, &nrsp, b, L, R);
+            if (code)
+            {
+                free(spans);
+                free(rsp);
+                return code;
+            }
+        }
+    }
+    free(spans);
+
+    *out = rsp;
+    *nout = nrsp;
+    return 0;
+}
+
+static
+int _fillpoly(Xpost_Context *ctx,
+              Xpost_Object poly,
+              Xpost_Object devdic)
+{
+    Xpost_Object colorspace;
+    int ncomp;
+    Xpost_Object comp1, comp2, comp3;
+    int numlines;
+    /* Xpost_Object x1, y1, x2, y2; */
+    Xpost_Object drawline;
+    Xpost_Object fillrect;
+    int usefillrect;
+    struct rspan *rsp;
+    int nrsp;
+    int i;
+    //int width;
+
+    //printf("_fillpoly\n");
+
+    //width = xpost_dict_get(ctx, devdic, namewidth).int_.val;
+    colorspace = xpost_dict_get(ctx, devdic, namenativecolorspace);
+    if (xpost_dict_compare_objects(ctx, colorspace, nameDeviceGray) == 0)
+    {
+        ncomp = 1;
+        comp1 = xpost_stack_pop(ctx->lo, ctx->os);
+    }
+    else if (xpost_dict_compare_objects(ctx, colorspace, nameDeviceRGB) == 0)
+    {
+        ncomp = 3;
+        comp3 = xpost_stack_pop(ctx->lo, ctx->os);
+        comp2 = xpost_stack_pop(ctx->lo, ctx->os);
+        comp1 = xpost_stack_pop(ctx->lo, ctx->os);
+    }
+    else
+    {
+        XPOST_LOG_ERR("unimplemented device color space");
+        return unregistered;
+    }
+
+    {
+        int code = _poly_resolved_spans(ctx, poly, &rsp, &nrsp);
+
+        if (code)
+            return code;
+    }
 
     /* A fill scanline is a horizontal span. When the device provides a
        compiled FillRect, render each span through it (the per-pixel plotting
@@ -450,54 +547,36 @@ int _fillpoly(Xpost_Context *ctx,
     fillrect = xpost_dict_get(ctx, devdic, nameFillRect);
     usefillrect = xpost_object_get_type(fillrect) == operatortype;
 
-    /* Walk each band accumulating winding: a span opens at the first
-       extent's left edge and closes where the winding count returns to
-       zero (or the band runs out), covering the rightmost extent seen.
-       Paint columns [floor(lo), ceil(hi)): every pixel whose interior
+    /* Paint columns [floor(lo), ceil(hi)): every pixel whose interior
        the span reaches, and exactly the geometry when the span lies on
        pixel boundaries. FillRect fills the inclusive box [x, x+w] on
        row y (a fill span is height 0); DrawLine plots from its first
        point (included) toward its second (excluded); both therefore
        cover [xlo, xhi-1]. */
     numlines = 0;
+    for (i = 0; i < nrsp; i++)
     {
-        int s = 0;
+        integer xlo = (integer)floor(rsp[i].lo);
+        integer xhi = (integer)ceil(rsp[i].hi);
+        int b = rsp[i].band;
 
-        while (s < nspans)
+        if (xhi <= xlo)
+            continue;
+        if (usefillrect)
         {
-            int b = spans[s].band;
-            int wind = 0;
-            real L = spans[s].lo, R = spans[s].hi;
-            integer xlo, xhi;
-
-            do
-            {
-                if (spans[s].hi > R)
-                    R = spans[s].hi;
-                wind += spans[s].dirn;
-                s++;
-            } while (wind != 0 && s < nspans && spans[s].band == b);
-
-            xlo = (integer)floor(L);
-            xhi = (integer)ceil(R);
-            if (xhi <= xlo)
-                continue;
-            if (usefillrect)
-            {
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xlo));
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xhi - xlo - 1));
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(0)); /* h */
-            }
-            else
-            {
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xlo));
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xhi));
-                xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
-            }
-            numlines++;
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xlo));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xhi - xlo - 1));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(0)); /* h */
         }
+        else
+        {
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xlo));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(xhi));
+            xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(b));
+        }
+        numlines++;
     }
 
     /*call the device's DrawLine generically with continuations.
@@ -617,8 +696,126 @@ int _fillpoly(Xpost_Context *ctx,
     /*performance could be increased by factoring-out calls to xpost_name_cons()  ... DONE!
       or using opcode shortcuts for Rbracket & cvx (or just the arrtomark() function) and repeat.
      */
-    free(points);
-    free(spans);
+    free(rsp);
+    return 0;
+}
+
+/* subjectpoly clippoly  .clipfillpoly  spanpoly
+   Intersect two filled regions, each a null-separated polygon array in
+   the FillPoly argument format, under the nonzero winding rule, and
+   return the intersection as one such array of pixel-band rectangles.
+   This is the exact boolean the clip machinery needs for regions the
+   half-plane clipper cannot express -- many disjoint windows, concave
+   boundaries, counters -- resolved span-by-span at device resolution:
+   both operands scan-convert to winding-resolved band extents, and
+   each band contributes the pairwise overlaps of its extents. */
+static
+int _clipfillpoly(Xpost_Context *ctx,
+                  Xpost_Object subj,
+                  Xpost_Object clip)
+{
+    struct rspan *S = NULL, *C = NULL, *out = NULL;
+    int nS, nC, nout, outcap;
+    int si, ci, i;
+    int code;
+    Xpost_Object result;
+
+    code = _poly_resolved_spans(ctx, subj, &S, &nS);
+    if (code)
+        return code;
+    code = _poly_resolved_spans(ctx, clip, &C, &nC);
+    if (code)
+    {
+        free(S);
+        return code;
+    }
+
+    nout = 0;
+    outcap = 0;
+    si = ci = 0;
+    while (si < nS && ci < nC)
+    {
+        if (S[si].band < C[ci].band)
+            si++;
+        else if (C[ci].band < S[si].band)
+            ci++;
+        else
+        {
+            /* one shared band: both extent runs are disjoint and
+               ascending, so a linear merge finds every overlap */
+            int b = S[si].band;
+            int i2 = si, j2 = ci;
+
+            while (i2 < nS && S[i2].band == b && j2 < nC && C[j2].band == b)
+            {
+                real L = S[i2].lo > C[j2].lo ? S[i2].lo : C[j2].lo;
+                real R = S[i2].hi < C[j2].hi ? S[i2].hi : C[j2].hi;
+
+                if (L < R)
+                {
+                    code = _rspan_push(&out, &outcap, &nout, b, L, R);
+                    if (code)
+                    {
+                        free(S);
+                        free(C);
+                        free(out);
+                        return code;
+                    }
+                }
+                if (S[i2].hi < C[j2].hi)
+                    i2++;
+                else
+                    j2++;
+            }
+            while (si < nS && S[si].band == b)
+                si++;
+            while (ci < nC && C[ci].band == b)
+                ci++;
+        }
+    }
+    free(S);
+    free(C);
+
+    if (5 * (long)nout > 65535)
+    {
+        /* too many spans for a single backing array (the object size
+           field is 16 bits) */
+        free(out);
+        return limitcheck;
+    }
+
+    result = xpost_array_cons(ctx, 5 * nout);
+    if (xpost_object_get_type(result) == invalidtype)
+    {
+        free(out);
+        return VMerror;
+    }
+    for (i = 0; i < nout; i++)
+    {
+        static const int xsel[4] = { 0, 1, 1, 0 };  /* lo hi hi lo */
+        static const int ysel[4] = { 0, 0, 1, 1 };  /* b  b  b+1 b+1 */
+        int k;
+
+        for (k = 0; k < 4; k++)
+        {
+            Xpost_Object pair = xpost_array_cons(ctx, 2);
+
+            if (xpost_object_get_type(pair) == invalidtype)
+            {
+                free(out);
+                return VMerror;
+            }
+            xpost_array_put(ctx, pair, 0,
+                xpost_real_cons(xsel[k] ? out[i].hi : out[i].lo));
+            xpost_array_put(ctx, pair, 1,
+                xpost_real_cons((real)(out[i].band + ysel[k])));
+            xpost_array_put(ctx, result, 5 * i + k, pair);
+        }
+        xpost_array_put(ctx, result, 5 * i + 4, null);
+    }
+    free(out);
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(result));
     return 0;
 }
 
@@ -1320,6 +1517,7 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, ".yxsort", (Xpost_Op_Func)_yxsort, 0, 1, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillpoly", (Xpost_Op_Func)_fillpoly, 0, 2, arraytype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".clipfillpoly", (Xpost_Op_Func)_clipfillpoly, 1, 2, arraytype, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillrectgray", (Xpost_Op_Func)_fillrectgray, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".blendpixgray", (Xpost_Op_Func)_blendpixgray, 0, 5,
