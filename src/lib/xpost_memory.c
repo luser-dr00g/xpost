@@ -313,7 +313,23 @@ xpost_memory_file_grow(Xpost_Memory_File *mem,
         sz = xpost_memory_page_size;
     else
         sz = (sz / xpost_memory_page_size + 1) * xpost_memory_page_size;
-    sz += mem->max * 1.5;
+    {
+        /* objects address the file through unsigned int offsets, which
+           caps a memory file at 4G: clamp the geometric growth to that
+           limit and fail once a request itself no longer fits, so the
+           caller raises VMerror instead of wrapping the size */
+        size_t req = sz;
+        sz += (size_t)(mem->max * 1.5);
+        if (sz > 0xffffffffu)
+        {
+            if ((size_t)mem->used + req > 0xffffffffu)
+            {
+                XPOST_LOG_ERR("%d memory file full: cannot grow beyond addressable size", VMerror);
+                return 0;
+            }
+            sz = 0xffffffffu;
+        }
+    }
 
     XPOST_LOG_INFO("grow memory file%s%s (old: %d  new: %d)",
                    mem->fname ? " for " : "", mem->fname ? mem->fname : "",
@@ -459,7 +475,7 @@ xpost_memory_file_alloc(Xpost_Memory_File *mem,
 
     if (sz)
     {
-        if (sz + mem->used >= mem->max)
+        if ((size_t)sz + mem->used >= mem->max)
         {
             if (!xpost_memory_file_grow(mem, sz))
             {
