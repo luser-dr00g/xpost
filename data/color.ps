@@ -3,6 +3,14 @@
 
 /setcolorspace {
     %[ currentcolor setcolordict currentcolorspace get counttomark 2 add -1 roll
+    % record the space as set (what currentcolorspace reports), then the
+    % space the colour components are recorded in: a Separation or
+    % DeviceN colour is converted on setcolor, so its components live in
+    % the alternative space
+    graphicsdict /currgstate get 1 index /setspace exch put
+    dup type /arraytype eq { dup 0 get dup /Separation eq exch /DeviceN eq or } { false } ifelse {
+        2 get
+    } if
     graphicsdict /currgstate get exch /colorspace exch put
     graphicsdict /currgstate get /colorcomp1 0.0 put
     graphicsdict /currgstate get /colorcomp2 0.0 put
@@ -13,7 +21,7 @@
 } bind def
 
 /currentcolorspace {
-    graphicsdict /currgstate get /colorspace get
+    graphicsdict /currgstate get /setspace get
 } bind def
 
 /setcolordict <<
@@ -27,7 +35,11 @@
     dup type /arraytype eq { dup 0 get dup /Separation eq exch /DeviceN eq or } { false } ifelse
     {
         % [/Separation name alt tint] or [/DeviceN names alt tint]:
-        % switch to the alternative space and convert via the tint transform
+        % switch to the alternative space and convert via the tint
+        % transform. setcolor must not change what currentcolorspace
+        % reports, so stash the space being painted in and restore it
+        % after the conversion (whose device-space setters overwrite it)
+        dup graphicsdict exch /.sepspace exch put
         dup 0 get /Separation eq { DEVICE /.registersep known } { false } ifelse {
             % a device that preserves separations also receives the
             % (tint, space) pair: convert first (the device-space
@@ -48,6 +60,7 @@
             3 get exec
             setcolor
         } ifelse
+        graphicsdict /currgstate get /setspace graphicsdict /.sepspace get put
     } {
         //setcolordict exch get exec
     } ifelse
@@ -63,7 +76,9 @@
     /Process /currentcolor cvx
 >> def
 /currentcolor {
-    //currentcolordict currentcolorspace get exec
+    % deliver the recorded components: keyed by the space they are
+    % recorded in (for Separation/DeviceN, the alternative space)
+    //currentcolordict graphicsdict /currgstate get /colorspace get get exec
 } bind def
 
 /.min { % x y  . x (if x < y)
@@ -150,6 +165,7 @@
 >> def
 
 /setgray {
+    graphicsdict /currgstate get /setspace /DeviceGray put
     graphicsdict /currgstate get /colorspace /DeviceGray put
     graphicsdict /currgstate get exch /colorcomp1 exch put
     graphicsdict /currgstate get /sepindex null put
@@ -162,6 +178,7 @@
 } bind def
 
 /setrgbcolor {
+    graphicsdict /currgstate get /setspace /DeviceRGB put
     graphicsdict /currgstate get /colorspace /DeviceRGB put
     graphicsdict /currgstate get exch /colorcomp3 exch put
     graphicsdict /currgstate get exch /colorcomp2 exch put
@@ -218,6 +235,7 @@
 } bind def
 
 /setcmykcolor {
+    graphicsdict /currgstate get /setspace /DeviceCMYK put
     graphicsdict /currgstate get /colorspace /DeviceCMYK put
     graphicsdict /currgstate get exch /colorcomp4 exch put
     graphicsdict /currgstate get exch /colorcomp3 exch put
