@@ -19,6 +19,11 @@
     /sepindex null
     /septint 0
     /transfer {}
+    % halftone screen: frequency, angle and spot function, recorded for
+    % currentscreen (continuous-tone rendering takes no effect from them)
+    /screenfreq 60
+    /screenangle 45
+    /screenproc { 180 mul cos exch 180 mul cos add 2 div }
     %/currmatrix DEVICE /defaultmatrix get matrix copy
     %/currmatrix [ 1 0 0 1 0 0 ]
     %/scratchmatrix [ 1 0 0 1 0 0 ] % ??
@@ -196,6 +201,24 @@ end
 % return installed gray-transfer procedure
 /currenttransfer {
     graphicsdict /currgstate get /transfer get
+} def
+
+% freq angle proc  setscreen  -
+% record the halftone screen. xpost renders continuous tone, so the
+% screen does not affect the raster; the parameters are part of the
+% graphics state and round-trip through currentscreen
+/setscreen {
+    graphicsdict /currgstate get exch /screenproc exch put
+    graphicsdict /currgstate get exch /screenangle exch put
+    graphicsdict /currgstate get exch /screenfreq exch put
+} def
+
+% -  currentscreen  freq angle proc
+% return the halftone screen parameters
+/currentscreen {
+    graphicsdict /currgstate get /screenfreq get
+    graphicsdict /currgstate get /screenangle get
+    graphicsdict /currgstate get /screenproc get
 } def
 
 % num  setlinewidth  -
