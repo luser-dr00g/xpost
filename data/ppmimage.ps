@@ -425,7 +425,7 @@ DATA_DIR(/qsort.ps)strcat run
             {
                 dup -16 bitshift =only( )=only
                 dup -8 bitshift 16#ff and =only( )=only
-                dup 16#ff and =only( )=only
+                16#ff and =only( )=only
             }forall
             (\n)=only
         }forall %data
@@ -450,7 +450,7 @@ DATA_DIR(/qsort.ps)strcat run
                 =string cvs dup length exch
                     f exch writestring
                     neg 4 add { f ( ) writestring } repeat
-                dup 16#ff and
+                16#ff and
                 =string cvs dup length exch
                     f exch writestring
                     neg 4 add { f ( ) writestring } repeat
