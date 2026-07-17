@@ -117,7 +117,7 @@ void *xpost_font_face_new_from_memory(const unsigned char *data, size_t len);
  * @brief Return bounding box from a font face.
  *
  */
-void xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray);
+void xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray, real em);
 
 /**
  * @brief Free the given font.

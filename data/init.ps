@@ -420,7 +420,9 @@ end % userdict
         {   % try the operator
             //findfont
             dup /FontType 1 put
-            dup /FontMatrix matrix put
+            % a fresh matrix per dictionary, following the Type 1
+            % convention: 1000 character-space units to the em
+            dup /FontMatrix [ 0.001 0.0 0.0 0.001 0.0 0.0 ] put
             dup /Encoding 256 array put
             dup /BuildChar {} put
         } stopped { % operator failed: 

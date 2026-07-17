@@ -326,16 +326,25 @@ xpost_font_face_new_from_memory(const unsigned char *data, size_t len)
 }
 
 void
-xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray){
+xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray, real em){
 #ifdef HAVE_FREETYPE2
     FT_Face f = face;
-    bboxarray[0] = xpost_real_cons(f->bbox.xMin);
-    bboxarray[1] = xpost_real_cons(f->bbox.yMin);
-    bboxarray[2] = xpost_real_cons(f->bbox.xMax);
-    bboxarray[3] = xpost_real_cons(f->bbox.yMax);
+    real s = 1.0;
+
+    /* FontBBox belongs to character space, whose scale is a convention
+       of the font type (1000 units per em for Type 1, one unit for
+       Type 42): normalize the face's design units to the em size the
+       caller's dictionary declares through its FontMatrix */
+    if (f->units_per_EM > 0)
+        s = em / f->units_per_EM;
+    bboxarray[0] = xpost_real_cons(f->bbox.xMin * s);
+    bboxarray[1] = xpost_real_cons(f->bbox.yMin * s);
+    bboxarray[2] = xpost_real_cons(f->bbox.xMax * s);
+    bboxarray[3] = xpost_real_cons(f->bbox.yMax * s);
 #else
     (void)face;
     (void)bboxarray;
+    (void)em;
 #endif
 }
 

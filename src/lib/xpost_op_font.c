@@ -145,21 +145,25 @@ int _findfont(Xpost_Context *ctx,
     }
 
     fontbbox = xpost_array_cons(ctx, 4);
-    xpost_font_face_get_bbox(data.face, fontbboxarray);
+    xpost_font_face_get_bbox(data.face, fontbboxarray, 1000.0);
     xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
 		     xpost_object_get_ent(fontbbox),
 		     0, 4 * sizeof(Xpost_Object), fontbboxarray);
     xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontBBox"), fontbbox);
 
-    /* the base font maps one em to one text-space unit: scalefont and
-       makefont concatenate onto this identity in dictionary copies,
-       and the text operators derive the face's pixel scale from it */
+    /* the base font follows the Type 1 convention: character space
+       holds 1000 units per em and FontMatrix maps it to one text-space
+       unit, so FontBBox above is in the same 1000-unit space (programs
+       read the pair together, e.g. FontBBox dtransformed through
+       FontMatrix). scalefont and makefont concatenate onto this in
+       dictionary copies, and the text operators derive the face's
+       pixel scale from it */
     {
         Xpost_Object fontmatrix = xpost_array_cons(ctx, 6);
         int mi;
         for (mi = 0; mi < 6; mi++)
             xpost_array_put(ctx, fontmatrix, mi,
-                            xpost_real_cons(mi == 0 || mi == 3 ? 1.0f : 0.0f));
+                            xpost_real_cons(mi == 0 || mi == 3 ? 0.001f : 0.0f));
         xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontMatrix"), fontmatrix);
     }
 
@@ -227,7 +231,8 @@ int _loadfont42(Xpost_Context *ctx,
     }
 
     fontbbox = xpost_array_cons(ctx, 4);
-    xpost_font_face_get_bbox(data.face, fontbboxarray);
+    /* a Type 42 dictionary maps one em to one character-space unit */
+    xpost_font_face_get_bbox(data.face, fontbboxarray, 1.0);
     xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
                      xpost_object_get_ent(fontbbox),
                      0, 4 * sizeof(Xpost_Object), fontbboxarray);
@@ -417,11 +422,24 @@ void _face_setup(Xpost_Context *ctx,
     if (q == 0)
         return;
 
-    /* the face serves a well-conditioned base size (an extreme em
-       would fail inside FreeType); the residual ratio to the true
-       size rides in the transform, which scales outlines, extents
-       and linear advances alike */
-    r = q / xpost_font_face_scale(face, q);
+    /* the em in pixels: FontMatrix maps character space to text space,
+       so the composed magnitude q is per character-space unit, and the
+       units per em are a convention of the font type (1000 for Type 1
+       dictionaries, whose FontMatrix carries the 0.001 factor; one for
+       Type 42, whose FontMatrix is an identity over the em) */
+    {
+        Xpost_Object ft = xpost_dict_get(ctx, fontdict,
+                                         xpost_name_cons(ctx, "FontType"));
+        real qem = q;
+        if (xpost_object_get_type(ft) == integertype && ft.int_.val == 1)
+            qem = q * 1000;
+
+        /* the face serves a well-conditioned base size (an extreme em
+           would fail inside FreeType); the residual ratio to the true
+           size rides in the transform, which scales outlines, extents
+           and linear advances alike */
+        r = qem / xpost_font_face_scale(face, qem);
+    }
 
     mat[0] = (float)( e[0] / q * r);   /* xx */
     mat[1] = (float)( e[2] / q * r);   /* xy */
