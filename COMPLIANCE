@@ -25,7 +25,7 @@ Level 1 operators
  [X] currentlinejoin
  [/] setlinecap (recorded; strokes draw butt ends only)
  [X] currentlinecap
- [/] image (1-, 2-, 4- and 8-bit samples; no 12-bit)
+ [/] image (no 12-bit samples)
  [X] imagemask
  [X] settransfer
  [X] currenttransfer
@@ -256,8 +256,9 @@ Level 2 operators
  [ ] xyshow
  [ ] glyphshow
  [ ] colorimage
- [ ] image with dict argument
- [ ] imagemask with dict argument
+ [/] image with dict argument (ImageType 1 only; MultipleDataSources
+     and Interpolate unsupported)
+ [X] imagemask with dict argument
  [ ] setcolortransfer
  [ ] currentcolortransfer
  [X] Named Resources

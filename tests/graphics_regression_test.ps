@@ -252,6 +252,66 @@ grestore
 25 25 inkat not (eoclip masks the twice-enclosed interior) assert
 2 2 inkat not (eoclip masks outside its region) assert
 
+% --- dictionary image forms and sample unpacking ---
+% dict imagemask: Decode [1 0] paints the set bits (operand polarity
+% true), with the high-order bit leftmost
+erasepage
+gsave
+10 10 translate 40 40 scale 0 setgray
+<< /ImageType 1 /Width 8 /Height 8 /BitsPerComponent 1
+   /ImageMatrix [8 0 0 -8 0 8] /Decode [1 0]
+   /DataSource <F0F0F0F0F0F0F0F0> >> imagemask
+grestore
+12 30 inkat (dict imagemask paints the set bits) assert
+40 30 inkat not (dict imagemask leaves the clear bits unpainted) assert
+erasepage
+gsave
+10 10 translate 40 40 scale 0 setgray
+<< /ImageType 1 /Width 8 /Height 8 /BitsPerComponent 1
+   /ImageMatrix [8 0 0 -8 0 8] /Decode [0 1]
+   /DataSource <F0F0F0F0F0F0F0F0> >> imagemask
+grestore
+12 30 inkat not (dict imagemask Decode 0-1 spares the set bits) assert
+40 30 inkat (dict imagemask Decode 0-1 paints the clear bits) assert
+
+% a five-wide one-bit image: samples unpack high bit first and every
+% row starts on a byte boundary
+erasepage
+gsave
+10 10 translate 40 40 scale
+<< /ImageType 1 /Width 5 /Height 2 /BitsPerComponent 1
+   /ImageMatrix [5 0 0 -2 0 2] /Decode [0 1]
+   /DataSource <88 08> >> image
+grestore
+14 40 inkat not (one-bit image: the high bit is the left pixel) assert
+22 40 inkat (one-bit image: a clear bit paints black) assert
+46 40 inkat not (one-bit image: the row's last sample is the low nibble's top) assert
+14 20 inkat (one-bit image: the next row begins at the next byte) assert
+46 20 inkat not (one-bit image: the padded row keeps its own samples) assert
+
+% dict image: Decode maps the sample range
+erasepage
+gsave
+10 10 translate 40 40 scale
+<< /ImageType 1 /Width 2 /Height 1 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -1 0 1] /Decode [1 0]
+   /DataSource <FF00> >> image
+grestore
+14 30 inkat (dict image Decode inverts a full sample to black) assert
+46 30 inkat not (dict image Decode inverts a zero sample to white) assert
+
+% dict image samples arrive in the colour space current at the call
+erasepage
+gsave
+10 10 translate 40 40 scale
+/DeviceRGB setcolorspace
+<< /ImageType 1 /Width 2 /Height 1 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -1 0 1] /Decode [0 1 0 1 0 1]
+   /DataSource <000000FFFFFF> >> image
+grestore
+14 30 inkat (an RGB dictionary image paints in the current space) assert
+46 30 inkat not (an RGB dictionary image passes white through) assert
+
 % --- stroke width follows the CTM ---
 erasepage
 gsave

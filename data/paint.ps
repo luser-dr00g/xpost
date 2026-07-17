@@ -175,75 +175,71 @@
     } ifelse
 } bind def
 
+% Sample collectors: normalize the packed source data to one byte per
+% sample in buf. Samples pack high-order first within each byte, and
+% every row of samples begins on a byte boundary (PLRM 4.10), so a
+% sub-byte depth walks each byte's groups from the top and drops the
+% pad bits once a row's samples are down. The procedures run inside
+% .imagepaint's dictionary, where width, ncomp, buf, bz, bp and the
+% row counters rowsamples and rs are defined.
 /bitsdict <<
     1 {
         {
             bp bz ge {exit} if
-            datasrc % src
+            datasrc
+            dup length 0 eq {pop exit} if
             { % char
-                8 {
-                    dup % char char
-                    -1 bitshift exch % char>1 char
-                    1 and % char>1 c0
-                    255 mul % char>1 c0'
-                    buf exch bp exch put /bp bp 1 add def
-                } repeat
+                7 -1 0 { % char i
+                    rs rowsamples lt bp bz lt and {
+                        2 copy neg bitshift 1 and 255 mul
+                        buf exch bp exch put
+                        /bp bp 1 add def
+                        /rs rs 1 add def
+                    } if
+                    pop
+                } for
                 pop
+                rs rowsamples ge { /rs 0 def } if
             } forall
         } loop
     }
     2 {
         {
             bp bz ge {exit} if
-            datasrc % src
+            datasrc
+            dup length 0 eq {pop exit} if
             { % char
-
-                4 {
-                    dup % char char
-                    -2 bitshift exch % char>2 char
-                    3 and % char>2 c01
-                    85 mul  % char>2 c01'
-                    buf exch bp exch put /bp bp 1 add def
-                } repeat
-
-                %dup % char>2 char>2
-                %-2 bitshift exch % char>4 char>2
-                %3 and % char>4 c23
-                %85 mul  % char>4 c23'
-                %buf exch bp exch put /bp bp 1 add def
-
-                %dup % char>4 char>4
-                %-2 bitshift exch % char>6 char>4
-                %3 and % char>6 c45
-                %85 mul  % char>6 c45'
-                %buf exch bp exch put /bp bp 1 add def
-
-                %dup % char>6 char>6
-                %-2 bitshift exch % char>8 c67
-                %85 mul
-                %buf exch bp exch put /bp bp 1 add def
-
+                6 -2 0 { % char i
+                    rs rowsamples lt bp bz lt and {
+                        2 copy neg bitshift 3 and 85 mul
+                        buf exch bp exch put
+                        /bp bp 1 add def
+                        /rs rs 1 add def
+                    } if
+                    pop
+                } for
                 pop
-
+                rs rowsamples ge { /rs 0 def } if
             } forall
         } loop
     }
     4 {
         {
             bp bz ge {exit} if
-            datasrc % str
+            datasrc
+            dup length 0 eq {pop exit} if
             { % char
-                0 exch dup % 0 char char
-
-                2 {
-                    15 and % char  lo
-                    17 mul % char lo'
-                    buf exch bp exch put /bp bp 1 add def
-                    -4 bitshift % hi
-                } repeat % 0
-
+                4 -4 0 { % char i
+                    rs rowsamples lt bp bz lt and {
+                        2 copy neg bitshift 15 and 17 mul
+                        buf exch bp exch put
+                        /bp bp 1 add def
+                        /rs rs 1 add def
+                    } if
+                    pop
+                } for
                 pop
-
+                rs rowsamples ge { /rs 0 def } if
             } forall
         } loop
     }
@@ -251,10 +247,12 @@
         {
             bp bz ge {exit} if
             datasrc
+            dup length 0 eq {pop exit} if
+            dup length bp add bz gt {
+                0 bz bp sub getinterval
+            } if
             buf exch bp exch
-            dup length
-            %pstack()=
-            bp add /bp exch def
+            dup length bp add /bp exch def
             putinterval
         } loop
     }
@@ -262,34 +260,75 @@
     }
 >> def
 
-% width height bits/sample matrix datasrc  image  -
-/image {
-    %pstack()=
+% src  .imgsource  proc
+% normalize an image data source: a file becomes a chunk-reading
+% procedure, a string a procedure delivering it, a procedure passes
+% through unchanged
+/.imgsource {
+    dup type /filetype eq {
+        [ exch 4096 string /readstring cvx /pop cvx ] cvx
+    }{
+        dup type /stringtype eq {
+            [ exch ] cvx
+        } if
+    } ifelse
+} def
+
+% -  .ncomponents  n
+% the number of colour components the current colour space takes
+/.spacecomps <<
+    /DeviceGray 1
+    /DeviceRGB 3
+    /DeviceCMYK 4
+>> def
+/.ncomponents {
+    currentcolorspace
+    dup type /arraytype eq {
+        dup 0 get /Separation eq { pop 1 }{
+        dup 0 get /DeviceN eq { 1 get length }{
+        0 get //.spacecomps exch get } ifelse } ifelse
+    }{
+        //.spacecomps exch get
+    } ifelse
+} def
+
+% width height bits mat datasrc decode ncomp  .imagepaint  -
+% the shared image painter: the collectors normalize every sample
+% depth to one byte, so each pixel reads ncomp bytes, maps each
+% through its Decode range, and delivers the components to setcolor
+% in the current colour space
+/.imagepaint {
     gsave
         newpath
-        10 dict begin
-        {datasrc mat bits height width}{exch def}forall
+        14 dict begin
+        {ncomp decode datasrc mat bits height width}{exch def}forall
 
-        /vdx 1 width div def
-        /vdy 1 height div def
-        /DeviceGray setcolorspace
-        /bz width height mul def
+        /bz width height mul ncomp mul def
         /buf bz string def
         /bp 0 def
+        /rowsamples width ncomp mul def
+        /rs 0 def
 
         bitsdict bits get exec
 
+        % per-component decode as base + sample x scale over 0..255
+        /dbase ncomp array def
+        /dscale ncomp array def
+        0 1 ncomp 1 sub { /c exch def
+            /dmin decode c 2 mul get def
+            dbase c dmin put
+            dscale c decode c 2 mul 1 add get dmin sub 255 div put
+        } for
+
         mat mat invertmatrix concat
-        %vdx vdy scale
         0 1 height 1 sub { /y exch def
             0 1 width 1 sub { /x exch def
-                buf y width mul x add get 255 div
+                /base y width mul x add ncomp mul def
+                0 1 ncomp 1 sub { /c exch def
+                    buf base c add get dscale c get mul dbase c get add
+                } for
                 setcolor
-                x %vdx mul
-                y %vdy mul %mat itransform
-                1 1 %vdx vdy %mat idtransform
-                %pstack()=
-                rectfill
+                x y 1 1 rectfill
             } for
         } for
 
@@ -297,11 +336,37 @@
     grestore
 } def
 
-% width height polarity matrix datasrc  imagemask  -
+% width height bits/sample matrix datasrc  image  -
+%                                imagedict  image  -
+% The five-operand form paints grey samples; the dictionary form
+% (ImageType 1, a single DataSource) paints samples in the colour
+% space current when image is invoked
+/image {
+    dup type /dicttype eq {
+        begin
+        ImageType 1 ne { end /image cvx /rangecheck signalerror } if
+        currentdict /MultipleDataSources known
+            { MultipleDataSources }{ false } ifelse {
+            end /image cvx /typecheck signalerror
+        } if
+        Width Height BitsPerComponent ImageMatrix
+        DataSource .imgsource
+        Decode
+        end
+        .ncomponents .imagepaint
+    }{
+        gsave
+        /DeviceGray setcolorspace
+        .imgsource [ 0 1 ] 1 .imagepaint
+        grestore
+    } ifelse
+} def
+
+% width height polarity matrix datasrc  .stencilmask  -
 % paint the current colour through a one-bit stencil: samples equal to
 % the polarity mark unit squares of image space, the rest leave the
 % page untouched. Each row of samples begins on a byte boundary.
-/imagemask {
+/.stencilmask {
     gsave
         newpath
         10 dict begin
@@ -333,6 +398,26 @@
         } for
         end
     grestore
+} def
+
+% width height polarity matrix datasrc  imagemask  -
+%                                  maskdict  imagemask  -
+% The dictionary form (ImageType 1) states its polarity through
+% Decode: [1 0] paints where the sample is one, as operand polarity
+% true does; [0 1] paints the zeroes
+/imagemask {
+    dup type /dicttype eq {
+        begin
+        ImageType 1 ne { end /imagemask cvx /rangecheck signalerror } if
+        Width Height
+        Decode 0 get 0 ne
+        ImageMatrix
+        DataSource .imgsource
+        end
+    }{
+        .imgsource
+    } ifelse
+    .stencilmask
 } def
 
 /QUIET where { pop }{ (eof paint.ps\n)print } ifelse
