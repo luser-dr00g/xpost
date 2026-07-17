@@ -100,6 +100,20 @@ void xpost_font_quit(void);
 void *xpost_font_face_new_from_name(const char *name);
 
 /**
+ * @brief Return a font face from a font program held in memory.
+ *
+ * @param[in] data The font program bytes (TrueType/OpenType sfnt).
+ * @param[in] len The number of bytes.
+ * @return The font face, or @c NULL on error.
+ *
+ * The buffer must remain valid for the lifetime of the face; the
+ * caller retains ownership.
+ *
+ * @see xpost_font_face_new_from_name()
+ */
+void *xpost_font_face_new_from_memory(const unsigned char *data, size_t len);
+
+/**
  * @brief Return bounding box from a font face.
  *
  */
@@ -153,6 +167,52 @@ void xpost_font_face_transform(void *face, float *mat);
 unsigned int xpost_font_face_glyph_index_get(void *face, char c);
 
 /**
+ * @brief Return the glyph index for a glyph name in the given font.
+ *
+ * @param[in] face The font face.
+ * @param[in] name The glyph name (e.g. "zero").
+ * @return The glyph index, or 0 when the face has no glyph by that
+ * name (or carries no glyph names at all).
+ *
+ * @see xpost_font_face_glyph_index_get()
+ */
+unsigned int xpost_font_face_glyph_name_index_get(void *face, const char *name);
+
+/**
+ * @typedef Xpost_Font_Outline_Sink
+ * Callbacks receiving a glyph outline decomposed into path segments.
+ *
+ * Coordinates are in pixels (26.6 fixed point divided out), y-up,
+ * relative to the pen position. Quadratic segments are converted so
+ * only cubic curves are delivered. Each callback returns 0 to
+ * continue, non-zero to abort the decomposition.
+ */
+typedef struct
+{
+    int (*moveto)(void *user, double x, double y);
+    int (*lineto)(void *user, double x, double y);
+    int (*curveto)(void *user, double x1, double y1, double x2, double y2, double x3, double y3);
+    int (*closepath)(void *user);
+    void *user;
+} Xpost_Font_Outline_Sink;
+
+/**
+ * @brief Decompose a glyph's outline into path segments.
+ *
+ * @param[in] face The font face.
+ * @param[in] glyph_index The glyph index.
+ * @param[in] sink The segment callbacks.
+ * @param[out] advance_x The horizontal advance (26.6 fixed point).
+ * @param[out] advance_y The vertical advance (26.6 fixed point).
+ * @return 1 on success, 0 otherwise (e.g. a bitmap-only glyph).
+ *
+ * The glyph is loaded without rendering; the face's size and
+ * transform apply to the outline and the advance exactly as they do
+ * to the rendered bitmap.
+ */
+int xpost_font_face_glyph_outline(void *face, unsigned int glyph_index, const Xpost_Font_Outline_Sink *sink, long *advance_x, long *advance_y);
+
+/**
  * @brief render the given glyph of the given face.
  * font.
  *
@@ -168,37 +228,18 @@ unsigned int xpost_font_face_glyph_index_get(void *face, char c);
  */
 int xpost_font_face_glyph_render(void *face, unsigned int glyph_index);
 
+/**
+ * @brief Report a glyph outline's ink extent and advance without
+ * rasterizing, in 26.6 glyph space (y-up around the pen).
+ *
+ * @return 1 on success; 0 when the glyph cannot load or has no
+ * outline (a bitmap strike), in which case render instead.
+ */
+int xpost_font_face_glyph_extents(void *face, unsigned int glyph_index,
+                                  long *xmin, long *ymin, long *xmax, long *ymax,
+                                  long *advance_x, long *advance_y);
+
 void xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, int *width, int *pitch, char *pixel_mode, int *left, int *top, long *advance_x, long *advance_y);
 
-/**
- * @brief Check if the given font has kerning feature.
- *
- * @param[in] face The font face.
- * @return 1 if the font has kerning feature, 0 otherwise.
- *
- * This function checks if @p face has kerning feature. It returns 1
- * if so, 0 otherwise.
- *
- * @see xpost_font_face_kerning_delta_get()
- */
-int xpost_font_face_kerning_has(void *face);
-
-/**
- * @brief Retrieve the kerning vector of the given glyph.
- *
- * @param[in] face The font face.
- * @param[in] glyph_previous The previous glyph.
- * @param[in] glyph_index The current glyph.
- * @param[out] delta_x The horizontal component of the kerning vector.
- * @param[out] delta_y The vertical component of the kerning vector.
- * @return 1 on success, 0 otherwise.
- *
- * This function stores the kerning vector of the glyph
- * @p glyph_index computed from @p glyph_previous  (in font @p face)
- * in @p delta_x and @p delta_y. It returns 1 on success, 0 otherwise.
- *
- * @see xpost_font_face_kerning_has()
- */
-int xpost_font_face_kerning_delta_get(void *face, unsigned int glyph_previous, unsigned int glyph_index, long *delta_x, long *delta_y);
 
 #endif

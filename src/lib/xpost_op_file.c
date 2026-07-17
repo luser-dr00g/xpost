@@ -98,6 +98,89 @@ int xpost_op_string_mode_file (Xpost_Context *ctx,
     return 0;
 }
 
+/* file /FilterName  filter  file'
+   layer a decoding filter over a readable file */
+static
+int xpost_op_file_filter (Xpost_Context *ctx,
+                          Xpost_Object F,
+                          Xpost_Object name)
+{
+    Xpost_Object namestr;
+    char *cname;
+    Xpost_Object f;
+
+    if (!xpost_object_is_readable(ctx, F))
+        return invalidaccess;
+    namestr = xpost_name_get_string(ctx, name);
+    cname = xpost_string_allocate_cstring(ctx, namestr);
+    if (!cname)
+        return VMerror;
+    if (strcmp(cname, "ASCII85Decode") == 0)
+        f = xpost_file_cons_filter_a85(ctx->lo, F);
+    else if (strcmp(cname, "ASCIIHexDecode") == 0)
+        f = xpost_file_cons_filter_hex(ctx->lo, F);
+    else if (strcmp(cname, "RunLengthDecode") == 0)
+        f = xpost_file_cons_filter_rle(ctx->lo, F);
+#ifdef HAVE_ZLIB
+    else if (strcmp(cname, "FlateDecode") == 0)
+        f = xpost_file_cons_filter_flate(ctx->lo, F);
+#endif
+    else
+    {
+        XPOST_LOG_ERR("unsupported filter %s", cname);
+        free(cname);
+        return undefined;
+    }
+    free(cname);
+    if (xpost_object_get_type(f) == invalidtype)
+        return ioerror;
+    f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    return 0;
+}
+
+/* file count string /SubFileDecode  filter  file'
+   pass bytes through until the delimiter string has occurred count
+   times (an empty string makes count a plain byte count) */
+static
+int xpost_op_file_filter_subfile (Xpost_Context *ctx,
+                                  Xpost_Object F,
+                                  Xpost_Object count,
+                                  Xpost_Object eod,
+                                  Xpost_Object name)
+{
+    Xpost_Object namestr;
+    char *cname;
+    int match;
+    Xpost_Object f;
+    char eodbuf[64];
+
+    if (!xpost_object_is_readable(ctx, F))
+        return invalidaccess;
+    namestr = xpost_name_get_string(ctx, name);
+    cname = xpost_string_allocate_cstring(ctx, namestr);
+    if (!cname)
+        return VMerror;
+    match = strcmp(cname, "SubFileDecode") == 0;
+    if (!match)
+        XPOST_LOG_ERR("unsupported filter %s with count and string", cname);
+    free(cname);
+    if (!match)
+        return undefined;
+    if (eod.comp_.sz > sizeof(eodbuf))
+        return rangecheck;
+    memcpy(eodbuf, xpost_string_get_pointer(ctx, eod), eod.comp_.sz);
+
+    f = xpost_file_cons_filter_subfile(ctx->lo, F, count.int_.val, eodbuf, (int)eod.comp_.sz);
+    if (xpost_object_get_type(f) == invalidtype)
+        return ioerror;
+    f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    return 0;
+}
+
 /* file  closefile  -
    close file object */
 static
@@ -136,6 +219,22 @@ int xpost_op_file_read(Xpost_Context *ctx,
     return 0;
 }
 
+/* pass the bytes to a registered handler when the file is the
+   process's standard output or error stream; returns 1 when the
+   write was diverted, -1 when the handler refused it, 0 when the
+   write should proceed normally */
+static
+int _divert_output(Xpost_Context *ctx, Xpost_File *f,
+                   const char *buf, size_t len)
+{
+    FILE *stream = xpost_file_stdio_stream_get(f);
+    if (stream == stdout && ctx->stdout_fn)
+        return ctx->stdout_fn(ctx->stdout_user, buf, len) == len ? 1 : -1;
+    if (stream == stderr && ctx->stderr_fn)
+        return ctx->stderr_fn(ctx->stderr_user, buf, len) == len ? 1 : -1;
+    return 0;
+}
+
 /* file int  write  -
    write a byte to file */
 static
@@ -146,6 +245,13 @@ int xpost_op_file_write (Xpost_Context *ctx,
     int ret;
     if (!xpost_object_is_writeable(ctx, f))
         return invalidaccess;
+    {
+        char c = (char)i.int_.val;
+        int d = _divert_output(ctx,
+                xpost_file_get_file_pointer(ctx->lo, f), &c, 1);
+        if (d < 0) return ioerror;
+        if (d) return 0;
+    }
     ret = xpost_file_write_byte(ctx->lo, f, i);
     if (ret)
         return ret;
@@ -221,9 +327,16 @@ int xpost_op_file_writehexstring (Xpost_Context *ctx,
 
     for (n = 0; n < S.comp_.sz; n++)
     {
-        if (xpost_file_putc(f, hex[s[n] / 16]) == EOF)
+        char h[2];
+        int d;
+        h[0] = hex[s[n] / 16];
+        h[1] = hex[s[n] % 16];
+        d = _divert_output(ctx, f, h, 2);
+        if (d < 0) return ioerror;
+        if (d) continue;
+        if (xpost_file_putc(f, h[0]) == EOF)
             return ioerror;
-        if (xpost_file_putc(f, hex[s[n] % 16]) == EOF)
+        if (xpost_file_putc(f, h[1]) == EOF)
             return ioerror;
     }
     return 0;
@@ -276,6 +389,11 @@ int xpost_op_file_writestring (Xpost_Context *ctx,
         return invalidaccess;
     f = xpost_file_get_file_pointer(ctx->lo, F);
     s = xpost_string_get_pointer(ctx, S);
+    {
+        int d = _divert_output(ctx, f, s, S.comp_.sz);
+        if (d < 0) return ioerror;
+        if (d) return 0;
+    }
     if (xpost_file_write(s, 1, S.comp_.sz, f) != S.comp_.sz)
         return ioerror;
     return 0;
@@ -425,17 +543,11 @@ int xpost_op_string_deletefile (Xpost_Context *ctx,
     int ret;
 
     sbuf = xpost_string_allocate_cstring(ctx, S);
-    ret = remove(sbuf);
-    if (ret != 0)
-        switch (errno)
-        {
-            case ENOENT:
-	      free(sbuf);
-	      return undefinedfilename;
-            default:
-	      free(sbuf);
-	      return ioerror;
-        }
+    if (xpost_diskfile_remove(sbuf, &ret) != 0)
+    {
+        free(sbuf);
+        return ret;
+    }
     free(sbuf);
     return 0;
 }
@@ -454,19 +566,12 @@ int xpost_op_string_renamefile (Xpost_Context *ctx,
 
     newbuf = xpost_string_allocate_cstring(ctx, New);
 
-    ret = rename(oldbuf, newbuf);
-    if (ret != 0)
-        switch(errno)
-        {
-            case ENOENT:
-	      free(oldbuf);
-	      free(newbuf);
-	      return undefinedfilename;
-            default:
-	      free(oldbuf);
-	      free(newbuf);
-	      return ioerror;
-        }
+    if (xpost_diskfile_rename(oldbuf, newbuf, &ret) != 0)
+    {
+        free(oldbuf);
+        free(newbuf);
+        return ret;
+    }
     free(oldbuf);
     free(newbuf);
     return 0;
@@ -488,6 +593,11 @@ int xpost_op_contfilenameforall (Xpost_Context *ctx,
     Xpost_Object interval;
 
     globbuf = oglob.glob_.ptr;
+    /* skip entries the engaged sandbox would not let the program open, so
+       a listing cannot disclose names outside the permitted set */
+    while (oglob.glob_.off < globbuf->gl_pathc
+           && !xpost_diskfile_readable(globbuf->gl_pathv[oglob.glob_.off]))
+        ++oglob.glob_.off;
     if (oglob.glob_.off < globbuf->gl_pathc)
     {
         /* xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "contfilenameforall", NULL,0,0)); */
@@ -594,6 +704,12 @@ int xpost_op_string_print (Xpost_Context *ctx,
     size_t ret;
     char *s;
     s = xpost_string_get_pointer(ctx, S);
+    if (ctx->stdout_fn)
+    {
+        if (ctx->stdout_fn(ctx->stdout_user, s, S.comp_.sz) != S.comp_.sz)
+            return ioerror;
+        return 0;
+    }
     ret = fwrite(s, 1, S.comp_.sz, stdout);
     if (ret != S.comp_.sz)
         return ioerror;
@@ -614,6 +730,137 @@ int xpost_op_bool_echo (Xpost_Context *ctx,
     return 0;
 }
 
+/* dir category name  .resourcefileopen  file true | false
+   Open the resource instance <dir>/<category>/<name> for reading, confined
+   beneath dir, with category and name validated as single path components.
+   Returns the file and true, or just false when the instance is absent,
+   refused, or the names are not valid components. */
+static
+int xpost_op_resourcefileopen (Xpost_Context *ctx,
+                               Xpost_Object dir,
+                               Xpost_Object cat,
+                               Xpost_Object nam)
+{
+    char *cdir;
+    char *ccat;
+    char *cnam;
+    char rel[XPOST_PATH_MAX];
+    Xpost_Object f;
+    FILE *fp;
+    int err;
+    int n;
+
+    /* validate against the raw bytes and length (rejects embedded NUL)
+       before composing any path */
+    if (!xpost_path_safe_leaf(xpost_string_get_pointer(ctx, cat), cat.comp_.sz) ||
+        !xpost_path_safe_leaf(xpost_string_get_pointer(ctx, nam), nam.comp_.sz))
+    {
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+        return 0;
+    }
+
+    cdir = xpost_string_allocate_cstring(ctx, dir);
+    ccat = xpost_string_allocate_cstring(ctx, cat);
+    cnam = xpost_string_allocate_cstring(ctx, nam);
+    if (!cdir || !ccat || !cnam)
+    {
+        free(cdir);
+        free(ccat);
+        free(cnam);
+        return VMerror;
+    }
+
+    n = snprintf(rel, sizeof rel, "%s/%s", ccat, cnam);
+    free(ccat);
+    free(cnam);
+    if (n < 0 || n >= (int)sizeof rel)
+    {
+        free(cdir);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+        return 0;
+    }
+
+    fp = xpost_diskfile_fopen_beneath(cdir, rel, &err);
+    free(cdir);
+    if (!fp)
+    {
+        /* absent or refused: the caller tries the next directory */
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+        return 0;
+    }
+
+    f = xpost_file_cons(ctx->lo, fp);
+    if (xpost_object_get_type(f) == invalidtype)
+    {
+        fclose(fp);
+        return VMerror;
+    }
+    f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
+    return 0;
+}
+
+/* string  .permitfileread  -
+   permit reading files within the directory tree; ignored once locked down */
+static
+int xpost_op_string_permitfileread (Xpost_Context *ctx,
+                                    Xpost_Object dir)
+{
+    char *d = xpost_string_allocate_cstring(ctx, dir);
+
+    if (!d)
+        return VMerror;
+    xpost_path_permit_read(d);
+    free(d);
+    return 0;
+}
+
+/* string  .permitfilewrite  -
+   permit writing files within the directory tree; ignored once locked down */
+static
+int xpost_op_string_permitfilewrite (Xpost_Context *ctx,
+                                     Xpost_Object dir)
+{
+    char *d = xpost_string_allocate_cstring(ctx, dir);
+
+    if (!d)
+        return VMerror;
+    xpost_path_permit_write(d);
+    free(d);
+    return 0;
+}
+
+/* Remove the sandbox-control and raw resource-open operators from systemdict
+   so a program cannot name them after lockdown. .resourcefileopen stays bound
+   (and executeonly) inside the resource machinery, so findresource is
+   unaffected; the enforcement is the C-level permit check regardless. */
+static void
+_undef_sandbox_ops (Xpost_Context *ctx)
+{
+    static const char *const names[] = {
+        ".permitfileread", ".permitfilewrite", ".lockdown", ".resourcefileopen"
+    };
+    Xpost_Object sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
+    size_t i;
+
+    for (i = 0; i < sizeof names / sizeof names[0]; i++)
+        xpost_dict_undef(ctx, sd, xpost_name_cons(ctx, names[i]));
+}
+
+/* -  .lockdown  -
+   engage the file-access sandbox: subsequent program-driven opens are
+   confined to the permitted directories. One-way -- a trusted prolog
+   permits what it needs and locks down before running untrusted input. */
+static
+int xpost_op_lockdown (Xpost_Context *ctx)
+{
+    xpost_path_control_engage();
+    _undef_sandbox_ops(ctx);
+    return 0;
+}
+
 int xpost_oper_init_file_ops (Xpost_Context *ctx,
                               Xpost_Object sd)
 {
@@ -628,7 +875,19 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, "file", (Xpost_Op_Func)xpost_op_string_mode_file, 1, 2, stringtype, stringtype);
     INSTALL;
-    /* filter */
+    op = xpost_operator_cons(ctx, ".resourcefileopen", (Xpost_Op_Func)xpost_op_resourcefileopen, 2, 3, stringtype, stringtype, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".permitfileread", (Xpost_Op_Func)xpost_op_string_permitfileread, 0, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".permitfilewrite", (Xpost_Op_Func)xpost_op_string_permitfilewrite, 0, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".lockdown", (Xpost_Op_Func)xpost_op_lockdown, 0, 0);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter, 1, 2, filetype, nametype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter_subfile, 1, 4,
+            filetype, integertype, stringtype, nametype);
+    INSTALL;
     op = xpost_operator_cons(ctx, "closefile", (Xpost_Op_Func)xpost_op_file_closefile, 0, 1, filetype);
     INSTALL;
     op = xpost_operator_cons(ctx, "read", (Xpost_Op_Func)xpost_op_file_read, 1, 1, filetype);

@@ -11,7 +11,7 @@ if sys_windows
   xpost_bin_src += xpost_rc
 endif
 
-executable('xpost', xpost_bin_src,
+xpost_exe = executable('xpost', xpost_bin_src,
   c_args: '-DHAVE_CONFIG_H',
   dependencies: libxpost_dep,
   include_directories: [

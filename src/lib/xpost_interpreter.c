@@ -34,7 +34,6 @@
 #endif
 
 #include <assert.h>
-#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -300,132 +299,759 @@ void xpost_interpreter_exit(Xpost_Interpreter *itpptr)
  *
  */
 
-/* function type for interpreter action pointers */
+/* function type for interpreter action pointers.
+   eval() has already popped the object from the execution stack. */
 typedef
-int evalfunc(Xpost_Context *ctx);
+int evalfunc(Xpost_Context *ctx, Xpost_Object t);
 
 /* quit the interpreter */
 static
-int evalquit(Xpost_Context *ctx)
+int evalquit(Xpost_Context *ctx, Xpost_Object t)
 {
+    (void)t;
     ++ctx->quit;
     return 0;
 }
 
-/* pop the execution stack */
+/* discard the object */
 static
-int evalpop(Xpost_Context *ctx)
+int evalpop(Xpost_Context *ctx, Xpost_Object t)
 {
-    if (!xpost_object_get_type(xpost_stack_pop(ctx->lo, ctx->es)) == invalidtype)
-        return stackunderflow;
+    (void)ctx;
+    (void)t;
     return 0;
 }
 
-/* pop the execution stack onto the operand stack */
+/* push the object on the operand stack */
 static
-int evalpush(Xpost_Context *ctx)
+int evalpush(Xpost_Context *ctx, Xpost_Object t)
 {
-    if (!xpost_stack_push(ctx->lo, ctx->os,
-            xpost_stack_pop(ctx->lo, ctx->es)))
+    if (!xpost_stack_push(ctx->lo, ctx->os, t))
         return stackoverflow;
     return 0;
 }
 
-/* load executable name */
+/* load executable name:
+   search the dictionary stack for the topmost definition,
+   as per the load operator, then push the value on the
+   execution stack (if executable) or the operand stack (if literal) */
 static
-int evalload(Xpost_Context *ctx)
+int evalload(Xpost_Context *ctx, Xpost_Object n)
 {
-    int ret;
+    int i;
+
     if (_xpost_interpreter_is_tracing)
     {
-        Xpost_Object s = xpost_name_get_string(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0));
+        Xpost_Object s = xpost_name_get_string(ctx, n);
         XPOST_LOG_DUMP("evalload <name \"%*s\">", s.comp_.sz, xpost_string_get_pointer(ctx, s));
     }
 
-    if (!xpost_stack_push(ctx->lo, ctx->os,
-            xpost_stack_pop(ctx->lo, ctx->es)))
-        return stackoverflow;
-    assert(ctx->gl->base);
-    /*xpost_operator_exec(ctx, xpost_operator_cons(ctx, "load", NULL,0,0).mark_.padw); */
-    ret = xpost_operator_exec(ctx, ctx->opcode_shortcuts.load);
-    if (ret)
-        return ret;
-    if (xpost_object_is_exe(xpost_stack_topdown_fetch(ctx->lo, ctx->os, 0)))
-    {
-        Xpost_Object q;
-        q = xpost_stack_pop(ctx->lo, ctx->os);
-        if (xpost_object_get_type(q) == invalidtype)
-            return undefined;
-        if (!xpost_stack_push(ctx->lo, ctx->es, q))
-            return ret;
+    { /* consult the cache of resolutions against the dict stack */
+        unsigned int key = ((unsigned int)n.mark_.padw << 1) |
+            ((n.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ? 1 : 0);
+
+        if (key < ctx->namecache_size &&
+            ctx->namecache_gen[key] == ctx->namebind_gen)
+        {
+            Xpost_Object x = ctx->namecache_val[key];
+            if (xpost_object_is_exe(x))
+            {
+                if (!xpost_stack_push(ctx->lo, ctx->es, x))
+                    return execstackoverflow;
+            }
+            else
+            {
+                if (!xpost_stack_push(ctx->lo, ctx->os, x))
+                    return stackoverflow;
+            }
+            return 0;
+        }
+
+        /* walk the dictionary stack segments directly, topmost first */
+        {
+        Xpost_Stack *ds_root = (Xpost_Stack *)(ctx->lo->base + ctx->ds);
+        Xpost_Stack *seg = (Xpost_Stack *)(ctx->lo->base + ds_root->prevseg);
+
+        for (;;)
+        {
+            for (i = seg->top; i--; )
+            {
+                Xpost_Object x = xpost_dict_get_name(ctx, seg->data[i], n);
+
+                if (xpost_object_get_type(x) == invalidtype)
+                    continue;
+
+                if (key >= ctx->namecache_size)
+                {
+                    unsigned int nsz = ctx->namecache_size ? ctx->namecache_size : 4096;
+                    while (nsz <= key) nsz *= 2;
+                    unsigned int *ngen = realloc(ctx->namecache_gen,
+                                                 nsz * sizeof(unsigned int));
+                    Xpost_Object *nval = realloc(ctx->namecache_val,
+                                                 nsz * sizeof(Xpost_Object));
+                    if (ngen)
+                        ctx->namecache_gen = ngen;
+                    if (nval)
+                        ctx->namecache_val = nval;
+                    if (ngen && nval)
+                    {
+                        memset(ctx->namecache_gen + ctx->namecache_size, 0,
+                               (nsz - ctx->namecache_size) * sizeof(unsigned int));
+                        ctx->namecache_size = nsz;
+                    }
+                }
+                if (key < ctx->namecache_size)
+                {
+                    ctx->namecache_gen[key] = ctx->namebind_gen;
+                    ctx->namecache_val[key] = x;
+                }
+
+                if (xpost_object_is_exe(x))
+                {
+                    if (!xpost_stack_push(ctx->lo, ctx->es, x))
+                        return execstackoverflow;
+                }
+                else
+                {
+                    if (!xpost_stack_push(ctx->lo, ctx->os, x))
+                        return stackoverflow;
+                }
+                return 0;
+            }
+            if (seg == ds_root)
+                break;
+            seg = (Xpost_Stack *)(ctx->lo->base + seg->prevseg);
+        }
+        }
     }
-    return 0;
+    return undefined;
 }
 
 /* execute operator */
 static
-int evaloperator(Xpost_Context *ctx)
+int evaloperator(Xpost_Context *ctx, Xpost_Object op)
 {
-    int ret;
-    Xpost_Object op = xpost_stack_pop(ctx->lo, ctx->es);
-    if (xpost_object_get_type(op) == invalidtype)
-        return stackunderflow;
-
     if (_xpost_interpreter_is_tracing)
         xpost_operator_dump(ctx, op.mark_.padw);
-    ret = xpost_operator_exec(ctx, op.mark_.padw);
-    if (ret)
-        return ret;
-    return 0;
+    return xpost_operator_exec(ctx, op.mark_.padw);
 }
 
-/* extract head (&tail) of array */
+/* extract head (&tail) of array.
+   steps successive elements of the procedure without re-entering the
+   interpreter loop. the remaining interval is kept in the top slot of
+   the execution stack, written lazily: literal elements cannot observe
+   it, so it is brought up to date only before an element executes or
+   the function returns. the loop returns to the interpreter whenever
+   an element changes the execution stack, since anything it pushed
+   must execute before the remaining interval. */
 static
-int evalarray(Xpost_Context *ctx)
+int evalarray(Xpost_Context *ctx, Xpost_Object a)
 {
-    Xpost_Object a = xpost_stack_pop(ctx->lo, ctx->es);
     Xpost_Object b;
+    const Xpost_Object *abase;
+    Xpost_Stack *es_root;
+    Xpost_Stack *es_top;
+    Xpost_Stack *os_root;
+    Xpost_Stack *os_top;
+    unsigned char *seen_lo_base = ctx->lo->base;
+    unsigned char *seen_gl_base = ctx->gl->base;
+    unsigned int off = a.comp_.off;
+    unsigned int remaining = a.comp_.sz;
+    int have_tail = 0;      /* a slot for the interval exists on es */
+    unsigned int slot_off = 0; /* the interval offset currently in the slot */
 
-    if (xpost_object_get_type(a) == invalidtype)
-        return stackunderflow;
+    /* resolve the array's storage once; elements are then direct reads.
+       re-derived after any fused call, which may move the memory file. */
+#define EVALARRAY_RESOLVE_ABASE() \
+    do { \
+        Xpost_Memory_File *amem_ = xpost_context_select_memory(ctx, a); \
+        unsigned int aent_ = xpost_object_get_ent(a); \
+        if (aent_ < amem_->table.nextent && \
+            (a.comp_.off + (unsigned int)a.comp_.sz) * sizeof(Xpost_Object) \
+                <= amem_->table.tab[aent_].sz) \
+            abase = (const Xpost_Object *)(amem_->base \
+                    + amem_->table.tab[aent_].adr); \
+        else \
+            abase = NULL; \
+    } while (0)
 
-    switch (a.comp_.sz)
+#define EVALARRAY_RESOLVE_STACKS() \
+    do { \
+        es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es); \
+        es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg); \
+        os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os); \
+        os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg); \
+    } while (0)
+
+    /* a stack push can allocate a fresh segment, growing (and so
+       relocating) the memory file: re-derive every cached pointer,
+       abase included, whenever a base has moved */
+#define EVALARRAY_RECHECK_BASES() \
+    do { \
+        if (ctx->lo->base != seen_lo_base || ctx->gl->base != seen_gl_base) \
+        { \
+            seen_lo_base = ctx->lo->base; \
+            seen_gl_base = ctx->gl->base; \
+            EVALARRAY_RESOLVE_ABASE(); \
+        } \
+        EVALARRAY_RESOLVE_STACKS(); \
+    } while (0)
+
+    /* write the remaining interval (elements from off+1) into the es
+       slot, or drop the slot when this is the last element */
+#define EVALARRAY_SYNC_SLOT() \
+    do { \
+        if (remaining > 1) \
+        { \
+            if (!have_tail || slot_off != off + 1) \
+            { \
+                Xpost_Object tail_ = a; \
+                tail_.comp_.off = off + 1; \
+                tail_.comp_.sz = remaining - 1; \
+                if (have_tail && es_top->top > 0) \
+                    es_top->data[es_top->top - 1] = tail_; \
+                else if (es_top->top < XPOST_STACK_SEGMENT_SIZE - 1) \
+                { \
+                    es_top->data[es_top->top++] = tail_; \
+                    have_tail = 1; \
+                } \
+                else \
+                { \
+                    if (!xpost_stack_push(ctx->lo, ctx->es, tail_)) \
+                        return execstackoverflow; \
+                    EVALARRAY_RECHECK_BASES(); \
+                    have_tail = 1; \
+                } \
+                slot_off = off + 1; \
+            } \
+        } \
+        else if (have_tail) \
+        { \
+            if (es_top->top > 0) \
+            { \
+                --es_top->top; \
+                if (es_top->top == 0 && \
+                    (unsigned char *)es_top != ctx->lo->base + ctx->es) \
+                    es_root->prevseg = es_top->prevseg; \
+            } \
+            else \
+                (void)xpost_stack_pop(ctx->lo, ctx->es); \
+            have_tail = 0; \
+        } \
+    } while (0)
+
+    /* like SYNC_SLOT but roots the current element together with the rest, so
+       the array's storage stays anchored across a collection even when this is
+       the last element (SYNC_SLOT would drop the slot there). The normal slot
+       sync corrects it to the tail, or drops it, before the element executes,
+       so tail-call flattening is preserved. */
+#define EVALARRAY_ROOT_CURRENT() \
+    do { \
+        Xpost_Object cur_ = a; \
+        cur_.comp_.off = off; \
+        cur_.comp_.sz = remaining; \
+        if (have_tail && es_top->top > 0) \
+            es_top->data[es_top->top - 1] = cur_; \
+        else if (es_top->top < XPOST_STACK_SEGMENT_SIZE - 1) \
+        { \
+            es_top->data[es_top->top++] = cur_; \
+            have_tail = 1; \
+        } \
+        else \
+        { \
+            if (!xpost_stack_push(ctx->lo, ctx->es, cur_)) \
+                return execstackoverflow; \
+            EVALARRAY_RECHECK_BASES(); \
+            have_tail = 1; \
+        } \
+        slot_off = off; \
+    } while (0)
+
+    if (remaining == 0)
+        return 0;
+
+    EVALARRAY_RESOLVE_ABASE();
+    EVALARRAY_RESOLVE_STACKS();
+
+    for (;;)
     {
-        default /* > 1 */:
+        Xpost_Object_Type btype;
+
+        if (ctx->quit)
         {
-            Xpost_Object interval;
-            interval = xpost_object_get_interval(a, 1, a.comp_.sz - 1);
-            if (xpost_object_get_type(interval) == invalidtype)
-                return rangecheck;
-            xpost_stack_push(ctx->lo, ctx->es, interval);
+            EVALARRAY_SYNC_SLOT();
+            return 0;
         }
-        /*@fallthrough@*/
-        case 1:
-            b = xpost_array_get(ctx, a, 0);
-            if (xpost_object_get_type(b) == arraytype)
-            {
-                if (!xpost_stack_push(ctx->lo, ctx->os, b))
-                    return stackoverflow;
-            }
+
+        /* between elements is a safe point just like the interpreter
+           loop: a requested collection must not starve while a fused
+           procedure runs through a long allocation-heavy stretch */
+        if (ctx->lo->garbage_collect_pending)
+        {
+            ctx->lo->garbage_collect_pending = 0;
+            /* anchor the current element (not just the tail) so an unrooted
+               anonymous procedure is not swept while its last element runs */
+            EVALARRAY_ROOT_CURRENT();
+            if (ctx->lo->garbage_collect_is_installed)
+                (void)ctx->lo->garbage_collect(ctx->lo, 1, 1);
+            EVALARRAY_RECHECK_BASES();
+        }
+
+
+
+        if (abase)
+            b = abase[off];
+        else
+        {
+            Xpost_Object cur_ = a;
+            cur_.comp_.off = off;
+            cur_.comp_.sz = remaining;
+            b = xpost_array_get(ctx, cur_, 0);
+        }
+        btype = xpost_object_get_type(b);
+        if (btype == invalidtype || btype >= XPOST_OBJECT_NTYPES)
+        {
+            EVALARRAY_SYNC_SLOT();
+            return unregistered;
+        }
+
+        if (btype == arraytype || !xpost_object_is_exe(b))
+        {
+            /* the interpreter cycle would only move it to the operand
+               stack; do so directly */
+            if (os_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+                os_top->data[os_top->top++] = b;
             else
             {
-                if (!xpost_stack_push(ctx->lo, ctx->es, b))
-                    return execstackoverflow;
+                EVALARRAY_SYNC_SLOT();
+                if (!xpost_stack_push(ctx->lo, ctx->os, b))
+                    return stackoverflow;
+                EVALARRAY_RECHECK_BASES();
             }
-            /*@fallthrough@*/
-        case 0: /* drop */;
+        }
+        else if (btype == operatortype || btype == nametype)
+        {
+            unsigned int seen_seg;
+            unsigned int seen_top;
+            int ret;
+
+            /* the hottest operators inline when their operands sit in
+               the top segment; any precondition failure falls through
+               to the generic invocation, keeping error behaviour
+               identical */
+            if (btype == operatortype)
+            {
+                unsigned int w = b.mark_.padw;
+                unsigned int ot = os_top->top;
+
+                ctx->currentobject = b;
+                if (w == (unsigned int)ctx->opcode_shortcuts.oppop && ot >= 1)
+                {
+                    --os_top->top;
+                    goto next_element;
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opexch && ot >= 2)
+                {
+                    Xpost_Object t_ = os_top->data[ot - 1];
+                    os_top->data[ot - 1] = os_top->data[ot - 2];
+                    os_top->data[ot - 2] = t_;
+                    goto next_element;
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opdup && ot >= 1 &&
+                    ot < XPOST_STACK_SEGMENT_SIZE - 1)
+                {
+                    os_top->data[ot] = os_top->data[ot - 1];
+                    ++os_top->top;
+                    goto next_element;
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opindex && ot >= 2)
+                {
+                    Xpost_Object n_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(n_) == integertype &&
+                        n_.int_.val >= 0 && n_.int_.val <= (integer)ot - 2)
+                    {
+                        os_top->data[ot - 1] = os_top->data[ot - 2 - n_.int_.val];
+                        goto next_element;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opget && ot >= 2)
+                {
+                    Xpost_Object a_ = os_top->data[ot - 2];
+                    Xpost_Object i_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(a_) == arraytype &&
+                        xpost_object_get_type(i_) == integertype &&
+                        i_.int_.val >= 0)
+                    {
+                        Xpost_Object t_ = xpost_array_get(ctx, a_, i_.int_.val);
+                        if (xpost_object_get_type(t_) != invalidtype)
+                        {
+                            --os_top->top;
+                            os_top->data[ot - 2] = t_;
+                            goto next_element;
+                        }
+                    }
+                }
+                if (ot >= 2 &&
+                    (w == (unsigned int)ctx->opcode_shortcuts.opadd ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opsub ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opmul))
+                {
+                    Xpost_Object x_ = os_top->data[ot - 2];
+                    Xpost_Object y_ = os_top->data[ot - 1];
+                    integer r_;
+                    if (xpost_object_get_type(x_) == integertype &&
+                        xpost_object_get_type(y_) == integertype &&
+                        !(w == (unsigned int)ctx->opcode_shortcuts.opadd
+                            ? __builtin_add_overflow(x_.int_.val, y_.int_.val, &r_)
+                            : w == (unsigned int)ctx->opcode_shortcuts.opsub
+                            ? __builtin_sub_overflow(x_.int_.val, y_.int_.val, &r_)
+                            : __builtin_mul_overflow(x_.int_.val, y_.int_.val, &r_)))
+                    {
+                        --os_top->top;
+                        os_top->data[ot - 2] = xpost_int_cons(r_);
+                        goto next_element;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.optype && ot >= 1)
+                {
+                    Xpost_Object o_ = os_top->data[ot - 1];
+                    Xpost_Object_Type k_ = xpost_object_get_type(o_);
+                    if (k_ >= XPOST_OBJECT_NTYPES)
+                        k_ = invalidtype; /* as the operator normalises */
+                    if (xpost_object_get_type(ctx->typenames[k_]) != nametype)
+                    {
+                        ctx->typenames[k_] = xpost_object_cvx(
+                            xpost_name_cons(ctx, xpost_object_type_names[k_]));
+                        /* interning the name may grow (and so move) the
+                           memory file: re-derive the cached pointers */
+                        EVALARRAY_RECHECK_BASES();
+                        ot = os_top->top;
+                    }
+                    os_top->data[ot - 1] = ctx->typenames[k_];
+                    goto next_element;
+                }
+                if (ot >= 2 &&
+                    (w == (unsigned int)ctx->opcode_shortcuts.opeq ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opne))
+                {
+                    Xpost_Object x_ = os_top->data[ot - 2];
+                    Xpost_Object y_ = os_top->data[ot - 1];
+                    Xpost_Object_Type tx_ = xpost_object_get_type(x_);
+                    if (tx_ == xpost_object_get_type(y_) &&
+                        (tx_ == nametype || tx_ == booleantype))
+                    {
+                        int r_;
+                        if (tx_ == nametype)
+                            r_ = ((x_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ==
+                                  (y_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK)) &&
+                                 x_.mark_.padw == y_.mark_.padw;
+                        else
+                            r_ = x_.int_.val == y_.int_.val;
+                        if (w == (unsigned int)ctx->opcode_shortcuts.opne)
+                            r_ = !r_;
+                        --os_top->top;
+                        os_top->data[ot - 2] = xpost_bool_cons(r_);
+                        goto next_element;
+                    }
+                }
+                if (ot >= 2 &&
+                    (w == (unsigned int)ctx->opcode_shortcuts.opeq ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opne ||
+                     w == (unsigned int)ctx->opcode_shortcuts.oplt ||
+                     w == (unsigned int)ctx->opcode_shortcuts.ople ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opgt ||
+                     w == (unsigned int)ctx->opcode_shortcuts.opge))
+                {
+                    Xpost_Object x_ = os_top->data[ot - 2];
+                    Xpost_Object y_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(x_) == integertype &&
+                        xpost_object_get_type(y_) == integertype)
+                    {
+                        int r_;
+                        if (w == (unsigned int)ctx->opcode_shortcuts.opeq)
+                            r_ = x_.int_.val == y_.int_.val;
+                        else if (w == (unsigned int)ctx->opcode_shortcuts.opne)
+                            r_ = x_.int_.val != y_.int_.val;
+                        else if (w == (unsigned int)ctx->opcode_shortcuts.oplt)
+                            r_ = x_.int_.val < y_.int_.val;
+                        else if (w == (unsigned int)ctx->opcode_shortcuts.ople)
+                            r_ = x_.int_.val <= y_.int_.val;
+                        else if (w == (unsigned int)ctx->opcode_shortcuts.opgt)
+                            r_ = x_.int_.val > y_.int_.val;
+                        else
+                            r_ = x_.int_.val >= y_.int_.val;
+                        --os_top->top;
+                        os_top->data[ot - 2] = xpost_bool_cons(r_);
+                        goto next_element;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.oproll && ot >= 2)
+                {
+                    Xpost_Object j_ = os_top->data[ot - 1];
+                    Xpost_Object n_ = os_top->data[ot - 2];
+                    if (xpost_object_get_type(n_) == integertype &&
+                        xpost_object_get_type(j_) == integertype &&
+                        n_.int_.val > 0 && n_.int_.val <= 32 &&
+                        (unsigned int)n_.int_.val + 2 <= ot)
+                    {
+                        Xpost_Object tmp_[32];
+                        integer n = n_.int_.val;
+                        integer j = j_.int_.val % n;
+                        integer k;
+                        Xpost_Object *base_ = os_top->data + ot - 2 - n;
+                        if (j < 0)
+                            j += n;
+                        for (k = 0; k < n; k++)
+                            tmp_[(k + j) % n] = base_[k];
+                        for (k = 0; k < n; k++)
+                            base_[k] = tmp_[k];
+                        os_top->top -= 2;
+                        goto next_element;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opdef && ot >= 2)
+                {
+                    Xpost_Object k_ = os_top->data[ot - 2];
+                    Xpost_Object v_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(k_) == nametype)
+                    {
+                        Xpost_Stack *ds_root = (Xpost_Stack *)(ctx->lo->base + ctx->ds);
+                        Xpost_Stack *ds_top = (Xpost_Stack *)(ctx->lo->base + ds_root->prevseg);
+                        if (ds_top->top > 0)
+                        {
+                            Xpost_Object d_ = ds_top->data[ds_top->top - 1];
+                            Xpost_Memory_File *dmem_ = xpost_context_select_memory(ctx, d_);
+                            if (!(dmem_ == ctx->gl &&
+                                  xpost_object_is_composite(v_) &&
+                                  dmem_ != xpost_context_select_memory(ctx, v_)))
+                            {
+                                /* the operands stay on the stack through the
+                                   put, keeping them visible to the collector
+                                   if the dictionary grows */
+                                int ret_ = xpost_dict_put_memory(ctx, dmem_, d_, k_, v_);
+                                if (ret_ == 0)
+                                {
+                                    unsigned int key_ = ((unsigned int)k_.mark_.padw << 1) |
+                                        ((k_.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ? 1 : 0);
+                                    if (ctx->lo->base != seen_lo_base ||
+                                        ctx->gl->base != seen_gl_base)
+                                    {
+                                        seen_lo_base = ctx->lo->base;
+                                        seen_gl_base = ctx->gl->base;
+                                        EVALARRAY_RESOLVE_ABASE();
+                                        EVALARRAY_RESOLVE_STACKS();
+                                    }
+                                    os_top->top -= 2;
+                                    if (key_ < ctx->namecache_size)
+                                    {
+                                        ctx->namecache_gen[key_] = ctx->namebind_gen;
+                                        ctx->namecache_val[key_] = v_;
+                                    }
+                                    goto next_element;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opput && ot >= 3)
+                {
+                    Xpost_Object a_ = os_top->data[ot - 3];
+                    Xpost_Object i_ = os_top->data[ot - 2];
+                    Xpost_Object v_ = os_top->data[ot - 1];
+                    if (xpost_object_get_type(a_) == arraytype &&
+                        xpost_object_get_type(i_) == integertype &&
+                        i_.int_.val >= 0)
+                    {
+                        /* operands stay on the stack through the put (a
+                           saved array copies on first write) */
+                        int ret_ = xpost_array_put(ctx, a_, i_.int_.val, v_);
+                        if (ret_ == 0)
+                        {
+                            if (ctx->lo->base != seen_lo_base ||
+                                ctx->gl->base != seen_gl_base)
+                            {
+                                seen_lo_base = ctx->lo->base;
+                                seen_gl_base = ctx->gl->base;
+                                EVALARRAY_RESOLVE_ABASE();
+                                EVALARRAY_RESOLVE_STACKS();
+                            }
+                            os_top->top -= 3;
+                            goto next_element;
+                        }
+                        /* on failure fall through: the generic path
+                           re-executes the put for the exact protocol */
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opif && ot >= 2)
+                {
+                    Xpost_Object p_ = os_top->data[ot - 1];
+                    Xpost_Object b_ = os_top->data[ot - 2];
+                    if (xpost_object_get_type(b_) == booleantype &&
+                        xpost_object_get_type(p_) == arraytype &&
+                        xpost_object_is_exe(p_))
+                    {
+                        os_top->top -= 2;
+                        if (!b_.int_.val)
+                            goto next_element;
+                        EVALARRAY_SYNC_SLOT();
+                        have_tail = 0;
+                        a = p_;
+                        off = a.comp_.off;
+                        remaining = a.comp_.sz;
+                        if (remaining == 0)
+                            return 0;
+                        EVALARRAY_RESOLVE_ABASE();
+                        continue;
+                    }
+                }
+                if (w == (unsigned int)ctx->opcode_shortcuts.opifelse && ot >= 3)
+                {
+                    Xpost_Object p2_ = os_top->data[ot - 1];
+                    Xpost_Object p1_ = os_top->data[ot - 2];
+                    Xpost_Object b_ = os_top->data[ot - 3];
+                    if (xpost_object_get_type(b_) == booleantype &&
+                        xpost_object_get_type(p1_) == arraytype &&
+                        xpost_object_is_exe(p1_) &&
+                        xpost_object_get_type(p2_) == arraytype &&
+                        xpost_object_is_exe(p2_))
+                    {
+                        os_top->top -= 3;
+                        EVALARRAY_SYNC_SLOT();
+                        have_tail = 0;
+                        a = b_.int_.val ? p1_ : p2_;
+                        off = a.comp_.off;
+                        remaining = a.comp_.sz;
+                        if (remaining == 0)
+                            return 0;
+                        EVALARRAY_RESOLVE_ABASE();
+                        continue;
+                    }
+                }
+            }
+
+            if (btype == nametype)
+            {
+                /* resolve via the name cache without leaving the loop */
+                unsigned int key = ((unsigned int)b.mark_.padw << 1) |
+                    ((b.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ? 1 : 0);
+                if (key < ctx->namecache_size &&
+                    ctx->namecache_gen[key] == ctx->namebind_gen)
+                {
+                    Xpost_Object x = ctx->namecache_val[key];
+                    if (!xpost_object_is_exe(x))
+                    {
+                        if (os_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+                        {
+                            os_top->data[os_top->top++] = x;
+                            goto next_element;
+                        }
+                    }
+                    else if (xpost_object_get_type(x) == operatortype)
+                    {
+                        /* execute the bound operator via the generic
+                           machinery below, sparing the es round-trip */
+                        b = x;
+                        btype = operatortype;
+                        ctx->currentobject = b;
+                        goto generic_operator;
+                    }
+                    else if (xpost_object_get_type(x) == arraytype)
+                    {
+                        /* a procedure call: continue stepping it here,
+                           leaving the current interval behind on es */
+                        EVALARRAY_SYNC_SLOT();
+                        have_tail = 0;
+                        a = x;
+                        off = a.comp_.off;
+                        remaining = a.comp_.sz;
+                        if (remaining == 0)
+                            return 0;
+                        EVALARRAY_RESOLVE_ABASE();
+                        continue;
+                    }
+                }
+            }
+
+          generic_operator:
+            EVALARRAY_SYNC_SLOT();
+
+            /* remember the execution stack position of our interval */
+            seen_seg = es_root->prevseg;
+            es_top = (Xpost_Stack *)(ctx->lo->base + seen_seg);
+            seen_top = es_top->top;
+
+            ctx->currentobject = b;
+            if (btype == operatortype)
+            {
+                if (_xpost_interpreter_is_tracing)
+                    xpost_operator_dump(ctx, b.mark_.padw);
+                ret = xpost_operator_exec(ctx, b.mark_.padw);
+            }
+            else
+                ret = evalload(ctx, b);
+            if (ret)
+                return ret;
+            if (ctx->quit)
+                return 0;
+
+            /* if the execution stack changed, what was pushed (or the
+               unwound state) takes precedence: resume via the loop */
+            es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+            if (es_root->prevseg != seen_seg)
+                return 0;
+            es_top = (Xpost_Stack *)(ctx->lo->base + seen_seg);
+            if (es_top->top != seen_top)
+                return 0;
+            if (have_tail)
+            {
+                Xpost_Object slot = es_top->data[seen_top - 1];
+                if (slot.tag != a.comp_.tag ||
+                    slot.comp_.sz != remaining - 1 ||
+                    slot.comp_.off != off + 1 ||
+                    xpost_object_get_ent(slot) != xpost_object_get_ent(a))
+                    return 0;
+            }
+            if (ctx->lo->base != seen_lo_base || ctx->gl->base != seen_gl_base)
+            {
+                seen_lo_base = ctx->lo->base;
+                seen_gl_base = ctx->gl->base;
+                EVALARRAY_RESOLVE_ABASE();
+            }
+            EVALARRAY_RESOLVE_STACKS();
+        }
+        else
+        {
+            /* rarer executable types resume via the interpreter loop */
+            EVALARRAY_SYNC_SLOT();
+            if (!xpost_stack_push(ctx->lo, ctx->es, b))
+                return execstackoverflow;
+            return 0;
+        }
+
+      next_element:
+        if (remaining == 1)
+        {
+            /* the slot, if any, still holds off+1..; it must not
+               survive: it was consumed by this call */
+            EVALARRAY_SYNC_SLOT();
+            return 0;
+        }
+        ++off;
+        --remaining;
     }
-    return 0;
+#undef EVALARRAY_RESOLVE_ABASE
+#undef EVALARRAY_RESOLVE_STACKS
+#undef EVALARRAY_SYNC_SLOT
+#undef EVALARRAY_ROOT_CURRENT
 }
 
 /* extract token from string */
 static
-int evalstring(Xpost_Context *ctx)
+int evalstring(Xpost_Context *ctx, Xpost_Object s)
 {
-    Xpost_Object b,t,s;
+    Xpost_Object b,t;
     int ret;
 
-    s = xpost_stack_pop(ctx->lo, ctx->es);
     if (!xpost_stack_push(ctx->lo, ctx->os, s))
         return stackoverflow;
     assert(ctx->gl->base);
@@ -446,7 +1072,7 @@ int evalstring(Xpost_Context *ctx)
             return stackunderflow;
         if (!xpost_stack_push(ctx->lo, ctx->es, s))
             return execstackoverflow;
-        if (xpost_object_get_type(t)==arraytype)
+        if (xpost_object_get_type(t)==arraytype && ctx->scanner_defer)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os , t))
                 return stackoverflow;
@@ -462,12 +1088,11 @@ int evalstring(Xpost_Context *ctx)
 
 /* extract token from file */
 static
-int evalfile(Xpost_Context *ctx)
+int evalfile(Xpost_Context *ctx, Xpost_Object f)
 {
-    Xpost_Object b,f,t;
+    Xpost_Object b,t;
     int ret;
 
-    f = xpost_stack_pop(ctx->lo, ctx->es);
     if (!xpost_stack_push(ctx->lo, ctx->os, f))
         return stackoverflow;
     assert(ctx->gl->base);
@@ -481,7 +1106,7 @@ int evalfile(Xpost_Context *ctx)
         t = xpost_stack_pop(ctx->lo, ctx->os);
         if (!xpost_stack_push(ctx->lo, ctx->es, f))
             return execstackoverflow;
-        if (xpost_object_get_type(t)==arraytype)
+        if (xpost_object_get_type(t)==arraytype && ctx->scanner_defer)
         {
             if (!xpost_stack_push(ctx->lo, ctx->os, t))
                 return stackoverflow;
@@ -608,7 +1233,21 @@ int validate_context(Xpost_Context *ctx)
 int eval(Xpost_Context *ctx)
 {
     int ret;
-    Xpost_Object t = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    Xpost_Object t;
+    Xpost_Stack *es_root;
+    Xpost_Stack *es_top;
+    Xpost_Object_Type type;
+
+    if (!validate_context(ctx))
+        return unregistered;
+
+    /* pop the next object, directly off the top segment when possible */
+    es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+    es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+    if (es_top->top > 0)
+        t = es_top->data[--es_top->top];
+    else
+        t = xpost_stack_pop(ctx->lo, ctx->es);
 
     ctx->currentobject = t; /* for _onerror to determine if hold stack contents are restoreable.
                                if opexec(opcode) discovers opcode != ctx->currentobject.mark_.padw
@@ -617,9 +1256,6 @@ int eval(Xpost_Context *ctx)
                                if an error is encountered, currentobject is reported as the
                                errant object since it is the "entry point" to the interpreter.
                              */
-
-    if (!validate_context(ctx))
-        return unregistered;
 
     if (_xpost_interpreter_is_tracing)
     {
@@ -633,19 +1269,35 @@ int eval(Xpost_Context *ctx)
         //xpost_stack_dump(ctx->lo, ctx->es);
     }
 
-    ret = idleproc(ctx); /* periodically process asynchronous events */
-    if (ret)
-        return ret;
-
-    { /* check object for sanity before using jump table */
-        Xpost_Object_Type type = xpost_object_get_type(t);
-        if (type == invalidtype || type >= XPOST_OBJECT_NTYPES)
-            return unregistered;
+    if (xpost_object_get_type(ctx->event_handler) == operatortype)
+    {
+        ret = idleproc(ctx); /* periodically process asynchronous events */
+        if (ret)
+            return ret;
     }
+
+    /* check object for sanity before using jump table */
+    type = xpost_object_get_type(t);
+    if (type == invalidtype || type >= XPOST_OBJECT_NTYPES)
+        return unregistered;
+
     if ( xpost_object_is_exe(t) ) /* if executable */
-        ret = evaltype[xpost_object_get_type(t)](ctx);
+    {
+        /* dispatch the common types with predictable direct calls;
+           the jump table's indirect branch mispredicts heavily */
+        switch (type)
+        {
+            case operatortype: ret = evaloperator(ctx, t); break;
+            case arraytype:    ret = evalarray(ctx, t);    break;
+            case nametype:     ret = evalload(ctx, t);     break;
+            case integertype:  /*@fallthrough@*/
+            case realtype:     /*@fallthrough@*/
+            case booleantype:  ret = evalpush(ctx, t);     break;
+            default:           ret = evaltype[type](ctx, t);
+        }
+    }
     else
-        ret = evalpush(ctx);
+        ret = evalpush(ctx, t);
 
     return ret;
 }
@@ -663,6 +1315,9 @@ void _onerror(Xpost_Context *ctx,
     Xpost_Object dollarerror;
 
     if (err > unknownerror) err = unknownerror;
+
+    strncpy(ctx->run_error_name, errorname[err], sizeof ctx->run_error_name - 1);
+    ctx->run_error_name[sizeof ctx->run_error_name - 1] = '\0';
 
     if (!validate_context(ctx))
         XPOST_LOG_ERR("context not valid");
@@ -810,6 +1465,15 @@ ctxswitch:
 
     while(!ctx->quit)
     {
+        /* safe point: between evaluation steps every live object is
+           reachable from the stacks, so a requested collection cannot
+           sweep an operator's C-held intermediates */
+        if (ctx->lo->garbage_collect_pending)
+        {
+            ctx->lo->garbage_collect_pending = 0;
+            if (ctx->lo->garbage_collect_is_installed)
+                (void)ctx->lo->garbage_collect(ctx->lo, 1, 1);
+        }
         ret = eval(ctx);
         if (ret)
             switch (ret)
@@ -919,18 +1583,22 @@ void setlocalconfig(Xpost_Context *ctx,
         { "pgm",     "",                 "newPGMIMAGEdevice" },
         { "ppm",     "",                 "newPPMIMAGEdevice" },
         { "null",    "",                 "newnulldevice"     },
+        { "bbox",    "",                 "newbboxdevice"     },
         { "xcb",     "loadxcbdevice",    "newxcbdevice"      },
         { "gdi",     "loadwin32device",  "newwin32device"    },
         { "gl",      "loadwin32device",  "newwin32device"    },
         { "bgr",     "loadbgrdevice",    "newbgrdevice"      },
         { "raster",  "loadrasterdevice", "newrasterdevice"   },
         { "pdfwrite","",                 "newPDFWRITEdevice" },
+        { "svgwrite","",                 "newSVGWRITEdevice" },
         { "png",     "loadpngdevice",    "newpngdevice"      },
+        { "pngalpha", "loadpngalphadevice", "newpngalphadevice" },
         { "jpeg",    "loadjpegdevice",   "newjpegdevice"      },
         { NULL, NULL, NULL }
     };
     const char *strtemplate = "currentglobal false setglobal "
                         "%s userdict /DEVICE %s %s put "
+                        "userdict /.outputdevice /%s put "
                         "setglobal";
     Xpost_Object namenewdev;
     Xpost_Object newdevstr;
@@ -938,6 +1606,7 @@ void setlocalconfig(Xpost_Context *ctx,
     char *devstr;
     char *subdevice;
     char *dimensions;
+    char dimensions_buf[48]; /* holds "%d %d" for any int width/height */
 
     ctx->vmmode = GLOBAL;
 
@@ -961,20 +1630,22 @@ void setlocalconfig(Xpost_Context *ctx,
         }
     }
     if (set_size == XPOST_USE_SIZE){
-        dimensions = malloc(2 + (int)ceil(log10(width)) + (int)ceil(log10(height)));
-        sprintf(dimensions, "%d %d", width, height);
+        snprintf(dimensions_buf, sizeof(dimensions_buf), "%d %d", width, height);
+        dimensions = dimensions_buf;
     } else {
         static char x[] = "612 792";
         dimensions = x;
     }
     newdevstr = xpost_string_cons(ctx,
-                                  strlen(strtemplate) - 6
+                                  strlen(strtemplate) - 8
                                   + strlen(device_strings[i][1])
                                   + strlen(dimensions)
-                                  + strlen(device_strings[i][2]) + 1,
+                                  + strlen(device_strings[i][2])
+                                  + strlen(device_strings[i][0]) + 1,
                                   NULL);
     sprintf(xpost_string_get_pointer(ctx, newdevstr), strtemplate,
-            device_strings[i][1], dimensions, device_strings[i][2]);
+            device_strings[i][1], dimensions, device_strings[i][2],
+            device_strings[i][0]);
     --newdevstr.comp_.sz; /* trim the '\0' */
 
     namenewdev = xpost_name_cons(ctx, "newdefaultdevice");
@@ -1044,9 +1715,10 @@ void loadinitps(Xpost_Context *ctx)
     if ((path = getenv("XPOST_DATA_DIR")))
         XPOST_PATH_INIT;
 
-    /* directory of the shared library */
-    path = (char *)xpost_data_dir_get(); /* always well-defined */
-    XPOST_PATH_INIT;
+    /* directory of the shared library (absent for an uninstalled build) */
+    path = (char *)xpost_data_dir_get();
+    if (path)
+        XPOST_PATH_INIT;
 
 #ifdef PACKAGE_DATA_DIR
     {
@@ -1079,6 +1751,11 @@ void loadinitps(Xpost_Context *ctx)
     return;
 
   load_init_ps:
+    /* init.ps loads now and graphics.ps loads lazily from this same directory;
+       permit reading it so a later sandbox does not deny the interpreter its
+       own start-up files */
+    xpost_path_permit_read(path_init);
+
     /* backslashes are not supported in path because they are inserted in
     * PostScript files, and PostScript */
 #ifdef _WIN32
@@ -1288,11 +1965,66 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx, int cnt, char *defs[])
     return 1;
 }
 
+XPAPI int xpost_add_resource_dir(Xpost_Context *ctx, const char *dir)
+{
+    Xpost_Object ud;
+    Xpost_Object key;
+    Xpost_Object rp;
+    Xpost_Object newrp;
+    Xpost_Object str;
+    unsigned int n;
+    unsigned int i;
+    unsigned int vmmode;
+
+    if (!ctx || !dir)
+        return 0;
+
+    key = xpost_name_cons(ctx, ".resourcepath");
+    ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+
+    /* extend any array already defined in userdict, else start empty */
+    rp = xpost_dict_get(ctx, ud, key);
+    n = (xpost_object_get_type(rp) == arraytype) ? rp.comp_.sz : 0;
+
+    /* userdict resides in global VM; the array and its strings must live
+       there too. They are data, not a procedure, so make them literal --
+       an executable array would be run, not read, when .resourcepath is
+       evaluated by name. */
+    vmmode = ctx->vmmode;
+    ctx->vmmode = GLOBAL;
+    str = xpost_object_cvlit(xpost_string_cons(ctx, (unsigned int)strlen(dir),
+                                               (char *)dir));
+    newrp = xpost_object_cvlit(xpost_array_cons(ctx, n + 1));
+    if (xpost_object_get_type(str) == invalidtype ||
+        xpost_object_get_type(newrp) == invalidtype)
+    {
+        ctx->vmmode = vmmode;
+        return 0;
+    }
+    for (i = 0; i < n; i++)
+        xpost_array_put(ctx, newrp, i, xpost_array_get(ctx, rp, i));
+    xpost_array_put(ctx, newrp, n, str);
+    ctx->vmmode = vmmode;
+
+    xpost_dict_put(ctx, ud, key, newrp);
+    return 1;
+}
+
+XPAPI const char *xpost_error_name_get(Xpost_Context *ctx)
+{
+    return ctx->run_uncaught ? ctx->run_error_name : "";
+}
+
+XPAPI const char *xpost_error_info_get(Xpost_Context *ctx)
+{
+    return ctx->run_uncaught ? ctx->run_error_info : "";
+}
+
 /*
    execute ps program until quit, fall-through to quit,
    SHOWPAGE_RETURN semantic, or error (default action: message, purge and quit).
  */
-XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void *inputptr, size_t set_size)
+XPAPI Xpost_Run_Status xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void *inputptr, size_t set_size)
 {
     Xpost_Object lsav = null;
     int llev = 0;
@@ -1312,6 +2044,11 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
         case XPOST_INPUT_STRING:
             ps_str = inputptr;
             ps_file_ptr = tmpfile();
+            if (ps_file_ptr == NULL)
+            {
+                XPOST_LOG_ERR("cannot create temporary file for program");
+                return XPOST_RUN_FAILED;
+            }
             if (set_size)
                 fwrite(ps_str, 1, set_size, (FILE*)ps_file_ptr);
             else
@@ -1322,14 +2059,24 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
             ps_file_ptr = inputptr;
             break;
         case XPOST_INPUT_RESUME: /* resuming a returned session, skip startup */
+            /* the resumed run gets a clean error record too */
+            ctx->run_error_name[0] = '\0';
+            ctx->run_error_info[0] = '\0';
+            ctx->run_uncaught = 0;
             goto run;
     }
+
+    /* a fresh run starts with a clean error record */
+    ctx->run_error_name[0] = '\0';
+    ctx->run_error_info[0] = '\0';
+    ctx->run_uncaught = 0;
 
     /* prime the exec stack
        so it starts with a 'start*' procedure,
        and if it ever gets to the bottom, it quits.
        These procedures are all defined in data/init.ps
      */
+    ctx->es_run_base = xpost_stack_count(ctx->lo, ctx->es);
     xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "quit", NULL,0,0));
     /*
        if ps_file is NULL:
@@ -1360,8 +2107,11 @@ XPAPI int xpost_run(Xpost_Context *ctx, Xpost_Input_Type input_type, const void 
             xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(xpost_name_cons(ctx, "startstdin")));
     }
 
-    (void) xpost_save_create_snapshot_object(ctx->gl);
-    lsav = xpost_save_create_snapshot_object(ctx->lo);
+    if (ctx->job_snapshots)
+    {
+        (void) xpost_save_create_snapshot_object(ctx->gl);
+        lsav = xpost_save_create_snapshot_object(ctx->lo);
+    }
 
     /* Run! */
 run:
@@ -1373,7 +2123,22 @@ run:
                   xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0),
                   xpost_name_cons(ctx, "ShowpageSemantics"));
     if (semantic.int_.val == XPOST_SHOWPAGE_RETURN)
-        return ret == 1 ? yieldtocaller : 0;
+    {
+        if (ret == 1)
+            return XPOST_RUN_YIELDED;
+
+        /* the run stops at its quit operator, leaving the frames
+           beneath it -- the run's own scheduling tail -- on the
+           exec stack. A persistent context serving many runs
+           accumulates them, and an error unwind can later walk
+           down into a stale frame and execute it out of context.
+           Discard everything this run left behind, for errored
+           runs just as for completed ones. */
+        while (xpost_stack_count(ctx->lo, ctx->es) > (int)ctx->es_run_base)
+            (void)xpost_stack_pop(ctx->lo, ctx->es);
+
+        return ctx->run_uncaught ? XPOST_RUN_ERRORED : XPOST_RUN_COMPLETE;
+    }
 
     XPOST_LOG_INFO("destroying device");
     device = xpost_dict_get(ctx,
@@ -1417,7 +2182,8 @@ run:
 	}
     }
 
-    xpost_save_restore_snapshot(ctx->gl);
+    if (ctx->job_snapshots)
+        xpost_save_restore_snapshot(ctx->gl);
     xpost_memory_table_get_addr(ctx->lo,
                                 XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs);
     if (xpost_object_get_type(lsav) == savetype)
@@ -1430,7 +2196,29 @@ run:
         }
     }
 
-    return noerror;
+    return ctx->run_uncaught ? XPOST_RUN_ERRORED : XPOST_RUN_COMPLETE;
+}
+
+/* enable or disable per-job VM snapshots for a context */
+XPAPI void xpost_job_snapshots_set(Xpost_Context *ctx, int enable)
+{
+    ctx->job_snapshots = enable;
+}
+
+XPAPI void xpost_stdout_handler_set(Xpost_Context *ctx,
+                                    Xpost_Output_Fn fn,
+                                    void *user)
+{
+    ctx->stdout_fn = fn;
+    ctx->stdout_user = user;
+}
+
+XPAPI void xpost_stderr_handler_set(Xpost_Context *ctx,
+                                    Xpost_Output_Fn fn,
+                                    void *user)
+{
+    ctx->stderr_fn = fn;
+    ctx->stderr_user = user;
 }
 
 /*

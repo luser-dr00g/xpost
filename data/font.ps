@@ -10,19 +10,44 @@
 
 /QUIET where { pop }{ (loading font.ps...)print } ifelse
 
+% Type 3 fonts render through their BuildChar procedure; Type 42 fonts
+% carry a TrueType program in /sfnts, reassembled and opened as a
+% memory face by .loadfont42 so the C text operators use it exactly
+% like a findfont face.
 /definefont { % /fontname -dict-
     dup type /dicttype ne
     2 index type /nulltype eq or {
         /definefont cvx /typecheck signalerror
     } if
-    {
-        dup /FontType known not {stop} if
-        dup /FontMatrix known not {stop} if
-        dup /Encoding known not {stop} if
-        dup /BuildChar known not {stop} if
-    } stopped {
-        /definefont cvx /invalidfont signalerror
-    } if
+    dup /FontType 2 copy known { get }{ pop pop -1 } ifelse
+    dup 42 eq {
+        pop
+        {
+            dup /FontMatrix known not {stop} if
+            dup /Encoding known not {stop} if
+            dup /sfnts known not {stop} if
+        } stopped {
+            /definefont cvx /invalidfont signalerror
+        } if
+        dup .loadfont42
+    }{
+        3 eq {
+            {
+                dup /FontMatrix known not {stop} if
+                dup /Encoding known not {stop} if
+                dup /BuildChar known not {stop} if
+            } stopped {
+                /definefont cvx /invalidfont signalerror
+            } if
+        }{
+            % other FontTypes carry no program to load here: accept when
+            % the dictionary already holds a working face (a re-encoded
+            % copy of a findfont dictionary shares its /Private face)
+            dup /Private known not {
+                /definefont cvx /invalidfont signalerror
+            } if
+        } ifelse
+    } ifelse
     dup /FontName known not {
         dup /FontName 3 index put
     } if
@@ -255,14 +280,43 @@
     } ifelse
 } def
 
+%   str bool  charpath  -
+% Append the text's glyph outlines to the current path. The segments
+% arrive from .stringoutline in the face's y-up glyph space relative
+% to the pen (device-magnitude pixels, oriented by the face
+% transform), so each point is flipped to a device offset and mapped
+% to user space about the current point. Type 3 fonts only advance
+% the pen by the text's width.
 /charpath {
-    %currentfont /FontName get ==
     pop
-    stringwidth
-    currentpoint
-    currentpoint currentfont /FontMatrix get 0 get .5 mul 1 index add exch
-    0 360 arc
-    moveto rmoveto
+    graphicsdict /currgstate get /currfont get
+    dup /FontType known { /FontType get 3 eq }{ pop false } ifelse {
+        stringwidth rmoveto
+    }{
+        12 dict begin
+        /cpstr exch def
+        currentpoint /cy exch def /cx exch def
+        % a glyph-space point on the stack becomes a user-space point
+        /cpt { % x y . X Y
+            neg idtransform exch cx add exch cy add
+        } def
+        cpstr .stringoutline {
+            dup type /nametype eq {
+                dup /h eq { pop closepath }{
+                /cpcmd exch def
+                cpcmd /c eq {
+                    {cpy3 cpx3 cpy2 cpx2 cpy1 cpx1}{exch def}forall
+                    cpx1 cpy1 cpt cpx2 cpy2 cpt cpx3 cpy3 cpt curveto
+                }{
+                    cpt
+                    cpcmd /m eq { moveto }{ lineto } ifelse
+                } ifelse } ifelse
+            } if
+        } forall
+        cx cy moveto
+        cpstr stringwidth rmoveto
+        end
+    } ifelse
 } def
 
 /ISOLatin1Encoding [

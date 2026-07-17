@@ -174,35 +174,63 @@ int Ncvi(Xpost_Context *ctx,
     return 0;
 }
 
+/* helper function: interpret the whole string as a PostScript numeral
+   (decimal or radix form); returns 0 on success or an error code */
+static
+int _string_to_number(const char *t,
+                      double *out)
+{
+    char *end;
+    long base;
+    double num;
+
+    /* radix numeral, e.g. 16#ff */
+    errno = 0;
+    base = strtol(t, &end, 10);
+    if (end != t && *end == '#' && base >= 2 && base <= 36)
+    {
+        long v;
+        const char *p = end + 1;
+        if (*p == '\0')
+            return typecheck;
+        errno = 0;
+        v = strtol(p, &end, (int)base);
+        if (*end != '\0')
+            return typecheck;
+        if (errno == ERANGE)
+            return limitcheck;
+        *out = (double)v;
+        return 0;
+    }
+
+    errno = 0;
+    num = strtod(t, &end);
+    if (end == t || *end != '\0')
+        return typecheck;
+    if (errno == ERANGE)
+        return limitcheck;
+    *out = num;
+    return 0;
+}
+
 /* string  cvi  int
-   convert initial portion of string to integer */
+   convert string numeral to integer */
 static
 int Scvi(Xpost_Context *ctx,
          Xpost_Object s)
 {
     double dbl;
-    long num;
+    int ret;
     char *t = xpost_string_allocate_cstring(ctx, s);
 
-    dbl = strtod(t, NULL);
-    if ((dbl == HUGE_VAL || dbl -HUGE_VAL) && errno==ERANGE){
-        free(t);
-        return limitcheck;
-    }
-    if (dbl >= LONG_MAX || dbl <= LONG_MIN){
-        free(t);
-        return limitcheck;
-    }
-    num = (long)dbl;
-
-    /*
-      num = strtol(t, NULL, 10);
-      if ((num == LONG_MAX || num == LONG_MIN) && errno==ERANGE)
-      return limitcheck;
-    */
-
-    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(num));
+    ret = _string_to_number(t, &dbl);
     free(t);
+    if (ret)
+        return ret;
+    if (dbl >= LONG_MAX || dbl <= LONG_MIN)
+        return limitcheck;
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((long)dbl));
     return 0;
 }
 
@@ -251,20 +279,21 @@ int Ncvr(Xpost_Context *ctx,
 }
 
 /* string  cvr  real
-   convert initial portion of string to real */
+   convert string numeral to real */
 static
 int Scvr(Xpost_Context *ctx,
          Xpost_Object str)
 {
     double num;
+    int ret;
     char *s = xpost_string_allocate_cstring(ctx, str);
-    num = strtod(s, NULL);
-    if ((num == HUGE_VAL || num -HUGE_VAL) && errno == ERANGE){
-        free(s);
-        return limitcheck;
-    }
-    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)num));
+
+    ret = _string_to_number(s, &num);
     free(s);
+    if (ret)
+        return ret;
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)num));
     return 0;
 }
 
@@ -438,19 +467,25 @@ int AScvs (Xpost_Context *ctx,
         break;
         case integertype:
         {
-            //n = conv_rad(any.int_.val, 10, xpost_string_get_pointer(ctx, str), str.comp_.sz);
+            /* write digits from the integer itself: a detour through
+               real drops bits past the float mantissa, and negating
+               the most negative integer does not exist */
             char *s = xpost_string_get_pointer(ctx, str);
-            int sz = str.comp_.sz;
-            n = 0;
-            if (any.int_.val < 0)
-            {
-                s[n++] = '-';
-                any.int_.val = abs(any.int_.val);
-                --sz;
-            }
-            n += conv_integ((real)any.int_.val, s + n, sz);
-            if (n == -1)
+            char t[24];
+            unsigned int u;
+            int neg = any.int_.val < 0;
+            int len = 0;
+
+            u = neg ? -(unsigned int)any.int_.val : (unsigned int)any.int_.val;
+            do { t[len++] = (char)(0x30 + u % 10); u /= 10; } while (u);
+            n = neg + len;
+            if (n > (int)str.comp_.sz)
                 return rangecheck;
+            {
+                int i = 0;
+                if (neg) s[i++] = 0x2d;
+                while (len) s[i++] = t[--len];
+            }
             if (n < str.comp_.sz) str.comp_.sz = n;
             break;
         }
@@ -510,6 +545,7 @@ int xpost_oper_init_type_ops(Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, "type", (Xpost_Op_Func)Atype, 1, 1, anytype);
     INSTALL;
+    ctx->opcode_shortcuts.optype = op.mark_.padw;
     op = xpost_operator_cons(ctx, "cvlit", (Xpost_Op_Func)Acvlit, 1, 1, anytype);
     INSTALL;
     op = xpost_operator_cons(ctx, "cvx", (Xpost_Op_Func)Acvx, 1, 1, anytype);

@@ -9,17 +9,23 @@
     /colorcomp2 0
     /colorcomp3 0
     /colorcomp4 0
+    % a separation colour delivered to a spot-capable device: the
+    % device's registry index and the tint, alongside the component
+    % values above (which hold the tint-transformed alternate colour
+    % for everything that does not preserve separations)
+    /sepindex null
+    /septint 0
     /transfer {}
     %/currmatrix DEVICE /defaultmatrix get matrix copy
     %/currmatrix [ 1 0 0 1 0 0 ]
     %/scratchmatrix [ 1 0 0 1 0 0 ] % ??
-    /currpath 1 dict
-    /clipregion 1 dict
+    /currpath .newpathstr
+    /clipregion .newpathstr
     /flat 1
     /linewidth 1
     /linecap 0
-    /linejoin 2
-    /miterlimit 0.0
+    /linejoin 0
+    /miterlimit 10.0
     /overprint false
     /dasharray []
     /dashoffset 0
@@ -97,9 +103,9 @@
 /gsave {
 graphicsdict begin
     /gptr gptr 1 add def
-    gptr gstackarray length ge { error } if
+    gptr gstackarray length ge { /gsave cvx /limitcheck signalerror } if
     gstackarray gptr gstate currentgstate put % push copy on stack
-    currgstate /currpath 2 copy get 1 dict deepcopy put % make a new working copy of path
+    currgstate /currpath 2 copy get .copypath put % make a new working copy of path
 end
 } def
 

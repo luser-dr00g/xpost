@@ -31,12 +31,26 @@ end
             //$error /ostackarray 1000 array put
             //$error /dstackarray 50 array put
         } if
-        count
+        % The snapshots must never raise inside the error machinery itself:
+        % clamp each stack to its snapshot array's capacity. A clamped
+        % operand snapshot keeps the topmost entries only; the deeper
+        % entries stay on the stack and survive the aload round-trip.
+        count dup //$error /ostackarray get length gt {
+            pop //$error /ostackarray get length
+        } if
         //$error /ostackarray get exch 0 exch getinterval astore
         //$error exch /ostack exch put
-        //$error /dstack //$error /dstackarray get dictstack put
-        //$error /estack //$error /estackarray get execstack
-        dup length 2 sub 0 exch getinterval put % trim 1:{ //$err... 2:{ //$err... execstack
+        countdictstack //$error /dstackarray get length le {
+            //$error /dstack //$error /dstackarray get dictstack put
+        } {
+            //$error /dstack null put
+        } ifelse
+        countexecstack //$error /estackarray get length le {
+            //$error /estack //$error /estackarray get execstack
+            dup length 2 sub 0 exch getinterval put % trim 1:{ //$err... 2:{ //$err... execstack
+        } {
+            //$error /estack null put % too deep to snapshot
+        } ifelse
         //$error /ostack get aload pop
     } if
     //$error /initializing get {
@@ -65,10 +79,24 @@ errordict begin
                 (; OffendingCommand: ) print
                 /command load //=print exec
                 (]%%\n) print
-                (Stack:\n) print
-                ostack { == } forall
-                (ExecStack:\n) print
-                estack { == } forall
+                % a program may raise an error by setting newerror,
+                % errorname and errorinfo in $error directly and then
+                % executing stop, without passing through .error: the
+                % stack snapshots are absent in that case
+                currentdict /errorinfo known {
+                    errorinfo null ne {
+                        (Additional information: ) print
+                        errorinfo ==
+                    } if
+                } if
+                currentdict /ostack known {
+                    (Stack:\n) print
+                    ostack { == } forall
+                } if
+                currentdict /estack known {
+                    (ExecStack:\n) print
+                    estack { == } forall
+                } if
                 flush
             } if
         end
@@ -95,6 +123,7 @@ errordict begin
     /undefined {/undefined //.error exec} def
     /undefinedfilename {/undefinedfilename //.error exec} def
     /undefinedresult {/undefinedresult //.error exec} def
+    /undefinedresource {/undefinedresource //.error exec} def
     /unmatchedmark {/unmatchedmark //.error exec} def
     /unregistered {/unregistered //.error exec} def
     /interrupt { stop } def

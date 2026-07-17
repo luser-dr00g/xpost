@@ -1,0 +1,184 @@
+/QUIET where { pop }{ (loading resource.ps...)print } ifelse
+
+% Level 2 resource machinery: named instances per category, held in
+% global VM. /Category is itself a category whose instances are
+% category implementation dictionaries: defining an instance there
+% brings a new category into existence, which is how programs register
+% private categories (typically copying /Generic as a starting point).
+% On-disk resource storage is not implemented: resourceforall
+% enumerates the defined instances only.
+
+currentglobal true setglobal
+
+/.resources 32 dict def
+.resources /Category 32 dict put
+% the Generic category implementation: programs copy it to seed their
+% own categories, so it need only exist and name itself
+.resources /Category get /Generic << /Category /Generic >> put
+
+% Directories searched, in order, when findresource misses in VM. Empty
+% by default; the host appends entries (xpost_add_resource_dir, -I).
+/.resourcepath [] def
+
+setglobal
+
+% category  .instof  instances
+/.instof {
+    //.resources exch 2 copy known not {
+        pop pop /findresource cvx /undefinedresource signalerror
+    } if
+    get
+} bind def
+
+% key instance category  defineresource  instance
+/defineresource {
+    dup /Category eq {
+        % a new category comes into being with an empty instance table
+        2 index //.resources exch 2 copy known not
+            { 32 dict put }{ pop pop } ifelse
+    } if
+    .instof 2 index 2 index put exch pop
+} bind def
+
+% key category  ,loadresource  bool
+% On a findresource miss, try to load the named instance from the search
+% path. Each directory is tried in order; the first file found is run in
+% global VM -- so its defineresource lands in the shared instance table
+% and persists across restore -- and the search stops. Returns whether a
+% file was run.
+/,loadresource {
+    2 dict begin
+    /category exch def
+    /key exch def
+    /loaded false def
+    .resourcepath {
+        % dir
+        category 128 string cvs
+        key 128 string cvs
+        .resourcefileopen {
+            % execute the already-opened, confined file directly; running it
+            % by name would reopen it outside the confined path
+            currentglobal exch true setglobal cvx exec setglobal
+            /loaded true def
+            exit
+        } if
+    } forall
+    loaded
+    end
+} bind def
+
+% key category  findresource  instance
+/findresource {
+    2 dict begin
+    /category exch def
+    /key exch def
+    % ensure the category is defined. A category is itself an instance of
+    % /Category, stored under Category/<name> in the resource layout, so a
+    % reference to an as-yet-unloaded category loads its implementation.
+    //.resources category known not {
+        category /Category ,loadresource pop
+    } if
+    //.resources category known not {
+        end /findresource cvx /undefinedresource signalerror
+    } if
+    category .instof /instances exch def
+    instances key known not {
+        % miss: load the instance from the search path. The instance table
+        % is shared, so a successful defineresource populates instances.
+        key category ,loadresource not
+        { end /findresource cvx /undefinedresource signalerror } if
+        instances key known not
+        { end /findresource cvx /undefinedresource signalerror } if
+    } if
+    instances key get
+    end
+} bind def
+
+% key category  resourcestatus  status size true | false
+/resourcestatus {
+    //.resources exch 2 copy known not {
+        pop pop pop false
+    }{
+        get exch known { 0 0 true }{ false } ifelse
+    } ifelse
+} bind def
+
+% key category  undefineresource  -
+/undefineresource {
+    .instof exch undef
+} bind def
+
+% string template  .wcmatch  bool
+% Match a name against a resourceforall template: ? matches any one
+% character, * any run (backtracking iteratively over the most recent
+% star), and \ makes the following character literal.
+/.wcmatch {
+    8 dict begin
+    /t exch def /s exch def
+    /sl s length def /tl t length def
+    /si 0 def /ti 0 def /star -1 def /smk 0 def
+    /res null def
+    { % loop
+        si sl lt {
+            /adv false def
+            ti tl lt {
+                t ti get dup 42 eq { % *
+                    pop /star ti def /smk si def /ti ti 1 add def /adv true def
+                }{
+                    dup 92 eq ti 1 add tl lt and { % escaped literal
+                        pop
+                        t ti 1 add get s si get eq {
+                            /ti ti 2 add def /si si 1 add def /adv true def
+                        } if
+                    }{
+                        dup 63 eq exch s si get eq or { % ? or same character
+                            /ti ti 1 add def /si si 1 add def /adv true def
+                        } if
+                    } ifelse
+                } ifelse
+            } if
+            adv not {
+                star 0 ge {
+                    /ti star 1 add def
+                    /smk smk 1 add def
+                    /si smk def
+                }{
+                    /res false def exit
+                } ifelse
+            } if
+        }{
+            exit
+        } ifelse
+    } loop
+    res null eq {
+        { % loop: trailing stars match the empty remainder
+            ti tl lt { t ti get 42 eq { /ti ti 1 add def }{ exit } ifelse }{ exit } ifelse
+        } loop
+        /res ti tl eq def
+    } if
+    res
+    end
+} bind def
+
+% template proc scratch category  resourceforall  -
+% Enumerate the category's instances whose names match the template,
+% copying each name into scratch and calling proc with the substring.
+% The keys are snapshotted first, so the proc may define or undefine
+% resources; whether such changes are enumerated is unspecified, as
+% the language allows.
+/resourceforall {
+    .instof
+    5 dict begin
+    /.rfinst exch def /.rfscr exch def /.rfproc exch def /.rftmpl exch def
+    /.rfbuf 127 string def
+    [ .rfinst { pop } forall ]
+    {
+        dup .rfbuf cvs .rftmpl .wcmatch {
+            % load, not lookup: a bare name would run the proc early
+            .rfscr cvs /.rfproc load exec
+        }{ pop } ifelse
+    } forall
+    end
+} bind def
+
+/QUIET where { pop }{ (eof resource.ps\n)print } ifelse

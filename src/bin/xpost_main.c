@@ -91,6 +91,7 @@ static const char *_xpost_main_devices[] =
     "pgm",
     "ppm",
     "null",
+    "bbox",
 #ifdef _WIN32
     "gdi",
     "gl",
@@ -103,6 +104,7 @@ static const char *_xpost_main_devices[] =
     "pdfwrite",
 #ifdef HAVE_LIBPNG
     "png",
+    "pngalpha",
 #endif
 #ifdef HAVE_LIBJPEG
     "jpeg",
@@ -127,6 +129,33 @@ _xpost_main_version(const char *filename)
     printf("%s %d.%d.%d\n", filename, maj, min, mic);
 }
 
+/* permit the directory containing `path`, for writing when `forwrite` */
+static void
+_xpost_permit_file_dir(const char *path, int forwrite)
+{
+    char buf[4096];
+    char *slash;
+
+    if (!path || strlen(path) >= sizeof buf)
+        return;
+    strcpy(buf, path);
+    slash = strrchr(buf, '/');
+    if (slash)
+    {
+        *slash = '\0';
+        if (buf[0] == '\0')
+            strcpy(buf, "/");
+    }
+    else
+    {
+        strcpy(buf, ".");
+    }
+    if (forwrite)
+        xpost_path_permit_write(buf);
+    else
+        xpost_path_permit_read(buf);
+}
+
 static void
 _xpost_main_usage(const char *filename)
 {
@@ -138,6 +167,8 @@ _xpost_main_usage(const char *filename)
     printf("  -o, --output=[FILE]                output file\n");
     printf("  -d, --device=[STRING]              device name\n");
     printf("  -Dname=token, --define name=token  add definition to userdict\n");
+    printf("  -I[DIR], --include [DIR]           add a resource search directory\n");
+    printf("  --no-sandbox                       allow the program unrestricted file access\n");
     printf("  -g, --geometry=WxH{+-}X{+-}Y       geometry specification\n");
     printf("  -q, --quiet                        suppress interpreter messages (default)\n");
     printf("  -v, --verbose                      do not go quiet into that good night\n");
@@ -245,6 +276,9 @@ int main(int argc, char *argv[])
     const char *define = NULL;
     char **defs = NULL;
     int num_defs = 0;
+    char **incs = NULL;
+    int num_incs = 0;
+    int no_sandbox = 0;
     int output_msg = XPOST_OUTPUT_MESSAGE_QUIET;
     int have_device;
     int width = -1;
@@ -348,6 +382,31 @@ int main(int argc, char *argv[])
                 defs = realloc(defs, ++num_defs * sizeof *defs);
                 defs[num_defs-1] = strdup(define);
             }
+            else if ((!strncmp(argv[i], "-I", 2)) ||
+                     (!strcmp(argv[i], "--include")))
+            {
+                const char *inc;
+                if (argv[i][1] == 'I' && argv[i][2])
+                {
+                    inc = argv[i] + 2;
+                }
+                else if ((i + 1) < argc)
+                {
+                    inc = argv[++i];
+                }
+                else
+                {
+                    XPOST_LOG_ERR("missing option value");
+                    _xpost_main_usage(filename);
+                    goto quit_xpost;
+                }
+                incs = realloc(incs, ++num_incs * sizeof *incs);
+                incs[num_incs-1] = strdup(inc);
+            }
+            else if (!strcmp(argv[i], "--no-sandbox"))
+            {
+                no_sandbox = 1;
+            }
             else if ((!strcmp(argv[i], "-q")) ||
                      (!strcmp(argv[i], "--quiet")))
             {
@@ -450,6 +509,42 @@ int main(int argc, char *argv[])
         free(defs);
         defs = NULL;
         num_defs = 0;
+    }
+
+    /* seed the resource search path from -I directories */
+    if (num_incs > 0)
+    {
+        for (i = 0; i < num_incs; i++)
+        {
+            xpost_add_resource_dir(ctx, incs[i]);
+            /* resource files are read from beneath this directory */
+            xpost_path_permit_read(incs[i]);
+            free(incs[i]);
+        }
+        free(incs);
+        incs = NULL;
+        num_incs = 0;
+    }
+
+    /* confine the program to its working area unless --no-sandbox: the
+       current and temporary directories, the input file's directory
+       (read) and the output file's directory (write). The interpreter
+       permits its own data directory (init.ps, graphics.ps) during
+       start-up; -I resource directories were read-permitted above. */
+    if (!no_sandbox)
+    {
+        const char *tmp = getenv("TMPDIR");
+
+        if (!tmp || !*tmp)
+            tmp = "/tmp";
+        xpost_path_permit_read(".");
+        xpost_path_permit_write(".");
+        xpost_path_permit_read(tmp);
+        xpost_path_permit_write(tmp);
+        _xpost_permit_file_dir(ps_file, 0);
+        if (output_file)
+            _xpost_permit_file_dir(output_file, 1);
+        xpost_path_control_engage();
     }
 
     xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file, 0);

@@ -34,6 +34,11 @@
 
 #include <stdlib.h>
 #include <stddef.h>
+#include <ctype.h>
+
+#ifdef HAVE_ZLIB
+# include <zlib.h>
+#endif
 
 #include <errno.h>
 #include <limits.h>
@@ -55,6 +60,556 @@
 
 #include "xpost_error.h"  /* file functions may throw errors */
 #include "xpost_file.h"  /* double-check prototypes */
+
+/* --- file-access sandbox -------------------------------------------------
+   A process-wide, one-way latch. Before engaging, disk access is
+   unrestricted; once engaged, an open by the running program is denied
+   unless the path resolves within a permitted directory. This is defence
+   in depth around the operating-system confinement of the host process,
+   not a substitute for it. Resource-file loading is separately confined
+   (see xpost_diskfile_fopen_beneath) and does not consult this. */
+
+#define XPOST_PATH_PERMIT_MAX 64
+
+static char *xpost_permit_read_dir[XPOST_PATH_PERMIT_MAX];
+static int xpost_permit_read_cnt = 0;
+static char *xpost_permit_write_dir[XPOST_PATH_PERMIT_MAX];
+static int xpost_permit_write_cnt = 0;
+static int xpost_path_control_engaged = 0;
+
+static int
+xpost_path_permit_add(char **tab, int *cnt, const char *dir)
+{
+    char *rp;
+
+    if (xpost_path_control_engaged) /* the permit set is frozen once engaged */
+        return 0;
+    if (*cnt >= XPOST_PATH_PERMIT_MAX)
+        return 0;
+    rp = xpost_realpath(dir);
+    if (!rp)
+        return 0;
+    tab[*cnt] = rp;
+    ++*cnt;
+    return 1;
+}
+
+int
+xpost_path_permit_read(const char *dir)
+{
+    return xpost_path_permit_add(xpost_permit_read_dir,
+                                 &xpost_permit_read_cnt, dir);
+}
+
+int
+xpost_path_permit_write(const char *dir)
+{
+    return xpost_path_permit_add(xpost_permit_write_dir,
+                                 &xpost_permit_write_cnt, dir);
+}
+
+void
+xpost_path_control_engage(void)
+{
+    xpost_path_control_engaged = 1;
+}
+
+/* Index of the permitted entry that contains the canonical path `full`, or
+   -1 if none does. A permitted directory contains `full` when it is a prefix
+   ending at a path separator (or the whole of `full`). */
+static int
+xpost_path_within_idx(const char *full, char *const *tab, int cnt)
+{
+    int i;
+
+    for (i = 0; i < cnt; i++)
+    {
+        size_t rl = strlen(tab[i]);
+
+#ifdef _WIN32
+        /* Windows paths are case-insensitive and GetFullPathName yields
+           backslash separators (mirrors the beneath-root check) */
+        if (_strnicmp(full, tab[i], rl) == 0 &&
+            (full[rl] == '\\' || full[rl] == '/' || full[rl] == '\0'))
+            return i;
+#else
+        if (strncmp(full, tab[i], rl) == 0 &&
+            (full[rl] == '/' || full[rl] == '\0'))
+            return i;
+#endif
+    }
+    return -1;
+}
+
+/* Resolve `path` to an absolute, symlink-free target in `buf`. An existing
+   path resolves directly; for a not-yet-existent write target the parent is
+   resolved and the leaf reattached, so a symlinked access directory (e.g.
+   /tmp -> /private/tmp) still lands on its canonical form. Returns 1 on
+   success, 0 when the path (or its parent, for a create) cannot be resolved. */
+static int
+xpost_path_canonical_target(const char *path, int write, char *buf, size_t buflen)
+{
+    char *canon = xpost_realpath(path);
+
+    if (canon)
+    {
+        int ok = strlen(canon) < buflen;
+
+        if (ok)
+            strcpy(buf, canon);
+        free(canon);
+        return ok;
+    }
+
+    /* the path does not resolve: only a create (write) is meaningful */
+    if (!write)
+        return 0;
+    {
+        char tmp[XPOST_PATH_MAX];
+        char *sep;
+        char *cdir;
+        const char *parent;
+        const char *base;
+        int ok;
+
+        if (strlen(path) >= sizeof tmp)
+            return 0;
+        strcpy(tmp, path);
+        sep = strrchr(tmp, '/');
+#ifdef _WIN32
+        /* accept either separator when splitting off the leaf */
+        {
+            char *bs = strrchr(tmp, '\\');
+
+            if (bs && (!sep || bs > sep))
+                sep = bs;
+        }
+#endif
+        if (sep)
+        {
+            *sep = '\0';
+            parent = tmp[0] ? tmp : "/";
+            base = sep + 1;
+        }
+        else
+        {
+            parent = ".";
+            base = tmp;
+        }
+        cdir = xpost_realpath(parent);
+        if (!cdir)
+            return 0;
+        ok = snprintf(buf, buflen, "%s/%s", cdir, base) < (int)buflen;
+        free(cdir);
+        return ok;
+    }
+}
+
+/* Is opening `path` (for writing when `write`) permitted? Kept for the
+   filesystem-control operations (delete/rename/enumerate) that decide access
+   from a name rather than an opened descriptor. */
+static int
+xpost_path_permitted(const char *path, int write)
+{
+    char full[XPOST_PATH_MAX];
+
+    if (!xpost_path_canonical_target(path, write, full, sizeof full))
+        return 0;
+    return xpost_path_within_idx(full,
+               write ? xpost_permit_write_dir : xpost_permit_read_dir,
+               write ? xpost_permit_write_cnt : xpost_permit_read_cnt) >= 0;
+}
+
+/* map an fopen/openat2 errno to a PostScript file error */
+static int
+xpost_fopen_errno(int e)
+{
+    switch (e)
+    {
+        case EACCES:
+#ifdef EPERM
+        case EPERM:
+#endif
+#ifdef ELOOP
+        case ELOOP:
+#endif
+#ifdef EXDEV
+        case EXDEV:
+#endif
+            return invalidfileaccess;
+        case ENOENT:
+#ifdef ENOTDIR
+        case ENOTDIR:
+#endif
+            return undefinedfilename;
+        default:
+            return unregistered;
+    }
+}
+
+/* The sole fopen call: every disk open the interpreter performs funnels
+   here, whether or not the sandbox is engaged. */
+static FILE *
+xpost_raw_fopen(const char *path, const char *mode, int *err)
+{
+    FILE *fp = fopen(path, mode);
+
+    if (!fp)
+    {
+        *err = xpost_fopen_errno(errno);
+        return NULL;
+    }
+    *err = 0;
+    return fp;
+}
+
+/* Advance past the separator(s) joining a permitted root to the path within
+   it, given a canonical `full` known to sit inside `root`. */
+static const char *
+xpost_path_after_root(const char *full, const char *root)
+{
+    const char *rel = full + strlen(root);
+
+    while (*rel == '/'
+#ifdef _WIN32
+           || *rel == '\\'
+#endif
+          )
+        rel++;
+    return rel;
+}
+
+/* Open a program-driven path under the engaged sandbox without a
+   check-then-open race. The target's permitted root is identified, then the
+   open is anchored there and resolved atomically beneath it by the kernel
+   (openat2), so a path repointed after the check cannot escape. Where that
+   primitive is unavailable the earlier name check stands and the opened
+   descriptor's real location is re-verified, keeping the decision on the
+   object actually opened rather than on a re-resolved name. */
+static FILE *
+xpost_confined_fopen(const char *path, const char *mode, int write, int *err)
+{
+    char full[XPOST_PATH_MAX];
+    char *const *tab = write ? xpost_permit_write_dir : xpost_permit_read_dir;
+    int cnt = write ? xpost_permit_write_cnt : xpost_permit_read_cnt;
+    int idx;
+    int access;
+    int supported;
+    const char *rel;
+    FILE *fp;
+
+    if (!xpost_path_canonical_target(path, write, full, sizeof full) ||
+        (idx = xpost_path_within_idx(full, tab, cnt)) < 0)
+    {
+        *err = invalidfileaccess;
+        return NULL;
+    }
+
+    /* the portion of the canonical target beyond the permitted root is what
+       is resolved beneath that root */
+    rel = xpost_path_after_root(full, tab[idx]);
+    if (!*rel) /* the permitted directory itself, not a file within it */
+    {
+        *err = invalidfileaccess;
+        return NULL;
+    }
+
+    access = 0;
+    if (strchr(mode, '+')) access |= XPOST_OPEN_WRITE | XPOST_OPEN_RDWR;
+    else if (write)        access |= XPOST_OPEN_WRITE;
+    if (strchr(mode, 'w')) access |= XPOST_OPEN_CREATE | XPOST_OPEN_TRUNC;
+    if (strchr(mode, 'a')) access |= XPOST_OPEN_CREATE | XPOST_OPEN_APPEND;
+
+    fp = xpost_openat2_beneath(tab[idx], rel, mode, access, &supported);
+    if (supported)
+    {
+        if (!fp)
+            *err = xpost_fopen_errno(errno);
+        else
+            *err = 0;
+        return fp;
+    }
+
+    /* portable fallback: the name check above already passed. Open, then --
+       where the platform can report it -- re-verify the descriptor's true
+       location, so a swap between check and open is still caught. */
+    fp = xpost_raw_fopen(path, mode, err);
+    if (!fp)
+        return NULL;
+    {
+        char idbuf[XPOST_PATH_MAX];
+
+        if (xpost_fd_realpath(fileno(fp), idbuf, sizeof idbuf) &&
+            xpost_path_within_idx(idbuf, tab, cnt) < 0)
+        {
+            fclose(fp);
+            *err = invalidfileaccess;
+            return NULL;
+        }
+    }
+    *err = 0;
+    return fp;
+}
+
+/* The single path-to-stream opener for disk-backed files: every disk file
+   the interpreter opens is created here, so file-access policy has one
+   enforcement point. internal marks a trusted interpreter-managed path
+   (temporary scratch) rather than one derived from the running program;
+   such opens bypass the sandbox. */
+FILE *
+xpost_diskfile_fopen(const char *path, const char *mode, int internal, int *err)
+{
+    if (!internal && xpost_path_control_engaged)
+    {
+        int write = strchr(mode, 'w') || strchr(mode, 'a') || strchr(mode, '+');
+
+        return xpost_confined_fopen(path, mode, write, err);
+    }
+
+    return xpost_raw_fopen(path, mode, err);
+}
+
+/* deletefile and renamefile modify the filesystem at the target path(s)
+   rather than opening a stream, so they do not pass through the opener
+   above; route them through the same policy. Under the engaged sandbox
+   each affected path must be write-permitted. */
+int
+xpost_diskfile_remove(const char *path, int *err)
+{
+    if (xpost_path_control_engaged)
+    {
+        char full[XPOST_PATH_MAX];
+        int idx;
+        const char *rel;
+        int supported;
+        int ret;
+
+        if (!xpost_path_canonical_target(path, 1, full, sizeof full) ||
+            (idx = xpost_path_within_idx(full, xpost_permit_write_dir,
+                                         xpost_permit_write_cnt)) < 0)
+        {
+            *err = invalidfileaccess;
+            return -1;
+        }
+        rel = xpost_path_after_root(full, xpost_permit_write_dir[idx]);
+        if (!*rel)
+        {
+            *err = invalidfileaccess;
+            return -1;
+        }
+        /* delete relative to the parent resolved beneath the permitted root,
+           so the name cannot be repointed after the check */
+        ret = xpost_unlinkat_beneath(xpost_permit_write_dir[idx], rel,
+                                     &supported);
+        if (supported)
+        {
+            if (ret != 0)
+            {
+                *err = errno == ENOENT ? undefinedfilename : ioerror;
+                return -1;
+            }
+            *err = 0;
+            return 0;
+        }
+        /* otherwise fall through: the name check above stands */
+    }
+    if (remove(path) != 0)
+    {
+        *err = errno == ENOENT ? undefinedfilename : ioerror;
+        return -1;
+    }
+    *err = 0;
+    return 0;
+}
+
+int
+xpost_diskfile_rename(const char *oldpath, const char *newpath, int *err)
+{
+    if (xpost_path_control_engaged)
+    {
+        char oldfull[XPOST_PATH_MAX];
+        char newfull[XPOST_PATH_MAX];
+        int oidx;
+        int nidx;
+        const char *orel;
+        const char *nrel;
+        int supported;
+        int ret;
+
+        if (!xpost_path_canonical_target(oldpath, 1, oldfull, sizeof oldfull) ||
+            (oidx = xpost_path_within_idx(oldfull, xpost_permit_write_dir,
+                                          xpost_permit_write_cnt)) < 0 ||
+            !xpost_path_canonical_target(newpath, 1, newfull, sizeof newfull) ||
+            (nidx = xpost_path_within_idx(newfull, xpost_permit_write_dir,
+                                          xpost_permit_write_cnt)) < 0)
+        {
+            *err = invalidfileaccess;
+            return -1;
+        }
+        orel = xpost_path_after_root(oldfull, xpost_permit_write_dir[oidx]);
+        nrel = xpost_path_after_root(newfull, xpost_permit_write_dir[nidx]);
+        if (!*orel || !*nrel)
+        {
+            *err = invalidfileaccess;
+            return -1;
+        }
+        ret = xpost_renameat_beneath(xpost_permit_write_dir[oidx], orel,
+                                     xpost_permit_write_dir[nidx], nrel,
+                                     &supported);
+        if (supported)
+        {
+            if (ret != 0)
+            {
+                *err = errno == ENOENT ? undefinedfilename : ioerror;
+                return -1;
+            }
+            *err = 0;
+            return 0;
+        }
+        /* otherwise fall through: the name checks above stand */
+    }
+    if (rename(oldpath, newpath) != 0)
+    {
+        *err = errno == ENOENT ? undefinedfilename : ioerror;
+        return -1;
+    }
+    *err = 0;
+    return 0;
+}
+
+/* May the running program see `path`? Directory enumeration is filtered to
+   the files it could actually open, so a listing does not disclose names
+   outside the permitted set. */
+int
+xpost_diskfile_readable(const char *path)
+{
+    return !xpost_path_control_engaged || xpost_path_permitted(path, 0);
+}
+
+/* Has the file-access sandbox been engaged? Environment access is refused
+   once it has, since the environment is neither read nor written through
+   the opener. */
+int
+xpost_path_control_is_engaged(void)
+{
+    return xpost_path_control_engaged;
+}
+
+/* Is s[0..len) a safe single path component ("leaf")? Externally-derived
+   resource names are validated with this so they cannot express a path:
+   rejected are separators of either platform, ':' (drive letter / NTFS
+   stream), NUL and other control bytes, '.' and '..', a leading dot or
+   space, a trailing dot or space (which Windows strips), and the reserved
+   Windows device names. Bytes are otherwise restricted to [A-Za-z0-9._-].
+   Returns 1 if safe, 0 otherwise. */
+int
+xpost_path_safe_leaf(const char *s, size_t len)
+{
+    static const char *const reserved[] = {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
+    };
+    size_t i;
+    size_t stem;
+    size_t r;
+
+    if (len == 0)
+        return 0;
+    if (s[0] == '.' || s[0] == ' ')                 /* leading dot ('.', '..',
+                                                       hidden) or space */
+        return 0;
+    if (s[len - 1] == '.' || s[len - 1] == ' ')     /* trailing dot or space */
+        return 0;
+    for (i = 0; i < len; i++)
+    {
+        unsigned char c = (unsigned char)s[i];
+
+        if (c < 0x20 || c == 0x7f)                  /* NUL and control bytes */
+            return 0;
+        if (c == '/' || c == '\\' || c == ':')      /* separators, drive/ADS */
+            return 0;
+        if (!((c >= 'A' && c <= 'Z') ||
+              (c >= 'a' && c <= 'z') ||
+              (c >= '0' && c <= '9') ||
+              c == '.' || c == '_' || c == '-'))
+            return 0;
+    }
+    /* reserved device name: the stem before the first '.', case-insensitive */
+    for (stem = 0; stem < len && s[stem] != '.'; stem++)
+        ;
+    for (r = 0; r < sizeof reserved / sizeof reserved[0]; r++)
+    {
+        size_t rl = strlen(reserved[r]);
+        size_t k;
+
+        if (rl != stem)
+            continue;
+        for (k = 0; k < rl; k++)
+        {
+            unsigned char c = (unsigned char)s[k];
+
+            if (c >= 'a' && c <= 'z')
+                c = (unsigned char)(c - 32);
+            if (c != (unsigned char)reserved[r][k])
+                break;
+        }
+        if (k == rl)
+            return 0;
+    }
+    return 1;
+}
+
+/* Open rel for reading beneath root, with the OS confining resolution to
+   root (see xpost_open_beneath), mapping the failure to an error code.
+   rel should already be composed of xpost_path_safe_leaf components. Under
+   the engaged sandbox root must be a read-permitted directory: it is caller-
+   supplied, so confinement beneath it is not itself a permit boundary. */
+FILE *
+xpost_diskfile_fopen_beneath(const char *root, const char *rel, int *err)
+{
+    FILE *fp;
+
+    if (xpost_path_control_engaged && !xpost_path_permitted(root, 0))
+    {
+        *err = invalidfileaccess;
+        return NULL;
+    }
+
+    fp = xpost_open_beneath(root, rel);
+
+    if (!fp)
+    {
+        switch (errno)
+        {
+            case EACCES:
+            case EPERM:
+#ifdef ELOOP
+            case ELOOP:
+#endif
+#ifdef EXDEV
+            case EXDEV:
+#endif
+                *err = invalidfileaccess;
+                break;
+            case ENOENT:
+            case ENOTDIR:
+                *err = undefinedfilename;
+                break;
+#ifdef ENAMETOOLONG
+            case ENAMETOOLONG:
+                *err = limitcheck;
+                break;
+#endif
+            default:
+                *err = unregistered;
+                break;
+        }
+        return NULL;
+    }
+    *err = 0;
+    return fp;
+}
 
 #ifdef _WIN32
 /*
@@ -92,7 +647,10 @@ f_tmpfile(void)
 #ifdef DEBUG_FILE
     printf("fopen\n");
 #endif
-    return fopen(buf, "w+bD");
+    {
+        int err;
+        return xpost_diskfile_fopen(buf, "w+bD", 1, &err);
+    }
 }
 #else
 # define f_tmpfile tmpfile
@@ -112,6 +670,7 @@ disk_readch(Xpost_File *file)
      */
 
 #ifdef HAVE_SYS_SELECT_H
+    if (df->poll_before_read)
     {
         FILE *fp;
         fd_set reads, writes, excepts;
@@ -140,7 +699,15 @@ disk_readch(Xpost_File *file)
     }
 #endif
 
+    /* the interpreter is single-threaded, so the unlocked fast path is safe;
+       unistd.h is present on mingw but does not declare getc_unlocked there */
+#if defined(_WIN32)
+    return _getc_nolock(df->file);
+#elif defined(HAVE_UNISTD_H)
+    return getc_unlocked(df->file);
+#else
     return fgetc(df->file);
+#endif
 }
 
 static int
@@ -224,13 +791,27 @@ xpost_diskfile_open(const FILE *fp)
 
     if (df)
     {
+        struct stat st;
+
         df->methods.methods = &disk_methods;
         df->file = (FILE*)fp;
+        /* reads from a regular file never block, so only poll fds that
+           can stall (pipes, terminals, sockets) */
+        df->poll_before_read = !(fstat(fileno(df->file), &st) == 0 &&
+                                 S_ISREG(st.st_mode));
     }
 
     return &df->methods;
 }
 
+
+/* the underlying stdio stream of a disk-backed file, or NULL */
+FILE *xpost_file_stdio_stream_get(Xpost_File *f)
+{
+    if (f && f->methods == &disk_methods)
+        return ((Xpost_DiskFile *)f)->file;
+    return NULL;
+}
 
 static int
 memory_readch(Xpost_File *f)
@@ -384,6 +965,203 @@ xpost_memoryfile_open_write(void)
     return &mf->methods;
 }
 
+/* ASCII85Decode filter: a read file decoding an ASCII base-85 stream
+   from an underlying file. Whitespace between coded characters is
+   ignored (a stream's layout carries no data), 'z' abbreviates four
+   zero bytes, and the "~>" marker ends the data with the underlying
+   file positioned just after it, so a program executing
+   "currentfile /ASCII85Decode filter cvx exec" resumes cleanly at
+   end of data. The source file is not owned: closing the filter
+   leaves it open. */
+typedef struct Xpost_FilterFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    unsigned char out[4];
+    int outn, outi;    /* decoded bytes pending */
+    int pushback;      /* one unread byte, or -1 */
+    int eod;
+    long count;        /* decoded bytes delivered (tell) */
+} Xpost_FilterFile;
+
+static int
+a85_readch(Xpost_File *f)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+    unsigned int grp[5];
+    int n, c;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->outi < ff->outn)
+    {
+        ff->count++;
+        return ff->out[ff->outi++];
+    }
+    if (ff->eod)
+        return EOF;
+
+    /* gather the next coded group */
+    n = 0;
+    for (;;)
+    {
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+        {
+            ff->eod = 1;
+            break;
+        }
+        if (isspace(c))
+            continue;
+        if (c == '~')
+        {
+            /* end of data: consume the closing '>' */
+            do
+            {
+                c = xpost_file_getc(ff->source);
+            } while (c != EOF && isspace(c));
+            if (c != '>' && c != EOF)
+                xpost_file_ungetc(ff->source, c);
+            ff->eod = 1;
+            break;
+        }
+        if (c == 'z' && n == 0)
+        {
+            ff->out[0] = ff->out[1] = ff->out[2] = ff->out[3] = 0;
+            ff->outn = 4;
+            ff->outi = 1;
+            ff->count++;
+            return 0;
+        }
+        if (c < '!' || c > 'u')
+        {
+            XPOST_LOG_ERR("character %d in ASCII85Decode stream", c);
+            ff->eod = 1;
+            break;
+        }
+        grp[n++] = c - '!';
+        if (n == 5)
+            break;
+    }
+
+    if (n <= 1)   /* nothing, or a dangling single character */
+        return EOF;
+
+    {
+        unsigned int tuple = 0;
+        int i, nbytes = n - 1;
+
+        for (i = 0; i < 5; i++)
+            tuple = tuple * 85 + (i < n ? grp[i] : 84);  /* pad with 'u' */
+        ff->out[0] = (tuple >> 24) & 0xff;
+        ff->out[1] = (tuple >> 16) & 0xff;
+        ff->out[2] = (tuple >> 8) & 0xff;
+        ff->out[3] = tuple & 0xff;
+        ff->outn = nbytes;
+        ff->outi = 1;
+        ff->count++;
+        return ff->out[0];
+    }
+}
+
+static int
+a85_writech(Xpost_File *f, int c)
+{
+    (void)f;
+    (void)c;
+    return EOF;
+}
+
+static int
+a85_close(Xpost_File *f)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+
+    /* the source stays open; just stop producing */
+    ff->eod = 1;
+    ff->outi = ff->outn = 0;
+    ff->pushback = -1;
+    return 0;
+}
+
+static int
+a85_flush(Xpost_File *f)
+{
+    (void)f;
+    return 0;
+}
+
+static void
+a85_purge(Xpost_File *f)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+
+    ff->eod = 1;
+    ff->outi = ff->outn = 0;
+    ff->pushback = -1;
+}
+
+static int
+a85_unreadch(Xpost_File *f, int c)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+
+    if (ff->pushback >= 0)
+        return EOF;
+    ff->pushback = c;
+    return 0;
+}
+
+static long
+a85_tell(Xpost_File *f)
+{
+    Xpost_FilterFile *ff = (Xpost_FilterFile *)f;
+
+    return ff->count;
+}
+
+static int
+a85_seek(Xpost_File *f, long offset)
+{
+    (void)f;
+    (void)offset;
+    return -1;
+}
+
+struct Xpost_File_Methods a85_methods =
+{
+    a85_readch,
+    a85_writech,
+    a85_close,
+    a85_flush,
+    a85_purge,
+    a85_unreadch,
+    a85_tell,
+    a85_seek
+};
+
+static Xpost_File *
+xpost_filterfile_open_a85(Xpost_File *source)
+{
+    Xpost_FilterFile *ff = malloc(sizeof *ff);
+
+    if (ff)
+    {
+        ff->methods.methods = &a85_methods;
+        ff->source = source;
+        ff->outn = ff->outi = 0;
+        ff->pushback = -1;
+        ff->eod = 0;
+        ff->count = 0;
+    }
+
+    return &ff->methods;
+}
+
 /* filetype objects use a slightly different interpretation
    of the access field.
    It uses two flags rather than a 2-bit number.
@@ -400,7 +1178,7 @@ xpost_memoryfile_open_write(void)
    caller must set access for a readable file,
    default is writable.
    eg.
-    FILE *fp = fopen(...);
+    FILE *fp = xpost_diskfile_fopen(path, mode, 0, &err);
     Xpost_Object f = readonly(xpost_file_cons(fp)).
  */
 Xpost_Object xpost_file_cons(Xpost_Memory_File *mem,
@@ -478,6 +1256,574 @@ Xpost_Object xpost_file_cons_writebuffer(Xpost_Memory_File *mem)
     {
         XPOST_LOG_ERR("cannot save file pointer in VM");
 	return invalid;
+    }
+    return f;
+}
+
+/* ASCIIHexDecode filter: hexadecimal digit pairs to bytes, whitespace
+   ignored, '>' ends the data (an odd final digit is padded with 0). */
+typedef struct Xpost_HexFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+} Xpost_HexFile;
+
+static int
+_hexval(int c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    return -1;
+}
+
+static int
+hex_readch(Xpost_File *f)
+{
+    Xpost_HexFile *ff = (Xpost_HexFile *)f;
+    int c, hi, lo;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->eod)
+        return EOF;
+    do
+    {
+        c = xpost_file_getc(ff->source);
+    } while (c != EOF && isspace(c));
+    if (c == EOF || c == '>')
+    {
+        ff->eod = 1;
+        return EOF;
+    }
+    hi = _hexval(c);
+    if (hi < 0)
+    {
+        XPOST_LOG_ERR("character %d in ASCIIHexDecode stream", c);
+        ff->eod = 1;
+        return EOF;
+    }
+    do
+    {
+        c = xpost_file_getc(ff->source);
+    } while (c != EOF && isspace(c));
+    if (c == EOF || c == '>')
+    {
+        ff->eod = 1;
+        lo = 0;
+    }
+    else
+    {
+        lo = _hexval(c);
+        if (lo < 0)
+        {
+            XPOST_LOG_ERR("character %d in ASCIIHexDecode stream", c);
+            ff->eod = 1;
+            lo = 0;
+        }
+    }
+    return (hi << 4) | lo;
+}
+
+/* RunLengthDecode filter: a length byte 0..127 copies that many plus
+   one literal bytes; 129..255 repeats the next byte 257 minus the
+   length times; 128 ends the data. */
+typedef struct Xpost_RleFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    int litrun;   /* literal bytes still to copy */
+    int reprun;   /* repetitions still to emit */
+    int repbyte;
+} Xpost_RleFile;
+
+static int
+rle_readch(Xpost_File *f)
+{
+    Xpost_RleFile *ff = (Xpost_RleFile *)f;
+    int c;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->reprun > 0)
+    {
+        ff->reprun--;
+        return ff->repbyte;
+    }
+    if (ff->litrun > 0)
+    {
+        ff->litrun--;
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+            ff->eod = 1;
+        return c;
+    }
+    if (ff->eod)
+        return EOF;
+    c = xpost_file_getc(ff->source);
+    if (c == EOF || c == 128)
+    {
+        ff->eod = 1;
+        return EOF;
+    }
+    if (c < 128)
+    {
+        ff->litrun = c;   /* this byte plus litrun more */
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+            ff->eod = 1;
+        return c;
+    }
+    ff->repbyte = xpost_file_getc(ff->source);
+    if (ff->repbyte == EOF)
+    {
+        ff->eod = 1;
+        return EOF;
+    }
+    ff->reprun = 257 - c - 1;   /* this byte plus reprun more */
+    return ff->repbyte;
+}
+
+/* SubFileDecode filter: pass bytes through until the EOD string has
+   been seen count times; the final occurrence is consumed but not
+   delivered, leaving the source just after it. A count of zero with
+   a non-empty string ends at the first occurrence; an empty string
+   makes count a plain byte count. */
+typedef struct Xpost_SubFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    int count;
+    unsigned char eodstr[64];
+    int eodlen;
+    unsigned char pend[64];   /* partially matched prefix to re-emit */
+    int pendn, pendi;
+} Xpost_SubFile;
+
+static int
+subfile_readch(Xpost_File *f)
+{
+    Xpost_SubFile *ff = (Xpost_SubFile *)f;
+    int c;
+    int matched;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->pendi < ff->pendn)
+        return ff->pend[ff->pendi++];
+    if (ff->eod)
+        return EOF;
+
+    if (ff->eodlen == 0)
+    {
+        /* byte count mode */
+        if (ff->count <= 0)
+        {
+            ff->eod = 1;
+            return EOF;
+        }
+        ff->count--;
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+            ff->eod = 1;
+        return c;
+    }
+
+    /* match the EOD string; on a partial mismatch the consumed prefix
+       replays from the pending buffer (the string may not contain a
+       repeated prefix hazard longer than itself, so rescanning from
+       the second byte is not needed for the delimiters in use) */
+    matched = 0;
+    for (;;)
+    {
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+        {
+            ff->eod = 1;
+            if (matched)
+            {
+                memcpy(ff->pend, ff->eodstr, matched);
+                ff->pendn = matched;
+                ff->pendi = 1;
+                return ff->pend[0];
+            }
+            return EOF;
+        }
+        if ((unsigned char)c == ff->eodstr[matched])
+        {
+            matched++;
+            if (matched == ff->eodlen)
+            {
+                if (ff->count > 1)
+                {
+                    /* deliver this occurrence and keep going */
+                    ff->count--;
+                    memcpy(ff->pend, ff->eodstr, matched);
+                    ff->pendn = matched;
+                    ff->pendi = 1;
+                    return ff->pend[0];
+                }
+                ff->eod = 1;
+                return EOF;
+            }
+            continue;
+        }
+        if (matched)
+        {
+            /* replay the matched prefix, then this byte */
+            memcpy(ff->pend, ff->eodstr, matched);
+            ff->pend[matched] = (unsigned char)c;
+            ff->pendn = matched + 1;
+            ff->pendi = 1;
+            return ff->pend[0];
+        }
+        return c;
+    }
+}
+
+#ifdef HAVE_ZLIB
+/* FlateDecode filter: a zlib stream inflated from the source, which
+   is left positioned just after the compressed data. */
+typedef struct Xpost_FlateFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    z_stream strm;
+    unsigned char in[1];
+    unsigned char out[4096];
+    int outn, outi;
+} Xpost_FlateFile;
+
+static int
+flate_readch(Xpost_File *f)
+{
+    Xpost_FlateFile *ff = (Xpost_FlateFile *)f;
+    int c, ret;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->outi < ff->outn)
+        return ff->out[ff->outi++];
+    if (ff->eod)
+        return EOF;
+
+    ff->strm.next_out = ff->out;
+    ff->strm.avail_out = sizeof(ff->out);
+    while (ff->strm.avail_out == sizeof(ff->out))
+    {
+        if (ff->strm.avail_in == 0)
+        {
+            c = xpost_file_getc(ff->source);
+            if (c == EOF)
+            {
+                ff->eod = 1;
+                break;
+            }
+            ff->in[0] = (unsigned char)c;
+            ff->strm.next_in = ff->in;
+            ff->strm.avail_in = 1;
+        }
+        ret = inflate(&ff->strm, Z_NO_FLUSH);
+        if (ret == Z_STREAM_END)
+        {
+            ff->eod = 1;
+            break;
+        }
+        if (ret != Z_OK && ret != Z_BUF_ERROR)
+        {
+            XPOST_LOG_ERR("FlateDecode error %d", ret);
+            ff->eod = 1;
+            break;
+        }
+    }
+    ff->outn = (int)(sizeof(ff->out) - ff->strm.avail_out);
+    ff->outi = 0;
+    if (ff->outi < ff->outn)
+    {
+        ff->outi = 1;
+        return ff->out[0];
+    }
+    return EOF;
+}
+#endif
+
+/* method boilerplate shared by the decode filters: they are read-only
+   streams over an unowned source with one byte of pushback */
+typedef struct Xpost_FilterBase
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+} Xpost_FilterBase;
+
+static int
+filter_writech(Xpost_File *f, int c)
+{
+    (void)f;
+    (void)c;
+    return EOF;
+}
+
+static int
+filter_close(Xpost_File *f)
+{
+    Xpost_FilterBase *ff = (Xpost_FilterBase *)f;
+
+    ff->eod = 1;
+    ff->pushback = -1;
+    return 0;
+}
+
+static int
+filter_flush(Xpost_File *f)
+{
+    (void)f;
+    return 0;
+}
+
+static void
+filter_purge(Xpost_File *f)
+{
+    Xpost_FilterBase *ff = (Xpost_FilterBase *)f;
+
+    ff->eod = 1;
+    ff->pushback = -1;
+}
+
+static int
+filter_unreadch(Xpost_File *f, int c)
+{
+    Xpost_FilterBase *ff = (Xpost_FilterBase *)f;
+
+    if (ff->pushback >= 0)
+        return EOF;
+    ff->pushback = c;
+    return 0;
+}
+
+static long
+filter_tell(Xpost_File *f)
+{
+    (void)f;
+    return 0;
+}
+
+static int
+filter_seek(Xpost_File *f, long offset)
+{
+    (void)f;
+    (void)offset;
+    return -1;
+}
+
+struct Xpost_File_Methods hex_methods =
+{
+    hex_readch, filter_writech, filter_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+struct Xpost_File_Methods rle_methods =
+{
+    rle_readch, filter_writech, filter_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+struct Xpost_File_Methods subfile_methods =
+{
+    subfile_readch, filter_writech, filter_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+#ifdef HAVE_ZLIB
+static int
+flate_close(Xpost_File *f)
+{
+    Xpost_FlateFile *ff = (Xpost_FlateFile *)f;
+
+    inflateEnd(&ff->strm);
+    ff->eod = 1;
+    ff->pushback = -1;
+    return 0;
+}
+
+struct Xpost_File_Methods flate_methods =
+{
+    flate_readch, filter_writech, flate_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+#endif
+
+/* wrap a malloc'd filter struct in a filetype object */
+static Xpost_Object
+_filter_object_cons(Xpost_Memory_File *mem, Xpost_File *ff)
+{
+    Xpost_Object f;
+    unsigned int ent;
+    int ret;
+
+    if (!ff)
+        return invalid;
+    f.tag = filetype;
+    if (!xpost_memory_table_alloc(mem, sizeof ff, filetype, &ent))
+    {
+        XPOST_LOG_ERR("cannot allocate file record");
+        return invalid;
+    }
+    f.mark_.padw = ent;
+    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof ff, &ff);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot save file pointer in VM");
+        return invalid;
+    }
+    return f;
+}
+
+Xpost_Object xpost_file_cons_filter_hex(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_HexFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = malloc(sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &hex_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->eod = 0;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
+Xpost_Object xpost_file_cons_filter_rle(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_RleFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = malloc(sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &rle_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->eod = 0;
+        ff->litrun = 0;
+        ff->reprun = 0;
+        ff->repbyte = 0;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
+Xpost_Object xpost_file_cons_filter_subfile(Xpost_Memory_File *mem, Xpost_Object src,
+                                            int count, const char *eod, int eodlen)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_SubFile *ff;
+
+    if (!source || eodlen < 0 || eodlen > 64)
+        return invalid;
+    ff = malloc(sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &subfile_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->eod = 0;
+        ff->count = count;
+        memcpy(ff->eodstr, eod, eodlen);
+        ff->eodlen = eodlen;
+        ff->pendn = ff->pendi = 0;
+        /* count 0 with a delimiter behaves as a single occurrence */
+        if (eodlen > 0 && ff->count < 1)
+            ff->count = 1;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
+#ifdef HAVE_ZLIB
+Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_FlateFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = malloc(sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &flate_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->eod = 0;
+        memset(&ff->strm, 0, sizeof ff->strm);
+        if (inflateInit(&ff->strm) != Z_OK)
+        {
+            free(ff);
+            return invalid;
+        }
+        ff->outn = ff->outi = 0;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+#endif
+
+/* construct an ASCII85Decode filter file over a source file object */
+Xpost_Object xpost_file_cons_filter_a85(Xpost_Memory_File *mem,
+                                        Xpost_Object src)
+{
+    Xpost_Object f;
+    unsigned int ent;
+    int ret;
+    Xpost_File *source, *ff;
+
+    source = xpost_file_get_file_pointer(mem, src);
+    if (!source)
+        return invalid;
+
+    f.tag = filetype;
+    ff = xpost_filterfile_open_a85(source);
+    if (!ff)
+        return invalid;
+    if (!xpost_memory_table_alloc(mem, sizeof ff, filetype, &ent))
+    {
+        XPOST_LOG_ERR("cannot allocate file record");
+        return invalid;
+    }
+    f.mark_.padw = ent;
+    ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof ff, &ff);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot save file pointer in VM");
+        return invalid;
     }
     return f;
 }
@@ -650,6 +1996,8 @@ int xpost_file_open(Xpost_Memory_File *mem,
             return invalidfileaccess;
         }
         f = xpost_file_cons(mem, stderr);
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     }
     else if (strcmp(fn, "%lineedit") == 0)
     {
@@ -678,22 +2026,9 @@ int xpost_file_open(Xpost_Memory_File *mem,
 #ifdef DEBUG_FILE
         printf("fopen\n");
 #endif
-        fp = fopen(fn, mode);
+        fp = xpost_diskfile_fopen(fn, mode, 0, &ret);
         if (fp == NULL)
-        {
-            switch (errno)
-            {
-                case EACCES:
-                    return invalidfileaccess;
-                    break;
-                case ENOENT:
-                    return undefinedfilename;
-                    break;
-                default:
-                    return unregistered;
-                    break;
-            }
-        }
+            return ret;
         f = xpost_file_cons(mem, fp);
         if (strcmp(mode, "r") == 0)
         {

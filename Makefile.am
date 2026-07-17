@@ -75,6 +75,27 @@ lcov-report:
 
 endif
 
+# PLRM operator-example conformance suite (data/test.ps) run through the built
+# interpreter -- the real interpreter test, run by `make check` regardless of
+# --with-tests (it needs only the xpost binary). XPOST_DATA_DIR points the
+# uninstalled binary at the source data. Mirrors the meson test('interpreter').
+XPOST_PS_CONFORMANCE = \
+	XPOST_DATA_DIR=$(top_srcdir)/data \
+	$(top_srcdir)/tests/run-ps-test.sh \
+	$(top_builddir)/src/bin/xpost$(EXEEXT) $(top_srcdir)/data/test.ps
+
+# Bounding-box device: render a known fill through -d bbox and check the box.
+XPOST_BBOX_TEST = \
+	XPOST_DATA_DIR=$(top_srcdir)/data \
+	$(top_srcdir)/tests/run-bbox-test.sh \
+	$(top_builddir)/src/bin/xpost$(EXEEXT) $(top_srcdir)/tests/bbox_test.ps
+
+# PDF device: write a PDF, check its structure, round-trip via gs when present.
+XPOST_PDF_TEST = \
+	XPOST_DATA_DIR=$(top_srcdir)/data \
+	$(top_srcdir)/tests/run-pdf-test.sh \
+	$(top_builddir)/src/bin/xpost$(EXEEXT) $(top_srcdir)/tests/pdf_bigfill_test.ps
+
 if XPOST_ENABLE_TESTS
 
 include src/tests/Makefile.mk
@@ -93,12 +114,17 @@ if XPOST_ENABLE_COVERAGE
 endif
 
 check-local:
+	$(XPOST_PS_CONFORMANCE)
+	$(XPOST_BBOX_TEST)
+	$(XPOST_PDF_TEST)
 	$(XPOST_VALGRIND) $(top_builddir)/src/tests/xpost_suite$(EXEEXT)
 
 else
 
 check-local:
-	@echo "reconfigure with --enable-tests"
+	$(XPOST_PS_CONFORMANCE)
+	$(XPOST_BBOX_TEST)
+	$(XPOST_PDF_TEST)
 
 endif
 
@@ -107,6 +133,11 @@ COMPLIANCE \
 autogen.sh \
 xpost.pc.in \
 m4/xpost.m4 \
+tests/run-ps-test.sh \
+tests/run-bbox-test.sh \
+tests/run-pdf-test.sh \
+tests/bbox_test.ps \
+tests/pdf_bigfill_test.ps \
 valgrind_wrapper.sh \
 glibc.supp \
 visual_studio/vc10/xpost.sln \

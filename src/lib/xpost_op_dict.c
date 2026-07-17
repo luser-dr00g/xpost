@@ -64,6 +64,12 @@ int xpost_op_int_dict(Xpost_Context *ctx,
                       Xpost_Object I)
 {
     Xpost_Object dic;
+
+    if (I.int_.val < 0)
+        return rangecheck;
+    if (I.int_.val > 65535) /* sz field is 16 bits; PLRM minimum limit */
+        return limitcheck;
+
     dic = xpost_dict_cons (ctx, I.int_.val);
     if (xpost_object_get_type(dic) == nulltype)
         return VMerror;
@@ -130,7 +136,7 @@ int xpost_op_dict_maxlength(Xpost_Context *ctx,
                             Xpost_Object D)
 {
     xpost_stack_push(ctx->lo, ctx->os,
-                     xpost_int_cons(xpost_dict_max_length_memory(xpost_context_select_memory(ctx, D) /*D.tag&FBANK?ctx->gl:ctx->lo*/,
+                     xpost_int_cons(xpost_dict_requested_length_memory(xpost_context_select_memory(ctx, D),
                                                                  D)));
     return 0;
 }
@@ -141,6 +147,8 @@ static
 int xpost_op_dict_begin(Xpost_Context *ctx,
                         Xpost_Object D)
 {
+    ++ctx->namebind_gen; /* visibility changes */
+
     if (!xpost_stack_push(ctx->lo, ctx->ds, D))
         return dictstackoverflow;
     return 0;
@@ -151,6 +159,8 @@ int xpost_op_dict_begin(Xpost_Context *ctx,
 static
 int xpost_op_end(Xpost_Context *ctx)
 {
+    ++ctx->namebind_gen;
+
     if (xpost_stack_count(ctx->lo, ctx->ds) <= 3)
         return dictstackunderflow;
     (void)xpost_stack_pop(ctx->lo, ctx->ds);
@@ -164,14 +174,40 @@ int xpost_op_any_any_def(Xpost_Context *ctx,
                          Xpost_Object K,
                          Xpost_Object V)
 {
+    Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, D);
     int ret;
-    //Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0);
-    //xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D); puts("");
-    ret = xpost_dict_put(ctx, xpost_stack_topdown_fetch(ctx->lo, ctx->ds, 0), K, V);
+
+    /* the current dictionary is topmost, so def deterministically sets
+       the visible binding of a name key: refresh that cache entry
+       instead of invalidating every resolution. the arguments are held
+       by the operator machinery, so the general wrapper's re-holding
+       is unnecessary. */
+    if (xpost_object_get_type(K) == nametype &&
+        !(mem == ctx->gl &&
+          ((xpost_object_is_composite(K) &&
+            mem != xpost_context_select_memory(ctx, K)) ||
+           (xpost_object_is_composite(V) &&
+            mem != xpost_context_select_memory(ctx, V)))))
+    {
+        ret = xpost_dict_put_memory(ctx, mem, D, K, V);
+        if (ret)
+            return ret;
+        {
+            unsigned int key = ((unsigned int)K.mark_.padw << 1) |
+                ((K.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ? 1 : 0);
+            if (key < ctx->namecache_size)
+            {
+                ctx->namecache_gen[key] = ctx->namebind_gen;
+                ctx->namecache_val[key] = V;
+            }
+        }
+        return 0;
+    }
+
+    ret = xpost_dict_put(ctx, D, K, V);
     if (ret)
         return ret;
-    //puts("!def!");
-    //xpost_dict_dump_memory (xpost_context_select_memory(ctx, D), D); puts("");
     return 0;
 }
 
@@ -310,10 +346,13 @@ int xpost_op_any_where(Xpost_Context *ctx,
 {
     int i;
     int z = xpost_stack_count(ctx->lo, ctx->ds);
+    int isname = xpost_object_get_type(K) == nametype;
     for (i = 0; i < z; i++)
     {
         Xpost_Object D = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, i);
-        if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K))
+        if (isname
+                ? xpost_object_get_type(xpost_dict_get_name(ctx, D, K)) != invalidtype
+                : xpost_dict_known_key(ctx, xpost_context_select_memory(ctx, D), D, K))
         {
             xpost_stack_push(ctx->lo, ctx->os, D);
             xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
@@ -360,6 +399,62 @@ int xpost_op_dict_copy(Xpost_Context *ctx,
     return 0;
 }
 
+/* find the next occupied slot from D's cursor, push the pair on the
+   operand stack and advance the cursor; shared by forall and its
+   iterate continuation. returns 1 while pairs remain. */
+static
+int _dict_forall_step (Xpost_Context *ctx,
+                       Xpost_Object *D,
+                       int *reterr)
+{
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, *D);
+    unsigned ad;
+    dicrec *tp;
+    int ret;
+
+    *reterr = 0;
+    D->comp_.sz = xpost_dict_max_length_memory (mem, *D); // cache size locally
+    if (D->comp_.off >= DICTABN(D->comp_.sz)) // cursor past the table
+        return 0;
+
+    ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(*D), &ad);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot retrieve address for dict ent %u",
+                      xpost_object_get_ent(*D));
+        *reterr = VMerror;
+        return 0;
+    }
+    tp = (void *)(mem->base + ad + sizeof(dichead));
+
+    for ( ; D->comp_.off < DICTABN(D->comp_.sz); ++D->comp_.off) // find next pair
+    {
+        if (xpost_object_get_type(tp[D->comp_.off].key) != nulltype) // found
+        {
+            Xpost_Object k,v;
+
+            k = tp[D->comp_.off].key;
+            if (xpost_object_get_type(k) == extendedtype)
+                k = xpost_dict_convert_extended_to_number(k);
+            v = tp[D->comp_.off].value;
+
+            if (!xpost_stack_push(ctx->lo, ctx->os, k))
+            {
+                *reterr = stackoverflow;
+                return 0;
+            }
+            if (!xpost_stack_push(ctx->lo, ctx->os, v))
+            {
+                *reterr = stackoverflow;
+                return 0;
+            }
+            ++D->comp_.off;
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /* dict proc  forall  -
    execute proc for each key value pair in dict */
 static
@@ -367,65 +462,58 @@ int xpost_op_dict_proc_forall (Xpost_Context *ctx,
                                Xpost_Object D,
                                Xpost_Object P)
 {
-    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, D);
-    assert(mem->base);
-    D.comp_.sz = xpost_dict_max_length_memory (mem, D); // cache size locally
-    if (D.comp_.off <= D.comp_.sz) // FIXME: not finished?
+    int err;
+
+    if (!_dict_forall_step(ctx, &D, &err))
+        return err;
+
+    /* loop frame: the sentinel forall operator (which exit searches
+       for) under literal state that the iterate operator consumes */
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(D)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.dictforallcont)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+        return execstackoverflow;
+    return 0;
+}
+
+/* continue a dict forall: es holds (from the top) the dict with its
+   slot cursor, the literal proc, and the sentinel */
+static
+int xpost_op_dict_forall_iterate (Xpost_Context *ctx)
+{
+    Xpost_Object D, P;
+    int err;
+
+    D = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    P = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 1);
+    if (xpost_object_get_type(D) == invalidtype)
+        return execstackunderflow;
+
+    if (!_dict_forall_step(ctx, &D, &err))
     {
-        unsigned ad;
-        dicrec *tp; /* dict Table Pointer */
-        int ret;
-
-        ret = xpost_memory_table_get_addr(mem, xpost_object_get_ent(D), &ad);
-        if (!ret)
-        {
-            XPOST_LOG_ERR("cannot retrieve address for dict ent %u",
-                          xpost_object_get_ent(D));
-            return VMerror;
-        }
-        tp = (void *)(mem->base + ad + sizeof(dichead));
-
-        for ( ; D.comp_.off < DICTABN(D.comp_.sz); ++D.comp_.off) // find next pair
-        {
-            if (xpost_object_get_type(tp[D.comp_.off].key) != nulltype) // found
-            {
-                Xpost_Object k,v;
-
-                k = tp[D.comp_.off].key;
-                if (xpost_object_get_type(k) == extendedtype)
-                    k = xpost_dict_convert_extended_to_number(k);
-                v = tp[D.comp_.off].value;
-
-                if (!xpost_stack_push(ctx->lo, ctx->os, k))
-                    return stackoverflow;
-                if (!xpost_stack_push(ctx->lo, ctx->os, v))
-                    return stackoverflow;
-
-                if (!xpost_stack_push(ctx->lo, ctx->es,
-                                      xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
-                    return execstackoverflow;
-                if (!xpost_stack_push(ctx->lo, ctx->es,
-                                      xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
-                    return execstackoverflow;
-                if (!xpost_stack_push(ctx->lo, ctx->es,
-                                      xpost_object_cvlit(P)))
-                    return execstackoverflow;
-
-                ++D.comp_.off; /* update offset in dict
-                                  before push for next iteration */
-                if (!xpost_stack_push(ctx->lo, ctx->es, D))
-                    return execstackoverflow;
-
-                if (!xpost_stack_push(ctx->lo, ctx->es, P))
-                    return execstackoverflow;
-
-                return 0; /* loop continues by ps continuation.
-                             thus, no need to recalc pointer since
-                             this function is re-entered from the
-                             beginning, with a new dict with ++D.comp_.off */
-            }
-        }
+        int k;
+        if (err)
+            return err;
+        for (k = 0; k < 3; k++)
+            (void)xpost_stack_pop(ctx->lo, ctx->es);
+        return 0;
     }
+
+    if (!xpost_stack_topdown_replace(ctx->lo, ctx->es, 0, xpost_object_cvlit(D)))
+        return execstackunderflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                          xpost_operator_cons_opcode(ctx->opcode_shortcuts.dictforallcont)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(P)))
+        return execstackoverflow;
     return 0;
 }
 
@@ -479,6 +567,9 @@ static
 int xpost_op_cleardictstack(Xpost_Context *ctx)
 {
     int z = xpost_stack_count(ctx->lo, ctx->ds);
+
+    ++ctx->namebind_gen;  /* popped dicts invalidate cached resolutions */
+
     while (z-- > 3)
     {
         (void)xpost_stack_pop(ctx->lo, ctx->ds);
@@ -526,6 +617,7 @@ int xpost_oper_init_dict_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "end", (Xpost_Op_Func)xpost_op_end, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "def", (Xpost_Op_Func)xpost_op_any_any_def, 0, 2, anytype, anytype);
+    ctx->opcode_shortcuts.opdef = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "load", (Xpost_Op_Func)xpost_op_any_load, 1, 1, anytype);
     INSTALL;
@@ -548,6 +640,8 @@ int xpost_oper_init_dict_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "forall", (Xpost_Op_Func)xpost_op_dict_proc_forall, 0, 2, dicttype, proctype);
     INSTALL;
     ctx->opcode_shortcuts.forall = op.mark_.padw;
+    op = xpost_operator_cons(ctx, "forall.dict.iterate", (Xpost_Op_Func)xpost_op_dict_forall_iterate, 0, 0);
+    ctx->opcode_shortcuts.dictforallcont = op.mark_.padw;
     op = xpost_operator_cons(ctx, "currentdict", (Xpost_Op_Func)xpost_op_currentdict, 1, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "countdictstack", (Xpost_Op_Func)xpost_op_countdictstack, 1, 0);

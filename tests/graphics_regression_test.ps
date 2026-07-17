@@ -1,0 +1,447 @@
+% Graphics regression checks, run through `xpost -d null` by
+% run-ps-test.sh: prints SUCCESS iff every assertion holds.
+%
+% Covers defects that once escaped the interpreter suite:
+%   - itransform/idtransform and currentpoint under a rotated CTM
+%     (the inverse transforms had transposed cross terms)
+%   - graphics operators running with a user dictionary on the dict
+%     stack whose keys shadow operator names (the machinery is
+%     PostScript and must be bound against capture)
+%   - filling many sub-pixel open subpaths in one path (scan-converter
+%     parity and dropout control)
+%   - clipping with an opposite-wound inner subpath (a hole)
+%   - stroking with the line width transformed to device space
+%
+% Pixel assertions render into a locally constructed PGM device and
+% probe it through its GetPix method.
+
+% failures accumulate in a dedicated dict, so an assert that runs with
+% another dictionary begun still updates the shared counter
+/faildict 2 dict def
+faildict /n 0 put
+/assert { % bool (name) . -
+    exch { pop } {
+        (FAIL: ) print print (\n) print
+        faildict /n 2 copy get 1 add put
+    } ifelse
+} bind def
+/assertnear { % val expected (name) . -
+    3 1 roll sub abs 0.01 lt exch assert
+} bind def
+
+% --- construct a raster device to probe ---
+/DEV 64 64 newPGMIMAGEdevice def
+DEV begin
+    /defaultmatrix [ 1 0 0 -1 0 64 ] def
+    /FillPoly /.fillpoly load def
+    /FillRect /.fillrectgray load def
+end
+gstatetemplate /device DEV put
+graphicsdict /currgstate get /device DEV put
+initgraphics
+
+/inkat { % ux uy . bool
+    transform
+    floor cvi exch floor cvi exch  % x y (device)
+    DEV dup /GetPix get exec
+    128 lt
+} def
+/inknear { % ux uy . bool  (ink within a 1px neighbourhood)
+    /py exch def /px exch def
+    false
+    -1 1 1 {
+        /dy exch def
+        -1 1 1 {
+            /dx exch def
+            px dx add py dy add inkat or
+        } for
+    } for
+} def
+/countink { % - . n
+    0
+    0 1 63 {
+        DEV /ImgData get exch get
+        { 128 lt { 1 add } if } forall
+    } for
+} def
+/maxrun { % - . n  (longest horizontal ink run)
+    6 dict begin
+    /best 0 def
+    0 1 63 {
+        /run 0 def
+        DEV /ImgData get exch get {
+            128 lt {
+                /run run 1 add def
+                run best gt { /best run def } if
+            }{
+                /run 0 def
+            } ifelse
+        } forall
+    } for
+    best
+    end
+} def
+
+% --- inverse point and distance transforms under rotation ---
+gsave
+30 40 translate
+45 rotate
+2 3 scale
+100 50 moveto
+currentpoint
+50 (currentpoint y survives a rotated CTM) assertnear
+100 (currentpoint x survives a rotated CTM) assertnear
+10 20 transform itransform
+20 (itransform inverts transform: y) assertnear
+10 (itransform inverts transform: x) assertnear
+3 4 dtransform idtransform
+4 (idtransform inverts dtransform: dy) assertnear
+3 (idtransform inverts dtransform: dx) assertnear
+grestore
+
+% --- operator names shadowed by a user dictionary ---
+<< /type 29 /length 1 /index 2 /copy 3 /width 4 /height 5
+   /flat 6 /off 7 /str 8 /ang 9 /cp 10 /poly 11
+   /pop 12 /concat 13 /roll 14 /repeat 15 /exec 16 /cvx 17 >> begin
+{
+    gsave
+    newpath 5 5 moveto 40 20 lineto 3 setlinewidth stroke
+    grestore
+    gsave
+    30 rotate
+    newpath 5 5 moveto 30 5 lineto 30 25 lineto 5 25 lineto closepath fill
+    grestore
+} stopped not (graphics survive shadowed operator names) assert
+count 0 eq (shadowed graphics leave the stack balanced) assert
+clear end
+
+% --- sub-pixel dots: one path of small open ring subpaths ---
+erasepage
+gsave
+0.5 0.5 scale
+newpath
+8 8 48 {
+    /yy exch def
+    8 8 48 {
+        /xx exch def
+        xx yy moveto
+        xx yy 0.9 0 360 arc
+    } for
+} for
+fill
+grestore
+countink dup
+36 ge (each sub-pixel dot marks at least one pixel) assert
+144 le (sub-pixel dots stay dots) assert
+maxrun 3 le (no dot row smears across the raster) assert
+
+% --- the any-part-of-pixel fill rule (PLRM 7.5): a pixel is painted
+%     iff the filled region meets its interior. Probes verified
+%     pixel-for-pixel against a reference interpreter, including the
+%     boundary cases: integer-aligned geometry is exact (closed at the
+%     low device boundary, open at the high one), sub-pixel geometry
+%     paints every pixel it enters, zero-width geometry on a pixel
+%     boundary paints nothing, and zero-height geometry paints the row
+%     its device coordinate floors to ---
+/rfill { % x0 y0 x1 y1 . -  (fill the rectangle)
+    8 dict begin
+    /ry1 exch def /rx1 exch def /ry0 exch def /rx0 exch def
+    newpath
+    rx0 ry0 moveto rx1 ry0 lineto rx1 ry1 lineto rx0 ry1 lineto closepath
+    fill
+    end
+} bind def
+
+erasepage
+2 2 5 5 rfill
+2.5 2.5 inkat (integer rect fills its own columns) assert
+4.5 4.5 inkat (integer rect fills to its high corner) assert
+1.5 2.5 inkat not (integer rect stays right of its low x edge) assert
+5.5 2.5 inkat not (integer rect stays left of its high x edge) assert
+2.5 1.5 inkat not (integer rect stays above its low y edge) assert
+2.5 5.5 inkat not (integer rect stays below its high y edge) assert
+
+erasepage
+1.2 2 1.4 5 rfill
+1.5 3.5 inkat (sub-pixel-wide bar paints its column) assert
+0.5 3.5 inkat not (sub-pixel bar does not spill left) assert
+2.5 3.5 inkat not (sub-pixel bar does not spill right) assert
+
+erasepage
+0.8 2 1.2 5 rfill
+0.5 3.5 inkat (straddling bar paints the left pixel) assert
+1.5 3.5 inkat (straddling bar paints the right pixel) assert
+
+erasepage
+1 2 1.2 5 rfill
+1.5 3.5 inkat (bar closed on its low integer edge) assert
+0.5 3.5 inkat not (bar open toward the pixel below the low edge) assert
+
+erasepage
+0.8 2 1 5 rfill
+0.5 3.5 inkat (bar open on its high integer edge) assert
+1.5 3.5 inkat not (bar does not enter the pixel past the high edge) assert
+
+% zero-width and zero-height degenerate subpaths
+erasepage
+newpath 3 1 moveto 3 6 lineto closepath fill
+2.5 3.5 inkat not (zero-width line on a pixel boundary paints nothing: left) assert
+3.5 3.5 inkat not (zero-width line on a pixel boundary paints nothing: right) assert
+erasepage
+newpath 3.5 1 moveto 3.5 6 lineto closepath fill
+3.5 3.5 inkat (zero-width line inside a pixel paints its column) assert
+erasepage
+newpath 1 3 moveto 6 3 lineto closepath fill
+3.5 2.5 inkat (zero-height line on a boundary paints the floor row) assert
+3.5 3.5 inkat not (zero-height line on a boundary paints one row only) assert
+erasepage
+newpath 3.5 3.5 moveto 3.5 3.5 lineto closepath fill
+3.5 3.5 inkat (a degenerate point paints its pixel) assert
+countink 1 eq (a degenerate point paints exactly one pixel) assert
+
+% a thin diagonal bar must be continuous (no dropouts) and thin
+erasepage
+newpath 3 2 moveto 12 11 lineto 12.28 10.72 lineto 3.28 1.72 lineto closepath fill
+5 4 inknear (thin diagonal marks its lower run) assert
+8 7 inknear (thin diagonal marks its middle run) assert
+11 10 inknear (thin diagonal marks its upper run) assert
+countink dup
+10 ge (thin diagonal is continuous) assert
+30 le (thin diagonal stays thin) assert
+
+% --- clip with an opposite-wound hole subpath ---
+erasepage
+gsave
+newpath
+ 5  5 moveto 45  5 lineto 45 45 lineto  5 45 lineto closepath  % window, CCW
+20 20 moveto 20 30 lineto 30 30 lineto 30 20 lineto closepath  % hole, CW
+clip
+newpath 0 0 moveto 50 0 lineto 50 50 lineto 0 50 lineto closepath fill
+grestore
+10 10 inkat (window region is painted) assert
+40 40 inkat (window region beyond the hole is painted) assert
+25 25 inkat not (hole region is clear) assert
+2 2 inkat not (outside the window is clear) assert
+
+% --- stroke width follows the CTM ---
+erasepage
+gsave
+2 2 scale
+0.75 setlinewidth
+newpath 5 5 moveto 20 12.5 lineto stroke
+grestore
+25 17.5 inknear (a scaled diagonal stroke marks pixels) assert
+
+% --- text rendering: sharp threshold by default, coverage blending
+%     under TextAlphaBits, /Encoding vectors honored, Type 42 font
+%     programs accepted by definefont. All skipped when no host font
+%     resolves (headless build without fonts). ---
+/countmid { % - . n  (pixels neither background nor ink: blended edges)
+    0
+    0 1 63 {
+        DEV /ImgData get exch get
+        { dup 10 gt exch 245 lt and { 1 add } if } forall
+    } for
+} bind def
+/snapshot { % - . array of row copies
+    [ 0 1 63 { DEV /ImgData get exch get dup length string copy } for ]
+} bind def
+/snapeq { % snapA snapB . bool
+    4 dict begin
+    /sb exch def /sa exch def
+    /same true def
+    0 1 63 { /i exch def sa i get sb i get eq not { /same false def } if } for
+    same
+    end
+} bind def
+
+/basefont null def
+{ /Helvetica findfont } stopped not count 0 gt and {
+    dup type /dicttype eq { /basefont exch def } { pop } ifelse
+} if
+
+basefont null ne {
+    % sharp text by default: ink but no intermediate values
+    erasepage
+    basefont 20 scalefont setfont
+    2 24 moveto (Ag) show
+    countink 20 ge (text marks pixels) assert
+    countmid 0 eq (text is sharp without TextAlphaBits) assert
+
+    % anti-aliased text: TextAlphaBits + BlendPix blend glyph edges
+    DEV /TextAlphaBits 4 put
+    DEV /BlendPix /.blendpixgray load put
+    erasepage
+    2 24 moveto (Ag) show
+    countmid 0 gt (TextAlphaBits blends glyph edges) assert
+    countink 10 ge (anti-aliased text keeps solid cores) assert
+    DEV /TextAlphaBits 1 put
+    erasepage
+    2 24 moveto (Ag) show
+    countmid 0 eq (TextAlphaBits 1 disables blending) assert
+
+    % /Encoding: a re-encoded copy renders the named glyph
+    erasepage
+    2 24 moveto (0) show
+    /wantsnap snapshot def
+    basefont dup length dict copy
+    dup /Encoding 256 array put
+    dup /Encoding get 65 /zero put
+    /ReencTest exch definefont 20 scalefont setfont
+    erasepage
+    2 24 moveto (A) show
+    /gotsnap snapshot def
+    wantsnap gotsnap snapeq (re-encoded code renders the named glyph) assert
+    basefont 20 scalefont setfont
+    erasepage
+    2 24 moveto (A) show
+    wantsnap snapshot snapeq not (the base font still renders its own glyph) assert
+} if
+
+% Type 42: a TrueType program supplied through /sfnts renders
+/t42file (/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf) def
+{ t42file (r) file } stopped {
+    pop pop  % font file absent on this host: discard the leftover path and mode strings
+} {
+    /f exch def
+    /sfntsarr [ { f 65000 string readstring not { exit } if } loop
+                dup length 0 gt { } { pop } ifelse ] def
+    f closefile
+    12 dict begin
+        /FontType 42 def
+        /FontMatrix [1 0 0 1 0 0] def
+        /Encoding ISOLatin1Encoding def
+        /sfnts sfntsarr def
+    currentdict end
+    { /Type42Test exch definefont } stopped
+    dup (definefont accepts a Type 42 program) exch not exch assert
+    not {
+        20 scalefont setfont
+        erasepage
+        2 24 moveto (Ag1) show
+        countink 20 ge (a Type 42 face renders glyphs) assert
+    } if
+} ifelse
+
+% --- charpath appends glyph outlines: the path carries curves, fills
+%     with its counters intact, and clips like any other path ---
+basefont null ne {
+    /cpd 4 dict def
+    cpd /nc 0 put cpd /nm 0 put
+    erasepage
+    basefont 40 scalefont setfont
+    newpath 8 20 moveto (O) false charpath
+    { pop pop cpd /nm 2 copy get 1 add put }
+    { pop pop }
+    { 6 { pop } repeat cpd /nc 2 copy get 1 add put }
+    { }
+    pathforall
+    cpd /nm get 2 ge (charpath makes a contour per boundary) assert
+    cpd /nc get 8 ge (charpath carries curve segments) assert
+    fill
+    countink 20 ge (charpath fills) assert
+    % the counter must stay clear: probe the middle of the O
+    23 34 inkat not (charpath fill keeps the counter open) assert
+    10 34 inkat (charpath fill marks the ring) assert
+
+    erasepage
+    gsave
+    newpath 8 20 moveto (O) false charpath clip
+    newpath 0 0 moveto 64 0 lineto 64 64 lineto 0 64 lineto closepath fill
+    grestore
+    23 34 inkat not (charpath clip keeps the counter open) assert
+    10 34 inknear (charpath clip admits the ring) assert
+} if
+
+% a many-segment convex clip window (a closed contour ends on its own
+% start; the degenerate closing edge must not poison the half-planes)
+erasepage
+gsave
+newpath 32 32 20 0 360 arc closepath clip
+newpath 0 0 moveto 64 0 lineto 64 64 lineto 0 64 lineto closepath fill
+grestore
+32 32 inkat (a circular clip window admits its centre) assert
+countink dup
+900 ge (circular clip covers the disk) assert
+1600 le (circular clip stays within the disk) assert
+
+% --- arc semantics: sweep direction, current point, segmentation ---
+% arc sweeps counterclockwise from angle1 to angle2 and leaves the
+% current point at angle2; arcn mirrors. Probed through pathforall,
+% independent of any device.
+/apd 8 dict def
+newpath 30 30 10 0 90 arc
+currentpoint
+40 (arc leaves the current point at angle2, y) assertnear
+30 (arc leaves the current point at angle2, x) assertnear
+newpath 30 30 10 90 0 arcn
+currentpoint
+30 (arcn leaves the current point at angle2, y) assertnear
+40 (arcn leaves the current point at angle2, x) assertnear
+
+% counterclockwise from (40,30): the first control point leads upward
+apd /c1y null put
+newpath 30 30 10 0 90 arc
+{ pop pop } { pop pop }
+{ pop pop pop pop exch pop
+  apd /c1y get null eq { apd /c1y 3 -1 roll put }{ pop } ifelse }
+{} pathforall
+apd /c1y get 30 gt (arc sweeps counterclockwise) assert
+
+% a full circle is one moveto and four quadrant curves, nothing else
+apd /m 0 put apd /l 0 put apd /c 0 put
+newpath 40 40 12 0 360 arc
+{ pop pop apd /m 2 copy get 1 add put }
+{ pop pop apd /l 2 copy get 1 add put }
+{ pop pop pop pop pop pop apd /c 2 copy get 1 add put }
+{} pathforall
+apd /m get 1 eq (a full circle starts with one moveto) assert
+apd /l get 0 eq (a full circle has no linetos) assert
+apd /c get 4 eq (a full circle is four quadrant curves) assert
+
+% a partial arc splits at the quadrant boundaries it crosses
+apd /c 0 put
+newpath 40 40 12 45 200 arc
+{ pop pop } { pop pop }
+{ pop pop pop pop pop pop apd /c 2 copy get 1 add put }
+{} pathforall
+apd /c get 3 eq (a partial arc splits at quadrant boundaries) assert
+
+% pen advances scale linearly: a run of one character is as wide as
+% the sum of its parts (the hinter must not round each step)
+/Courier findfont 13 scalefont setfont
+(iiiiiiiiiiiiiiiiiiii) stringwidth pop
+(i) stringwidth pop 20 mul
+sub abs 0.01 lt (advances accumulate without per-glyph rounding) assert
+
+% the PostScript style-variant names reach a styled face: bold covers
+% more area than regular at the same size
+erasepage
+/Helvetica findfont 24 scalefont setfont
+newpath 4 20 moveto (HHHH) show
+countink /apreg exch def
+erasepage
+/Helvetica-Bold findfont 24 scalefont setfont
+newpath 4 20 moveto (HHHH) show
+countink apreg gt (Helvetica-Bold resolves to a bold face) assert
+
+% an annulus clip built the standard way: the closepath's point bridges
+% into the inner subpath by a straight line, so the region arrives as
+% one keyhole path; the clipper must split it at the close, peel the
+% doubled bridge edge, and subtract the opposite-wound inner ring
+erasepage
+gsave
+newpath 32 32 24 0 360 arc closepath
+        32 32 12 360 0 arcn closepath
+clip
+newpath 0 0 moveto 64 0 lineto 64 64 lineto 0 64 lineto closepath fill
+grestore
+32 14 inkat (ring clip admits the band) assert
+14 32 inkat (ring clip admits the band on the other axis) assert
+32 32 inkat not (ring clip excludes the hole) assert
+32 4 inkat not (ring clip excludes outside the outer circle) assert
+
+count 0 eq (operand stack is balanced) assert
+faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse
+flush
+quit

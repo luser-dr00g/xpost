@@ -129,6 +129,8 @@ int xpost_stack_count(Xpost_Memory_File *mem,
     while (s->top == XPOST_STACK_SEGMENT_SIZE)
     {
         ct += XPOST_STACK_SEGMENT_SIZE;
+        if (s->nextseg == 0)
+            return ct; /* a full segment with no successor is a legal topmost state */
         s = (Xpost_Stack *)(mem->base + s->nextseg);
     }
     return ct + s->top;
@@ -144,9 +146,10 @@ XPCHECKAPI int xpost_stack_push(Xpost_Memory_File *mem,
     if (xpost_object_get_type(obj) == invalidtype)
         return 0;
 
-    s->data[s->top++] = obj; /* push value */
-
-    /* if push filled the topmost segment, link a new one. */
+    /* the segment is left in place when a push fills it, so the top
+       segment never rests empty with values below it: direct segment
+       accesses can rely on root->prevseg holding the topmost value.
+       move to (or link) the next segment when pushing into a full one. */
     if (s->top == XPOST_STACK_SEGMENT_SIZE)
     {
         if (s->nextseg == 0)
@@ -162,16 +165,14 @@ XPCHECKAPI int xpost_stack_push(Xpost_Memory_File *mem,
             s = (Xpost_Stack *)(mem->base + stadr);
             root = (Xpost_Stack *)(mem->base + stackadr);
             s->nextseg = newst;
-            root->prevseg = newst; //root->prev==top
             ((Xpost_Stack *)(mem->base + newst))->prevseg = stadr;
         }
-        else
-        {
-            root->prevseg = s->nextseg;
-            s = (Xpost_Stack *)(mem->base + s->nextseg);
-            s->top = 0;
-        }
+        root->prevseg = s->nextseg;
+        s = (Xpost_Stack *)(mem->base + s->nextseg);
+        s->top = 0;
     }
+
+    s->data[s->top++] = obj; /* push value */
 
     return 1;
 }
@@ -296,6 +297,7 @@ XPCHECKAPI Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
 {
     Xpost_Stack *root = (Xpost_Stack *)(mem->base + stackadr);
     Xpost_Stack *s = (Xpost_Stack *)(mem->base + root->prevseg); /* load top seg */
+    Xpost_Object val;
 
     if (s->top == 0) /* back up if top is empty */
     {
@@ -304,6 +306,8 @@ XPCHECKAPI Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
             unsigned int soff = s->prevseg;
             s = (Xpost_Stack *)(mem->base + soff);
             root->prevseg = soff; // update root->top
+            if (s->top == 0)
+                return invalid;
         }
         else /* can't back up if stack is empty */
         {
@@ -311,5 +315,12 @@ XPCHECKAPI Xpost_Object xpost_stack_pop(Xpost_Memory_File *mem,
         }
     }
 
-    return s->data[--s->top]; /* pop value */
+    val = s->data[--s->top]; /* pop value */
+
+    /* retreat eagerly when the segment empties, maintaining the
+       invariant that the top segment holds the topmost value */
+    if (s->top == 0 && s != root)
+        root->prevseg = s->prevseg;
+
+    return val;
 }

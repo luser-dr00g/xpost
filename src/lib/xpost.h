@@ -273,13 +273,125 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx,
                                 char *defs[]);
 
 /**
+ * @brief Receives text output from the interpreter.
+ *
+ * @param user The pointer registered alongside the handler.
+ * @param buf The bytes written by the program.
+ * @param len The number of bytes.
+ * @return The number of bytes accepted; a short count is an error.
+ */
+typedef size_t (*Xpost_Output_Fn)(void *user, const char *buf, size_t len);
+
+/**
+ * @brief Divert the program's standard-output text to a handler.
+ *
+ * Everything a program writes to its standard output -- print, = and
+ * writes to the %stdout file -- is passed to @p fn instead of the
+ * process's stdout. Device output (files, buffers) is not affected.
+ * Pass NULL to restore the default.
+ */
+XPAPI void xpost_stdout_handler_set(Xpost_Context *ctx,
+                                    Xpost_Output_Fn fn,
+                                    void *user);
+
+/**
+ * @brief Divert the program's standard-error text to a handler.
+ *
+ * As xpost_stdout_handler_set(), for writes to the %stderr file.
+ */
+XPAPI void xpost_stderr_handler_set(Xpost_Context *ctx,
+                                    Xpost_Output_Fn fn,
+                                    void *user);
+
+/**
+ * @brief Enable or disable per-job VM snapshots for a context.
+ *
+ * By default each xpost_run() job takes virtual-memory snapshots that
+ * the quit path restores. A persistent context that serves many runs
+ * accumulates one save level per run, pinning each run's garbage
+ * against collection; disable the snapshots for such use.
+ */
+XPAPI void xpost_job_snapshots_set(Xpost_Context *ctx, int enable);
+
+/**
+ * @brief File-access sandbox: permit directory trees, then engage.
+ *
+ * Before the sandbox is engaged, a program's disk access is
+ * unrestricted. xpost_path_permit_read() (xpost_path_permit_write())
+ * grants reading (writing) of files within a directory tree;
+ * xpost_path_control_engage() then denies every other disk open by the
+ * running program. Engaging is process-wide and one-way -- it cannot be
+ * reversed and the permit set is frozen -- so configure the permitted
+ * directories first and engage before running untrusted input.
+ * Resource-file loading is separately confined and is unaffected.
+ *
+ * The permit functions return 1 on success, or 0 when the directory
+ * cannot be resolved, the permit table is full, or the sandbox is
+ * already engaged.
+ *
+ * This is defence in depth: it complements, and does not replace,
+ * operating-system confinement of the host process.
+ */
+XPAPI int xpost_path_permit_read(const char *dir);
+XPAPI int xpost_path_permit_write(const char *dir);
+XPAPI void xpost_path_control_engage(void);
+
+/**
+ * @brief Append a directory to the resource search path.
+ *
+ * findresource searches these directories, in the order added, when a
+ * resource is not already defined in virtual memory. Add directories
+ * before running the program that resolves resources. Returns 1 on
+ * success, 0 on failure.
+ */
+XPAPI int xpost_add_resource_dir(Xpost_Context *ctx, const char *dir);
+
+/**
+ * @brief Outcome of executing a program with xpost_run().
+ *
+ * A context that reports #XPOST_RUN_COMPLETE, #XPOST_RUN_YIELDED or
+ * #XPOST_RUN_ERRORED remains usable for further runs; after
+ * #XPOST_RUN_FAILED it must be destroyed. When a run reports
+ * #XPOST_RUN_ERRORED, xpost_error_name_get() identifies the
+ * PostScript error that ended it.
+ */
+typedef enum {
+    XPOST_RUN_COMPLETE = 0, /**< the program ran to completion */
+    XPOST_RUN_YIELDED,      /**< showpage returned control to the caller
+                                 (#XPOST_SHOWPAGE_RETURN); pass
+                                 #XPOST_INPUT_RESUME to continue */
+    XPOST_RUN_ERRORED,      /**< an uncaught PostScript error ended the
+                                 program; the context has been tidied
+                                 and accepts further runs */
+    XPOST_RUN_FAILED        /**< the run could not be scheduled or the
+                                 interpreter is no longer coherent */
+} Xpost_Run_Status;
+
+/**
+ * @brief Name of the PostScript error that ended the last run.
+ *
+ * Valid after xpost_run() returns #XPOST_RUN_ERRORED, until the next
+ * run on the same context; the empty string otherwise. The name is the
+ * standard error name, e.g. "typecheck" or "undefined".
+ */
+XPAPI const char *xpost_error_name_get(Xpost_Context *ctx);
+
+/**
+ * @brief Additional information for the error that ended the last run.
+ *
+ * The errorinfo detail recorded alongside the error, when the program
+ * supplied one; the empty string otherwise.
+ */
+XPAPI const char *xpost_error_info_get(Xpost_Context *ctx);
+
+/**
  * @brief Execute ps program.
  *
  * @param ctx The context to run.
  * @param input_type The input type to use.
  * @param inputptr The pointer passed to the interpreter.
  * @param size The size of the memory passed to the interpreter.
- * @return
+ * @return The run's outcome as an #Xpost_Run_Status.
  *
  * This function executes a ps program until quit, fall-through to quit,
  * #XPOST_SHOWPAGE_RETURN semantic, or error (default action: message,
@@ -317,7 +429,7 @@ XPAPI int xpost_add_definitions(Xpost_Context *ctx,
  *
  * @see #Xpost_Input_Type
  */
-XPAPI int xpost_run(Xpost_Context *ctx,
+XPAPI Xpost_Run_Status xpost_run(Xpost_Context *ctx,
                     Xpost_Input_Type input_type,
                     const void *inputptr,
                     size_t size);

@@ -29,6 +29,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if defined(__linux__)
+# ifndef _GNU_SOURCE
+#  define _GNU_SOURCE /* O_PATH, syscall, openat2 */
+# endif
+#elif defined(__APPLE__)
+# ifndef _DARWIN_C_SOURCE
+#  define _DARWIN_C_SOURCE /* O_NOFOLLOW and other BSD extensions */
+# endif
+#endif
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
@@ -41,6 +51,13 @@
 #include <stdlib.h> /* free, malloc, mkstemp, realpath */
 #include <string.h> /* memcpy, strdup, strlen */
 #include <time.h> /* clock_gettime, time */
+#include <errno.h> /* errno */
+#include <fcntl.h> /* open, O_* */
+#include <unistd.h> /* close */
+#if defined(__linux__)
+# include <stdint.h> /* uint64_t */
+# include <sys/syscall.h> /* SYS_openat2 */
+#endif
 
 #if defined(__APPLE__) && defined(__MACH__)
 # include <mach/mach_time.h> /* mach_absolute_time */
@@ -241,6 +258,337 @@ xpost_realpath(const char *path)
         return NULL;
 
     return resolved_path;
+#endif
+}
+
+/* struct open_how / RESOLVE_* may predate the installed kernel headers */
+#ifndef XPOST_RESOLVE_NO_SYMLINKS
+# define XPOST_RESOLVE_NO_SYMLINKS 0x04
+#endif
+#ifndef XPOST_RESOLVE_BENEATH
+# define XPOST_RESOLVE_BENEATH 0x08
+#endif
+/* the anchor dirfd needs no read access; fall back to a plain directory
+   open where O_PATH is unavailable */
+#ifndef O_PATH
+# define O_PATH 0
+#endif
+
+FILE *
+xpost_open_beneath(const char *root, const char *rel)
+{
+    int fd = -1;
+    int resolved = 0; /* the OS-confined path produced an fd or a real error */
+
+    if (!root || !rel || !*rel)
+    {
+        errno = ENOENT;
+        return NULL;
+    }
+
+#if defined(__linux__) && defined(SYS_openat2)
+    {
+        struct { uint64_t flags; uint64_t mode; uint64_t resolve; } how;
+        int rootfd = open(root, O_PATH | O_DIRECTORY | O_CLOEXEC);
+
+        if (rootfd >= 0)
+        {
+            how.flags = (uint64_t)(O_RDONLY | O_CLOEXEC);
+            how.mode = 0;
+            how.resolve = XPOST_RESOLVE_BENEATH | XPOST_RESOLVE_NO_SYMLINKS;
+            fd = (int)syscall(SYS_openat2, rootfd, rel, &how, sizeof how);
+            close(rootfd);
+            /* ENOSYS: kernel older than the syscall; use the portable check */
+            if (!(fd < 0 && errno == ENOSYS))
+                resolved = 1;
+        }
+    }
+#endif
+
+    if (!resolved)
+    {
+        char *root_real = xpost_realpath(root);
+        char *file_real;
+        char full[XPOST_PATH_MAX];
+        size_t rl;
+
+        if (!root_real)
+            return NULL; /* errno from realpath */
+        if (snprintf(full, sizeof full, "%s/%s", root_real, rel) >= (int)sizeof full)
+        {
+            free(root_real);
+            errno = ENAMETOOLONG;
+            return NULL;
+        }
+        file_real = xpost_realpath(full);
+        if (!file_real)
+        {
+            free(root_real);
+            return NULL; /* errno from realpath (ENOENT) */
+        }
+        /* the resolved file must sit strictly beneath the resolved root */
+        rl = strlen(root_real);
+        if (strncmp(file_real, root_real, rl) != 0 || file_real[rl] != '/')
+        {
+            free(root_real);
+            free(file_real);
+            errno = EACCES;
+            return NULL;
+        }
+        fd = open(file_real, O_RDONLY | O_NOFOLLOW | O_CLOEXEC);
+        free(root_real);
+        free(file_real);
+    }
+
+    if (fd < 0)
+        return NULL; /* errno from open/openat2 */
+
+    {
+        FILE *fp = fdopen(fd, "rb");
+        if (!fp)
+        {
+            int e = errno;
+            close(fd);
+            errno = e;
+            return NULL;
+        }
+        return fp;
+    }
+}
+
+#if defined(__linux__) && defined(SYS_openat2)
+/* translate the XPOST_OPEN_* mask into open(2) flags */
+static int
+xpost_open_oflags(int access)
+{
+    int oflags;
+
+    if (access & XPOST_OPEN_RDWR)       oflags = O_RDWR;
+    else if (access & XPOST_OPEN_WRITE) oflags = O_WRONLY;
+    else                                oflags = O_RDONLY;
+    if (access & XPOST_OPEN_CREATE) oflags |= O_CREAT;
+    if (access & XPOST_OPEN_TRUNC)  oflags |= O_TRUNC;
+    if (access & XPOST_OPEN_APPEND) oflags |= O_APPEND;
+    return oflags;
+}
+
+/* openat2 with resolution confined beneath rootfd; -1/errno on failure,
+   ENOSYS when the running kernel predates the syscall */
+static int
+xpost_openat2_raw(int rootfd, const char *rel, int oflags, unsigned int cmode)
+{
+    struct { uint64_t flags; uint64_t mode; uint64_t resolve; } how;
+
+    how.flags = (uint64_t)(oflags | O_CLOEXEC);
+    how.mode = (oflags & O_CREAT) ? (uint64_t)cmode : 0;
+    how.resolve = XPOST_RESOLVE_BENEATH | XPOST_RESOLVE_NO_SYMLINKS;
+    return (int)syscall(SYS_openat2, rootfd, rel, &how, sizeof how);
+}
+#endif
+
+FILE *
+xpost_openat2_beneath(const char *root, const char *rel, const char *mode,
+                      int access, int *supported)
+{
+    *supported = 0;
+#if defined(__linux__) && defined(SYS_openat2)
+    {
+        int rootfd;
+        int fd;
+        FILE *fp;
+
+        if (!root || !rel || !*rel)
+        {
+            errno = ENOENT;
+            return NULL;
+        }
+        rootfd = open(root, O_PATH | O_DIRECTORY | O_CLOEXEC);
+        if (rootfd < 0)
+            return NULL; /* supported stays 0: caller uses the fallback */
+        fd = xpost_openat2_raw(rootfd, rel, xpost_open_oflags(access), 0666);
+        close(rootfd);
+        if (fd < 0 && errno == ENOSYS)
+            return NULL; /* supported stays 0 */
+        *supported = 1;
+        if (fd < 0)
+            return NULL; /* a genuine failure; errno already set */
+        fp = fdopen(fd, mode);
+        if (!fp)
+        {
+            int e = errno;
+            close(fd);
+            errno = e;
+        }
+        return fp;
+    }
+#else
+    (void)root; (void)rel; (void)mode; (void)access;
+    errno = ENOSYS;
+    return NULL;
+#endif
+}
+
+int
+xpost_fd_realpath(int fd, char *buf, size_t buflen)
+{
+#if defined(__APPLE__) && defined(F_GETPATH)
+    char tmp[PATH_MAX];
+
+    if (fcntl(fd, F_GETPATH, tmp) != 0)
+        return 0;
+    if (strlen(tmp) >= buflen)
+        return 0;
+    strcpy(buf, tmp);
+    return 1;
+#elif defined(__linux__)
+    char link[64];
+    ssize_t n;
+
+    snprintf(link, sizeof link, "/proc/self/fd/%d", fd);
+    n = readlink(link, buf, buflen - 1);
+    if (n < 0 || (size_t)n >= buflen)
+        return 0;
+    buf[n] = '\0';
+    /* a since-unlinked file reads back as "<path> (deleted)": not a location
+       we can meaningfully test, so report indeterminate */
+    if (n >= 10 && strcmp(buf + n - 10, " (deleted)") == 0)
+        return 0;
+    return 1;
+#else
+    (void)fd; (void)buf; (void)buflen;
+    return 0;
+#endif
+}
+
+#if defined(__linux__) && defined(SYS_openat2)
+/* Open the parent directory of rel beneath root (confined), returning its
+   descriptor and, in leaf, the final path component to act on. -1/errno on
+   failure; sets *supported per xpost_openat2_beneath. */
+static int
+xpost_open_parent_beneath(const char *root, const char *rel,
+                          char *leaf, size_t leaflen, int *supported)
+{
+    const char *slash;
+    char subdir[XPOST_PATH_MAX];
+    int rootfd;
+    int dirfd;
+    struct { uint64_t flags; uint64_t mode; uint64_t resolve; } how;
+
+    *supported = 0;
+    if (!root || !rel || !*rel)
+    {
+        errno = ENOENT;
+        return -1;
+    }
+    slash = strrchr(rel, '/');
+    if (slash)
+    {
+        size_t dl = (size_t)(slash - rel);
+
+        if (dl == 0 || dl >= sizeof subdir)
+        {
+            errno = ENOENT;
+            return -1;
+        }
+        memcpy(subdir, rel, dl);
+        subdir[dl] = '\0';
+        slash++;
+    }
+    else
+    {
+        subdir[0] = '.';
+        subdir[1] = '\0';
+        slash = rel;
+    }
+    /* a control op must name a real leaf, never "" / "." / ".." */
+    if (!*slash || strcmp(slash, ".") == 0 || strcmp(slash, "..") == 0)
+    {
+        errno = EINVAL;
+        return -1;
+    }
+    if (strlen(slash) >= leaflen)
+    {
+        errno = ENAMETOOLONG;
+        return -1;
+    }
+    rootfd = open(root, O_PATH | O_DIRECTORY | O_CLOEXEC);
+    if (rootfd < 0)
+        return -1; /* supported stays 0 */
+    how.flags = (uint64_t)(O_PATH | O_DIRECTORY | O_CLOEXEC);
+    how.mode = 0;
+    how.resolve = XPOST_RESOLVE_BENEATH | XPOST_RESOLVE_NO_SYMLINKS;
+    dirfd = (int)syscall(SYS_openat2, rootfd, subdir, &how, sizeof how);
+    close(rootfd);
+    if (dirfd < 0 && errno == ENOSYS)
+        return -1; /* supported stays 0 */
+    *supported = 1;
+    if (dirfd < 0)
+        return -1;
+    strcpy(leaf, slash);
+    return dirfd;
+}
+#endif
+
+int
+xpost_unlinkat_beneath(const char *root, const char *rel, int *supported)
+{
+    *supported = 0;
+#if defined(__linux__) && defined(SYS_openat2)
+    {
+        char leaf[XPOST_PATH_MAX];
+        int dirfd = xpost_open_parent_beneath(root, rel, leaf, sizeof leaf,
+                                              supported);
+        int ret;
+
+        if (!*supported || dirfd < 0)
+            return -1;
+        ret = unlinkat(dirfd, leaf, 0);
+        close(dirfd);
+        return ret;
+    }
+#else
+    (void)root; (void)rel;
+    errno = ENOSYS;
+    return -1;
+#endif
+}
+
+int
+xpost_renameat_beneath(const char *oldroot, const char *oldrel,
+                       const char *newroot, const char *newrel,
+                       int *supported)
+{
+    *supported = 0;
+#if defined(__linux__) && defined(SYS_openat2)
+    {
+        char oldleaf[XPOST_PATH_MAX];
+        char newleaf[XPOST_PATH_MAX];
+        int oldfd;
+        int newfd;
+        int ret;
+
+        oldfd = xpost_open_parent_beneath(oldroot, oldrel, oldleaf,
+                                          sizeof oldleaf, supported);
+        if (!*supported || oldfd < 0)
+            return -1;
+        newfd = xpost_open_parent_beneath(newroot, newrel, newleaf,
+                                          sizeof newleaf, supported);
+        if (!*supported || newfd < 0)
+        {
+            int e = errno;
+            close(oldfd);
+            errno = e;
+            return -1;
+        }
+        ret = renameat(oldfd, oldleaf, newfd, newleaf);
+        close(oldfd);
+        close(newfd);
+        return ret;
+    }
+#else
+    (void)oldroot; (void)oldrel; (void)newroot; (void)newrel;
+    errno = ENOSYS;
+    return -1;
 #endif
 }
 

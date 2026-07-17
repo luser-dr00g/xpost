@@ -1,0 +1,157 @@
+% Object-semantics regression checks, run through `xpost -d null` by
+% run-ps-test.sh: prints SUCCESS iff every assertion holds.
+%
+% Covers:
+%   - eq/ne on file objects compare the underlying stream (distinct
+%     streams are ne; an object is eq to itself)
+%   - pathbbox reports the current path in user space, undoing the CTM
+
+/failcount 0 def
+/assert { % bool (name) . -
+    exch { pop } { (FAIL: ) print print (\n) print /failcount failcount 1 add def } ifelse
+} def
+/assertnear { % val expected (name) . -
+    3 1 roll sub abs 0.001 lt exch assert
+} def
+
+% --- file object comparison ---
+/tmpf (%stdout) (w) file def
+/diskf (semantics.diskf) (w) file def  % a real disk file (portable: not /dev/null)
+diskf tmpf ne (disk file vs stdout are distinct) assert
+diskf dup eq (file object equals itself) assert
+tmpf dup ne not (stdout object not-ne itself) assert
+
+% --- %stderr is writable ---
+{ (%stderr) (w) file (semantics_test: stderr probe\n) writestring true } stopped
+{ pop false } if (writestring to %stderr) assert
+
+% --- pathbbox in user space ---
+% pathbbox leaves llx lly urx ury; consume top-down
+newpath 10 10 moveto 50 10 lineto 50 60 lineto 10 60 lineto closepath
+pathbbox
+60 (pathbbox ury) assertnear
+50 (pathbbox urx) assertnear
+10 (pathbbox lly) assertnear
+10 (pathbbox llx) assertnear
+
+% under a translated CTM the box must stay in (translated) user space
+gsave
+100 200 translate
+newpath 0 0 moveto 10 0 lineto 10 5 lineto closepath
+pathbbox
+5 (translated ury) assertnear
+10 (translated urx) assertnear
+0 (translated lly) assertnear
+0 (translated llx) assertnear
+grestore
+
+% --- resource machinery: instances per category, private categories
+%     registered by defining into /Category ---
+currentglobal true setglobal
+/Generic /Category findresource type /dicttype eq (Generic category exists) assert
+/Generic /Category findresource dup length 1 add dict copy
+dup /Category /st.private put
+/st.private exch /Category defineresource pop
+/st.key << /v 42 >> /st.private defineresource /v get 42 eq (defineresource returns the instance) assert
+/st.key /st.private findresource /v get 42 eq (findresource retrieves the instance) assert
+/st.key /st.private resourcestatus { pop pop true } { false } ifelse (resourcestatus finds it) assert
+/st.other /st.private resourcestatus { pop pop false } { true } ifelse (resourcestatus rejects the unknown) assert
+/st.aa 1 /st.private defineresource pop
+/st.ab 2 /st.private defineresource pop
+/st.bb 3 /st.private defineresource pop
+[ (*) { dup length string copy } 32 string /st.private resourceforall ]
+length 4 eq (resourceforall enumerates every instance) assert
+[ (st.a*) { dup length string copy } 32 string /st.private resourceforall ]
+length 2 eq (resourceforall filters by a star template) assert
+[ (st.?b) { dup length string copy } 32 string /st.private resourceforall ]
+length 2 eq (a ? in the template matches any one character) assert
+[ (st.key) { dup length string copy } 32 string /st.private resourceforall ]
+length 1 eq (a literal template matches exactly one) assert
+[ (none*) { dup length string copy } 32 string /st.private resourceforall ]
+length 0 eq (an unmatched template enumerates nothing) assert
+[ (st.priv*) { dup length string copy } 32 string /Category resourceforall ]
+length 1 eq (resourceforall enumerates categories) assert
+/st.aa /st.private undefineresource
+/st.ab /st.private undefineresource
+/st.bb /st.private undefineresource
+/st.key /st.private undefineresource
+/st.key /st.private resourcestatus { pop pop false } { true } ifelse (undefineresource removes it) assert
+count /st.d0 exch def
+{ /st.key /st.ghost findresource } stopped
+{ count st.d0 sub { pop } repeat $error /errorname get /undefinedresource eq }
+{ count st.d0 sub { pop } repeat false } ifelse
+(a missing category reports undefinedresource) assert
+setglobal
+
+% --- binary tokens (PLRM 3.14.2): every encoding a packaged program
+%     body uses, plus the sibling byte orders ---
+<8820> cvx exec 32 eq (int8) assert
+<88E0> cvx exec -32 eq (int8 negative) assert
+<860100> cvx exec 256 eq (int16 high order) assert
+<870001> cvx exec 256 eq (int16 low order) assert
+<8400010000> cvx exec 65536 eq (int32 high order) assert
+<8500000100> cvx exec 65536 eq (int32 low order) assert
+<84FFFFFFFF> cvx exec -1 eq (int32 negative) assert
+<8A3F800000> cvx exec 1.0 eq (real IEEE high order) assert
+<8B0000803F> cvx exec 1.0 eq (real IEEE low order) assert
+<8D01> cvx exec true eq (boolean) assert
+<8E03414243> cvx exec (ABC) eq (string, 1-byte length) assert
+<8F0003414243> cvx exec (ABC) eq (string, 2-byte length) assert
+<9100> cvx exec /abs eq (literal system name) assert
+-5 <9200> cvx exec 5 eq (executable system name executes) assert
+% a binary token byte delimits the token it follows
+<747275658820> cvx exec 32 eq exch true eq and (binary byte delimits a name token) assert
+% inside a deferred procedure body
+<7B20880A203320616464207D> cvx exec exec 13 eq (binary token inside a procedure) assert
+
+% --- ASCII85Decode filter over the executing file: the program resumes
+%     after the end-of-data marker, as packaged bodies require ---
+currentfile /ASCII85Decode filter cvx exec
+04?gtE,ol+AKY282BXt<+?))!3%uI70O5f3AS)8~>
+a85probe length 5 eq (filtered definition arrived) assert
+a85probe 0 get 66 eq (filtered content decodes) assert
+% and a binary token delivered through the filter
+currentfile /ASCII85Decode filter cvx exec
+04?gt@VK_%DegJO.Ni85AdS~>
+a85bintok 42 eq (binary token through the filter) assert
+
+% --- decode filters ---
+currentfile /ASCIIHexDecode filter cvx exec
+2F73742E68657876616C2034322064656620>
+st.hexval 42 eq (ASCIIHexDecode delivers and the file resumes after the marker) assert
+currentfile 1 (*EOD*) /SubFileDecode filter cvx exec
+/st.sub 7 def *EOD*
+st.sub 7 eq (SubFileDecode ends at the delimiter and the file resumes after it) assert
+/st.f (semantics.scratch) (w) file def
+st.f <014142FD4380> writestring st.f closefile
+(semantics.scratch) (r) file /RunLengthDecode filter
+16 string readstring pop (ABCCCC) eq (RunLengthDecode expands runs) assert
+[ (squeeze me please, twenty-six letters and then some more) ] .flatecompress {
+    /st.chunks exch def
+    /st.f (semantics.scratch) (w) file def
+    st.chunks { st.f exch writestring } forall st.f closefile
+    (semantics.scratch) (r) file /FlateDecode filter
+    64 string readstring pop
+    (squeeze me please, twenty-six letters and then some more) eq
+    (FlateDecode round-trips the compressor) assert
+}{ pop } ifelse
+
+% --- setpagedevice (last: it replaces the device) ---
+<< /OutputDevice /pgm /PageSize [50 25] /HWResolution [144 144] /TextAlphaBits 3 >> setpagedevice
+DEVICE /dimensions get dup 0 get 100 eq exch 1 get 50 eq and
+    (setpagedevice sizes the device from PageSize and HWResolution) assert
+DEVICE /TextAlphaBits get 3 eq (device features land on the device) assert
+currentpagedevice /HWResolution get 0 get 144 eq (currentpagedevice reports the request) assert
+1 0 dtransform pop 2 sub abs 0.01 lt (the device matrix carries the resolution) assert
+<< /PageSize [25 25] >> setpagedevice
+DEVICE /dimensions get 0 get 50 eq (a partial request merges over the previous one) assert
+DEVICE /TextAlphaBits get 3 eq (merged features persist) assert
+<< /OutputDevice /null /PageSize [10 10] >> setpagedevice
+currentpagedevice /TextAlphaBits known not
+    (switching OutputDevice discards the accumulated parameters) assert
+currentpagedevice /HWResolution known not
+    (a device switch reverts unstated parameters to defaults) assert
+
+failcount 0 eq { (SUCCESS\n) print } { (FAILURES: ) print failcount 20 string cvs print (\n) print } ifelse
+flush
+quit

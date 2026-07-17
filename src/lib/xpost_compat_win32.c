@@ -272,6 +272,165 @@ xpost_realpath(const char *path)
     return resolved_path;
 }
 
+FILE *
+xpost_open_beneath(const char *root, const char *rel)
+{
+    char full[XPOST_PATH_MAX];
+    char root_final[XPOST_PATH_MAX];
+    char file_final[XPOST_PATH_MAX];
+    HANDLE rh;
+    HANDLE h;
+    DWORD n;
+    int fd;
+    FILE *fp;
+    size_t rl;
+
+    if (!root || !rel || !*rel)
+    {
+        errno = ENOENT;
+        return NULL;
+    }
+
+    /* canonical form of root, resolved via a handle (FILE_FLAG_BACKUP_SEMANTICS
+       is required to open a directory handle) */
+    rh = CreateFile(root, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                    OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    if (rh == INVALID_HANDLE_VALUE)
+    {
+        errno = ENOENT;
+        return NULL;
+    }
+    n = GetFinalPathNameByHandle(rh, root_final, sizeof root_final, FILE_NAME_NORMALIZED);
+    CloseHandle(rh);
+    if (n == 0UL || n >= sizeof root_final)
+    {
+        errno = ENOENT;
+        return NULL;
+    }
+
+    if (_snprintf(full, sizeof full, "%s\\%s", root, rel) < 0)
+    {
+        errno = ENAMETOOLONG;
+        return NULL;
+    }
+    full[sizeof full - 1] = '\0';
+
+    /* open the reparse point itself rather than following it; the final-path
+       check below rejects anything that resolves outside root */
+    h = CreateFile(full, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                   FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+    if (h == INVALID_HANDLE_VALUE)
+    {
+        errno = ENOENT;
+        return NULL;
+    }
+    n = GetFinalPathNameByHandle(h, file_final, sizeof file_final, FILE_NAME_NORMALIZED);
+    if (n == 0UL || n >= sizeof file_final)
+    {
+        CloseHandle(h);
+        errno = EACCES;
+        return NULL;
+    }
+
+    /* the resolved file must sit strictly beneath the resolved root */
+    rl = strlen(root_final);
+    if (_strnicmp(file_final, root_final, rl) != 0 ||
+        (file_final[rl] != '\\' && file_final[rl] != '/'))
+    {
+        CloseHandle(h);
+        errno = EACCES;
+        return NULL;
+    }
+
+    fd = _open_osfhandle((intptr_t)h, _O_RDONLY);
+    if (fd < 0)
+    {
+        CloseHandle(h);
+        errno = EACCES;
+        return NULL;
+    }
+    fp = _fdopen(fd, "rb"); /* takes ownership of fd, and of the handle */
+    if (!fp)
+    {
+        _close(fd);
+        errno = EACCES;
+        return NULL;
+    }
+    return fp;
+}
+
+/* The atomic beneath-root primitives are Linux-specific (openat2). On Windows
+   they report themselves unsupported so the file layer applies its portable
+   name-based check instead. */
+
+FILE *
+xpost_openat2_beneath(const char *root, const char *rel, const char *mode,
+                      int access, int *supported)
+{
+    (void)root; (void)rel; (void)mode; (void)access;
+    *supported = 0;
+    errno = ENOSYS;
+    return NULL;
+}
+
+int
+xpost_fd_realpath(int fd, char *buf, size_t buflen)
+{
+    HANDLE h;
+    char tmp[XPOST_PATH_MAX];
+    DWORD n;
+
+    h = (HANDLE)_get_osfhandle(fd);
+    if (h == INVALID_HANDLE_VALUE)
+        return 0;
+    n = GetFinalPathNameByHandle(h, tmp, sizeof tmp, FILE_NAME_NORMALIZED);
+    if (n == 0UL || n >= sizeof tmp)
+        return 0;
+    /* GetFinalPathNameByHandle yields the \\?\ (or \\?\UNC\) prefixed form;
+       strip it so the result matches xpost_realpath (GetFullPathName), the
+       form the permit set is stored in */
+    if (_strnicmp(tmp, "\\\\?\\UNC\\", 8) == 0) /* \\?\UNC\server\share -> \\server\share */
+    {
+        if ((size_t)(2 + strlen(tmp + 8)) >= buflen)
+            return 0;
+        buf[0] = '\\';
+        buf[1] = '\\';
+        strcpy(buf + 2, tmp + 8);
+        return 1;
+    }
+    if (_strnicmp(tmp, "\\\\?\\", 4) == 0)
+    {
+        if (strlen(tmp + 4) >= buflen)
+            return 0;
+        strcpy(buf, tmp + 4);
+        return 1;
+    }
+    if (strlen(tmp) >= buflen)
+        return 0;
+    strcpy(buf, tmp);
+    return 1;
+}
+
+int
+xpost_unlinkat_beneath(const char *root, const char *rel, int *supported)
+{
+    (void)root; (void)rel;
+    *supported = 0;
+    errno = ENOSYS;
+    return -1;
+}
+
+int
+xpost_renameat_beneath(const char *oldroot, const char *oldrel,
+                       const char *newroot, const char *newrel,
+                       int *supported)
+{
+    (void)oldroot; (void)oldrel; (void)newroot; (void)newrel;
+    *supported = 0;
+    errno = ENOSYS;
+    return -1;
+}
+
 /*============================================================================*
  *                                   API                                      *
  *============================================================================*/

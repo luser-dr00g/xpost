@@ -117,8 +117,6 @@ int initglobal(Xpost_Context *ctx,
                Xpost_Memory_File *(*xpost_interpreter_alloc_global_memory)(void),
                int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall))
 {
-    char g_filenam[] = "gmemXXXXXX";
-    int fd;
     int ret;
     unsigned int safeadr;
 
@@ -133,16 +131,11 @@ int initglobal(Xpost_Context *ctx,
         return 0;
     }
 
-    if (!xpost_mkstemp(g_filenam, &fd))
-    {
-        return 0;
-    }
-
-    ret = xpost_memory_file_init(ctx->gl, g_filenam, fd, xpost_interpreter_cid_get_context,
+    /* anonymous mapping: nothing ever reads these pages back from disk */
+    ret = xpost_memory_file_init(ctx->gl, NULL, -1, xpost_interpreter_cid_get_context,
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing);
     if (!ret)
     {
-        close(fd);
         return 0;
     }
     ret = xpost_memory_table_init(ctx->gl);
@@ -196,8 +189,6 @@ int initlocal(Xpost_Context *ctx,
               Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void),
               int (*garbage_collect_function)(Xpost_Memory_File *mem, int dosweep, int markall))
 {
-    char l_filenam[] = "lmemXXXXXX";
-    int fd;
     int ret;
     unsigned int safeadr;
 
@@ -212,16 +203,11 @@ int initlocal(Xpost_Context *ctx,
         return 0;
     }
 
-    if (!xpost_mkstemp(l_filenam, &fd))
-    {
-        return 0;
-    }
-
-    ret = xpost_memory_file_init(ctx->lo, l_filenam, fd, xpost_interpreter_cid_get_context,
+    /* anonymous mapping: nothing ever reads these pages back from disk */
+    ret = xpost_memory_file_init(ctx->lo, NULL, -1, xpost_interpreter_cid_get_context,
             xpost_interpreter_get_initializing, xpost_interpreter_set_initializing);
     if (!ret)
     {
-        close(fd);
         return 0;
     }
 
@@ -312,6 +298,7 @@ int xpost_context_init(Xpost_Context *ctx,
     }
     ctx->event_handler = null;
     ctx->ignoreinvalidaccess = 0;
+    ctx->job_snapshots = 1;
     ctx->xpost_interpreter_cid_init = xpost_interpreter_cid_init;
     ctx->xpost_interpreter_alloc_local_memory = xpost_interpreter_alloc_local_memory;
     ctx->xpost_interpreter_alloc_global_memory = xpost_interpreter_alloc_global_memory;
@@ -462,7 +449,6 @@ unsigned int xpost_context_fork3(Xpost_Context *ctx,
 
     xpost_stack_push(newctx->lo, newctx->ds,
             xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)); // systemdict
-    printf("fork cid %u, ctx->id %u\n", newcid, newctx->id);
     return newcid;
 }
 

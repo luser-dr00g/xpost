@@ -42,6 +42,24 @@ config_h = configuration_data()
 
 cc = meson.get_compiler('c')
 
+# Release builds enable link-time optimization by default: it inlines the hot
+# cross-translation-unit interpreter accessors and is the single largest
+# speedup. debug and debugoptimized builds stay LTO-free for fast compiles, so
+# a release build is the way to opt in and any other buildtype opts out.
+if get_option('buildtype') == 'release'
+  lto_flags = cc.get_supported_arguments('-flto=auto')
+  if lto_flags.length() == 0
+    lto_flags = cc.get_supported_arguments('-flto')
+  endif
+  # Without -fno-semantic-interposition a shared library assumes its own global
+  # functions may be interposed at runtime, so the optimizer cannot inline calls
+  # to them across translation units even under LTO -- which is exactly the
+  # inlining of the hot object accessors we want.
+  lto_flags += cc.get_supported_arguments('-fno-semantic-interposition')
+  add_project_arguments(lto_flags, language: 'c')
+  add_project_link_arguments(lto_flags, language: 'c')
+endif
+
 splint = find_program('splint', required: false)
 
 if splint.found()
@@ -119,6 +137,11 @@ endif
 libpng_dep = dependency('libpng', required: false)
 if libpng_dep.found()
   config_h.set('HAVE_LIBPNG', 1)
+endif
+
+zlib_dep = dependency('zlib', required: false)
+if zlib_dep.found()
+  config_h.set('HAVE_ZLIB', 1)
 endif
 
 xcb_dep = dependency('xcb-image xcb-icccm xcb xcb-aux', required: false)
@@ -233,6 +256,135 @@ subdir('data')
 if get_option('doc')
   subdir('doc')
 endif
+
+# Core-interpreter conformance: run the PLRM operator-example suite through
+# the built interpreter and require its failcount to reach zero. The build-tree
+# binary is not installed, so point it at the source data via XPOST_DATA_DIR.
+test('interpreter',
+  find_program('tests/run-ps-test.sh'),
+  args: [ xpost_exe, files('data/test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' },
+  timeout: 120)
+
+# Embedding contract: run-status outcomes and error identity across a
+# persistent context.
+run_status_exe = executable('run_status_test',
+  'tests/run_status_test.c',
+  c_args: '-DHAVE_CONFIG_H',
+  dependencies: libxpost_dep,
+  include_directories: [ config_dir, include_directories('src/lib') ],
+  install: false)
+test('run-status',
+  run_status_exe,
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# Object semantics: file-object comparison and user-space pathbbox.
+test('semantics',
+  find_program('tests/run-ps-test.sh'),
+  args: [ xpost_exe, files('tests/semantics_test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# Graphics regressions: inverse transforms under rotation, operator-name
+# capture by user dictionaries, sub-pixel fills, hole clipping, and
+# device-space stroke widths, asserted against a locally built raster device.
+test('graphics-regression',
+  find_program('tests/run-ps-test.sh'),
+  args: [ xpost_exe, files('tests/graphics_regression_test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# Bounding-box device: render a known fill through -d bbox and check the box.
+test('bbox-device',
+  find_program('tests/run-bbox-test.sh'),
+  args: [ xpost_exe, files('tests/bbox_test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# PDF device: write a PDF and check its structure; round-trip via gs when
+# present. The input is a single fill large enough to overflow the content
+# buffer, exercising the flush path.
+test('pdf-device',
+  find_program('tests/run-pdf-test.sh'),
+  args: [ xpost_exe, files('tests/pdf_bigfill_test.ps') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# SVG device: render fills, strokes and glyph outlines through
+# setpagedevice and require the document's structural landmarks,
+# including resolution-independent point sizing.
+test('svg-device',
+  find_program('tests/run-svg-test.sh'),
+  args: [ xpost_exe ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# Binary tokens (PLRM 3.14): the conformance corpus against a golden
+# record generated from the reference interpreter, which revalidates
+# the golden when gs is present.
+test('binary-tokens',
+  find_program('tests/run-bintok-test.sh'),
+  args: [ xpost_exe,
+          files('tests/binary_token_test.ps'),
+          files('tests/binary_token_test.expected') ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# pngalpha device: RGBA output where the erased page is transparent and
+# marks (including explicit white) are opaque; png stays RGB.
+test('pngalpha-device',
+  find_program('tests/run-pngalpha-test.sh'),
+  args: [ xpost_exe ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# Single-opener invariant: fopen() appears only inside xpost_diskfile_fopen(),
+# so every disk file passes one enforcement point.
+test('fopen-funnel',
+  find_program('tests/check-fopen-funnel.sh'),
+  args: [ meson.current_source_dir() / 'src' / 'lib' ])
+
+# Path-component validation and beneath-root confinement: traversal and
+# symlink-escape attempts are refused. POSIX-only: the escape probe builds
+# its test tree with symlink(), which the Windows CRT does not provide.
+if host_machine.system() != 'windows'
+  path_confine_exe = executable('path_confine_test',
+    'tests/path_confine_test.c',
+    c_args: '-DHAVE_CONFIG_H',
+    dependencies: libxpost_dep,
+    include_directories: [ config_dir, include_directories('src/lib') ],
+    install: false)
+  test('path-confine', path_confine_exe)
+endif
+
+# Implicit resource loading: findresource loads a named instance from the
+# search path on a miss, confined and leaf-validated.
+resource_load_exe = executable('resource_load_test',
+  'tests/resource_load_test.c',
+  c_args: '-DHAVE_CONFIG_H',
+  dependencies: libxpost_dep,
+  include_directories: [ config_dir, include_directories('src/lib') ],
+  install: false)
+test('resource-load',
+  resource_load_exe,
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# File-access sandbox: once engaged, only permitted directories may be
+# opened by the running program.
+sandbox_exe = executable('sandbox_test',
+  'tests/sandbox_test.c',
+  c_args: '-DHAVE_CONFIG_H',
+  dependencies: libxpost_dep,
+  include_directories: [ config_dir, include_directories('src/lib') ],
+  install: false)
+test('sandbox',
+  sandbox_exe,
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
+# From-PostScript lockdown: .permitfileread/.permitfilewrite/.lockdown raise
+# the sandbox from within a program and freeze the permit set.
+lockdown_exe = executable('lockdown_test',
+  'tests/lockdown_test.c',
+  c_args: '-DHAVE_CONFIG_H',
+  dependencies: libxpost_dep,
+  include_directories: [ config_dir, include_directories('src/lib') ],
+  install: false)
+test('lockdown',
+  lockdown_exe,
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 #if get_option('nls') == true
 #  subdir('po')
 #endif

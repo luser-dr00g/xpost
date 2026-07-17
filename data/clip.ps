@@ -54,10 +54,16 @@ def
 
 
 /clip {
+    % the clip machinery consumes line segments, so the region is cut
+    % from a flattened working copy; the caller's path is kept aside
+    % and put back, undisturbed by flattening or the intersection
+    graphicsdict /currgstate get /currpath get
+    dup length string copy
+    flattenpath
     doclip
     graphicsdict /currgstate get
     dup /currpath get /clipregion exch put
-    %newpath %NO! clip does not disturb the current path.
+    graphicsdict /currgstate get /currpath 3 -1 roll put
 } def
 
 
@@ -83,119 +89,108 @@ def
     add add
 } bind def
 
+% hodgman-sutherland keeps the half-plane to the left of each directed
+% clip edge, so a clip polygon's interior must lie to the left of its
+% edges: a positive signed area, the winding initclip produces. A user
+% clip path can arrive in the opposite device-space winding (e.g. after
+% the y-flip), which would keep the exterior and clip everything away.
+% Reverse such a polygon so its winding always matches.
+% doubled signed area of a closed polygon (first point repeated at the
+% end); positive when wound counter-clockwise in device space
+/polyarea2 { % poly  .  a2
+    8 dict begin
+    /poly exch def
+    /a2 0.0 def
+    0 1 poly length 2 sub {
+        /i exch def
+        poly i get aload pop /yi exch def /xi exch def
+        poly i 1 add get aload pop /yj exch def /xj exch def
+        /a2 a2 xi yj mul xj yi mul sub add def
+    } for
+    a2
+    end
+} bind def
+
+/normclipwind { % poly  .  poly'
+    dup polyarea2 0 lt {
+        4 dict begin
+        /poly exch def
+        [ poly length 1 sub -1 0 { poly exch get } for ]
+        end
+    } if
+} bind def
+
 % polygon [A B C]  .  new-polygon
+% Canonical Sutherland-Hodgman: clip the closed polygon (points array,
+% first point repeated at the end) against the half-plane where the clip
+% line evaluates <= 0. For each edge P->Q emit Q when it lies inside, and
+% emit the edge's crossing point wherever the edge enters or leaves the
+% half-plane. Correct for any convex clip window and any edge orientation.
 /hodgman-sutherland {
 	DICT
-	%10 dict
 	begin
     /f exch def
     /p exch def
-    /n p length 1 sub def
-    /DEBUGCLIP where { pop
-        (n=)print n =
-    } if
-    n 0 gt { % else nothing to do.
-
-    % P = p[n-1] to start !!No. our poly has a duplicate point at the end
-    %/P p n 1 sub get def
-    %/d P length 1 sub def
-    /P p 0 get def
-    /fP P aload pop f evaluate def
-    /starting true def
-    /first null def
-    [
-        p 1 1 index length 1 sub getinterval {
-            /Q exch def
-            /fQ Q aload pop f evaluate def
-            /DEBUGCLIP where { pop
-                (P=)print P ==
-                (Q=)print Q ==
-                (fP=)print fP ==
-                (fQ=)print fQ ==
-            } if
-            fP 0 le {
-                counttomark 0 eq {
-                    P
-                    /DEBUGCLIP where { pop
-                        (P)=
-                    } if
-                } if
+    /n p length 1 sub def   % edge count (p carries a duplicated closing point)
+    /DEBUGCLIP where { pop (n=)print n = } if
+    n 0 gt {
+        /out [
+            0 1 n 1 sub {
+                /i exch def
+                /P p i get def
+                /Q p i 1 add get def
+                /fP P aload pop f evaluate def
+                /fQ Q aload pop f evaluate def
                 fQ 0 le {
-                    Q
-                    /DEBUGCLIP where { pop
-                        (Q)=
-                    } if
-                }{
-                    fP 0 lt {
+                    fP 0 le not {          % P outside, Q inside: entering crossing
                         /QP fQ fP sub def
                         [
                             fQ P 0 get mul fP Q 0 get mul sub QP div
                             fQ P 1 get mul fP Q 1 get mul sub QP div
                         ]
-                        %dup /P exch def
-                        %/dup /Q exch def
-                        %/fQ -1 def
-                        %dup aload pop f evaluate /fQ exch def
-                        /DEBUGCLIP where { pop
-                            (I)=
-                        } if
+                    } if
+                    Q                      % Q inside
+                }{
+                    fP 0 le {              % P inside, Q outside: leaving crossing
+                        /QP fQ fP sub def
+                        [
+                            fQ P 0 get mul fP Q 0 get mul sub QP div
+                            fQ P 1 get mul fP Q 1 get mul sub QP div
+                        ]
                     } if
                 } ifelse
-            }{
-                fQ 0 le {
-                    fQ 0 lt {
-                        /QP fQ fP sub def
-                        [
-                            fQ P 0 get mul fP Q 0 get mul sub QP div
-                            fQ P 1 get mul fP Q 1 get mul sub QP div
-                        ]
-                        %dup /P exch def
-                        %/dup /Q exch def
-                        %/fQ -1 def
-                        %dup aload pop f evaluate /fQ exch def
-                        starting {
-                            /first 1 index
-                                %pstack()=
-                                2 array copy
-                                def  % first point was clipped
-                        } if
-                        /DEBUGCLIP where { pop
-                            (I)=
-                        } if
-                    } if
-                    Q
-                    /DEBUGCLIP where { pop
-                        (Q)=
-                    } if
-                } if
-            } ifelse
-            /P Q def
-            /fP fQ def
-            /starting false def
-        } forall
-        first type /nulltype ne { % if first point was clipped and path was closed, add final intersection
-            fQ 0 gt {
-                Q aload pop  % Qx Qy
-                p 0 get aload pop  % Qx Qy Px Py
-                3 2 roll eq 3 1 roll eq and { % Qx==Px&&Qy==Py
-                    first %2 array copy
-                } if
-            } if
-        } if
-    ]
-    /DEBUGCLIP where { pop
-        dup ==
-    } if
-
-    }{ % n==0
+            } for
+        ] def
+        out length 0 gt {                  % re-close: repeat the first vertex
+            [ out aload pop out 0 get ]
+        }{
+            out
+        } ifelse
+    }{
         p
     } ifelse
-
 end }
-dup 0 10 dict put
+dup 0 16 dict put
 bind
 def
 
+
+% A subpath split off at a closepath enters through the bridge the
+% path walked from the closing point: its leading edge doubles its
+% trailing edge. Peel such pairs until the polygon walks only its own
+% boundary; what remains classifies as a window or hole by winding.
+/despike { % poly  .  poly'
+    2 dict begin
+    /p exch def
+    { % loop
+        p length 4 lt { exit } if
+        p 1 get aload pop p p length 2 sub get aload pop
+        exch 4 -1 roll eq 3 1 roll eq and not { exit } if
+        /p p 1 p length 2 sub getinterval def
+    } loop
+    p
+    end
+} bind def
 
 %clip the current path by the clipregion
 % convert the path to an array of polygons (arrays of points)
@@ -206,8 +201,12 @@ def
 %       receiving new polygon.
 % convert polygon array back to path structure
 /doclip {
+    % when the clip region is an axis-aligned rectangle that already
+    % contains the whole path, clipping passes every point through
+    % unchanged: skip the polygon-clipping machinery
+    .cliptrivial not {
 	%DICT
-	10 dict
+	20 dict
 	begin
 
     %/isclosed 
@@ -235,6 +234,11 @@ def
         ]  % /PA mark [...] [...] [...] 
     ] def
 
+    % A closepath ends a clip subpath, but need not be followed by a
+    % moveto: a segment operator may continue from the closing point
+    % (the straight line arc appends is the common case, building a
+    % ring as one keyhole path). Split polygons at the close as well
+    % as at movetos, so each ring boundary classifies separately.
     /CR                         % Clip Region   clippath array
     clippath [
         %{ 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall
@@ -248,7 +252,7 @@ def
         }
         { 2 array astore }
         {}
-        { counttomark 1 sub index }
+        { counttomark 1 sub index ] [ }
         .devpathforall
         ]
     ]
@@ -262,30 +266,80 @@ def
         %hook
     } if
 
+    % A clip path may carry several subpaths: the first is the clip
+    % window, and any later subpath wound the opposite way is a hole
+    % cut out of it (the nonzero-rule idiom for clipping around a
+    % reserved area). Later subpaths with the window's winding are
+    % treated as further windows to intersect, as before.
+    /wsign 0 def
     CR { % one clipping polygon
-        %dup dup length 2 sub get % polygon final-point
-	dup length 0 eq {
+	despike
+	% fewer than three points bound no area (e.g. the bare pen
+	% moveto charpath leaves after its outlines)
+	dup length 3 lt {
 	    pop
 	}{
-	    
+	    dup polyarea2 0 lt { -1 }{ 1 } ifelse /psign exch def
+	    wsign 0 eq { /wsign psign def } if
+	    psign wsign eq {
+
+	    % intersect the subject polygons with the (convex) window
+	    normclipwind
 	    dup 0 get
 	    /U exch def
 	    1 1 index length 1 sub getinterval
 	    {
 		/V exch def
-		[ U aload pop V aload pop p2abc ]  % clip-line
-		/CL exch def
-		/DEBUGCLIP where { pop
-		    CL ==
-		} if
+		U 0 get V 0 get sub abs U 1 get V 1 get sub abs add 0.001 lt {
+		    % a degenerate edge (a contour closing on its own start,
+		    % exactly or within float noise) has no usable half-plane
+		}{
+		    [ U aload pop V aload pop p2abc ]  % clip-line
+		    /CL exch def
+		    /DEBUGCLIP where { pop
+			CL ==
+		    } if
 
-		/PA [ PA { % one subject polygon
-		    CL hodgman-sutherland
-		} forall ] def
+		    /PA [ PA { % one subject polygon
+			CL hodgman-sutherland
+		    } forall ] def
+		} ifelse
 
 		/U V def
 	    } forall
 
+	    }{
+
+	    % subtract the (convex) hole: the difference decomposes into
+	    % one piece per hole edge - the part beyond that edge,
+	    % limited by the edges before it
+	    normclipwind
+	    /HP exch def
+	    /HL [
+		HP 0 get /U exch def
+		HP 1 HP length 1 sub getinterval {
+		    /V exch def
+		    U 0 get V 0 get sub abs U 1 get V 1 get sub abs add 0.001 ge {
+			[ U aload pop V aload pop p2abc ]
+		    } if
+		    /U V def
+		} forall
+	    ] def
+	    /PA [
+		PA {
+		    /SP exch def
+		    0 1 HL length 1 sub {
+			/hi exch def
+			/piece SP [ HL hi get { neg } forall ] hodgman-sutherland def
+			0 1 hi 1 sub {
+			    /piece piece 3 -1 roll HL exch get hodgman-sutherland def
+			} for
+			piece length 3 gt { piece } if
+		    } for
+		} forall
+	    ] def
+
+	    } ifelse
 	} ifelse
     } forall
     newpath
@@ -296,28 +350,25 @@ def
 
     PA {
         dup length 0 gt {
-            dup 0 get << /data 3 2 roll /cmd /move >> cpath addtopath
-            1 1 index length 1 sub getinterval {
-                << /data 3 2 roll /cmd /line >> cpath addtopath
+            dup 0 get aload pop .devmoveto
+            dup 1 1 index length 1 sub getinterval {
+                aload pop .devlineto
             } forall
 
-            cpath dup length 1 sub get
-            dup 0 get /data get
-            exch dup length 1 sub get /data get
-            aload pop 3 2 roll aload pop % x0 y0 xN yN
-            exch 4 1 roll % xN x0 y0 yN
+            dup dup length 1 sub get aload pop % P xN yN
+            2 index 0 get aload pop % P xN yN x0 y0
+            exch 4 1 roll % P x0 xN yN y0
             eq 3 1 roll eq and {
-                %closepath
-                cpath dup length 1 sub get
-                dup length 1 sub get
-                /cmd /close put
+                .retagclose
             } if
+            pop
         }{
             pop
         } ifelse
     } forall
 
-end }
+end
+    } if }
 %dup 0 10 dict put
 bind
 def

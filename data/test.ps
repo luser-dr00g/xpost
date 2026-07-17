@@ -15,6 +15,14 @@
     //fail
     ifelse
 } def
+% tolerance compare for transcendental results: real math is inexact
+% (and reals are single-precision here), so comparing atan/cos/exp/ln
+% output against a decimal literal with eq is unreliable.
+/nearly { sub abs 0.001 lt } def
+
+% breakhere is an xpost debugger breakpoint; stub it as a no-op on
+% interpreters that lack it so the suite is portable
+/breakhere where { pop }{ /breakhere { } def } ifelse
 
 %(test: loading graphics...)=
 %flush
@@ -37,7 +45,7 @@ clear
 { = } stopped { $error /errorname get /stackunderflow eq check }{ fail } ifelse
 
 /== cvx ==
-{ == } stopped { end $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
+{ == } stopped { $error /errorname get /stackunderflow ne {fail} if }{ fail } ifelse
 
 (abs)=
 4.5 abs 4.5 eq check
@@ -98,14 +106,14 @@ false false and false eq check
 (a) (bcd) (ef) 3 array astore type /arraytype eq check
 
 (atan)=
-(1: 0 1 atan 0.0 eq check) ==
-0 1 atan 0.0 eq check
-(2: 1 0 atan 90.0 eq check) ==
-1 0 atan 90.0 eq check
-(3: -100 0 atan 270.0 eq check) ==
--100 0 atan 270.0 eq check
-(4: 4 4 atan 45.0 eq check) ==
-4 4 atan 45.0 eq check
+(1: 0 1 atan 0.0 nearly check) ==
+0 1 atan 0.0 nearly check
+(2: 1 0 atan 90.0 nearly check) ==
+1 0 atan 90.0 nearly check
+(3: -100 0 atan 270.0 nearly check) ==
+-100 0 atan 270.0 nearly check
+(4: 4 4 atan 45.0 nearly check) ==
+4 4 atan 45.0 nearly check
 
 %awidthshow
 %banddevice
@@ -182,8 +190,8 @@ a1 dup length array copy aload pop
 %copypage
 
 (cos)=
-0 cos 1.0 eq check
-90 cos 0.0 eq check
+0 cos 1.0 nearly check
+90 cos 0.0 nearly check
 
 (count)=
 clear count 0 eq check
@@ -369,10 +377,10 @@ errordict type /dicttype eq check
 {exit false check}loop
 
 (exp)=
-(1: 9 0.5 exp 3.0 eq check)=
-9 0.5 exp 3.0 eq check
-(2: -9 -1 exp -0.111111 eq check)=
--9 -1 exp -0.111111 eq check
+(1: 9 0.5 exp 3.0 nearly check)=
+9 0.5 exp 3.0 nearly check
+(2: -9 -1 exp -0.111111 nearly check)=
+-9 -1 exp -0.111111 nearly check
 
 (false)=
 false not check
@@ -437,8 +445,8 @@ d {} forall
 (ge)=
 (1: 4.2 4 ge check)=
 4.2 4 ge check
-(2: (abc) (d) ge check)=
-(abc) (d) ge check
+(2: (d) (abc) ge check)=
+(d) (abc) ge check
 (3: (aba) (ab) ge check)=
 (aba) (ab) ge check
 (4: (aba) (aba) ge check)=
@@ -550,16 +558,16 @@ mydict length 1 eq check
 %lineto
 
 (ln)=
-10 ln 2.30259 eq check
-100 ln 4.60517 eq check
+10 ln 2.30259 nearly check
+100 ln 4.60517 nearly check
 
 (load)=
 /avg {add 2 div} def
 /avg load 1 get 2 eq check
 
 (log)=
-10 log 1.0 eq check
-100 log 2.0 eq check
+10 log 1.0 nearly check
+100 log 2.0 nearly check
 
 %(loop)=
 %(lt)=
@@ -573,7 +581,7 @@ mark [ eq check
 (maxlength)=
 /mydict 8 dict def
 mydict length 0 eq check
-mydict maxlength 10 eq check
+mydict maxlength 8 eq check
 
 (mod)=
 5 3 mod 2 eq check
@@ -689,9 +697,14 @@ abc
 (1:)= pstack
  check (abc) eq check
 
-DATA_DIR(/readstring.ps)strcat run
-(2:)= pstack
- not check 0 3 getinterval (abc) eq check
+/DATA_DIR where {
+    pop
+    DATA_DIR(/readstring.ps)strcat run
+    (2:)= pstack
+     not check 0 3 getinterval (abc) eq check
+}{
+    (readstring-from-file test skipped: no DATA_DIR)=
+} ifelse
 
 %renderbands
 

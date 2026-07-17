@@ -295,15 +295,14 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
                     XPOST_LOG_ERR("cannot retrieve tag for array ent %u", ent);
                     return 0;
                 }
-                if (o.comp_.sz != objmem->table.tab[ent].used/sizeof(Xpost_Object))
-                {
-                    XPOST_LOG_INFO("o.comp_.sz %u != tab[ent].used/obj %u",
-                            o.comp_.sz, objmem->table.tab[ent].used/sizeof(Xpost_Object));
-                }
+                /* subarray views share the entity: descend over the whole
+                   underlying allocation, not the view window, so elements
+                   reachable only through another view stay marked (the
+                   ent-level marked flag makes the first view visited the
+                   only one descended) */
                 if (!_xpost_garbage_mark_array(ctx, objmem, ad,
-                            //mem->table.tab[ent].used/sizeof(Xpost_Object)
-                            o.comp_.sz
-                            , markall))
+                            objmem->table.tab[ent].used/sizeof(Xpost_Object),
+                            markall))
                     return 0;
             }
             break;
@@ -425,7 +424,7 @@ next:
         if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         {
             if (s->nextseg == 0)
-                return 0;
+                return 1; /* final segment exactly full: walk complete */
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             start = 0;
             goto next;
@@ -465,7 +464,7 @@ next:
         if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         {
             if (s->nextseg == 0)
-                return 0;
+                return 1; /* final segment exactly full: walk complete */
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             goto next;
         }
@@ -556,6 +555,8 @@ next:
         }
         if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         {
+            if (s->nextseg == 0)
+                return 1; /* final segment exactly full: walk complete */
             s = (Xpost_Stack *)(mem->base + s->nextseg);
             goto next;
         }
@@ -589,6 +590,8 @@ int _xpost_garbage_mark_save(Xpost_Context *ctx,
         }
         if (i == XPOST_STACK_SEGMENT_SIZE) /* ie. s->top == XPOST_STACK_SEGMENT_SIZE */
         {
+            if (s->nextseg == 0)
+                return 1; /* final segment exactly full: walk complete */
             s = (void *)(mem->base + s->nextseg);
             goto next;
         }
@@ -602,6 +605,20 @@ int _xpost_garbage_mark_save(Xpost_Context *ctx,
             free it.
    return reclaimed size
  */
+/* free list bucket helpers shared with xpost_free.c */
+#define XPOST_FREE_NBUCKETS 16
+static unsigned int _sweep_bucket(unsigned int sz)
+{
+    unsigned int b = 0;
+    unsigned int s = sz >> 5;
+    while (s && b < XPOST_FREE_NBUCKETS - 1)
+    {
+        s >>= 1;
+        b++;
+    }
+    return b;
+}
+
 static
 unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
 {
@@ -611,44 +628,185 @@ unsigned int _xpost_garbage_sweep(Xpost_Memory_File *mem)
     unsigned int sz = 0;
     int ret;
 
-    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list head */
+    /* diagnostic quarantine: sweep nothing, so freed entities are never
+       reused; distinguishes stale-holder-of-recycled-entity bugs (which
+       vanish) from in-place corruption (which persists) */
+    if (getenv("XPOST_GC_NO_REUSE"))
+        return 0;
+
+    ret = xpost_memory_table_get_addr(mem, XPOST_MEMORY_TABLE_SPECIAL_FREE, &z); /* address of the free list heads */
     if (!ret)
     {
         XPOST_LOG_ERR("cannot load free list head");
         return 0;
     }
 
-    memcpy(mem->base+z, &zero, sizeof(unsigned int)); /* discard list */
-    /* *(unsigned int *)(mem->base+z) = 0; */
+    /* discard the lists; previously-freed entities are gathered again */
+    for (i = 0; i < XPOST_FREE_NBUCKETS; i++)
+        memcpy(mem->base + z + i * sizeof(unsigned int), &zero, sizeof zero);
 
-#ifdef DEBUG_GC
-    printf("freeing ");
-#endif
-    /* scan table */
+    {
+    unsigned int bstat[XPOST_FREE_NBUCKETS] = {0};
     for (i = mem->start; i < mem->table.nextent; i++)
     {
         if (((mem->table.tab[i].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0) &&
             (mem->table.tab[i].sz != 0))
         {
-#ifdef DEBUG_GC
-            printf("%u ", i);
-#endif
+            unsigned int bz;
+            unsigned int b;
             if (mem->table.tab[i].tag == filetype)
                 continue;
-            ret = xpost_free_memory_ent(mem, i);
-            if (ret < 0)
-            {
-                XPOST_LOG_ERR("cannot free ent");
-                return sz;
-            }
-            sz += (unsigned int)ret;
+            mem->table.tab[i].tag = 0;
+            b = _sweep_bucket(mem->table.tab[i].sz);
+            bstat[b]++;
+            bz = z + b * sizeof(unsigned int);
+            memcpy(mem->base + mem->table.tab[i].adr, mem->base + bz, sizeof(unsigned int));
+            memcpy(mem->base + bz, &i, sizeof(unsigned int));
+            sz += mem->table.tab[i].sz;
         }
     }
-#ifdef DEBUG_GC
-    printf("\n");
-#endif
+    if (getenv("XPOST_GC_BUCKETSTAT"))
+    {
+        fprintf(stderr, "BUCKETS:");
+        for (i = 0; i < XPOST_FREE_NBUCKETS; i++)
+            fprintf(stderr, " %u", bstat[i]);
+        fprintf(stderr, "\n");
+    }
+    }
 
     return sz;
+}
+
+/* P0 diagnostic: independent reachability verifier. BFS from the same
+   roots with a private visited set and unconditional full descent;
+   report any reachable entity whose mark bit is clear, with its parent. */
+typedef struct { unsigned int ent; int bank; unsigned int parent; int pbank; } _vq_item;
+static _vq_item *_vq; static unsigned int _vq_n, _vq_cap;
+static unsigned char *_vseen_lo, *_vseen_gl; static unsigned int _vseen_lo_n, _vseen_gl_n;
+
+static void _verify_push(Xpost_Context *ctx, Xpost_Object o,
+                         unsigned int parent, int pbank)
+{
+    unsigned int ent; int bank;
+    Xpost_Memory_File *m;
+    unsigned char *seen;
+    Xpost_Object_Type t = xpost_object_get_type(o);
+    if (t != arraytype && t != dicttype && t != stringtype && t != filetype)
+        return;
+    m = xpost_context_select_memory(ctx, o);
+    bank = (m == ctx->gl);
+    ent = (t == filetype) ? o.mark_.padw : xpost_object_get_ent(o);
+    seen = bank ? _vseen_gl : _vseen_lo;
+    if (ent >= (bank ? _vseen_gl_n : _vseen_lo_n)) return;
+    if (seen[ent]) return;
+    seen[ent] = 1;
+    if (_vq_n == _vq_cap)
+    {
+        _vq_cap = _vq_cap ? _vq_cap * 2 : 65536;
+        _vq = realloc(_vq, _vq_cap * sizeof *_vq);
+    }
+    _vq[_vq_n].ent = ent; _vq[_vq_n].bank = bank;
+    _vq[_vq_n].parent = parent; _vq[_vq_n].pbank = pbank;
+    _vq_n++;
+}
+
+static void _verify_stack(Xpost_Context *ctx, Xpost_Memory_File *mem,
+                          unsigned int stackadr)
+{
+    Xpost_Stack *s = (Xpost_Stack *)(mem->base + stackadr);
+    unsigned int i;
+    for (;;)
+    {
+        for (i = 0; i < s->top; i++)
+            _verify_push(ctx, s->data[i], 0xFFFFFFFF, 2);
+        if (s->top == XPOST_STACK_SEGMENT_SIZE && s->nextseg)
+            s = (Xpost_Stack *)(mem->base + s->nextseg);
+        else
+            break;
+    }
+}
+
+static void _verify_reachability(Xpost_Context *ctx, Xpost_Memory_File *mem)
+{
+    unsigned int head = 0, ad;
+    int bad = 0;
+    _vq_n = 0;
+    _vseen_lo_n = ctx->lo->table.nextent; _vseen_gl_n = ctx->gl->table.nextent;
+    _vseen_lo = calloc(_vseen_lo_n, 1); _vseen_gl = calloc(_vseen_gl_n, 1);
+
+    _verify_stack(ctx, ctx->lo, ctx->os);
+    _verify_stack(ctx, ctx->lo, ctx->ds);
+    _verify_stack(ctx, ctx->lo, ctx->es);
+    _verify_stack(ctx, ctx->lo, ctx->hold);
+    _verify_push(ctx, ctx->currentobject, 0xFFFFFFFF, 3);
+    _verify_push(ctx, ctx->window_device, 0xFFFFFFFF, 3);
+
+    while (head < _vq_n)
+    {
+        _vq_item it = _vq[head++];
+        Xpost_Memory_File *m = it.bank ? ctx->gl : ctx->lo;
+        unsigned int tag = m->table.tab[it.ent].tag;
+        unsigned int used = m->table.tab[it.ent].used;
+        unsigned int adr = m->table.tab[it.ent].adr;
+        unsigned int off;
+
+        /* local unmarked reachable = the gap (global is never swept) */
+        if (!it.bank && it.ent >= ctx->lo->start &&
+            (ctx->lo->table.tab[it.ent].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0
+            && ctx->lo->table.tab[it.ent].sz != 0 && tag != filetype)
+        {
+            fprintf(stderr, "VERIFY GAP: lo ent %u (tag %u used %u) reachable "
+                    "via parent ent %u (bank %d)\n",
+                    it.ent, tag, used, it.parent, it.pbank);
+            bad++;
+            if (bad > 8) break;
+        }
+        if (tag == arraytype)
+        {
+            for (off = 0; off + sizeof(Xpost_Object) <= used; off += sizeof(Xpost_Object))
+            {
+                Xpost_Object o;
+                memcpy(&o, m->base + adr + off, sizeof o);
+                _verify_push(ctx, o, it.ent, it.bank);
+            }
+        }
+        else if (tag == dicttype)
+        {
+            dichead *dp = (void *)(m->base + adr);
+            dicrec *tp = (void *)(m->base + adr + sizeof(dichead));
+            int j;
+            for (j = 0; j < DICTABN(dp->sz); j++)
+            {
+                if (xpost_object_get_type(tp[j].key) != nulltype)
+                {
+                    _verify_push(ctx, tp[j].key, it.ent, it.bank);
+                    _verify_push(ctx, tp[j].value, it.ent, it.bank);
+                }
+            }
+        }
+    }
+    if (bad)
+        fprintf(stderr, "VERIFY: %d gaps found (%u reachable ents)\n", bad, _vq_n);
+    if (getenv("XPOST_GC_CENSUS"))
+    {
+        unsigned int i2, cnt_lo = 0, cnt_gl = 0;
+        unsigned long bytes_lo = 0, bytes_gl = 0;
+        unsigned int bytag[32] = {0};
+        for (i2 = 0; i2 < _vq_n; i2++)
+        {
+            Xpost_Memory_File *m2 = _vq[i2].bank ? ctx->gl : ctx->lo;
+            unsigned int t2 = m2->table.tab[_vq[i2].ent].tag;
+            if (_vq[i2].bank) { cnt_gl++; bytes_gl += m2->table.tab[_vq[i2].ent].sz; }
+            else { cnt_lo++; bytes_lo += m2->table.tab[_vq[i2].ent].sz; }
+            if (t2 < 32) bytag[t2]++;
+        }
+        fprintf(stderr, "CENSUS: lo %u ents %lu bytes | gl %u ents %lu bytes |"
+                " arr %u dict %u str %u | lo_nextent %u\n",
+                cnt_lo, bytes_lo, cnt_gl, bytes_gl,
+                bytag[5], bytag[6], bytag[16], ctx->lo->table.nextent);
+    }
+    free(_vseen_lo); free(_vseen_gl);
+    _vseen_lo = _vseen_gl = NULL;
 }
 
 /*
@@ -740,6 +898,15 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
     else /* local */
     {
         //printf("collect!\n");
+        /* the name-lookup cache holds objects outside the root set;
+           entities recycled by this collection must not be served from
+           it afterwards */
+        for (i = 0; i < MAXCONTEXT && cid[i]; i++)
+        {
+            Xpost_Context *cctx = mem->interpreter_cid_get_context(cid[i]);
+            if (cctx)
+                ++cctx->namebind_gen;
+        }
         _xpost_garbage_unmark(mem);
         if (markall)
             _xpost_garbage_unmark(ctx->gl);
@@ -798,6 +965,10 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
 #endif
             if (!_xpost_garbage_mark_object(ctx, mem, ctx->window_device, markall))
                 return -1;
+
+            /* the object being executed may exist only here */
+            if (!_xpost_garbage_mark_object(ctx, mem, ctx->currentobject, markall))
+                return -1;
 #if 0
 #ifdef DEBUG_GC
             printf("marking event handler\n");
@@ -812,6 +983,57 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
 #ifdef DEBUG_GC
         printf("sweep\n");
 #endif
+        if (!isglobal && getenv("XPOST_GC_VERIFY") && ctx)
+            _verify_reachability(ctx, mem);
+        /* P0 diagnostic: before sweeping local VM, report any global
+           container still referencing an unmarked (about-to-die) local
+           entity -- the cross-bank reference the local mark cannot see */
+        if (!isglobal && getenv("XPOST_GC_XBANK_CHECK") && ctx && ctx->gl)
+        {
+            unsigned int ge, off;
+            Xpost_Memory_File *gl = ctx->gl;
+            for (ge = gl->start; ge < gl->table.nextent; ge++)
+            {
+                unsigned int gtag = gl->table.tab[ge].tag;
+                unsigned int gused = gl->table.tab[ge].used;
+                unsigned int gadr = gl->table.tab[ge].adr;
+                if (gtag != arraytype && gtag != dicttype) continue;
+                for (off = 0; off + sizeof(Xpost_Object) <= gused; off += sizeof(Xpost_Object))
+                {
+                    Xpost_Object o;
+                    unsigned int te;
+                    memcpy(&o, gl->base + gadr + off, sizeof o);
+                    if (!xpost_object_is_composite(o)) continue;
+                    if (o.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) continue; /* global ref: fine */
+                    te = xpost_object_get_ent(o);
+                    if (te >= mem->table.nextent) continue;
+                    if ((mem->table.tab[te].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK) == 0
+                        && mem->table.tab[te].sz != 0)
+                    {
+                        fprintf(stderr, "XBANK: gl ent %u (tag %u, %s) slot %u -> dying lo ent %u "
+                                "(type %u sz %u)",
+                                ge, gtag,
+                                (gl->table.tab[ge].mark & XPOST_MEMORY_TABLE_MARK_DATA_MARK_MASK)
+                                    ? "MARKED" : "unmarked",
+                                (unsigned int)(off / sizeof(Xpost_Object)),
+                                te, xpost_object_get_type(o), o.comp_.sz);
+                        if (xpost_object_get_type(o) == stringtype && o.comp_.sz < 200)
+                        {
+                            unsigned int k;
+                            fprintf(stderr, " content=\"");
+                            for (k = 0; k < o.comp_.sz; k++)
+                            {
+                                unsigned char c = gl->base[0]; /* placeholder */
+                                c = *(mem->base + mem->table.tab[te].adr + o.comp_.off + k);
+                                fprintf(stderr, "%c", (c >= 32 && c < 127) ? c : '.');
+                            }
+                            fprintf(stderr, "\"");
+                        }
+                        fprintf(stderr, "\n");
+                    }
+                }
+            }
+        }
         sz += _xpost_garbage_sweep(mem);
         if (isglobal)
         {
@@ -826,7 +1048,7 @@ int xpost_garbage_collect(Xpost_Memory_File *mem, int dosweep, int markall)
         }
     }
 
-    printf("collect recovered %u bytes\n", sz);
+    XPOST_LOG_INFO("collect recovered %u bytes", sz);
     return sz;
 }
 

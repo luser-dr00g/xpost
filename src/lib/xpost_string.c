@@ -32,6 +32,7 @@
 # include <config.h>
 #endif
 
+#include <stdio.h>
 #include <stdlib.h> /* size_t */
 #include <string.h> /* memcpy */
 
@@ -74,6 +75,14 @@ Xpost_Object xpost_string_cons_memory(Xpost_Memory_File *mem,
             XPOST_LOG_ERR("cannot store initial value in string");
             return null;
         }
+    }
+    else
+    {
+        /* the PLRM specifies zero-initialized strings; storage reused
+           from the free list still holds the previous tenant's bytes */
+        unsigned int adr;
+        if (xpost_memory_table_get_addr(mem, ent, &adr))
+            memset(mem->base + adr, 0, sz);
     }
     o.tag = stringtype | (XPOST_OBJECT_TAG_ACCESS_UNLIMITED << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     o.comp_.sz = sz;
@@ -132,6 +141,8 @@ int xpost_string_put_memory(Xpost_Memory_File *mem,
     byte b = c;
     int ret;
 
+    if (i < 0 || i >= s.comp_.sz)
+        return rangecheck;
     ret = xpost_memory_put(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {
@@ -161,6 +172,8 @@ int xpost_string_get_memory(Xpost_Memory_File *mem,
     byte b;
     int ret;
 
+    if (i < 0 || i >= s.comp_.sz)
+        return rangecheck;
     ret = xpost_memory_get(mem, xpost_object_get_ent(s), s.comp_.off + i, 1, &b);
     if (!ret)
     {

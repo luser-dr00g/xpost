@@ -47,6 +47,42 @@
    initialize the free-list in the memory file.
    free list head is in slot zero
    sz is 0 so gc will ignore it */
+/* collection threshold in allocated bytes; overridable for testing
+   and for embedders that want more frequent collections */
+static int _xpost_free_gc_threshold(void)
+{
+    static int v = -1;
+    if (v < 0)
+    {
+        const char *e = getenv("XPOST_GC_THRESHOLD");
+        v = e ? atoi(e) : 0;
+        if (v <= 0)
+            v = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+    }
+    return v;
+}
+
+/* The free list is segregated into size-class buckets so that both
+   freeing and allocation are near-constant-time: a single sorted list
+   makes every operation walk the entities smaller than the request,
+   which dominates once a large collection has populated the list.
+   Bucket b holds entities with size in [2^(b+4), 2^(b+5)), clamped to
+   the first and last buckets. The head words live in the FREE special
+   entity's data area. */
+#define XPOST_FREE_NBUCKETS 16
+
+static unsigned int _xpost_free_bucket(unsigned int sz)
+{
+    unsigned int b = 0;
+    unsigned int s = sz >> 5;
+    while (s && b < XPOST_FREE_NBUCKETS - 1)
+    {
+        s >>= 1;
+        b++;
+    }
+    return b;
+}
+
 int xpost_free_init(Xpost_Memory_File *mem)
 {
     unsigned int ent;
@@ -66,12 +102,19 @@ int xpost_free_init(Xpost_Memory_File *mem)
     /* make sure this is the correct ent */
     assert (ent == XPOST_MEMORY_TABLE_SPECIAL_FREE);
 
-    /* set to zero (== NULL == link-back-to-head) */
-    ret = xpost_memory_put(mem, ent, 0, sizeof(unsigned int), &val);
-    if (!ret)
+    /* set all bucket heads to zero (== NULL == end of list) */
     {
-        XPOST_LOG_ERR("xpost_free_init cannot access list head");
-        return 0;
+        unsigned int b;
+        for (b = 0; b < XPOST_FREE_NBUCKETS; b++)
+        {
+            ret = xpost_memory_put(mem, ent, b * sizeof(unsigned int),
+                                   sizeof(unsigned int), &val);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("xpost_free_init cannot access list head");
+                return 0;
+            }
+        }
     }
 
     /* set zero size to enable guards against NULL writes */
@@ -83,7 +126,7 @@ int xpost_free_init(Xpost_Memory_File *mem)
     /* make free list available for general memory allocations */
     (void) xpost_memory_register_free_list_alloc_function(mem, xpost_free_alloc);
     mem->period = XPOST_GARBAGE_COLLECTION_PERIOD;
-    mem->threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+    mem->threshold = _xpost_free_gc_threshold();
 
     return 1;
 }
@@ -152,49 +195,27 @@ int xpost_free_memory_ent(Xpost_Memory_File *mem,
         XPOST_LOG_ERR("unable to load free list head");
         return -1;
     }
-    /* printf("freeing %d bytes\n", xpost_memory_table_get_size(mem, ent)); */
+    z += _xpost_free_bucket(sz) * sizeof(unsigned int);
 
-    //while current node < size of ent being added
-        //load next ent in list
-    while (1)
-    {
-        unsigned int t;
-        unsigned int ta;
-        unsigned int tsz;
-
-        /* get the next ent from z node */
-        memcpy(&t, mem->base + z, sizeof(unsigned int));
-
-        if (t == 0) /* end of the list */
-            break;
-
-        ret = xpost_memory_table_get_size(mem, t, &tsz);
-        if (!ret)
-        {
-            XPOST_LOG_ERR("cannot get size from ent on free list");
-            return -1;
-        }
-
-        if (tsz > sz) /* this is the place */
-            break;
-
-        ret = xpost_memory_table_get_addr(mem, t, &ta);
-        if (!ret)
-        {
-            XPOST_LOG_ERR("cannot get addr from ent on free list");
-            return -1;
-        }
-
-        z = ta;
-    }
-
-    /* copy the current free-list node to the data area of the ent. */
+    /* push onto the bucket: link word lives in the ent's data area */
     memcpy(mem->base + a, mem->base + z, sizeof(unsigned int));
-
-    /* copy the ent number into the free-list node */
     memcpy(mem->base + z, &ent, sizeof(unsigned int));
 
     return sz;
+}
+
+static void _dump_chain(Xpost_Memory_File *mem, unsigned int z)
+{
+    unsigned int e;
+    memcpy(&e, mem->base + z, sizeof(unsigned int));
+    while (e)
+    {
+        unsigned int sz;
+        if (!xpost_memory_table_get_size(mem, e, &sz)) return;
+        printf("%u(%u) ", e, sz);
+        if (!xpost_memory_table_get_addr(mem, e, &z)) return;
+        memcpy(&e, mem->base + z, sizeof(unsigned int));
+    }
 }
 
 /* print a dump of the free list */
@@ -211,6 +232,17 @@ void xpost_free_dump(Xpost_Memory_File *mem)
     }
 
     printf("freelist: ");
+    {
+        unsigned int b, headz = z;
+        for (b = 0; b < XPOST_FREE_NBUCKETS; b++)
+        {
+            z = headz + b * sizeof(unsigned int);
+            memcpy(&e, mem->base + z, sizeof(unsigned int));
+            if (e) printf("[bucket %u] ", b);
+            _dump_chain(mem, z);
+        }
+    }
+    return;
     memcpy(&e, mem->base + z, sizeof(unsigned int));
     while (e)
     {
@@ -250,10 +282,9 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
     if (!mem->interpreter_get_initializing())
     {
 #ifdef XPOST_USE_THRESHOLD
-        //(void)period;
         if ((mem->threshold -= sz) <= 0)
         {
-            mem->threshold = XPOST_GARBAGE_COLLECTION_THRESHOLD;
+            mem->threshold = _xpost_free_gc_threshold();
             return 2;
         }
 #else
@@ -275,64 +306,90 @@ int xpost_free_alloc(Xpost_Memory_File *mem,
         return 0;
     }
 
-    memcpy(&e, mem->base+z, sizeof(unsigned int)); /* e = *z */
-    while (e) /* e is not zero */
     {
-        unsigned int tsz;
-        if (e > XPOST_OBJECT_COMP_MAX_ENT)
-        {
-            unsigned int zero = 0;
-            XPOST_LOG_ERR("ent number %u exceeds object storage max %u",
-                    e, XPOST_OBJECT_COMP_MAX_ENT);
-            /* bad element found: discard free list */
-            xpost_memory_put(mem, 0, 0, sizeof zero, &zero);
-            return 2; /* request collection to fill the list */
-        }
-        ret = xpost_memory_table_get_size(mem, e, &tsz);
-        if (!ret)
-        {
-            XPOST_LOG_ERR("cannot retrieve size of ent %u", e);
-            return 0;
-        }
+    unsigned int b;
+    unsigned int headz = z;
 
-        /* if this ent is sufficient to hold sz,
-           but does not waste more than sz bytes, use it */
-        if (tsz >= sz)
-        {
-            Xpost_Memory_Table *tab = &mem->table;
-            unsigned int ent;
-            unsigned int ad;
+    for (b = _xpost_free_bucket(sz); b < XPOST_FREE_NBUCKETS; b++)
+    {
+        unsigned int best = 0, bestz = 0, bestsz = 0;
 
-            /* if this ent is too big */
-            if (tsz * XPOST_FREE_ACCEPT_DENOM > sz * XPOST_FREE_ACCEPT_OVERSIZE)
+        z = headz + b * sizeof(unsigned int);
+        memcpy(&e, mem->base + z, sizeof(unsigned int));
+        while (e) /* e is not zero */
+        {
+            unsigned int tsz;
+            unsigned int ta;
+            /* The links live inside the freed entities' data, where a stale
+               write can turn one into an arbitrary number. Handing out an
+               entity that is not actually free aliases two owners onto one
+               allocation, so validate every node: freed entities carry a
+               zero tag. On any inconsistency discard the lists and request
+               a collection to rebuild them. */
+            if (e > XPOST_OBJECT_COMP_MAX_ENT ||
+                e >= mem->table.nextent ||
+                mem->table.tab[e].tag != 0)
             {
-                return 0; /* early exit to _new allocator since free list is sorted */
+                unsigned int zero = 0;
+                unsigned int bb;
+                XPOST_LOG_ERR("free list corrupt at ent %u (tag %u): discarding",
+                        e, e < mem->table.nextent ? mem->table.tab[e].tag : 0);
+                for (bb = 0; bb < XPOST_FREE_NBUCKETS; bb++)
+                    xpost_memory_put(mem, 0, bb * sizeof(unsigned int),
+                                     sizeof zero, &zero);
+                return 2; /* request collection to fill the list */
             }
-
-            ret = xpost_memory_table_get_addr(mem, e, &ad);
+            ret = xpost_memory_table_get_size(mem, e, &tsz);
             if (!ret)
             {
-                XPOST_LOG_ERR("cannot retrieve address of ent %u", e);
+                XPOST_LOG_ERR("cannot retrieve size of ent %u", e);
                 return 0;
             }
-            memcpy(mem->base + z, mem->base + ad, sizeof(unsigned int));
-            ent = e;
-            if (ent >= mem->table.nextent)
+
+            /* best fit within the request's own bucket: entity numbers
+               are a fixed budget, so near-exact recycling matters more
+               than the walk. An exact fit ends the search; any fit from
+               a higher bucket is taken as-is (the byte waste is
+               reclaimable by a later collection, a consumed entity
+               number is not). */
+            if (tsz >= sz && (best == 0 || tsz < bestsz))
             {
-                XPOST_LOG_ERR("cannot find table for ent %u", e);
+                best = e;
+                bestz = z;
+                bestsz = tsz;
+                if (tsz == sz)
+                    break;
+            }
+
+            ret = xpost_memory_table_get_addr(mem, e, &ta);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address for ent %u", e);
                 return 0;
             }
-            tab->tab[ent].tag = tag;
-            *entity = e;
+            z = ta;
+            memcpy(&e, mem->base + z, sizeof(unsigned int));
+        }
+
+        if (best)
+        {
+            Xpost_Memory_Table *tab = &mem->table;
+            unsigned int ad;
+
+            ret = xpost_memory_table_get_addr(mem, best, &ad);
+            if (!ret)
+            {
+                XPOST_LOG_ERR("cannot retrieve address of ent %u", best);
+                return 0;
+            }
+            /* unlink: the predecessor link slot was recorded when the
+               node was reached */
+            memcpy(mem->base + bestz, mem->base + ad, sizeof(unsigned int));
+            tab->tab[best].tag = tag;
+            *entity = best;
             return 1; /* found, return SUCCESS */
         }
-        ret = xpost_memory_table_get_addr(mem, e, &z);
-        if (!ret)
-        {
-            XPOST_LOG_ERR("cannot retrieve address for ent %u", e);
-            return 0;
-        }
-        memcpy(&e, mem->base + z, sizeof(unsigned int));
+    }
     }
     /* finished scanning free list */
 

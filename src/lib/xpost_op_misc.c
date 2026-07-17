@@ -52,6 +52,7 @@
 #include "xpost_stack.h"
 #include "xpost_context.h"
 #include "xpost_error.h"
+#include "xpost_file.h"  /* the sandbox denies environment access once engaged */
 #include "xpost_name.h"
 #include "xpost_string.h"
 #include "xpost_array.h"
@@ -75,16 +76,18 @@ Xpost_Object bind(Xpost_Context *ctx,
         {
             default: break;
             case nametype:
+                if (!xpost_object_is_exe(t)) break; /* bind only replaces executable names */
                 z = xpost_stack_count(ctx->lo, ctx->ds);
                 for (j = 0; j < z; j++) {
                     d = xpost_stack_topdown_fetch(ctx->lo, ctx->ds, j);
-                    if (xpost_dict_known_key(ctx, xpost_context_select_memory(ctx,d), d, t)) {
-                        t = xpost_dict_get(ctx, d, t);
+                    t = xpost_dict_get_name(ctx, d, t);
+                    if (xpost_object_get_type(t) != invalidtype) {
                         if (xpost_object_get_type(t) == operatortype) {
                             xpost_array_put(ctx, p, i, t);
                         }
                         break;
                     }
+                    t = xpost_array_get(ctx, p, i); /* keep searching for the name */
                 }
                 break;
             case arraytype:
@@ -145,6 +148,8 @@ int Sgetenv(Xpost_Context *ctx,
 {
     char *str;
     char *r;
+    if (xpost_path_control_is_engaged())
+        return invalidaccess;
     str = xpost_string_allocate_cstring(ctx, S);
     r = getenv(str);
     if (r)
@@ -174,6 +179,8 @@ int SSputenv(Xpost_Context *ctx,
              Xpost_Object S)
 {
     char *n, *s, *r;
+    if (xpost_path_control_is_engaged())
+        return invalidaccess;
     n = xpost_string_get_pointer(ctx, N);
     if (xpost_object_get_type(S) == nulltype)
     {

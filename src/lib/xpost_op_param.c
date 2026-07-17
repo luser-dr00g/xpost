@@ -116,8 +116,8 @@ int globalvmstatus (Xpost_Context *ctx)
         return VMerror;
     }
     lev = xpost_stack_count(ctx->gl, vstk);
-    used = ctx->gl->used + ctx->gl->used;
-    max = ctx->gl->max + ctx->gl->max;
+    used = ctx->gl->used;
+    max = ctx->gl->max;
 
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(lev)))
         return stackoverflow;

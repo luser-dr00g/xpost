@@ -5,82 +5,100 @@
 % -  erasepage  -
 % paint current page white
 /erasepage {
-    %(erasepage)=
-    %gsave
-    %    initclip
-    %    1 setgray
-    %    clippath fill
-    %grestore
+    % a device with an Erase method resets the page itself (the alpha
+    % device clears to transparent); otherwise paint the page white
+    DEVICE /Erase known {
+        DEVICE dup /Erase get exec
+        flushpage
+    }{
     gsave
-        %(1 setgray\n) print
         1 setgray
         [ currentcolordict DEVICE /nativecolorspace get
-        %dup =
         get exec
         counttomark { currenttransfer exec counttomark 1 roll } repeat
-        %(FillRect\n) print
         0 0 DEVICE /dimensions get aload pop
         DEVICE dup /FillRect get exec
         pop
-        %(flushpage\n) print
         flushpage
     grestore
+    } ifelse
 } bind def
 
 % -  fill  -
 % fill current path with current color
+% A device with a FillPath method consumes the whole path itself
+% (vector devices fill with curves preserved). The path must lie
+% inside a rectangular clip: a non-trivial clip region is cut by the
+% polygon machinery below, at the cost of flattening.
 /fill {
     closepath
+    DEVICE /FillPath known .cliptrivial and {
+        [ currentcolordict DEVICE /nativecolorspace get get exec
+        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        DEVICE dup /FillPath get exec
+        pop
+        flushpage
+        newpath
+    }{
     flattenpath
     doclip
-    %[ { 2 array astore [ exch } { 2 array astore } {} {]} .devpathforall ]
-    [
-        [ % mark
-        {
-            2 array astore % ... mark ... [x0 y0]
-            counttomark 1 ne {
-                counttomark 1 add 1 roll % ... [x0 y0] mark ...
-                ] exch % ... [ ... ] [x0 y0]
-                [ exch % ... [ ... ] [ [x0 y0]
-            } if % ... +++ mark [x0 y0]
-        }
-        { 2 array astore } % ... mark [x0 y0] ... [xN yN]
-        {}
-        { counttomark dup 0 ne { 1 sub index } if } % ... mark [x0 y0] ... [x0 y0]
-        .devpathforall
-        ]
-        dup length 0 eq {pop} if
-    ]
+    % subpaths merged into one point list, separated by null, so that
+    % FillPoly scans them together and interior subpaths produce holes
+    .fillpolyargs
     /DEBUGFILL where { pop
         (fill)=
         pstack()=
         hook
     } if
-    {
-        dup length 2 gt {
-            [ currentcolordict DEVICE /nativecolorspace get get exec
-            counttomark { currenttransfer exec counttomark 1 roll } repeat
-            counttomark 2 add -1 roll
-            DEVICE dup /FillPoly get exec
-            pop
-            %pstack()=
-        }{
-            pop
-        } ifelse
-    } forall
+
+    dup length 2 gt {
+        [ currentcolordict DEVICE /nativecolorspace get get exec
+        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        counttomark 2 add -1 roll
+        DEVICE dup /FillPoly get exec
+        pop
+        %pstack()=
+    }{
+        pop
+    } ifelse
 
     flushpage
     newpath
+    } ifelse
 } bind def
 
 % -  eofill  -
 % fill using even-odd rule
+% Approximated by the nonzero fill: the two rules differ only for
+% self-overlapping or same-wound-hole paths, which the fill pipeline
+% here does not distinguish
 /eofill {
+    fill
 } def
 
 % -  stroke  -
 % draw line along current path
+% A device with a StrokePath method consumes the whole path itself
+% (vector devices stroke with true joins, caps and width); raster
+% devices take the hairline DrawLine walk when the device-space width
+% is within a pixel, else the stroked outline is filled.
 /stroke {
+    DEVICE /StrokePath known {
+        % dashing and non-rectangular clipping consume line segments;
+        % with neither active the path passes through unflattened, so
+        % curves reach the device
+        currentdash pop length 0 eq .cliptrivial and not {
+            flattenpath
+            dashpath
+            doclip
+        } if
+        [ currentcolordict DEVICE /nativecolorspace get get exec
+        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        DEVICE dup /StrokePath get exec
+        pop
+        flushpage
+        newpath
+    }{
     currentlinewidth 0 dtransform
     dup mul exch dup mul exch add sqrt
         1 le {
@@ -123,6 +141,7 @@
     } ifelse
 
     newpath
+    } ifelse
 } bind def
 
 /bitsdict <<

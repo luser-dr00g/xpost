@@ -1,0 +1,179 @@
+/QUIET where { pop }{ (loading bboxdev.ps...)print } ifelse
+
+/newbboxdevice { % width height  .  IMAGE-device-dict
+    BBOX dup /Create get exec
+} def
+
+% BBOX computes the bounding box of all marks, like Ghostscript's
+% -sDEVICE=bbox, and prints it on Emit -- without rasterizing (NoOutput).
+% Coordinates arrive in device space; Emit reports them in default user space
+% (y-up) to match Ghostscript's bbox device.
+%
+% Methods are as for the other devices (see nulldev.ps), except the marking
+% methods accumulate a box rather than discarding their arguments. The page
+% clear must not contribute to the box, so the device carries an Erase no-op
+% and erasepage never reaches the marking methods.
+%
+% Glyphs need no rasterization here -- whose cost grows with the square of
+% the resolution -- so the device declares /GlyphExtents: each glyph
+% contributes its ink box through FillRect instead.
+
+/BBOX <<
+    /nativecolorspace /DeviceGray
+    /dimensions [0 0]
+    /NoOutput true  % accumulate coordinates only; never rasterize
+    /GlyphExtents true  % text marks contribute outline ink boxes, not bitmaps
+
+    /.copydict {
+        dup length dict copy
+        dup /width known {
+            dup begin
+                /dimensions [width height] def
+            end
+        } if
+    }
+
+    /Create { % width height IMAGE  .  IMAGE'
+        begin {/height /width}{exch def}forall
+        currentdict end
+        dup /.copydict get exec
+        begin
+            /minx 1e30 def   % empty box: min > max
+            /miny 1e30 def
+            /maxx -1e30 def
+            /maxy -1e30 def
+        currentdict
+        end
+    }
+
+    /Destroy { % IMAGE  .  -
+        pop
+    }
+
+    % does this colour mark the box? Pure white marks only when the
+    % device carries /WhiteIsOpaque true; the default is false (white
+    % ignored), matching Ghostscript's bbox device, whose crop-style
+    % boxes exclude painted white. Anything else always marks.
+    /.opaque { % val  .  bool
+        1 lt
+        currentdict /WhiteIsOpaque 2 copy known { get }{ pop pop false } ifelse
+        or
+    }
+
+    % expand the box to include a device-space point
+    /.maxmin { % x y  .  -
+        2 copy
+        dup maxy gt { /maxy exch def }{ pop } ifelse
+        dup maxx gt { /maxx exch def }{ pop } ifelse
+        dup miny lt { /miny exch def }{ pop } ifelse
+        dup minx lt { /minx exch def }{ pop } ifelse
+    }
+
+    /PutPix { % val x y IMAGE  .  -
+        begin
+            3 -1 roll .opaque { .maxmin }{ pop pop } ifelse
+        end
+    }
+
+    /GetPix { % x y IMAGE  .  val
+        pop pop pop  0
+    }
+
+    /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
+        begin {y2 x2 y1 x1 val}{exch def}forall
+            val .opaque {
+                x1 y1 .maxmin
+                x2 y2 .maxmin
+            } if
+        end
+    }
+
+    /DrawRect { % val x y w h IMAGE  .  -
+        begin {h w y x val}{exch def}forall
+            val .opaque {
+                x y .maxmin
+                x w add  y h add  .maxmin
+            } if
+        end
+    }
+
+    % the page clear (erasepage) is not a mark -- matches gs bbox
+    /Erase { % IMAGE  .  -
+        pop
+    }
+
+    /FillRect { % val x y w h IMAGE  .  -
+        begin {h w y x val}{exch def}forall
+            val .opaque {
+                x y .maxmin
+                x w add  y h add  .maxmin
+            } if
+        end
+    }
+
+    /FillPoly { % val polygon IMAGE  .  -
+        begin
+            exch .opaque {
+                {
+                    dup type /arraytype eq {
+                        dup length 2 eq { aload pop .maxmin }{ pop } ifelse
+                    }{ pop } ifelse  % null subpath separators fall here
+                } forall
+            }{
+                pop
+            } ifelse
+        end
+    }
+
+    /Emit { % IMAGE  .  -
+        begin
+            minx maxx gt {  % nothing was marked
+                (%%BoundingBox: 0 0 0 0\n) print
+                (%%HiResBoundingBox: 0 0 0 0\n) print
+            }{
+                % device -> default user space (points, y-up): unscale by
+                % the device resolution and flip. The defaultmatrix fixup
+                % applied after construction carries the scale; a raw
+                % device is 1:1
+                /sx 1 def /sy 1 def
+                currentdict /defaultmatrix 2 copy known {
+                    get dup 0 get /sx exch def 3 get neg /sy exch def
+                }{ pop pop } ifelse
+                /uxmin minx sx div def
+                /uxmax maxx sx div def
+                /uymin height maxy sub sy div def
+                /uymax height miny sub sy div def
+                (%%BoundingBox: ) print
+                uxmin floor cvi 20 string cvs print ( ) print
+                uymin floor cvi 20 string cvs print ( ) print
+                uxmax ceiling cvi 20 string cvs print ( ) print
+                uymax ceiling cvi 20 string cvs print (\n) print
+                (%%HiResBoundingBox: ) print
+                uxmin 30 string cvs print ( ) print
+                uymin 30 string cvs print ( ) print
+                uxmax 30 string cvs print ( ) print
+                uymax 30 string cvs print (\n) print
+            } ifelse
+        end
+    }
+>> def
+
+/TESTGRAPHICS where {pop
+    (TESTGRAPHICS bboxdev)=
+    /dev 100 100 newbboxdevice def
+    % a filled triangle spanning device x[10,30] y[20,40]
+    0 [ [10 20] [30 20] [30 40] ] dev dup /FillPoly get exec
+    % a white rect must not mark (WhiteIsOpaque unset), and the page
+    % clear reaches Erase, which never marks
+    1 0 0 100 100 dev dup /FillRect get exec
+    dev dup /Erase get exec
+    % a marking FillRect inside the triangle's box changes nothing
+    0 15 25 10 10 dev dup /FillRect get exec
+    dev begin
+        minx 10 eq maxx 30 eq and  miny 20 eq maxy 40 eq and  and
+        { (bboxdev accumulate PASS)= }{ (bboxdev accumulate FAIL)= } ifelse
+    end
+    dev dup /Emit get exec  % user space: y' = 100 - y -> BoundingBox 10 60 30 80
+} if
+
+/QUIET where { pop }{ (eof bboxdev.ps\n)print } ifelse

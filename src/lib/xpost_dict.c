@@ -158,15 +158,16 @@ cont:
         case booleantype: /*@fallthrough@*/
         case integertype: return L.int_.val - R.int_.val;
 
-        case realtype: return (fabs(L.real_.val - R.real_.val) < 0.0001)?
-                                0:
-                                L.real_.val - R.real_.val > 0? 1: -1;
+        /* numbers compare exactly: this function also backs
+           the relational operators */
+        case realtype: return L.real_.val < R.real_.val ? -1 :
+                              L.real_.val > R.real_.val ? 1 : 0;
         case extendedtype:
         {
             double l,r;
             l = xpost_dict_convert_extended_to_double(L);
             r = xpost_dict_convert_extended_to_double(R);
-            return (fabs(l - r) < 0.0001) ? 0 : l - r > 0? 1: -1;
+            return l < r ? -1 : l > r ? 1 : 0;
         }
 
         case operatortype:  return L.mark_.padw - R.mark_.padw;
@@ -181,10 +182,20 @@ cont:
                                 && xpost_object_get_ent(L) == xpost_object_get_ent(R)
                                 && L.comp_.off == R.comp_.off ); /* 0 if all eq */
 
-        case stringtype: return L.comp_.sz == R.comp_.sz ?
-                                memcmp(xpost_string_get_pointer(ctx, L), xpost_string_get_pointer(ctx, R), L.comp_.sz) :
-                                L.comp_.sz - R.comp_.sz;
-        case filetype: return xpost_file_get_file_pointer(ctx->lo, L) == xpost_file_get_file_pointer(ctx->lo, R);
+        case stringtype:
+        {
+            /* strings compare lexicographically, element by element;
+               where one is a prefix of the other the shorter is less
+               (PLRM, gt/ge/lt/le). Comparing by length alone is wrong:
+               (abc) is less than (d), not greater. */
+            unsigned int ln = L.comp_.sz, rn = R.comp_.sz;
+            unsigned int n = ln < rn ? ln : rn;
+            int c = memcmp(xpost_string_get_pointer(ctx, L),
+                           xpost_string_get_pointer(ctx, R), n);
+            return c != 0 ? c : (int)ln - (int)rn;
+        }
+        /* equal underlying streams compare equal (0), like every case above */
+        case filetype: return xpost_file_get_file_pointer(ctx->lo, L) != xpost_file_get_file_pointer(ctx->lo, R);
     }
 }
 
@@ -193,13 +204,26 @@ static
 unsigned int hash(Xpost_Object k)
 {
     unsigned int h;
-    h = ( (xpost_object_get_type(k)
-            | (k.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
-            << 1) /* ignore flags (except BANK!) */
-        + (k.comp_.sz << 3)
-        + (xpost_object_get_ent(k) << 7)
-        + (k.comp_.off << 5);
+    /* names are identified by bank and name-stack index alone;
+       xpost_object_get_ent() is -1 for non-composites, so without this
+       case every name key would hash identically */
+    if (xpost_object_get_type(k) == nametype)
+        h = ( (nametype
+                | (k.mark_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
+                << 1)
+            + ((unsigned int)k.mark_.padw << 3);
+    else
+        h = ( (xpost_object_get_type(k)
+                | (k.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
+                << 1) /* ignore flags (except BANK!) */
+            + (k.comp_.sz << 3)
+            + (xpost_object_get_ent(k) << 7)
+            + (k.comp_.off << 5);
     /* h = xpost_object_get_type(k); /\* test collisions. *\/ */
+    /* mix bits so the modulo by the table size spreads keys across
+       all slots for any size */
+    h *= 2654435761u; /* Knuth multiplicative hash (golden ratio) */
+    h ^= h >> 16;
 #ifdef DEBUGDIC
     printf("\nhash(");
     xpost_object_dump(k);
@@ -231,6 +255,8 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     unsigned int ent;
     unsigned int hashnull;
 
+    unsigned int reqsz = sz; /* nominal capacity, as maxlength reports it */
+
     if (sz < 8) sz = 8;
     sz = (unsigned int)ceil((double)sz * 1.25);
 
@@ -260,7 +286,7 @@ Xpost_Object xpost_dict_cons_memory (Xpost_Memory_File *mem,
     dp->tag = d.tag;
     dp->sz = sz;
     dp->nused = 0;
-    dp->pad = 0;
+    dp->pad = reqsz; /* remember the requested capacity for maxlength */
 
     tp = (void *)(mem->base + ad + sizeof(dichead)); /* clear table */
     hashnull = hash(null);
@@ -305,7 +331,8 @@ unsigned int xpost_dict_length_memory (Xpost_Memory_File *mem,
     return dp->nused;
 }
 
-/* get the sz field from the dichead */
+/* get the sz field from the dichead: the internal hash-table size,
+   used to decide when the dict is full and how large to grow it */
 unsigned int xpost_dict_max_length_memory (Xpost_Memory_File *mem,
                       Xpost_Object d)
 {
@@ -314,6 +341,19 @@ unsigned int xpost_dict_max_length_memory (Xpost_Memory_File *mem,
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &da);
     dp = (void *)(mem->base + da);
     return dp->sz;
+}
+
+/* the nominal capacity the dict was created with, which maxlength must
+   report; the internal size above is over-allocated (min 8, x1.25) and
+   would over-report */
+unsigned int xpost_dict_requested_length_memory (Xpost_Memory_File *mem,
+                      Xpost_Object d)
+{
+    unsigned int da;
+    dichead *dp;
+    xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &da);
+    dp = (void *)(mem->base + da);
+    return dp->pad;
 }
 
 /*
@@ -439,7 +479,7 @@ Xpost_Object consextended (double d)
 
     r.number = d;
     o.extended_.tag = extendedtype;
-    o.extended_.sign_exp = (r.bits >> 52) & 0x7FF;
+    o.extended_.sign_exp = (r.bits >> 52) & 0xFFF;
     o.extended_.fraction = (r.bits >> 20) & 0xFFFFFFFF;
     return o;
 }
@@ -504,11 +544,24 @@ Xpost_Object clean_key (Xpost_Context *ctx,
     return k;
 }
 
+/* keys are overwhelmingly names: equal iff same bank and name index.
+   decided inline to spare a function call per probe */
+static inline int
+_keys_equal(Xpost_Context *ctx, Xpost_Object a, Xpost_Object b)
+{
+    if (xpost_object_get_type(a) == nametype &&
+        xpost_object_get_type(b) == nametype)
+        return ((a.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK) ==
+                (b.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK)) &&
+               a.mark_.padw == b.mark_.padw;
+    return xpost_dict_compare_objects(ctx, a, b) == 0;
+}
+
 /* repeated loop body from the lookup function */
 #define RETURN_TAB_I_IF_EQ_K_OR_NULL    \
     if (xpost_object_get_type(tp[i].key) == nulltype \
         || (hashval == tp[i].hash \
-            && xpost_dict_compare_objects(ctx, tp[i].key, k) == 0)) \
+            && _keys_equal(ctx, tp[i].key, k))) \
         return tp + i
 
 static dicrec invalidrec[] = {{ 0, {0}, {0}}};
@@ -538,7 +591,7 @@ dicrec *diclookup(Xpost_Context *ctx,
         return invalidrec;
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
-    sz = (dp->sz + 1);
+    sz = DICTABN(dp->sz);
 
     hashval = hash(k);
     h = hashval % sz;
@@ -621,6 +674,61 @@ Xpost_Object xpost_dict_get(Xpost_Context *ctx,
 }
 
 /*
+   Get value from dict with a name key.
+
+   names are already canonical dict keys, so the key normalisation and
+   generality of the full lookup are unnecessary; magic values and any
+   irregularity fall back to the full path. */
+Xpost_Object xpost_dict_get_name(Xpost_Context *ctx,
+        Xpost_Object d,
+        Xpost_Object k)
+{
+    Xpost_Memory_File *mem = xpost_context_select_memory(ctx, d);
+    unsigned int ent = xpost_object_get_ent(d);
+    unsigned int ad;
+    dichead *dp;
+    dicrec *tp;
+    unsigned int sz;
+    unsigned int hashval;
+    unsigned int h;
+    unsigned int i;
+
+    if (ent >= mem->table.nextent)
+        return invalid;
+    ad = mem->table.tab[ent].adr;
+    dp = (void *)(mem->base + ad);
+    tp = (void *)(mem->base + ad + sizeof(dichead));
+    sz = DICTABN(dp->sz);
+
+    hashval = hash(k);
+    h = hashval % sz;
+
+    for (i = h; i < sz; i++)
+    {
+        if (xpost_object_get_type(tp[i].key) == nulltype)
+            return invalid;
+        if (hashval == tp[i].hash && _keys_equal(ctx, tp[i].key, k))
+        {
+            if (xpost_object_get_type(tp[i].value) == magictype)
+                return xpost_dict_get_memory(ctx, mem, d, k);
+            return tp[i].value;
+        }
+    }
+    for (i = 0; i < h; i++)
+    {
+        if (xpost_object_get_type(tp[i].key) == nulltype)
+            return invalid;
+        if (hashval == tp[i].hash && _keys_equal(ctx, tp[i].key, k))
+        {
+            if (xpost_object_get_type(tp[i].value) == magictype)
+                return xpost_dict_get_memory(ctx, mem, d, k);
+            return tp[i].value;
+        }
+    }
+    return invalid;
+}
+
+/*
    Put key+value in dict with specified memory file.
    (dict must be valid for this memory file)
 
@@ -644,6 +752,13 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
     if (!ctx->gl->interpreter_get_initializing())
         if (!xpost_object_is_writeable(ctx, d))
             return invalidaccess;
+
+    /* canonicalise the key first: converting a new string key to a name
+       allocates, which can collect or move the memory file; every
+       pointer derived before that point would be stale */
+    k = clean_key(ctx, k);
+    if (xpost_object_get_type(k) == invalidtype)
+        return VMerror;
 
     if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
@@ -689,10 +804,8 @@ int xpost_dict_put_memory(Xpost_Context *ctx,
         xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
         dp = (void *)(mem->base + ad);
         ++ dp->nused;
-        r->key = clean_key(ctx, k);
-        r->hash = hash(r->key);
-        if (xpost_object_get_type(r->key) == invalidtype)
-            return VMerror;
+        r->key = k; /* canonicalised above */
+        r->hash = hash(k);
     }
     else if (xpost_object_get_type(r->value) == magictype)
     {
@@ -736,102 +849,78 @@ int xpost_dict_put(Xpost_Context *ctx,
     xpost_stack_push(ctx->lo, ctx->hold, k);
     xpost_stack_push(ctx->lo, ctx->hold, v);
 
+    ++ctx->namebind_gen; /* a binding may change: invalidate name cache */
+
     return xpost_dict_put_memory(ctx, xpost_context_select_memory(ctx, d), d, k, v);
 }
 
-/* undefine key from dict */
+/* undefine key from dict.
+
+   after emptying the slot, re-slot the entries that follow it in the
+   probe cluster so no entry is left unreachable beyond the new hole
+   (Knuth TAOCP vol.3, 6.4 Algorithm R). */
 int xpost_dict_undef_memory(Xpost_Context *ctx,
         Xpost_Memory_File *mem,
         Xpost_Object d,
         Xpost_Object k)
 {
+    ++ctx->namebind_gen;
+
     dicrec *e;
     unsigned int ad;
     dichead *dp;
     dicrec *tp;
     unsigned int sz;
-    unsigned int hashval;
-    unsigned int h;
+    unsigned int hashnull;
     unsigned int i;
-    unsigned int last = 0;
-    int lastisset = 0;
-    int found = 0;
+    unsigned int j;
 
     if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))
             return VMerror;
 
+    k = clean_key(ctx, k); /* may allocate: derive pointers after */
+    if (xpost_object_get_type(k) == invalidtype)
+        return VMerror;
+
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     tp = (void *)(mem->base + ad + sizeof(dichead));
 
-    k = clean_key(ctx, k);
-    if (xpost_object_get_type(k) == invalidtype)
-        return VMerror;
-
     e = diclookup(ctx, mem, d, k); /*find slot for key */
-    if (e == NULL || e == invalidrec || xpost_dict_compare_objects(ctx,e->key,null) == 0)
+    if (e == NULL || e == invalidrec || xpost_object_get_type(e->key) == nulltype)
     {
         return undefined;
     }
 
-    /*find last chained key and value with same hash */
-    /*FIXME: need to repeat this process with this 'last chained key with same hash'
-      until the key we're clearing is the actual last key in the chain, recursively. */
     sz = DICTABN(dp->sz);
-    hashval = hash(k);
-    h = hashval % sz;
+    hashnull = hash(null);
 
-    for (i = h; i < sz; i++)
-    {
-        if (h == hash(tp[i].key) % sz)
-        {
-            last = i;
-            lastisset = 1;
-        }
-        else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0)
-        {
-            if (lastisset)
-            {
-                found = 1;
-                break;
-            }
-        }
-    }
+    j = e - tp; /* empty the slot */
+    tp[j].key = null;
+    tp[j].hash = hashnull;
+    tp[j].value = null;
+    --dp->nused;
 
-    if (!found)
+    i = j;
+    while (1) /* re-slot the remainder of the cluster */
     {
-        for (i = 0; i < h; i++)
-        {
-            if (h == hash(tp[i].key) % sz)
-            {
-                last = i;
-                lastisset = 1;
-            }
-            else if (xpost_dict_compare_objects(ctx, tp[i].key, null) == 0)
-            {
-                if (lastisset)
-                {
-                    found = 1;
-                    break;
-                }
-            }
-        }
-    }
+        unsigned int home;
 
-    if (found) /* f found: move last key and value to slot */
-    {
-        e->key = tp[last].key;
-        e->value = tp[last].value;
-        tp[last].key = null;
-        tp[last].hash = hash(tp[last].key);
-        tp[last].value = null;
-    }
-    else /* ot found: write null over key and value */
-    {
-        e->key = null;
-        tp[last].hash = hash(tp[last].key);
-        e->value = null;
+        i = (i + 1) % sz;
+        if (xpost_object_get_type(tp[i].key) == nulltype)
+            break;
+        /* move entry i into the hole at j unless its home slot lies
+           cyclically within (j, i], in which case it is still reachable */
+        home = tp[i].hash % sz;
+        if (i > j ? (home <= j || home > i) : (home <= j && home > i))
+        {
+            tp[j] = tp[i];
+            tp[i].key = null;
+            tp[i].hash = hashnull;
+            tp[i].value = null;
+            j = i;
+        }
     }
 
     return 0;

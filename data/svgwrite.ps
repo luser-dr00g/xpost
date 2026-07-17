@@ -1,0 +1,219 @@
+/QUIET where { pop }{ (loading svgwrite.ps...)print } ifelse
+
+/newSVGWRITEdevice { % width height  .  IMAGE-device-dict
+    SVGWRITE dup /Create get exec
+} def
+
+% SVGWRITE writes a single-page vector SVG: the marking methods append
+% path and rect elements and Emit wraps them in the document structure.
+% A sibling of the PDFWRITE device sharing its content accumulator (the
+% .pdfinit/.pdfput/.pdfchunks/.pdffree ops are format-agnostic); only
+% the emitted syntax differs. Device coordinates are y-down, as SVG's
+% are, so they pass through unchanged -- no device-matrix prefix.
+%
+% Emit reports the page size in points (unscaling the device resolution
+% from the defaultmatrix fixup, as the bbox device does) with a viewBox
+% in device units, so any HWResolution yields the same physical page.
+
+/SVGWRITE <<
+    /nativecolorspace /DeviceRGB
+    /dimensions [0 0]
+    /NoOutput true  % keep this device's own vector FillPoly (no rasterizing)
+    /VectorGlyphs true   % text operators emit glyph outlines, not bitmaps
+    /VectorSyntax /svg   % ... spelled as SVG path data
+
+    /.copydict {
+        dup length dict copy
+        dup /width known {
+            dup begin
+                /dimensions [width height] def
+            end
+        } if
+        /OutputFileName where {
+            /OutputFileName exch 1 index get
+            3 copy put pop pop
+        } if
+    } bind
+
+    /Create { % width height IMAGE  .  IMAGE'
+    begin {/height /width}{exch def}forall
+    % the page dimensions are points and need not be integral; adopt the
+    % exact values when the page device machinery published them
+    /.exactpagedims where { pop
+        /width .exactpagedims 0 get def
+        /height .exactpagedims 1 get def
+    } if
+    currentdict end
+    dup /.copydict get exec
+    begin
+        currentdict .pdfinit    % create the content accumulator (outside VM)
+    currentdict
+    end } bind
+
+    /Destroy { % IMAGE  .  -
+        dup .pdffree pop
+    } bind
+
+    % append a string to the content accumulator (held outside VM via /Private)
+    /.put { % str  .  -
+        currentdict .pdfput
+    } bind
+
+    % append a number in SVG syntax (integer, or two decimals; never
+    % exponential). round(n*100) avoids binary-float print noise.
+    /.svgnum { % num  .  -
+        dup truncate 1 index eq {
+            cvi 20 string cvs .put
+        }{
+            100 mul round cvi
+            dup 0 lt { (-) .put neg } if
+            dup 100 idiv 20 string cvs .put
+            (.) .put
+            100 mod
+            dup 10 lt { (0) .put } if
+            20 string cvs .put
+        } ifelse
+    } bind
+
+    % append a colour as an rgb() percentage triple, quoted
+    /.svgrgb { % r g b  .  -
+        ("rgb\() .put
+        3 -1 roll 100 mul .svgnum (%,) .put
+        exch 100 mul .svgnum (%,) .put
+        100 mul .svgnum (%\)") .put
+    } bind
+
+    /PutPix { % r g b x y IMAGE  .  -
+    begin {y x b g r}{exch def}forall
+        (<rect fill=) .put r g b .svgrgb
+        ( x=") .put x .svgnum (" y=") .put y .svgnum
+        (" width="1" height="1"/>\n) .put
+    end }
+
+    /GetPix { % x y IMAGE  .  r g b
+        pop pop pop  0 0 0
+    }
+
+    /DrawLine { % r g b x1 y1 x2 y2 IMAGE  .  -
+    begin {y2 x2 y1 x1 b g r}{exch def}forall
+        (<path fill="none" stroke=) .put r g b .svgrgb
+        ( d="M) .put x1 .svgnum ( ) .put y1 .svgnum
+        (L) .put x2 .svgnum ( ) .put y2 .svgnum ("/>\n) .put
+    end }
+
+    /DrawRect { % r g b x y w h IMAGE  .  -
+    begin {h w y x b g r}{exch def}forall
+        (<rect fill="none" stroke=) .put r g b .svgrgb
+        ( x=") .put x .svgnum (" y=") .put y .svgnum
+        (" width=") .put w .svgnum (" height=") .put h .svgnum ("/>\n) .put
+    end }
+
+    /FillRect { % r g b x y w h IMAGE  .  -
+    begin {h w y x b g r}{exch def}forall
+        (<rect fill=) .put r g b .svgrgb
+        ( x=") .put x .svgnum (" y=") .put y .svgnum
+        (" width=") .put w .svgnum (" height=") .put h .svgnum ("/>\n) .put
+    end }
+
+    % r g b polygon IMAGE . -  ; append one path element: the fill colour,
+    % the subpaths as M/L commands each closed with Z, and a nonzero
+    % fill rule. The per-coordinate formatting is the hot loop, so it is
+    % done in C (.svgfillpoly), appending to the accumulator.
+    /FillPoly { .svgfillpoly } bind
+
+    % append collected path elements (coordinates then a /m /l /c /h
+    % name each, from the .devpathforall walker) as SVG path commands
+    /.putelems { % elems  .  -
+        {
+            dup type /nametype eq {
+                dup /h eq { pop (Z) .put }{
+                /spcmd exch def
+                spcmd /c eq {
+                    {spy3 spx3 spy2 spx2 spy1 spx1}{exch def}forall
+                    (C) .put
+                    spx1 .svgnum ( ) .put spy1 .svgnum ( ) .put
+                    spx2 .svgnum ( ) .put spy2 .svgnum ( ) .put
+                    spx3 .svgnum ( ) .put spy3 .svgnum
+                }{
+                    spcmd /m eq { (M) }{ (L) } ifelse .put
+                    exch .svgnum ( ) .put .svgnum
+                } ifelse } ifelse
+            } if
+        } forall
+    } bind
+
+    % r g b IMAGE . -  ; fill the current path as one path element with
+    % curves preserved (the flattening fill goes through FillPoly
+    % instead), subpaths closed implicitly by the nonzero fill rule --
+    % the rule the flattening fill applies. The per-element formatting
+    % walks the path in C (.svgfillpath), appending to the accumulator,
+    % so subpath count costs no operand stack.
+    /FillPath { .svgfillpath } bind
+
+    % r g b IMAGE . -  ; stroke the current path as one path element with
+    % the device-space line width and the graphics state's cap, join and
+    % miter limit, so joints between segments are drawn by the consumer
+    % rather than lost to per-segment strokes. The path is collected
+    % first (the walker runs in its own dictionary, away from this
+    % device's methods) and emitted afterwards.
+    /StrokePath { % r g b IMAGE  .  -
+    begin {spb spg spr}{exch def}forall
+        /spelems [ { /m } { /l } { /c } { /h } .devpathforall ] def
+        spelems length 0 gt {
+            (<path fill="none" stroke=) .put spr spg spb .svgrgb
+            ( stroke-width=") .put
+            currentlinewidth 0 dtransform dup mul exch dup mul add sqrt
+            .svgnum
+            (" stroke-linecap=") .put
+            currentlinecap dup 0 eq { pop (butt) }{ 1 eq { (round) }{ (square) } ifelse } ifelse .put
+            (" stroke-linejoin=") .put
+            currentlinejoin dup 0 eq { pop (miter) }{ 1 eq { (round) }{ (bevel) } ifelse } ifelse .put
+            (" stroke-miterlimit=") .put
+            currentmiterlimit .svgnum
+            (" d=") .put
+            spelems .putelems
+            ("/>\n) .put
+        } if
+    end }
+
+    /Emit { % IMAGE  .  -
+    begin
+        /F /OutputFileName where { pop OutputFileName (w) file }{ (%stdout) (w) file } ifelse def
+        /.w { F exch writestring } def
+
+        % page size in points: unscale the device resolution carried in
+        % the defaultmatrix fixup; a raw 1:1 device is unaffected
+        /sx 1 def /sy 1 def
+        currentdict /defaultmatrix 2 copy known {
+            get dup 0 get /sx exch def 3 get neg /sy exch def
+        }{ pop pop } ifelse
+
+        (<?xml version="1.0" encoding="UTF-8"?>\n) .w
+        (<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width=") .w
+        /.wnum { 100 mul round cvi dup 100 idiv 20 string cvs F exch writestring
+                 100 mod dup 0 ne { (.) .w dup 10 lt { (0) .w } if 20 string cvs .w }{ pop } ifelse } def
+        width sx div .wnum (pt" height=") .w
+        height sy div .wnum (pt" viewBox="0 0 ) .w
+        width .wnum ( ) .w height .wnum (">\n) .w
+
+        currentdict .pdfchunks { .w } forall
+
+        (</svg>\n) .w
+        F (%stdout) (w) file ne { F closefile } if
+
+        % start the next page fresh: showpage's page clear and later
+        % marks must not stack on the emitted content (a later Emit
+        % rewrites the output with the then-current page)
+        currentdict .pdfreset
+    end }
+>> def
+
+/TESTGRAPHICS where {pop
+    (TESTGRAPHICS svgwrite)=
+    /dev 200 200 newSVGWRITEdevice def
+    0 0 0 [ [20 20] [80 20] [80 80] [20 80] ] dev dup /FillPoly get exec
+    dev .pdfchunks 0 get length 0 gt { (svgwrite content PASS)= }{ (svgwrite content FAIL)= } ifelse
+    dev dup /Destroy get exec
+} if
+
+/QUIET where { pop }{ (eof svgwrite.ps\n)print } ifelse

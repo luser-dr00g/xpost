@@ -67,6 +67,32 @@ struct _Xpost_Context {
         int load;
         int loop;
         int repeat;
+        int forcont;
+        int repeatcont;
+        int loopcont;
+        int arrayforallcont;
+        int stringforallcont;
+        int dictforallcont;
+        int oppop;
+        int opexch;
+        int opdup;
+        int opindex;
+        int opadd;
+        int opget;
+        int opsub;
+        int opmul;
+        int opeq;
+        int opne;
+        int oplt;
+        int ople;
+        int opgt;
+        int opge;
+        int opif;
+        int opifelse;
+        int opdef;
+        int opput;
+        int optype;
+        int oproll;
         int token;
         int transform;
         int itransform;
@@ -75,6 +101,16 @@ struct _Xpost_Context {
     } opcode_shortcuts;  /**< opcodes for internal use, to avoid lookups */
 
     Xpost_Object currentobject;  /**< currently-executing object, for error() */
+
+    /* cache of name -> value resolutions against the dict stack,
+       invalidated in bulk whenever any binding may have changed */
+    unsigned int *namecache_gen;   /**< generation per (name index, bank) */
+    Xpost_Object *namecache_val;   /**< cached resolution */
+    unsigned int namecache_size;   /**< entries allocated */
+    unsigned int namebind_gen;     /**< current binding generation */
+
+    Xpost_Object typenames[XPOST_OBJECT_NTYPES]; /**< executable name per type,
+                                                      populated on first use */
 
     /*@dependent@*/
     Xpost_Memory_File *gl; /**< global VM */
@@ -94,6 +130,30 @@ struct _Xpost_Context {
     const char *device_str;
 
     int ignoreinvalidaccess; //briefly allow invalid access to put userdict in systemdict (per PLRM)
+
+    int scanner_defer; /**< the token just scanned is a brace procedure:
+                            the interpreter pushes it as data rather than
+                            executing it. A binary object sequence also
+                            scans to an executable array but executes. */
+
+    size_t (*stdout_fn)(void *, const char *, size_t); /**< divert %stdout text */
+    void *stdout_user;
+    size_t (*stderr_fn)(void *, const char *, size_t); /**< divert %stderr text */
+    void *stderr_user;
+
+    char run_error_name[48];  /**< error that ended the last run ("" if none) */
+    char run_error_info[128]; /**< errorinfo detail for the same ("" if none) */
+    int run_uncaught;         /**< an error unwound past every stopped context */
+
+    unsigned int es_run_base; /**< exec-stack depth at xpost_run entry;
+                                    a completed run is truncated back to
+                                    this depth so its scheduling frames
+                                    cannot accumulate across jobs */
+    int job_snapshots; /**< take VM snapshots around each xpost_run job
+                            (restored on the quit path); disable for a
+                            persistent context serving many runs, where
+                            the per-run snapshots would accumulate save
+                            levels and pin every run's garbage */
 
     int (*xpost_interpreter_cid_init)(unsigned int *cid);
     Xpost_Memory_File *(*xpost_interpreter_alloc_local_memory)(void);

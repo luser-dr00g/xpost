@@ -241,16 +241,22 @@ int xpost_oper_init_bool_ops(Xpost_Context *ctx,
     //optab = (void *)(ctx->gl->base + optadr);
 
     op = xpost_operator_cons(ctx, "eq", (Xpost_Op_Func)xpost_op_any_any_eq, 1, 2, anytype, anytype);
+    ctx->opcode_shortcuts.opeq = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "ne", (Xpost_Op_Func)xpost_op_any_any_ne, 1, 2, anytype, anytype);
+    ctx->opcode_shortcuts.opne = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "ge", (Xpost_Op_Func)xpost_op_any_any_ge, 1, 2, anytype, anytype);
+    ctx->opcode_shortcuts.opge = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "gt", (Xpost_Op_Func)xpost_op_any_any_gt, 1, 2, anytype, anytype);
+    ctx->opcode_shortcuts.opgt = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "le", (Xpost_Op_Func)xpost_op_any_any_le, 1, 2, anytype, anytype);
+    ctx->opcode_shortcuts.ople = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "lt", (Xpost_Op_Func)xpost_op_any_any_lt, 1, 2, anytype, anytype);
+    ctx->opcode_shortcuts.oplt = op.mark_.padw;
     INSTALL;
     op = xpost_operator_cons(ctx, "and", (Xpost_Op_Func)xpost_op_bool_bool_and, 1, 2, booleantype, booleantype);
     INSTALL;

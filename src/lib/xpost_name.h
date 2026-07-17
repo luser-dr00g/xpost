@@ -53,6 +53,13 @@ typedef struct tst
 void xpost_name_dump_names(Xpost_Context *ctx);
 int xpost_name_init(Xpost_Context *ctx);
 Xpost_Object xpost_name_cons(Xpost_Context *ctx, const char *s);
+
+/**
+ * @brief Construct a name object in global VM regardless of the
+ * current allocation mode. Operator names must live in the global
+ * name space: the operator table records them by global index.
+ */
+Xpost_Object xpost_name_cons_global(Xpost_Context *ctx, const char *s);
 Xpost_Object xpost_name_get_string(Xpost_Context *ctx, Xpost_Object n);
 
 /**

@@ -160,8 +160,8 @@ end
     dup 0 eq { pop x y end /itransform cvx /undefinedresult signalerror } if
     1 exch div
     /invdet exch def
-    d x mul b y mul sub c f mul add d e mul sub invdet mul
-    c x mul neg a y mul add b e mul add a f mul sub invdet mul
+    d x mul c y mul sub c f mul add d e mul sub invdet mul
+    b x mul neg a y mul add b e mul add a f mul sub invdet mul
 end
 } def
 
@@ -177,8 +177,8 @@ end
     dup 0 eq { end /idtransform cvx /undefinedresult signalerror } if
     1 exch div
     /invdet exch def
-    d x mul b y mul sub invdet mul
-    c x mul neg a y mul add invdet mul
+    d x mul c y mul sub invdet mul
+    b x mul neg a y mul add invdet mul
 end
 } def
 

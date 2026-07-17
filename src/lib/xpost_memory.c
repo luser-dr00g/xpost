@@ -405,6 +405,19 @@ xpost_memory_file_grow(Xpost_Memory_File *mem,
 #else
     /* initialize mem (valgrind) */
     memset(mem->base + mem->used, 0, mem->max - mem->used);
+    if (getenv("XPOST_GROW_MOVES"))
+    {
+        /* debug: force every grow to relocate, so a stale pointer into
+           the old buffer is a use-after-free that ASan reports */
+        tmp = malloc(sz);
+        if (tmp != NULL)
+        {
+            memcpy(tmp, mem->base, mem->used);
+            memset((unsigned char *)tmp + mem->used, 0, sz - mem->used);
+            free(mem->base);
+        }
+    }
+    else
     tmp = realloc(mem->base, sz);
     if (tmp == NULL)
     { /* hanging error case */
@@ -580,12 +593,15 @@ _xpost_memory_table_alloc_new(Xpost_Memory_File *mem,
     }
 
     ent = mem->table.nextent;
-    ++mem->table.nextent;
     if (ent > XPOST_OBJECT_COMP_MAX_ENT)
     {
-        XPOST_LOG_ERR("Warning: ent number %u exceeds object extended-ent-field max %u",
-                ent, XPOST_OBJECT_COMP_MAX_ENT);
+        /* an ent number beyond the object field width would be silently
+           truncated when stored in an object, aliasing another entity */
+        XPOST_LOG_ERR("%d entity numbers exhausted (max %u)",
+                VMerror, XPOST_OBJECT_COMP_MAX_ENT);
+        return 0;
     }
+    ++mem->table.nextent;
 
     if (!xpost_memory_file_alloc(mem, sz, &adr))
     {
@@ -627,33 +643,39 @@ xpost_memory_table_alloc(Xpost_Memory_File *mem,
 
     if (mem->free_list_alloc_is_installed)
     {
+        /* entity numbers are a fixed budget independent of the byte
+           threshold: collect well before the table saturates, or
+           allocation fails outright once it does */
+        if (mem->garbage_collect_is_installed &&
+            !mem->interpreter_get_initializing() &&
+            mem->table.nextent > XPOST_OBJECT_COMP_MAX_ENT / 2 &&
+            mem->table.nextent >= mem->gc_trigger_nextent)
+        {
+            mem->garbage_collect_pending = 1;
+            mem->gc_trigger_nextent = mem->table.nextent + 65536;
+        }
+
         ret = mem->free_list_alloc(mem, sz, tag, entity);
         if (ret == 1)
         {
+            mem->table.tab[*entity].used = sz;
             return 1;
         }
         else if (ret == 2)
         {
+            /* collection is due, but running it here would sweep any
+               object the current operator holds only in C variables
+               (invisible to the root set). Record the request; the
+               interpreter collects at its safe point between operator
+               executions, where the stacks are the complete roots. */
             if (mem->garbage_collect_is_installed &&
                     !mem->interpreter_get_initializing())
-            {
-                int sz_reclaimed;
-
-                sz_reclaimed = mem->garbage_collect(mem, 1, 1);
-                if (sz_reclaimed == -1)
-                    return 0;
-                if (sz_reclaimed > (int)sz)
-                {
-                    ret = mem->free_list_alloc(mem, sz, tag, entity);
-                    if (ret == 1)
-                    {
-                        return 1;
-                    }
-                }
-            }
+                mem->garbage_collect_pending = 1;
         }
     }
     ret = _xpost_memory_table_alloc_new(mem, sz, tag, entity);
+    if (!ret)
+        return 0; /* *entity is not valid on failure */
     //XPOST_LOG_INFO("allocated %u(%u) bytes with tag %u as ent %u at %u in %s", sz, mem->table.tab[*entity].sz, tag, *entity, mem->table.tab[*entity].adr, mem->fname);
     mem->table.tab[*entity].used = sz;
     return ret;
@@ -772,10 +794,11 @@ xpost_memory_get(Xpost_Memory_File *mem,
 {
     CHECK_VALID_ENT(ent,mem,0)
 
-    if (offset * sz > mem->table.tab[ent].sz)
+    if (offset * sz + sz > mem->table.tab[ent].sz)
     {
         XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
                 offset, sz, mem->table.tab[ent].sz);
+        if (getenv("XPOST_TRAP_OOB")) abort(); /* P0 TEMP */
         return 0;
     }
 
@@ -793,7 +816,7 @@ xpost_memory_put(Xpost_Memory_File *mem,
 {
     CHECK_VALID_ENT(ent,mem,0)
 
-    if (offset * sz > mem->table.tab[ent].sz)
+    if (offset * sz + sz > mem->table.tab[ent].sz)
     {
         XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
                 offset, sz, mem->table.tab[ent].sz);

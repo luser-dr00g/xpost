@@ -55,6 +55,12 @@ int Istring(Xpost_Context *ctx,
             Xpost_Object I)
 {
     Xpost_Object str;
+
+    if (I.int_.val < 0)
+        return rangecheck;
+    if (I.int_.val > 65535) /* sz field is 16 bits; PLRM minimum limit */
+        return limitcheck;
+
     str = xpost_string_cons(ctx, I.int_.val, NULL);
     if (xpost_object_get_type(str) == nulltype)
         return VMerror;
@@ -217,7 +223,12 @@ int Ssearch(Xpost_Context *ctx,
     Xpost_Object interval;
 
     if (seek.comp_.sz > str.comp_.sz)
-        return rangecheck;
+    {
+        /* needle cannot match: report not-found, per PLRM */
+        xpost_stack_push(ctx->lo, ctx->os, str);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+        return 0;
+    }
     s = xpost_string_get_pointer(ctx, str);
     k = xpost_string_get_pointer(ctx, seek);
     for (i = 0; i <= (str.comp_.sz - seek.comp_.sz); i++)
@@ -256,33 +267,95 @@ int Sforall(Xpost_Context *ctx,
 
     if (S.comp_.sz == 0) return 0;
     assert(ctx->gl->base);
-    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "forall", NULL,0,0));
+    (void)interval;
+    (void)val;
+    (void)ret;
+    /* loop frame, as for the array forall */
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.forall)))
-        return execstackoverflow;
-    //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0));
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
         return execstackoverflow;
     if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(P)))
         return execstackoverflow;
-    interval = xpost_object_get_interval(S, 1, S.comp_.sz-1);
-    if (xpost_object_get_type(interval) == invalidtype)
-        return rangecheck;
-    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(interval)))
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvlit(S)))
         return execstackoverflow;
-    if (!xpost_stack_push(ctx->lo, ctx->es, P))
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                xpost_operator_cons_opcode(ctx->opcode_shortcuts.stringforallcont)))
         return execstackoverflow;
-    if (!xpost_object_is_exe(S))
+    return 0;
+}
+
+/* continue a string forall: es holds (from the top) the remaining
+   interval, the literal proc, and the sentinel */
+int xpost_op_string_forall_iterate(Xpost_Context *ctx)
+{
+    Xpost_Object S, P;
+    integer val;
+    int ret;
+    Xpost_Stack *es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+    Xpost_Stack *es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+
+    /* frame in the top segment, with room for the two pushes */
+    if (es_top->top >= 3 && es_top->top < XPOST_STACK_SEGMENT_SIZE - 2)
     {
-        //xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons(ctx, "cvx", NULL,0,0));
-        if (!xpost_stack_push(ctx->lo, ctx->es, xpost_operator_cons_opcode(ctx->opcode_shortcuts.cvx)))
-            return execstackoverflow;
+        Xpost_Stack *os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
+        Xpost_Stack *os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
+
+        S = es_top->data[es_top->top - 1];
+        P = es_top->data[es_top->top - 2];
+        if (S.comp_.sz == 0)
+        {
+            es_top->top -= 3; /* drop the frame */
+            if (es_top->top == 0 &&
+                (unsigned char *)es_top != ctx->lo->base + ctx->es)
+                es_root->prevseg = es_top->prevseg;
+            return 0;
+        }
+        ret = xpost_string_get(ctx, S, 0, &val);
+        if (ret)
+            return ret;
+        if (os_top->top < XPOST_STACK_SEGMENT_SIZE - 1)
+            os_top->data[os_top->top++] = xpost_int_cons(val);
+        else
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(val)))
+                return stackoverflow;
+            /* the push may grow the memory file and move its base:
+               re-derive the frame pointers before writing through them */
+            es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
+            es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
+        }
+        es_top->data[es_top->top - 1] =
+            xpost_object_cvlit(xpost_object_get_interval(S, 1, S.comp_.sz - 1));
+        es_top->data[es_top->top] =
+            xpost_operator_cons_opcode(ctx->opcode_shortcuts.stringforallcont);
+        es_top->data[es_top->top + 1] = xpost_object_cvx(P);
+        es_top->top += 2;
+        return 0;
     }
 
+    S = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 0);
+    P = xpost_stack_topdown_fetch(ctx->lo, ctx->es, 1);
+    if (xpost_object_get_type(S) == invalidtype)
+        return execstackunderflow;
+    if (S.comp_.sz == 0)
+    {
+        int k;
+        for (k = 0; k < 3; k++)
+            (void)xpost_stack_pop(ctx->lo, ctx->es);
+        return 0;
+    }
     ret = xpost_string_get(ctx, S, 0, &val);
     if (ret)
         return ret;
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(val)))
         return stackoverflow;
+    if (!xpost_stack_topdown_replace(ctx->lo, ctx->es, 0,
+            xpost_object_cvlit(xpost_object_get_interval(S, 1, S.comp_.sz - 1))))
+        return execstackunderflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es,
+                xpost_operator_cons_opcode(ctx->opcode_shortcuts.stringforallcont)))
+        return execstackoverflow;
+    if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(P)))
+        return execstackoverflow;
     return 0;
 }
 
@@ -331,5 +404,7 @@ int xpost_oper_init_string_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "forall", (Xpost_Op_Func)Sforall, 0, 2,
                              stringtype, proctype);
     INSTALL;
+    op = xpost_operator_cons(ctx, "forall.string.iterate", (Xpost_Op_Func)xpost_op_string_forall_iterate, 0, 0);
+    ctx->opcode_shortcuts.stringforallcont = op.mark_.padw;
     return 0;
 }
