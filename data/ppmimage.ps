@@ -57,6 +57,10 @@ DATA_DIR(/qsort.ps)strcat run
     currentdict end
     dup /.copydict get exec
     begin
+        % raster memory is not part of VM (PLRM 3.7.3): allocate the
+        % page buffer in global VM, which save/restore snapshots exempt,
+        % so marks placed inside a save survive its restore
+        currentglobal true setglobal
         /ImgData height array def
         0 1 height 1 sub {
             ImgData exch width array
@@ -65,6 +69,7 @@ DATA_DIR(/qsort.ps)strcat run
             } for
             put
         } for
+        setglobal
     currentdict
     end } bind
 
