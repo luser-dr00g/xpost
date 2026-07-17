@@ -385,4 +385,45 @@ def
     exch graphicsdict /currgstate get /currpath 3 -1 roll put
 } bind def
 
+% poly  .polytopath  -
+% append a null-separated polygon array (device-space point pairs) to
+% the current path
+/.polytopath {
+    1 dict begin
+    /first true def
+    {
+        dup type /nulltype eq {
+            pop
+            closepath
+            /first true def
+        }{
+            aload pop
+            first { .devmoveto /first false def }{ .devlineto } ifelse
+        } ifelse
+    } forall
+    end
+} bind def
+
+% -  eoclip  -
+% intersect the clip region with the even-odd interior of the current
+% path. The interior resolves to pixel-band rectangles through the
+% fill pipeline's scan-conversion; the rectangles, being
+% winding-uniform, intersect the existing region exactly through the
+% span machinery and serve every later paint the same way. The
+% caller's path survives untouched, as with clip.
+/eoclip {
+    graphicsdict /currgstate get /currpath get
+    dup length string copy
+    flattenpath
+    .fillpolyargs .eospanpoly
+    .cliptrivial not {
+        .clippolyargs .clipfillpoly
+    } if
+    newpath
+    .polytopath
+    graphicsdict /currgstate get
+    dup /currpath get /clipregion exch put
+    graphicsdict /currgstate get /currpath 3 -1 roll put
+} bind def
+
 /QUIET where { pop }{ (eof clip.ps\n)print } ifelse

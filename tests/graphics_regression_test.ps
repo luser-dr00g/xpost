@@ -10,6 +10,7 @@
 %   - filling many sub-pixel open subpaths in one path (scan-converter
 %     parity and dropout control)
 %   - clipping with an opposite-wound inner subpath (a hole)
+%   - the even-odd rule in eofill and eoclip
 %   - stroking with the line width transformed to device space
 %
 % Pixel assertions render into a locally constructed PGM device and
@@ -222,6 +223,34 @@ grestore
 40 40 inkat (window region beyond the hole is painted) assert
 25 25 inkat not (hole region is clear) assert
 2 2 inkat not (outside the window is clear) assert
+
+% --- eofill and eoclip resolve by the even-odd rule ---
+% two same-wound nested contours: parity separates the band between
+% them from the twice-enclosed interior, where winding does not
+erasepage
+newpath
+ 5  5 moveto 45  5 lineto 45 45 lineto  5 45 lineto closepath  % outer, CCW
+15 15 moveto 35 15 lineto 35 35 lineto 15 35 lineto closepath  % inner, CCW too
+eofill
+10 10 inkat (eofill paints the singly-enclosed band) assert
+25 25 inkat not (eofill leaves the twice-enclosed interior clear) assert
+newpath
+ 5  5 moveto 45  5 lineto 45 45 lineto  5 45 lineto closepath
+15 15 moveto 35 15 lineto 35 35 lineto 15 35 lineto closepath
+fill
+25 25 inkat (the nonzero fill covers the same interior) assert
+
+erasepage
+gsave
+newpath
+ 5  5 moveto 45  5 lineto 45 45 lineto  5 45 lineto closepath
+15 15 moveto 35 15 lineto 35 35 lineto 15 35 lineto closepath
+eoclip
+newpath 0 0 moveto 50 0 lineto 50 50 lineto 0 50 lineto closepath fill
+grestore
+10 10 inkat (eoclip passes the singly-enclosed band) assert
+25 25 inkat not (eoclip masks the twice-enclosed interior) assert
+2 2 inkat not (eoclip masks outside its region) assert
 
 % --- stroke width follows the CTM ---
 erasepage

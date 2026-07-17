@@ -255,13 +255,17 @@ int _rspan_push(struct rspan **rsp, int *cap, int *n,
 
 /* Scan-convert a null-separated polygon array to winding-resolved
    band spans (the shared middle of the fill pipeline: vertices in,
-   sorted boundary passages accumulated to nonzero-rule extents out).
-   The caller owns the returned buffer. 0 on success. */
+   sorted boundary passages accumulated to filled extents out).
+   evenodd selects the insideness rule: 0 accumulates winding numbers
+   to zero (nonzero rule), 1 counts boundary passages by parity
+   (even-odd rule). The caller owns the returned buffer.
+   0 on success. */
 static
 int _poly_resolved_spans(Xpost_Context *ctx,
                          Xpost_Object poly,
                          struct rspan **out,
-                         int *nout)
+                         int *nout,
+                         int evenodd)
 {
     struct point *points;
     struct band_span *spans;
@@ -473,7 +477,8 @@ int _poly_resolved_spans(Xpost_Context *ctx,
                     R = spans[s].hi;
                 wind += spans[s].dirn;
                 s++;
-            } while (wind != 0 && s < nspans && spans[s].band == b);
+            } while ((evenodd ? (wind & 1) : wind) != 0
+                     && s < nspans && spans[s].band == b);
 
             code = _rspan_push(&rsp, &rspcap, &nrsp, b, L, R);
             if (code)
@@ -532,7 +537,7 @@ int _fillpoly(Xpost_Context *ctx,
     }
 
     {
-        int code = _poly_resolved_spans(ctx, poly, &rsp, &nrsp);
+        int code = _poly_resolved_spans(ctx, poly, &rsp, &nrsp, 0);
 
         if (code)
             return code;
@@ -700,6 +705,51 @@ int _fillpoly(Xpost_Context *ctx,
     return 0;
 }
 
+/* Build a null-separated polygon array of pixel-band rectangles, one
+   per resolved span, in the FillPoly argument format: winding-uniform
+   output any consumer may treat by either insideness rule. Consumes
+   nothing; pushes the array on the operand stack. 0 on success. */
+static
+int _rspans_to_poly(Xpost_Context *ctx,
+                    struct rspan *out,
+                    int nout)
+{
+    Xpost_Object result;
+    int i;
+
+    if (5 * (long)nout > 65535)
+        /* too many spans for a single backing array (the object size
+           field is 16 bits) */
+        return limitcheck;
+
+    result = xpost_array_cons(ctx, 5 * nout);
+    if (xpost_object_get_type(result) == invalidtype)
+        return VMerror;
+    for (i = 0; i < nout; i++)
+    {
+        static const int xsel[4] = { 0, 1, 1, 0 };  /* lo hi hi lo */
+        static const int ysel[4] = { 0, 0, 1, 1 };  /* b  b  b+1 b+1 */
+        int k;
+
+        for (k = 0; k < 4; k++)
+        {
+            Xpost_Object pair = xpost_array_cons(ctx, 2);
+
+            if (xpost_object_get_type(pair) == invalidtype)
+                return VMerror;
+            xpost_array_put(ctx, pair, 0,
+                xpost_real_cons(xsel[k] ? out[i].hi : out[i].lo));
+            xpost_array_put(ctx, pair, 1,
+                xpost_real_cons((real)(out[i].band + ysel[k])));
+            xpost_array_put(ctx, result, 5 * i + k, pair);
+        }
+        xpost_array_put(ctx, result, 5 * i + 4, null);
+    }
+
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(result));
+    return 0;
+}
+
 /* subjectpoly clippoly  .clipfillpoly  spanpoly
    Intersect two filled regions, each a null-separated polygon array in
    the FillPoly argument format, under the nonzero winding rule, and
@@ -716,14 +766,13 @@ int _clipfillpoly(Xpost_Context *ctx,
 {
     struct rspan *S = NULL, *C = NULL, *out = NULL;
     int nS, nC, nout, outcap;
-    int si, ci, i;
+    int si, ci;
     int code;
-    Xpost_Object result;
 
-    code = _poly_resolved_spans(ctx, subj, &S, &nS);
+    code = _poly_resolved_spans(ctx, subj, &S, &nS, 0);
     if (code)
         return code;
-    code = _poly_resolved_spans(ctx, clip, &C, &nC);
+    code = _poly_resolved_spans(ctx, clip, &C, &nC, 0);
     if (code)
     {
         free(S);
@@ -776,47 +825,32 @@ int _clipfillpoly(Xpost_Context *ctx,
     free(S);
     free(C);
 
-    if (5 * (long)nout > 65535)
-    {
-        /* too many spans for a single backing array (the object size
-           field is 16 bits) */
-        free(out);
-        return limitcheck;
-    }
-
-    result = xpost_array_cons(ctx, 5 * nout);
-    if (xpost_object_get_type(result) == invalidtype)
-    {
-        free(out);
-        return VMerror;
-    }
-    for (i = 0; i < nout; i++)
-    {
-        static const int xsel[4] = { 0, 1, 1, 0 };  /* lo hi hi lo */
-        static const int ysel[4] = { 0, 0, 1, 1 };  /* b  b  b+1 b+1 */
-        int k;
-
-        for (k = 0; k < 4; k++)
-        {
-            Xpost_Object pair = xpost_array_cons(ctx, 2);
-
-            if (xpost_object_get_type(pair) == invalidtype)
-            {
-                free(out);
-                return VMerror;
-            }
-            xpost_array_put(ctx, pair, 0,
-                xpost_real_cons(xsel[k] ? out[i].hi : out[i].lo));
-            xpost_array_put(ctx, pair, 1,
-                xpost_real_cons((real)(out[i].band + ysel[k])));
-            xpost_array_put(ctx, result, 5 * i + k, pair);
-        }
-        xpost_array_put(ctx, result, 5 * i + 4, null);
-    }
+    code = _rspans_to_poly(ctx, out, nout);
     free(out);
+    return code;
+}
 
-    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(result));
-    return 0;
+/* poly  .eospanpoly  spanpoly
+   The even-odd interior of a filled region, returned as pixel-band
+   rectangles in the FillPoly argument format. The rectangles are
+   winding-uniform, so downstream nonzero machinery (the span
+   intersection, the device fill) treats them exactly: this is how
+   eofill and eoclip obtain the rule the nonzero pipeline lacks. */
+static
+int _eospanpoly(Xpost_Context *ctx,
+                Xpost_Object poly)
+{
+    struct rspan *rsp = NULL;
+    int nrsp;
+    int code;
+
+    code = _poly_resolved_spans(ctx, poly, &rsp, &nrsp, 1);
+    if (code)
+        return code;
+
+    code = _rspans_to_poly(ctx, rsp, nrsp);
+    free(rsp);
+    return code;
 }
 
 /* Fast FillRect for grayscale (DeviceGray) array-of-strings devices such as
@@ -1518,6 +1552,7 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".yxsort", (Xpost_Op_Func)_yxsort, 0, 1, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillpoly", (Xpost_Op_Func)_fillpoly, 0, 2, arraytype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".clipfillpoly", (Xpost_Op_Func)_clipfillpoly, 1, 2, arraytype, arraytype); INSTALL;
+    op = xpost_operator_cons(ctx, ".eospanpoly", (Xpost_Op_Func)_eospanpoly, 1, 1, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillrectgray", (Xpost_Op_Func)_fillrectgray, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".blendpixgray", (Xpost_Op_Func)_blendpixgray, 0, 5,
