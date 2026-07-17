@@ -14,29 +14,35 @@ Level 1 operators
  [X] setdash
  [X] currentdash
  [X] arcto
- [ ] fill with complex paths
- [ ] eofill
- [ ] clip with complex paths
+ [X] fill with complex paths
+ [/] eofill (aliased to the nonzero fill; even-odd rule not distinguished)
+ [/] clip with complex paths (combining two non-trivial regions in
+     clip keeps only a convex intersection)
  [ ] eoclip
- [/] setlinejoin (implemented bevel joins and round joins)
- [X] currentlinejoin (implemented)
- [ ] setlinecap (stubbed)
- [X] currentlinecap (stubbed)
- [/] image (implemented for 8-bit, 4-bit, 2-bit, and 1-bit)
- [ ] imagemask
- [X] settransfer (implemented)
- [X] currenttransfer (implemented)
+ [/] setlinejoin (round and bevel joins; miter renders as bevel,
+     miterlimit is recorded but unused)
+ [X] currentlinejoin
+ [/] setlinecap (recorded; strokes draw butt ends only)
+ [X] currentlinecap
+ [/] image (1-, 2-, 4- and 8-bit samples; no 12-bit)
+ [X] imagemask
+ [X] settransfer
+ [X] currenttransfer
+ [X] setscreen (recorded only: rendering stays continuous-tone)
+ [X] currentscreen
+ [ ] setcolorscreen
+ [ ] currentcolorscreen
  [ ] sethalftone  (low priority)
  [ ] currenthalftone  (low priority)
- [ ] makefont
- [X] ashow (implemented)
- [X] widthshow (implemented)
- [X] awidthshow (implemented)
- [X] kshow (implemented)
- [X] stringwidth (implemented)
- [/] Type-3 Fonts (implemented)
+ [X] makefont
+ [X] ashow
+ [X] widthshow
+ [X] awidthshow
+ [X] kshow
+ [X] stringwidth
+ [/] Type-3 Fonts (no glyph caching)
  [ ] font data caching
- [ ] definefont for modified font properties (matrix, encoding, etc.)
+ [X] definefont for modified font properties (matrix, encoding, etc.)
 
  [X] pop
  [X] exch
@@ -160,9 +166,9 @@ Level 1 operators
  [X] grestoreall
  [X] setlinewidth
  [X] currentlinewidth
- [X] setlinecap
+ [/] setlinecap
  [X] currentlinecap
- [X] setlinejoin
+ [/] setlinejoin
  [X] currentlinejoin
  [X] setmiterlimit
  [X] currentmiterlimit
@@ -172,8 +178,8 @@ Level 1 operators
  [X] currentgray
  [X] setrgbcolor
  [X] currentrgbcolor
- [ ] sethsbcolor
- [ ] currenthsbcolor
+ [X] sethsbcolor
+ [X] currenthsbcolor
  [X] settransfer
  [X] currenttransfer
  [X] matrix
@@ -205,7 +211,7 @@ Level 1 operators
  [X] rcurveto
  [X] closepath
  [X] flattenpath
- [ ] charpath
+ [X] charpath
  [X] clippath
  [X] pathbbox
  [X] initclip
@@ -213,10 +219,12 @@ Level 1 operators
  [ ] eoclip
  [X] erasepage
  [X] fill
- [ ] eofill
+ [/] eofill
  [X] stroke
+ [X] strokepath
+ [X] reversepath
  [/] image
- [ ] imagemask
+ [X] imagemask
  [X] showpage
  [X] copypage
  [ ] currentrasteropcode
@@ -230,22 +238,40 @@ Level 2 operators
 -----------------
 
  [X] arct
+ [X] rectfill
+ [X] rectstroke
+ [X] rectclip
+ [X] selectfont
+ [/] setcolorspace (device spaces, Separation and DeviceN; no
+     CIE-based spaces)
+ [X] currentcolorspace
+ [X] setcolor
+ [X] currentcolor
+ [X] setpagedevice (OutputDevice, PageSize, HWResolution, OutputFile,
+     PageOffset; other keys reach the device as features)
+ [X] currentpagedevice
+ [ ] xshow
+ [ ] yshow
+ [ ] xyshow
+ [ ] glyphshow
  [ ] colorimage
  [ ] image with dict argument
+ [ ] imagemask with dict argument
  [ ] setcolortransfer
  [ ] currentcolortransfer
- [ ] Named Resources
+ [X] Named Resources
 
 Display Postscript
 ------------------
 
  [X] multiple contexts
- [ ] multiple devices
+ [/] multiple devices (setpagedevice switches the device mid-job; one
+     device per context at a time)
 
 NeWS
 ----
 
- [ ] getenv/putenv
+ [X] getenv/putenv
  [X] magic dictionaries
  [ ] classes
  [ ] canvases
@@ -258,10 +284,11 @@ Typical output devices
  [X] ppm
  [ ] pbm
  [ ] tiff
- [ ] jpeg
- [ ] png
- [ ] pdf
- [ ] bounding-box
+ [X] jpeg
+ [X] png (also a png with alpha)
+ [X] pdf (pdfwrite)
+ [X] svg (svgwrite)
+ [X] bounding-box
  [ ] dsc-compliant distilled ps
  [X] xcb
  [X] ms-windows
