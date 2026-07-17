@@ -267,10 +267,41 @@
 } def
 
 % width height polarity matrix datasrc  imagemask  -
+% paint the current colour through a one-bit stencil: samples equal to
+% the polarity mark unit squares of image space, the rest leave the
+% page untouched. Each row of samples begins on a byte boundary.
 /imagemask {
-    10 dict begin
-    {datasrc mat polarity height width}{exch def}forall
-    end
+    gsave
+        newpath
+        10 dict begin
+        {datasrc mat polarity height width}{exch def}forall
+        /rowbytes width 7 add 8 idiv def
+        /buf rowbytes height mul string def
+        /bp 0 def
+        { % collect the sample data
+            bp buf length ge {exit} if
+            datasrc
+            dup length 0 eq {pop exit} if
+            dup length bp add buf length gt {
+                0 buf length bp sub getinterval
+            } if
+            buf exch bp exch
+            dup length bp add /bp exch def
+            putinterval
+        } loop
+        mat mat invertmatrix concat
+        /ink polarity {1}{0} ifelse def
+        0 1 height 1 sub { /y exch def
+            0 1 width 1 sub { /x exch def
+                buf y rowbytes mul x 8 idiv add get
+                x 8 mod 7 sub bitshift 1 and
+                ink eq {
+                    x y 1 1 rectfill
+                } if
+            } for
+        } for
+        end
+    grestore
 } def
 
 /QUIET where { pop }{ (eof paint.ps\n)print } ifelse
