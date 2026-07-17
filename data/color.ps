@@ -175,18 +175,46 @@
         get exec
 } bind def
 
+% hue saturation brightness  sethsbcolor  -
+% the components are recorded in RGB, converted with the usual
+% hexcone model (hue scaled to a sector 0-5; the sector's fractional
+% part blends between the derived p, q and t values)
 /sethsbcolor {
-    graphicsdict /currgstate get /colorspace /DeviceRGB put
-    graphicsdict /currgstate get exch /colorcomp3 exch put
-    graphicsdict /currgstate get exch /colorcomp2 exch put
-    graphicsdict /currgstate get exch /colorcomp1 exch put
-    graphicsdict /currgstate get /sepindex null put
+    7 dict begin
+    {/b /s /h}{exch def}forall
+    /h h h truncate sub 6 mul def       % wrap hue, scale to sector 0-5
+    /i h truncate cvi def
+    /f h i sub def
+    /p b 1 s sub mul def
+    /q b 1 s f mul sub mul def
+    /t b 1 s 1 f sub mul sub mul def
+    i 0 eq { b t p }{
+    i 1 eq { q b p }{
+    i 2 eq { p b t }{
+    i 3 eq { p q b }{
+    i 4 eq { t p b }{
+             b p q } ifelse } ifelse } ifelse } ifelse } ifelse
+    end
+    setrgbcolor
 } bind def
 
 /currenthsbcolor {
-    ColorConversion /DeviceRGB get
-        graphicsdict /currgstate get /colorspace get
-        get exec
+    currentrgbcolor
+    3 dict begin
+    {/b /g /r}{exch def}forall
+    /v r g 2 copy lt {exch} if pop b 2 copy lt {exch} if pop def
+    /d v r g 2 copy gt {exch} if pop b 2 copy gt {exch} if pop sub def
+    d 0 eq {
+        0 0 v
+    }{
+        v r eq { g b sub d div 6 add
+        }{ v g eq { b r sub d div 2 add
+        }{ r g sub d div 4 add } ifelse } ifelse
+        6 div dup truncate sub          % hue
+        d v div                         % saturation
+        v                               % brightness
+    } ifelse
+    end
 } bind def
 
 /setcmykcolor {
