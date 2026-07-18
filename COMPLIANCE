@@ -242,8 +242,8 @@ Level 2 operators
  [X] rectstroke
  [X] rectclip
  [X] selectfont
- [/] setcolorspace (device spaces, Separation and DeviceN; no
-     CIE-based spaces)
+ [/] setcolorspace (device spaces, Separation, DeviceN and Indexed;
+     no CIE-based spaces)
  [X] currentcolorspace
  [X] setcolor
  [X] currentcolor

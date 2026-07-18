@@ -314,6 +314,40 @@ grestore
 14 30 inkat (dict image Decode inverts a full sample to black) assert
 46 30 inkat not (dict image Decode inverts a zero sample to white) assert
 
+% Indexed colour: setcolor looks the index up in the palette and
+% paints in the base space, keeping the space as set; an indexed
+% image maps each sample through the same lookup
+erasepage
+gsave
+[/Indexed /DeviceGray 3 <FF 00 FF 00>] setcolorspace
+1 setcolor 10 10 20 20 rectfill
+2 setcolor 34 10 20 20 rectfill
+currentcolorspace dup type /arraytype eq exch 0 get /Indexed eq and
+(setcolor keeps the Indexed space current) assert
+grestore
+18 18 inkat (an indexed setcolor paints through the palette) assert
+42 18 inkat not (an indexed palette entry of white stays white) assert
+erasepage
+gsave
+10 10 translate 40 40 scale
+[/Indexed /DeviceGray 3 <00 FF 00 FF>] setcolorspace
+<< /ImageType 1 /Width 2 /Height 1 /BitsPerComponent 2
+   /ImageMatrix [2 0 0 -1 0 1] /Decode [0 3]
+   /DataSource <60> >> image
+grestore
+18 30 inkat not (an indexed image maps its first sample) assert
+42 30 inkat (an indexed image maps its second sample) assert
+erasepage
+gsave
+10 10 translate 40 40 scale
+[/Indexed /DeviceGray 3 { 3 div }] setcolorspace
+<< /ImageType 1 /Width 2 /Height 1 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -1 0 1] /Decode [0 255]
+   /DataSource <0003> >> image
+grestore
+18 30 inkat (a procedure palette maps a zero index dark) assert
+42 30 inkat not (a procedure palette maps a full index light) assert
+
 % colorimage: interleaved samples paint in the matching device space
 erasepage
 gsave

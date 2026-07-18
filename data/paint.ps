@@ -311,24 +311,6 @@
     } ifelse
 } def
 
-% -  .ncomponents  n
-% the number of colour components the current colour space takes
-/.spacecomps <<
-    /DeviceGray 1
-    /DeviceRGB 3
-    /DeviceCMYK 4
->> def
-/.ncomponents {
-    currentcolorspace
-    dup type /arraytype eq {
-        dup 0 get /Separation eq { pop 1 }{
-        dup 0 get /DeviceN eq { 1 get length }{
-        0 get //.spacecomps exch get } ifelse } ifelse
-    }{
-        //.spacecomps exch get
-    } ifelse
-} def
-
 % width height bits mat datasrc decode ncomp  .imagepaint  -
 % the shared image painter: the collectors normalize every sample
 % depth to one byte, so each pixel reads ncomp bytes, maps each

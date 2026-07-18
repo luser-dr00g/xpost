@@ -4,13 +4,19 @@
 /setcolorspace {
     %[ currentcolor setcolordict currentcolorspace get counttomark 2 add -1 roll
     % record the space as set (what currentcolorspace reports), then the
-    % space the colour components are recorded in: a Separation or
-    % DeviceN colour is converted on setcolor, so its components live in
-    % the alternative space
+    % space the colour components are recorded in: setcolor converts an
+    % Indexed colour through its base and a Separation or DeviceN tint
+    % through its alternative, so reduce through any such chain
     graphicsdict /currgstate get 1 index /setspace exch put
-    dup type /arraytype eq { dup 0 get dup /Separation eq exch /DeviceN eq or } { false } ifelse {
-        2 get
-    } if
+    {
+        dup type /arraytype ne { exit } if
+        dup 0 get /Indexed eq { 1 get }{
+        dup 0 get dup /Separation eq exch /DeviceN eq or {
+            2 get
+        }{
+            exit
+        } ifelse } ifelse
+    } loop
     graphicsdict /currgstate get exch /colorspace exch put
     graphicsdict /currgstate get /colorcomp1 0.0 put
     graphicsdict /currgstate get /colorcomp2 0.0 put
@@ -30,8 +36,56 @@
     /DeviceCMYK /setcmykcolor cvx
     /Pattern { pop }
 >> def
+
+% -  .ncomponents  n
+% the number of colour components the current colour space takes: an
+% Indexed colour is one index, a Separation one tint, a DeviceN one
+% tint per named colorant
+/.spacecomps <<
+    /DeviceGray 1
+    /DeviceRGB 3
+    /DeviceCMYK 4
+>> def
+/.ncomponents {
+    currentcolorspace
+    dup type /arraytype eq {
+        dup 0 get /Indexed eq { pop 1 }{
+        dup 0 get /Separation eq { pop 1 }{
+        dup 0 get /DeviceN eq { 1 get length }{
+        0 get //.spacecomps exch get } ifelse } ifelse } ifelse
+    }{
+        //.spacecomps exch get
+    } ifelse
+} def
 /setcolor {
     currentcolorspace
+    dup type /arraytype eq { dup 0 get /Indexed eq } { false } ifelse {
+        % [/Indexed base hival lookup] index setcolor: resolve the
+        % palette entry and set it in the base space. setcolor must not
+        % change what currentcolorspace reports, so the space is
+        % stashed and restored around the conversion -- in its own
+        % slot, since a Separation base stashes .sepspace within
+        dup graphicsdict exch /.idxspace exch put
+        3 dict begin
+        /cs exch def
+        cvi
+        dup 0 lt { pop 0 } if
+        dup cs 2 get gt { pop cs 2 get } if
+        /ix exch def
+        cs 1 get setcolorspace
+        cs 3 get dup type /stringtype eq {
+            /lk exch def
+            .ncomponents /n exch def
+            0 1 n 1 sub {
+                lk exch n ix mul add get 255 div
+            } for
+        }{
+            ix exch exec
+        } ifelse
+        end
+        setcolor
+        graphicsdict /currgstate get /setspace graphicsdict /.idxspace get put
+    }{
     dup type /arraytype eq { dup 0 get dup /Separation eq exch /DeviceN eq or } { false } ifelse
     {
         % [/Separation name alt tint] or [/DeviceN names alt tint]:
@@ -63,6 +117,7 @@
         graphicsdict /currgstate get /setspace graphicsdict /.sepspace get put
     } {
         //setcolordict exch get exec
+    } ifelse
     } ifelse
 } bind def
 
