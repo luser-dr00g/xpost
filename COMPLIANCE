@@ -254,7 +254,7 @@ Level 2 operators
  [ ] yshow
  [ ] xyshow
  [ ] glyphshow
- [ ] colorimage
+ [/] colorimage (one data source per component unsupported)
  [/] image with dict argument (ImageType 1 only; MultipleDataSources
      and Interpolate unsupported)
  [X] imagemask with dict argument

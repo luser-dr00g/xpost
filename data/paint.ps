@@ -401,6 +401,34 @@
     } ifelse
 } def
 
+% width height bits matrix datasrc false ncomp  colorimage  -
+% paint interleaved samples in the device space matching the
+% component count: one grey, three RGB or four CMYK components per
+% pixel through the shared painter, in its own colour space like the
+% five-operand image. One data source per component (multi true) is
+% unsupported and refused.
+/.identdecode <<
+    1 [ 0 1 ]
+    3 [ 0 1 0 1 0 1 ]
+    4 [ 0 1 0 1 0 1 0 1 ]
+>> def
+/colorimage {
+    exch {
+        /colorimage cvx /typecheck signalerror
+    } if
+    dup //.identdecode exch known not {
+        /colorimage cvx /rangecheck signalerror
+    } if
+    gsave
+    dup 4 eq { /DeviceCMYK }{
+    dup 3 eq { /DeviceRGB }{ /DeviceGray } ifelse } ifelse
+    setcolorspace
+    exch .imgsource exch
+    //.identdecode 1 index get exch
+    .imagepaint
+    grestore
+} def
+
 % width height polarity matrix datasrc  .stencilmask  -
 % paint the current colour through a one-bit stencil: samples equal to
 % the polarity mark unit squares of image space, the rest leave the

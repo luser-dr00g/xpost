@@ -314,6 +314,25 @@ grestore
 14 30 inkat (dict image Decode inverts a full sample to black) assert
 46 30 inkat not (dict image Decode inverts a zero sample to white) assert
 
+% colorimage: interleaved samples paint in the matching device space
+erasepage
+gsave
+10 10 translate 40 40 scale
+2 1 8 [2 0 0 -1 0 1] <000000FFFFFF> false 3 colorimage
+grestore
+18 30 inkat (an RGB colorimage paints its black sample) assert
+42 30 inkat not (an RGB colorimage passes white through) assert
+erasepage
+gsave
+10 10 translate 40 40 scale
+2 1 8 [2 0 0 -1 0 1] <00FF> false 1 colorimage
+grestore
+18 30 inkat (a one-component colorimage paints grey samples) assert
+42 30 inkat not (a one-component colorimage passes white) assert
+{ 2 1 8 [2 0 0 -1 0 1] <00> <00> <00> true 3 colorimage } stopped
+(one source per component is refused) assert
+$error /newerror false put clear newpath
+
 % dict image samples arrive in the colour space current at the call
 erasepage
 gsave
