@@ -32,8 +32,8 @@ Level 1 operators
  [X] currentscreen
  [X] setcolorscreen (recorded only: rendering stays continuous-tone)
  [X] currentcolorscreen
- [ ] sethalftone  (low priority)
- [ ] currenthalftone  (low priority)
+ [X] sethalftone (recorded only: rendering stays continuous-tone)
+ [X] currenthalftone
  [X] makefont
  [X] ashow
  [X] widthshow

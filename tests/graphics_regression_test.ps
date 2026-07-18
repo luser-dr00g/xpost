@@ -492,6 +492,23 @@ pop
 grestore
 currentscreen pop pop 60 eq (grestore restores the screen) assert
 
+% --- halftone dictionaries record and answer the screen family ---
+gsave
+<< /HalftoneType 1 /Frequency 33 /Angle 44 /SpotFunction { pop } >> sethalftone
+currenthalftone /Frequency get 33 eq (currenthalftone returns the dictionary) assert
+currentscreen type /dicttype eq
+3 1 roll 44 eq exch 33 eq and and
+(a type 1 halftone answers its frequency, angle and itself) assert
+currentcolorscreen 12 array astore
+dup 2 get type /dicttype eq (the colour channels answer the dictionary too) assert
+dup 0 get 33 eq (the colour channels answer its frequency) assert
+pop
+12 34 { pop } setscreen
+currenthalftone dup /HalftoneType get 1 eq
+exch /Frequency get 12 eq and
+(a screen-set state synthesizes a type 1 dictionary) assert
+grestore
+
 % --- stroke width follows the CTM ---
 erasepage
 gsave

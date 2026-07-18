@@ -35,6 +35,9 @@
     /bluescreenfreq 60
     /bluescreenangle 45
     /bluescreenproc { 180 mul cos exch 180 mul cos add 2 div }
+    % a halftone installed as a dictionary; null while the screens
+    % came from setscreen or setcolorscreen
+    /halftone null
     %/currmatrix DEVICE /defaultmatrix get matrix copy
     %/currmatrix [ 1 0 0 1 0 0 ]
     %/scratchmatrix [ 1 0 0 1 0 0 ] % ??
@@ -242,6 +245,7 @@ end
     graphicsdict /currgstate get exch /screenproc exch put
     graphicsdict /currgstate get exch /screenangle exch put
     graphicsdict /currgstate get exch /screenfreq exch put
+    graphicsdict /currgstate get /halftone null put
     .spreadgrayscreen
 } def
 
@@ -269,6 +273,47 @@ end
     graphicsdict /currgstate get exch /redscreenproc exch put
     graphicsdict /currgstate get exch /redscreenangle exch put
     graphicsdict /currgstate get exch /redscreenfreq exch put
+    graphicsdict /currgstate get /halftone null put
+} def
+
+% halftonedict  sethalftone  -
+% record the halftone dictionary. Every screen channel then answers
+% the dictionary itself in the spot-function position: behind its own
+% frequency and angle for a type 1 dictionary, behind 60 and 0 for
+% any other type
+/sethalftone {
+    dup type /dicttype ne {
+        /sethalftone cvx /typecheck signalerror
+    } if
+    graphicsdict /currgstate get exch /halftone exch put
+    1 dict begin
+    /ht graphicsdict /currgstate get /halftone get def
+    ht /HalftoneType 2 copy known { get 1 eq }{ pop pop false } ifelse
+    ht /Frequency known and ht /Angle known and {
+        graphicsdict /currgstate get /screenfreq ht /Frequency get put
+        graphicsdict /currgstate get /screenangle ht /Angle get put
+    }{
+        graphicsdict /currgstate get /screenfreq 60 put
+        graphicsdict /currgstate get /screenangle 0 put
+    } ifelse
+    graphicsdict /currgstate get /screenproc ht put
+    end
+    .spreadgrayscreen
+} def
+
+% -  currenthalftone  halftonedict
+% return the halftone: the installed dictionary, or a type 1
+% dictionary over the grey screen when the screens were set directly
+/currenthalftone {
+    graphicsdict /currgstate get /halftone get
+    dup null eq {
+        pop
+        << /HalftoneType 1
+           /Frequency graphicsdict /currgstate get /screenfreq get
+           /Angle graphicsdict /currgstate get /screenangle get
+           /SpotFunction graphicsdict /currgstate get /screenproc get
+        >>
+    } if
 } def
 
 % -  currentcolorscreen  rf ra rp gf ga gp bf ba bp kf ka kp
