@@ -449,6 +449,25 @@ gsave 10 setlinewidth 0 setlinejoin
 16 16 moveto 40 16 lineto 40 40 lineto closepath stroke grestore
 44 12 inkat (a closed subpath miters its corner) assert
 
+% --- join sides across the angle seam ---
+% a wide closed rectangle must fill all four outer corners in either
+% winding: one of its turns always crosses the atan seam at zero
+% degrees, where a raw angle difference misreads the turn's side
+erasepage
+gsave 10 setlinewidth 0 setlinejoin
+16 16 moveto 16 40 lineto 40 40 lineto 40 16 lineto closepath stroke grestore
+13 13 inkat (a clockwise rectangle fills its first outer corner) assert
+13 43 inkat (a clockwise rectangle fills its second outer corner) assert
+43 43 inkat (a clockwise rectangle fills its third outer corner) assert
+43 13 inkat (a clockwise rectangle fills its fourth outer corner) assert
+erasepage
+gsave 10 setlinewidth 0 setlinejoin
+16 16 moveto 40 16 lineto 40 40 lineto 16 40 lineto closepath stroke grestore
+13 13 inkat (an anticlockwise rectangle fills its first outer corner) assert
+13 43 inkat (an anticlockwise rectangle fills its second outer corner) assert
+43 43 inkat (an anticlockwise rectangle fills its third outer corner) assert
+43 13 inkat (an anticlockwise rectangle fills its fourth outer corner) assert
+
 % a dash pattern set inside gsave must not survive its grestore: the
 % state copy once kept the longer stale array beneath a shorter one
 gsave 6 setlinewidth [8 10] 0 setdash grestore

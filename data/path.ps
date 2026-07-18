@@ -600,6 +600,10 @@ bind def
 
         strokedict /justmoved get not { % draw join
             strokedict /ang get strokedict /oldang get sub
+            % the side reads from the turn within one revolution: the
+            % atan angles wrap at 360, so a difference below -180 is
+            % the same turn seen across the seam
+            dup 0 lt { 360 add } if
             /DEBUGSTROKE where { pop (C)= pstack()= } if
             dup 0 le exch 180 ge or { % right turn
 
@@ -669,6 +673,10 @@ bind def
 
         strokedict /justmoved get not { % draw join
             strokedict /ang get strokedict /oldang get sub
+            % the side reads from the turn within one revolution: the
+            % atan angles wrap at 360, so a difference below -180 is
+            % the same turn seen across the seam
+            dup 0 lt { 360 add } if
             /DEBUGSTROKE where { pop (C)= pstack()= } if
             dup 0 le exch 180 ge or { % right turn
 
@@ -692,6 +700,10 @@ bind def
 
             %draw final line join
             strokedict /firstang get strokedict /ang get sub
+            % the side reads from the turn within one revolution: the
+            % atan angles wrap at 360, so a difference below -180 is
+            % the same turn seen across the seam
+            dup 0 lt { 360 add } if
             dup 0 le exch 180 ge or { % right turn
 
                 strokedict /firstLL get aload pop
