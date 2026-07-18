@@ -447,6 +447,36 @@ bind def
     } currentlinejoin get exec
 } def
 
+% x y ang  .docap  -
+% append the line-cap shape at one end of an open subpath: the
+% endpoint in device space and the outward direction along the
+% segment. A butt cap adds nothing; a round cap is the half-disc
+% beyond the end; a projecting square extends half a width past it.
+% Each shape meets the stroke body only along the end's chord, so its
+% winding cannot cancel the body's under the nonzero rule.
+/.docap {
+    currentlinecap 0 eq {
+        pop pop pop
+    }{
+        4 dict begin
+        /ang exch def /y exch def /x exch def
+        /h minlinewidth .5 mul def
+        currentlinecap 1 eq {
+            x y moveto
+            x y h ang 90 sub ang 90 add arc
+            closepath
+        }{
+            x y moveto
+            h ang 90 sub ravec rmoveto
+            h ang ravec rlineto
+            minlinewidth ang 90 add ravec rlineto
+            h ang 180 add ravec rlineto
+            closepath
+        } ifelse
+        end
+    } ifelse
+} def
+
 %
 % replace lineto segments . with 
 %                         |              L LL
@@ -477,7 +507,22 @@ bind def
     /pointRR 2 array
     /pointL 2 array
     /pointLL 2 array
+    /needcap false
+    % the previous subpath ended without a closepath: only now is it
+    % known to be open, so it takes its caps here -- the trailing end
+    % at the first point facing away from the first segment's travel,
+    % the leading end at the last point facing along the last one's
+    /docaps {
+        strokedict /needcap get {
+            strokedict /firstpt get aload pop
+            strokedict /firstang get 180 add
+            .docap
+            strokedict /cp get aload pop strokedict /ang get .docap
+        } if
+        strokedict /needcap false put
+    }
     0 { % move: x y
+        strokedict /docaps get exec
         2 copy strokedict /firstpt get astore pop
         2 copy strokedict /cp get astore pop
         moveto
@@ -556,6 +601,7 @@ bind def
         strokedict /cp get aload pop moveto % moveto 6
 
         strokedict /justmoved false put
+        strokedict /needcap true put
     }
     3 { % close: the closing segment runs back to the subpath start
 
@@ -645,6 +691,8 @@ bind def
         strokedict /cp get aload pop moveto % moveto 6
 
         strokedict /justmoved false put
+        % a closed subpath meets itself through its joins: no cap owed
+        strokedict /needcap false put
     }
     2 { } %curve: s.b. eliminated by flattenpath
 >> def
@@ -658,6 +706,7 @@ bind def
     put
     matrix currentmatrix % stash matrix on stack
     matrix setmatrix     % use identity matrix
+    strokedict /needcap false put
     .pathempty not {
         10 dict begin
         /str cpath def
@@ -668,6 +717,8 @@ bind def
             /off exch def                     % coords... cmd
             strokedict exch get exec
         } loop
+        % the path ran out with a subpath still open: its caps are owed
+        strokedict /docaps get exec
         end
     } if
     setmatrix           % restore stashed matrix

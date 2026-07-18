@@ -11,6 +11,7 @@
 %     parity and dropout control)
 %   - clipping with an opposite-wound inner subpath (a hole)
 %   - the even-odd rule in eofill and eoclip
+%   - line caps at the ends of open stroked subpaths
 %   - stroking with the line width transformed to device space
 %
 % Pixel assertions render into a locally constructed PGM device and
@@ -311,6 +312,39 @@ gsave
 grestore
 14 30 inkat (an RGB dictionary image paints in the current space) assert
 46 30 inkat not (an RGB dictionary image passes white through) assert
+
+% --- line caps on open subpath ends ---
+% a thick horizontal stroke from (16,32) to (40,32), width 10: a butt
+% cap stops at the endpoint, round and square caps extend past it,
+% and only the square reaches the projected corner
+erasepage
+gsave 10 setlinewidth 0 setlinecap
+16 32 moveto 40 32 lineto stroke grestore
+43 32 inkat not (a butt cap stops at the endpoint) assert
+13 32 inkat not (a butt cap stops at the start point) assert
+erasepage
+gsave 10 setlinewidth 1 setlinecap
+16 32 moveto 40 32 lineto stroke grestore
+43 32 inkat (a round cap extends past the endpoint) assert
+13 32 inkat (a round cap extends past the start point) assert
+44 37 inkat not (a round cap stays within its radius) assert
+erasepage
+gsave 10 setlinewidth 2 setlinecap
+16 32 moveto 40 32 lineto stroke grestore
+43 32 inkat (a square cap extends past the endpoint) assert
+13 32 inkat (a square cap extends past the start point) assert
+44 37 inkat (a square cap fills the projected corner) assert
+% a closed subpath ends in joins and owes no caps
+erasepage
+gsave 10 setlinewidth 2 setlinecap
+20 20 moveto 44 20 lineto 44 44 lineto closepath stroke grestore
+15 20 inkat not (a closed subpath takes no caps) assert
+% every dash of a dashed stroke is capped
+erasepage
+gsave 6 setlinewidth 1 setlinecap [8 10] 0 setdash
+10 50 moveto 54 50 lineto stroke grestore
+20 50 inkat (a dash carries its own end cap) assert
+23 50 inkat not (capped dashes keep their gaps) assert
 
 % --- stroke width follows the CTM ---
 erasepage
