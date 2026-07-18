@@ -334,9 +334,11 @@ gsave 10 setlinewidth 2 setlinecap
 43 32 inkat (a square cap extends past the endpoint) assert
 13 32 inkat (a square cap extends past the start point) assert
 44 37 inkat (a square cap fills the projected corner) assert
-% a closed subpath ends in joins and owes no caps
+% a closed subpath ends in joins and owes no caps. The join is pinned
+% to bevel so the probe sits outside every legitimate corner shape: a
+% miter join's spike at this sharp corner covers it correctly.
 erasepage
-gsave 10 setlinewidth 2 setlinecap
+gsave 10 setlinewidth 2 setlinecap 2 setlinejoin
 20 20 moveto 44 20 lineto 44 44 lineto closepath stroke grestore
 15 20 inkat not (a closed subpath takes no caps) assert
 % every dash of a dashed stroke is capped
@@ -345,6 +347,41 @@ gsave 6 setlinewidth 1 setlinecap [8 10] 0 setdash
 10 50 moveto 54 50 lineto stroke grestore
 20 50 inkat (a dash carries its own end cap) assert
 23 50 inkat not (capped dashes keep their gaps) assert
+
+% --- line joins at stroked corners ---
+% a right-angle corner, width 10: the miter fills the projected
+% corner, round and bevel stop short of it, and all three fill the
+% wedge between the segment ends
+erasepage
+gsave 10 setlinewidth 0 setlinejoin
+16 16 moveto 40 16 lineto 40 40 lineto stroke grestore
+44 12 inkat (a miter join fills the projected corner) assert
+42 14 inkat (a miter join covers the wedge) assert
+erasepage
+gsave 10 setlinewidth 1 setlinejoin
+16 16 moveto 40 16 lineto 40 40 lineto stroke grestore
+44 12 inkat not (a round join stays within its radius) assert
+42 14 inkat (a round join covers the wedge) assert
+erasepage
+gsave 10 setlinewidth 2 setlinejoin
+16 16 moveto 40 16 lineto 40 40 lineto stroke grestore
+44 12 inkat not (a bevel join cuts the projected corner) assert
+42 14 inkat (a bevel join covers the wedge) assert
+% the miter limit: a right angle's ratio is sqrt(2), so a limit below
+% that bevels the corner and one above keeps the miter
+erasepage
+gsave 10 setlinewidth 0 setlinejoin 1.2 setmiterlimit
+16 16 moveto 40 16 lineto 40 40 lineto stroke grestore
+44 12 inkat not (a miter past the limit falls back to bevel) assert
+erasepage
+gsave 10 setlinewidth 0 setlinejoin 1.5 setmiterlimit
+16 16 moveto 40 16 lineto 40 40 lineto stroke grestore
+44 12 inkat (a miter within the limit is kept) assert
+% a closed subpath miters its corners too
+erasepage
+gsave 10 setlinewidth 0 setlinejoin
+16 16 moveto 40 16 lineto 40 40 lineto closepath stroke grestore
+44 12 inkat (a closed subpath miters its corner) assert
 
 % --- stroke width follows the CTM ---
 erasepage

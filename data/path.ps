@@ -434,7 +434,31 @@ bind def
 
 /dolinejoin { % RR|LL R|L C
     {
-        { moveto lineto lineto closepath } % miter join
+        { % miter join: extend the outer edges to their intersection.
+          % The corner offsets v_old and v_new both have the half-width
+          % magnitude and meet at the turn angle, so the apex sits at
+          % C + (v_old + v_new)/(1 + cos delta), and the PLRM ratio
+          % miterlength/width = 1/cos(delta/2) exceeds the miter limit
+          % exactly when limit^2 (1 + cos delta) < 2: then the join
+          % falls back to the bevel triangle
+            10 dict begin
+            {/cy /cx /oy /ox /ny /nx}{exch def}forall
+            /vox ox cx sub def /voy oy cy sub def
+            /vnx nx cx sub def /vny ny cy sub def
+            /cosd vox vnx mul voy vny mul add
+                  vox dup mul voy dup mul add div def
+            currentmiterlimit dup mul 1 cosd add mul 2 ge {
+                cx cy moveto
+                ox oy lineto
+                cx vox vnx add 1 cosd add div add
+                cy voy vny add 1 cosd add div add lineto
+                nx ny lineto
+                closepath
+            }{
+                cx cy moveto ox oy lineto nx ny lineto closepath
+            } ifelse
+            end
+        }
         { % XX X C
             6 4 roll pop pop
             2 copy moveto % X C

@@ -20,8 +20,7 @@ Level 1 operators
  [/] clip with complex paths (combining two non-trivial regions in
      clip keeps only a convex intersection)
  [X] eoclip
- [/] setlinejoin (round and bevel joins; miter renders as bevel,
-     miterlimit is recorded but unused)
+ [X] setlinejoin
  [X] currentlinejoin
  [X] setlinecap (hairline strokes draw uncapped)
  [X] currentlinecap
@@ -169,7 +168,7 @@ Level 1 operators
  [X] currentlinewidth
  [X] setlinecap
  [X] currentlinecap
- [/] setlinejoin
+ [X] setlinejoin
  [X] currentlinejoin
  [X] setmiterlimit
  [X] currentmiterlimit
