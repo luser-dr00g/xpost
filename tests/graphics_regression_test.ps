@@ -290,6 +290,19 @@ grestore
 14 20 inkat (one-bit image: the next row begins at the next byte) assert
 46 20 inkat not (one-bit image: the padded row keeps its own samples) assert
 
+% 12-bit samples: three nibbles high-first, rows byte-aligned (three
+% samples occupy four and a half bytes, padded to five per row)
+erasepage
+gsave
+10 10 translate 48 16 scale
+<< /ImageType 1 /Width 3 /Height 1 /BitsPerComponent 12
+   /ImageMatrix [3 0 0 -1 0 1] /Decode [0 1]
+   /DataSource <000FFF00 00> >> image
+grestore
+18 18 inkat (a 12-bit zero sample paints black) assert
+34 18 inkat not (a 12-bit full sample paints white) assert
+50 18 inkat (a 12-bit row is read past its half-byte) assert
+
 % dict image: Decode maps the sample range
 erasepage
 gsave

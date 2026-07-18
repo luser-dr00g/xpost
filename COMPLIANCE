@@ -24,7 +24,7 @@ Level 1 operators
  [X] currentlinejoin
  [X] setlinecap (hairline strokes draw uncapped)
  [X] currentlinecap
- [/] image (no 12-bit samples)
+ [X] image (12-bit samples render at the raster's 8-bit depth)
  [X] imagemask
  [X] settransfer
  [X] currenttransfer
@@ -223,7 +223,7 @@ Level 1 operators
  [X] stroke
  [X] strokepath
  [X] reversepath
- [/] image
+ [X] image
  [X] imagemask
  [X] showpage
  [X] copypage

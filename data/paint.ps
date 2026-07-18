@@ -182,6 +182,27 @@
 % pad bits once a row's samples are down. The procedures run inside
 % .imagepaint's dictionary, where width, ncomp, buf, bz, bp and the
 % row counters rowsamples and rs are defined.
+
+% v  .nib12  -
+% one nibble of a 12-bit sample stream: accumulate three into a
+% sample and keep its high byte (the buffer holds a byte per sample).
+% Runs inside .imagepaint's dictionary, which holds the accumulator
+% nib12a and nibble count nib12n.
+/.nib12 {
+    rs rowsamples lt bp bz lt and {
+        nib12a 4 bitshift or /nib12a exch def
+        nib12n 2 eq {
+            buf bp nib12a -4 bitshift put
+            /bp bp 1 add def
+            /rs rs 1 add def
+            /nib12n 0 def
+            /nib12a 0 def
+        }{
+            /nib12n nib12n 1 add def
+        } ifelse
+    }{ pop } ifelse
+} def
+
 /bitsdict <<
     1 {
         {
@@ -257,6 +278,22 @@
         } loop
     }
     12 {
+        {
+            bp bz ge {exit} if
+            datasrc
+            dup length 0 eq {pop exit} if
+            { % char: two nibbles, high first
+                dup -4 bitshift .nib12
+                15 and .nib12
+                % a full row ends on a byte boundary: any partial
+                % sample still accumulated is padding
+                rs rowsamples ge {
+                    /rs 0 def
+                    /nib12n 0 def
+                    /nib12a 0 def
+                } if
+            } forall
+        } loop
     }
 >> def
 
@@ -300,7 +337,7 @@
 /.imagepaint {
     gsave
         newpath
-        14 dict begin
+        16 dict begin
         {ncomp decode datasrc mat bits height width}{exch def}forall
 
         /bz width height mul ncomp mul def
@@ -308,6 +345,8 @@
         /bp 0 def
         /rowsamples width ncomp mul def
         /rs 0 def
+        /nib12n 0 def
+        /nib12a 0 def
 
         bitsdict bits get exec
 
