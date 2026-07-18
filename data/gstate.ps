@@ -264,17 +264,48 @@ end
     dup /screenproc get /bluescreenproc exch put
 } def
 
+% sample a spot function across its halftone cell, one call per
+% device pixel the cell spans: the language evaluates the spot
+% function when the screen is installed, and programs lean on the
+% side effects (the classic pattern-cell idiom counts its bits
+% there), so the calls must happen even though rendering stays
+% continuous tone
+/.samplespot { % freq proc  .  -
+    4 dict begin
+    /proc exch def
+    /freq exch def
+    /n DEVICE /defaultmatrix get 0 get abs 72 mul freq div
+       round cvi dup 1 lt { pop 1 } if dup 64 gt { pop 64 } if def
+    0 1 n 1 sub { /i exch def
+        0 1 n 1 sub { /j exch def
+            % restore the operand depth around the call: only the
+            % side effects are wanted, whatever the procedure leaves
+            count /d0 exch def
+            i 0.5 add n div 2 mul 1 sub
+            j 0.5 add n div 2 mul 1 sub
+            proc
+            count d0 sub dup 0 gt { { pop } repeat }{ pop } ifelse
+        } for
+    } for
+    end
+} def
+
 % freq angle proc  setscreen  -
-% record the halftone screen for every component. xpost renders
-% continuous tone, so the screen does not affect the raster; the
-% parameters are part of the graphics state and round-trip through
-% currentscreen and currentcolorscreen
+% record the halftone screen for every component and evaluate the
+% spot function across the cell. xpost renders continuous tone, so
+% the screen does not affect the raster; the parameters are part of
+% the graphics state and round-trip through currentscreen and
+% currentcolorscreen
 /setscreen {
     graphicsdict /currgstate get exch /screenproc exch put
     graphicsdict /currgstate get exch /screenangle exch put
     graphicsdict /currgstate get exch /screenfreq exch put
     graphicsdict /currgstate get /halftone null put
     .spreadgrayscreen
+    graphicsdict /currgstate get /screenfreq get dup 0 gt {
+        graphicsdict /currgstate get /screenproc get
+        dup xcheck { .samplespot }{ pop pop } ifelse
+    }{ pop } ifelse
 } def
 
 % -  currentscreen  freq angle proc
