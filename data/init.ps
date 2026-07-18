@@ -423,7 +423,11 @@ end % userdict
             % a fresh matrix per dictionary, following the Type 1
             % convention: 1000 character-space units to the em
             dup /FontMatrix [ 0.001 0.0 0.0 0.001 0.0 0.0 ] put
-            dup /Encoding 256 array put
+            % a text font's built-in encoding is the standard one; a
+            % fresh copy, so a program re-encoding in place cannot
+            % touch the shared array. A face without standard glyph
+            % names still resolves through its character map.
+            dup /Encoding StandardEncoding dup length array copy put
             dup /BuildChar {} put
         } stopped { % operator failed: 
             fontsubstitutions exch 2 copy known { % try substitution
