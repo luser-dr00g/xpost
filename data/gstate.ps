@@ -325,6 +325,16 @@ end
         graphicsdict /currgstate get /screenangle 0 put
     } ifelse
     graphicsdict /currgstate get /screenproc ht put
+    % a threshold-array halftone may deliver its thresholds through a
+    % file (a filter over the program stream): sethalftone consumes
+    % that data, so drain it, or the interpreter would execute the
+    % thresholds as program text
+    ht /Thresholds 2 copy known {
+        get dup type /filetype eq {
+            { dup 4096 string readstring not { exit } if pop } loop
+            pop
+        }{ pop } ifelse
+    }{ pop pop } ifelse
     end
     .spreadgrayscreen
 } def
