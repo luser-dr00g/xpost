@@ -16,6 +16,18 @@ true setglobal   % systemdict is global, so these allocations must be global
     /product (Xpost)
 >> def
 
+% the job server's dictionary. exitserver ends the encapsulated job,
+% announces that permanent state may change, and execution continues
+% with the definitions made so far outliving the job -- the idiom
+% every driver prolog uses. xpost runs jobs unencapsulated, so
+% announcing and unwinding the begun dictionary is the whole of it.
+/serverdict 2 dict def
+serverdict /exitserver {
+    pop
+    (%%[ exitserver: permanent state may be changed ]%%\n) print flush
+    currentdict serverdict eq { end } if
+} put
+
 /strcat {
     2 copy
     length exch length exch 1 index add % a b an bn+an

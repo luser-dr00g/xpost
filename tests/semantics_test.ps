@@ -142,6 +142,12 @@ st.f <014142FD4380> writestring st.f closefile
 (ab\rcd) token pop exch (cd) eq
     (a bare CR after a token is consumed alone) assert
 
+% --- the job server accepts exitserver ---
+countdictstack
+{ serverdict begin 0 exitserver } stopped not
+    (exitserver continues the job) assert
+countdictstack eq (exitserver unwinds the begun serverdict) assert
+
 % --- setpagedevice (last: it replaces the device) ---
 << /OutputDevice /pgm /PageSize [50 25] /HWResolution [144 144] /TextAlphaBits 3 >> setpagedevice
 DEVICE /dimensions get dup 0 get 100 eq exch 1 get 50 eq and
