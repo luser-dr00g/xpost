@@ -84,8 +84,12 @@
                 dup type /arraytype eq {
                     2 copy length exch length exch % key val dict2-val n d2-n
                     le {
-                        copy % key dict2-val
-                        pop pop
+                        % reuse the storage, but the entry must take the
+                        % subarray copy returns: a shorter value left
+                        % behind the old full-length array (a dash set
+                        % inside gsave survived its grestore)
+                        copy % key dict2-val'
+                        def
                     }{
                         pop dup length array
                         copy

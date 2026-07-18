@@ -449,6 +449,11 @@ gsave 10 setlinewidth 0 setlinejoin
 16 16 moveto 40 16 lineto 40 40 lineto closepath stroke grestore
 44 12 inkat (a closed subpath miters its corner) assert
 
+% a dash pattern set inside gsave must not survive its grestore: the
+% state copy once kept the longer stale array beneath a shorter one
+gsave 6 setlinewidth [8 10] 0 setdash grestore
+currentdash pop length 0 eq (grestore restores a shorter dash array) assert
+
 % --- stroke width follows the CTM ---
 erasepage
 gsave
