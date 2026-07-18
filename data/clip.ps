@@ -57,8 +57,7 @@ def
     % the clip machinery consumes line segments, so the region is cut
     % from a flattened working copy; the caller's path is kept aside
     % and put back, undisturbed by flattening or the intersection
-    graphicsdict /currgstate get /currpath get
-    dup length string copy
+    graphicsdict /currgstate get /currpath get .copypath
     flattenpath
     doclip
     graphicsdict /currgstate get
@@ -412,8 +411,7 @@ def
 % span machinery and serve every later paint the same way. The
 % caller's path survives untouched, as with clip.
 /eoclip {
-    graphicsdict /currgstate get /currpath get
-    dup length string copy
+    graphicsdict /currgstate get /currpath get .copypath
     flattenpath
     .fillpolyargs .eospanpoly
     .cliptrivial not {
