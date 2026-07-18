@@ -385,6 +385,18 @@ grestore
 18 30 inkat (a procedure palette maps a zero index dark) assert
 42 30 inkat not (a procedure palette maps a full index light) assert
 
+% the image operators must not mutate the caller's matrix: a Type 3
+% bitmap font reuses one matrix for every glyph
+erasepage
+/sharedmat [8 0 0 -8 0 8] def
+gsave 10 10 translate 16 16 scale 0 setgray
+8 8 true sharedmat <F0F0F0F0F0F0F0F0> imagemask grestore
+gsave 34 10 translate 16 16 scale 0 setgray
+8 8 true sharedmat <F0F0F0F0F0F0F0F0> imagemask grestore
+sharedmat 0 get 8 eq (imagemask leaves the caller's matrix unchanged) assert
+12 18 inkat (the first mask through a shared matrix paints) assert
+36 18 inkat (the second mask through the same matrix paints) assert
+
 % colorimage: interleaved samples paint in the matching device space
 erasepage
 gsave

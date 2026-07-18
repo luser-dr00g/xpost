@@ -341,7 +341,10 @@
             dscale c decode c 2 mul 1 add get dmin sub 255 div put
         } for
 
-        mat mat invertmatrix concat
+        % invert into a fresh matrix: the operand matrix belongs to
+        % the caller, who may reuse it (a Type 3 font mutating one
+        % shared matrix per glyph is the classic case)
+        mat matrix invertmatrix concat
         0 1 height 1 sub { /y exch def
             0 1 width 1 sub { /x exch def
                 /base y width mul x add ncomp mul def
@@ -434,7 +437,10 @@
             dup length bp add /bp exch def
             putinterval
         } loop
-        mat mat invertmatrix concat
+        % invert into a fresh matrix: the operand matrix belongs to
+        % the caller, who may reuse it (a Type 3 font mutating one
+        % shared matrix per glyph is the classic case)
+        mat matrix invertmatrix concat
         /ink polarity {1}{0} ifelse def
         0 1 height 1 sub { /y exch def
             0 1 width 1 sub { /x exch def
