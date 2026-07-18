@@ -19,11 +19,22 @@
     /sepindex null
     /septint 0
     /transfer {}
-    % halftone screen: frequency, angle and spot function, recorded for
-    % currentscreen (continuous-tone rendering takes no effect from them)
+    % halftone screens: frequency, angle and spot function per
+    % component, recorded for currentscreen and currentcolorscreen
+    % (continuous-tone rendering takes no effect from them). The
+    % unprefixed slots are the grey channel, shared with setscreen.
     /screenfreq 60
     /screenangle 45
     /screenproc { 180 mul cos exch 180 mul cos add 2 div }
+    /redscreenfreq 60
+    /redscreenangle 45
+    /redscreenproc { 180 mul cos exch 180 mul cos add 2 div }
+    /greenscreenfreq 60
+    /greenscreenangle 45
+    /greenscreenproc { 180 mul cos exch 180 mul cos add 2 div }
+    /bluescreenfreq 60
+    /bluescreenangle 45
+    /bluescreenproc { 180 mul cos exch 180 mul cos add 2 div }
     %/currmatrix DEVICE /defaultmatrix get matrix copy
     %/currmatrix [ 1 0 0 1 0 0 ]
     %/scratchmatrix [ 1 0 0 1 0 0 ] % ??
@@ -207,19 +218,71 @@ end
     graphicsdict /currgstate get /transfer get
 } def
 
+% copy the grey screen to the colour channels: setscreen installs one
+% screen for every component
+/.spreadgrayscreen {
+    graphicsdict /currgstate get
+    dup dup /screenfreq get /redscreenfreq exch put
+    dup dup /screenangle get /redscreenangle exch put
+    dup dup /screenproc get /redscreenproc exch put
+    dup dup /screenfreq get /greenscreenfreq exch put
+    dup dup /screenangle get /greenscreenangle exch put
+    dup dup /screenproc get /greenscreenproc exch put
+    dup dup /screenfreq get /bluescreenfreq exch put
+    dup dup /screenangle get /bluescreenangle exch put
+    dup /screenproc get /bluescreenproc exch put
+} def
+
 % freq angle proc  setscreen  -
-% record the halftone screen. xpost renders continuous tone, so the
-% screen does not affect the raster; the parameters are part of the
-% graphics state and round-trip through currentscreen
+% record the halftone screen for every component. xpost renders
+% continuous tone, so the screen does not affect the raster; the
+% parameters are part of the graphics state and round-trip through
+% currentscreen and currentcolorscreen
 /setscreen {
     graphicsdict /currgstate get exch /screenproc exch put
     graphicsdict /currgstate get exch /screenangle exch put
     graphicsdict /currgstate get exch /screenfreq exch put
+    .spreadgrayscreen
 } def
 
 % -  currentscreen  freq angle proc
-% return the halftone screen parameters
+% return the grey channel's screen parameters
 /currentscreen {
+    graphicsdict /currgstate get /screenfreq get
+    graphicsdict /currgstate get /screenangle get
+    graphicsdict /currgstate get /screenproc get
+} def
+
+% rf ra rp gf ga gp bf ba bp kf ka kp  setcolorscreen  -
+% record one screen per component; the grey channel shares its slots
+% with setscreen
+/setcolorscreen {
+    graphicsdict /currgstate get exch /screenproc exch put
+    graphicsdict /currgstate get exch /screenangle exch put
+    graphicsdict /currgstate get exch /screenfreq exch put
+    graphicsdict /currgstate get exch /bluescreenproc exch put
+    graphicsdict /currgstate get exch /bluescreenangle exch put
+    graphicsdict /currgstate get exch /bluescreenfreq exch put
+    graphicsdict /currgstate get exch /greenscreenproc exch put
+    graphicsdict /currgstate get exch /greenscreenangle exch put
+    graphicsdict /currgstate get exch /greenscreenfreq exch put
+    graphicsdict /currgstate get exch /redscreenproc exch put
+    graphicsdict /currgstate get exch /redscreenangle exch put
+    graphicsdict /currgstate get exch /redscreenfreq exch put
+} def
+
+% -  currentcolorscreen  rf ra rp gf ga gp bf ba bp kf ka kp
+% return every component's screen parameters
+/currentcolorscreen {
+    graphicsdict /currgstate get /redscreenfreq get
+    graphicsdict /currgstate get /redscreenangle get
+    graphicsdict /currgstate get /redscreenproc get
+    graphicsdict /currgstate get /greenscreenfreq get
+    graphicsdict /currgstate get /greenscreenangle get
+    graphicsdict /currgstate get /greenscreenproc get
+    graphicsdict /currgstate get /bluescreenfreq get
+    graphicsdict /currgstate get /bluescreenangle get
+    graphicsdict /currgstate get /bluescreenproc get
     graphicsdict /currgstate get /screenfreq get
     graphicsdict /currgstate get /screenangle get
     graphicsdict /currgstate get /screenproc get

@@ -30,8 +30,8 @@ Level 1 operators
  [X] currenttransfer
  [X] setscreen (recorded only: rendering stays continuous-tone)
  [X] currentscreen
- [ ] setcolorscreen
- [ ] currentcolorscreen
+ [X] setcolorscreen (recorded only: rendering stays continuous-tone)
+ [X] currentcolorscreen
  [ ] sethalftone  (low priority)
  [ ] currenthalftone  (low priority)
  [X] makefont

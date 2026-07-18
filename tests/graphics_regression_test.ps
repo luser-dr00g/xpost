@@ -473,6 +473,25 @@ gsave 10 setlinewidth 0 setlinejoin
 gsave 6 setlinewidth [8 10] 0 setdash grestore
 currentdash pop length 0 eq (grestore restores a shorter dash array) assert
 
+% --- the colour screen family records and round-trips ---
+gsave
+1 2 {} 3 4 {} 5 6 {} 7 8 {} setcolorscreen
+currentscreen pop 8 eq exch 7 eq and
+(currentscreen reports the grey channel of setcolorscreen) assert
+currentcolorscreen 12 array astore
+dup 0 get 1 eq (setcolorscreen keeps the red frequency) assert
+dup 4 get 4 eq (setcolorscreen keeps the green angle) assert
+dup 6 get 5 eq (setcolorscreen keeps the blue frequency) assert
+dup 9 get 7 eq (setcolorscreen keeps the grey frequency) assert
+pop
+9 10 {} setscreen
+currentcolorscreen 12 array astore
+dup 0 get 9 eq (setscreen sets the red screen alike) assert
+dup 7 get 10 eq (setscreen sets the blue angle alike) assert
+pop
+grestore
+currentscreen pop pop 60 eq (grestore restores the screen) assert
+
 % --- stroke width follows the CTM ---
 erasepage
 gsave
