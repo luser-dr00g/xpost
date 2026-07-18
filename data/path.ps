@@ -351,8 +351,10 @@ bind def
         1 index pos add dasharray ipos get le { % same dash position
             1 index pos add /pos exch def
             parity 0 eq { % if drawing, continue line
+                % the cp update leaves its copy of the endpoint on
+                % top: emit the line to it directly
                 2 index /cp 1 index aload pop itransform 2 array astore def
-                2 index aload pop .devlineto
+                aload pop .devlineto
             } if
         }{ % cross a dash pattern boundary
             crossdashbound

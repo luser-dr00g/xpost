@@ -562,6 +562,18 @@ currentcolortransfer 4 array astore
 pop
 grestore
 
+% --- a dash element spanning several segments ---
+% the within-element branch of the dash walk only runs when a
+% subpath's segments are shorter than the element: it corrupted its
+% stack and typechecked (a dashed arc was the natural victim)
+erasepage
+gsave 4 setlinewidth
+newpath 8 32 moveto 16 32 lineto 24 32 lineto 32 32 lineto 40 32 lineto 48 32 lineto
+[30 8] 0 setdash stroke grestore
+12 32 inkat (a multi-segment dash draws its element) assert
+28 32 inkat (the dash element spans segment joints) assert
+42 32 inkat not (the gap follows the element across joints) assert
+
 % --- stroke width follows the CTM ---
 erasepage
 gsave
