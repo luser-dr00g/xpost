@@ -136,6 +136,12 @@ st.f <014142FD4380> writestring st.f closefile
     (FlateDecode round-trips the compressor) assert
 }{ pop } ifelse
 
+% --- an end-of-line marker is one white-space delimiter ---
+(ab\r\ncd) token pop exch (cd) eq
+    (a CRLF after a token is consumed as one marker) assert
+(ab\rcd) token pop exch (cd) eq
+    (a bare CR after a token is consumed alone) assert
+
 % --- setpagedevice (last: it replaces the device) ---
 << /OutputDevice /pgm /PageSize [50 25] /HWResolution [144 144] /TextAlphaBits 3 >> setpagedevice
 DEVICE /dimensions get dup 0 get 100 eq exch 1 get 50 eq and

@@ -548,7 +548,16 @@ int puff(Xpost_Context *ctx,
         if (s - buf >= nbuf) return 0;
         *s++ = c;
     }
-    if (!isspace(c) && c != EOF) back(ctx, c, src);
+    if (c == '\r')
+    {
+        /* an end-of-line marker is one white-space character however
+           written (PLRM 3.8): a CR delimiter claims its LF */
+        int c2 = next(ctx, src);
+        if (c2 != '\n' && c2 != EOF)
+            back(ctx, c2, src);
+    }
+    else if (!isspace(c) && c != EOF)
+        back(ctx, c, src);
     return s - buf;
 }
 

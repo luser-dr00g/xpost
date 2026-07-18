@@ -421,9 +421,18 @@ int xpost_op_file_readline (Xpost_Context *ctx,
         c = xpost_file_getc(f);
         if (c == EOF || c == '\n')
             break;
+        if (c == '\r')
+        {
+            /* CR, LF and CRLF each end the line (PLRM 3.8): consume
+               the whole marker, return the line without it */
+            int c2 = xpost_file_getc(f);
+            if (c2 != '\n' && c2 != EOF)
+                xpost_file_ungetc(f, c2);
+            break;
+        }
         s[n] = c;
     }
-    if (n == S.comp_.sz && c != '\n')
+    if (n == S.comp_.sz && c != '\n' && c != '\r')
         return rangecheck;
     S.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, S);
