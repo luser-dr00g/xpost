@@ -227,8 +227,6 @@ Level 1 operators
  [X] imagemask
  [X] showpage
  [X] copypage
- [ ] currentrasteropcode
- [ ] setrasteropcode
  [X] setfont
  [X] currentfont
  [X] show
@@ -274,6 +272,8 @@ NeWS
 
  [X] getenv/putenv
  [X] magic dictionaries
+ [ ] setrasteropcode
+ [ ] currentrasteropcode
  [ ] classes
  [ ] canvases
  [ ] process type objects (magic dictionary controlling a DPS context)
