@@ -509,6 +509,22 @@ exch /Frequency get 12 eq and
 (a screen-set state synthesizes a type 1 dictionary) assert
 grestore
 
+% --- colour transfer functions record and round-trip ---
+gsave
+{ 1 exch sub } { dup mul } { sqrt } { 2 div } setcolortransfer
+0.5 currenttransfer exec 0.25 (setcolortransfer's grey lands in currenttransfer) assertnear
+currentcolortransfer 4 array astore
+0.25 1 index 0 get exec 0.75 (the red transfer answers) assertnear
+0.25 1 index 1 get exec 0.0625 (the green transfer answers) assertnear
+0.25 1 index 3 get exec 0.125 (the grey transfer answers) assertnear
+pop
+{ 3 mul } settransfer
+currentcolortransfer 4 array astore
+0.2 1 index 0 get exec 0.6 (settransfer sets the red transfer alike) assertnear
+0.2 1 index 2 get exec 0.6 (settransfer sets the blue transfer alike) assertnear
+pop
+grestore
+
 % --- stroke width follows the CTM ---
 erasepage
 gsave

@@ -258,8 +258,8 @@ Level 2 operators
  [/] image with dict argument (ImageType 1 only; MultipleDataSources
      and Interpolate unsupported)
  [X] imagemask with dict argument
- [ ] setcolortransfer
- [ ] currentcolortransfer
+ [X] setcolortransfer (recorded; painting applies the grey transfer)
+ [X] currentcolortransfer
  [X] Named Resources
 
 Display Postscript

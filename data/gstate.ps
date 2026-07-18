@@ -19,6 +19,11 @@
     /sepindex null
     /septint 0
     /transfer {}
+    % colour transfer functions; the unprefixed grey slot above is
+    % shared with settransfer and is the one painting applies
+    /redtransfer {}
+    /greentransfer {}
+    /bluetransfer {}
     % halftone screens: frequency, angle and spot function per
     % component, recorded for currentscreen and currentcolorscreen
     % (continuous-tone rendering takes no effect from them). The
@@ -210,14 +215,37 @@ end
 } def
 
 % proc  settransfer  -
-% install gray-tranfer procedure
+% install the transfer procedure for every component
 /settransfer {
     graphicsdict /currgstate get exch /transfer exch put
+    graphicsdict /currgstate get
+    dup dup /transfer get /redtransfer exch put
+    dup dup /transfer get /greentransfer exch put
+    dup /transfer get /bluetransfer exch put
 } def
 
 % -  currenttransfer  proc
-% return installed gray-transfer procedure
+% return the grey channel's transfer procedure
 /currenttransfer {
+    graphicsdict /currgstate get /transfer get
+} def
+
+% redproc greenproc blueproc grayproc  setcolortransfer  -
+% record one transfer procedure per component; the grey channel
+% shares its slot with settransfer, and is the one painting applies
+/setcolortransfer {
+    graphicsdict /currgstate get exch /transfer exch put
+    graphicsdict /currgstate get exch /bluetransfer exch put
+    graphicsdict /currgstate get exch /greentransfer exch put
+    graphicsdict /currgstate get exch /redtransfer exch put
+} def
+
+% -  currentcolortransfer  redproc greenproc blueproc grayproc
+% return every component's transfer procedure
+/currentcolortransfer {
+    graphicsdict /currgstate get /redtransfer get
+    graphicsdict /currgstate get /greentransfer get
+    graphicsdict /currgstate get /bluetransfer get
     graphicsdict /currgstate get /transfer get
 } def
 
