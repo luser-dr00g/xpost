@@ -482,9 +482,12 @@ end % userdict
     lineto
 } def
 
-/rectfill { rect fill } def
-/rectstroke { rect stroke } def
-/rectclip { rect clip } def
+% the painting pair works on its own path and leaves the caller's
+% untouched; rectclip clips by the rectangles alone and clears the
+% path, as the language specifies
+/rectfill { gsave newpath rect fill grestore } def
+/rectstroke { gsave newpath rect stroke grestore } def
+/rectclip { newpath rect clip newpath } def
 
 /runtest {
     DATA_DIR (/test.ps) strcat run
