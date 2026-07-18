@@ -59,9 +59,22 @@ def
     % and put back, undisturbed by flattening or the intersection
     graphicsdict /currgstate get /currpath get .copypath
     flattenpath
-    doclip
-    graphicsdict /currgstate get
-    dup /currpath get /clipregion exch put
+    .cliptrivial {
+        % the region is a rectangle containing the whole path: the
+        % intersection is the path itself, kept as a path so a vector
+        % device's whole-path output stays exact
+        graphicsdict /currgstate get
+        dup /currpath get /clipregion exch put
+    }{
+        % otherwise intersect span by span, as eoclip does: the
+        % resulting pixel-band rectangles are winding-uniform, so
+        % stacked regions of any shape combine exactly
+        .fillpolyargs .clippolyargs .clipfillpoly
+        newpath
+        .polytopath
+        graphicsdict /currgstate get
+        dup /currpath get /clipregion exch put
+    } ifelse
     graphicsdict /currgstate get /currpath 3 -1 roll put
 } def
 

@@ -225,6 +225,43 @@ grestore
 25 25 inkat not (hole region is clear) assert
 2 2 inkat not (outside the window is clear) assert
 
+% --- stacked clips combine exactly ---
+% a region of two disjoint windows survives a further clip: the
+% half-plane combiner intersected the windows with each other and
+% kept nothing
+erasepage
+gsave
+newpath
+ 5  5 moveto 20  5 lineto 20 20 lineto  5 20 lineto closepath
+30 30 moveto 45 30 lineto 45 45 lineto 30 45 lineto closepath
+clip newpath
+0 0 moveto 50 0 lineto 50 50 lineto 0 50 lineto closepath clip newpath
+0 0 moveto 50 0 lineto 50 50 lineto 0 50 lineto closepath fill
+grestore
+10 10 inkat (the first window survives a stacked clip) assert
+38 38 inkat (the second window survives a stacked clip) assert
+25 25 inkat not (between the windows stays clear) assert
+% an L-shaped region then a rectangle straddling its notch
+erasepage
+gsave
+newpath
+ 5  5 moveto 45  5 lineto 45 25 lineto 25 25 lineto
+25 45 lineto  5 45 lineto closepath
+clip newpath
+10 10 moveto 40 10 lineto 40 40 lineto 10 40 lineto closepath clip newpath
+0 0 moveto 50 0 lineto 50 50 lineto 0 50 lineto closepath fill
+grestore
+15 15 inkat (the L's arm intersects the rectangle) assert
+15 38 inkat (the L's other arm intersects the rectangle) assert
+38 38 inkat not (the L's notch stays clear through both clips) assert
+% the caller's path survives the clip and can still paint
+erasepage
+gsave
+newpath 5 5 moveto 45 5 lineto 45 45 lineto 5 45 lineto closepath
+clip fill
+grestore
+25 25 inkat (the path survives clip and fills) assert
+
 % --- eofill and eoclip resolve by the even-odd rule ---
 % two same-wound nested contours: parity separates the band between
 % them from the twice-enclosed interior, where winding does not

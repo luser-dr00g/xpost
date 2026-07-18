@@ -17,8 +17,7 @@ Level 1 operators
  [X] fill with complex paths
  [X] eofill (through a vector device's whole-path output, the fill
      falls back to the nonzero rule)
- [/] clip with complex paths (combining two non-trivial regions in
-     clip keeps only a convex intersection)
+ [X] clip with complex paths
  [X] eoclip
  [X] setlinejoin
  [X] currentlinejoin
