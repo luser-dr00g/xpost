@@ -91,7 +91,26 @@
 
 /show {
     graphicsdict /currgstate get /currfont get
-    dup /FontType get 3 ne { pop //show }{
+    dup /FontType get 3 ne {
+        % PaintType 2 marks an outline font: its glyphs are the
+        % character outlines stroked with StrokeWidth, a character
+        % space distance carried to user space through FontMatrix
+        dup /PaintType 2 copy known { get 2 eq }{ pop pop false } ifelse {
+            gsave
+            dup /StrokeWidth 2 copy known { get }{ pop pop 0 } ifelse
+            0 2 index /FontMatrix get dtransform
+            dup mul exch dup mul add sqrt setlinewidth
+            pop
+            dup
+            currentpoint newpath moveto
+            true charpath
+            stroke
+            grestore
+            stringwidth rmoveto
+        }{
+            pop //show
+        } ifelse
+    }{
     gsave
         currentpoint translate
         newpath
