@@ -16,6 +16,16 @@ currentglobal true setglobal
 % own categories, so it need only exist and name itself
 .resources /Category get /Generic << /Category /Generic >> put
 
+% the standard regular categories exist from the start, empty until
+% instances are defined into them
+[ /Font /CIDFont /CMap /FontSet /Encoding /Form /Pattern /ProcSet
+  /ColorSpace /Halftone /ColorRendering /IdiomSet /Filter
+  /ColorSpaceFamily /Emulator /ControlLanguage /Localization /PDL ]
+{
+    dup .resources exch 32 dict put
+    .resources /Category get exch dup << /Category 3 -1 roll >> put
+} forall
+
 % Directories searched, in order, when findresource misses in VM. Empty
 % by default; the host appends entries (xpost_add_resource_dir, -I).
 /.resourcepath [] def
@@ -30,6 +40,19 @@ setglobal
     get
 } bind def
 
+% instances defined in local VM live beside the global table and go
+% away with restore, as the local dictionary holding them does
+/.lresources 32 dict def
+
+% category  .linstof  instances
+% the local table of a category, created on first use
+/.linstof {
+    //.lresources exch 2 copy known not {
+        2 copy 8 dict put
+    } if
+    get
+} bind def
+
 % key instance category  defineresource  instance
 /defineresource {
     dup /Category eq {
@@ -37,7 +60,9 @@ setglobal
         2 index //.resources exch 2 copy known not
             { 32 dict put }{ pop pop } ifelse
     } if
-    .instof 2 index 2 index put exch pop
+    dup .instof pop     % the category must exist either way
+    currentglobal { .instof }{ .linstof } ifelse
+    2 index 2 index put exch pop
 } bind def
 
 % key category  ,loadresource  bool
@@ -69,6 +94,7 @@ setglobal
 
 % key category  findresource  instance
 /findresource {
+  { % loop, so the local-shadow path can exit early
     2 dict begin
     /category exch def
     /key exch def
@@ -81,6 +107,11 @@ setglobal
     //.resources category known not {
         end /findresource cvx /undefinedresource signalerror
     } if
+    % a local instance shadows a global one of the same name
+    //.lresources category known {
+        //.lresources category get dup key known
+            { key get end exit }{ pop } ifelse
+    } if
     category .instof /instances exch def
     instances key known not {
         % miss: load the instance from the search path. The instance table
@@ -92,20 +123,39 @@ setglobal
     } if
     instances key get
     end
+    exit
+  } loop
 } bind def
 
 % key category  resourcestatus  status size true | false
 /resourcestatus {
-    //.resources exch 2 copy known not {
-        pop pop pop false
+    2 copy //.lresources exch 2 copy known {
+        get exch known {
+            pop pop 0 0 true
+        }{
+            //.resources exch 2 copy known not
+                { pop pop pop false }
+                { get exch known { 0 0 true }{ false } ifelse } ifelse
+        } ifelse
     }{
-        get exch known { 0 0 true }{ false } ifelse
+        pop pop pop
+        //.resources exch 2 copy known not
+            { pop pop pop false }
+            { get exch known { 0 0 true }{ false } ifelse } ifelse
     } ifelse
 } bind def
 
 % key category  undefineresource  -
 /undefineresource {
-    .instof exch undef
+    2 copy //.lresources exch 2 copy known {
+        get 1 index known {
+            .linstof exch undef pop
+        }{
+            pop pop .instof exch undef
+        } ifelse
+    }{
+        pop pop pop .instof exch undef
+    } ifelse
 } bind def
 
 % string template  .wcmatch  bool
@@ -167,7 +217,13 @@ setglobal
 % resources; whether such changes are enumerated is unspecified, as
 % the language allows.
 /resourceforall {
-    .instof
+    % merge the global table with any local instances over it
+    dup .instof exch
+    //.lresources exch 2 copy known {
+        get exch dup length 2 index length add 1 add dict
+        exch { 2 index 3 1 roll put } forall
+        exch { 2 index 3 1 roll put } forall
+    }{ pop pop } ifelse
     5 dict begin
     /.rfinst exch def /.rfscr exch def /.rfproc exch def /.rftmpl exch def
     /.rfbuf 127 string def

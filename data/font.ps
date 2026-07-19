@@ -524,5 +524,12 @@
     /udieresis /yacute /thorn /ydieresis
 ] def
 
+% the required instances of the Encoding resource category, copied
+% into global VM where the instance tables live
+currentglobal true setglobal
+/StandardEncoding StandardEncoding dup length array copy /Encoding defineresource pop
+/ISOLatin1Encoding ISOLatin1Encoding dup length array copy /Encoding defineresource pop
+setglobal
+
 /QUIET where { pop }{ (eof font.ps\n)print } ifelse
 
