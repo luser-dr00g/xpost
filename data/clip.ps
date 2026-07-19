@@ -437,4 +437,24 @@ def
     graphicsdict /currgstate get /currpath 3 -1 roll put
 } bind def
 
+% clipsave/cliprestore (LL3): push and pop the clip region alone,
+% independent of the graphics state stack
+/clipsave {
+    graphicsdict /clipstack 2 copy known { get }{
+        2 copy 32 array put get
+    } ifelse
+    graphicsdict /clipptr 2 copy known { get }{ 2 copy 0 put get } ifelse
+    2 copy graphicsdict /currgstate get /clipregion get .copypath put
+    pop
+    graphicsdict /clipptr 2 copy get 1 add put
+} def
+/cliprestore {
+    graphicsdict /clipptr get 0 gt {
+        graphicsdict /clipptr 2 copy get 1 sub put
+        graphicsdict /currgstate get /clipregion
+        graphicsdict /clipstack get graphicsdict /clipptr get get
+        put
+    } if
+} def
+
 /QUIET where { pop }{ (eof clip.ps\n)print } ifelse

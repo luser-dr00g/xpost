@@ -94,6 +94,18 @@ rsdstash 3 string readstring pop (llo) eq
 <~87cURD]hD=6i~> (Hello CID) eq (a base-85 literal decodes) assert
 <~z~> <00000000> eq (z abbreviates four zero bytes) assert
 
+% --- clipsave and cliprestore stack the clip region alone ---
+gsave
+newpath 10 10 moveto 50 10 lineto 50 50 lineto 10 50 lineto closepath clip
+clipsave
+newpath 20 20 moveto 30 20 lineto 30 30 lineto 20 30 lineto closepath clip
+gsave clippath flattenpath pathbbox grestore
+pop pop pop 20 sub abs 0.5 lt (an inner clip narrows the region) assert
+cliprestore
+gsave clippath flattenpath pathbbox grestore
+pop pop pop 10 sub abs 0.5 lt (cliprestore reopens the outer region) assert
+grestore
+
 % --- resource machinery: instances per category, private categories
 %     registered by defining into /Category ---
 currentglobal true setglobal
