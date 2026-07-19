@@ -1558,6 +1558,11 @@ int _blitrow(Xpost_Context *ctx,
              Xpost_Object dict)
 {
     Xpost_Object rows, bufo, luto, dlutso, tluto, mbitso, mrangeso;
+    Xpost_Object cspans;
+    unsigned char *plane[4] = { NULL, NULL, NULL, NULL };
+    int ncspans = 0, have_cspans = 0, have_planes = 0;
+    double ivl[512][2];
+    int nivl = 0;
     unsigned char *buf, *lut = NULL, *tlut = NULL, *mbits = NULL;
     unsigned char *dlut[4] = { NULL, NULL, NULL, NULL };
     int mranges[8];
@@ -1594,11 +1599,34 @@ int _blitrow(Xpost_Context *ctx,
     rows = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "rows"));
     if (xpost_object_get_type(rows) != arraytype)
         return typecheck;
-    bufo = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "buf"));
-    if (xpost_object_get_type(bufo) != stringtype
-     || bufo.comp_.sz < (unsigned int)(w * ncomp))
-        return rangecheck;
-    buf = (unsigned char *)xpost_string_get_pointer(ctx, bufo);
+    /* planar sources deliver one row buffer per component */
+    {
+        Xpost_Object bufso = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "bufs"));
+        if (xpost_object_get_type(bufso) == arraytype)
+        {
+            if (bufso.comp_.sz < (unsigned int)ncomp || ncomp > 4)
+                return rangecheck;
+            for (c = 0; c < ncomp; c++)
+            {
+                Xpost_Object b = xpost_array_get(ctx, bufso, c);
+                if (xpost_object_get_type(b) != stringtype
+                 || b.comp_.sz < (unsigned int)w)
+                    return rangecheck;
+                plane[c] = (unsigned char *)xpost_string_get_pointer(ctx, b);
+            }
+            have_planes = 1;
+            buf = NULL;
+        }
+    }
+    if (!have_planes)
+    {
+        bufo = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "buf"));
+        if (xpost_object_get_type(bufo) != stringtype
+         || bufo.comp_.sz < (unsigned int)(w * ncomp))
+            return rangecheck;
+        buf = (unsigned char *)xpost_string_get_pointer(ctx, bufo);
+    }
+#define SAMPLE(x, c) (have_planes ? plane[c][x] : buf[(x) * ncomp + (c)])
 
     luto = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "lut"));
     if (xpost_object_get_type(luto) == stringtype)
@@ -1637,6 +1665,19 @@ int _blitrow(Xpost_Context *ctx,
             return rangecheck;
         mbits = (unsigned char *)xpost_string_get_pointer(ctx, mbitso);
     }
+    /* an optional clip region: flat quads x0 y0 x1 y1 in device
+       space, the resolved rectangle spans of a non-rectangular clip;
+       column runs intersect the quads overlapping the device row */
+    {
+        Xpost_Object cs = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "cspans"));
+        if (xpost_object_get_type(cs) == arraytype)
+        {
+            cspans = cs;
+            ncspans = cs.comp_.sz / 4;
+            have_cspans = 1;
+        }
+    }
+
     mrangeso = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "mranges"));
     if (xpost_object_get_type(mrangeso) == arraytype)
     {
@@ -1667,6 +1708,34 @@ int _blitrow(Xpost_Context *ctx,
 
         if (dy < 0)
             continue;
+        if (have_cspans)
+        {
+            int q;
+            nivl = 0;
+            for (q = 0; q < ncspans && nivl < 512; q++)
+            {
+                double qx0, qy0, qx1, qy1;
+                Xpost_Object e;
+#define QGET(i, into) do { \
+                e = xpost_array_get(ctx, cspans, q * 4 + (i)); \
+                if (xpost_object_get_type(e) == realtype) into = e.real_.val; \
+                else if (xpost_object_get_type(e) == integertype) into = e.int_.val; \
+                else return typecheck; \
+            } while (0)
+                QGET(0, qx0); QGET(1, qy0); QGET(2, qx1); QGET(3, qy1);
+#undef QGET
+                if (qy0 > qy1) { t = qy0; qy0 = qy1; qy1 = t; }
+                if (qx0 > qx1) { t = qx0; qx0 = qx1; qx1 = t; }
+                if (qy0 < dy + 1 && qy1 > dy)
+                {
+                    ivl[nivl][0] = qx0;
+                    ivl[nivl][1] = qx1;
+                    nivl++;
+                }
+            }
+            if (nivl == 0)
+                continue;
+        }
         row = xpost_array_get(ctx, rows, dy);
         if (packed)
         {
@@ -1698,7 +1767,7 @@ int _blitrow(Xpost_Context *ctx,
                 int inside = 1;
                 for (c = 0; c < ncomp; c++)
                 {
-                    int v = buf[x * ncomp + c];
+                    int v = SAMPLE(x, c);
                     if (v < mranges[2 * c] || v > mranges[2 * c + 1])
                     {
                         inside = 0;
@@ -1711,7 +1780,7 @@ int _blitrow(Xpost_Context *ctx,
 
             if (lut)
             {
-                const unsigned char *e = lut + buf[x] * nat;
+                const unsigned char *e = lut + SAMPLE(x, 0) * nat;
                 if (nat == 3) { r = e[0]; g = e[1]; b = e[2]; }
                 else gray = e[0];
             }
@@ -1719,7 +1788,7 @@ int _blitrow(Xpost_Context *ctx,
             {
                 int v[4] = {0};
                 for (c = 0; c < ncomp; c++)
-                    v[c] = dlut[c][buf[x * ncomp + c]];
+                    v[c] = dlut[c][SAMPLE(x, c)];
                 if (cmyk)
                 {
                     r = 255 - (v[0] + v[3] > 255 ? 255 : v[0] + v[3]);
@@ -1747,20 +1816,35 @@ int _blitrow(Xpost_Context *ctx,
             if (xb > cx1) xb = cx1;
             if (xa < 0) xa = 0;
             if (xb > devw) xb = devw;
-            for (dx = (int)floor(xa); dx < xb; dx++)
             {
-                if (dx < 0)
-                    continue;
-                if (packed)
-                    xpost_array_put(ctx, row, dx,
-                                    xpost_int_cons(r << 16 | g << 8 | b));
-                else
-                    rowp[dx] = (unsigned char)gray;
+                int iv, niv = have_cspans ? nivl : 1;
+
+                for (iv = 0; iv < niv; iv++)
+                {
+                    double sa = xa, sb = xb;
+
+                    if (have_cspans)
+                    {
+                        if (ivl[iv][0] > sa) sa = ivl[iv][0];
+                        if (ivl[iv][1] < sb) sb = ivl[iv][1];
+                    }
+                    for (dx = (int)floor(sa); dx < sb; dx++)
+                    {
+                        if (dx < 0)
+                            continue;
+                        if (packed)
+                            xpost_array_put(ctx, row, dx,
+                                            xpost_int_cons(r << 16 | g << 8 | b));
+                        else
+                            rowp[dx] = (unsigned char)gray;
+                    }
+                }
             }
         }
     }
     return 0;
 }
+#undef SAMPLE
 
 int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
                                        Xpost_Object sd)

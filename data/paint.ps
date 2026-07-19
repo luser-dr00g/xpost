@@ -266,6 +266,52 @@
     } ifelse } ifelse
 } def
 
+% -  .clipspans  array
+% the clip region resolved to rectangle spans, as flat device-space
+% quads (x0 y0 x1 y1 each): the region path -- a stored user path or
+% already-resolved spans -- runs through the fill machinery's
+% scan-conversion either way
+/.clipspans {
+    gsave
+    clippath flattenpath
+    % resolve by the nonzero rule: the region may hold overlapping
+    % subpaths (a stencil's adjacent runs under magnification), which
+    % the even-odd resolver would cancel; intersecting with the page
+    % rectangle scan-converts the region as the fills themselves do
+    .fillpolyargs
+    [ [0 0]
+      [DEVICE /dimensions get 0 get 0]
+      [DEVICE /dimensions get 0 get DEVICE /dimensions get 1 get]
+      [0 DEVICE /dimensions get 1 get] ]
+    .clipfillpoly
+    grestore
+    6 dict begin
+    /q exch def
+    [
+    /i 0 def
+    {
+        i q length ge { exit } if
+        /mnx 9e99 def /mny 9e99 def /mxx -9e99 def /mxy -9e99 def
+        /got false def
+        {
+            i q length ge { exit } if
+            q i get dup type /nulltype eq { pop /i i 1 add def exit } if
+            aload pop
+            dup mny lt { dup /mny exch def } if
+            dup mxy gt { dup /mxy exch def } if
+            pop
+            dup mnx lt { dup /mnx exch def } if
+            dup mxx gt { dup /mxx exch def } if
+            pop
+            /got true def
+            /i i 1 add def
+        } loop
+        got { mnx mny mxx mxy } if
+    } loop
+    ]
+    end
+} def
+
 % v  .c255  byte
 % clamp a 0..1 component and scale it to a byte
 /.c255 {
@@ -335,22 +381,30 @@
         % per-component decode tables, convert in the operator and
         % pass through the transfer table after
         /blitok false def
-        multi not DEVICE /ImgData known and {
+        DEVICE /ImgData known {
             DEVICE /nativecolorspace get
             dup /DeviceRGB eq exch /DeviceGray eq or {
                 /m mat matrix invertmatrix matrix currentmatrix
                    matrix concatmatrix def
                 m 1 get abs 0.000001 lt m 2 get abs 0.000001 lt and {
+                    /cspansv null def
                     .cliprect {
                         /ccy1 exch def /ccx1 exch def
                         /ccy0 exch def /ccx0 exch def
-                        /csname currentcolorspace
-                            dup type /arraytype eq { 0 get } if def
-                        ncomp 1 eq
-                        ncomp 3 eq csname /DeviceRGB eq and or
-                        ncomp 4 eq csname /DeviceCMYK eq and or
-                        { /blitok true def } if
-                    } if
+                    }{
+                        % a non-rectangular region: its resolved spans
+                        % clamp each raster write instead
+                        /ccx0 0 def /ccy0 0 def
+                        /ccx1 DEVICE /dimensions get 0 get def
+                        /ccy1 DEVICE /dimensions get 1 get def
+                        /cspansv .clipspans def
+                    } ifelse
+                    /csname currentcolorspace
+                        dup type /arraytype eq { 0 get } if def
+                    ncomp 1 eq
+                    ncomp 3 eq csname /DeviceRGB eq and or
+                    ncomp 4 eq csname /DeviceCMYK eq and or
+                    { /blitok true def } if
                 } if
             } if
         } if
@@ -395,7 +449,7 @@
             bd /packed nat 3 eq put
             bd /w width put
             bd /ncomp ncomp put
-            bd /buf buf put
+            multi { bd /bufs bufs put }{ bd /buf buf put } ifelse
             bd /xoff m 4 get put
             bd /xscale m 0 get put
             bd /yoff m 5 get put
@@ -404,6 +458,7 @@
             bd /cy0 ccy0 put
             bd /cx1 ccx1 put
             bd /cy1 ccy1 put
+            cspansv null ne { bd /cspans cspansv put } if
             bd /mbits currentdict /mbits get put
             bd /mrowb mrow put
             bd /mranges currentdict /mranges get put
@@ -416,7 +471,18 @@
             bd /tlut tlut put
             bd /y 0 put
             0 1 height 1 sub { /y exch def
-                .fill .rownorm
+                multi {
+                    0 1 ncomp 1 sub { /c exch def
+                        /datasrc srcs c get def
+                        /pend pends c get def
+                        /rawrow rawrows c get def
+                        /buf bufs c get def
+                        .fill .rownorm
+                        pends c pend put
+                    } for
+                }{
+                    .fill .rownorm
+                } ifelse
                 bd /y y put
                 bd .blitrow
             } for

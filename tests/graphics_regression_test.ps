@@ -510,6 +510,22 @@ grestore
 20 40 inkat (a procedure source delivers its first row) assert
 20 20 inkat not (a procedure source advances to its next row) assert
 
+% an image under a non-rectangular clip paints exactly the region
+erasepage
+gsave
+newpath 32 32 20 0 360 arc clip
+/DeviceRGB setcolorspace
+gsave
+12 12 translate 40 40 scale
+<< /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1 0 1 0 1]
+   /DataSource <000000000000000000000000> >> image
+grestore
+grestore
+32 32 inkat (a clipped image paints inside the region) assert
+14 14 inkat not (a clipped image stays out of the near corner) assert
+50 50 inkat not (a clipped image stays out of the far corner) assert
+
 % DCTDecode inflates a JPEG stream into image samples, layered over
 % the hexadecimal filter here as producers layer it over ASCII85; the
 % parameter-dictionary filter form is what PDF converters emit. The
