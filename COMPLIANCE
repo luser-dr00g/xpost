@@ -276,7 +276,7 @@ Level 2 operators
      smooths stencil masks and sampled images on the direct raster
      path; masked and planar images paint stepped)
  [X] imagemask with dict argument
- [X] setcolortransfer (painting applies each channel's transfer)
+ [X] setcolortransfer
  [X] currentcolortransfer
  [X] setblackgeneration (recorded only)
  [X] currentblackgeneration

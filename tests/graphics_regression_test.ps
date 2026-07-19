@@ -1192,6 +1192,27 @@ FontDirectory /SubsetT42Test known {
     erasepage
 } if
 
+% Per-channel transfer procedures reach a colour raster: with the
+% red transfer inverting and the rest passing, green paint arrives
+% yellow. A separate colour device keeps the grey harness untouched
+/DEV2 8 8 newPPMIMAGEdevice def
+DEV2 begin
+    /defaultmatrix [ 1 0 0 -1 0 8 ] def
+    /FillPoly /.fillpoly load def
+end
+graphicsdict /currgstate get /device DEV2 put
+matrix setmatrix
+{1 exch sub} {} {} {} setcolortransfer
+0 1 0 setrgbcolor
+0 0 8 8 rectfill
+0 0 DEV2 dup /GetPix get exec
+60 lt exch 195 gt and exch 195 gt and
+(per-channel transfers reach the colour raster) assert
+{} settransfer
+0 setgray
+graphicsdict /currgstate get /device DEV put
+initgraphics
+
 % A CIDFontType 0 descendant: its charstrings arrive in the StartData
 % block -- read from the file itself, so this stands at the top level
 % -- and the face assembles from the written-back resource file,

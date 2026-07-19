@@ -1589,7 +1589,10 @@ static int _pdffree(Xpost_Context *ctx, Xpost_Object devdic)
 static void
 _blit_decode_row(const unsigned char *src, int w, int ncomp,
                  const unsigned char *lut, unsigned char *const dlut[4],
-                 const unsigned char *tlut, int cmyk, int nat, int *out)
+                 const unsigned char *tlut,
+                 const unsigned char *tlr, const unsigned char *tlg,
+                 const unsigned char *tlb,
+                 int cmyk, int nat, int *out)
 {
     int x, c;
 
@@ -1624,7 +1627,14 @@ _blit_decode_row(const unsigned char *src, int w, int ncomp,
             }
             if (nat == 3)
             {
-                r = tlut[r]; g = tlut[g]; b = tlut[b];
+                if (tlr)
+                {
+                    r = tlr[r]; g = tlg[g]; b = tlb[b];
+                }
+                else
+                {
+                    r = tlut[r]; g = tlut[g]; b = tlut[b];
+                }
             }
             else
                 r = g = b = tlut[(r * 30 + g * 59 + b * 11) / 100];
@@ -1656,12 +1666,14 @@ int _blitrow(Xpost_Context *ctx,
              Xpost_Object dict)
 {
     Xpost_Object rows, bufo, luto, dlutso, tluto, mbitso, mrangeso;
+    Xpost_Object tro, tgo, tbo;
     Xpost_Object cspans;
     unsigned char *plane[4] = { NULL, NULL, NULL, NULL };
     int ncspans = 0, have_cspans = 0, have_planes = 0;
     double ivl[512][2];
     int nivl = 0;
     unsigned char *buf, *lut = NULL, *tlut = NULL, *mbits = NULL;
+    unsigned char *tlr = NULL, *tlg = NULL, *tlb = NULL;
     unsigned char *dlut[4] = { NULL, NULL, NULL, NULL };
     int mranges[8];
     int devw, devh, nat, packed, w, ncomp, y, cmyk, mrowb = 0;
@@ -1750,6 +1762,17 @@ int _blitrow(Xpost_Context *ctx,
             dlut[c] = (unsigned char *)xpost_string_get_pointer(ctx, d);
         }
         tlut = (unsigned char *)xpost_string_get_pointer(ctx, tluto);
+        tro = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "tlutr"));
+        tgo = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "tlutg"));
+        tbo = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "tlutb"));
+        if (xpost_object_get_type(tro) == stringtype && tro.comp_.sz >= 256
+         && xpost_object_get_type(tgo) == stringtype && tgo.comp_.sz >= 256
+         && xpost_object_get_type(tbo) == stringtype && tbo.comp_.sz >= 256)
+        {
+            tlr = (unsigned char *)xpost_string_get_pointer(ctx, tro);
+            tlg = (unsigned char *)xpost_string_get_pointer(ctx, tgo);
+            tlb = (unsigned char *)xpost_string_get_pointer(ctx, tbo);
+        }
     }
 
     mbitso = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "mbits"));
@@ -1824,8 +1847,10 @@ int _blitrow(Xpost_Context *ctx,
                     return VMerror;
                 pc = cols;
                 cc = cols + w * 3;
-                _blit_decode_row(prevsamp, w, ncomp, lut, dlut, tlut, cmyk, nat, pc);
-                _blit_decode_row(buf, w, ncomp, lut, dlut, tlut, cmyk, nat, cc);
+                _blit_decode_row(prevsamp, w, ncomp, lut, dlut, tlut,
+                                 tlr, tlg, tlb, cmyk, nat, pc);
+                _blit_decode_row(buf, w, ncomp, lut, dlut, tlut,
+                                 tlr, tlg, tlb, cmyk, nat, cc);
 
                 bandlo[0] = y == 0 ? yoff : yoff + (y - 0.5) * yscale;
                 bandhi[0] = yoff + (y + 0.5) * yscale;
@@ -2034,7 +2059,14 @@ int _blitrow(Xpost_Context *ctx,
                 }
                 if (nat == 3)
                 {
-                    r = tlut[r]; g = tlut[g]; b = tlut[b];
+                    if (tlr)
+                    {
+                        r = tlr[r]; g = tlg[g]; b = tlb[b];
+                    }
+                    else
+                    {
+                        r = tlut[r]; g = tlut[g]; b = tlut[b];
+                    }
                 }
                 else
                     gray = tlut[(r * 30 + g * 59 + b * 11) / 100];
