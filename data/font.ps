@@ -35,9 +35,21 @@
             {
                 dup /FontMatrix known not {stop} if
                 dup /Encoding known not {stop} if
-                dup /BuildChar known not {stop} if
+                % either build procedure suffices: BuildGlyph fonts
+                % answer show through the derivation below
+                dup /BuildChar known 1 index /BuildGlyph known or
+                not {stop} if
             } stopped {
                 /definefont cvx /invalidfont signalerror
+            } if
+            % a font defining only BuildGlyph serves the string
+            % operators through the standard derivation: the code's
+            % Encoding entry names the glyph to build
+            dup /BuildChar known not {
+                dup /BuildChar {
+                    1 index /Encoding get exch get
+                    1 index /BuildGlyph get exec
+                } put
             } if
         }{
             % other FontTypes carry no program to load here: accept when
@@ -277,6 +289,53 @@
             } for
         } ifelse } if
     end
+} def
+
+%   name  glyphshow  -
+% Paint the glyph the name selects, independent of the character
+% encoding, and advance the current point by the glyph's width. A
+% Type 3 font renders through its BuildGlyph procedure; one defining
+% only BuildChar is served through the first code its Encoding
+% assigns the name. Other font types resolve the name against the
+% font program.
+/glyphshow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 3 ne {
+        pop .glyphshow
+    }{
+        3 dict begin
+        /fnt exch def
+        /gname exch def
+        gsave
+            currentpoint translate
+            newpath
+            fnt /FontMatrix get concat
+            % a build procedure that never reports a width (or a name
+            % the font cannot serve) must not advance the pen
+            fnt /xadvance 0 put
+            fnt /yadvance 0 put
+            gsave
+                fnt /BuildGlyph 2 copy known {
+                    get fnt gname 3 -1 roll exec
+                }{
+                    pop pop
+                    /code null def
+                    0 1 fnt /Encoding get length 1 sub {
+                        dup fnt /Encoding get exch get gname eq
+                        { /code exch def exit }{ pop } ifelse
+                    } for
+                    code null ne {
+                        fnt code fnt /BuildChar get exec
+                    } if
+                } ifelse
+            grestore
+            graphicsdict /currgstate get /currfont get
+            dup /xadvance get exch /yadvance get translate
+            0 0 transform  % device-space coordinates survive grestore
+        grestore
+        itransform moveto
+        end
+    } ifelse
 } def
 
 /stringwidth {

@@ -375,6 +375,40 @@ unsigned int _glyph_index_for_char(Xpost_Context *ctx,
     return xpost_font_face_glyph_index_get(face, (char)ch);
 }
 
+/* Map a glyph name to a glyph index without passing through a
+   character code, as glyphshow selects glyphs: the CharStrings
+   dictionary decides when it holds an integer for the name, then the
+   face's own glyph names; an unknown name selects the notdef glyph,
+   there being no code to fall back to the character map with. */
+static
+unsigned int _glyph_index_for_name(Xpost_Context *ctx,
+                                   Xpost_Object charstrings,
+                                   void *face,
+                                   Xpost_Object gname)
+{
+    Xpost_Object str;
+    char *cname;
+    unsigned int gi = 0;
+
+    if (xpost_object_get_type(charstrings) == dicttype)
+    {
+        Xpost_Object gid = xpost_dict_get(ctx, charstrings,
+                                          xpost_object_cvlit(gname));
+        if (xpost_object_get_type(gid) == integertype
+         && gid.int_.val >= 0)
+            return (unsigned int)gid.int_.val;
+    }
+    str = xpost_name_get_string(ctx, gname);
+    cname = xpost_string_allocate_cstring(ctx, str);
+    if (cname)
+    {
+        if (strcmp(cname, ".notdef") != 0)
+            gi = xpost_font_face_glyph_name_index_get(face, cname);
+        free(cname);
+    }
+    return gi;
+}
+
 #ifdef HAVE_FREETYPE2
 /* Prepare the shared face for use under the current graphics state.
    The font dictionary's FontMatrix carries the size (and any rotation,
@@ -918,22 +952,21 @@ int _show_char_outline(Xpost_Context *ctx,
 #endif
 
 static
-int _show_char(Xpost_Context *ctx,
-               Xpost_Object devdic,
-               Xpost_Object putpix,
-               struct fontdata data,
-               const textstate *ts,
-               real *xpos,
-               real *ypos,
-               unsigned int ch,
-               int ncomp,
-               Xpost_Object comp1,
-               Xpost_Object comp2,
-               Xpost_Object comp3,
-               Xpost_Object comp4)
+int _show_glyph(Xpost_Context *ctx,
+                Xpost_Object devdic,
+                Xpost_Object putpix,
+                struct fontdata data,
+                const textstate *ts,
+                real *xpos,
+                real *ypos,
+                unsigned int glyph_index,
+                int ncomp,
+                Xpost_Object comp1,
+                Xpost_Object comp2,
+                Xpost_Object comp3,
+                Xpost_Object comp4)
 {
 #ifdef HAVE_FREETYPE2
-    unsigned int glyph_index;
     unsigned char *buffer;
     int rows;
     int width;
@@ -945,11 +978,6 @@ int _show_char(Xpost_Context *ctx,
     long advance_y;
     long bx0, by0, bx1, by1;
 
-    /* show does not kern: pair adjustment in PostScript is the
-       program's business (kshow, ashow), and the reference
-       interpreter advances by the glyph widths alone */
-    glyph_index = _glyph_index_for_char(ctx, ts->encoding, ts->charstrings,
-                                        data.face, ch);
     if (ts->vector)
     {
         if (!_show_char_outline(ctx, devdic, ts, data.face, glyph_index,
@@ -1026,7 +1054,7 @@ int _show_char(Xpost_Context *ctx,
     (void)ts;
     (void)xpos;
     (void)ypos;
-    (void)ch;
+    (void)glyph_index;
     (void)ncomp;
     (void)comp1;
     (void)comp2;
@@ -1034,6 +1062,31 @@ int _show_char(Xpost_Context *ctx,
     (void)comp4;
 #endif
     return 1;
+}
+
+static
+int _show_char(Xpost_Context *ctx,
+               Xpost_Object devdic,
+               Xpost_Object putpix,
+               struct fontdata data,
+               const textstate *ts,
+               real *xpos,
+               real *ypos,
+               unsigned int ch,
+               int ncomp,
+               Xpost_Object comp1,
+               Xpost_Object comp2,
+               Xpost_Object comp3,
+               Xpost_Object comp4)
+{
+    /* show does not kern: pair adjustment in PostScript is the
+       program's business (kshow, ashow), and the reference
+       interpreter advances by the glyph widths alone */
+    unsigned int glyph_index = _glyph_index_for_char(ctx, ts->encoding,
+                                                     ts->charstrings,
+                                                     data.face, ch);
+    return _show_glyph(ctx, devdic, putpix, data, ts, xpos, ypos,
+                       glyph_index, ncomp, comp1, comp2, comp3, comp4);
 }
 
 static
@@ -1171,6 +1224,81 @@ int _show(Xpost_Context *ctx,
     xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
     free(cstr);
+    return 0;
+}
+
+/* glyphname  .glyphshow  -
+   paint the single glyph the name selects, bypassing the encoding,
+   and advance the current point by the glyph's width. The
+   PostScript-level glyphshow sends Type 3 fonts to their build
+   procedures instead of here. */
+static
+int _glyphshow(Xpost_Context *ctx,
+               Xpost_Object gname)
+{
+    Xpost_Object userdict;
+    Xpost_Object gd;
+    Xpost_Object gs;
+    Xpost_Object fontdict;
+    Xpost_Object privatestr;
+    struct fontdata data;
+    real xpos, ypos;
+    Xpost_Object devdic;
+    Xpost_Object putpix;
+    textstate ts;
+    int ncomp;
+    Xpost_Object comp[4];
+    Xpost_Object finalize;
+    unsigned int glyph_index;
+    int ret;
+
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        return dictstackunderflow;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    fontdict = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currfont"));
+    if (xpost_object_get_type(fontdict) == invalidtype)
+        return invalidfont;
+
+    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
+    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
+    ts = _text_state_get(ctx, fontdict, devdic, gs);
+
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return invalidfont;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    if (data.face == NULL)
+    {
+        XPOST_LOG_ERR("face is NULL");
+        return invalidfont;
+    }
+    _face_setup(ctx, gs, fontdict, data.face);
+
+    ret = _get_current_point(ctx, gs, &xpos, &ypos);
+    if (ret)
+        return ret;
+
+    if (_device_color(ctx, gs, devdic, &ncomp, comp))
+        return unregistered;
+
+    finalize = xpost_object_cvx(xpost_array_cons(ctx, 5));
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+    xpost_array_put(ctx, finalize, 2, xpost_object_cvx(xpost_name_cons(ctx, "itransform")));
+    xpost_array_put(ctx, finalize, 3, xpost_object_cvx(xpost_name_cons(ctx, "moveto")));
+    xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
+    xpost_stack_push(ctx->lo, ctx->es, finalize);
+
+    glyph_index = _glyph_index_for_name(ctx, ts.charstrings, data.face, gname);
+    _show_glyph(ctx, devdic, putpix, data, &ts, &xpos, &ypos,
+                glyph_index, ncomp, comp[0], comp[1], comp[2], comp[3]);
+
+    xpost_array_put(ctx, finalize, 0, xpost_real_cons(xpos));
+    xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
+
     return 0;
 }
 
@@ -1796,6 +1924,8 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     INSTALL;
 
     op = xpost_operator_cons(ctx, "show", (Xpost_Op_Func)_show, 0, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".glyphshow", (Xpost_Op_Func)_glyphshow, 0, 1, nametype);
     INSTALL;
     op = xpost_operator_cons(ctx, "ashow", (Xpost_Op_Func)_ashow, 0, 3,
         floattype, floattype, stringtype);

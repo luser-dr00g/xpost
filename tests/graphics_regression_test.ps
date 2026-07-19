@@ -684,6 +684,17 @@ basefont null ne {
     erasepage
     2 24 moveto (A) show
     wantsnap snapshot snapeq not (the base font still renders its own glyph) assert
+
+    % glyphshow paints by name, bypassing the encoding, and advances
+    % the current point exactly as show would
+    erasepage
+    2 24 moveto (0) show
+    /wantsnap snapshot def
+    /wantcp currentpoint pop def
+    erasepage
+    2 24 moveto /zero glyphshow
+    wantsnap snapshot snapeq (glyphshow paints the named glyph) assert
+    currentpoint pop wantcp sub abs 0.01 le (glyphshow advances by the glyph width) assert
 } if
 
 % Type 42: a TrueType program supplied through /sfnts renders
@@ -768,7 +779,63 @@ not {
     newpath 10 16 moveto (B) false charpath flattenpath pathbbox
     pop exch pop exch sub 12 sub abs 1.5 le (charpath resolves subset glyphs) assert
     erasepage
+    10 16 moveto /tri glyphshow
+    countink 40 ge (glyphshow reaches a subset glyph through CharStrings) assert
+    currentpoint pop 26 sub abs 0.5 le (glyphshow advances by the program width) assert
+    erasepage
 } if
+
+% Type 3 fonts serve glyphshow through their BuildGlyph procedure, as
+% plotting tools emit them (a name-keyed CharStrings of drawing
+% procedures); a font defining only BuildGlyph also answers show
+% through the derived BuildChar, and one defining only BuildChar
+% serves glyphshow through the code its Encoding assigns the name.
+9 dict begin
+    /FontType 3 def
+    /FontMatrix [0.01 0 0 0.01 0 0] def
+    /FontBBox [0 0 100 100] def
+    /Encoding 256 array def
+    0 1 255 { Encoding exch /.notdef put } for
+    Encoding 65 /box put
+    /CharStrings << /box { 0 0 60 60 rectfill } /.notdef {} >> def
+    /BuildGlyph {
+        exch begin
+        80 0 setcharwidth
+        CharStrings exch 2 copy known not { pop /.notdef } if get exec
+        end
+    } def
+currentdict end
+/T3GlyphTest exch definefont pop
+/T3GlyphTest findfont 20 scalefont setfont
+erasepage
+10 16 moveto /box glyphshow
+countink 100 ge (BuildGlyph serves glyphshow) assert
+currentpoint pop 26 sub abs 0.5 le (the BuildGlyph width advances the pen) assert
+erasepage
+10 16 moveto (A) show
+countink 100 ge (a BuildGlyph-only font answers show) assert
+currentpoint pop 26 sub abs 0.5 le (show advances through the derived BuildChar) assert
+9 dict begin
+    /FontType 3 def
+    /FontMatrix [0.01 0 0 0.01 0 0] def
+    /FontBBox [0 0 100 100] def
+    /Encoding 256 array def
+    0 1 255 { Encoding exch /.notdef put } for
+    Encoding 66 /tribar put
+    /BuildChar {
+        exch begin
+        80 0 setcharwidth
+        Encoding exch get /tribar eq { 0 0 60 30 rectfill } if
+        end
+    } def
+currentdict end
+/T3CharTest exch definefont pop
+/T3CharTest findfont 20 scalefont setfont
+erasepage
+10 16 moveto /tribar glyphshow
+countink 50 ge (BuildChar serves glyphshow through the Encoding) assert
+currentpoint pop 26 sub abs 0.5 le (the BuildChar width advances the pen) assert
+erasepage
 
 % --- charpath appends glyph outlines: the path carries curves, fills
 %     with its counters intact, and clips like any other path ---
