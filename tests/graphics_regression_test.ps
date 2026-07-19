@@ -428,6 +428,50 @@ grestore
 14 30 inkat (an RGB dictionary image paints in the current space) assert
 46 30 inkat not (an RGB dictionary image passes white through) assert
 
+% DCTDecode inflates a JPEG stream into image samples, layered over
+% the hexadecimal filter here as producers layer it over ASCII85; the
+% parameter-dictionary filter form is what PDF converters emit. The
+% embedded stream is a solid red 8-by-8 JPEG; the guard probe skips
+% the block on a build without the JPEG library, draining the inline
+% data through the hexadecimal filter alone so the file stays in
+% register either way. The assertions after the data also prove the
+% decoder leaves the file positioned exactly past the stream.
+% the filter construction reads nothing (the decoder starts at the
+% first byte pulled), so probing it over currentfile is safe
+/hasdct false def
+{ currentfile << >> /DCTDecode filter closefile /hasdct true def } stopped pop
+$error /newerror false put
+erasepage
+gsave
+10 10 translate 44 44 scale
+/DeviceRGB setcolorspace
+hasdct {
+    << /ImageType 1 /Width 8 /Height 8 /BitsPerComponent 8
+       /ImageMatrix [8 0 0 -8 0 8] /Decode [0 1 0 1 0 1]
+       /DataSource currentfile /ASCIIHexDecode filter << >> /DCTDecode filter
+    >> image
+    % the decoder consumed the stream through its end-of-image marker;
+    % the hexadecimal layer's closing delimiter remains to drain
+    currentfile /ASCIIHexDecode filter flushfile
+}{
+    currentfile /ASCIIHexDecode filter flushfile
+} ifelse
+FFD8FFE000104A46494600010100000000000000FFDB0043000302020302020303030304
+030304050805050404050A070706080C0A0C0C0B0A0B0B0D0E12100D0E110E0B0B101610
+1113141515150C0F171816141812141514FFDB00430103040405040509050509140D0B0D
+141414141414141414141414141414141414141414141414141414141414141414141414
+1414141414141414141414141414FFC00011080008000803011100021101031101FFC400
+14000100000000000000000000000000000008FFC4001410010000000000000000000000
+0000000000FFC4001501010100000000000000000000000000000709FFC4001411010000
+0000000000000000000000000000FFDA000C03010002110311003F003A03154DFFD9
+>
+grestore
+hasdct {
+    30 30 inkat (a JPEG image paints its samples) assert
+    countink 1500 ge (the JPEG fills its area) assert
+} if
+erasepage
+
 % --- line caps on open subpath ends ---
 % a thick horizontal stroke from (16,32) to (40,32), width 10: a butt
 % cap stops at the endpoint, round and square caps extend past it,

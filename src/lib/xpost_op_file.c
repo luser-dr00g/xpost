@@ -125,6 +125,10 @@ int xpost_op_file_filter (Xpost_Context *ctx,
     else if (strcmp(cname, "FlateDecode") == 0)
         f = xpost_file_cons_filter_flate(ctx->lo, F);
 #endif
+#ifdef HAVE_LIBJPEG
+    else if (strcmp(cname, "DCTDecode") == 0)
+        f = xpost_file_cons_filter_dct(ctx->lo, F);
+#endif
     else
     {
         XPOST_LOG_ERR("unsupported filter %s", cname);
@@ -138,6 +142,21 @@ int xpost_op_file_filter (Xpost_Context *ctx,
     f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
     xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
     return 0;
+}
+
+/* file dict /FilterName  filter  file'
+   the optional parameter dictionary form: the decode filters take no
+   parameter that changes their output here (DCTDecode reads its
+   layout from the stream itself), so the dictionary is accepted and
+   set aside */
+static
+int xpost_op_file_filter_dict (Xpost_Context *ctx,
+                               Xpost_Object F,
+                               Xpost_Object dict,
+                               Xpost_Object name)
+{
+    (void)dict;
+    return xpost_op_file_filter(ctx, F, name);
 }
 
 /* file count string /SubFileDecode  filter  file'
@@ -895,6 +914,9 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".lockdown", (Xpost_Op_Func)xpost_op_lockdown, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter, 1, 2, filetype, nametype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter_dict, 1, 3,
+            filetype, dicttype, nametype);
     INSTALL;
     op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter_subfile, 1, 4,
             filetype, integertype, stringtype, nametype);

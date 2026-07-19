@@ -260,6 +260,8 @@ Level 2 operators
  [X] setcolortransfer (recorded; painting applies the grey transfer)
  [X] currentcolortransfer
  [X] Named Resources
+ [/] filter (decode filters only: ASCIIHex, ASCII85, SubFile,
+     RunLength, Flate, DCT; no encode filters, no LZW or CCITTFax)
 
 Display Postscript
 ------------------

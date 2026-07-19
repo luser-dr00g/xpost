@@ -44,6 +44,11 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+
+#ifdef HAVE_LIBJPEG
+# include <jpeglib.h>
+# include <setjmp.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -1571,6 +1576,175 @@ flate_readch(Xpost_File *f)
 }
 #endif
 
+#ifdef HAVE_LIBJPEG
+/* DCTDecode filter: a JPEG stream decompressed from the source into
+   interleaved samples (grey, RGB or CMYK as the stream declares).
+   libjpeg pulls its input through a one-byte source manager so the
+   underlying file is never read past what the decoder consumes,
+   leaving it positioned at the end of the compressed data like the
+   other decode filters. Decoder errors end the stream rather than
+   the process: the default error handler exits, so a longjmp handler
+   is installed around every libjpeg call. */
+typedef struct Xpost_DctFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    struct jpeg_decompress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+    jmp_buf jmp;
+    struct jpeg_source_mgr jsrc;
+    JOCTET jbyte;
+    int started;
+    unsigned char *row;
+    unsigned int rown, rowi;
+} Xpost_DctFile;
+
+static void
+dct_error_exit(j_common_ptr cinfo)
+{
+    Xpost_DctFile *ff = (Xpost_DctFile *)cinfo->client_data;
+    char msg[JMSG_LENGTH_MAX];
+
+    (*cinfo->err->format_message)(cinfo, msg);
+    XPOST_LOG_ERR("DCTDecode: %s", msg);
+    longjmp(ff->jmp, 1);
+}
+
+static void
+dct_output_message(j_common_ptr cinfo)
+{
+    char msg[JMSG_LENGTH_MAX];
+
+    (*cinfo->err->format_message)(cinfo, msg);
+    XPOST_LOG_ERR("DCTDecode: %s", msg);
+}
+
+static void
+dct_init_source(j_decompress_ptr cinfo)
+{
+    (void)cinfo;
+}
+
+static boolean
+dct_fill_input_buffer(j_decompress_ptr cinfo)
+{
+    Xpost_DctFile *ff = (Xpost_DctFile *)cinfo->client_data;
+    int c = xpost_file_getc(ff->source);
+
+    /* a truncated stream feeds the decoder end-of-image markers so it
+       terminates with whatever scanlines it has */
+    ff->jbyte = c == EOF ? 0xd9 : (JOCTET)c;
+    ff->jsrc.next_input_byte = &ff->jbyte;
+    ff->jsrc.bytes_in_buffer = 1;
+    return TRUE;
+}
+
+static void
+dct_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
+{
+    Xpost_DctFile *ff = (Xpost_DctFile *)cinfo->client_data;
+
+    if (num_bytes <= 0)
+        return;
+    if ((size_t)num_bytes <= ff->jsrc.bytes_in_buffer)
+    {
+        ff->jsrc.next_input_byte += num_bytes;
+        ff->jsrc.bytes_in_buffer -= num_bytes;
+        return;
+    }
+    num_bytes -= (long)ff->jsrc.bytes_in_buffer;
+    ff->jsrc.bytes_in_buffer = 0;
+    while (num_bytes-- > 0)
+        if (xpost_file_getc(ff->source) == EOF)
+            break;
+}
+
+static void
+dct_term_source(j_decompress_ptr cinfo)
+{
+    (void)cinfo;
+}
+
+static int
+dct_readch(Xpost_File *f)
+{
+    Xpost_DctFile *ff = (Xpost_DctFile *)f;
+    int c;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->rowi < ff->rown)
+        return ff->row[ff->rowi++];
+    if (ff->eod)
+        return EOF;
+
+    if (setjmp(ff->jmp))
+    {
+        ff->eod = 1;
+        return EOF;
+    }
+    if (!ff->started)
+    {
+        jpeg_read_header(&ff->cinfo, TRUE);
+        jpeg_start_decompress(&ff->cinfo);
+        ff->row = malloc((size_t)ff->cinfo.output_width
+                         * ff->cinfo.output_components);
+        if (!ff->row)
+        {
+            ff->eod = 1;
+            return EOF;
+        }
+        ff->started = 1;
+    }
+    if (ff->cinfo.output_scanline < ff->cinfo.output_height)
+    {
+        JSAMPROW rowp = ff->row;
+
+        if (jpeg_read_scanlines(&ff->cinfo, &rowp, 1) != 1)
+        {
+            ff->eod = 1;
+            return EOF;
+        }
+        ff->rown = ff->cinfo.output_width * ff->cinfo.output_components;
+        ff->rowi = 0;
+        /* the caller may drain exactly the samples and never pull the
+           EOF that follows: consume through the end-of-image marker as
+           soon as the last scanline is out, so a program resumes
+           reading the underlying file just past the compressed data */
+        if (ff->cinfo.output_scanline >= ff->cinfo.output_height)
+        {
+            jpeg_finish_decompress(&ff->cinfo);
+            ff->eod = 1;
+        }
+        if (ff->rown)
+            return ff->row[ff->rowi++];
+        return EOF;
+    }
+    jpeg_finish_decompress(&ff->cinfo);
+    ff->eod = 1;
+    return EOF;
+}
+
+static int
+dct_close(Xpost_File *f)
+{
+    Xpost_DctFile *ff = (Xpost_DctFile *)f;
+
+    jpeg_destroy_decompress(&ff->cinfo);
+    free(ff->row);
+    ff->row = NULL;
+    ff->eod = 1;
+    ff->pushback = -1;
+    return 0;
+}
+#endif
+
 /* method boilerplate shared by the decode filters: they are read-only
    streams over an unowned source with one byte of pushback */
 typedef struct Xpost_FilterBase
@@ -1678,6 +1852,14 @@ flate_close(Xpost_File *f)
 struct Xpost_File_Methods flate_methods =
 {
     flate_readch, filter_writech, flate_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+#endif
+
+#ifdef HAVE_LIBJPEG
+struct Xpost_File_Methods dct_methods =
+{
+    dct_readch, filter_writech, dct_close, filter_flush,
     filter_purge, filter_unreadch, filter_tell, filter_seek
 };
 #endif
@@ -1795,6 +1977,44 @@ Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object s
             return invalid;
         }
         ff->outn = ff->outi = 0;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+#endif
+
+#ifdef HAVE_LIBJPEG
+Xpost_Object xpost_file_cons_filter_dct(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_DctFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = calloc(1, sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &dct_methods;
+        ff->source = source;
+        ff->pushback = -1;
+
+        ff->cinfo.err = jpeg_std_error(&ff->jerr);
+        ff->jerr.error_exit = dct_error_exit;
+        ff->jerr.output_message = dct_output_message;
+        ff->cinfo.client_data = ff;
+        if (setjmp(ff->jmp))
+        {
+            free(ff);
+            return invalid;
+        }
+        jpeg_create_decompress(&ff->cinfo);
+        ff->jsrc.init_source = dct_init_source;
+        ff->jsrc.fill_input_buffer = dct_fill_input_buffer;
+        ff->jsrc.skip_input_data = dct_skip_input_data;
+        ff->jsrc.resync_to_restart = jpeg_resync_to_restart;
+        ff->jsrc.term_source = dct_term_source;
+        ff->jsrc.next_input_byte = NULL;
+        ff->jsrc.bytes_in_buffer = 0;
+        ff->cinfo.src = &ff->jsrc;
     }
     return _filter_object_cons(mem, &ff->methods);
 }
