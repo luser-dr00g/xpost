@@ -122,6 +122,15 @@ int Scopy(Xpost_Context *ctx,
     return 0;
 }
 
+/* real operands truncate to integers: a real-valued loop counter
+   produces fractional indices, and driver prologs lean on them
+   being accepted */
+static integer _S_toint(Xpost_Object o)
+{
+    return xpost_object_get_type(o) == realtype
+        ? (integer)o.real_.val : o.int_.val;
+}
+
 static
 int Sget(Xpost_Context *ctx,
          Xpost_Object S,
@@ -129,7 +138,7 @@ int Sget(Xpost_Context *ctx,
 {
     integer val;
     int ret;
-    ret = xpost_string_get(ctx, S, I.int_.val, &val);
+    ret = xpost_string_get(ctx, S, _S_toint(I), &val);
     if (ret)
         return ret;
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons(val));
@@ -142,7 +151,7 @@ int Sput(Xpost_Context *ctx,
          Xpost_Object I,
          Xpost_Object C)
 {
-    return xpost_string_put(ctx, S, I.int_.val, C.int_.val);
+    return xpost_string_put(ctx, S, _S_toint(I), _S_toint(C));
 }
 
 static
@@ -384,10 +393,10 @@ int xpost_oper_init_string_ops (Xpost_Context *ctx,
                              stringtype, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "get", (Xpost_Op_Func)Sget, 1, 2,
-                             stringtype, integertype);
+                             stringtype, numbertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "put", (Xpost_Op_Func)Sput, 0, 3,
-                             stringtype, integertype, integertype);
+                             stringtype, numbertype, numbertype);
     INSTALL;
     op = xpost_operator_cons(ctx, "getinterval", (Xpost_Op_Func)Sgetinterval, 1, 3,
                              stringtype, integertype, integertype);
