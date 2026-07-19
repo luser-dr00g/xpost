@@ -519,7 +519,9 @@ int xpost_op_file_status (Xpost_Context *ctx,
 }
 
 /* -  currentfile  file
-   return topmost file from the exec stack */
+   return topmost file from the exec stack. The result carries the
+   literal attribute (PLRM): programs stash it under a name and a
+   later lookup must push the stashed file, not resume executing it. */
 static
 int xpost_op_currentfile (Xpost_Context *ctx)
 {
@@ -531,14 +533,14 @@ int xpost_op_currentfile (Xpost_Context *ctx)
         o = xpost_stack_topdown_fetch(ctx->lo, ctx->es, i);
         if (xpost_object_get_type(o) == filetype)
         {
-            xpost_stack_push(ctx->lo, ctx->os, o);
+            xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(o));
             return 0;
         }
     }
     o = xpost_file_cons(ctx->lo, NULL);
     if (xpost_object_get_type(o) == invalidtype)
         return VMerror;
-    xpost_stack_push(ctx->lo, ctx->os, o);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(o));
     return 0;
 }
 

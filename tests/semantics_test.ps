@@ -68,6 +68,13 @@ pathbbox
 7 (only-moveto lly) assertnear
 5 (only-moveto llx) assertnear
 
+% --- currentfile returns a literal file: programs stash it under a
+%     name and the later lookup must push the stashed file, not
+%     resume executing it ---
+currentfile xcheck not (currentfile carries the literal attribute) assert
+/cfstash currentfile def
+cfstash type /filetype eq (a stashed currentfile recalls as a file) assert
+
 % --- resource machinery: instances per category, private categories
 %     registered by defining into /Category ---
 currentglobal true setglobal
