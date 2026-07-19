@@ -818,8 +818,21 @@ not {
     10 40 moveto (A) [11] yshow
     currentpoint exch 10 sub abs 0.01 le exch 51 sub abs 0.01 le and
     (yshow advances y by the displacement alone) assert
+
+    % displacements may arrive as an encoded number string: 16- or
+    % 32-bit fixed point with a binary scale, or 32-bit reals, in
+    % either byte order
+    10 40 moveto (AB) <9520000200090007> xshow
+    currentpoint exch 26 sub abs 0.01 le exch 40 sub abs 0.01 le and
+    (a fixed-point number string displaces x) assert
+    10 40 moveto (A) <952100010016> yshow
+    currentpoint exch 10 sub abs 0.01 le exch 51 sub abs 0.01 le and
+    (a scaled number string halves its stored values) assert
+    10 40 moveto (AB) <95B00400000080410000000000008041 00000000> xyshow
+    currentpoint exch 42 sub abs 0.01 le exch 40 sub abs 0.01 le and
+    (a low-order-first real number string displaces pairs) assert
     { (A) (no displacements) xshow } stopped
-    (a number string operand is refused) assert
+    (a string that is not an encoded number string is refused) assert
     $error /newerror false put clear newpath
     erasepage
 } if

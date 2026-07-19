@@ -34,6 +34,8 @@
 
 #include <assert.h>
 #include <stdlib.h> /* NULL */
+#include <string.h> /* memcpy */
+#include <math.h> /* ldexp */
 
 #include "xpost.h"
 #include "xpost_memory.h"
@@ -374,6 +376,92 @@ int xpost_op_array_forall_iterate(Xpost_Context *ctx)
     return 0;
 }
 
+/* numstring  .numstring2array  array
+   decode an encoded number string (PLRM 3.14.5) into a fresh array:
+   byte 0 is 149; byte 1 selects the representation R, where 0..31 is
+   32-bit fixed point with scale R, 32..47 is 16-bit fixed point with
+   scale R-32, 48 is a 32-bit IEEE real, and adding 128 stores the
+   multibyte values low-order byte first; bytes 2..3 carry the count
+   in the same byte order. Scale zero yields integers, any other
+   representation reals. Any other shape is a rangecheck. */
+static
+int _numstring2array (Xpost_Context *ctx,
+                      Xpost_Object str)
+{
+    unsigned char *p;
+    unsigned int sz, n, i, width;
+    int le, r;
+    Xpost_Object arr;
+
+    sz = str.comp_.sz;
+    if (sz < 4)
+        return rangecheck;
+    p = (unsigned char *)xpost_string_get_pointer(ctx, str);
+    if (p[0] != 149)
+        return rangecheck;
+    r = p[1];
+    le = r >= 128;
+    if (le)
+        r -= 128;
+    if (r > 48)
+        return rangecheck;
+    n = le ? (unsigned int)p[2] | (unsigned int)p[3] << 8
+           : (unsigned int)p[2] << 8 | (unsigned int)p[3];
+    width = (r >= 32 && r <= 47) ? 2 : 4;
+    if (sz < 4 + n * width)
+        return rangecheck;
+    arr = xpost_array_cons(ctx, n);
+    if (xpost_object_get_type(arr) == nulltype)
+        return VMerror;
+    for (i = 0; i < n; i++)
+    {
+        const unsigned char *q = p + 4 + i * width;
+        Xpost_Object el;
+
+        if (r == 48)
+        {
+            unsigned int u = le
+                ? (unsigned int)q[0]
+                | (unsigned int)q[1] << 8
+                | (unsigned int)q[2] << 16
+                | (unsigned int)q[3] << 24
+                : (unsigned int)q[0] << 24
+                | (unsigned int)q[1] << 16
+                | (unsigned int)q[2] << 8
+                | (unsigned int)q[3];
+            float f;
+            memcpy(&f, &u, sizeof f);
+            el = xpost_real_cons((real)f);
+        }
+        else if (width == 2)
+        {
+            short v = (short)(le ? (unsigned short)q[0]
+                                 | (unsigned short)q[1] << 8
+                                 : (unsigned short)q[0] << 8
+                                 | (unsigned short)q[1]);
+            int scale = r - 32;
+            el = scale == 0 ? xpost_int_cons(v)
+                 : xpost_real_cons((real)ldexp((double)v, -scale));
+        }
+        else
+        {
+            int v = (int)(le ? (unsigned int)q[0]
+                             | (unsigned int)q[1] << 8
+                             | (unsigned int)q[2] << 16
+                             | (unsigned int)q[3] << 24
+                             : (unsigned int)q[0] << 24
+                             | (unsigned int)q[1] << 16
+                             | (unsigned int)q[2] << 8
+                             | (unsigned int)q[3]);
+            el = r == 0 ? xpost_int_cons(v)
+                 : xpost_real_cons((real)ldexp((double)v, -r));
+        }
+        xpost_array_put(ctx, arr, (integer)i, el);
+    }
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(arr));
+    return 0;
+}
+
 int xpost_oper_init_array_ops (Xpost_Context *ctx,
                                Xpost_Object sd)
 {
@@ -416,6 +504,9 @@ int xpost_oper_init_array_ops (Xpost_Context *ctx,
     INSTALL;
     op = xpost_operator_cons(ctx, "astore", (Xpost_Op_Func)xpost_op_anyn_array_astore, 1, 1,
             arraytype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".numstring2array", (Xpost_Op_Func)_numstring2array, 1, 1,
+            stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, "copy", (Xpost_Op_Func)xpost_op_array_copy, 1, 2,
             arraytype, arraytype);
