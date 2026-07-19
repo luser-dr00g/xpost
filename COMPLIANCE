@@ -247,9 +247,9 @@ Level 2 operators
  [X] setpagedevice (OutputDevice, PageSize, HWResolution, OutputFile,
      PageOffset; other keys reach the device as features)
  [X] currentpagedevice
- [ ] xshow
- [ ] yshow
- [ ] xyshow
+ [/] xshow (displacement arrays only; encoded number strings unsupported)
+ [/] yshow (displacement arrays only; encoded number strings unsupported)
+ [/] xyshow (displacement arrays only; encoded number strings unsupported)
  [X] glyphshow
  [/] colorimage (one data source per component unsupported)
  [/] image with dict argument (ImageType 1 only; MultipleDataSources

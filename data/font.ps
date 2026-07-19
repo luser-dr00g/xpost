@@ -338,6 +338,54 @@
     } ifelse
 } def
 
+%   str numarray  xshow  -
+% Show each character, replacing the glyph's advance with the
+% corresponding displacement: after painting glyph i the current
+% point moves to the previous point offset by the array's user-space
+% x displacement (xshow), y displacement (yshow), or (x,y) pair
+% (xyshow). Too few displacements is a rangecheck at the glyph that
+% wants one; encoded number strings are not accepted.
+/xshow {
+    dup type /arraytype ne { /xshow cvx /typecheck signalerror } if
+    3 dict begin
+    /nums exch def /str exch def
+    0 1 str length 1 sub {
+        /i exch def
+        currentpoint
+        str i 1 getinterval show
+        exch nums i get add exch moveto
+    } for
+    end
+} def
+
+/yshow {
+    dup type /arraytype ne { /yshow cvx /typecheck signalerror } if
+    3 dict begin
+    /nums exch def /str exch def
+    0 1 str length 1 sub {
+        /i exch def
+        currentpoint
+        str i 1 getinterval show
+        nums i get add moveto
+    } for
+    end
+} def
+
+/xyshow {
+    dup type /arraytype ne { /xyshow cvx /typecheck signalerror } if
+    3 dict begin
+    /nums exch def /str exch def
+    0 1 str length 1 sub {
+        /i exch def
+        currentpoint
+        str i 1 getinterval show
+        exch nums i 2 mul get add
+        exch nums i 2 mul 1 add get add
+        moveto
+    } for
+    end
+} def
+
 /stringwidth {
     graphicsdict /currgstate get /currfont get
     dup /FontType get 3 ne { pop //stringwidth }{
