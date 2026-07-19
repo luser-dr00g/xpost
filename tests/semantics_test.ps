@@ -352,6 +352,12 @@ currentglobal true setglobal [ 1 2 ] exch setglobal gcheck
 /st.cyc load 0 /st.cyc load put
 /st.cyc load bind type /arraytype eq (bind survives a cyclic procedure) assert
 
+% --- a repeated stencil replays from the run cache cleanly ---
+count /st.c0 exch def
+gsave 8 8 true [8 0 0 -8 0 8] {<AA55AA55AA55AA55>} imagemask grestore
+gsave 8 8 true [8 0 0 -8 0 8] {<AA55AA55AA55AA55>} imagemask grestore
+count st.c0 eq (a cached stencil leaves the stack clean) assert
+
 % --- the job server accepts exitserver ---
 countdictstack
 { serverdict begin 0 exitserver } stopped not
