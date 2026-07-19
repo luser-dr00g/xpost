@@ -5,6 +5,7 @@
 % the red, green and blue transfers, four to red, green, blue and
 % grey in the CMYK order, anything else through the grey transfer
 /.applytransfer {
+    .refreshscreencell
     counttomark 3 eq {
         graphicsdict /currgstate get /bluetransfer get exec
         3 1 roll
@@ -374,6 +375,7 @@
     gsave
         newpath
         24 dict begin
+        .refreshscreencell
         {mranges mbits ncomp decode datasrc mat bits height width}{exch def}forall
         % the dictionary image form leaves its Interpolate request in
         % userdict for this one painting; anything else paints stepped
@@ -524,6 +526,11 @@
                 bd /dluts dluts put
             } ifelse
             bd /tlut tlut put
+            DEVICE /.htcell known {
+                bd /.htcell DEVICE /.htcell get put
+                bd /.htw DEVICE /.htw get put
+                bd /.hth DEVICE /.hth get put
+            } if
             nat 3 eq {
                 bd /tlutr tlutr put
                 bd /tlutg tlutg put

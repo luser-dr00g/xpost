@@ -26,11 +26,12 @@ Level 1 operators
  [X] imagemask
  [X] settransfer
  [X] currenttransfer
- [X] setscreen (recorded only: rendering stays continuous-tone)
+ [X] setscreen
  [X] currentscreen
- [X] setcolorscreen (recorded only: rendering stays continuous-tone)
+ [X] setcolorscreen
  [X] currentcolorscreen
- [X] sethalftone (recorded only: rendering stays continuous-tone)
+ [X] sethalftone (a type 5 dictionary, carrying its component
+     screens, leaves the screen previously in force)
  [X] currenthalftone
  [X] makefont
  [X] ashow

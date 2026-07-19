@@ -348,6 +348,201 @@ setglobal
     end
 } def
 
+% The threshold cell of a screening device. A bilevel device that
+% declares /ScreenPaint takes a cell built from the current screen:
+% the spot function samples across the cell and the pixels rank by
+% spot value, the lowest whitening first -- highlight dots open at
+% the spot minima, and the shadow dot at the maximum darkens last --
+% so each pixel's threshold is its rank.
+% The painting machinery refreshes the cell before it marks, so the
+% screen in force is the one the paint sees.
+
+% freq ang proc  .installscreencell  -
+% The screen tiles the device plane on a rotated integer lattice:
+% the angle becomes the nearest rational tangent b/a with the cell
+% diagonal near the requested frequency, the lattice vectors (a,b)
+% and (-b,a) map every device pixel into its cell, and the whole
+% repeating tile ranks together, the lowest spot values whitening
+% first. An axis-aligned screen falls out as b = 0.
+/.gcd { % m n .gcd g
+    { dup 0 eq { pop exit } if exch 1 index mod } loop
+} def
+/.installscreencell {
+    20 dict begin
+    /proc exch def /ang exch def /freq exch def
+    /n DEVICE /defaultmatrix get 0 get abs 72 mul freq div
+       round cvi dup 2 lt { pop 2 } if dup 48 gt { pop 48 } if def
+    % the lattice needs the angle only modulo ninety degrees, but the
+    % spot pattern need not have the cell's symmetry: the whole
+    % quarter turns rotate the spot's argument instead
+    /th ang 90 div dup floor sub 90 mul def
+    /quad ang 90 div floor cvi 4 mod dup 0 lt { 4 add } if def
+    /besta n def /bestb 0 def /bestscore 1e9 def
+    0 1 24 { /aa exch def
+        0 1 24 { /bb exch def
+            aa 0 eq bb 0 eq and not {
+                /cand bb aa atan dup 90 ge { 90 sub } if def
+                /sz aa dup mul bb dup mul add sqrt def
+                /per aa dup mul bb dup mul add
+                     aa abs bb abs .gcd idiv def
+                per 64 le sz 1.5 ge and {
+                    /score cand th sub abs
+                           sz n sub abs n div 30 mul add def
+                    score bestscore lt {
+                        /bestscore score def
+                        /besta aa def /bestb bb def
+                    } if
+                } if
+            } if
+        } for
+    } for
+    /a besta def /b bestb def
+    /q a dup mul b dup mul add def
+    /L q a abs b abs .gcd idiv def
+    /vals L L mul array def
+    % arguments stay strictly inside (-1 1) whatever their sign: a
+    % program may fold a negation into its spot, and the closed end
+    % of the domain would come back around
+    /.clamparg {
+        dup -0.999 lt { pop -0.999 } if
+        dup 0.999 gt { pop 0.999 } if
+    } def
+    0 1 L 1 sub { /y exch def
+        0 1 L 1 sub { /x exch def
+            % the sample point sits at the pixel centre, nudged just
+            % off the symmetric positions, so a symmetric spot orders
+            % its near-equal values by its own topology instead of
+            % leaving runs of exact ties whose sort order, not the
+            % spot, would shape the dot
+            /xs x 0.5071 add def
+            /ys y 0.4877 add def
+            % the cell holding the pixel, and that cell's centre
+            % snapped to the nearest pixel centre: measuring the
+            % argument from the snapped centre rounds each dot about
+            % one pixel rather than squaring it about a corner, and
+            % keeps a table-indexing spot reading the entry under
+            % the pixel, never the seam between two
+            /m1 a xs mul b ys mul add q div floor def
+            /m2 a ys mul b xs mul sub q div floor def
+            /xc a m1 0.5 add mul b m2 0.5 add mul sub floor 0.5 add def
+            /yc b m1 0.5 add mul a m2 0.5 add mul add floor 0.5 add def
+            count /d0 exch def
+            a xs xc sub mul b ys yc sub mul add q div 2 mul
+            dup 1 ge { 2 sub } if dup -1 lt { 2 add } if .clamparg
+            a ys yc sub mul b xs xc sub mul sub q div 2 mul
+            dup 1 ge { 2 sub } if dup -1 lt { 2 add } if .clamparg
+            quad { exch neg } repeat
+            proc
+            count d0 sub
+            dup 0 le { pop 0 }{ 1 sub { exch pop } repeat } ifelse
+            vals y L mul x add 3 -1 roll put
+        } for
+    } for
+    /idx L L mul array def
+    0 1 idx length 1 sub { dup idx 3 1 roll put } for
+    % equal spot values rank in sample order, so a flat run of the
+    % spot -- a line screen's column, a pattern's plateau -- whitens
+    % coherently instead of in the sort's incidental order
+    idx { 2 copy vals exch get exch vals exch get
+          2 copy eq { pop pop lt }{ exch lt 3 1 roll pop pop } ifelse
+    } qsort
+    % when the tile holds several cells, deal the ranks around them:
+    % each cell takes every nth rank in its own value order, so a
+    % shell of equal spot values splits evenly and every cell grows
+    % the same dot, one pixel at a time
+    /g a abs b abs .gcd def
+    /nc q g idiv g idiv def
+    nc 1 gt {
+        /ap a g idiv def
+        /bp b g idiv def
+        /ctr nc array def
+        0 1 nc 1 sub { ctr exch 0 put } for
+        /idx2 L L mul array def
+        0 1 idx length 1 sub { /r exch def
+            /i idx r get def
+            /ix i L mod def
+            /iy i L idiv def
+            /m1 a ix mul b iy mul add q div floor cvi def
+            /m2 a iy mul b ix mul sub q div floor cvi def
+            /cid ap m1 mul bp m2 mul sub nc mod
+                 dup 0 lt { nc add } if def
+            idx2 ctr cid get nc mul cid add i put
+            ctr cid 2 copy get 1 add put
+        } for
+        /idx idx2 def
+    } if
+    /cell L L mul string def
+    % a pixel whitens when the grey level, on the painters' 0..256
+    % halftone scale, reaches its threshold; rank r takes the first
+    % level past r whitened pixels' worth of grey, so an even tint
+    % splits a line screen's cell without a stray pixel and the
+    % extremes stay solid
+    0 1 idx length 1 sub { /r exch def
+        cell idx r get
+        r 256 mul idx length div cvi 1 add
+        dup 255 gt { pop 255 } if
+        put
+    } for
+    DEVICE /.htcell cell put
+    DEVICE /.htw L put
+    DEVICE /.hth L put
+    % fetched, not looked up: a bare name would run the procedure
+    DEVICE /.htsrc currentdict /proc get put
+    DEVICE /.htfreq freq put
+    DEVICE /.htang ang put
+    end
+} def
+
+% -  .refreshscreencell  -
+% bring a screening device's cell up to the screen in force: the
+% installed halftone dictionary's thresholds or spot function, else
+% the screen triple, rebuilt only when it has changed
+/.refreshscreencell {
+    DEVICE /ScreenPaint known {
+        4 dict begin
+        /ht graphicsdict /currgstate get /halftone get def
+        ht null ne {
+            ht /Thresholds 2 copy known { get }{ pop pop null } ifelse
+            dup type /stringtype eq {
+                /th exch def
+                DEVICE /.htsrc 2 copy known { get }{ pop pop null } ifelse
+                th eq not {
+                    DEVICE /.htcell th put
+                    DEVICE /.htw ht /Width get put
+                    DEVICE /.hth ht /Height get put
+                    DEVICE /.htsrc th put
+                } if
+            }{
+                pop
+                ht /SpotFunction 2 copy known { get }{ pop pop null } ifelse
+                dup null ne {
+                    /sp exch def
+                    DEVICE /.htsrc 2 copy known { get }{ pop pop null } ifelse
+                    currentdict /sp get eq not {
+                        ht /Frequency 2 copy known { get }{ pop pop 60 } ifelse
+                        ht /Angle 2 copy known { get }{ pop pop 0 } ifelse
+                        currentdict /sp get .installscreencell
+                    } if
+                }{ pop } ifelse
+            } ifelse
+        }{
+            DEVICE /.htsrc 2 copy known { get }{ pop pop null } ifelse
+                graphicsdict /currgstate get /screenproc get eq
+            DEVICE /.htfreq 2 copy known { get }{ pop pop null } ifelse
+                graphicsdict /currgstate get /screenfreq get eq and
+            DEVICE /.htang 2 copy known { get }{ pop pop null } ifelse
+                graphicsdict /currgstate get /screenangle get eq and
+            not {
+                graphicsdict /currgstate get /screenfreq get
+                graphicsdict /currgstate get /screenangle get
+                graphicsdict /currgstate get /screenproc get
+                .installscreencell
+            } if
+        } ifelse
+        end
+    } if
+} def
+
 % freq angle proc  setscreen  -
 % record the halftone screen for every component and evaluate the
 % spot function across the cell. xpost renders continuous tone, so

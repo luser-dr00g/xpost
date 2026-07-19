@@ -14,6 +14,36 @@
 % a bilevel page keeps its glyphs bilevel
 PBMIMAGE /TextAlphaBits 1 put
 
+% every grey painted screens through the halftone in force
+PBMIMAGE /ScreenPaint true put
+
+PBMIMAGE /PutPix { % val x y IMAGE  .  -
+begin
+    {
+        .to-int exch .to-int exch
+        dup 0 lt { stop } if
+        dup height ge { stop } if
+        1 index 0 lt { stop } if
+        1 index width ge { stop } if
+        currentdict /.htcell known {
+            2 copy                          % v x y x y
+            .hth mod .htw mul               % v x y x (y%h)*w
+            exch .htw mod add               % v x y idx
+            .htcell exch get                % v x y thr
+            4 -1 roll 256 mul 0.5 add cvi exch ge % x y white?
+            { 255 }{ 0 } ifelse 3 1 roll    % v' x y
+            ImgData exch get 3 1 roll exch
+            put
+        }{
+            ImgData exch get 3 1 roll exch
+            255 mul cvi
+            put
+        } ifelse
+    } stopped {
+        pop pop pop
+    } if
+end } put
+
 PBMIMAGE /.writepbm { % img file
     8 dict begin
     {/f /a}{exch def}forall

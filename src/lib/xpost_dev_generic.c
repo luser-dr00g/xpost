@@ -853,6 +853,27 @@ int _eospanpoly(Xpost_Context *ctx,
     return code;
 }
 
+/* The device's halftone threshold cell, when paint screens through
+   one: a bilevel device carries .htcell/.htw/.hth and every grey
+   written compares against the threshold under its pixel. */
+static const unsigned char *
+_ht_cell(Xpost_Context *ctx, Xpost_Object devdic, int *w, int *h)
+{
+    Xpost_Object c = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, ".htcell"));
+    Xpost_Object wo = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, ".htw"));
+    Xpost_Object ho = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, ".hth"));
+
+    if (xpost_object_get_type(c) != stringtype
+     || xpost_object_get_type(wo) != integertype
+     || xpost_object_get_type(ho) != integertype)
+        return NULL;
+    *w = wo.int_.val;
+    *h = ho.int_.val;
+    if (*w < 1 || *h < 1 || (unsigned int)(*w * *h) > c.comp_.sz)
+        return NULL;
+    return (const unsigned char *)xpost_string_get_pointer(ctx, c);
+}
+
 /* Fast FillRect for grayscale (DeviceGray) array-of-strings devices such as
    PGMIMAGE. Writes the ImgData row strings directly rather than looping over
    PutPix in PostScript; erasepage clears the whole page through FillRect, so
@@ -874,7 +895,11 @@ int _fillrectgray(Xpost_Context *ctx,
     double dx, dy, dw, dh;
     int height, iy, iy0, iy1, ix0, ix1;
     unsigned char b;
+    int bht;
+    const unsigned char *cell;
+    int hw = 0, hh = 0;
 
+    cell = _ht_cell(ctx, devdic, &hw, &hh);
     imgdata = xpost_dict_get(ctx, devdic, nameImgData);
     if (xpost_object_get_type(imgdata) != arraytype)
         return undefined;
@@ -883,6 +908,12 @@ int _fillrectgray(Xpost_Context *ctx,
     /* value -> byte, matching PGMIMAGE PutPix "255 mul cvi put" */
     b = (unsigned char)(int)((xpost_object_get_type(val) == realtype
                               ? val.real_.val : (double)val.int_.val) * 255.0);
+    /* the halftone comparison runs on a 0..256 scale: a pixel is
+       white when the level reaches its threshold, so a threshold of
+       255 whitens just before solid white and solid black stays
+       solid */
+    bht = (int)((xpost_object_get_type(val) == realtype
+                 ? val.real_.val : (double)val.int_.val) * 256.0 + 0.5);
 
     dx = xpost_object_get_type(x) == realtype ? x.real_.val : (double)x.int_.val;
     dy = xpost_object_get_type(y) == realtype ? y.real_.val : (double)y.int_.val;
@@ -909,8 +940,21 @@ int _fillrectgray(Xpost_Context *ctx,
         cx0 = ix0 < 0 ? 0 : ix0;
         cx1 = ix1 > width - 1 ? width - 1 : ix1;
         if (cx0 <= cx1)
-            memset(xpost_string_get_pointer(ctx, row) + cx0, b,
-                   (size_t)(cx1 - cx0 + 1));
+        {
+            unsigned char *p = (unsigned char *)
+                xpost_string_get_pointer(ctx, row);
+
+            if (cell)
+            {
+                const unsigned char *crow = cell + (iy % hh) * hw;
+                int ix;
+
+                for (ix = cx0; ix <= cx1; ix++)
+                    p[ix] = bht >= crow[ix % hw] ? 255 : 0;
+            }
+            else
+                memset(p + cx0, b, (size_t)(cx1 - cx0 + 1));
+        }
     }
 
     return 0;
@@ -1674,6 +1718,8 @@ int _blitrow(Xpost_Context *ctx,
     int nivl = 0;
     unsigned char *buf, *lut = NULL, *tlut = NULL, *mbits = NULL;
     unsigned char *tlr = NULL, *tlg = NULL, *tlb = NULL;
+    const unsigned char *htc = NULL;
+    int htw = 0, hth = 0;
     unsigned char *dlut[4] = { NULL, NULL, NULL, NULL };
     int mranges[8];
     int devw, devh, nat, packed, w, ncomp, y, cmyk, mrowb = 0;
@@ -1937,6 +1983,10 @@ int _blitrow(Xpost_Context *ctx,
                             if (packed)
                                 xpost_array_put(ctx, row, dx,
                                     xpost_int_cons(px[0] << 16 | px[1] << 8 | px[2]));
+                            else if (htc)
+                                rowp[dx] = (256 * px[0] + 127) / 255
+                                           >= htc[(dy % hth) * htw + dx % htw]
+                                         ? 255 : 0;
                             else
                                 rowp[dx] = (unsigned char)px[0];
                         }
@@ -1948,6 +1998,10 @@ int _blitrow(Xpost_Context *ctx,
             }
         }
     }
+
+    /* a screening device thresholds every grey written; the caller
+       copies the cell into the blit dictionary when the device has one */
+    htc = _ht_cell(ctx, dict, &htw, &hth);
 
     ya = yoff + y * yscale;
     yb = yoff + (y + 1) * yscale;
@@ -2098,6 +2152,10 @@ int _blitrow(Xpost_Context *ctx,
                         if (packed)
                             xpost_array_put(ctx, row, dx,
                                             xpost_int_cons(r << 16 | g << 8 | b));
+                        else if (htc)
+                            rowp[dx] = (256 * gray + 127) / 255
+                                       >= htc[(dy % hth) * htw + dx % htw]
+                                     ? 255 : 0;
                         else
                             rowp[dx] = (unsigned char)gray;
                     }

@@ -1213,6 +1213,95 @@ matrix setmatrix
 graphicsdict /currgstate get /device DEV put
 initgraphics
 
+% A bilevel device screens every grey through the halftone in force:
+% a mid grey lands as a mix, the extremes stay themselves
+/DEV3 8 8 newPBMIMAGEdevice def
+DEV3 begin
+    /defaultmatrix [ 1 0 0 -1 0 8 ] def
+    /FillPoly /.fillpoly load def
+    /FillRect /.fillrectgray load def
+end
+graphicsdict /currgstate get /device DEV3 put
+matrix setmatrix
+36 0 { add 2 div } setscreen
+0.5 setgray 0 0 8 8 rectfill
+/htblack 0 def /htwhite 0 def
+0 1 7 { /yy exch def 0 1 7 { /xx exch def
+    xx yy DEV3 dup /GetPix get exec
+    128 lt { /htblack htblack 1 add def }{ /htwhite htwhite 1 add def } ifelse
+} for } for
+htblack 0 gt htwhite 0 gt and (a mid grey screens to a mix) assert
+1 setgray 0 0 8 8 rectfill
+0 0 DEV3 dup /GetPix get exec 128 ge
+(white stays white through the screen) assert
+0 setgray 0 0 8 8 rectfill
+3 3 DEV3 dup /GetPix get exec 128 lt (black stays black) assert
+
+% The screen angle tiles a rotated lattice: at forty-five degrees the
+% pattern largely repeats along the diagonal lattice vector -- here
+% (3 3); the whole repeating tile ranks together, so the cells in it
+% may differ by the odd growing pixel -- and inverts along the axis,
+% half a cell out of phase
+18 45 { 180 mul cos exch 180 mul cos add 2 div } setscreen
+0.5 setgray 0 0 8 8 rectfill
+/diageq 0 def /axiseq 0 def
+0 1 4 { /yy exch def 0 1 4 { /xx exch def
+    xx yy DEV3 dup /GetPix get exec 128 lt
+    xx 3 add yy 3 add DEV3 dup /GetPix get exec 128 lt
+    eq { /diageq diageq 1 add def } if
+    xx yy DEV3 dup /GetPix get exec 128 lt
+    xx 3 add yy DEV3 dup /GetPix get exec 128 lt
+    eq { /axiseq axiseq 1 add def } if
+} for } for
+diageq 18 ge (a rotated screen repeats along its lattice vector) assert
+axiseq 12 le (a rotated screen does not repeat along the axis) assert
+
+% A program may fold a sign flip into its spot function before
+% installing it: the sampled arguments stay strictly inside the
+% domain, so a spot that indexes a table never reads past the end
+/bstr8 <0102030405060708> def
+{ 18 0 { neg exch neg exch
+         1 add 2 div 8 mul cvi bstr8 exch get
+         exch 1 add 2 div 8 mul cvi bstr8 exch get
+         add 510 div } setscreen
+  0.5 setgray 0 0 8 8 rectfill
+} stopped not
+(a sign-flipped indexing spot stays inside its table) assert
+
+% A threshold-array halftone whitens a pixel when the grey level, on
+% the 0..256 halftone scale, reaches its threshold byte: a threshold
+% of 1 opens at the first step above black, one of 255 just before
+% solid white, and the extremes stay solid
+<< /HalftoneType 3 /Width 2 /Height 2 /Thresholds <0180C8FF> >> sethalftone
+/.countblack { % gray  .countblack  n
+    setgray 0 0 8 8 rectfill
+    /nb 0 def
+    0 1 7 { /yy exch def 0 1 7 { /xx exch def
+        xx yy DEV3 dup /GetPix get exec 128 lt { /nb nb 1 add def } if
+    } for } for
+    nb
+} def
+0        .countblack 64 eq (solid black stays solid through thresholds) assert
+1 255 div .countblack 48 eq (a threshold of one opens above black) assert
+128 255 div .countblack 32 eq (a mid grey reaches the mid threshold) assert
+254 255 div .countblack 0 eq (the top threshold opens before solid white) assert
+1        .countblack 0 eq (solid white stays solid through thresholds) assert
+
+% A two-valued spot function -- the pattern-cell idiom -- splits its
+% cell exactly at the boundary grey: the black pixels are the
+% pattern's one bits, no more and no fewer
+/patbits <F0F0F0F000000000> def   % 16 bits set of 64
+{ 9 0 { /py exch def /px exch def
+        patbits py 1 add 2 div 8 mul cvi get
+        1 7 px 1 add 2 div 8 mul cvi sub bitshift and 0 ne
+        { 1 }{ 0 } ifelse } setscreen
+} stopped not (a bitmap spot installs) assert
+0.75 .countblack 16 eq (a bitmap spot splits its cell at the boundary grey) assert
+
+60 45 { 180 mul cos exch 180 mul cos add 2 div } setscreen
+graphicsdict /currgstate get /device DEV put
+initgraphics
+
 % A CIDFontType 0 descendant: its charstrings arrive in the StartData
 % block -- read from the file itself, so this stands at the top level
 % -- and the face assembles from the written-back resource file,
