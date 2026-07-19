@@ -1036,9 +1036,15 @@ int _show_glyph(Xpost_Context *ctx,
         xpost_font_face_glyph_buffer_get(data.face,
                                          &buffer, &rows, &width, &pitch, &pixel_mode,
                                          &left, &top, &advance_x, &advance_y);
+        /* the pen rides at fractional device positions but the glyph
+           bitmap sits on the pixel grid: place it at the nearest
+           pixel, not the floor, so a pen an epsilon shy of a pixel
+           boundary (the linear advance's 16.16 quantization) lands
+           where exact arithmetic would put it */
         _draw_bitmap(ctx, devdic, putpix, ts,
                      buffer, rows, width, pitch, pixel_mode,
-                     *xpos + left, *ypos - top,
+                     (int)floor(*xpos + left + 0.5),
+                     (int)floor(*ypos - top + 0.5),
                      ncomp, comp1, comp2, comp3, comp4);
     }
     /* the face transform leaves the advance in y-up glyph space; the
