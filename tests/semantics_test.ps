@@ -358,6 +358,12 @@ gsave 8 8 true [8 0 0 -8 0 8] {<AA55AA55AA55AA55>} imagemask grestore
 gsave 8 8 true [8 0 0 -8 0 8] {<AA55AA55AA55AA55>} imagemask grestore
 count st.c0 eq (a cached stencil leaves the stack clean) assert
 
+% --- internaldict answers its password and refuses others ---
+1183615869 internaldict type /dicttype eq
+(internaldict answers its password) assert
+{ 0 internaldict } stopped (a wrong password is refused) assert
+$error /newerror false put clear
+
 % --- the job server accepts exitserver ---
 countdictstack
 { serverdict begin 0 exitserver } stopped not

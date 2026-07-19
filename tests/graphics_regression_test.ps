@@ -1190,6 +1190,45 @@ currentpoint pop 22 sub abs 0.5 le
 (its codes advance by the charstring width) assert
 erasepage
 
+% An embedded Type 1 program: the encrypted portion runs through
+% eexec, the charstrings arrive through RD from the decrypted
+% stream, and the program closes its own file; the face assembles
+% from the written-back program. Top level, since eexec reads the
+% file itself.
+%!PS-AdobeFont-1.0: TestT1 001.001
+11 dict begin
+/FontName /TestT1 def
+/FontType 1 def
+/PaintType 0 def
+/FontMatrix [0.001 0 0 0.001 0 0] def
+/FontBBox {0 0 1000 1000} def
+/Encoding 256 array 0 1 255 {1 index exch /.notdef put} for
+dup 65 /sq put readonly def
+currentdict end
+currentfile eexec
+81B0E31231A309E292676B3DFF2E6BA20FF38AE5A2B04E0F2C2D470BB995CD523C821771
+8DA3AF13AD5C6903059F2FD1FFFCC441E6775BEBD9DF5EB3599E8CB489FE7B7285B41D12
+417929EF4C545E986161C0A1C508CF373CC84A31114F0BDC5238187B20E0BFD2E810E260
+6736EF718DF78CEB859063856448C6DBCD7291D37EE7118E4492C59D67AD011A56678E9F
+1ADF952A1A76B8246565BF7D904BAF85B7C231CCCAC1727D3805E87E1B5BF0E2D9A82C7F
+A919FE03254A80DF333E682F8825A7D93F7176278AB8F0F8A0E037C7805397C5C8E9A72E
+73C1B754C514524D25A0628BBE408F575C922A41F26DE9632C9A906E35EE714726B24625
+E3C42AC4E9E2A5161395EF9CAC30822D4A765B0D4D4D59B1CF7BBCD3C571115D601CAC8F
+4EB2F16F07C74B857ABC2D6B0BFD588DA3006FE898B1A3419826453B35756041B9E39E4C
+A214FA19F8210C59B8FA80C9D00D9014FB85AD06AE33B44A6A897B9B2E5A7B2A12F45F9D
+515E980F8921D9647AE1AB955AAD974BF4C589347270EF51FA783023CD8221BCB41C8EA3
+62CA907605DA717E3ADCEA
+0000000000000000000000000000000000000000000000000000000000000000
+cleartomark
+/TestT1 findfont 20 scalefont setfont
+erasepage
+10 16 moveto (A) show
+countink 80 ge (an embedded charstring font paints through eexec) assert
+currentpoint pop 22 sub abs 0.5 le
+(its codes advance by the charstring width) assert
+erasepage
+
+
 % Type 3 fonts serve glyphshow through their BuildGlyph procedure, as
 % plotting tools emit them (a name-keyed CharStrings of drawing
 % procedures); a font defining only BuildGlyph also answers show

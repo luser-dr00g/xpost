@@ -3495,6 +3495,153 @@ Xpost_Object xpost_file_cons_filter_enc_ccitt(Xpost_Memory_File *mem,
     return f;
 }
 
+
+/* eexec decryption: the outer encryption layer of Type 1 font
+   programs, R initialized to 55665, each plain byte the cipher byte
+   xored with the high half of R before R absorbs the cipher byte.
+   The first four plain bytes are salt and are discarded; whether the
+   ciphertext is raw bytes or hexadecimal is decided the way the
+   format specifies, by whether the first four bytes all read as
+   hexadecimal characters. */
+typedef struct Xpost_EexecFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    unsigned short r;
+    int mode;           /* -1 undecided, 0 binary, 1 hex */
+    int skip;
+    unsigned char head[4];
+    int headn, headi;
+} Xpost_EexecFile;
+
+static int
+eexec_hexval(int c)
+{
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return -1;
+}
+
+static int
+eexec_srcbyte(Xpost_EexecFile *ff)
+{
+    if (ff->headi < ff->headn)
+        return ff->head[ff->headi++];
+    return xpost_file_getc(ff->source);
+}
+
+static int
+eexec_cipherbyte(Xpost_EexecFile *ff)
+{
+    int c, hi, lo;
+
+    if (ff->mode < 0)
+    {
+        int i, allhex = 1;
+
+        /* white space rides between the eexec token and the
+           ciphertext; the four test bytes follow it */
+        do
+            c = xpost_file_getc(ff->source);
+        while (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+        if (c == EOF)
+            return EOF;
+        ff->head[0] = (unsigned char)c;
+        if (eexec_hexval(c) < 0)
+            allhex = 0;
+        for (i = 1; i < 4; i++)
+        {
+            c = xpost_file_getc(ff->source);
+            if (c == EOF)
+                return EOF;
+            ff->head[i] = (unsigned char)c;
+            if (eexec_hexval(c) < 0 && c != ' ' && c != '\t'
+             && c != '\r' && c != '\n')
+                allhex = 0;
+        }
+        ff->headn = 4;
+        ff->headi = 0;
+        ff->mode = allhex;
+    }
+    if (ff->mode == 0)
+        return eexec_srcbyte(ff);
+    do
+        c = eexec_srcbyte(ff);
+    while (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+    hi = eexec_hexval(c);
+    if (hi < 0)
+        return EOF;
+    do
+        c = eexec_srcbyte(ff);
+    while (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+    lo = eexec_hexval(c);
+    if (lo < 0)
+        return EOF;
+    return hi << 4 | lo;
+}
+
+static int
+eexec_readch(Xpost_File *f)
+{
+    Xpost_EexecFile *ff = (Xpost_EexecFile *)f;
+    int c, p;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->eod)
+        return EOF;
+    for (;;)
+    {
+        c = eexec_cipherbyte(ff);
+        if (c == EOF)
+        {
+            ff->eod = 1;
+            return EOF;
+        }
+        p = c ^ (ff->r >> 8);
+        ff->r = (unsigned short)((unsigned int)(c + ff->r) * 52845u + 22719u);
+        if (ff->skip)
+        {
+            ff->skip--;
+            continue;
+        }
+        return p;
+    }
+}
+
+struct Xpost_File_Methods eexec_methods =
+{
+    eexec_readch, filter_writech, filter_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+Xpost_Object xpost_file_cons_filter_eexec(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_EexecFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = calloc(1, sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &eexec_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->r = 55665;
+        ff->mode = -1;
+        ff->skip = 4;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
 /* ReusableStreamDecode filter: the entire source is drained into a
    buffer at construction -- leaving the underlying file positioned
    just past the encoded data, exactly as reading it would -- and the

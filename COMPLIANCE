@@ -244,8 +244,8 @@ Level 1 operators
  [X] nulldevice
  [X] pathforall
  [X] version
- [ ] eexec
- [ ] internaldict
+ [X] eexec
+ [X] internaldict (empty but for what programs deposit)
  [ ] cachestatus
  [ ] setcachelimit
 

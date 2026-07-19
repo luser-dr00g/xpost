@@ -40,6 +40,16 @@
         } if
         dup .loadfont42
     }{
+    dup 1 eq 2 index /CharStrings known and
+    2 index /Private 2 copy known { get type /dicttype eq }{ pop pop false } ifelse and {
+        pop
+        % an embedded Type 1 program: its interpreted dictionaries are
+        % written back out as a font program and opened as a face; the
+        % charstrings and subroutines flatten here, where forall lives
+        dup dup /CharStrings get [ exch { } forall ]
+        2 index /Private get /Subrs 2 copy known { get }{ pop pop 0 array } ifelse
+        .loadfont1
+    }{
         3 eq {
             {
                 dup /FontMatrix known not {stop} if
@@ -68,6 +78,7 @@
                 /definefont cvx /invalidfont signalerror
             } if
         } ifelse
+    } ifelse
     } ifelse
     } ifelse
     dup /FontName known not {
@@ -548,6 +559,29 @@
     /ocircumflex /otilde /odieresis /divide /oslash /ugrave /uacute /ucircumflex
     /udieresis /yacute /thorn /ydieresis
 ] def
+
+% file  eexec  -
+% run the encrypted portion of a Type 1 font program: the decrypted
+% stream executes with systemdict as the current dictionary, and the
+% dictionary is popped when the stream is exhausted -- the program
+% inside closes its own file with currentfile closefile
+/eexec {
+    dup type /filetype ne { /eexec cvx /typecheck signalerror } if
+    .eexecdecode cvx
+    systemdict begin
+    exec
+    end
+} def
+
+% int  internaldict  dict
+% the guarded dictionary some font programs probe for; the password
+% is part of the language folklore, the contents are ours to keep
+/.internaldict 8 dict def
+/internaldict {
+    1183615869 eq { //.internaldict }{
+        /internaldict cvx /invalidaccess signalerror
+    } ifelse
+} def
 
 % the required instances of the Encoding resource category, copied
 % into global VM where the instance tables live

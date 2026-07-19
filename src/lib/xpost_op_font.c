@@ -530,7 +530,20 @@ void _face_setup(Xpost_Context *ctx,
         real qem = q;
         if ((xpost_object_get_type(ft) == integertype && ft.int_.val == 1)
          || (xpost_object_get_type(cft) == integertype && cft.int_.val == 0))
-            qem = q * 1000;
+        {
+            /* a Type 1 character-space unit is usually a thousandth
+               of the em -- the convention findfont dictionaries
+               declare whatever their face's native units -- but an
+               embedded program keeps its design count (a converted
+               2048-unit font arrives with a 1/2048 matrix), recorded
+               in the dictionary when its face was assembled */
+            Xpost_Object emu = xpost_dict_get(ctx, fontdict,
+                                              xpost_name_cons(ctx, ".emunits"));
+            int units = xpost_object_get_type(emu) == integertype
+                      ? emu.int_.val : 1000;
+
+            qem = q * (units > 0 ? units : 1000);
+        }
 
         /* the face serves a well-conditioned base size (an extreme em
            would fail inside FreeType); the residual ratio to the true
@@ -1659,6 +1672,220 @@ fail2:
 #endif
 }
 
+
+/* fontdict charstrings-flat subrs  .loadfont1  -
+   assemble a working face for a Type 1 font defined by an embedded
+   program. The interpreted dictionary is written back out as a font
+   program -- cleartext header, then an eexec section carrying the
+   private dictionary, the subroutines and the charstrings, whose
+   own charstring-level encryption the strings still carry -- and
+   opened as a memory face. The charstrings arrive flattened as
+   name, string pairs, since only the interpreter can walk its
+   dictionaries. */
+
+static void
+_t1_encrypt(unsigned char *data, size_t n)
+{
+    unsigned short r = 55665;
+    size_t i;
+
+    for (i = 0; i < n; i++)
+    {
+        unsigned char p = data[i];
+        unsigned char c = p ^ (r >> 8);
+
+        data[i] = c;
+        r = (unsigned short)((c + r) * 52845 + 22719);
+    }
+}
+
+static int
+_t1_emit_bin(Xpost_Context *ctx, char **buf, size_t *len, size_t *cap,
+             Xpost_Object s)
+{
+    char *p = xpost_string_get_pointer(ctx, s);
+
+    while (*len + s.comp_.sz + 1 >= *cap)
+    {
+        char *nb = realloc(*buf, *cap * 2);
+
+        if (!nb)
+            return -1;
+        *buf = nb;
+        *cap *= 2;
+    }
+    memcpy(*buf + *len, p, s.comp_.sz);
+    *len += s.comp_.sz;
+    return 0;
+}
+
+static
+int _loadfont1(Xpost_Context *ctx,
+               Xpost_Object fontdict,
+               Xpost_Object csflat,
+               Xpost_Object subrs)
+{
+#ifdef HAVE_FREETYPE2
+    Xpost_Object priv, privatestr, fontbbox;
+    Xpost_Object fontbboxarray[4];
+    struct fontdata data;
+    char *hdr, *sec;
+    unsigned char *whole;
+    size_t hlen = 0, hcap = 2048, slen = 0, scap = 16384;
+    int i;
+    unsigned int k;
+
+    if (xpost_object_get_type(csflat) != arraytype
+     || xpost_object_get_type(subrs) != arraytype)
+        return invalidfont;
+    priv = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(priv) != dicttype)
+        return invalidfont;
+
+    hdr = malloc(hcap);
+    if (!hdr)
+        return VMerror;
+    if (_cid_emit(&hdr, &hlen, &hcap,
+        "%%!PS-AdobeFont-1.0: X 001.001\n"
+        "11 dict begin\n"
+        "/FontName /X def\n"
+        "/FontType 1 def\n"
+        "/PaintType 0 def\n")) goto failh;
+    if (_cid_emit_entry(ctx, &hdr, &hlen, &hcap, fontdict, "FontMatrix")) goto failh;
+    if (_cid_emit_entry(ctx, &hdr, &hlen, &hcap, fontdict, "FontBBox")) goto failh;
+    if (_cid_emit(&hdr, &hlen, &hcap,
+        "/Encoding StandardEncoding def\n"
+        "currentdict end\n"
+        "currentfile eexec\n")) goto failh;
+
+    sec = malloc(scap);
+    if (!sec)
+        goto failh;
+    /* four salt bytes ahead of the program proper */
+    if (_cid_emit(&sec, &slen, &scap, "XPT1"
+        "dup /Private 16 dict dup begin\n"
+        "/RD {string currentfile exch readstring pop} executeonly def\n"
+        "/ND {noaccess def} executeonly def\n"
+        "/NP {noaccess put} executeonly def\n"
+        "/password 5839 def\n"
+        "/MinFeature {16 16} def\n")) goto fails;
+    for (k = 0; k < sizeof _cid_private_keys / sizeof *_cid_private_keys; k++)
+        if (_cid_emit_entry(ctx, &sec, &slen, &scap, priv,
+                            _cid_private_keys[k])) goto fails;
+    if (subrs.comp_.sz > 0)
+    {
+        if (_cid_emit(&sec, &slen, &scap, "/Subrs %d array\n", subrs.comp_.sz))
+            goto fails;
+        for (i = 0; i < subrs.comp_.sz; i++)
+        {
+            Xpost_Object s = xpost_array_get(ctx, subrs, i);
+
+            if (xpost_object_get_type(s) != stringtype)
+                goto fails;
+            if (_cid_emit(&sec, &slen, &scap, "dup %d %u RD ", i,
+                          (unsigned int)s.comp_.sz)) goto fails;
+            if (_t1_emit_bin(ctx, &sec, &slen, &scap, s)) goto fails;
+            if (_cid_emit(&sec, &slen, &scap, " NP\n")) goto fails;
+        }
+        if (_cid_emit(&sec, &slen, &scap, "ND\n")) goto fails;
+    }
+    if (_cid_emit(&sec, &slen, &scap, "end put\n"
+        "dup /CharStrings %d dict dup begin\n", csflat.comp_.sz / 2 + 1))
+        goto fails;
+    for (i = 0; i + 1 < csflat.comp_.sz; i += 2)
+    {
+        Xpost_Object nm = xpost_array_get(ctx, csflat, i);
+        Xpost_Object s = xpost_array_get(ctx, csflat, i + 1);
+        Xpost_Object nstr;
+        char nbuf[128];
+
+        if (xpost_object_get_type(s) != stringtype)
+            continue;
+        if (xpost_object_get_type(nm) != nametype)
+            continue;
+        nstr = xpost_name_get_string(ctx, nm);
+        if (nstr.comp_.sz >= sizeof nbuf)
+            continue;
+        memcpy(nbuf, xpost_string_get_pointer(ctx, nstr), nstr.comp_.sz);
+        nbuf[nstr.comp_.sz] = 0;
+        if (_cid_emit(&sec, &slen, &scap, "/%s %u RD ", nbuf,
+                      (unsigned int)s.comp_.sz)) goto fails;
+        if (_t1_emit_bin(ctx, &sec, &slen, &scap, s)) goto fails;
+        if (_cid_emit(&sec, &slen, &scap, " ND\n")) goto fails;
+    }
+    if (_cid_emit(&sec, &slen, &scap,
+        "end end put put\n"
+        "dup /FontName get exch definefont pop\n"
+        "mark currentfile closefile\n")) goto fails;
+
+    /* a reader decides hex against the first four cipher bytes, so
+       the salt must not encrypt to four hexadecimal characters */
+    for (;;)
+    {
+        unsigned char t[4];
+        unsigned short r = 55665;
+        int j, allhex = 1;
+
+        for (j = 0; j < 4; j++)
+        {
+            unsigned char cc = (unsigned char)(sec[j] ^ (r >> 8));
+
+            t[j] = cc;
+            r = (unsigned short)((cc + r) * 52845 + 22719);
+        }
+        for (j = 0; j < 4; j++)
+            if (!( (t[j] >= '0' && t[j] <= '9')
+                || (t[j] >= 'a' && t[j] <= 'f')
+                || (t[j] >= 'A' && t[j] <= 'F') ))
+                allhex = 0;
+        if (!allhex)
+            break;
+        sec[0]++;   /* different salt, different ciphertext */
+    }
+
+    whole = malloc(hlen + slen + 34);
+    if (!whole)
+        goto fails;
+    memcpy(whole, hdr, hlen);
+    memcpy(whole + hlen, sec, slen);
+    _t1_encrypt(whole + hlen, slen);
+    memcpy(whole + hlen + slen, "\n0000000000000000\ncleartomark\n", 30);
+    free(hdr);
+    free(sec);
+
+    data.face = xpost_font_face_new_from_memory(whole, hlen + slen + 30);
+    data.program = whole;
+    if (data.face == NULL)
+    {
+        free(whole);
+        return invalidfont;
+    }
+
+    fontbbox = xpost_array_cons(ctx, 4);
+    xpost_font_face_get_bbox(data.face, fontbboxarray, 1000.0);
+    xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
+                     xpost_object_get_ent(fontbbox),
+                     0, 4 * sizeof(Xpost_Object), fontbboxarray);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontBBox"), fontbbox);
+
+    privatestr = xpost_string_cons(ctx, sizeof data, NULL);
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "Private"), privatestr);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, ".emunits"),
+                   xpost_int_cons(xpost_font_face_units(data.face)));
+    return 0;
+fails:
+    free(sec);
+failh:
+    free(hdr);
+    return invalidfont;
+#else
+    (void)ctx; (void)fontdict; (void)csflat; (void)subrs;
+    return invalidfont;
+#endif
+}
+
 /* ciddict glypharray  .loadcidfont2  -
    assemble a working TrueType face for a CIDFontType 2 dictionary.
    The /sfnts strings supply every table but the outlines: the glyphs
@@ -2549,6 +2776,9 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".glyphshowidx", (Xpost_Op_Func)_glyphshowidx, 0, 1, integertype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".loadcidfont0", (Xpost_Op_Func)_loadcidfont0, 0, 1, dicttype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".loadfont1", (Xpost_Op_Func)_loadfont1, 0, 3,
+            dicttype, arraytype, arraytype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".loadcidfont2", (Xpost_Op_Func)_loadcidfont2, 0, 2,
             dicttype, arraytype);

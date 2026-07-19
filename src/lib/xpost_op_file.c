@@ -206,6 +206,25 @@ int _dict_int (Xpost_Context *ctx, Xpost_Object dict, const char *key, int def)
     return def;
 }
 
+/* file  .eexecdecode  file'
+   the decryption layer under a Type 1 font program's eexec */
+static
+int xpost_op_file_eexecdecode (Xpost_Context *ctx,
+                               Xpost_Object F)
+{
+    Xpost_Object f;
+
+    if (!xpost_object_is_readable(ctx, F))
+        return invalidaccess;
+    f = xpost_file_cons_filter_eexec(ctx->lo, F);
+    if (xpost_object_get_type(f) == invalidtype)
+        return ioerror;
+    f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    return 0;
+}
+
 /* file recordsize /RunLengthEncode  filter  file'
    records bound the runs; zero means no record structure */
 static
@@ -1079,6 +1098,8 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     INSTALL;
     op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter_int, 1, 3,
             filetype, integertype, nametype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".eexecdecode", (Xpost_Op_Func)xpost_op_file_eexecdecode, 1, 1, filetype);
     INSTALL;
     op = xpost_operator_cons(ctx, "closefile", (Xpost_Op_Func)xpost_op_file_closefile, 0, 1, filetype);
     INSTALL;

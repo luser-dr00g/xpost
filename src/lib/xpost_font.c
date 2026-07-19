@@ -348,6 +348,19 @@ xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray, real em){
 #endif
 }
 
+int
+xpost_font_face_units(void *face)
+{
+#ifdef HAVE_FREETYPE2
+    FT_Face f = face;
+
+    return f->units_per_EM > 0 ? f->units_per_EM : 0;
+#else
+    (void)face;
+    return 0;
+#endif
+}
+
 void
 xpost_font_face_free(void *face)
 {
