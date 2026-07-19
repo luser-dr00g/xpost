@@ -1007,9 +1007,16 @@ int _fillpath_emit(Xpost_Context *ctx,
     char tmp[192];
     int n, i;
 
+    Xpost_Object eo;
+    int evenodd;
+
     gstate = _gstate(ctx);
     if (xpost_object_get_type(gstate) == invalidtype)
         return undefined;
+    /* eofill raises the flag around its call: the consumer applies
+       the even-odd rule instead of nonzero winding */
+    eo = xpost_dict_get(ctx, gstate, xpost_name_cons(ctx, ".eorule"));
+    evenodd = xpost_object_get_type(eo) == booleantype && eo.int_.val;
     path = xpost_dict_get(ctx, gstate, namecurrpath);
     if (xpost_object_get_type(path) != stringtype)
         return unregistered;
@@ -1026,7 +1033,10 @@ int _fillpath_emit(Xpost_Context *ctx,
         n += xpost_dev_pdf_fmt_num(tmp + n, comp[0] * 100); tmp[n++] = '%'; tmp[n++] = ',';
         n += xpost_dev_pdf_fmt_num(tmp + n, comp[1] * 100); tmp[n++] = '%'; tmp[n++] = ',';
         n += xpost_dev_pdf_fmt_num(tmp + n, comp[2] * 100); tmp[n++] = '%';
-        memcpy(tmp + n, ")\" fill-rule=\"nonzero\" d=\"", 26); n += 26;
+        if (evenodd)
+            { memcpy(tmp + n, ")\" fill-rule=\"evenodd\" d=\"", 26); n += 26; }
+        else
+            { memcpy(tmp + n, ")\" fill-rule=\"nonzero\" d=\"", 26); n += 26; }
         if (!xpost_dev_pdf_append(ctx, devdic, tmp, n))
             return undefined;
     }
@@ -1075,7 +1085,8 @@ int _fillpath_emit(Xpost_Context *ctx,
     }
 
     if (!xpost_dev_pdf_append(ctx, devdic,
-                              svg ? "\"/>\n" : "f\n", svg ? 4 : 2))
+                              svg ? "\"/>\n" : evenodd ? "f*\n" : "f\n",
+                              svg ? 4 : evenodd ? 3 : 2))
         return undefined;
     return 0;
 }

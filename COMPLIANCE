@@ -15,8 +15,7 @@ Level 1 operators
  [X] currentdash
  [X] arcto
  [X] fill with complex paths
- [X] eofill (through a vector device's whole-path output, the fill
-     falls back to the nonzero rule)
+ [X] eofill
  [X] clip with complex paths
  [X] eoclip
  [X] setlinejoin
@@ -277,7 +276,7 @@ Level 2 operators
      smooths stencil masks and sampled images on the direct raster
      path; masked and planar images paint stepped)
  [X] imagemask with dict argument
- [X] setcolortransfer (recorded; painting applies the grey transfer)
+ [X] setcolortransfer (painting applies each channel's transfer)
  [X] currentcolortransfer
  [X] setblackgeneration (recorded only)
  [X] currentblackgeneration

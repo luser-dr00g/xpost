@@ -1,5 +1,28 @@
 /QUIET where { pop }{ (loading paint.ps...)print } ifelse
 
+% mark c1..cn  .applytransfer  mark c1'..cn'
+% the transfer procedures, one per channel: three components map to
+% the red, green and blue transfers, four to red, green, blue and
+% grey in the CMYK order, anything else through the grey transfer
+/.applytransfer {
+    counttomark 3 eq {
+        graphicsdict /currgstate get /bluetransfer get exec
+        3 1 roll
+        graphicsdict /currgstate get /greentransfer get exec
+        3 1 roll
+        graphicsdict /currgstate get /redtransfer get exec
+        3 1 roll
+    }{
+    counttomark 4 eq {
+        currenttransfer exec 4 1 roll
+        graphicsdict /currgstate get /bluetransfer get exec 4 1 roll
+        graphicsdict /currgstate get /greentransfer get exec 4 1 roll
+        graphicsdict /currgstate get /redtransfer get exec 4 1 roll
+    }{
+        counttomark { currenttransfer exec counttomark 1 roll } repeat
+    } ifelse } ifelse
+} def
+
 % Painting Operators
 
 % -  erasepage  -
@@ -15,7 +38,7 @@
         1 setgray
         [ currentcolordict DEVICE /nativecolorspace get
         get exec
-        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        .applytransfer
         0 0 DEVICE /dimensions get aload pop
         DEVICE dup /FillRect get exec
         pop
@@ -35,7 +58,7 @@
     closepath
     DEVICE /FillPath known .cliptrivial and {
         [ currentcolordict DEVICE /nativecolorspace get get exec
-        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        .applytransfer
         DEVICE dup /FillPath get exec
         pop
         flushpage
@@ -60,7 +83,7 @@
 
     dup length 2 gt {
         [ currentcolordict DEVICE /nativecolorspace get get exec
-        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        .applytransfer
         counttomark 2 add -1 roll
         DEVICE dup /FillPoly get exec
         pop
@@ -81,12 +104,13 @@
 % same scan-conversion as the nonzero fill, and the rectangles --
 % winding-uniform -- then travel the ordinary pipeline: clip span
 % intersection and the device FillPoly. A vector device consuming
-% whole paths through FillPath still receives the nonzero
-% approximation, as before.
+% whole paths through FillPath carries the rule to its consumer.
 /eofill {
     .patternactive { .patterneofill }{
     DEVICE /FillPath known .cliptrivial and {
+        graphicsdict /currgstate get /.eorule true put
         fill
+        graphicsdict /currgstate get /.eorule false put
     }{
         closepath
         flattenpath
@@ -97,7 +121,7 @@
 
         dup length 2 gt {
             [ currentcolordict DEVICE /nativecolorspace get get exec
-            counttomark { currenttransfer exec counttomark 1 roll } repeat
+            .applytransfer
             counttomark 2 add -1 roll
             DEVICE dup /FillPoly get exec
             pop
@@ -131,7 +155,7 @@
             doclip
         } if
         [ currentcolordict DEVICE /nativecolorspace get get exec
-        counttomark { currenttransfer exec counttomark 1 roll } repeat
+        .applytransfer
         DEVICE dup /StrokePath get exec
         pop
         flushpage
@@ -154,7 +178,7 @@
         {          % ... xN-1 yN-1 xN yN
             4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
             [ currentcolordict DEVICE /nativecolorspace get get exec
-            counttomark { currenttransfer exec counttomark 1 roll } repeat
+            .applytransfer
             counttomark 5 add -4 roll
             %5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
             %pstack(L)=
@@ -166,7 +190,7 @@
         {            % x0 y0 xN yN
             4 2 roll % xN yN x0 y0
             [ currentcolordict DEVICE /nativecolorspace get get exec
-            counttomark { currenttransfer exec counttomark 1 roll } repeat
+            .applytransfer
             counttomark 5 add -4 roll
             %5 1 roll % gray xN yN x0 y0
             %pstack(C)=
@@ -431,6 +455,22 @@
                 v 255 div currenttransfer exec .c255
                 put
             } for
+            nat 3 eq {
+                /tlutr 256 string def
+                /tlutg 256 string def
+                /tlutb 256 string def
+                0 1 255 { /v exch def
+                    tlutr v v 255 div
+                        graphicsdict /currgstate get /redtransfer get exec
+                        .c255 put
+                    tlutg v v 255 div
+                        graphicsdict /currgstate get /greentransfer get exec
+                        .c255 put
+                    tlutb v v 255 div
+                        graphicsdict /currgstate get /bluetransfer get exec
+                        .c255 put
+                } for
+            } if
             ncomp 1 eq {
                 /lut 256 nat mul string def
                 0 1 255 { /v exch def
@@ -438,9 +478,9 @@
                     currentcolordict DEVICE /nativecolorspace get get exec
                     nat 3 eq {
                         /bb exch def /gg exch def /rr exch def
-                        lut v 3 mul       tlut rr .c255 get put
-                        lut v 3 mul 1 add tlut gg .c255 get put
-                        lut v 3 mul 2 add tlut bb .c255 get put
+                        lut v 3 mul       tlutr rr .c255 get put
+                        lut v 3 mul 1 add tlutg gg .c255 get put
+                        lut v 3 mul 2 add tlutb bb .c255 get put
                     }{
                         lut v 3 -1 roll .c255 tlut exch get put
                     } ifelse
@@ -484,6 +524,11 @@
                 bd /dluts dluts put
             } ifelse
             bd /tlut tlut put
+            nat 3 eq {
+                bd /tlutr tlutr put
+                bd /tlutg tlutg put
+                bd /tlutb tlutb put
+            } if
             bd /y 0 put
             /interpok interp multi not and
                 mbits null eq and mranges null eq and
