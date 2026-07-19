@@ -1864,6 +1864,176 @@ struct Xpost_File_Methods dct_methods =
 };
 #endif
 
+static Xpost_Object _filter_object_cons(Xpost_Memory_File *mem, Xpost_File *ff);
+
+/* LZWDecode filter: the variable-width LZW codes PostScript and PDF
+   share -- 9 to 12 bits, packed high bit first, code 256 clearing
+   the table and 257 ending the data, with the width growing one
+   code early under the default EarlyChange. Table entries chain
+   through prefix links; a code expands by walking the chain onto a
+   stack and draining it byte by byte. */
+typedef struct Xpost_LzwFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    unsigned int bitbuf;
+    int bitcnt;
+    int codewidth;
+    int nextcode;
+    int early;
+    int prev;
+    unsigned short prefix[4096];
+    unsigned char suffix[4096];
+    unsigned char stack[4096];
+    int sp;
+} Xpost_LzwFile;
+
+static int
+lzw_nextcode(Xpost_LzwFile *ff)
+{
+    int c;
+
+    while (ff->bitcnt < ff->codewidth)
+    {
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+            return -1;
+        ff->bitbuf = ff->bitbuf << 8 | (unsigned int)c;
+        ff->bitcnt += 8;
+    }
+    ff->bitcnt -= ff->codewidth;
+    return (int)(ff->bitbuf >> ff->bitcnt) & ((1 << ff->codewidth) - 1);
+}
+
+static int
+lzw_readch(Xpost_File *f)
+{
+    Xpost_LzwFile *ff = (Xpost_LzwFile *)f;
+    int code, k;
+
+    if (ff->pushback >= 0)
+    {
+        code = ff->pushback;
+        ff->pushback = -1;
+        return code;
+    }
+    if (ff->sp > 0)
+        return ff->stack[--ff->sp];
+    if (ff->eod)
+        return EOF;
+
+    for (;;)
+    {
+        code = lzw_nextcode(ff);
+        if (code < 0 || code == 257)
+        {
+            ff->eod = 1;
+            /* peek one byte past the end-of-data code: an encoding
+               filter beneath (hex, base-85) swallows its own in-band
+               terminator producing that byte, leaving the underlying
+               file positioned past the whole encoded stream; a plain
+               byte is put back untouched */
+            if (code == 257)
+            {
+                int c = xpost_file_getc(ff->source);
+                if (c != EOF)
+                    xpost_file_ungetc(ff->source, c);
+            }
+            return EOF;
+        }
+        if (code == 256)
+        {
+            ff->codewidth = 9;
+            ff->nextcode = 258;
+            ff->prev = -1;
+            continue;
+        }
+        break;
+    }
+
+    /* expand the code onto the stack, reversed so the root -- the
+       string's first byte -- sits on top; the not-yet-defined code
+       is the previous string plus its own first byte */
+    if (ff->prev >= 0 && code == ff->nextcode)
+    {
+        int w = ff->prev;
+        while (w >= 258)
+        {
+            ff->stack[ff->sp++] = ff->suffix[w];
+            w = ff->prefix[w];
+        }
+        ff->stack[ff->sp++] = (unsigned char)w;
+        /* first byte of the previous string repeats at the end */
+        {
+            unsigned char first = ff->stack[ff->sp - 1];
+            int i;
+            for (i = ff->sp; i > 0; i--)
+                ff->stack[i] = ff->stack[i - 1];
+            ff->stack[0] = first;
+            ff->sp++;
+        }
+    }
+    else if (code < 256 || (code >= 258 && code < ff->nextcode))
+    {
+        int w = code;
+        while (w >= 258)
+        {
+            ff->stack[ff->sp++] = ff->suffix[w];
+            w = ff->prefix[w];
+        }
+        ff->stack[ff->sp++] = (unsigned char)w;
+    }
+    else
+    {
+        XPOST_LOG_ERR("LZWDecode: code out of range");
+        ff->eod = 1;
+        return EOF;
+    }
+
+    if (ff->prev >= 0 && ff->nextcode < 4096)
+    {
+        ff->prefix[ff->nextcode] = (unsigned short)ff->prev;
+        ff->suffix[ff->nextcode] = ff->stack[ff->sp - 1]; /* first byte of current */
+        ff->nextcode++;
+    }
+    if (ff->nextcode + ff->early >= (1 << ff->codewidth)
+     && ff->codewidth < 12)
+        ff->codewidth++;
+    ff->prev = code;
+
+    k = ff->stack[--ff->sp];
+    return k;
+}
+
+struct Xpost_File_Methods lzw_methods =
+{
+    lzw_readch, filter_writech, filter_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+Xpost_Object xpost_file_cons_filter_lzw(Xpost_Memory_File *mem, Xpost_Object src, int early)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_LzwFile *ff;
+
+    if (!source)
+        return invalid;
+    ff = calloc(1, sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &lzw_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->codewidth = 9;
+        ff->nextcode = 258;
+        ff->early = early;
+        ff->prev = -1;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
 /* ReusableStreamDecode filter: the entire source is drained into a
    buffer at construction -- leaving the underlying file positioned
    just past the encoded data, exactly as reading it would -- and the

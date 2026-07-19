@@ -123,6 +123,8 @@ int xpost_op_file_filter (Xpost_Context *ctx,
         f = xpost_file_cons_filter_rle(ctx->lo, F);
     else if (strcmp(cname, "ReusableStreamDecode") == 0)
         f = xpost_file_cons_filter_rsd(ctx->lo, F);
+    else if (strcmp(cname, "LZWDecode") == 0)
+        f = xpost_file_cons_filter_lzw(ctx->lo, F, 1);
 #ifdef HAVE_ZLIB
     else if (strcmp(cname, "FlateDecode") == 0)
         f = xpost_file_cons_filter_flate(ctx->lo, F);
@@ -147,17 +149,41 @@ int xpost_op_file_filter (Xpost_Context *ctx,
 }
 
 /* file dict /FilterName  filter  file'
-   the optional parameter dictionary form: the decode filters take no
-   parameter that changes their output here (DCTDecode reads its
-   layout from the stream itself), so the dictionary is accepted and
-   set aside */
+   the optional parameter dictionary form. LZWDecode reads its
+   EarlyChange switch from the dictionary; the other decode filters
+   take no parameter that changes their output here (DCTDecode reads
+   its layout from the stream itself), so it is otherwise set aside */
 static
 int xpost_op_file_filter_dict (Xpost_Context *ctx,
                                Xpost_Object F,
                                Xpost_Object dict,
                                Xpost_Object name)
 {
-    (void)dict;
+    Xpost_Object namestr;
+    char *cname;
+
+    namestr = xpost_name_get_string(ctx, name);
+    cname = xpost_string_allocate_cstring(ctx, namestr);
+    if (cname && strcmp(cname, "LZWDecode") == 0)
+    {
+        Xpost_Object ec, f;
+        int early = 1;
+
+        free(cname);
+        if (!xpost_object_is_readable(ctx, F))
+            return invalidaccess;
+        ec = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "EarlyChange"));
+        if (xpost_object_get_type(ec) == integertype)
+            early = ec.int_.val;
+        f = xpost_file_cons_filter_lzw(ctx->lo, F, early);
+        if (xpost_object_get_type(f) == invalidtype)
+            return ioerror;
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+        return 0;
+    }
+    free(cname);
     return xpost_op_file_filter(ctx, F, name);
 }
 
