@@ -45,6 +45,29 @@ pathbbox
 0 (translated llx) assertnear
 grestore
 
+% a moveto that ends the path is only a pending current point (as
+% after charpath or a text operator advances it) and stays outside
+% the box; a moveto later drawn from counts, and a path holding
+% nothing but a moveto is that one point
+newpath 0 0 moveto 10 10 lineto 50 60 moveto
+pathbbox
+10 (trailing moveto ury) assertnear
+10 (trailing moveto urx) assertnear
+0 (trailing moveto lly) assertnear
+0 (trailing moveto llx) assertnear
+newpath 0 0 moveto 10 10 lineto 50 60 moveto 20 20 lineto
+pathbbox
+60 (drawn-from moveto ury) assertnear
+50 (drawn-from moveto urx) assertnear
+0 (drawn-from moveto lly) assertnear
+0 (drawn-from moveto llx) assertnear
+newpath 5 7 moveto
+pathbbox
+7 (only-moveto ury) assertnear
+5 (only-moveto urx) assertnear
+7 (only-moveto lly) assertnear
+5 (only-moveto llx) assertnear
+
 % --- resource machinery: instances per category, private categories
 %     registered by defining into /Category ---
 currentglobal true setglobal
