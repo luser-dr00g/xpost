@@ -308,10 +308,33 @@ int grok(Xpost_Context *ctx,
                     {
                         case '(': ++defer; break;
                         case ')': --defer; break;
+                        case '\r':
+                        {
+                            /* an end-of-line marker inside a string is
+                               one newline character, whichever of the
+                               three conventions wrote it */
+                            int c2 = next(ctx, src);
+
+                            if (c2 != '\n' && c2 != EOF)
+                                back(ctx, c2, src);
+                            c = '\n';
+                            break;
+                        }
                         case '\\':
                             switch(c = next(ctx, src))
                             {
                                 case '\n': continue;
+                                case '\r':
+                                {
+                                    /* an escaped end-of-line joins the
+                                       lines: nothing is inserted, for
+                                       CR alone or CR LF */
+                                    int c2 = next(ctx, src);
+
+                                    if (c2 != '\n' && c2 != EOF)
+                                        back(ctx, c2, src);
+                                    continue;
+                                }
                                 case 'a': c = '\a'; break;
                                 case 'b': c = '\b'; break;
                                 case 'f': c = '\f'; break;

@@ -333,6 +333,20 @@ st.e <F0F00F0FF0F00F0F> writestring st.e closefile st.f closefile
 16 string readstring exch pop not
 (a marker-less mixed stream does not decode) assert
 
+% --- an end-of-line inside a string literal: escaped, it joins
+%     the lines; raw, it is one newline character, whichever of
+%     the three conventions wrote it ---
+(ab\
+cd) length 4 eq (an escaped CRLF joins the lines) assert
+(ab\cd) length 4 eq (an escaped bare CR joins the lines) assert
+(ab\
+cd) length 4 eq (an escaped LF joins the lines) assert
+(a
+b) dup length 3 eq exch 1 get 10 eq and
+(a raw CRLF reads as one newline) assert
+(ab) dup length 3 eq exch 1 get 10 eq and
+(a raw CR reads as one newline) assert
+
 % --- an end-of-line marker is one white-space delimiter ---
 (ab\r\ncd) token pop exch (cd) eq
     (a CRLF after a token is consumed as one marker) assert
