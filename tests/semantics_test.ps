@@ -487,6 +487,8 @@ legal currentpagedevice /PageSize get 1 get 1008 eq
     (legal requests the legal page) assert
 letter currentpagedevice /PageSize get 0 get 612 eq
     (letter requests the letter page) assert
+b4 currentpagedevice /PageSize get 0 get 728 eq
+    (b4 measures 728 points across) assert
 
 failcount 0 eq { (SUCCESS\n) print } { (FAILURES: ) print failcount 20 string cvs print (\n) print } ifelse
 flush
