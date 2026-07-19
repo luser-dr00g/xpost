@@ -111,7 +111,9 @@ int Zcurrentglobal(Xpost_Context *ctx)
 }
 
 /* any  gcheck  bool
-   check whether value is a legal element of a global composite object */
+   check whether value is a legal element of a global composite
+   object: simple objects always are; composite objects are when
+   their value lives in global VM */
 static
 int Agcheck(Xpost_Context *ctx,
             Xpost_Object A)
@@ -120,11 +122,11 @@ int Agcheck(Xpost_Context *ctx,
     switch(xpost_object_get_type(A))
     {
         default:
-            r = xpost_bool_cons(0); break;
+            r = xpost_bool_cons(1); break;
         case stringtype:
-        case nametype:
         case dicttype:
         case arraytype:
+        case filetype:
             r = xpost_bool_cons((A.tag&XPOST_OBJECT_TAG_DATA_FLAG_BANK)!=0);
     }
     xpost_stack_push(ctx->lo, ctx->os, r);
