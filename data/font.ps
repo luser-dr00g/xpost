@@ -360,47 +360,72 @@
 % (xyshow). The displacements arrive as an array or an encoded
 % number string (decoded up front); too few displacements is a
 % rangecheck at the glyph that wants one.
+% the show variants position per glyph: through a composite font one
+% glyph spans however many bytes its CMap says, and the number array
+% advances by glyphs, not bytes
+% str  .glyphbytes  w
+/.glyphbytes { % str p -> w
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 0 eq {
+        /CMap get .cmapnext exch pop
+    }{
+        pop pop pop 1
+    } ifelse
+} def
+
 /xshow {
     dup type /stringtype eq { .numstring2array } if
     dup type /arraytype ne { /xshow cvx /typecheck signalerror } if
-    3 dict begin
+    5 dict begin
     /nums exch def /str exch def
-    0 1 str length 1 sub {
-        /i exch def
+    /p 0 def /i 0 def
+    {
+        p str length ge { exit } if
+        /w str p .glyphbytes def
         currentpoint
-        str i 1 getinterval show
+        str p w getinterval show
         exch nums i get add exch moveto
-    } for
+        /p p w add def
+        /i i 1 add def
+    } loop
     end
 } def
 
 /yshow {
     dup type /stringtype eq { .numstring2array } if
     dup type /arraytype ne { /yshow cvx /typecheck signalerror } if
-    3 dict begin
+    5 dict begin
     /nums exch def /str exch def
-    0 1 str length 1 sub {
-        /i exch def
+    /p 0 def /i 0 def
+    {
+        p str length ge { exit } if
+        /w str p .glyphbytes def
         currentpoint
-        str i 1 getinterval show
+        str p w getinterval show
         nums i get add moveto
-    } for
+        /p p w add def
+        /i i 1 add def
+    } loop
     end
 } def
 
 /xyshow {
     dup type /stringtype eq { .numstring2array } if
     dup type /arraytype ne { /xyshow cvx /typecheck signalerror } if
-    3 dict begin
+    5 dict begin
     /nums exch def /str exch def
-    0 1 str length 1 sub {
-        /i exch def
+    /p 0 def /i 0 def
+    {
+        p str length ge { exit } if
+        /w str p .glyphbytes def
         currentpoint
-        str i 1 getinterval show
+        str p w getinterval show
         exch nums i 2 mul get add
         exch nums i 2 mul 1 add get add
         moveto
-    } for
+        /p p w add def
+        /i i 1 add def
+    } loop
     end
 } def
 
