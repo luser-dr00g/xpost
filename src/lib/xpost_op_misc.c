@@ -63,12 +63,41 @@
 #include "xpost_op_dict.h"
 #include "xpost_op_misc.h"
 
+/* the procedures already walked in this bind, so a procedure that
+   reaches itself -- directly or through others -- binds once and
+   terminates: access flags ride on the reference, not the value, so
+   marking the copy in hand cannot break the cycle */
+typedef struct
+{
+    unsigned int *ents;
+    int n, cap;
+} Bind_Seen;
+
 static
 Xpost_Object bind(Xpost_Context *ctx,
-                  Xpost_Object p)
+                  Xpost_Object p,
+                  Bind_Seen *seen)
 {
     Xpost_Object t, d;
+    unsigned int ent;
     int i, j, z;
+
+    ent = xpost_object_get_ent(p);
+    for (i = 0; i < seen->n; i++)
+        if (seen->ents[i] == ent)
+            return xpost_object_set_access(ctx, p, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
+    if (seen->n == seen->cap)
+    {
+        int ncap = seen->cap ? seen->cap * 2 : 64;
+        unsigned int *nents = realloc(seen->ents, (size_t)ncap * sizeof(*nents));
+
+        if (!nents)
+            return xpost_object_set_access(ctx, p, XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
+        seen->ents = nents;
+        seen->cap = ncap;
+    }
+    seen->ents[seen->n++] = ent;
+
     for (i = 0; i < p.comp_.sz; i++)
     {
         t = xpost_array_get(ctx, p, i);
@@ -91,9 +120,13 @@ Xpost_Object bind(Xpost_Context *ctx,
                 }
                 break;
             case arraytype:
-                if (xpost_object_is_exe(t))
+                /* recursion reaches procedures with unrestricted
+                   access only (PLRM): an already-bound, read-only
+                   procedure keeps its finished contents */
+                if (xpost_object_is_exe(t)
+                 && xpost_object_get_access(ctx, t) >= XPOST_OBJECT_TAG_ACCESS_UNLIMITED)
                 {
-                    t = bind(ctx, t);
+                    t = bind(ctx, t, seen);
                     xpost_array_put(ctx, p, i, t);
                 }
         }
@@ -107,7 +140,12 @@ static
 int Pbind(Xpost_Context *ctx,
           Xpost_Object P)
 {
-    xpost_stack_push(ctx->lo, ctx->os, bind(ctx, P));
+    Bind_Seen seen;
+
+    seen.ents = NULL;
+    seen.n = seen.cap = 0;
+    xpost_stack_push(ctx->lo, ctx->os, bind(ctx, P, &seen));
+    free(seen.ents);
     return 0;
 }
 
