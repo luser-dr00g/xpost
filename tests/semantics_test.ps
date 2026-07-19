@@ -133,6 +133,20 @@ dup /Category /st.private put
 /st.key << /v 42 >> /st.private defineresource /v get 42 eq (defineresource returns the instance) assert
 /st.key /st.private findresource /v get 42 eq (findresource retrieves the instance) assert
 /st.key /st.private resourcestatus { pop pop true } { false } ifelse (resourcestatus finds it) assert
+setglobal
+% --- instances defined in local VM shadow global ones and go away
+%     with restore ---
+/StandardEncoding /Encoding findresource length 256 eq
+(the Encoding category serves the standard encodings) assert
+save
+/st.linst [ 1 2 3 ] /Encoding defineresource pop
+/st.linst /Encoding findresource length 3 eq (a local instance resolves) assert
+/st.linst /Encoding resourcestatus { pop pop true }{ false } ifelse
+(a local instance reports status) assert
+restore
+/st.linst /Encoding resourcestatus { pop pop false }{ true } ifelse
+(restore removes a local instance) assert
+currentglobal true setglobal
 /st.other /st.private resourcestatus { pop pop false } { true } ifelse (resourcestatus rejects the unknown) assert
 /st.aa 1 /st.private defineresource pop
 /st.ab 2 /st.private defineresource pop
@@ -324,6 +338,19 @@ st.e <F0F00F0FF0F00F0F> writestring st.e closefile st.f closefile
     (a CRLF after a token is consumed as one marker) assert
 (ab\rcd) token pop exch (cd) eq
     (a bare CR after a token is consumed alone) assert
+
+% --- gcheck holds for simple objects; composites answer for their
+%     storage ---
+42 gcheck (an integer is a legal element of a global composite) assert
+/st.gname gcheck (a name is a simple object under gcheck) assert
+[ 1 2 ] gcheck not (a local array is not) assert
+currentglobal true setglobal [ 1 2 ] exch setglobal gcheck
+(a global array is) assert
+
+% --- bind terminates on a procedure that reaches itself ---
+/st.cyc [ 1 2 3 ] cvx def
+/st.cyc load 0 /st.cyc load put
+/st.cyc load bind type /arraytype eq (bind survives a cyclic procedure) assert
 
 % --- the job server accepts exitserver ---
 countdictstack
