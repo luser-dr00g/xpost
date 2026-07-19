@@ -660,7 +660,9 @@
             pop
             begin
             Width Height BitsPerComponent ImageMatrix
-            DataSource .imgsource
+            % fetch through the dictionary: a procedure source fetched
+            % by name would execute instead of arriving as the operand
+            currentdict /DataSource get .imgsource
             Decode
             end
             .ncomponents .imagepaint
@@ -767,7 +769,9 @@
         Width Height
         Decode 0 get 0 ne
         ImageMatrix
-        DataSource .imgsource
+        % fetch through the dictionary: a procedure source fetched by
+        % name would execute instead of arriving as the operand
+        currentdict /DataSource get .imgsource
         end
     }{
         .imgsource

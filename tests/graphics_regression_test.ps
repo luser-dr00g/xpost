@@ -493,6 +493,23 @@ grestore
 18 30 inkat not (the key colour is not painted) assert
 42 30 inkat (other pixels paint normally) assert
 
+% a procedure DataSource in an image dictionary must arrive as the
+% operand, not execute at dictionary lookup: the stateful source is
+% the standard idiom for row-at-a-time delivery
+erasepage
+gsave
+10 10 translate 40 40 scale
+/DeviceRGB setcolorspace
+/imgrow 0 def
+<< /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1 0 1 0 1]
+   /DataSource { /imgrow imgrow 1 add def
+                 imgrow 1 eq { <000000000000> }{ <FFFFFFFFFFFF> } ifelse }
+>> image
+grestore
+20 40 inkat (a procedure source delivers its first row) assert
+20 20 inkat not (a procedure source advances to its next row) assert
+
 % DCTDecode inflates a JPEG stream into image samples, layered over
 % the hexadecimal filter here as producers layer it over ASCII85; the
 % parameter-dictionary filter form is what PDF converters emit. The
