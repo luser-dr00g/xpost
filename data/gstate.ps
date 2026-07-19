@@ -23,6 +23,11 @@
     /patdict null
     /patbase null
     /patcomps null
+    % black generation, undercolor removal and the colour rendering
+    % dictionary, recorded for round-tripping
+    /blackgen {}
+    /ucr {}
+    /colorrendering 0 dict
     /transfer {}
     % colour transfer functions; the unprefixed grey slot above is
     % shared with settransfer and is the one painting applies
@@ -233,6 +238,28 @@ end
 % return the grey channel's transfer procedure
 /currenttransfer {
     graphicsdict /currgstate get /transfer get
+} def
+
+% black generation and undercolor removal (recorded only: painting
+% converts by the additive-complement formulae), and the colour
+% rendering dictionary (recorded only)
+/setblackgeneration {
+    graphicsdict /currgstate get exch /blackgen exch put
+} def
+/currentblackgeneration {
+    graphicsdict /currgstate get /blackgen get
+} def
+/setundercolorremoval {
+    graphicsdict /currgstate get exch /ucr exch put
+} def
+/currentundercolorremoval {
+    graphicsdict /currgstate get /ucr get
+} def
+/setcolorrendering {
+    graphicsdict /currgstate get exch /colorrendering exch put
+} def
+/currentcolorrendering {
+    graphicsdict /currgstate get /colorrendering get
 } def
 
 % redproc greenproc blueproc grayproc  setcolortransfer  -
