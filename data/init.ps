@@ -586,13 +586,12 @@ end % userdict
         /pw pwf ceiling cvi def
         /ph phf ceiling cvi def
 
-        % device constructors read /OutputFileName via where
+        % device constructors read /OutputFileName via where; the
+        % host's binding persists across page device changes, as an
+        % output file given on a command line does
         merged /OutputFile 2 copy known {
             get userdict /OutputFileName 3 -1 roll put
-        }{
-            pop pop
-            userdict /OutputFileName known { userdict /OutputFileName undef } if
-        } ifelse
+        }{ pop pop } ifelse
 
         % retire the outgoing device (Destroy frees its buffers; a
         % vector device's output was written by showpage's Emit)
