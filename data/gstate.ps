@@ -611,10 +611,20 @@ setglobal
     graphicsdict /currgstate get /screenproc ht put
     % a threshold-array halftone may deliver its thresholds through a
     % file (a filter over the program stream): sethalftone consumes
-    % that data, so drain it, or the interpreter would execute the
-    % thresholds as program text
+    % that data, so read it -- into a string put back in the
+    % dictionary, where a screening device's cell can find it, or
+    % drained when it exceeds a string
     ht /Thresholds 2 copy known {
         get dup type /filetype eq {
+            /htw ht /Width 2 copy known { get }{ pop pop 0 } ifelse def
+            /hth ht /Height 2 copy known { get }{ pop pop 0 } ifelse def
+            htw hth mul dup 0 gt 1 index 65535 le and {
+                string
+                1 index exch readstring pop
+                ht wcheck {
+                    ht /Thresholds 3 -1 roll put
+                }{ pop } ifelse
+            }{ pop } ifelse
             { dup 4096 string readstring not { exit } if pop } loop
             pop
         }{ pop } ifelse
