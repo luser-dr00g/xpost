@@ -241,8 +241,8 @@ Level 2 operators
  [X] rectstroke
  [X] rectclip
  [X] selectfont
- [/] setcolorspace (device spaces, Separation, DeviceN and Indexed;
-     no CIE-based spaces)
+ [/] setcolorspace (device spaces, Separation, DeviceN, Indexed and
+     Pattern; no CIE-based spaces)
  [X] currentcolorspace
  [X] setcolor
  [X] currentcolor
@@ -260,6 +260,9 @@ Level 2 operators
  [X] setcolortransfer (recorded; painting applies the grey transfer)
  [X] currentcolortransfer
  [X] Named Resources
+ [/] makepattern (PatternType 1; every tile repaints its cell, and
+     text under a pattern colour paints the underlying colour)
+ [X] setpattern
  [/] filter (decode filters only: ASCIIHex, ASCII85, SubFile,
      RunLength, Flate, DCT, ReusableStream; no encode filters, no LZW
      or CCITTFax)

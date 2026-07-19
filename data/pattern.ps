@@ -1,15 +1,120 @@
 %!
+% Tiling patterns (PLRM 4.9): makepattern instantiates, setpattern
+% (color.ps) selects, and the painting operators tile the cells over
+% whatever region they would have painted.
 
-% dict matrix  makepattern  pattern
+%   dict matrix  makepattern  pattern
+% instantiate a tiling pattern: a copy of the dictionary carrying the
+% pattern space -- the matrix concatenated with the CTM in effect
+% now, so later coordinate changes leave the tiling anchored -- under
+% /Implementation
 /makepattern {
-    exch dup length dict copy exch
-    gstate currentgstate exch                      % d gs mat
-    2 copy pop /currmatrix get dup concatmatrix  % d gs' mat
-    pop %pstack ()=
-    dup /currpath .newpathstr put    % clear currentpath     % d gs'
-    % replace clippath with dict/BBox
-    % replace device with special one
-    /Implementation exch 3 copy put pop pop
-    readonly
-} def
+    exch
+    dup /PaintProc known 1 index /BBox known and
+    1 index /XStep known and 1 index /YStep known and
+    1 index /PaintType known and not {
+        /makepattern cvx /rangecheck signalerror
+    } if
+    dup length 1 add dict copy
+    exch matrix currentmatrix matrix concatmatrix
+    1 index exch /Implementation exch put
+} bind def
+
+% -  .patternactive  bool
+% the current colour is a pattern
+/.patternactive {
+    graphicsdict /currgstate get /colorspace get /Pattern eq
+} bind def
+
+% -  .patterntile  -
+% tile the current pattern colour over the current clip region: every
+% cell whose pattern-space step position meets the region's box runs
+% the pattern's paint procedure under the pattern space translated to
+% its position, clipped to the cell's BBox. An uncoloured pattern's
+% cells paint with the underlying colour; a coloured pattern's
+% procedure sets its own (the colour is reset first, so a procedure
+% that paints without setting one cannot re-enter the tiling).
+/.patterntile {
+    16 dict begin
+    /pat graphicsdict /currgstate get /patdict get def
+    pat null ne {
+    /pm pat /Implementation get def
+    /bb pat /BBox get def
+    /xs pat /XStep get def
+    /ys pat /YStep get def
+    xs 0 ne ys 0 ne and {
+        % the region's bounds, carried to pattern space: clip box
+        % corners through the CTM to the device, then back through
+        % the pattern space
+        gsave clippath flattenpath pathbbox grestore
+        /uy1 exch def /ux1 exch def /uy0 exch def /ux0 exch def
+        /im pm matrix invertmatrix def
+        /px0 9e99 def /px1 -9e99 def /py0 9e99 def /py1 -9e99 def
+        [ ux0 uy0 ux0 uy1 ux1 uy0 ux1 uy1 ]
+        0 2 6 { /k exch def
+            dup k get 1 index k 1 add get
+            transform im transform
+            dup py0 lt { dup /py0 exch def } if
+            dup py1 gt { dup /py1 exch def } if
+            pop
+            dup px0 lt { dup /px0 exch def } if
+            dup px1 gt { dup /px1 exch def } if
+            pop
+        } for
+        pop
+        /i0 px0 bb 2 get sub xs div floor cvi def
+        /i1 px1 bb 0 get sub xs div ceiling cvi def
+        /j0 py0 bb 3 get sub ys div floor cvi def
+        /j1 py1 bb 1 get sub ys div ceiling cvi def
+        % a degenerate mapping tiles without bound: refuse it
+        i1 i0 sub 1 add j1 j0 sub 1 add mul dup 65536 le exch 0 gt and {
+            i0 1 i1 { /i exch def
+                j0 1 j1 { /j exch def
+                    gsave
+                    pm setmatrix
+                    i xs mul j ys mul translate
+                    newpath
+                    bb 0 get bb 1 get moveto
+                    bb 2 get bb 1 get lineto
+                    bb 2 get bb 3 get lineto
+                    bb 0 get bb 3 get lineto
+                    closepath clip newpath
+                    pat /PaintType get 2 eq {
+                        graphicsdict /currgstate get /patbase get
+                        dup null ne {
+                            setcolorspace
+                            graphicsdict /currgstate get /patcomps get
+                            dup null ne { aload pop setcolor }{ pop } ifelse
+                        }{ pop 0 setgray } ifelse
+                    }{
+                        0 setgray
+                    } ifelse
+                    pat dup /PaintProc get exec
+                    grestore
+                } for
+            } for
+        } if
+    } if
+    } if
+    end
+} bind def
+
+% -  .patternfill  -
+% paint the current path with the pattern colour: the path becomes
+% the clip and the pattern tiles across it
+/.patternfill {
+    gsave
+    clip
+    .patterntile
+    grestore
+    newpath
+} bind def
+
+/.patterneofill {
+    gsave
+    eoclip
+    .patterntile
+    grestore
+    newpath
+} bind def
 

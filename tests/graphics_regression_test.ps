@@ -526,6 +526,33 @@ grestore
 14 14 inkat not (a clipped image stays out of the near corner) assert
 50 50 inkat not (a clipped image stays out of the far corner) assert
 
+% tiling patterns: a coloured cell tiles across the painted region,
+% anchored to the pattern space; an uncoloured cell paints the
+% underlying colour
+erasepage
+<< /PatternType 1 /PaintType 1 /TilingType 1
+   /BBox [0 0 16 16] /XStep 16 /YStep 16
+   /PaintProc { pop 0 setgray 0 0 8 8 rectfill } >> matrix makepattern
+setpattern
+0 0 64 64 rectfill
+4 4 inkat (a pattern cell paints its ink) assert
+12 12 inkat not (a pattern cell leaves its background) assert
+20 20 inkat (the cell tiles across the region) assert
+28 28 inkat not (the tiled background repeats) assert
+0 setgray
+erasepage
+/DeviceGray setcolorspace
+0
+<< /PatternType 1 /PaintType 2 /TilingType 1
+   /BBox [0 0 16 16] /XStep 16 /YStep 16
+   /PaintProc { pop 0 0 8 8 rectfill } >> matrix makepattern
+setpattern
+0 0 64 64 rectfill
+4 4 inkat (an uncoloured pattern paints the underlying colour) assert
+12 12 inkat not (an uncoloured pattern leaves its background) assert
+0 setgray
+erasepage
+
 % DCTDecode inflates a JPEG stream into image samples, layered over
 % the hexadecimal filter here as producers layer it over ASCII85; the
 % parameter-dictionary filter form is what PDF converters emit. The

@@ -8,6 +8,19 @@
     % Indexed colour through its base and a Separation or DeviceN tint
     % through its alternative, so reduce through any such chain
     graphicsdict /currgstate get 1 index /setspace exch put
+    dup type /arraytype eq { dup 0 get /Pattern eq }{ dup /Pattern eq } ifelse {
+        % a pattern space: setcolor stores the pattern for the
+        % painting machinery; a second element names the underlying
+        % space an uncoloured pattern's cells paint with
+        1 dict begin
+        /sp exch def
+        graphicsdict /currgstate get /colorspace /Pattern put
+        graphicsdict /currgstate get /patbase
+            sp type /arraytype eq { sp length 1 gt { sp 1 get }{ null } ifelse }
+                                  { null } ifelse
+        put
+        end
+    }{
     {
         dup type /arraytype ne { exit } if
         dup 0 get /Indexed eq { 1 get }{
@@ -18,6 +31,7 @@
         } ifelse } ifelse
     } loop
     graphicsdict /currgstate get exch /colorspace exch put
+    } ifelse
     graphicsdict /currgstate get /colorcomp1 0.0 put
     graphicsdict /currgstate get /colorcomp2 0.0 put
     graphicsdict /currgstate get /colorcomp3 0.0 put
@@ -34,8 +48,47 @@
     /DeviceGray /setgray cvx
     /DeviceRGB /setrgbcolor cvx
     /DeviceCMYK /setcmykcolor cvx
-    /Pattern { pop }
+    /Pattern {
+        % comp1..compn pattern (components only under an uncoloured
+        % pattern, in its underlying space)
+        2 dict begin
+        /pat exch def
+        graphicsdict /currgstate get /patdict pat put
+        pat /PaintType get 2 eq {
+            /bs graphicsdict /currgstate get /patbase get def
+            /n bs type /arraytype eq {
+                bs 0 get /Indexed eq { 1 }{
+                bs 0 get /Separation eq { 1 }{
+                bs 0 get /DeviceN eq { bs 1 get length }{
+                .spacecomps bs 0 get get } ifelse } ifelse } ifelse
+            }{ .spacecomps bs get } ifelse def
+            n array astore
+            graphicsdict /currgstate get exch /patcomps exch put
+        } if
+        end
+    }
 >> def
+
+%   pattern  setpattern  -
+%   comp1..compn pattern  setpattern  -
+% shorthand for entering the pattern colour space and setting the
+% pattern as the colour; an uncoloured pattern takes the current
+% colour space as its underlying space, with the components beneath
+/setpattern {
+    dup /PaintType get 1 eq {
+        [ /Pattern ] setcolorspace
+    }{
+        % the underlying space is the current one -- or, when that is
+        % already a pattern space, its own underlying space
+        currentcolorspace
+        dup type /arraytype eq { dup 0 get /Pattern eq }{ dup /Pattern eq } ifelse {
+            dup type /arraytype eq { dup length 1 gt }{ false } ifelse
+                { 1 get }{ pop /DeviceGray } ifelse
+        } if
+        [ /Pattern 3 -1 roll ] setcolorspace
+    } ifelse
+    setcolor
+} bind def
 
 % -  .ncomponents  n
 % the number of colour components the current colour space takes: an
@@ -116,6 +169,8 @@
         } ifelse
         graphicsdict /currgstate get /setspace graphicsdict /.sepspace get put
     } {
+        % a pattern space arrives as an array: dispatch on the family
+        dup type /arraytype eq { 0 get } if
         //setcolordict exch get exec
     } ifelse
     } ifelse
@@ -303,16 +358,6 @@
     ColorConversion /DeviceCMYK get
         graphicsdict /currgstate get /colorspace get
         get exec
-} bind def
-
-% if PatternType == 1 and PaintType == 2, then color comps will also be passed
-/setpattern {
-    currentcolorspace 0 get /Pattern ne {
-	%[ /Pattern currentcolorspace ] setcolorspace
-	/DeviceGrey setcolorspace
-	0 setgray
-    } if
-    setcolor
 } bind def
 
 /QUIET where { pop }{ (eof color\n)print } ifelse

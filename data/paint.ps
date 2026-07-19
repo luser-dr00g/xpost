@@ -31,6 +31,7 @@
 % inside a rectangular clip: a non-trivial clip region is cut by the
 % polygon machinery below, at the cost of flattening.
 /fill {
+    .patternactive { .patternfill }{
     closepath
     DEVICE /FillPath known .cliptrivial and {
         [ currentcolordict DEVICE /nativecolorspace get get exec
@@ -71,6 +72,7 @@
     flushpage
     newpath
     } ifelse
+    } ifelse
 } bind def
 
 % -  eofill  -
@@ -82,6 +84,7 @@
 % whole paths through FillPath still receives the nonzero
 % approximation, as before.
 /eofill {
+    .patternactive { .patterneofill }{
     DEVICE /FillPath known .cliptrivial and {
         fill
     }{
@@ -105,6 +108,7 @@
         flushpage
         newpath
     } ifelse
+    } ifelse
 } bind def
 
 % -  stroke  -
@@ -114,6 +118,9 @@
 % devices take the hairline DrawLine walk when the device-space width
 % is within a pixel, else the stroked outline is filled.
 /stroke {
+    .patternactive {
+        strokepath .patternfill
+    }{
     DEVICE /StrokePath known {
         % dashing and non-rectangular clipping consume line segments;
         % with neither active the path passes through unflattened, so
@@ -175,6 +182,7 @@
     } ifelse
 
     newpath
+    } ifelse
     } ifelse
 } bind def
 
@@ -813,15 +821,36 @@
         % shared matrix per glyph is the classic case)
         mat matrix invertmatrix concat
         /ink polarity {1}{0} ifelse def
+        % consecutive set samples paint as one run; under a pattern
+        % colour the runs assemble into a single path so the tiling
+        % runs once over the whole stencil
+        /paintpat .patternactive def
+        paintpat { newpath } if
         0 1 height 1 sub { /y exch def
-            0 1 width 1 sub { /x exch def
+            /x 0 def
+            {
+                x width ge { exit } if
                 buf y rowbytes mul x 8 idiv add get
-                x 8 mod 7 sub bitshift 1 and
-                ink eq {
-                    x y 1 1 rectfill
-                } if
-            } for
+                x 8 mod 7 sub bitshift 1 and ink eq {
+                    /x0 x def
+                    {
+                        /x x 1 add def
+                        x width ge { exit } if
+                        buf y rowbytes mul x 8 idiv add get
+                        x 8 mod 7 sub bitshift 1 and ink ne { exit } if
+                    } loop
+                    paintpat {
+                        x0 y moveto x y lineto
+                        x y 1 add lineto x0 y 1 add lineto closepath
+                    }{
+                        x0 y x x0 sub 1 rectfill
+                    } ifelse
+                }{
+                    /x x 1 add def
+                } ifelse
+            } loop
         } for
+        paintpat { .patternfill } if
         end
     grestore
 } def
