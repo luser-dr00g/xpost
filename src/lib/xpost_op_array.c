@@ -142,6 +142,15 @@ int xpost_op_array_length (Xpost_Context *ctx,
     return 0;
 }
 
+/* real indices truncate to integers: a real-valued loop counter
+   produces fractional indices, and programs lean on them being
+   accepted */
+static integer _A_toint(Xpost_Object o)
+{
+    return xpost_object_get_type(o) == realtype
+        ? (integer)o.real_.val : o.int_.val;
+}
+
 /* array index  get  any
    get array element indexed by index */
 static
@@ -150,9 +159,9 @@ int xpost_op_array_int_get (Xpost_Context *ctx,
                             Xpost_Object I)
 {
     Xpost_Object t;
-    if (I.int_.val < 0)
+    if (_A_toint(I) < 0)
         return rangecheck;
-    t = xpost_array_get(ctx, A, I.int_.val);
+    t = xpost_array_get(ctx, A, _A_toint(I));
     if (xpost_object_get_type(t) == invalidtype)
         return rangecheck;
     if (!xpost_stack_push(ctx->lo, ctx->os, t))
@@ -168,9 +177,9 @@ int xpost_op_array_int_any_put(Xpost_Context *ctx,
                                Xpost_Object I,
                                Xpost_Object O)
 {
-    if (I.int_.val < 0)
+    if (_A_toint(I) < 0)
         return rangecheck;
-    return xpost_array_put(ctx, A, I.int_.val, O);
+    return xpost_array_put(ctx, A, _A_toint(I), O);
 }
 
 /* array index count  getinterval  subarray
@@ -486,11 +495,11 @@ int xpost_oper_init_array_ops (Xpost_Context *ctx,
             arraytype);
     INSTALL;
     op = xpost_operator_cons(ctx, "get", (Xpost_Op_Func)xpost_op_array_int_get, 1, 2,
-            arraytype, integertype);
+            arraytype, numbertype);
     INSTALL;
     ctx->opcode_shortcuts.opget = op.mark_.padw;
     op = xpost_operator_cons(ctx, "put", (Xpost_Op_Func)xpost_op_array_int_any_put, 0, 3,
-            arraytype, integertype, anytype);
+            arraytype, numbertype, anytype);
     INSTALL;
     ctx->opcode_shortcuts.opput = op.mark_.padw;
     op = xpost_operator_cons(ctx, "getinterval", (Xpost_Op_Func)xpost_op_array_int_int_getinterval, 1, 3,

@@ -112,6 +112,10 @@ grestore
 /st.co 2 string def
 st.co 0.0 65.0 put
 st.co 0 get 65 eq (a real index and value truncate in put) assert
+[ 5 6 7 ] 1.0 get 6 eq (a real index truncates in array get) assert
+/st.ca 2 array def
+st.ca 1.0 42 put
+st.ca 1 get 42 eq (a real index truncates in array put) assert
 % black generation, undercolor removal and colour rendering record
 % and report round-trip
 { 0.5 mul } setblackgeneration
