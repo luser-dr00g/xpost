@@ -1093,6 +1093,12 @@ int evalfile(Xpost_Context *ctx, Xpost_Object f)
     Xpost_Object b,t;
     int ret;
 
+    /* a program may close the file it is executing from -- the
+       Type 1 font idiom mark currentfile closefile -- and a closed
+       file simply has nothing further to run */
+    if (!xpost_file_get_status(ctx->lo, f))
+        return 0;
+
     if (!xpost_stack_push(ctx->lo, ctx->os, f))
         return stackoverflow;
     assert(ctx->gl->base);
