@@ -938,7 +938,7 @@ xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
 #ifdef HAVE_FREETYPE2
     FT_Error err;
 
-    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_HINTING);
+    err = FT_Load_Glyph(face, glyph_index, FT_LOAD_FORCE_AUTOHINT);
     if (!err)
     {
         if (((FT_Face)face)->glyph->format != FT_GLYPH_FORMAT_BITMAP)
