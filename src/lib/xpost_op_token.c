@@ -60,7 +60,10 @@
 #include "xpost_op_dict.h"
 #include "xpost_op_token.h"
 
-enum { NBUF = 2 * BUFSIZ };
+/* large enough for the longest legal string literal (a string's
+   length field is 16 bits), which base-85 z-runs can reach from a
+   modest number of coded characters */
+enum { NBUF = 65540 };
 
 static
 int puff(Xpost_Context *ctx,
@@ -358,6 +361,90 @@ int grok(Xpost_Context *ctx,
                 {
                     //return xpost_object_cvx(xpost_name_cons(ctx, "<<"));
                     *retval = xpost_object_cvx(xpost_name_cons(ctx, "<<"));
+                    return 0;
+                }
+                if (c == '~')
+                {
+                    /* <~ ... ~> ASCII base-85 string literal (PLRM
+                       3.2.2): five coded characters carry four bytes,
+                       'z' abbreviates four zeros, a short final group
+                       drops its pad bytes, whitespace falls out */
+                    unsigned int grp[5];
+                    int n = 0;
+
+                    for (c = next(ctx, src); c != EOF; c = next(ctx, src))
+                    {
+                        unsigned int tuple;
+                        int k;
+
+                        if (isspace(c))
+                            continue;
+                        if (c == '~')
+                        {
+                            c = next(ctx, src);
+                            if (c != '>')
+                            {
+                                XPOST_LOG_ERR("malformed base-85 terminator");
+                                return syntaxerror;
+                            }
+                            break;
+                        }
+                        if (c == 'z' && n == 0)
+                        {
+                            if (sp - s + 4 > NBUF)
+                            {
+                                XPOST_LOG_ERR("base-85 string exceeds buf");
+                                return limitcheck;
+                            }
+                            *sp++ = 0; *sp++ = 0; *sp++ = 0; *sp++ = 0;
+                            continue;
+                        }
+                        if (c < '!' || c > 'u')
+                        {
+                            XPOST_LOG_ERR("character %d in base-85 string", c);
+                            return syntaxerror;
+                        }
+                        grp[n++] = c - '!';
+                        if (n < 5)
+                            continue;
+                        tuple = 0;
+                        for (k = 0; k < 5; k++)
+                            tuple = tuple * 85 + grp[k];
+                        if (sp - s + 4 > NBUF)
+                        {
+                            XPOST_LOG_ERR("base-85 string exceeds buf");
+                            return limitcheck;
+                        }
+                        *sp++ = (tuple >> 24) & 0xff;
+                        *sp++ = (tuple >> 16) & 0xff;
+                        *sp++ = (tuple >> 8) & 0xff;
+                        *sp++ = tuple & 0xff;
+                        n = 0;
+                    }
+                    if (n == 1)
+                    {
+                        XPOST_LOG_ERR("dangling base-85 character");
+                        return syntaxerror;
+                    }
+                    if (n > 1)
+                    {
+                        unsigned int tuple = 0;
+                        int k, nbytes = n - 1;
+
+                        for (k = 0; k < 5; k++)
+                            tuple = tuple * 85 + (k < n ? grp[k] : 84);
+                        if (sp - s + nbytes > NBUF)
+                        {
+                            XPOST_LOG_ERR("base-85 string exceeds buf");
+                            return limitcheck;
+                        }
+                        for (k = 0; k < nbytes; k++)
+                            *sp++ = (tuple >> (24 - 8 * k)) & 0xff;
+                    }
+                    obj = xpost_string_cons(ctx, sp - s, s);
+                    if (xpost_object_get_type(obj) == nulltype)
+                        return VMerror;
+                    *retval = xpost_object_cvlit(obj);
                     return 0;
                 }
                 for ( ; c != '>' && c != EOF; c = next(ctx, src))

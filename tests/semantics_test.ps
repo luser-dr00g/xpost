@@ -90,6 +90,10 @@ rsdstash fileposition 2 eq (fileposition reports the reusable position) assert
 rsdstash 3 string readstring pop (llo) eq
 (setfileposition repositions a reusable stream) assert
 
+% --- ASCII base-85 string literals decode in the scanner ---
+<~87cURD]hD=6i~> (Hello CID) eq (a base-85 literal decodes) assert
+<~z~> <00000000> eq (z abbreviates four zero bytes) assert
+
 % --- resource machinery: instances per category, private categories
 %     registered by defining into /Category ---
 currentglobal true setglobal
