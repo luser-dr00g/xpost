@@ -102,6 +102,13 @@ DATA_DIR(/qsort.ps)strcat run
 
     /DrawLine { % val x1 y1 x2 y2 IMAGE  .  -
     begin {y2 x2 y1 x1 val}{exch def}forall
+        % quantize to the fill pipeline's 1/256 device grid: an
+        % endpoint meant to lie on a pixel boundary arrives with
+        % accumulated float noise, and the plot floors it
+        /x1 x1 256 mul 0.5 add floor 256 div def
+        /y1 y1 256 mul 0.5 add floor 256 div def
+        /x2 x2 256 mul 0.5 add floor 256 div def
+        /y2 y2 256 mul 0.5 add floor 256 div def
         x1 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect
 			{ {y1 x1}{exch def}forall } if } if
         x2 0 lt{ x1 y1 x2 y2 0 0 0 height .intersect
@@ -118,33 +125,40 @@ DATA_DIR(/qsort.ps)strcat run
 			{ {y1 x1}{exch def}forall } if } if
         y2 height ge { x1 y1 x2 y2 0 height width height .intersect
 			{ {y2 x2}{exch def}forall } if } if
-        /xx x1 def
-        /yy y1 def
-        x2 x1 sub  dup abs /dx exch def
-            .sign /s1 exch def
-        y2 y1 sub  dup abs /dy exch def
-            .sign /s2 exch def
-        /interchange dy dx gt def
-        interchange { /dx dy /dy dx def def } if
-        /e 2 dy mul dx sub def
-        1 1 dx { pop
-            val xx yy currentdict PutPix
-            {
-                e 0 ge not {exit} if
-                interchange {
-                    /xx xx s1 add def
-                }{
-                    /yy yy s2 add def
-                } ifelse
-                /e e 2 dx mul sub def
-            } loop
-            interchange {
-                /yy yy s2 add def
-            }{
-                /xx xx s1 add def
-            } ifelse
-            /e e 2 dy mul add def
-        } for
+        % walk the major axis by pixel centres: each pixel whose
+        % centre the segment spans paints at the line's height there,
+        % so collinear segments continue each other exactly across
+        % their shared endpoint, wherever it falls within a pixel
+        /ddx x2 x1 sub def
+        /ddy y2 y1 sub def
+        ddx 0 eq ddy 0 eq and {
+            val x1 y1 currentdict PutPix
+        }{
+        /painted false def
+        ddx abs ddy abs ge {
+            x1 floor cvi ddx 0 lt { -1 }{ 1 } ifelse x2 floor cvi {
+                /cc exch def
+                /t cc 0.5 add x1 sub ddx div def
+                t 0 ge t 1 le and {
+                    val cc y1 ddy t mul add currentdict PutPix
+                    /painted true def
+                } if
+            } for
+        }{
+            y1 floor cvi ddy 0 lt { -1 }{ 1 } ifelse y2 floor cvi {
+                /rr exch def
+                /t rr 0.5 add y1 sub ddy div def
+                t 0 ge t 1 le and {
+                    val x1 ddx t mul add rr currentdict PutPix
+                    /painted true def
+                } if
+            } for
+        } ifelse
+        % a segment too short to span any centre still marks a pixel
+        painted not {
+            val x1 x2 add 2 div y1 y2 add 2 div currentdict PutPix
+        } if
+        } ifelse
     end }
 
     %  -----|

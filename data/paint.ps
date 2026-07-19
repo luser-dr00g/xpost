@@ -136,6 +136,45 @@
     } ifelse
 } bind def
 
+% x1 y1 x2 y2 rect  .hairsegclip  x1' y1' x2' y2' true
+%                                 false
+% the portion of the segment within the rectangle [x0 y0 x1 y1],
+% found by walking the parameter range against each edge; an
+% endpoint on the boundary stays, so a segment ending on a shared
+% tile edge still marks the boundary pixel, as the unclipped walk
+% would
+/.hairsegclip {
+    12 dict begin
+    aload pop
+    /ey exch def
+    /ex exch def
+    /by exch def /bx exch def
+    /qy exch def /qx exch def /py exch def /px exch def
+    /dx qx px sub def /dy qy py sub def
+    /t0 0 def /t1 1 def /ok true def
+    [ [ dx neg px bx sub ] [ dx ex px sub ]
+      [ dy neg py by sub ] [ dy ey py sub ] ]
+    {
+        aload pop /q exch def /p exch def
+        p 0 eq {
+            q 0 lt { /ok false def } if
+        }{
+            /r q p div def
+            p 0 lt {
+                r t1 gt { /ok false def }{ r t0 gt { /t0 r def } if } ifelse
+            }{
+                r t0 lt { /ok false def }{ r t1 lt { /t1 r def } if } ifelse
+            } ifelse
+        } ifelse
+    } forall
+    ok t0 t1 le and {
+        px dx t0 mul add py dy t0 mul add
+        px dx t1 mul add py dy t1 mul add
+        true
+    }{ false } ifelse
+    end
+} bind def
+
 % -  stroke  -
 % draw line along current path
 % A device with a StrokePath method consumes the whole path itself
@@ -162,41 +201,46 @@
         flushpage
         newpath
     }{
-    % the hairline walk clips its segments by half-planes, exact only
-    % against a rectangular region: a complex clip takes the outline
+    % the hairline walk clips each segment against the rectangular
+    % clip region before plotting it: a complex clip takes the outline
     % fill below, whose span intersection is exact for any region
     currentlinewidth 0 dtransform
     dup mul exch dup mul exch add sqrt 1 le
-    .cliptrivial and {
+    .cliprect { 4 array astore }{ null } ifelse
+    userdict /.hairrect 3 -1 roll put
+    userdict /.hairrect get null ne and {
         flattenpath
         dashpath
-        doclip
         mark
-        {          % x0 y0 
+        {          % x0 y0
             2 copy % x0 y0 x0 y0
             %pstack(M)=
         }
         {          % ... xN-1 yN-1 xN yN
             4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
-            [ currentcolordict DEVICE /nativecolorspace get get exec
-            .applytransfer
-            counttomark 5 add -4 roll
-            %5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
-            %pstack(L)=
-            DEVICE dup /DrawLine get exec  % ... xN-1 yN-1 xN yN
-            pop
+            userdict /.hairrect get .hairsegclip {
+                [ currentcolordict DEVICE /nativecolorspace get get exec
+                .applytransfer
+                counttomark 5 add -4 roll
+                %5 1 roll  % ... xN-1 yN-1 xN yN gray xN-1 yN-1 xN yN
+                %pstack(L)=
+                DEVICE dup /DrawLine get exec  % ... xN-1 yN-1 xN yN
+                pop
+            } if
             4 2 roll pop pop % ... xN yN
         }
         {}
         {            % x0 y0 xN yN
             4 2 roll % xN yN x0 y0
-            [ currentcolordict DEVICE /nativecolorspace get get exec
-            .applytransfer
-            counttomark 5 add -4 roll
-            %5 1 roll % gray xN yN x0 y0
-            %pstack(C)=
-            DEVICE dup /DrawLine get exec  % -
-            pop
+            userdict /.hairrect get .hairsegclip {
+                [ currentcolordict DEVICE /nativecolorspace get get exec
+                .applytransfer
+                counttomark 5 add -4 roll
+                %5 1 roll % gray xN yN x0 y0
+                %pstack(C)=
+                DEVICE dup /DrawLine get exec  % -
+                pop
+            } if
         }
         .devpathforall
         cleartomark
