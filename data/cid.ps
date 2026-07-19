@@ -1,0 +1,303 @@
+%!
+% CID-keyed composite fonts (PLRM 5.11): the CIDInit procedure set
+% builds CMap dictionaries, composefont assembles a Type 0 font from
+% a CMap and its descendant CIDFonts, and the composite show
+% machinery decodes character codes through the CMap to CIDs, maps
+% them to glyph indices through the descendant's CIDMap, and paints
+% the glyphs by index. A CIDFontType 2 descendant carries a TrueType
+% template in /sfnts with its outlines delivered incrementally in
+% /GlyphDirectory; the face is assembled (and reassembled as the
+% directory grows) by .loadcidfont2.
+
+/QUIET where { pop }{ (loading cid.ps...)print } ifelse
+
+% resource categories for the composite font machinery
+[ /CIDFont /CMap /ProcSet ] {
+    /c exch def
+    c /Category resourcestatus { pop pop }{
+        /Generic /Category findresource
+        dup length 1 add dict copy
+        dup /Category c put
+        c exch /Category defineresource pop
+    } ifelse
+} forall
+currentdict /c undef
+
+% The CIDInit procedure set: a program begins a dictionary, invokes
+% these operators to accumulate the code spaces and ranges into it,
+% and defines the result as a /CMap resource instance. The bracketed
+% operand lists arrive on the stack; each end operator gathers them
+% into (or appends to) an array in the dictionary under construction.
+/CIDInit <<
+    /begincmap {}
+    /endcmap {}
+    /begincodespacerange { pop mark }
+    /endcodespacerange {
+        counttomark array astore exch pop
+        /.newr exch def
+        /.codespaces currentdict /.codespaces known {
+            [ .codespaces aload pop .newr aload pop ]
+        }{ .newr } ifelse def
+    }
+    /begincidrange { pop mark }
+    /endcidrange {
+        counttomark array astore exch pop
+        /.newr exch def
+        /.cidranges currentdict /.cidranges known {
+            [ .cidranges aload pop .newr aload pop ]
+        }{ .newr } ifelse def
+    }
+    /beginnotdefrange { pop mark }
+    /endnotdefrange {
+        counttomark array astore exch pop
+        /.notdefranges exch def
+    }
+    /begincidchar { pop mark }
+    /endcidchar {
+        counttomark array astore exch pop
+        /.newr exch def
+        /.cidchars currentdict /.cidchars known {
+            [ .cidchars aload pop .newr aload pop ]
+        }{ .newr } ifelse def
+    }
+    % single-descendant jobs select font 0; the association of later
+    % ranges with other descendants is not kept
+    /usefont { pop }
+    /usecmap { pop }
+    % base-font character mappings (ToUnicode tables) pass through
+    % this procedure set too: accept and discard them
+    /beginbfchar { pop mark }
+    /endbfchar { cleartomark }
+    /beginbfrange { pop mark }
+    /endbfrange { cleartomark }
+    /beginrearrangedfont { pop pop mark }
+    /endrearrangedfont { cleartomark }
+>> /ProcSet defineresource pop
+
+%   key cmap fonts  composefont  font
+% assemble a Type 0 composite font: names resolve through their
+% resource categories, the CMap decodes the codes, the descendants
+% carry the glyphs
+/composefont {
+    dup type /arraytype ne { /composefont cvx /typecheck signalerror } if
+    [ exch { dup type /nametype eq { /CIDFont findresource } if } forall ]
+    exch dup type /nametype eq { /CMap findresource } if
+    exch
+    8 dict begin
+    /FDepVector exch def
+    /CMap exch def
+    /FontType 0 def
+    /FMapType 9 def
+    /FontMatrix matrix def
+    /Encoding [ 0 ] def
+    /WMode CMap /WMode 2 copy known { get }{ pop pop 0 } ifelse def
+    currentdict end
+    definefont
+} def
+
+% str pos cmapdict  .cmapnext  cid nbytes
+% decode one character code: the code space whose byte width brackets
+% the bytes at pos names the width, the cid ranges (and single-cid
+% assignments) supply the CID; an unmapped code is CID 0
+/.cmapnext {
+    20 dict begin
+    /cm exch def /p exch def /s exch def
+    /cs cm /.codespaces 2 copy known { get }{ pop pop [ <00> <FF> ] } ifelse def
+    /w 1 def
+    /code s p get def
+    /matched false def
+    0 2 cs length 2 sub { /k exch def
+        matched not {
+            /lo cs k get def
+            /hi cs k 1 add get def
+            /wl lo length def
+            p wl add s length le {
+                /c 0 def /clo 0 def /chi 0 def
+                0 1 wl 1 sub { /b exch def
+                    /c c 256 mul s p b add get add def
+                    /clo clo 256 mul lo b get add def
+                    /chi chi 256 mul hi b get add def
+                } for
+                c clo ge c chi le and {
+                    /matched true def /w wl def /code c def
+                } if
+            } if
+        } if
+    } for
+    /cid 0 def
+    /rgs cm /.cidranges 2 copy known { get }{ pop pop [] } ifelse def
+    0 3 rgs length 3 sub { /k exch def
+        rgs k get length w eq {
+            /rlo 0 def /rhi 0 def
+            0 1 w 1 sub { /b exch def
+                /rlo rlo 256 mul rgs k get b get add def
+                /rhi rhi 256 mul rgs k 1 add get b get add def
+            } for
+            code rlo ge code rhi le and {
+                /cid rgs k 2 add get code rlo sub add def
+            } if
+        } if
+    } for
+    /rgs cm /.cidchars 2 copy known { get }{ pop pop [] } ifelse def
+    0 2 rgs length 2 sub { /k exch def
+        rgs k get length w eq {
+            /rlo 0 def
+            0 1 w 1 sub { /b exch def
+                /rlo rlo 256 mul rgs k get b get add def
+            } for
+            code rlo eq { /cid rgs k 1 add get def } if
+        } if
+    } for
+    cid w
+    end
+} def
+
+% ciddict  .cidface  -
+% assemble (or reassemble) the descendant's face around the glyphs
+% delivered so far: the directory flattens into a glyph-indexed
+% array for the synthesizer, and the count is remembered so a grown
+% directory triggers a rebuild
+/.cidface {
+    4 dict begin
+    /d exch def
+    /gd d /GlyphDirectory 2 copy known { get }{ pop pop 0 dict } ifelse def
+    gd length 0 eq {
+        % no incremental glyphs: the template is the whole program
+        d .loadfont42
+    }{
+        /mx 0 def
+        gd { pop dup mx gt { /mx exch def }{ pop } ifelse } forall
+        /ga mx 1 add array def
+        gd { ga 3 1 roll put } forall
+        d ga .loadcidfont2
+    } ifelse
+    d /.gdcount gd length put
+    end
+} def
+
+% font str  .showtype0  -
+% paint a string through a composite font: each code decodes to a
+% CID, the CID maps to a glyph index through the descendant's CIDMap
+% (GDBytes bytes per entry, across the array of segments), and the
+% glyph paints by index under the descendant's face carried through
+% the composite's matrix
+/.showtype0 {
+    20 dict begin
+    /str exch def
+    /fnt exch def
+    /cm fnt /CMap get def
+    /desc fnt /FDepVector get 0 get def
+    % a CIDFontType 2 descendant renders through an assembled face,
+    % rebuilt when its glyph directory has grown since
+    desc /CIDFontType 2 copy known { get 2 eq }{ pop pop false } ifelse {
+        desc /GlyphDirectory 2 copy known { get length }{ pop pop 0 } ifelse
+        desc /.gdcount 2 copy known { get }{ pop pop -1 } ifelse
+        ne { desc .cidface } if
+    } if
+    /wrap desc dup length 2 add dict copy def
+    wrap /FontMatrix
+        desc /FontMatrix 2 copy known { get }{ pop pop matrix } ifelse
+        fnt /FontMatrix get matrix concatmatrix put
+    /gdb desc /GDBytes 2 copy known { get }{ pop pop 1 } ifelse def
+    /cidmap desc /CIDMap 2 copy known { get }{ pop pop null } ifelse def
+    graphicsdict /currgstate get /currfont wrap put
+    /p 0 def
+    {
+        p str length ge { exit } if
+        str p cm .cmapnext
+        /w exch def
+        /cid exch def
+        /gid cid def
+        cidmap null ne {
+            /off cid gdb mul def
+            /gid 0 def
+            cidmap type /stringtype eq {
+                off gdb add cidmap length le {
+                    0 1 gdb 1 sub { /b exch def
+                        /gid gid 256 mul cidmap off b add get add def
+                    } for
+                } if
+            }{
+                /seg 0 def
+                {
+                    seg cidmap length ge { exit } if
+                    off cidmap seg get length lt { exit } if
+                    /off off cidmap seg get length sub def
+                    /seg seg 1 add def
+                } loop
+                seg cidmap length lt {
+                    off gdb add cidmap seg get length le {
+                        0 1 gdb 1 sub { /b exch def
+                            /gid gid 256 mul cidmap seg get off b add get add def
+                        } for
+                    } if
+                } if
+            } ifelse
+        } if
+        gid .glyphshowidx
+        /p p w add def
+    } loop
+    graphicsdict /currgstate get /currfont fnt put
+    end
+} def
+
+% a one-byte identity CMap: cshow's procedure sees the descendant
+% under byte codes, the idiom drivers use to repaint one glyph at a
+% time from inside the procedure
+/.bytecmap <<
+    /.codespaces [ <00> <FF> ]
+    /.cidranges [ <00> <FF> 0 ]
+>> def
+
+%   proc string  cshow  -
+% call the procedure for each character with its code and width,
+% painting nothing itself. Through a composite font the codes decode
+% by the CMap first, and while the procedure runs the current font
+% is the composite rebound to one-byte codes, so a show of the
+% code's byte inside the procedure paints the glyph the code named.
+/cshow {
+    graphicsdict /currgstate get /currfont get
+    dup /FontType get 0 eq {
+        20 dict begin
+        /fnt exch def /str exch def /proc exch def
+        /cm fnt /CMap get def
+        /bw fnt dup length 1 add dict copy def
+        bw /CMap //.bytecmap put
+        /p 0 def
+        {
+            p str length ge { exit } if
+            str p cm .cmapnext
+            /w exch def /cid exch def
+            /cs 1 string dup 0 cid 255 and put def
+            gsave
+                nulldevice
+                graphicsdict /currgstate get /currfont bw put
+                0 0 moveto cs show currentpoint
+            grestore
+            /wy exch def /wx exch def
+            graphicsdict /currgstate get /currfont bw put
+            cid wx wy proc
+            graphicsdict /currgstate get /currfont fnt put
+            /p p w add def
+        } loop
+        end
+    }{
+        20 dict begin
+        /fnt exch def /str exch def /proc exch def
+        /p 0 def
+        {
+            p str length ge { exit } if
+            /cs str p 1 getinterval def
+            gsave
+                nulldevice
+                0 0 moveto cs show currentpoint
+            grestore
+            /wy exch def /wx exch def
+            cs 0 get wx wy proc
+            /p p 1 add def
+        } loop
+        end
+    } ifelse
+} def
+
+/QUIET where { pop }{ (eof cid.ps\n)print } ifelse

@@ -1281,8 +1281,10 @@ int _show(Xpost_Context *ctx,
    PostScript-level glyphshow sends Type 3 fonts to their build
    procedures instead of here. */
 static
-int _glyphshow(Xpost_Context *ctx,
-               Xpost_Object gname)
+int _glyphshow_common(Xpost_Context *ctx,
+                      Xpost_Object gname,
+                      int byname,
+                      unsigned int gid)
 {
     Xpost_Object userdict;
     Xpost_Object gd;
@@ -1340,7 +1342,9 @@ int _glyphshow(Xpost_Context *ctx,
     xpost_array_put(ctx, finalize, 4, xpost_object_cvx(xpost_name_cons(ctx, "flushpage")));
     xpost_stack_push(ctx->lo, ctx->es, finalize);
 
-    glyph_index = _glyph_index_for_name(ctx, ts.charstrings, data.face, gname);
+    glyph_index = byname
+        ? _glyph_index_for_name(ctx, ts.charstrings, data.face, gname)
+        : gid;
     _show_glyph(ctx, devdic, putpix, data, &ts, &xpos, &ypos,
                 glyph_index, ncomp, comp[0], comp[1], comp[2], comp[3]);
 
@@ -1348,6 +1352,309 @@ int _glyphshow(Xpost_Context *ctx,
     xpost_array_put(ctx, finalize, 1, xpost_real_cons(ypos));
 
     return 0;
+}
+
+static
+int _glyphshow(Xpost_Context *ctx,
+               Xpost_Object gname)
+{
+    return _glyphshow_common(ctx, gname, 1, 0);
+}
+
+/* index  .glyphshowidx  -
+   paint the single glyph at the given index in the current font's
+   face and advance the current point by its width; the composite
+   font machinery reaches glyphs by index once a CMap has resolved
+   the character code */
+static
+int _glyphshowidx(Xpost_Context *ctx,
+                  Xpost_Object gidx)
+{
+    if (gidx.int_.val < 0)
+        return rangecheck;
+    return _glyphshow_common(ctx, null, 0,
+                             (unsigned int)gidx.int_.val);
+}
+
+/* big-endian field readers over the assembled font program */
+static unsigned int _sfnt_u16(const unsigned char *p)
+{
+    return p[0] << 8 | p[1];
+}
+static unsigned int _sfnt_u32(const unsigned char *p)
+{
+    return (unsigned int)p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3];
+}
+static void _sfnt_put16(unsigned char *p, unsigned int v)
+{
+    p[0] = (v >> 8) & 0xff; p[1] = v & 0xff;
+}
+static void _sfnt_put32(unsigned char *p, unsigned int v)
+{
+    p[0] = (v >> 24) & 0xff; p[1] = (v >> 16) & 0xff;
+    p[2] = (v >> 8) & 0xff; p[3] = v & 0xff;
+}
+
+/* ciddict glypharray  .loadcidfont2  -
+   assemble a working TrueType face for a CIDFontType 2 dictionary.
+   The /sfnts strings supply every table but the outlines: the glyphs
+   arrive in /GlyphDirectory, delivered incrementally by glyph index,
+   and the caller flattens the directory into an array indexed by
+   glyph (null where none has arrived). A fresh glyf table and a
+   long-format loca are synthesized around the delivered outlines,
+   maxp's glyph count and head's loca format patched to match, and
+   the whole reassembled program opened as a memory face stored in
+   /Private. Called again after the directory has grown, the previous
+   face is released and rebuilt around the larger complement. */
+static
+int _loadcidfont2(Xpost_Context *ctx,
+                  Xpost_Object fontdict,
+                  Xpost_Object glyphs)
+{
+#ifdef HAVE_FREETYPE2
+    Xpost_Object sfnts;
+    Xpost_Object privatestr;
+    Xpost_Object fontbbox;
+    Xpost_Object fontbboxarray[4];
+    struct fontdata data;
+    unsigned char *buf = NULL, *out = NULL;
+    size_t total, glyftotal, outtotal, pos;
+    unsigned int ntab, nglyphs;
+    unsigned int headoff = 0, maxpoff = 0;
+    int i;
+
+    sfnts = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "sfnts"));
+    if (xpost_object_get_type(sfnts) != arraytype)
+        return invalidfont;
+    total = 0;
+    for (i = 0; i < sfnts.comp_.sz; i++)
+    {
+        Xpost_Object s = xpost_array_get(ctx, sfnts, i);
+        if (xpost_object_get_type(s) != stringtype)
+            return invalidfont;
+        total += s.comp_.sz;
+    }
+    if (total < 12)
+        return invalidfont;
+    buf = malloc(total);
+    if (!buf)
+        return VMerror;
+    total = 0;
+    for (i = 0; i < sfnts.comp_.sz; i++)
+    {
+        Xpost_Object s = xpost_array_get(ctx, sfnts, i);
+        memcpy(buf + total, xpost_string_get_pointer(ctx, s), s.comp_.sz);
+        total += s.comp_.sz;
+    }
+
+    ntab = _sfnt_u16(buf + 4);
+    if (12 + 16 * (size_t)ntab > total)
+    {
+        free(buf);
+        return invalidfont;
+    }
+
+    nglyphs = glyphs.comp_.sz;
+    glyftotal = 0;
+    for (i = 0; i < (int)nglyphs; i++)
+    {
+        Xpost_Object g = xpost_array_get(ctx, glyphs, i);
+        if (xpost_object_get_type(g) == stringtype)
+            glyftotal += (g.comp_.sz + 1) & ~(size_t)1;
+    }
+
+    /* rebuild the directory: glyf and loca are synthesized (the
+       template may omit them entirely, carrying a gdir placeholder
+       for the incremental download instead), the hinting programs
+       and the placeholder are dropped -- a subset template's
+       bytecode does not survive its stripping and fails every glyph
+       under the bytecode interpreter -- and everything else is
+       carried over */
+    {
+        int has_glyf = 0, has_loca = 0;
+        unsigned int newntab = 0, w = 0;
+
+        out = NULL;
+        for (i = 0; i < (int)ntab; i++)
+        {
+            unsigned int tag = _sfnt_u32(buf + 12 + 16 * i);
+            if (tag == 0x63767420 || tag == 0x6670676d
+             || tag == 0x70726570 || tag == 0x67646972)
+                continue;
+            if (tag == 0x676c7966) has_glyf = 1;
+            if (tag == 0x6c6f6361) has_loca = 1;
+            newntab++;
+        }
+        newntab += !has_glyf + !has_loca;
+
+        outtotal = 12 + 16 * (size_t)newntab;
+        for (i = 0; i < (int)ntab; i++)
+        {
+            unsigned char *e = buf + 12 + 16 * i;
+            unsigned int tag = _sfnt_u32(e);
+            size_t len;
+            if (tag == 0x63767420 || tag == 0x6670676d
+             || tag == 0x70726570 || tag == 0x67646972)
+                continue;
+            if (tag == 0x676c7966)
+                len = glyftotal;
+            else if (tag == 0x6c6f6361)
+                len = 4 * ((size_t)nglyphs + 1);
+            else
+                len = _sfnt_u32(e + 12);
+            outtotal = (outtotal + 3) & ~(size_t)3;
+            outtotal += len;
+        }
+        if (!has_glyf)
+        {
+            outtotal = (outtotal + 3) & ~(size_t)3;
+            outtotal += glyftotal;
+        }
+        if (!has_loca)
+        {
+            outtotal = (outtotal + 3) & ~(size_t)3;
+            outtotal += 4 * ((size_t)nglyphs + 1);
+        }
+        out = malloc(outtotal);
+        if (!out)
+        {
+            free(buf);
+            return VMerror;
+        }
+        memcpy(out, buf, 12);
+        _sfnt_put16(out + 4, newntab);
+        for (i = 0; i < (int)ntab; i++)
+        {
+            unsigned char *e = buf + 12 + 16 * i;
+            unsigned int tag = _sfnt_u32(e);
+            if (tag == 0x63767420 || tag == 0x6670676d
+             || tag == 0x70726570 || tag == 0x67646972)
+                continue;
+            memcpy(out + 12 + 16 * w, e, 16);
+            w++;
+        }
+        pos = 12 + 16 * (size_t)w;
+        if (!has_glyf)
+        {
+            memset(out + pos, 0, 16);
+            _sfnt_put32(out + pos, 0x676c7966);
+            pos += 16;
+            w++;
+        }
+        if (!has_loca)
+        {
+            memset(out + pos, 0, 16);
+            _sfnt_put32(out + pos, 0x6c6f6361);
+            pos += 16;
+            w++;
+        }
+        ntab = newntab;
+    }
+
+    pos = 12 + 16 * (size_t)ntab;
+    for (i = 0; i < (int)ntab; i++)
+    {
+        unsigned char *e = out + 12 + 16 * i;
+        unsigned int tag = _sfnt_u32(e);
+        unsigned int srcoff = _sfnt_u32(e + 8);
+        unsigned int srclen = _sfnt_u32(e + 12);
+
+        pos = (pos + 3) & ~(size_t)3;
+        if (tag == 0x676c7966)
+        {
+            size_t gp = 0;
+            int gi;
+            for (gi = 0; gi < (int)nglyphs; gi++)
+            {
+                Xpost_Object g = xpost_array_get(ctx, glyphs, gi);
+                if (xpost_object_get_type(g) == stringtype)
+                {
+                    memcpy(out + pos + gp,
+                           xpost_string_get_pointer(ctx, g), g.comp_.sz);
+                    if (g.comp_.sz & 1)
+                        out[pos + gp + g.comp_.sz] = 0;
+                    gp += (g.comp_.sz + 1) & ~(size_t)1;
+                }
+            }
+            _sfnt_put32(e + 8, (unsigned int)pos);
+            _sfnt_put32(e + 12, (unsigned int)glyftotal);
+            pos += glyftotal;
+        }
+        else if (tag == 0x6c6f6361)
+        {
+            size_t gp = 0;
+            int gi;
+            for (gi = 0; gi <= (int)nglyphs; gi++)
+            {
+                _sfnt_put32(out + pos + 4 * gi, (unsigned int)gp);
+                if (gi < (int)nglyphs)
+                {
+                    Xpost_Object g = xpost_array_get(ctx, glyphs, gi);
+                    if (xpost_object_get_type(g) == stringtype)
+                        gp += (g.comp_.sz + 1) & ~(size_t)1;
+                }
+            }
+            _sfnt_put32(e + 8, (unsigned int)pos);
+            _sfnt_put32(e + 12, 4 * (nglyphs + 1));
+            pos += 4 * ((size_t)nglyphs + 1);
+        }
+        else
+        {
+            if ((size_t)srcoff + srclen > total)
+            {
+                free(buf); free(out);
+                return invalidfont;
+            }
+            memcpy(out + pos, buf + srcoff, srclen);
+            if (tag == 0x68656164) headoff = (unsigned int)pos;
+            if (tag == 0x6d617870) maxpoff = (unsigned int)pos;
+            _sfnt_put32(e + 8, (unsigned int)pos);
+            pos += srclen;
+        }
+    }
+    free(buf);
+    if (headoff && headoff + 52 <= outtotal)
+        _sfnt_put16(out + headoff + 50, 1);   /* long loca offsets */
+    if (maxpoff && maxpoff + 6 <= outtotal)
+        _sfnt_put16(out + maxpoff + 4, nglyphs);
+
+    /* replace any previous face: the directory grows between shows */
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == stringtype)
+    {
+        xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                         xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+        if (data.face)
+            xpost_font_face_free(data.face);
+        free(data.program);
+    }
+
+    data.face = xpost_font_face_new_from_memory(out, outtotal);
+    data.program = out;
+    if (data.face == NULL)
+    {
+        free(out);
+        return invalidfont;
+    }
+
+    fontbbox = xpost_array_cons(ctx, 4);
+    xpost_font_face_get_bbox(data.face, fontbboxarray, 1.0);
+    xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
+                     xpost_object_get_ent(fontbbox),
+                     0, 4 * sizeof(Xpost_Object), fontbboxarray);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontBBox"), fontbbox);
+
+    privatestr = xpost_string_cons(ctx, sizeof data, NULL);
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "Private"), privatestr);
+    return 0;
+#else
+    (void)ctx;
+    (void)fontdict;
+    (void)glyphs;
+    return invalidfont;
+#endif
 }
 
 static
@@ -1974,6 +2281,11 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "show", (Xpost_Op_Func)_show, 0, 1, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".glyphshow", (Xpost_Op_Func)_glyphshow, 0, 1, nametype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".glyphshowidx", (Xpost_Op_Func)_glyphshowidx, 0, 1, integertype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".loadcidfont2", (Xpost_Op_Func)_loadcidfont2, 0, 2,
+            dicttype, arraytype);
     INSTALL;
     op = xpost_operator_cons(ctx, "ashow", (Xpost_Op_Func)_ashow, 0, 3,
         floattype, floattype, stringtype);

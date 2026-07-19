@@ -20,6 +20,15 @@
         /definefont cvx /typecheck signalerror
     } if
     dup /FontType 2 copy known { get }{ pop pop -1 } ifelse
+    dup 0 eq {
+        pop
+        {
+            dup /FMapType known not {stop} if
+            dup /FDepVector known not {stop} if
+        } stopped {
+            /definefont cvx /invalidfont signalerror
+        } if
+    }{
     dup 42 eq {
         pop
         {
@@ -59,6 +68,7 @@
                 /definefont cvx /invalidfont signalerror
             } if
         } ifelse
+    } ifelse
     } ifelse
     dup /FontName known not {
         dup /FontName 3 index put
@@ -103,6 +113,9 @@
 
 /show {
     graphicsdict /currgstate get /currfont get
+    dup /FontType get 0 eq {
+        exch .showtype0
+    }{
     dup /FontType get 3 ne {
         % PaintType 2 marks an outline font: its glyphs are the
         % character outlines stroked with StrokeWidth, a character
@@ -143,6 +156,7 @@
     grestore
     itransform moveto
 
+    } ifelse
     } ifelse
 } def
 
@@ -392,7 +406,7 @@
 
 /stringwidth {
     graphicsdict /currgstate get /currfont get
-    dup /FontType get 3 ne { pop //stringwidth }{
+    dup /FontType get dup 3 eq exch 0 eq or not { pop //stringwidth }{
     pop
     gsave
         nulldevice
@@ -416,7 +430,7 @@
 /charpath {
     pop
     graphicsdict /currgstate get /currfont get
-    dup /FontType known { /FontType get 3 eq }{ pop false } ifelse {
+    dup /FontType known { /FontType get dup 3 eq exch 0 eq or }{ pop false } ifelse {
         stringwidth rmoveto
     }{
         12 dict begin

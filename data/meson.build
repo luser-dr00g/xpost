@@ -19,6 +19,7 @@ xpost_data_src = files([
   'resource.ps',
   'pattern.ps',
   'shade.ps',
+  'cid.ps',
   'font.ps',
   'init.ps',
   'prepr.ps',

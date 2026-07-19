@@ -1054,6 +1054,73 @@ not {
     erasepage
 } if
 
+% A CID-keyed composite font: the CMap decodes two-byte codes to
+% CIDs, the descendant CIDFontType 2 maps them to glyph indices
+% through its CIDMap, and the glyphs paint by index. The descendant
+% reuses the subset program above; the second variant delivers its
+% outlines incrementally through GlyphDirectory, so the face is
+% assembled around them.
+FontDirectory /SubsetT42Test known {
+    /CIDInit /ProcSet findresource begin
+    10 dict begin
+    /CIDFontType 2 def
+    /CIDFontName /TestCID def
+    /CIDSystemInfo << /Registry (T) /Ordering (T) /Supplement 0 >> def
+    /FontMatrix [1 0 0 1 0 0] def
+    /FontType 42 def
+    /CIDCount 3 def
+    /GDBytes 1 def
+    /CIDMap <000102> def
+    /GlyphDirectory 0 dict def
+    /sfnts FontDirectory /SubsetT42Test get /sfnts get def
+    CIDFontName currentdict end /CIDFont defineresource pop
+    10 dict begin
+    begincmap
+    /CMapName /TestCMap def
+    /CIDSystemInfo << /Registry (T) /Ordering (T) /Supplement 0 >> def
+    1 begincodespacerange
+    <0000> <FFFF>
+    endcodespacerange
+    1 begincidrange
+    <0000> <FFFF> 0
+    endcidrange
+    endcmap
+    CMapName currentdict end /CMap defineresource pop
+    end
+    /TestT0 /TestCMap [/TestCID] composefont pop
+    /TestT0 findfont 20 scalefont setfont
+    erasepage
+    10 16 moveto <00010002> show
+    countink 100 ge (a composite font paints its glyphs) assert
+    currentpoint pop 42 sub abs 0.5 le (composite codes advance by glyph widths) assert
+    erasepage
+    % incremental delivery: an empty template gains its outlines
+    % through GlyphDirectory and the face assembles around them
+    /CIDInit /ProcSet findresource begin
+    10 dict begin
+    /CIDFontType 2 def
+    /CIDFontName /TestCIDInc def
+    /CIDSystemInfo << /Registry (T) /Ordering (T) /Supplement 0 >> def
+    /FontMatrix [1 0 0 1 0 0] def
+    /FontType 42 def
+    /CIDCount 3 def
+    /GDBytes 1 def
+    /CIDMap <000102> def
+    /GlyphDirectory 3 dict dup begin
+        1 <00010064000002BC025800030000331121116402580258FDA800> def
+        2 <00010064000002BC02580002000033010164012C012C0258FDA8> def
+    end def
+    /sfnts FontDirectory /SubsetT42Test get /sfnts get def
+    CIDFontName currentdict end /CIDFont defineresource pop
+    end
+    /TestT0i /TestCMap [/TestCIDInc] composefont pop
+    /TestT0i findfont 20 scalefont setfont
+    erasepage
+    10 16 moveto <00010002> show
+    countink 100 ge (an incremental descendant paints its delivered glyphs) assert
+    erasepage
+} if
+
 % Type 3 fonts serve glyphshow through their BuildGlyph procedure, as
 % plotting tools emit them (a name-keyed CharStrings of drawing
 % procedures); a font defining only BuildGlyph also answers show
