@@ -282,7 +282,8 @@ Level 3 operators
      depths)
  [/] composite fonts (Type 0 FMapType 9 through composefont; CIDFont
      descendants of CIDFontType 2, incremental GlyphDirectory
-     delivery; cshow rebinds the composite to one-byte codes)
+     delivery, and CIDFontType 0, charstrings through StartData;
+     cshow rebinds the composite to one-byte codes)
  [X] clipsave
  [X] cliprestore
 

@@ -32,6 +32,7 @@
 # include <config.h>
 #endif
 
+#include <stdarg.h>
 #include <stdlib.h> /* NULL strtod */
 #include <stddef.h>
 
@@ -524,8 +525,11 @@ void _face_setup(Xpost_Context *ctx,
     {
         Xpost_Object ft = xpost_dict_get(ctx, fontdict,
                                          xpost_name_cons(ctx, "FontType"));
+        Xpost_Object cft = xpost_dict_get(ctx, fontdict,
+                                          xpost_name_cons(ctx, "CIDFontType"));
         real qem = q;
-        if (xpost_object_get_type(ft) == integertype && ft.int_.val == 1)
+        if ((xpost_object_get_type(ft) == integertype && ft.int_.val == 1)
+         || (xpost_object_get_type(cft) == integertype && cft.int_.val == 0))
             qem = q * 1000;
 
         /* the face serves a well-conditioned base size (an extreme em
@@ -1393,6 +1397,266 @@ static void _sfnt_put32(unsigned char *p, unsigned int v)
 {
     p[0] = (v >> 24) & 0xff; p[1] = (v >> 16) & 0xff;
     p[2] = (v >> 8) & 0xff; p[3] = v & 0xff;
+}
+
+
+/* ciddict  .loadcidfont0  -
+   assemble a working face for a CIDFontType 0 dictionary. The glyph
+   programs arrived through StartData as the /GlyphData binary block
+   -- the CIDMap, then Type 1 charstrings the FDArray's private
+   dictionaries describe. The dictionary is written back out as a
+   CIDFont resource file around that block and opened as a memory
+   face, which serves glyphs directly by CID. */
+
+static int
+_cid_emit(char **buf, size_t *len, size_t *cap, const char *fmt, ...)
+{
+    va_list ap;
+    int n;
+
+    for (;;)
+    {
+        va_start(ap, fmt);
+        n = vsnprintf(*buf + *len, *cap - *len, fmt, ap);
+        va_end(ap);
+        if (n < 0)
+            return -1;
+        if (*len + (size_t)n < *cap)
+        {
+            *len += (size_t)n;
+            return 0;
+        }
+        {
+            char *nb = realloc(*buf, *cap * 2);
+
+            if (!nb)
+                return -1;
+            *buf = nb;
+            *cap *= 2;
+        }
+    }
+}
+
+static int
+_cid_emit_num(Xpost_Context *ctx, char **buf, size_t *len, size_t *cap,
+              Xpost_Object v)
+{
+    (void)ctx;
+    if (xpost_object_get_type(v) == integertype)
+        return _cid_emit(buf, len, cap, "%d", v.int_.val);
+    if (xpost_object_get_type(v) == realtype)
+        return _cid_emit(buf, len, cap, "%g", v.real_.val);
+    if (xpost_object_get_type(v) == booleantype)
+        return _cid_emit(buf, len, cap, "%s", v.int_.val ? "true" : "false");
+    return -1;
+}
+
+static int
+_cid_emit_entry(Xpost_Context *ctx, char **buf, size_t *len, size_t *cap,
+                Xpost_Object d, const char *key)
+{
+    Xpost_Object v = xpost_dict_get(ctx, d, xpost_name_cons(ctx, key));
+    int i;
+
+    if (xpost_object_get_type(v) == invalidtype)
+        return 0;
+    if (xpost_object_get_type(v) == arraytype)
+    {
+        if (_cid_emit(buf, len, cap, "/%s [", key)) return -1;
+        for (i = 0; i < v.comp_.sz; i++)
+        {
+            if (_cid_emit(buf, len, cap, i ? " " : "")) return -1;
+            if (_cid_emit_num(ctx, buf, len, cap, xpost_array_get(ctx, v, i)))
+                return -1;
+        }
+        return _cid_emit(buf, len, cap, "] def\n");
+    }
+    if (_cid_emit(buf, len, cap, "/%s ", key)) return -1;
+    if (_cid_emit_num(ctx, buf, len, cap, v)) return -1;
+    return _cid_emit(buf, len, cap, " def\n");
+}
+
+static const char *_cid_private_keys[] = {
+    "lenIV", "BlueValues", "OtherBlues", "FamilyBlues", "FamilyOtherBlues",
+    "BlueScale", "BlueShift", "BlueFuzz", "StdHW", "StdVW",
+    "StemSnapH", "StemSnapV", "LanguageGroup", "ForceBold", "RndStemUp",
+    "SubrMapOffset", "SDBytes", "SubrCount",
+};
+
+static
+int _loadcidfont0(Xpost_Context *ctx,
+                  Xpost_Object fontdict)
+{
+#ifdef HAVE_FREETYPE2
+    Xpost_Object gdata, fdarray, privatestr, fontbbox;
+    Xpost_Object fontbboxarray[4];
+    struct fontdata data;
+    char *buf;
+    unsigned char *whole;
+    size_t len = 0, cap = 8192, glen, gpos;
+    int i;
+    unsigned int k;
+
+    gdata = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "GlyphData"));
+    if (xpost_object_get_type(gdata) == stringtype)
+        glen = gdata.comp_.sz;
+    else if (xpost_object_get_type(gdata) == arraytype)
+    {
+        glen = 0;
+        for (i = 0; i < gdata.comp_.sz; i++)
+        {
+            Xpost_Object s = xpost_array_get(ctx, gdata, i);
+            if (xpost_object_get_type(s) != stringtype)
+                return invalidfont;
+            glen += s.comp_.sz;
+        }
+    }
+    else
+        return invalidfont;
+    fdarray = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "FDArray"));
+    if (xpost_object_get_type(fdarray) != arraytype)
+        return invalidfont;
+
+    buf = malloc(cap);
+    if (!buf)
+        return VMerror;
+    if (_cid_emit(&buf, &len, &cap,
+        "%%!PS-Adobe-3.0 Resource-CIDFont\n"
+        "%%%%DocumentNeededResources: ProcSet (CIDInit)\n"
+        "%%%%IncludeResource: ProcSet (CIDInit)\n"
+        "/CIDInit /ProcSet findresource begin\n"
+        "20 dict begin\n"
+        "/CIDFontName /X def\n"
+        "/CIDFontVersion 1 def\n"
+        "/CIDFontType 0 def\n"
+        "/CIDSystemInfo 3 dict dup begin\n"
+        "  /Registry (Adobe) def\n"
+        "  /Ordering (Identity) def\n"
+        "  /Supplement 0 def\n"
+        "end def\n")) goto fail;
+    if (_cid_emit_entry(ctx, &buf, &len, &cap, fontdict, "FontMatrix")) goto fail;
+    if (_cid_emit_entry(ctx, &buf, &len, &cap, fontdict, "FontBBox")) goto fail;
+    if (_cid_emit_entry(ctx, &buf, &len, &cap, fontdict, "CIDCount")) goto fail;
+    if (_cid_emit_entry(ctx, &buf, &len, &cap, fontdict, "FDBytes")) goto fail;
+    if (_cid_emit_entry(ctx, &buf, &len, &cap, fontdict, "GDBytes")) goto fail;
+    if (_cid_emit_entry(ctx, &buf, &len, &cap, fontdict, "CIDMapOffset")) goto fail;
+    if (_cid_emit(&buf, &len, &cap, "/FDArray %d array\n", fdarray.comp_.sz))
+        goto fail;
+    for (i = 0; i < fdarray.comp_.sz; i++)
+    {
+        Xpost_Object fd = xpost_array_get(ctx, fdarray, i);
+        Xpost_Object priv;
+
+        Xpost_Object topfm, fdfm;
+        double m[6] = { 0.001, 0, 0, 0.001, 0, 0 };
+
+        if (xpost_object_get_type(fd) != dicttype)
+            goto fail2;
+        if (_cid_emit(&buf, &len, &cap,
+            "%%ADOBeginFontDict\n"
+            "dup %d 10 dict begin\n/FontType 1 def\n", i)) goto fail;
+        /* the face carries one matrix per dictionary: the product of
+           the font's matrix and the dictionary's own, so the glyph
+           space the charstrings draw in reaches CID font space the
+           way the two-level dictionary said it should */
+        topfm = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "FontMatrix"));
+        fdfm = xpost_dict_get(ctx, fd, xpost_name_cons(ctx, "FontMatrix"));
+        if (xpost_object_get_type(topfm) == arraytype && topfm.comp_.sz == 6
+         && xpost_object_get_type(fdfm) == arraytype && fdfm.comp_.sz == 6)
+        {
+            double a[6], b[6];
+            int j;
+
+            for (j = 0; j < 6; j++)
+            {
+                Xpost_Object v = xpost_array_get(ctx, fdfm, j);
+                a[j] = xpost_object_get_type(v) == realtype ? v.real_.val : v.int_.val;
+                v = xpost_array_get(ctx, topfm, j);
+                b[j] = xpost_object_get_type(v) == realtype ? v.real_.val : v.int_.val;
+            }
+            m[0] = a[0]*b[0] + a[1]*b[2];
+            m[1] = a[0]*b[1] + a[1]*b[3];
+            m[2] = a[2]*b[0] + a[3]*b[2];
+            m[3] = a[2]*b[1] + a[3]*b[3];
+            m[4] = a[4]*b[0] + a[5]*b[2] + b[4];
+            m[5] = a[4]*b[1] + a[5]*b[3] + b[5];
+        }
+        if (_cid_emit(&buf, &len, &cap,
+            "/FontMatrix [%g %g %g %g %g %g] def\n",
+            m[0], m[1], m[2], m[3], m[4], m[5])) goto fail;
+        if (_cid_emit(&buf, &len, &cap, "/PaintType 0 def\n/Private 32 dict begin\n"))
+            goto fail;
+        priv = xpost_dict_get(ctx, fd, xpost_name_cons(ctx, "Private"));
+        if (xpost_object_get_type(priv) == dicttype)
+            for (k = 0; k < sizeof _cid_private_keys / sizeof *_cid_private_keys; k++)
+                if (_cid_emit_entry(ctx, &buf, &len, &cap, priv,
+                                    _cid_private_keys[k])) goto fail;
+        if (_cid_emit(&buf, &len, &cap,
+            "currentdict end def\ncurrentdict end put\n"
+            "%%ADOEndFontDict\n")) goto fail;
+    }
+    if (_cid_emit(&buf, &len, &cap, "def\n(Binary) %lu StartData ",
+                  (unsigned long)glen)) goto fail;
+
+    whole = malloc(len + glen);
+    if (!whole)
+        goto fail2;
+    memcpy(whole, buf, len);
+    gpos = len;
+    if (xpost_object_get_type(gdata) == stringtype)
+    {
+        memcpy(whole + gpos, xpost_string_get_pointer(ctx, gdata), glen);
+    }
+    else
+    {
+        for (i = 0; i < gdata.comp_.sz; i++)
+        {
+            Xpost_Object s = xpost_array_get(ctx, gdata, i);
+            memcpy(whole + gpos, xpost_string_get_pointer(ctx, s), s.comp_.sz);
+            gpos += s.comp_.sz;
+        }
+    }
+    free(buf);
+
+    /* a rebuilt descendant releases its previous face */
+    privatestr = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Private"));
+    if (xpost_object_get_type(privatestr) == stringtype)
+    {
+        xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                         xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+        if (data.face)
+            xpost_font_face_free(data.face);
+    }
+
+    data.face = xpost_font_face_new_from_memory(whole, len + glen);
+    data.program = whole;
+    if (data.face == NULL)
+    {
+        free(whole);
+        return invalidfont;
+    }
+
+    fontbbox = xpost_array_cons(ctx, 4);
+    xpost_font_face_get_bbox(data.face, fontbboxarray, 1000.0);
+    xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
+                     xpost_object_get_ent(fontbbox),
+                     0, 4 * sizeof(Xpost_Object), fontbboxarray);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontBBox"), fontbbox);
+
+    privatestr = xpost_string_cons(ctx, sizeof data, NULL);
+    xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0, sizeof data, &data);
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "Private"), privatestr);
+    return 0;
+fail:
+fail2:
+    free(buf);
+    return invalidfont;
+#else
+    (void)ctx;
+    (void)fontdict;
+    return invalidfont;
+#endif
 }
 
 /* ciddict glypharray  .loadcidfont2  -
@@ -2283,6 +2547,8 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".glyphshow", (Xpost_Op_Func)_glyphshow, 0, 1, nametype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".glyphshowidx", (Xpost_Op_Func)_glyphshowidx, 0, 1, integertype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".loadcidfont0", (Xpost_Op_Func)_loadcidfont0, 0, 1, dicttype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".loadcidfont2", (Xpost_Op_Func)_loadcidfont2, 0, 2,
             dicttype, arraytype);

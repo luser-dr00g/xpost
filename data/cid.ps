@@ -29,6 +29,40 @@ currentdict /c undef
 % operand lists arrive on the stack; each end operator gathers them
 % into (or appends to) an array in the dictionary under construction.
 /CIDInit <<
+    % (Binary)|(Hex) length  StartData  -
+    % the glyph data block that ends a CIDFont resource file: read it,
+    % attach it to the dictionary under construction as /GlyphData,
+    % close the dictionary and the procedure set, and define the
+    % completed CIDFont resource
+    /StartData {
+        currentdict /.sdn 3 -1 roll put
+        (Hex) eq {
+            currentdict /.sdf currentfile /ASCIIHexDecode filter put
+            currentdict /.sdhex true put
+        }{
+            currentdict /.sdf currentfile put
+            currentdict /.sdhex false put
+        } ifelse
+        .sdn 65000 le {
+            currentdict /GlyphData .sdf .sdn string readstring pop put
+        }{
+            currentdict /GlyphData [
+                {
+                    .sdn 0 le { exit } if
+                    .sdf .sdn 65000 min string readstring pop
+                    currentdict /.sdn .sdn 65000 sub put
+                } loop
+            ] put
+        } ifelse
+        % the in-band terminator of a hex block belongs to it
+        .sdhex { .sdf flushfile } if
+        currentdict /.sdn undef
+        currentdict /.sdf undef
+        currentdict /.sdhex undef
+        currentdict /CIDFontName get currentdict
+        end end
+        /CIDFont defineresource pop
+    }
     /begincmap {}
     /endcmap {}
     /begincodespacerange { pop mark }
@@ -193,6 +227,13 @@ currentdict /c undef
         desc /GlyphDirectory 2 copy known { get length }{ pop pop 0 } ifelse
         desc /.gdcount 2 copy known { get }{ pop pop -1 } ifelse
         ne { desc .cidface } if
+    } if
+    % a CIDFontType 0 descendant carries its charstrings in the
+    % GlyphData block; the face assembles once and serves by CID
+    desc /CIDFontType 2 copy known { get 0 eq }{ pop pop false } ifelse
+    desc /GlyphData known and
+    desc /Private known not and {
+        desc .loadcidfont0
     } if
     /wrap desc dup length 2 add dict copy def
     wrap /FontMatrix

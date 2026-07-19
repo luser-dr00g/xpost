@@ -1133,8 +1133,62 @@ FontDirectory /SubsetT42Test known {
     erasepage
     10 16 moveto <00010002> show
     countink 100 ge (an incremental descendant paints its delivered glyphs) assert
+    % the show variants advance one number per glyph, not per byte
+    /TestT0 findfont 20 scalefont setfont
+    erasepage
+    10 16 moveto <00010002> [30 40] xshow
+    currentpoint pop 80 sub abs 0.5 le
+    (xshow through a composite font advances per glyph) assert
+
     erasepage
 } if
+
+% A CIDFontType 0 descendant: its charstrings arrive in the StartData
+% block -- read from the file itself, so this stands at the top level
+% -- and the face assembles from the written-back resource file,
+% serving glyphs directly by CID
+/CIDInit /ProcSet findresource begin
+20 dict begin
+/CIDFontName /TestCID0 def
+/CIDFontType 0 def
+/CIDSystemInfo << /Registry (T) /Ordering (T) /Supplement 0 >> def
+/FontMatrix [0.001 0 0 0.001 0 0] def
+/FontBBox [0 0 1000 1000] def
+/CIDCount 2 def
+/FDBytes 1 def
+/GDBytes 2 def
+/CIDMapOffset 0 def
+/FDArray 1 array
+dup 0 4 dict begin
+/FontType 1 def
+/FontMatrix [1 0 0 1 0 0] def
+/Private 1 dict def
+currentdict end put
+def
+(Hex) 43 StartData
+00000900001200002B10BF317079C84B925B10BF317079C84B92BA9844E67E3430AF9B4AC1F3C7BC50D639>
+/CIDInit /ProcSet findresource begin
+10 dict begin
+begincmap
+/CMapName /TestCMap0 def
+/CIDSystemInfo << /Registry (T) /Ordering (T) /Supplement 0 >> def
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+1 begincidrange
+<0000> <FFFF> 0
+endcidrange
+endcmap
+CMapName currentdict end /CMap defineresource pop
+end
+/TestT00 /TestCMap0 [/TestCID0] composefont pop
+/TestT00 findfont 20 scalefont setfont
+erasepage
+10 16 moveto <0001> show
+countink 40 ge (a CID-keyed charstring descendant paints) assert
+currentpoint pop 22 sub abs 0.5 le
+(its codes advance by the charstring width) assert
+erasepage
 
 % Type 3 fonts serve glyphshow through their BuildGlyph procedure, as
 % plotting tools emit them (a name-keyed CharStrings of drawing
