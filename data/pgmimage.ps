@@ -414,7 +414,7 @@ DATA_DIR(/qsort.ps)strcat run
     begin
         /OutputFileName where { pop
             ImgData
-            OutputFileName (w) file
+            OutputFileName .pagefilename (w) file
             .writepgm
         }{
             ImgData

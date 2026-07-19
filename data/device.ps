@@ -72,6 +72,33 @@ end
     } 
 >> def
 
+% a b  .strcat  ab
+/.strcat {
+    2 dict begin
+    /b exch def /a exch def
+    a length b length add string
+    dup 0 a putinterval
+    dup a length b putinterval
+    end
+} bind def
+
+% name  .pagefilename  name'
+% substitute the page number for a %d marker in an output file name,
+% counting pages in the device the caller has begun; without the
+% marker every page writes the same file, last page standing
+/.pagefilename {
+    dup (%d) search {
+        exch pop
+        currentdict /.pageno 2 copy known { get }{ pop pop 1 } ifelse
+        dup 1 add /.pageno exch def
+        10 string cvs
+        .strcat exch .strcat
+        exch pop
+    }{
+        pop
+    } ifelse
+} bind def
+
 /showpage {
     DEVICE dup /Emit get exec
 
