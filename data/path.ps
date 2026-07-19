@@ -165,9 +165,14 @@ dup 0 10 dict put
 bind def
 
 % move line curve close  pathforall  -
-% enumerate current path in user coordinates
+% enumerate current path in user coordinates. The caller's
+% procedures run outside the enumerator's dictionary scope -- the
+% scope pops around each call and resumes after -- so a procedure
+% that accumulates a running total by def reaches the caller's
+% dictionary, and one that leaves results on the stack keeps them
+/.pfdict 10 dict def
 /pathforall {
-DICT
+.pfdict
 begin
     4 array astore /procs exch def
     /str cpath def
@@ -184,12 +189,11 @@ begin
                 7 -1 roll
             } if
         } ifelse
-        procs exch get exec
+        procs exch get
+        end exec .pfdict begin
     } loop
 end
-}
-dup 0 10 dict put
-bind def
+} bind def
 
 % emit the held-back element, drawn to the endpoint on the stack;
 % reversal delays each element by one so that its command pairs with

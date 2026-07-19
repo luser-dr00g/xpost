@@ -1494,6 +1494,28 @@ countink dup
 900 ge (circular clip covers the disk) assert
 1600 le (circular clip stays within the disk) assert
 
+% two rectangle clips intersect to a rectangle, and the region still
+% answers as one through clippath
+gsave
+newpath 10 10 40 40 rectclip 20 20 40 40 rectclip
+clippath pathbbox 4 array astore
+dup 0 get 20 sub abs 0.02 le
+1 index 1 get 20 sub abs 0.02 le and
+1 index 2 get 50 sub abs 0.02 le and
+exch 3 get 50 sub abs 0.02 le and
+(two rectangle clips intersect to the rectangle) assert
+grestore
+
+% the procedures a program hands pathforall run in the caller's
+% environment: a def made inside one must land in the caller's
+% dictionary -- the Blue Book's centred-dash program accumulates its
+% path length this way
+/pfsum 0 def
+newpath 10 10 moveto 30 40 lineto 50 10 lineto
+{ pop pop } { pop pop /pfsum pfsum 1 add def } { 6 { pop } repeat } { }
+pathforall
+pfsum 2 eq (pathforall procedures def into the caller's dictionary) assert
+
 % --- arc semantics: sweep direction, current point, segmentation ---
 % arc sweeps counterclockwise from angle1 to angle2 and leaves the
 % current point at angle2; arcn mirrors. Probed through pathforall,
