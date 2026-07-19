@@ -964,6 +964,34 @@ int _cliptrivial(Xpost_Context *ctx)
     return 0;
 }
 
+/* -  .cliprect  x0 y0 x1 y1 true
+                 false
+   when the clip region is a single axis-aligned rectangle, its
+   device-space bounds; painting machinery that writes the raster
+   directly clamps to them */
+static
+int _cliprect(Xpost_Context *ctx)
+{
+    Xpost_Object gstate, clipregion;
+    real cminx, cminy, cmaxx, cmaxy;
+
+    gstate = _gstate(ctx);
+    if (xpost_object_get_type(gstate) == invalidtype)
+        return undefined;
+    clipregion = xpost_dict_get(ctx, gstate, nameclipregion);
+    if (_path_is_rect(ctx, clipregion, &cminx, &cminy, &cmaxx, &cmaxy))
+    {
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(cminx));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(cminy));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(cmaxx));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(cmaxy));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
+    }
+    else
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+    return 0;
+}
+
 /* Emit the current path into a vector device's content accumulator with
    curves preserved -- the FillPath hot loop, walking the path string
    directly so arbitrarily many subpaths cost no operand stack. The
@@ -1826,6 +1854,8 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "closepath", (Xpost_Op_Func)_closepath, 0, 0);
     INSTALL;
 
+    op = xpost_operator_cons(ctx, ".cliprect", (Xpost_Op_Func)_cliprect, 5, 0);
+    INSTALL;
     op = xpost_operator_cons(ctx, ".cliptrivial", (Xpost_Op_Func)_cliptrivial, 1, 0);
     INSTALL;
 

@@ -266,6 +266,13 @@
     } ifelse } ifelse
 } def
 
+% v  .c255  byte
+% clamp a 0..1 component and scale it to a byte
+/.c255 {
+    dup 0 lt { pop 0 } if dup 1 gt { pop 1 } if
+    255 mul round cvi
+} def
+
 % c  .sampleat  value
 % one normalized component of the pixel in hand, from its plane's
 % row buffer or the interleaved one
@@ -318,6 +325,102 @@
             dscale c decode c 2 mul 1 add get dmin sub 255 div put
         } for
 
+        % direct raster path: an axis-aligned mapping, a rectangular
+        % clip region and a raster device with a page buffer let each
+        % row write straight into the raster through .blitrow, the
+        % colour pipeline baked into tables up front: a one-component
+        % space bakes decode, colour conversion and transfer into one
+        % table by running each of its 256 samples through the
+        % interpreter's own machinery; RGB and CMYK samples take
+        % per-component decode tables, convert in the operator and
+        % pass through the transfer table after
+        /blitok false def
+        multi not DEVICE /ImgData known and {
+            DEVICE /nativecolorspace get
+            dup /DeviceRGB eq exch /DeviceGray eq or {
+                /m mat matrix invertmatrix matrix currentmatrix
+                   matrix concatmatrix def
+                m 1 get abs 0.000001 lt m 2 get abs 0.000001 lt and {
+                    .cliprect {
+                        /ccy1 exch def /ccx1 exch def
+                        /ccy0 exch def /ccx0 exch def
+                        /csname currentcolorspace
+                            dup type /arraytype eq { 0 get } if def
+                        ncomp 1 eq
+                        ncomp 3 eq csname /DeviceRGB eq and or
+                        ncomp 4 eq csname /DeviceCMYK eq and or
+                        { /blitok true def } if
+                    } if
+                } if
+            } if
+        } if
+        blitok {
+            /nat DEVICE /nativecolorspace get /DeviceRGB eq { 3 }{ 1 } ifelse def
+            /tlut 256 string def
+            0 1 255 { /v exch def
+                tlut v
+                v 255 div currenttransfer exec .c255
+                put
+            } for
+            ncomp 1 eq {
+                /lut 256 nat mul string def
+                0 1 255 { /v exch def
+                    v dscale 0 get mul dbase 0 get add setcolor
+                    currentcolordict DEVICE /nativecolorspace get get exec
+                    nat 3 eq {
+                        /bb exch def /gg exch def /rr exch def
+                        lut v 3 mul       tlut rr .c255 get put
+                        lut v 3 mul 1 add tlut gg .c255 get put
+                        lut v 3 mul 2 add tlut bb .c255 get put
+                    }{
+                        lut v 3 -1 roll .c255 tlut exch get put
+                    } ifelse
+                } for
+            }{
+                /dluts [ ncomp { 256 string } repeat ] def
+                0 1 ncomp 1 sub { /c exch def
+                    /dl dluts c get def
+                    0 1 255 { /v exch def
+                        dl v
+                        v dscale c get mul dbase c get add .c255
+                        put
+                    } for
+                } for
+            } ifelse
+            /bd 24 dict def
+            bd /rows DEVICE /ImgData get put
+            bd /devw DEVICE /dimensions get 0 get put
+            bd /devh DEVICE /dimensions get 1 get put
+            bd /nat nat put
+            bd /packed nat 3 eq put
+            bd /w width put
+            bd /ncomp ncomp put
+            bd /buf buf put
+            bd /xoff m 4 get put
+            bd /xscale m 0 get put
+            bd /yoff m 5 get put
+            bd /yscale m 3 get put
+            bd /cx0 ccx0 put
+            bd /cy0 ccy0 put
+            bd /cx1 ccx1 put
+            bd /cy1 ccy1 put
+            bd /mbits currentdict /mbits get put
+            bd /mrowb mrow put
+            bd /mranges currentdict /mranges get put
+            bd /cmyk ncomp 4 eq put
+            ncomp 1 eq {
+                bd /lut lut put
+            }{
+                bd /dluts dluts put
+            } ifelse
+            bd /tlut tlut put
+            bd /y 0 put
+            0 1 height 1 sub { /y exch def
+                .fill .rownorm
+                bd /y y put
+                bd .blitrow
+            } for
+        }{
         % invert into a fresh matrix: the operand matrix belongs to
         % the caller, who may reuse it (a Type 3 font mutating one
         % shared matrix per glyph is the classic case)
@@ -362,6 +465,7 @@
                 } if
             } for
         } for
+        } ifelse
 
         end
     grestore

@@ -1537,6 +1537,231 @@ static int _pdffree(Xpost_Context *ctx, Xpost_Object devdic)
     return 0;
 }
 
+/* blitdict  .blitrow  -
+   write one image row straight into a raster device's page buffer.
+   The dictionary carries the device raster (rows: the ImgData array,
+   packed 24-bit integer pixels or grey bytes per the packed flag),
+   the axis-aligned image-to-device mapping (xoff xscale yoff yscale),
+   the clip rectangle (cx0 cy0 cx1 cy1), the normalized sample row
+   (buf, one byte per sample, ncomp samples per pixel, row index y of
+   w pixels), the colour tables -- lut: a full 256-entry table of
+   native bytes for one-component spaces with everything baked in;
+   else dluts: per-component decode tables and tlut: the transfer,
+   applied after conversion (cmyk converts by additive complement) --
+   and the masks: mbits, one bit per pixel high-order first in rows
+   of mrowb bytes (set = leave unpainted), and mranges, raw min,max
+   pairs (a pixel inside every range is left unpainted). Pixels cover
+   device pixels by the any-part-of-pixel rule, the high edge
+   exclusive, matching the rectangle fills this replaces. */
+static
+int _blitrow(Xpost_Context *ctx,
+             Xpost_Object dict)
+{
+    Xpost_Object rows, bufo, luto, dlutso, tluto, mbitso, mrangeso;
+    unsigned char *buf, *lut = NULL, *tlut = NULL, *mbits = NULL;
+    unsigned char *dlut[4] = { NULL, NULL, NULL, NULL };
+    int mranges[8];
+    int devw, devh, nat, packed, w, ncomp, y, cmyk, mrowb = 0;
+    double xoff, xscale, yoff, yscale, cx0, cy0, cx1, cy1;
+    double ya, yb, t;
+    int dy, x, c, nranges = 0;
+
+#define GETI(name) do { \
+        Xpost_Object o_ = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, #name)); \
+        if (xpost_object_get_type(o_) != integertype) return typecheck; \
+        name = o_.int_.val; \
+    } while (0)
+#define GETR(name) do { \
+        Xpost_Object o_ = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, #name)); \
+        if (xpost_object_get_type(o_) == realtype) name = o_.real_.val; \
+        else if (xpost_object_get_type(o_) == integertype) name = o_.int_.val; \
+        else return typecheck; \
+    } while (0)
+#define GETB(name) do { \
+        Xpost_Object o_ = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, #name)); \
+        if (xpost_object_get_type(o_) != booleantype) return typecheck; \
+        name = o_.int_.val; \
+    } while (0)
+
+    GETI(devw); GETI(devh); GETI(nat); GETI(w); GETI(ncomp); GETI(y);
+    GETB(packed); GETB(cmyk);
+    GETR(xoff); GETR(xscale); GETR(yoff); GETR(yscale);
+    GETR(cx0); GETR(cy0); GETR(cx1); GETR(cy1);
+#undef GETI
+#undef GETR
+#undef GETB
+
+    rows = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "rows"));
+    if (xpost_object_get_type(rows) != arraytype)
+        return typecheck;
+    bufo = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "buf"));
+    if (xpost_object_get_type(bufo) != stringtype
+     || bufo.comp_.sz < (unsigned int)(w * ncomp))
+        return rangecheck;
+    buf = (unsigned char *)xpost_string_get_pointer(ctx, bufo);
+
+    luto = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "lut"));
+    if (xpost_object_get_type(luto) == stringtype)
+    {
+        if (luto.comp_.sz < (unsigned int)(256 * nat))
+            return rangecheck;
+        lut = (unsigned char *)xpost_string_get_pointer(ctx, luto);
+    }
+    else
+    {
+        dlutso = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "dluts"));
+        tluto = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "tlut"));
+        if (xpost_object_get_type(dlutso) != arraytype
+         || dlutso.comp_.sz < (unsigned int)ncomp
+         || xpost_object_get_type(tluto) != stringtype
+         || tluto.comp_.sz < 256)
+            return typecheck;
+        for (c = 0; c < ncomp && c < 4; c++)
+        {
+            Xpost_Object d = xpost_array_get(ctx, dlutso, c);
+            if (xpost_object_get_type(d) != stringtype || d.comp_.sz < 256)
+                return typecheck;
+            dlut[c] = (unsigned char *)xpost_string_get_pointer(ctx, d);
+        }
+        tlut = (unsigned char *)xpost_string_get_pointer(ctx, tluto);
+    }
+
+    mbitso = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "mbits"));
+    if (xpost_object_get_type(mbitso) == stringtype)
+    {
+        Xpost_Object o = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "mrowb"));
+        if (xpost_object_get_type(o) != integertype)
+            return typecheck;
+        mrowb = o.int_.val;
+        if (mbitso.comp_.sz < (unsigned int)((y + 1) * mrowb))
+            return rangecheck;
+        mbits = (unsigned char *)xpost_string_get_pointer(ctx, mbitso);
+    }
+    mrangeso = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "mranges"));
+    if (xpost_object_get_type(mrangeso) == arraytype)
+    {
+        nranges = mrangeso.comp_.sz;
+        if (nranges > 8)
+            return rangecheck;
+        for (c = 0; c < nranges; c++)
+        {
+            Xpost_Object o = xpost_array_get(ctx, mrangeso, c);
+            if (xpost_object_get_type(o) != integertype)
+                return typecheck;
+            mranges[c] = o.int_.val;
+        }
+    }
+
+    ya = yoff + y * yscale;
+    yb = yoff + (y + 1) * yscale;
+    if (ya > yb) { t = ya; ya = yb; yb = t; }
+    if (ya < cy0) ya = cy0;
+    if (yb > cy1) yb = cy1;
+    if (ya < 0) ya = 0;
+    if (yb > devh) yb = devh;
+
+    for (dy = (int)floor(ya); dy < yb; dy++)
+    {
+        Xpost_Object row;
+        unsigned char *rowp = NULL;
+
+        if (dy < 0)
+            continue;
+        row = xpost_array_get(ctx, rows, dy);
+        if (packed)
+        {
+            if (xpost_object_get_type(row) != arraytype
+             || row.comp_.sz < (unsigned int)devw)
+                return rangecheck;
+        }
+        else
+        {
+            if (xpost_object_get_type(row) != stringtype
+             || row.comp_.sz < (unsigned int)devw)
+                return rangecheck;
+            rowp = (unsigned char *)xpost_string_get_pointer(ctx, row);
+        }
+
+        for (x = 0; x < w; x++)
+        {
+            double xa, xb;
+            int dx, r = 0, g = 0, b = 0, gray = 0;
+
+            if (mbits)
+            {
+                int bit = mbits[y * mrowb + (x >> 3)] >> (7 - (x & 7)) & 1;
+                if (bit)
+                    continue;
+            }
+            if (nranges)
+            {
+                int inside = 1;
+                for (c = 0; c < ncomp; c++)
+                {
+                    int v = buf[x * ncomp + c];
+                    if (v < mranges[2 * c] || v > mranges[2 * c + 1])
+                    {
+                        inside = 0;
+                        break;
+                    }
+                }
+                if (inside)
+                    continue;
+            }
+
+            if (lut)
+            {
+                const unsigned char *e = lut + buf[x] * nat;
+                if (nat == 3) { r = e[0]; g = e[1]; b = e[2]; }
+                else gray = e[0];
+            }
+            else
+            {
+                int v[4] = {0};
+                for (c = 0; c < ncomp; c++)
+                    v[c] = dlut[c][buf[x * ncomp + c]];
+                if (cmyk)
+                {
+                    r = 255 - (v[0] + v[3] > 255 ? 255 : v[0] + v[3]);
+                    g = 255 - (v[1] + v[3] > 255 ? 255 : v[1] + v[3]);
+                    b = 255 - (v[2] + v[3] > 255 ? 255 : v[2] + v[3]);
+                }
+                else
+                {
+                    r = v[0];
+                    g = ncomp > 1 ? v[1] : v[0];
+                    b = ncomp > 2 ? v[2] : v[0];
+                }
+                if (nat == 3)
+                {
+                    r = tlut[r]; g = tlut[g]; b = tlut[b];
+                }
+                else
+                    gray = tlut[(r * 30 + g * 59 + b * 11) / 100];
+            }
+
+            xa = xoff + x * xscale;
+            xb = xoff + (x + 1) * xscale;
+            if (xa > xb) { t = xa; xa = xb; xb = t; }
+            if (xa < cx0) xa = cx0;
+            if (xb > cx1) xb = cx1;
+            if (xa < 0) xa = 0;
+            if (xb > devw) xb = devw;
+            for (dx = (int)floor(xa); dx < xb; dx++)
+            {
+                if (dx < 0)
+                    continue;
+                if (packed)
+                    xpost_array_put(ctx, row, dx,
+                                    xpost_int_cons(r << 16 | g << 8 | b));
+                else
+                    rowp[dx] = (unsigned char)gray;
+            }
+        }
+    }
+    return 0;
+}
+
 int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
                                        Xpost_Object sd)
 {
@@ -1553,6 +1778,7 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".fillpoly", (Xpost_Op_Func)_fillpoly, 0, 2, arraytype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".clipfillpoly", (Xpost_Op_Func)_clipfillpoly, 1, 2, arraytype, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".eospanpoly", (Xpost_Op_Func)_eospanpoly, 1, 1, arraytype); INSTALL;
+    op = xpost_operator_cons(ctx, ".blitrow", (Xpost_Op_Func)_blitrow, 0, 1, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillrectgray", (Xpost_Op_Func)_fillrectgray, 0, 6,
             numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".blendpixgray", (Xpost_Op_Func)_blendpixgray, 0, 5,
