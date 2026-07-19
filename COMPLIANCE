@@ -351,6 +351,8 @@ Extensions
 
  [X] pdfmark (DOCINFO reaches the pdfwrite device; other mark types
      are consumed without effect)
+ [X] page-size operators of the printer products (letter, legal, a4,
+     and the rest of the common set)
 
 Display Postscript
 ------------------

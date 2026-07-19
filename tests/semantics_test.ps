@@ -479,6 +479,15 @@ currentpagedevice /TextAlphaBits known not
 currentpagedevice /HWResolution known not
     (a device switch reverts unstated parameters to defaults) assert
 
+% --- the page-size convenience operators of the printer products ---
+a4 currentpagedevice /PageSize get
+dup 0 get 595 eq exch 1 get 842 eq and
+    (a4 requests the a4 page) assert
+legal currentpagedevice /PageSize get 1 get 1008 eq
+    (legal requests the legal page) assert
+letter currentpagedevice /PageSize get 0 get 612 eq
+    (letter requests the letter page) assert
+
 failcount 0 eq { (SUCCESS\n) print } { (FAILURES: ) print failcount 20 string cvs print (\n) print } ifelse
 flush
 quit

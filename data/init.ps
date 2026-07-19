@@ -16,6 +16,26 @@ true setglobal   % systemdict is global, so these allocations must be global
     /product (Xpost)
 >> def
 
+% the page-size convenience operators of the printer products, which
+% driver prologs invoke from their PPD feature blocks
+<<
+    /letter      [ 612  792]
+    /lettersmall [ 612  792]
+    /note        [ 612  792]
+    /legal       [ 612 1008]
+    /ledger      [1224  792]
+    /11x17       [ 792 1224]
+    /a3          [ 842 1191]
+    /a4          [ 595  842]
+    /a4small     [ 595  842]
+    /a5          [ 420  595]
+    /b4          [ 729 1032]
+    /b5          [ 516  729]
+>> {
+    1 dict dup /PageSize 4 -1 roll put
+    /setpagedevice cvx 2 array astore cvx def
+} forall
+
 % the job server's dictionary. exitserver ends the encapsulated job,
 % announces that permanent state may change, and execution continues
 % with the definitions made so far outliving the job -- the idiom
