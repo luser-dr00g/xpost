@@ -880,24 +880,45 @@ grestore
 } if
 
 basefont null ne {
-    % sharp text by default: ink but no intermediate values
+    % anti-aliased by default: glyph edges blend, cores stay solid
     erasepage
     basefont 20 scalefont setfont
     2 24 moveto (Ag) show
-    countink 20 ge (text marks pixels) assert
-    countmid 0 eq (text is sharp without TextAlphaBits) assert
-
-    % anti-aliased text: TextAlphaBits + BlendPix blend glyph edges
-    DEV /TextAlphaBits 4 put
-    DEV /BlendPix /.blendpixgray load put
-    erasepage
-    2 24 moveto (Ag) show
-    countmid 0 gt (TextAlphaBits blends glyph edges) assert
-    countink 10 ge (anti-aliased text keeps solid cores) assert
+    countink 10 ge (text marks pixels) assert
+    countmid 0 gt (text blends its glyph edges by default) assert
     DEV /TextAlphaBits 1 put
     erasepage
     2 24 moveto (Ag) show
     countmid 0 eq (TextAlphaBits 1 disables blending) assert
+    countink 20 ge (bilevel text keeps its ink) assert
+    DEV /TextAlphaBits 4 put
+
+    % a bitmap-described glyph blends its edges like any other text,
+    % and a bare stencil outside a glyph keeps the bilevel threshold
+    /T3Mask << /FontType 3 /FontMatrix [0.001 0 0 0.001 0 0]
+      /FontBBox [0 0 1000 1000]
+      /Encoding 256 array 0 1 255 { 1 index exch /.notdef put } for
+        dup 65 /sq put
+      /BuildChar {
+        exch begin
+        600 0 0 0 550 550 setcachedevice
+        Encoding exch get /sq eq {
+          8 8 true [ 8 550 div 0 0 8 550 div neg 0 8 ]
+          {<3C7EFFFFFFFF7E3C>} imagemask
+        } if
+        end
+      }
+    >> definefont pop
+    /T3Mask findfont 30 scalefont setfont
+    erasepage
+    6 20 moveto (A) show
+    countmid 0 gt (a stencil glyph blends its edges) assert
+    countink 40 ge (its core stays solid) assert
+    erasepage
+    8 8 true [ 8 30 div 0 0 8 30 div neg 4 34 ]
+    {<3C7EFFFFFFFF7E3C>} imagemask
+    countmid 0 eq (a stencil outside a glyph stays bilevel) assert
+    basefont 20 scalefont setfont
 
     % /Encoding: a re-encoded copy renders the named glyph
     erasepage

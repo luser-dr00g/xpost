@@ -11,6 +11,9 @@
 
 /PBMIMAGE PGMIMAGE dup length 2 add dict copy def
 
+% a bilevel page keeps its glyphs bilevel
+PBMIMAGE /TextAlphaBits 1 put
+
 PBMIMAGE /.writepbm { % img file
     8 dict begin
     {/f /a}{exch def}forall

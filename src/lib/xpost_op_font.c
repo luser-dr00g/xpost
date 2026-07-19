@@ -334,7 +334,9 @@ textstate _text_state_get(Xpost_Context *ctx,
     ts.charstrings = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "CharStrings"));
     ts.blendpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "BlendPix"));
     tab = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "TextAlphaBits"));
-    ts.blend = xpost_object_get_type(ts.blendpix) == operatortype
+    ts.blend = (xpost_object_get_type(ts.blendpix) == operatortype
+             || (xpost_object_get_type(ts.blendpix) == arraytype
+              && xpost_object_is_exe(ts.blendpix)))
             && xpost_object_get_type(tab) == integertype
             && tab.int_.val > 1;
     vec = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "VectorGlyphs"));
@@ -1886,6 +1888,165 @@ failh:
 #endif
 }
 
+
+/* maskdict  .stencilaa  bool
+   paint a small stencil mask with coverage-blended edges, the way
+   glyph bitmaps paint: an axis-aligned transform lets each device
+   pixel take the box-filtered coverage of the mask cells it spans,
+   fully covered pixels going through the device's solid path and
+   partial ones through its blend. Anything else -- a rotated or
+   skewed matrix, an oversized result, a device without the blending
+   machinery -- answers false and the caller keeps the bilevel path. */
+static
+int _stencilaa(Xpost_Context *ctx,
+               Xpost_Object dict)
+{
+    Xpost_Object userdict, gd, gs, devdic, putpix;
+    Xpost_Object buf, mat, o;
+    textstate ts;
+    int w, h, ink, ncomp;
+    Xpost_Object comp[4];
+    double m[6];
+    double fx0, fx1, fy0, fy1, xa, xb, ya, yb, full;
+    int ix0, iy0, devw, devh, px, py, i;
+    int rowbytes;
+    unsigned char *bits, *cov;
+
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        goto refuse;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
+    if (xpost_object_get_type(devdic) != dicttype)
+        goto refuse;
+
+    memset(&ts, 0, sizeof ts);
+    ts.blendpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "BlendPix"));
+    o = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "TextAlphaBits"));
+    ts.blend = (xpost_object_get_type(ts.blendpix) == operatortype
+             || (xpost_object_get_type(ts.blendpix) == arraytype
+              && xpost_object_is_exe(ts.blendpix)))
+            && xpost_object_get_type(o) == integertype
+            && o.int_.val > 1;
+    if (!ts.blend)
+        goto refuse;
+    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
+
+    buf = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "buf"));
+    if (xpost_object_get_type(buf) != stringtype)
+        goto refuse;
+    o = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "width"));
+    if (xpost_object_get_type(o) != integertype) goto refuse;
+    w = o.int_.val;
+    o = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "height"));
+    if (xpost_object_get_type(o) != integertype) goto refuse;
+    h = o.int_.val;
+    o = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "ink"));
+    if (xpost_object_get_type(o) != integertype) goto refuse;
+    ink = o.int_.val;
+    mat = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "mat"));
+    if (xpost_object_get_type(mat) != arraytype || mat.comp_.sz != 6)
+        goto refuse;
+    for (i = 0; i < 6; i++)
+    {
+        o = xpost_array_get(ctx, mat, i);
+        m[i] = xpost_object_get_type(o) == realtype ? o.real_.val
+             : xpost_object_get_type(o) == integertype ? (double)o.int_.val
+             : 0.0;
+    }
+    if (w <= 0 || h <= 0 || (w + 7) / 8 * h > buf.comp_.sz)
+        goto refuse;
+    /* coverage integrates separably only over an axis-aligned map */
+    if (fabs(m[1]) > 1e-4 || fabs(m[2]) > 1e-4
+     || fabs(m[0]) < 1e-6 || fabs(m[3]) < 1e-6)
+        goto refuse;
+
+    xa = m[4]; xb = m[0] * w + m[4];
+    fx0 = xa < xb ? xa : xb; fx1 = xa < xb ? xb : xa;
+    ya = m[5]; yb = m[3] * h + m[5];
+    fy0 = ya < yb ? ya : yb; fy1 = ya < yb ? yb : ya;
+    ix0 = (int)floor(fx0); iy0 = (int)floor(fy0);
+    devw = (int)ceil(fx1) - ix0;
+    devh = (int)ceil(fy1) - iy0;
+    if (devw <= 0 || devh <= 0 || devw > 4096 || devh > 4096
+     || devw * devh > (1 << 20))
+        goto refuse;
+
+    cov = malloc((size_t)devw * devh);
+    if (!cov)
+        goto refuse;
+    bits = (unsigned char *)xpost_string_get_pointer(ctx, buf);
+    rowbytes = (w + 7) / 8;
+    full = (1.0 / fabs(m[0])) * (1.0 / fabs(m[3]));
+
+    for (py = 0; py < devh; py++)
+    {
+        double dy0 = iy0 + py, dy1 = dy0 + 1;
+        double my0 = (dy0 - m[5]) / m[3], my1 = (dy1 - m[5]) / m[3];
+        double t;
+        int yi, yi0, yi1;
+
+        if (my0 > my1) { t = my0; my0 = my1; my1 = t; }
+        if (my0 < 0) my0 = 0;
+        if (my1 > h) my1 = h;
+        yi0 = (int)floor(my0); yi1 = (int)ceil(my1);
+        for (px = 0; px < devw; px++)
+        {
+            double dx0 = ix0 + px, dx1 = dx0 + 1;
+            double mx0 = (dx0 - m[4]) / m[0], mx1 = (dx1 - m[4]) / m[0];
+            double acc = 0.0;
+            int xi, xi0, xi1;
+
+            if (mx0 > mx1) { t = mx0; mx0 = mx1; mx1 = t; }
+            if (mx0 < 0) mx0 = 0;
+            if (mx1 > w) mx1 = w;
+            xi0 = (int)floor(mx0); xi1 = (int)ceil(mx1);
+            for (yi = yi0; yi < yi1; yi++)
+            {
+                double wy = (yi + 1 < my1 ? yi + 1 : my1)
+                          - (yi > my0 ? yi : my0);
+
+                if (wy <= 0)
+                    continue;
+                for (xi = xi0; xi < xi1; xi++)
+                {
+                    double wx = (xi + 1 < mx1 ? xi + 1 : mx1)
+                              - (xi > mx0 ? xi : mx0);
+                    int bit;
+
+                    if (wx <= 0)
+                        continue;
+                    bit = (bits[yi * rowbytes + xi / 8] >> (7 - (xi % 8))) & 1;
+                    if (bit == ink)
+                        acc += wx * wy;
+                }
+            }
+            acc = acc / full * 255.0 + 0.5;
+            cov[py * devw + px] = acc >= 255.0 ? 255
+                                : acc <= 0.0 ? 0 : (unsigned char)acc;
+        }
+    }
+
+    if (_device_color(ctx, gs, devdic, &ncomp, comp))
+    {
+        free(cov);
+        goto refuse;
+    }
+    /* the answer goes under the queue: the painter stacks one entry
+       per pixel above it, and each entry consumes its own operands
+       before the caller sees the boolean */
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
+    _draw_bitmap(ctx, devdic, putpix, &ts, cov, devh, devw, devw,
+                 XPOST_FONT_PIXEL_MODE_GRAY, ix0, iy0,
+                 ncomp, comp[0], comp[1], comp[2], comp[3]);
+    free(cov);
+    return 0;
+refuse:
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+    return 0;
+}
+
 /* ciddict glypharray  .loadcidfont2  -
    assemble a working TrueType face for a CIDFontType 2 dictionary.
    The /sfnts strings supply every table but the outlines: the glyphs
@@ -2776,6 +2937,8 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".glyphshowidx", (Xpost_Op_Func)_glyphshowidx, 0, 1, integertype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".loadcidfont0", (Xpost_Op_Func)_loadcidfont0, 0, 1, dicttype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".stencilaa", (Xpost_Op_Func)_stencilaa, 1, 1, dicttype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".loadfont1", (Xpost_Op_Func)_loadfont1, 0, 3,
             dicttype, arraytype, arraytype);

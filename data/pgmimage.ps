@@ -92,6 +92,11 @@ DATA_DIR(/qsort.ps)strcat run
         ImgData exch get exch get
     end }
 
+    % glyph edges blend by coverage against what the page holds; the
+    % interior takes the solid PutPix path
+    /TextAlphaBits 4
+    /BlendPix /.blendpixgray load
+
 
     /.sign { dup 0 le { 0 lt { -1 }{ 0 } ifelse }{ pop 1 } ifelse }
 

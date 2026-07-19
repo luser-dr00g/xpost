@@ -14,6 +14,15 @@
 % carry a TrueType program in /sfnts, reassembled and opened as a
 % memory face by .loadfont42 so the C text operators use it exactly
 % like a findfont face.
+% run a glyph-description procedure with the glyph flag raised: the
+% stencil painter blends mask edges only for glyphs, the way the
+% device's TextAlphaBits asks
+/.runbuild { % ... proc  .runbuild  ...
+    graphicsdict /.inglyph true put
+    exec
+    graphicsdict /.inglyph false put
+} def
+
 /definefont { % /fontname -dict-
     dup type /dicttype ne
     2 index type /nulltype eq or {
@@ -67,7 +76,7 @@
             dup /BuildChar known not {
                 dup /BuildChar {
                     1 index /Encoding get exch get
-                    1 index /BuildGlyph get exec
+                    1 index /BuildGlyph get .runbuild
                 } put
             } if
         }{
@@ -155,7 +164,7 @@
         %pstack()=
         {
             gsave
-                1 index /BuildChar get exec
+                1 index /BuildChar get .runbuild
             grestore
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
@@ -193,7 +202,7 @@
         {
             dup /curcode exch def
             gsave
-                1 index /BuildChar get exec
+                1 index /BuildChar get .runbuild
             grestore
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
@@ -233,7 +242,7 @@
         %pstack()=
         {
             gsave
-                1 index /BuildChar get exec
+                1 index /BuildChar get .runbuild
             grestore
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
@@ -274,7 +283,7 @@
         {
             dup /curcode exch def
             gsave
-                1 index /BuildChar get exec
+                1 index /BuildChar get .runbuild
             grestore
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
@@ -350,7 +359,7 @@
                         { /code exch def exit }{ pop } ifelse
                     } for
                     code null ne {
-                        fnt code fnt /BuildChar get exec
+                        fnt code fnt /BuildChar get .runbuild
                     } if
                 } ifelse
             grestore
