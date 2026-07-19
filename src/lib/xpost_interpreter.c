@@ -1899,8 +1899,8 @@ XPAPI Xpost_Context *xpost_create(const char *device,
 
     if (quiet)
     {
-        /* a boolean, matching the convention of other interpreters:
-           programs test both `/QUIET where` and the value itself */
+        /* a boolean: programs test both `/QUIET where` and the
+           value itself */
         xpost_dict_put(xpost_ctx,
                        sd /*xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0)*/ ,
                        xpost_name_cons(xpost_ctx, "QUIET"),

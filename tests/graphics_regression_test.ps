@@ -138,8 +138,7 @@ countink dup
 maxrun 3 le (no dot row smears across the raster) assert
 
 % --- the any-part-of-pixel fill rule (PLRM 7.5): a pixel is painted
-%     iff the filled region meets its interior. Probes verified
-%     pixel-for-pixel against a reference interpreter, including the
+%     iff the filled region meets its interior, including the
 %     boundary cases: integer-aligned geometry is exact (closed at the
 %     low device boundary, open at the high one), sub-pixel geometry
 %     paints every pixel it enters, zero-width geometry on a pixel

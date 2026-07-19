@@ -1145,8 +1145,8 @@ int _show_char(Xpost_Context *ctx,
                Xpost_Object comp4)
 {
     /* show does not kern: pair adjustment in PostScript is the
-       program's business (kshow, ashow), and the reference
-       interpreter advances by the glyph widths alone */
+       program's business (kshow, ashow); the advance is the glyph
+       widths alone */
     unsigned int glyph_index = _glyph_index_for_char(ctx, ts->encoding,
                                                      ts->charstrings,
                                                      data.face, ch);

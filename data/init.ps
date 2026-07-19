@@ -692,8 +692,7 @@ end % userdict
         /pd exch def
         % requests merge with the accumulated parameters, except that
         % switching OutputDevice reinstalls the new device's defaults:
-        % nothing carries across a device change (matching the
-        % reference interpreter's page device semantics)
+        % nothing carries across a device change
         /merged
         pd /OutputDevice 2 copy known {
             get /.pagedevice where {

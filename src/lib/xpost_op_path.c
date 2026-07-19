@@ -1443,8 +1443,8 @@ void _arcbezseg(Xpost_Context *ctx,
 }
 
 /* Append a circular arc counterclockwise (dir=1) or clockwise (dir=-1)
-   from a1 to a2, split at the quadrant boundaries as the reference
-   interpreter splits, emitted forward: the first point (at a1) reaches
+   from a1 to a2, split at the quadrant boundaries, emitted forward:
+   the first point (at a1) reaches
    the path through moveto-or-lineto and each segment through curveto,
    leaving the current point at a2 as the language requires. The
    scheduled operators transform the user-space coordinates through the

@@ -3,16 +3,16 @@
 % (written to SCRATCH and executed), with the resulting objects dumped
 % in a canonical form and errors reported by name.
 %
-% The expected output is generated from Ghostscript, which serves as
-% the reference implementation:
+% The expected output is generated from Ghostscript:
 %
 %   { echo "/SCRATCH (/tmp/bt.scratch) def"; cat binary_token_test.ps; } \
 %     | gs -q -dNOSAFER -dNOPAUSE -dBATCH -sDEVICE=nullpage - \
 %     > binary_token_test.expected
 %
-% run-bintok-test.sh compares both interpreters against that golden
-% record, so any divergence -- either implementation drifting, or the
-% golden going stale -- fails the check.
+% run-bintok-test.sh compares xpost against that committed golden
+% record, so a regression in the scanner fails the check. The golden is
+% the conformance baseline; regenerate it with the command above only
+% when the binary-token encoding semantics legitimately change.
 
 % SCRATCH must be defined by the caller (a writable scratch path)
 
@@ -191,9 +191,8 @@
 (bseq null nonzero) <8001000C 00000000 00000001> case
 (bseq mark)         <8001000C 0A000000 00000000> case
 (bseq bool)         <8001000C 04000000 00000001> case
-% a boolean record value other than 0 or 1 is outside the encoding;
-% the reference implementation's response is not meaningful, so the
-% corner stays unprobed
+% a boolean record value other than 0 or 1 is outside the encoding,
+% so the corner stays unprobed
 (bseq real ieee be) <8001000C 02000000 3F800000> case
 (bseq int le)       <8101 0C00 01000000 05000000> case
 (bseq real native le-host) <8301 0C00 02000000 0000803F> case
