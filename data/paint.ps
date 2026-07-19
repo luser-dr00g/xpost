@@ -175,162 +175,139 @@
     } ifelse
 } bind def
 
-% Sample collectors: normalize the packed source data to one byte per
-% sample in buf. Samples pack high-order first within each byte, and
-% every row of samples begins on a byte boundary (PLRM 4.10), so a
-% sub-byte depth walks each byte's groups from the top and drops the
-% pad bits once a row's samples are down. The procedures run inside
-% .imagepaint's dictionary, where width, ncomp, buf, bz, bp and the
-% row counters rowsamples and rs are defined.
+% Row machinery: image data arrives from datasrc in arbitrary
+% chunks; .fill assembles exact raw rows and .rownorm unpacks a
+% row's samples to one byte per sample. Samples pack high-order
+% first within each byte, and every row of samples begins on a byte
+% boundary (PLRM 4.10), so a sub-byte depth unpacks per row and the
+% pad bits fall off with the row's tail. Both run inside a
+% dictionary holding datasrc, pend, rawrow, buf, bits and
+% rowsamples; rows keep the raster within the string size limit
+% however large the image.
 
-% v  .nib12  -
-% one nibble of a 12-bit sample stream: accumulate three into a
-% sample and keep its high byte (the buffer holds a byte per sample).
-% Runs inside .imagepaint's dictionary, which holds the accumulator
-% nib12a and nibble count nib12n.
-/.nib12 {
-    rs rowsamples lt bp bz lt and {
-        nib12a 4 bitshift or /nib12a exch def
-        nib12n 2 eq {
-            buf bp nib12a -4 bitshift put
-            /bp bp 1 add def
-            /rs rs 1 add def
-            /nib12n 0 def
-            /nib12a 0 def
-        }{
-            /nib12n nib12n 1 add def
-        } ifelse
-    }{ pop } ifelse
+% -  .fill  -
+% assemble the next raw row into rawrow from the source's chunks,
+% carrying any surplus in pend; a dry source leaves the tail zeroed
+/.fill {
+    /got 0 def
+    {
+        got rawrow length ge { exit } if
+        pend length 0 eq { /pend datasrc def } if
+        pend length 0 eq {
+            got 1 rawrow length 1 sub { rawrow exch 0 put } for
+            exit
+        } if
+        /take pend length rawrow length got sub
+              2 copy gt { exch } if pop def
+        rawrow got pend 0 take getinterval putinterval
+        /pend pend take pend length take sub getinterval def
+        /got got take add def
+    } loop
 } def
 
-/bitsdict <<
-    1 {
-        {
-            bp bz ge {exit} if
-            datasrc
-            dup length 0 eq {pop exit} if
-            { % char
-                7 -1 0 { % char i
-                    rs rowsamples lt bp bz lt and {
-                        2 copy neg bitshift 1 and 255 mul
-                        buf exch bp exch put
-                        /bp bp 1 add def
-                        /rs rs 1 add def
-                    } if
-                    pop
-                } for
-                pop
-                rs rowsamples ge { /rs 0 def } if
-            } forall
-        } loop
-    }
-    2 {
-        {
-            bp bz ge {exit} if
-            datasrc
-            dup length 0 eq {pop exit} if
-            { % char
-                6 -2 0 { % char i
-                    rs rowsamples lt bp bz lt and {
-                        2 copy neg bitshift 3 and 85 mul
-                        buf exch bp exch put
-                        /bp bp 1 add def
-                        /rs rs 1 add def
-                    } if
-                    pop
-                } for
-                pop
-                rs rowsamples ge { /rs 0 def } if
-            } forall
-        } loop
-    }
-    4 {
-        {
-            bp bz ge {exit} if
-            datasrc
-            dup length 0 eq {pop exit} if
-            { % char
-                4 -4 0 { % char i
-                    rs rowsamples lt bp bz lt and {
-                        2 copy neg bitshift 15 and 17 mul
-                        buf exch bp exch put
-                        /bp bp 1 add def
-                        /rs rs 1 add def
-                    } if
-                    pop
-                } for
-                pop
-                rs rowsamples ge { /rs 0 def } if
-            } forall
-        } loop
-    }
-    8 {
-        {
-            bp bz ge {exit} if
-            datasrc
-            dup length 0 eq {pop exit} if
-            dup length bp add bz gt {
-                0 bz bp sub getinterval
-            } if
-            buf exch bp exch
-            dup length bp add /bp exch def
-            putinterval
-        } loop
-    }
-    12 {
-        {
-            bp bz ge {exit} if
-            datasrc
-            dup length 0 eq {pop exit} if
-            { % char: two nibbles, high first
-                dup -4 bitshift .nib12
-                15 and .nib12
-                % a full row ends on a byte boundary: any partial
-                % sample still accumulated is padding
-                rs rowsamples ge {
-                    /rs 0 def
-                    /nib12n 0 def
-                    /nib12a 0 def
-                } if
-            } forall
-        } loop
-    }
->> def
+% -  .rownorm  -
+% unpack rawrow's rowsamples samples at depth bits into buf, one
+% byte per sample: sub-byte depths spread to the byte range, twelve
+% bits keep their high byte
+/.rownorm {
+    bits 8 eq {
+        buf 0 rawrow putinterval
+    }{ bits 1 eq {
+        0 1 rowsamples 1 sub { /s exch def
+            buf s
+            rawrow s 8 idiv get 7 s 7 and sub neg bitshift 1 and 255 mul
+            put
+        } for
+    }{ bits 2 eq {
+        0 1 rowsamples 1 sub { /s exch def
+            buf s
+            rawrow s 4 idiv get 3 s 3 and sub 2 mul neg bitshift 3 and 85 mul
+            put
+        } for
+    }{ bits 4 eq {
+        0 1 rowsamples 1 sub { /s exch def
+            buf s
+            rawrow s 2 idiv get s 1 and 0 eq { -4 bitshift }{ 15 and } ifelse
+            17 mul
+            put
+        } for
+    }{
+        % twelve bits: an even sample owns a byte and the next
+        % nibble, an odd one the low nibble and the next byte
+        0 1 rowsamples 1 sub { /s exch def
+            /k s 3 mul 2 idiv def
+            buf s
+            s 1 and 0 eq {
+                rawrow k get
+            }{
+                rawrow k get 15 and 4 bitshift
+                rawrow k 1 add get -4 bitshift or
+            } ifelse
+            put
+        } for
+    } ifelse } ifelse } ifelse } ifelse
+} def
 
 % src  .imgsource  proc
 % normalize an image data source: a file becomes a chunk-reading
 % procedure, a string a procedure delivering it, a procedure passes
 % through unchanged
 /.imgsource {
+    dup type /arraytype eq 1 index xcheck not and {
+        % a literal array carries one source per component
+        [ exch { .imgsource } forall ]
+    }{
     dup type /filetype eq {
         [ exch 4096 string /readstring cvx /pop cvx ] cvx
     }{
         dup type /stringtype eq {
             [ exch ] cvx
         } if
-    } ifelse
+    } ifelse } ifelse
 } def
 
-% width height bits mat datasrc decode ncomp  .imagepaint  -
+% c  .sampleat  value
+% one normalized component of the pixel in hand, from its plane's
+% row buffer or the interleaved one
+/.sampleat {
+    multi { bufs exch get x get }{ base add buf exch get } ifelse
+} def
+
+% width height bits mat datasrc decode ncomp mbits mranges  .imagepaintm  -
 % the shared image painter: the collectors normalize every sample
 % depth to one byte, so each pixel reads ncomp bytes, maps each
 % through its Decode range, and delivers the components to setcolor
-% in the current colour space
-/.imagepaint {
+% in the current colour space. Two masking controls, null when
+% unused: mbits is a string of one bit per pixel in byte-padded row
+% order (a set bit leaves the pixel unpainted), and mranges an array
+% of min,max pairs of normalized sample values (a pixel whose every
+% raw component falls within its pair is left unpainted)
+/.imagepaintm {
     gsave
         newpath
-        16 dict begin
-        {ncomp decode datasrc mat bits height width}{exch def}forall
+        24 dict begin
+        {mranges mbits ncomp decode datasrc mat bits height width}{exch def}forall
 
-        /bz width height mul ncomp mul def
-        /buf bz string def
-        /bp 0 def
-        /rowsamples width ncomp mul def
-        /rs 0 def
-        /nib12n 0 def
-        /nib12a 0 def
-
-        bitsdict bits get exec
+        % a literal array of sources delivers each component from its
+        % own plane; a single source interleaves them. The source is
+        % loaded through the dictionary, never by name: an executable
+        % array is a procedure and a bare lookup would run it.
+        /multi currentdict /datasrc get
+               dup type /arraytype eq exch xcheck not and def
+        multi {
+            /rowsamples width def
+            /prb width bits mul 7 add 8 idiv def
+            /srcs currentdict /datasrc get def
+            /rawrows [ ncomp { prb string } repeat ] def
+            /bufs [ ncomp { width string } repeat ] def
+            /pends [ ncomp { () } repeat ] def
+        }{
+            /rowsamples width ncomp mul def
+            /rawrow rowsamples bits mul 7 add 8 idiv string def
+            /buf rowsamples string def
+            /pend () def
+        } ifelse
+        /mrow width 7 add 8 idiv def
 
         % per-component decode as base + sample x scale over 0..255
         /dbase ncomp array def
@@ -346,13 +323,43 @@
         % shared matrix per glyph is the classic case)
         mat matrix invertmatrix concat
         0 1 height 1 sub { /y exch def
-            0 1 width 1 sub { /x exch def
-                /base y width mul x add ncomp mul def
+            multi {
                 0 1 ncomp 1 sub { /c exch def
-                    buf base c add get dscale c get mul dbase c get add
+                    /datasrc srcs c get def
+                    /pend pends c get def
+                    /rawrow rawrows c get def
+                    /buf bufs c get def
+                    .fill .rownorm
+                    pends c pend put
                 } for
-                setcolor
-                x y 1 1 rectfill
+            }{
+                .fill .rownorm
+            } ifelse
+            0 1 width 1 sub { /x exch def
+                /base x ncomp mul def
+                /paintit true def
+                mbits null ne {
+                    mbits y mrow mul x 8 idiv add get
+                    7 x 7 and sub neg bitshift 1 and 1 eq
+                    { /paintit false def } if
+                } if
+                paintit mranges null ne and {
+                    /inrange true def
+                    0 1 ncomp 1 sub { /c exch def
+                        c .sampleat
+                        dup mranges c 2 mul get lt
+                        exch mranges c 2 mul 1 add get gt or
+                        { /inrange false def } if
+                    } for
+                    inrange { /paintit false def } if
+                } if
+                paintit {
+                    0 1 ncomp 1 sub { /c exch def
+                        c .sampleat dscale c get mul dbase c get add
+                    } for
+                    setcolor
+                    x y 1 1 rectfill
+                } if
             } for
         } for
 
@@ -360,24 +367,206 @@
     grestore
 } def
 
+/.imagepaint {
+    null null .imagepaintm
+} def
+
+% raw bits  .mcscale  normalized
+% scale a raw sample value as the collectors scale samples to bytes
+/.mcscale {
+    dup 12 eq { pop -4 bitshift }{
+    dup 8 eq { pop }{
+    dup 4 eq { pop 17 mul }{
+    2 eq { 85 mul }{ 255 mul } ifelse } ifelse } ifelse } ifelse
+} def
+
+% imagedict  .imagetype4  -
+% colour-key masking: a pixel whose every raw component falls within
+% the MaskColor ranges leaves the page untouched. MaskColor holds one
+% value per component (an exact colour) or min,max pairs.
+/.imagetype4 {
+    6 dict begin
+    /d exch def
+    /itbits d /BitsPerComponent get def
+    /itn .ncomponents def
+    /itrange [
+        d /MaskColor get length itn eq {
+            d /MaskColor get { itbits .mcscale dup } forall
+        }{
+            d /MaskColor get { itbits .mcscale } forall
+        } ifelse
+    ] def
+    d /Width get d /Height get itbits d /ImageMatrix get
+    d /DataSource get .imgsource
+    d /Decode get
+    itn null itrange
+    end
+    .imagepaintm
+} def
+
+% imagedict  .imagetype3  -
+% explicit masking: MaskDict describes a one-bit-deep stencil over
+% the same image space as DataDict's samples; a mask value decoding
+% to 1 leaves the pixel unpainted. The three interleaves place the
+% mask sample-by-sample in the one stream (1, at the image depth),
+% row-by-row in the one stream (2), or in MaskDict's own DataSource
+% (3), where the mask's grid may differ from the image's.
+/.it1row { % statedict  .it1row  datarow
+    begin
+    .fill .rownorm
+    0 1 iw 1 sub { /i exch def
+        /mv buf i nc 1 add mul get def
+        iminv { /mv 255 mv sub def } if
+        mv 127 gt {
+            imbits iy imrow mul i 8 idiv add 2 copy get
+            128 i 7 and neg bitshift or put
+        } if
+        drow i nc mul buf i nc 1 add mul 1 add nc getinterval putinterval
+    } for
+    /iy iy 1 add def
+    drow
+    end
+} def
+
+/.it2row { % statedict  .it2row  datarow
+    begin
+    /rawrow mraw def .fill
+    iminv {
+        0 1 mraw length 1 sub { /k exch def
+            imbits iy imrow mul k add mraw k get 255 xor put
+        } for
+    }{
+        imbits iy imrow mul mraw putinterval
+    } ifelse
+    /rawrow draw def .fill
+    /iy iy 1 add def
+    draw
+    end
+} def
+
+/.imagetype3 {
+    20 dict begin
+    /d exch def
+    /md d /MaskDict get def
+    /dd d /DataDict get def
+    /il d /InterleaveType get def
+    /w dd /Width get def
+    /h dd /Height get def
+    /bpc dd /BitsPerComponent get def
+    /n .ncomponents def
+    /mw md /Width get def
+    /mh md /Height get def
+    /minv md /Decode 2 copy known { get }{ pop pop [0 1] } ifelse
+           0 get 1 eq def
+    /mrow w 7 add 8 idiv def
+    /mbits mrow h mul string def
+    il 1 eq {
+        % one stream, a mask sample at the image depth before each
+        % pixel's components: a row procedure de-interleaves as the
+        % painter pulls, filing each mask row and yielding the data
+        % row normalized (the painter reads it at eight bits)
+        /st 16 dict def
+        st begin
+            /datasrc dd /DataSource get .imgsource def
+            /pend () def
+            /bits bpc def
+            /rowsamples w n 1 add mul def
+            /rawrow rowsamples bpc mul 7 add 8 idiv string def
+            /buf rowsamples string def
+            /drow w n mul string def
+            /iw w def /nc n def /imrow mrow def
+            /imbits mbits def /iminv minv def
+            /iy 0 def
+        end
+        w h 8 dd /ImageMatrix get
+        [ st /.it1row cvx ] cvx
+        dd /Decode get n
+        mbits null
+    }{ il 2 eq {
+        % one stream, a byte-aligned one-bit mask row before each
+        % byte-aligned image row: the row procedure files the mask
+        % row and yields the raw image row
+        /st 12 dict def
+        st begin
+            /datasrc dd /DataSource get .imgsource def
+            /pend () def
+            /mraw mrow string def
+            /draw w n mul bpc mul 7 add 8 idiv string def
+            /imrow mrow def
+            /imbits mbits def /iminv minv def
+            /iy 0 def
+        end
+        w h bpc dd /ImageMatrix get
+        [ st /.it2row cvx ] cvx
+        dd /Decode get n
+        mbits null
+    }{
+        % separate streams: read the whole one-bit mask up front,
+        % then map its grid over the image's when the two differ
+        /mrb mw 7 add 8 idiv def
+        /mall mrb mh mul string def
+        /datasrc md /DataSource get .imgsource def
+        /pend () def
+        /rawrow mrb string def
+        0 1 mh 1 sub { /my exch def
+            .fill
+            mall my mrb mul rawrow putinterval
+        } for
+        mw w eq mh h eq and {
+            minv {
+                0 1 mall length 1 sub { /k exch def
+                    mbits k mall k get 255 xor put
+                } for
+            }{
+                mbits 0 mall putinterval
+            } ifelse
+        }{
+            0 1 h 1 sub { /y exch def
+                /sy y mh mul h idiv def
+                0 1 w 1 sub { /x exch def
+                    /sx x mw mul w idiv def
+                    mall sy mrb mul sx 8 idiv add get
+                    7 sx 7 and sub neg bitshift 1 and 1 eq
+                    minv { not } if {
+                        mbits y mrow mul x 8 idiv add 2 copy get
+                        128 x 7 and neg bitshift or put
+                    } if
+                } for
+            } for
+        } ifelse
+        w h bpc dd /ImageMatrix get
+        dd /DataSource get .imgsource
+        dd /Decode get n
+        mbits null
+    } ifelse } ifelse
+    end
+    .imagepaintm
+} def
+
 % width height bits/sample matrix datasrc  image  -
 %                                imagedict  image  -
-% The five-operand form paints grey samples; the dictionary form
-% (ImageType 1, a single DataSource) paints samples in the colour
-% space current when image is invoked
+% The five-operand form paints grey samples; the dictionary forms
+% paint samples in the colour space current when image is invoked:
+% ImageType 1 plainly, 3 under an explicit mask, 4 under colour-key
+% masking
 /image {
     dup type /dicttype eq {
-        begin
-        ImageType 1 ne { end /image cvx /rangecheck signalerror } if
-        currentdict /MultipleDataSources known
-            { MultipleDataSources }{ false } ifelse {
-            end /image cvx /typecheck signalerror
-        } if
-        Width Height BitsPerComponent ImageMatrix
-        DataSource .imgsource
-        Decode
-        end
-        .ncomponents .imagepaint
+        dup /ImageType get
+        dup 1 eq {
+            pop
+            begin
+            Width Height BitsPerComponent ImageMatrix
+            DataSource .imgsource
+            Decode
+            end
+            .ncomponents .imagepaint
+        }{ dup 3 eq {
+            pop .imagetype3
+        }{ 4 eq {
+            .imagetype4
+        }{
+            pop /image cvx /rangecheck signalerror
+        } ifelse } ifelse } ifelse
     }{
         gsave
         /DeviceGray setcolorspace
@@ -398,19 +587,26 @@
     4 [ 0 1 0 1 0 1 0 1 ]
 >> def
 /colorimage {
-    exch {
-        /colorimage cvx /typecheck signalerror
+    4 dict begin
+    /nc exch def
+    /msrc exch def
+    nc //.identdecode exch known not {
+        end /colorimage cvx /rangecheck signalerror
     } if
-    dup //.identdecode exch known not {
-        /colorimage cvx /rangecheck signalerror
-    } if
+    msrc {
+        % gather the per-component sources into one literal array
+        /srcs nc array def
+        nc 1 sub -1 0 { srcs exch 3 -1 roll .imgsource put } for
+    }{
+        /srcs exch .imgsource def
+    } ifelse
     gsave
-    dup 4 eq { /DeviceCMYK }{
-    dup 3 eq { /DeviceRGB }{ /DeviceGray } ifelse } ifelse
+    nc 4 eq { /DeviceCMYK }{
+    nc 3 eq { /DeviceRGB }{ /DeviceGray } ifelse } ifelse
     setcolorspace
-    exch .imgsource exch
-    //.identdecode 1 index get exch
-    .imagepaint
+    srcs //.identdecode nc get nc
+    end
+    null null .imagepaintm
     grestore
 } def
 

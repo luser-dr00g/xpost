@@ -412,9 +412,13 @@ gsave
 grestore
 18 30 inkat (a one-component colorimage paints grey samples) assert
 42 30 inkat not (a one-component colorimage passes white) assert
-{ 2 1 8 [2 0 0 -1 0 1] <00> <00> <00> true 3 colorimage } stopped
-(one source per component is refused) assert
-$error /newerror false put clear newpath
+erasepage
+gsave
+10 10 translate 40 40 scale
+2 1 8 [2 0 0 -1 0 1] <00FF> <00FF> <00FF> true 3 colorimage
+grestore
+18 30 inkat (a plane-per-component colorimage paints its black sample) assert
+42 30 inkat not (a plane-per-component colorimage passes white) assert
 
 % dict image samples arrive in the colour space current at the call
 erasepage
@@ -427,6 +431,67 @@ gsave
 grestore
 14 30 inkat (an RGB dictionary image paints in the current space) assert
 46 30 inkat not (an RGB dictionary image passes white through) assert
+
+% MultipleDataSources delivers each component from its own plane
+erasepage
+gsave
+10 10 translate 40 40 scale
+/DeviceRGB setcolorspace
+<< /ImageType 1 /Width 2 /Height 1 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -1 0 1] /Decode [0 1 0 1 0 1]
+   /MultipleDataSources true
+   /DataSource [ <00FF> <00FF> <00FF> ] >> image
+grestore
+18 30 inkat (planar sources assemble each pixel) assert
+42 30 inkat not (planar sources pass white through) assert
+
+% ImageType 3: an explicit one-bit mask keeps pixels unpainted; a
+% Decode of [1 0] inverts its sense
+erasepage
+gsave
+10 10 translate 40 40 scale
+/DeviceRGB setcolorspace
+<< /ImageType 3 /InterleaveType 3
+   /DataDict << /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8
+      /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1 0 1 0 1]
+      /DataSource <000000000000000000000000> >>
+   /MaskDict << /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 1
+      /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1]
+      /DataSource <4000> >>
+>> image
+grestore
+20 40 inkat (an unmasked pixel paints) assert
+40 40 inkat not (a set mask bit keeps its pixel unpainted) assert
+20 20 inkat (the second mask row paints its left pixel) assert
+40 20 inkat (the second mask row paints its right pixel) assert
+erasepage
+gsave
+10 10 translate 40 40 scale
+/DeviceRGB setcolorspace
+<< /ImageType 3 /InterleaveType 1
+   /DataDict << /ImageType 1 /Width 2 /Height 1 /BitsPerComponent 8
+      /ImageMatrix [2 0 0 -1 0 1] /Decode [0 1 0 1 0 1]
+      /DataSource <00000000FF000000> >>
+   /MaskDict << /ImageType 1 /Width 2 /Height 1 /BitsPerComponent 8
+      /ImageMatrix [2 0 0 -1 0 1] /Decode [1 0]
+      /DataSource null >>
+>> image
+grestore
+18 30 inkat not (interleaved mask samples mask under an inverted Decode) assert
+42 30 inkat (an interleaved full mask sample paints under an inverted Decode) assert
+
+% ImageType 4: pixels of the key colour leave the page untouched
+erasepage
+gsave
+10 10 translate 40 40 scale
+/DeviceRGB setcolorspace
+<< /ImageType 4 /Width 2 /Height 1 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -1 0 1] /Decode [0 1 0 1 0 1]
+   /MaskColor [ 0 0 0 ]
+   /DataSource <000000404040> >> image
+grestore
+18 30 inkat not (the key colour is not painted) assert
+42 30 inkat (other pixels paint normally) assert
 
 % DCTDecode inflates a JPEG stream into image samples, layered over
 % the hexadecimal filter here as producers layer it over ASCII85; the

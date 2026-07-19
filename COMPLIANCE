@@ -253,15 +253,16 @@ Level 2 operators
  [X] yshow
  [X] xyshow
  [X] glyphshow
- [/] colorimage (one data source per component unsupported)
- [/] image with dict argument (ImageType 1 only; MultipleDataSources
-     and Interpolate unsupported)
+ [X] colorimage
+ [/] image with dict argument (ImageTypes 1, 3 and 4; Interpolate
+     unsupported)
  [X] imagemask with dict argument
  [X] setcolortransfer (recorded; painting applies the grey transfer)
  [X] currentcolortransfer
  [X] Named Resources
  [/] filter (decode filters only: ASCIIHex, ASCII85, SubFile,
-     RunLength, Flate, DCT; no encode filters, no LZW or CCITTFax)
+     RunLength, Flate, DCT, ReusableStream; no encode filters, no LZW
+     or CCITTFax)
 
 Display Postscript
 ------------------
