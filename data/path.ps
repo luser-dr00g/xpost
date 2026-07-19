@@ -425,13 +425,14 @@ bind def
     3 1 roll sin mul     % rad*cos(ang) rad*sin(ang)
 } bind def
 
-% The stroke outline is constructed in device coordinates (strokepath
-% switches to the identity matrix), so its width is the line width as
-% transformed by the CTM. strokepath stashes that while the CTM is
-% still live; clamp to one pixel so thin strokes stay visible.
+% The stroke outline is constructed in user coordinates and mapped to
+% the device by the live CTM, so a circular pen becomes the correct
+% ellipse under an anisotropic matrix. The pen diameter is the user
+% line width; a zero width is the thinnest renderable line, taken as
+% one device pixel carried back to user space.
 /minlinewidth {
-    strokedict /devlinewidth get
-    dup 1 lt { pop 1 } if
+    currentlinewidth
+    dup 0 le { pop 1 0 idtransform dup mul exch dup mul add sqrt } if
 } bind def
 
 /dolinejoin { % RR|LL R|L C
@@ -520,8 +521,9 @@ bind def
 %                 1  4
 %           point RR  point LL
 % "switch" actions (indexed by .pathnext command code); handlers
-% receive device coordinates, and strokepath runs under the identity
-% matrix so the user-space construction operators append them unchanged
+% receive user coordinates and append the outline with the user-space
+% construction operators, so the live CTM maps the circular pen to the
+% device as the correct (possibly elliptical) shape
 /strokedict <<
     /ang 0
     /oldcp 2 array
@@ -738,12 +740,6 @@ bind def
 /strokepath {
     flattenpath          % convert all curve segments to line approximations
     dashpath             % apply dashing effect
-    strokedict /devlinewidth    % device-space width, while the CTM is live
-        currentlinewidth 0 dtransform
-        dup mul exch dup mul add sqrt
-    put
-    matrix currentmatrix % stash matrix on stack
-    matrix setmatrix     % use identity matrix
     strokedict /needcap false put
     .pathempty not {
         10 dict begin
@@ -753,13 +749,16 @@ bind def
         { % loop
             str off .pathnext not { exit } if % coords... cmd nextoff
             /off exch def                     % coords... cmd
+            % the path holds device coordinates; the outline is built
+            % in user space, so a move or line's point is carried back
+            % through the CTM before the handler sees it
+            dup 2 lt { 3 1 roll itransform 3 -1 roll } if
             strokedict exch get exec
         } loop
         % the path ran out with a subpath still open: its caps are owed
         strokedict /docaps get exec
         end
     } if
-    setmatrix           % restore stashed matrix
 } bind def
 
 /clippath {

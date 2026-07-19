@@ -595,6 +595,31 @@ newpath 5 5 moveto 20 12.5 lineto stroke
 grestore
 25 17.5 inknear (a scaled diagonal stroke marks pixels) assert
 
+% --- an anisotropic CTM makes the pen an ellipse ---
+% under 4x horizontal, 1x vertical, a width-2 stroke is 8 device
+% pixels wide on a vertical run and 2 on a horizontal run
+erasepage
+gsave
+4 1 scale
+2 setlinewidth 0 setlinecap
+newpath 8 8 moveto 8 40 lineto stroke
+grestore
+% the vertical stroke sits at device x=32; its half-width is 4 px, so
+% it fills columns 28..35 (the high edge is exclusive)
+28 24 inkat (an anisotropic vertical stroke is wide) assert
+35 24 inkat (the wide side reaches four pixels out) assert
+36 24 inkat not (but no wider than the transformed pen) assert
+erasepage
+gsave
+4 1 scale
+2 setlinewidth 0 setlinecap
+newpath 4 20 moveto 12 20 lineto stroke
+grestore
+% the horizontal stroke keeps its thin one-pixel half-width in y
+32 20 inkat (an anisotropic horizontal stroke marks its row) assert
+32 22 inkat not (the thin side stays within one pixel) assert
+32 18 inkat not (the thin side stays within one pixel below) assert
+
 % --- text rendering: sharp threshold by default, coverage blending
 %     under TextAlphaBits, /Encoding vectors honored, Type 42 font
 %     programs accepted by definefont. All skipped when no host font
