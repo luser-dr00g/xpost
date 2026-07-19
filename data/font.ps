@@ -583,6 +583,44 @@
     } ifelse
 } def
 
+% key  undefinefont  -
+/undefinefont {
+    FontDirectory exch undef
+} def
+
+% the font directory serves both VM views
+/GlobalFontDirectory FontDirectory def
+/SharedFontDirectory FontDirectory def
+
+% key  findencoding  encoding
+/findencoding { /Encoding findresource } def
+
+% the show machinery rebinds the current font while it works through
+% a composite; rootfont answers with the font the program set
+/.rootsetfont /setfont load def
+/setfont {
+    dup graphicsdict /currgstate get /rootfont 3 -1 roll put
+    .rootsetfont
+} def
+/rootfont {
+    graphicsdict /currgstate get /rootfont 2 copy known
+        { get }{ pop pop currentfont } ifelse
+} def
+
+% the wider glyph metrics reduce to the horizontal ones
+/setcachedevice2 {
+    pop pop pop pop setcachedevice
+} def
+
+% the glyph cache the language describes is not a resource under
+% program control here: the status answers are nominal
+/cachestatus { 0 32768 0 4096 0 512 32768 } def
+/setcachelimit { pop } def
+/setcacheparams { cleartomark } def
+/currentcacheparams { mark 32768 4 32768 } def
+/setucacheparams { cleartomark } def
+/ucachestatus { mark 0 32768 0 4096 32768 } def
+
 % the required instances of the Encoding resource category, copied
 % into global VM where the instance tables live
 currentglobal true setglobal

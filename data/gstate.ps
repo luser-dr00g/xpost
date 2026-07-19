@@ -262,6 +262,32 @@ end
     graphicsdict /currgstate get /colorrendering get
 } def
 
+% string  findcolorrendering  name bool
+% one rendering serves every condition: the default instance
+/findcolorrendering { pop /DefaultColorRendering true } def
+currentglobal true setglobal
+/DefaultColorRendering 0 dict dup /ColorRenderingType 1 put
+/ColorRendering defineresource pop
+setglobal
+
+% flag  setstrokeadjust  -   (recorded only)
+/setstrokeadjust {
+    graphicsdict /currgstate get exch /strokeadjust exch put
+} def
+/currentstrokeadjust {
+    graphicsdict /currgstate get /strokeadjust 2 copy known
+        { get }{ pop pop false } ifelse
+} def
+
+% num  setsmoothness  -   (recorded only)
+/setsmoothness {
+    graphicsdict /currgstate get exch /smoothness exch put
+} def
+/currentsmoothness {
+    graphicsdict /currgstate get /smoothness 2 copy known
+        { get }{ pop pop 0.02 } ifelse
+} def
+
 % redproc greenproc blueproc grayproc  setcolortransfer  -
 % record one transfer procedure per component; the grey channel
 % shares its slot with settransfer, and is the one painting applies

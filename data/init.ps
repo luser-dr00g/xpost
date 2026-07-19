@@ -28,6 +28,22 @@ serverdict /exitserver {
     currentdict serverdict eq { end } if
 } put
 
+% bool password  startjob  bool
+% job boundaries are accepted -- definitions persist either way,
+% as xpost runs jobs unencapsulated
+/startjob { pop pop true } def
+
+% the interpreter answers for the whole language
+/languagelevel 3 def
+
+/setvmthreshold { pop } def
+
+% the shared-VM view of global VM, one and the same here
+/setshared /setglobal load def
+/currentshared /currentglobal load def
+/scheck /gcheck load def
+/shareddict globaldict def
+
 /strcat {
     2 copy
     length exch length exch 1 index add % a b an bn+an

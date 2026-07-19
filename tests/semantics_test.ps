@@ -364,6 +364,30 @@ count st.c0 eq (a cached stencil leaves the stack clean) assert
 { 0 internaldict } stopped (a wrong password is refused) assert
 $error /newerror false put clear
 
+% --- the language answers for itself ---
+languagelevel 3 eq (languagelevel names the level) assert
+false (pw) startjob (startjob accepts a job boundary) assert
+currentshared currentglobal eq (shared and global VM are one view) assert
+42 scheck (scheck follows gcheck) assert
+shareddict globaldict eq (shareddict is the global dictionary) assert
+/st.uf << /FontType 3 /FontMatrix [1 0 0 1 0 0] /Encoding 256 array
+    /BuildChar { pop pop } /FontBBox [0 0 1 1] >> definefont pop
+/st.uf undefinefont
+FontDirectory /st.uf known not (undefinefont removes the instance) assert
+/StandardEncoding findencoding length 256 eq
+(findencoding resolves through the Encoding category) assert
+(any) findcolorrendering exch /DefaultColorRendering eq and
+(findcolorrendering names the default instance) assert
+true setstrokeadjust currentstrokeadjust (stroke adjustment is recorded) assert
+false setstrokeadjust
+0.5 setsmoothness currentsmoothness 0.5 eq (smoothness is recorded) assert
+count /st.cd exch def
+cachestatus
+count st.cd sub 7 eq (cachestatus reports seven values) assert
+7 { pop } repeat
+/Courier findfont dup setfont
+rootfont eq (rootfont answers with the font the program set) assert
+
 % --- the job server accepts exitserver ---
 countdictstack
 { serverdict begin 0 exitserver } stopped not
