@@ -93,14 +93,23 @@
     } ifelse
 } def
 
-% -  .clipbig  r
-% a radius that covers the clip region from any point inside it
+% x y  .clipbig  r
+% a radius from the given point that covers the whole clip region:
+% the farthest corner of the region's box, plus a margin
 /.clipbig {
+    6 dict begin
+    /py exch def /px exch def
     gsave clippath flattenpath pathbbox grestore
-    3 -1 roll sub abs
-    3 1 roll sub abs
-    2 copy gt { exch } if pop
-    2 mul 1 add
+    /y1 exch def /x1 exch def /y0 exch def /x0 exch def
+    x0 px sub dup mul y0 py sub dup mul add sqrt
+    x0 px sub dup mul y1 py sub dup mul add sqrt
+    2 copy lt { exch } if pop
+    x1 px sub dup mul y0 py sub dup mul add sqrt
+    2 copy lt { exch } if pop
+    x1 px sub dup mul y1 py sub dup mul add sqrt
+    2 copy lt { exch } if pop
+    1 add
+    end
 } def
 
 % shdict  .axialsh  -
@@ -130,7 +139,7 @@
     /uy dy ax div def
     /px uy neg def
     /py ux def
-    /big .clipbig def
+    /big x0 y0 .clipbig def
     /band { % sa sb  (fractions of the axis)  .band  -
         6 dict begin
         /sb exch def /sa exch def
@@ -188,7 +197,8 @@
     ex inout { 1 }{ 0 } ifelse get {
         inout { t1 }{ t0 } ifelse .shcolor
         newpath
-        inout { cx1 cy1 }{ cx0 cy0 } ifelse .clipbig 0 360 arc fill
+        inout { cx1 cy1 }{ cx0 cy0 } ifelse
+        2 copy .clipbig 0 360 arc fill
     } if
     % paint from the larger circle to the smaller
     nb -1 0 { /i exch def
