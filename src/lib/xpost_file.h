@@ -194,6 +194,13 @@ Xpost_Object xpost_file_cons_filter_dct(Xpost_Memory_File *mem, Xpost_Object src
 Xpost_Object xpost_file_cons_filter_rsd(Xpost_Memory_File *mem, Xpost_Object src);
 Xpost_Object xpost_file_cons_filter_lzw(Xpost_Memory_File *mem, Xpost_Object src, int early);
 Xpost_Object xpost_file_cons_filter_ccitt(Xpost_Memory_File *mem, Xpost_Object src, int k, int columns, int rows, int blackis1, int byteal, int eol, int eob);
+Xpost_Object xpost_file_cons_filter_enc_null(Xpost_Memory_File *mem, Xpost_Object tgt);
+Xpost_Object xpost_file_cons_filter_enc_hex(Xpost_Memory_File *mem, Xpost_Object tgt);
+Xpost_Object xpost_file_cons_filter_enc_a85(Xpost_Memory_File *mem, Xpost_Object tgt);
+Xpost_Object xpost_file_cons_filter_enc_rle(Xpost_Memory_File *mem, Xpost_Object tgt, int recsize);
+Xpost_Object xpost_file_cons_filter_enc_flate(Xpost_Memory_File *mem, Xpost_Object tgt);
+Xpost_Object xpost_file_cons_filter_enc_lzw(Xpost_Memory_File *mem, Xpost_Object tgt, int early);
+Xpost_Object xpost_file_cons_filter_enc_ccitt(Xpost_Memory_File *mem, Xpost_Object tgt, int k, int columns, int rows, int blackis1, int byteal, int eol, int eob);
 
 /**
  * @brief The single path-to-stream opener for disk-backed files.

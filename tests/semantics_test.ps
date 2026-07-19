@@ -259,6 +259,65 @@ currentfile /ASCIIHexDecode filter
 35645B9CDD90C0040040040040040040>
 pop <F0000F0000F0000F> eq
 (the one-dimensional coding honours BlackIs1) assert
+% --- encode filters: the write-side counterparts ---
+/st.f (semantics.scratch) (w) file def
+/st.e st.f /ASCIIHexEncode filter def
+st.e (Hello) writestring st.e closefile st.f closefile
+(semantics.scratch) (r) file 16 string readstring pop
+(48656C6C6F>) eq (ASCIIHexEncode writes hex and the closing marker) assert
+/st.f (semantics.scratch) (w) file def
+/st.e st.f /ASCII85Encode filter def
+st.e <00000000010203> writestring st.e closefile st.f closefile
+(semantics.scratch) (r) file 16 string readstring pop
+(z!<N?~>) eq (ASCII85Encode abbreviates zeros and closes the partial group) assert
+/st.f (semantics.scratch) (w) file def
+/st.e st.f 0 /RunLengthEncode filter def
+st.e (AAAABCCCCC) writestring st.e closefile st.f closefile
+(semantics.scratch) (r) file 16 string readstring pop
+<FD410042FC4380> eq (RunLengthEncode packs runs and literals) assert
+/st.f (semantics.scratch) (w) file def
+/st.e st.f 4 /RunLengthEncode filter def
+st.e (DDDDDDDD) writestring st.e closefile st.f closefile
+(semantics.scratch) (r) file 16 string readstring pop
+<FD44FD4480> eq (records bound the runs in RunLengthEncode) assert
+/st.data (the rain in spain stays mainly in the plain) def
+/st.f (semantics.scratch) (w) file def
+/st.e st.f /LZWEncode filter def
+st.e st.data writestring st.e closefile st.f closefile
+(semantics.scratch) (r) file /LZWDecode filter 64 string readstring pop
+st.data eq (LZWEncode round-trips through its decoder) assert
+[ (x) ] .flatecompress {
+    pop
+    /st.f (semantics.scratch) (w) file def
+    /st.e st.f /FlateEncode filter def
+    st.e st.data writestring st.e closefile st.f closefile
+    (semantics.scratch) (r) file /FlateDecode filter 64 string readstring pop
+    st.data eq (FlateEncode round-trips through its decoder) assert
+}{ pop } ifelse
+/st.f (semantics.scratch) (w) file def
+/st.e st.f << /K -1 /Columns 16 /Rows 4 >> /CCITTFaxEncode filter def
+st.e <0FFFF0FFFF0FFFF0> writestring st.e closefile st.f closefile
+(semantics.scratch) (r) file 16 string readstring pop
+<26AE6DCCDC90C0040040> eq
+(CCITTFaxEncode writes the two-dimensional coding) assert
+% the mixed coding types each row by a tag bit behind its
+% end-of-line marker, and round-trips behind them
+/st.f (semantics.scratch) (w) file def
+/st.e st.f << /K 2 /Columns 16 /Rows 4 /EndOfLine true >> /CCITTFaxEncode filter def
+st.e <F0F00F0FF0F00F0F> writestring st.e closefile st.f closefile
+(semantics.scratch) (r) file
+<< /K 2 /Columns 16 /Rows 4 >> /CCITTFaxDecode filter
+16 string readstring pop <F0F00F0FF0F00F0F> eq
+(the mixed coding round-trips behind its markers) assert
+% without markers a mixed row carries no tag naming its coding,
+% and the stream does not decode
+/st.f (semantics.scratch) (w) file def
+/st.e st.f << /K 2 /Columns 16 /Rows 4 >> /CCITTFaxEncode filter def
+st.e <F0F00F0FF0F00F0F> writestring st.e closefile st.f closefile
+(semantics.scratch) (r) file
+<< /K 2 /Columns 16 /Rows 4 >> /CCITTFaxDecode filter
+16 string readstring exch pop not
+(a marker-less mixed stream does not decode) assert
 
 % --- an end-of-line marker is one white-space delimiter ---
 (ab\r\ncd) token pop exch (cd) eq

@@ -109,12 +109,56 @@ int xpost_op_file_filter (Xpost_Context *ctx,
     char *cname;
     Xpost_Object f;
 
-    if (!xpost_object_is_readable(ctx, F))
-        return invalidaccess;
     namestr = xpost_name_get_string(ctx, name);
     cname = xpost_string_allocate_cstring(ctx, namestr);
     if (!cname)
         return VMerror;
+    {
+        size_t len = strlen(cname);
+
+        if (len > 6 && strcmp(cname + len - 6, "Encode") == 0)
+        {
+            if (!xpost_object_is_writeable(ctx, F))
+            {
+                free(cname);
+                return invalidaccess;
+            }
+            if (strcmp(cname, "ASCIIHexEncode") == 0)
+                f = xpost_file_cons_filter_enc_hex(ctx->lo, F);
+            else if (strcmp(cname, "ASCII85Encode") == 0)
+                f = xpost_file_cons_filter_enc_a85(ctx->lo, F);
+            else if (strcmp(cname, "NullEncode") == 0)
+                f = xpost_file_cons_filter_enc_null(ctx->lo, F);
+            else if (strcmp(cname, "RunLengthEncode") == 0)
+                f = xpost_file_cons_filter_enc_rle(ctx->lo, F, 0);
+            else if (strcmp(cname, "LZWEncode") == 0)
+                f = xpost_file_cons_filter_enc_lzw(ctx->lo, F, 1);
+            else if (strcmp(cname, "CCITTFaxEncode") == 0)
+                f = xpost_file_cons_filter_enc_ccitt(ctx->lo, F, 0, 1728, 0, 0, 0, 0, 1);
+#ifdef HAVE_ZLIB
+            else if (strcmp(cname, "FlateEncode") == 0)
+                f = xpost_file_cons_filter_enc_flate(ctx->lo, F);
+#endif
+            else
+            {
+                XPOST_LOG_ERR("unsupported filter %s", cname);
+                free(cname);
+                return undefined;
+            }
+            free(cname);
+            if (xpost_object_get_type(f) == invalidtype)
+                return ioerror;
+            f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+            f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+            xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+            return 0;
+        }
+    }
+    if (!xpost_object_is_readable(ctx, F))
+    {
+        free(cname);
+        return invalidaccess;
+    }
     if (strcmp(cname, "ASCII85Decode") == 0)
         f = xpost_file_cons_filter_a85(ctx->lo, F);
     else if (strcmp(cname, "ASCIIHexDecode") == 0)
@@ -162,6 +206,40 @@ int _dict_int (Xpost_Context *ctx, Xpost_Object dict, const char *key, int def)
     return def;
 }
 
+/* file recordsize /RunLengthEncode  filter  file'
+   records bound the runs; zero means no record structure */
+static
+int xpost_op_file_filter_int (Xpost_Context *ctx,
+                              Xpost_Object F,
+                              Xpost_Object rec,
+                              Xpost_Object name)
+{
+    Xpost_Object namestr, f;
+    char *cname;
+
+    namestr = xpost_name_get_string(ctx, name);
+    cname = xpost_string_allocate_cstring(ctx, namestr);
+    if (!cname)
+        return VMerror;
+    if (strcmp(cname, "RunLengthEncode") != 0)
+    {
+        free(cname);
+        return typecheck;
+    }
+    free(cname);
+    if (!xpost_object_is_writeable(ctx, F))
+        return invalidaccess;
+    if (rec.int_.val < 0)
+        return rangecheck;
+    f = xpost_file_cons_filter_enc_rle(ctx->lo, F, rec.int_.val);
+    if (xpost_object_get_type(f) == invalidtype)
+        return ioerror;
+    f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+    f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+    return 0;
+}
+
 /* file dict /FilterName  filter  file'
    the optional parameter dictionary form. LZWDecode reads its
    EarlyChange switch and CCITTFaxDecode its coding layout from the
@@ -179,14 +257,21 @@ int xpost_op_file_filter_dict (Xpost_Context *ctx,
 
     namestr = xpost_name_get_string(ctx, name);
     cname = xpost_string_allocate_cstring(ctx, namestr);
-    if (cname && strcmp(cname, "CCITTFaxDecode") == 0)
+    if (cname && (strcmp(cname, "CCITTFaxDecode") == 0
+               || strcmp(cname, "CCITTFaxEncode") == 0))
     {
         Xpost_Object f;
 
+        int enc = cname[8] == 'E';
+        int access = enc ? XPOST_OBJECT_TAG_ACCESS_FILE_WRITE
+                         : XPOST_OBJECT_TAG_ACCESS_FILE_READ;
+
         free(cname);
-        if (!xpost_object_is_readable(ctx, F))
+        if (enc ? !xpost_object_is_writeable(ctx, F)
+                : !xpost_object_is_readable(ctx, F))
             return invalidaccess;
-        f = xpost_file_cons_filter_ccitt(ctx->lo, F,
+        f = (enc ? xpost_file_cons_filter_enc_ccitt
+                 : xpost_file_cons_filter_ccitt)(ctx->lo, F,
                 _dict_int(ctx, dict, "K", 0),
                 _dict_int(ctx, dict, "Columns", 1728),
                 _dict_int(ctx, dict, "Rows", 0),
@@ -197,26 +282,32 @@ int xpost_op_file_filter_dict (Xpost_Context *ctx,
         if (xpost_object_get_type(f) == invalidtype)
             return ioerror;
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        f.tag |= (unsigned int)access << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET;
         xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
         return 0;
     }
-    if (cname && strcmp(cname, "LZWDecode") == 0)
+    if (cname && (strcmp(cname, "LZWDecode") == 0
+               || strcmp(cname, "LZWEncode") == 0))
     {
         Xpost_Object ec, f;
         int early = 1;
+        int enc = cname[3] == 'E';
+        int access = enc ? XPOST_OBJECT_TAG_ACCESS_FILE_WRITE
+                         : XPOST_OBJECT_TAG_ACCESS_FILE_READ;
 
         free(cname);
-        if (!xpost_object_is_readable(ctx, F))
+        if (enc ? !xpost_object_is_writeable(ctx, F)
+                : !xpost_object_is_readable(ctx, F))
             return invalidaccess;
         ec = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "EarlyChange"));
         if (xpost_object_get_type(ec) == integertype)
             early = ec.int_.val;
-        f = xpost_file_cons_filter_lzw(ctx->lo, F, early);
+        f = (enc ? xpost_file_cons_filter_enc_lzw
+                 : xpost_file_cons_filter_lzw)(ctx->lo, F, early);
         if (xpost_object_get_type(f) == invalidtype)
             return ioerror;
         f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
-        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        f.tag |= (unsigned int)access << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET;
         xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
         return 0;
     }
@@ -985,6 +1076,9 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     INSTALL;
     op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter_subfile, 1, 4,
             filetype, integertype, stringtype, nametype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "filter", (Xpost_Op_Func)xpost_op_file_filter_int, 1, 3,
+            filetype, integertype, nametype);
     INSTALL;
     op = xpost_operator_cons(ctx, "closefile", (Xpost_Op_Func)xpost_op_file_closefile, 0, 1, filetype);
     INSTALL;

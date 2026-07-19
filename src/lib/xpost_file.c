@@ -2554,6 +2554,947 @@ Xpost_Object xpost_file_cons_filter_ccitt(Xpost_Memory_File *mem,
     return _filter_object_cons(mem, &ff->methods);
 }
 
+/* Encoding filters: write-side counterparts of the decode filters.
+   Bytes pushed at the filter come out encoded on the target file;
+   closing the filter writes the coding's end-of-data marker and
+   leaves the target open. */
+
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+} Xpost_EncBase;
+
+static int
+enc_readch(Xpost_File *f)
+{
+    (void)f;
+    return EOF;
+}
+
+static int
+enc_flush(Xpost_File *f)
+{
+    Xpost_EncBase *ff = (Xpost_EncBase *)f;
+
+    return xpost_file_flush(ff->target);
+}
+
+static void
+enc_purge(Xpost_File *f)
+{
+    Xpost_EncBase *ff = (Xpost_EncBase *)f;
+
+    ff->closed = 1;
+}
+
+static int
+enc_unreadch(Xpost_File *f, int c)
+{
+    (void)f;
+    (void)c;
+    return EOF;
+}
+
+/* NullEncode: bytes pass through untouched */
+static int
+nullenc_writech(Xpost_File *f, int c)
+{
+    Xpost_EncBase *ff = (Xpost_EncBase *)f;
+
+    if (ff->closed)
+        return EOF;
+    c &= 0xff;
+    if (xpost_file_putc(ff->target, c) == EOF)
+        return EOF;
+    return c;
+}
+
+static int
+nullenc_close(Xpost_File *f)
+{
+    Xpost_EncBase *ff = (Xpost_EncBase *)f;
+
+    ff->closed = 1;
+    return 0;
+}
+
+struct Xpost_File_Methods nullenc_methods =
+{
+    enc_readch, nullenc_writech, nullenc_close, enc_flush,
+    enc_purge, enc_unreadch, filter_tell, filter_seek
+};
+
+/* ASCIIHexEncode: two hex digits per byte, a newline every
+   thirty-two bytes, '>' at the end */
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+    int col;
+} Xpost_HexEncFile;
+
+static int
+hexenc_writech(Xpost_File *f, int c)
+{
+    Xpost_HexEncFile *ff = (Xpost_HexEncFile *)f;
+    static const char digit[] = "0123456789ABCDEF";
+
+    if (ff->closed)
+        return EOF;
+    c &= 0xff;
+    if (xpost_file_putc(ff->target, digit[(c >> 4) & 15]) == EOF)
+        return EOF;
+    if (xpost_file_putc(ff->target, digit[c & 15]) == EOF)
+        return EOF;
+    if (++ff->col == 32)
+    {
+        ff->col = 0;
+        if (xpost_file_putc(ff->target, '\n') == EOF)
+            return EOF;
+    }
+    return c;
+}
+
+static int
+hexenc_close(Xpost_File *f)
+{
+    Xpost_HexEncFile *ff = (Xpost_HexEncFile *)f;
+
+    if (!ff->closed)
+    {
+        ff->closed = 1;
+        xpost_file_putc(ff->target, '>');
+    }
+    return 0;
+}
+
+struct Xpost_File_Methods hexenc_methods =
+{
+    enc_readch, hexenc_writech, hexenc_close, enc_flush,
+    enc_purge, enc_unreadch, filter_tell, filter_seek
+};
+
+/* ASCII85Encode: four bytes become five base-85 digits, an all-zero
+   group abbreviates to 'z', the trailing partial group of n bytes
+   to its first n+1 digits, and "~>" closes the stream */
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+    int col;
+    unsigned int tuple;
+    int n;
+} Xpost_A85EncFile;
+
+static int
+a85enc_putch(Xpost_A85EncFile *ff, int c)
+{
+    if (xpost_file_putc(ff->target, c) == EOF)
+        return EOF;
+    if (++ff->col == 75)
+    {
+        ff->col = 0;
+        if (xpost_file_putc(ff->target, '\n') == EOF)
+            return EOF;
+    }
+    return c;
+}
+
+static int
+a85enc_group(Xpost_A85EncFile *ff, int nbytes)
+{
+    char digits[5];
+    unsigned int tuple = ff->tuple;
+    int i;
+
+    if (nbytes == 4 && tuple == 0)
+        return a85enc_putch(ff, 'z');
+    for (i = 4; i >= 0; i--)
+    {
+        digits[i] = (char)('!' + tuple % 85);
+        tuple /= 85;
+    }
+    for (i = 0; i <= nbytes; i++)
+        if (a85enc_putch(ff, digits[i]) == EOF)
+            return EOF;
+    return 0;
+}
+
+static int
+a85enc_writech(Xpost_File *f, int c)
+{
+    Xpost_A85EncFile *ff = (Xpost_A85EncFile *)f;
+
+    if (ff->closed)
+        return EOF;
+    c &= 0xff;
+    ff->tuple = ff->tuple << 8 | (unsigned int)c;
+    if (++ff->n == 4)
+    {
+        if (a85enc_group(ff, 4) == EOF)
+            return EOF;
+        ff->tuple = 0;
+        ff->n = 0;
+    }
+    return c;
+}
+
+static int
+a85enc_close(Xpost_File *f)
+{
+    Xpost_A85EncFile *ff = (Xpost_A85EncFile *)f;
+
+    if (!ff->closed)
+    {
+        ff->closed = 1;
+        if (ff->n)
+        {
+            ff->tuple <<= 8 * (4 - ff->n);
+            a85enc_group(ff, ff->n);
+        }
+        xpost_file_putc(ff->target, '~');
+        xpost_file_putc(ff->target, '>');
+    }
+    return 0;
+}
+
+struct Xpost_File_Methods a85enc_methods =
+{
+    enc_readch, a85enc_writech, a85enc_close, enc_flush,
+    enc_purge, enc_unreadch, filter_tell, filter_seek
+};
+
+/* RunLengthEncode: runs of three or more repeated bytes become a
+   (257-count, byte) pair, other bytes gather into literal blocks of
+   up to 128, and byte 128 ends the data */
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+    unsigned char buf[128];
+    int n;          /* literal bytes gathered */
+    int runcnt;     /* repeats of runch gathered */
+    int runch;
+    int recsize;    /* runs never span record boundaries */
+    int reccnt;
+} Xpost_RleEncFile;
+
+static int
+rleenc_flushlit(Xpost_RleEncFile *ff)
+{
+    int i;
+
+    if (ff->n == 0)
+        return 0;
+    if (xpost_file_putc(ff->target, ff->n - 1) == EOF)
+        return EOF;
+    for (i = 0; i < ff->n; i++)
+        if (xpost_file_putc(ff->target, ff->buf[i]) == EOF)
+            return EOF;
+    ff->n = 0;
+    return 0;
+}
+
+static int
+rleenc_flushrun(Xpost_RleEncFile *ff)
+{
+    if (ff->runcnt == 0)
+        return 0;
+    if (ff->runcnt >= 3)
+    {
+        if (xpost_file_putc(ff->target, 257 - ff->runcnt) == EOF)
+            return EOF;
+        if (xpost_file_putc(ff->target, ff->runch) == EOF)
+            return EOF;
+    }
+    else
+    {
+        while (ff->runcnt)
+        {
+            if (ff->n == 128 && rleenc_flushlit(ff) == EOF)
+                return EOF;
+            ff->buf[ff->n++] = (unsigned char)ff->runch;
+            ff->runcnt--;
+        }
+        ff->runcnt = 0;
+        return 0;
+    }
+    ff->runcnt = 0;
+    return 0;
+}
+
+static int
+rleenc_writech(Xpost_File *f, int c)
+{
+    Xpost_RleEncFile *ff = (Xpost_RleEncFile *)f;
+
+    if (ff->closed)
+        return EOF;
+    c &= 0xff;
+    if (ff->recsize > 0 && ff->reccnt == ff->recsize)
+    {
+        if (ff->runcnt >= 3)
+        {
+            if (rleenc_flushlit(ff) == EOF || rleenc_flushrun(ff) == EOF)
+                return EOF;
+        }
+        else if (rleenc_flushrun(ff) == EOF || rleenc_flushlit(ff) == EOF)
+            return EOF;
+        ff->reccnt = 0;
+    }
+    ff->reccnt++;
+    if (ff->runcnt && c == ff->runch)
+    {
+        if (++ff->runcnt == 128)
+        {
+            if (rleenc_flushlit(ff) == EOF || rleenc_flushrun(ff) == EOF)
+                return EOF;
+        }
+        return c;
+    }
+    if (ff->runcnt >= 3)
+    {
+        if (rleenc_flushlit(ff) == EOF || rleenc_flushrun(ff) == EOF)
+            return EOF;
+    }
+    else if (rleenc_flushrun(ff) == EOF)   /* short run joins the literals */
+        return EOF;
+    ff->runch = c;
+    ff->runcnt = 1;
+    return c;
+}
+
+static int
+rleenc_close(Xpost_File *f)
+{
+    Xpost_RleEncFile *ff = (Xpost_RleEncFile *)f;
+
+    if (!ff->closed)
+    {
+        ff->closed = 1;
+        if (ff->runcnt >= 3)
+        {
+            rleenc_flushlit(ff);
+            rleenc_flushrun(ff);
+        }
+        else
+        {
+            rleenc_flushrun(ff);
+            rleenc_flushlit(ff);
+        }
+        xpost_file_putc(ff->target, 128);
+    }
+    return 0;
+}
+
+struct Xpost_File_Methods rleenc_methods =
+{
+    enc_readch, rleenc_writech, rleenc_close, enc_flush,
+    enc_purge, enc_unreadch, filter_tell, filter_seek
+};
+
+#ifdef HAVE_ZLIB
+/* FlateEncode: the zlib compressor */
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+    z_stream strm;
+    unsigned char out[4096];
+} Xpost_FlateEncFile;
+
+static int
+flateenc_drain(Xpost_FlateEncFile *ff)
+{
+    int i, n = (int)(sizeof(ff->out) - ff->strm.avail_out);
+
+    for (i = 0; i < n; i++)
+        if (xpost_file_putc(ff->target, ff->out[i]) == EOF)
+            return EOF;
+    ff->strm.next_out = ff->out;
+    ff->strm.avail_out = sizeof(ff->out);
+    return 0;
+}
+
+static int
+flateenc_writech(Xpost_File *f, int c)
+{
+    Xpost_FlateEncFile *ff = (Xpost_FlateEncFile *)f;
+    unsigned char b;
+
+    if (ff->closed)
+        return EOF;
+    c &= 0xff;
+    b = (unsigned char)c;
+    ff->strm.next_in = &b;
+    ff->strm.avail_in = 1;
+    while (ff->strm.avail_in)
+    {
+        if (deflate(&ff->strm, Z_NO_FLUSH) != Z_OK)
+            return EOF;
+        if (ff->strm.avail_out == 0 && flateenc_drain(ff) == EOF)
+            return EOF;
+    }
+    return c;
+}
+
+static int
+flateenc_close(Xpost_File *f)
+{
+    Xpost_FlateEncFile *ff = (Xpost_FlateEncFile *)f;
+    int ret;
+
+    if (!ff->closed)
+    {
+        ff->closed = 1;
+        ff->strm.avail_in = 0;
+        do
+        {
+            ret = deflate(&ff->strm, Z_FINISH);
+            if (flateenc_drain(ff) == EOF)
+                break;
+        } while (ret == Z_OK);
+        deflateEnd(&ff->strm);
+    }
+    return 0;
+}
+
+struct Xpost_File_Methods flateenc_methods =
+{
+    enc_readch, flateenc_writech, flateenc_close, enc_flush,
+    enc_purge, enc_unreadch, filter_tell, filter_seek
+};
+#endif
+
+/* a most-significant-bit-first code writer shared by the LZW and
+   CCITT encoders */
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+    unsigned int bitbuf;
+    int bitcnt;
+} Xpost_BitEncBase;
+
+static int
+bitenc_put(Xpost_BitEncBase *ff, unsigned int code, int len)
+{
+    ff->bitbuf = ff->bitbuf << len | code;
+    ff->bitcnt += len;
+    while (ff->bitcnt >= 8)
+    {
+        ff->bitcnt -= 8;
+        if (xpost_file_putc(ff->target,
+                            (int)(ff->bitbuf >> ff->bitcnt) & 0xff) == EOF)
+            return EOF;
+    }
+    return 0;
+}
+
+static int
+bitenc_pad(Xpost_BitEncBase *ff)
+{
+    if (ff->bitcnt &&
+        xpost_file_putc(ff->target,
+                        (int)(ff->bitbuf << (8 - ff->bitcnt)) & 0xff) == EOF)
+        return EOF;
+    ff->bitcnt = 0;
+    return 0;
+}
+
+/* LZWEncode: the mirror of the decoder.  Strings grow through a
+   child list per table entry; the code width follows the size the
+   decoder's table will have reached when it reads each code, one
+   entry behind this one */
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+    unsigned int bitbuf;
+    int bitcnt;
+    int codewidth;
+    int nextcode;
+    int early;
+    int prefix;
+    short child[4096];      /* first extension of each string */
+    short sibling[4096];    /* next extension sharing a prefix */
+    unsigned char suffix[4096];
+} Xpost_LzwEncFile;
+
+static void
+lzwenc_reset(Xpost_LzwEncFile *ff)
+{
+    int i;
+
+    for (i = 0; i < 4096; i++)
+        ff->child[i] = ff->sibling[i] = -1;
+    ff->codewidth = 9;
+    ff->nextcode = 258;
+    ff->prefix = -1;
+}
+
+static int
+lzwenc_emit(Xpost_LzwEncFile *ff, int code)
+{
+    return bitenc_put((Xpost_BitEncBase *)ff, (unsigned int)code,
+                      ff->codewidth);
+}
+
+static int
+lzwenc_writech(Xpost_File *f, int c)
+{
+    Xpost_LzwEncFile *ff = (Xpost_LzwEncFile *)f;
+    int i;
+
+    if (ff->closed)
+        return EOF;
+    c &= 0xff;
+    if (ff->prefix < 0)
+    {
+        ff->prefix = c;
+        return c;
+    }
+    for (i = ff->child[ff->prefix]; i >= 0; i = ff->sibling[i])
+        if (ff->suffix[i] == c)
+        {
+            ff->prefix = i;
+            return c;
+        }
+    if (lzwenc_emit(ff, ff->prefix) == EOF)
+        return EOF;
+    ff->suffix[ff->nextcode] = (unsigned char)c;
+    ff->sibling[ff->nextcode] = ff->child[ff->prefix];
+    ff->child[ff->prefix] = (short)ff->nextcode;
+    ff->nextcode++;
+    /* the decoder adds this entry only after the next code arrives,
+       so its width grows one code later than a naive mirror would */
+    if (ff->nextcode + ff->early > (1 << ff->codewidth)
+     && ff->codewidth < 12)
+        ff->codewidth++;
+    if (ff->nextcode + ff->early > 4095)
+    {
+        if (lzwenc_emit(ff, c) == EOF)
+            return EOF;
+        if (lzwenc_emit(ff, 256) == EOF)
+            return EOF;
+        lzwenc_reset(ff);
+        return c;
+    }
+    ff->prefix = c;
+    return c;
+}
+
+static int
+lzwenc_close(Xpost_File *f)
+{
+    Xpost_LzwEncFile *ff = (Xpost_LzwEncFile *)f;
+
+    if (!ff->closed)
+    {
+        ff->closed = 1;
+        if (ff->prefix >= 0)
+            lzwenc_emit(ff, ff->prefix);
+        lzwenc_emit(ff, 257);
+        bitenc_pad((Xpost_BitEncBase *)ff);
+    }
+    return 0;
+}
+
+struct Xpost_File_Methods lzwenc_methods =
+{
+    enc_readch, lzwenc_writech, lzwenc_close, enc_flush,
+    enc_purge, enc_unreadch, filter_tell, filter_seek
+};
+
+/* CCITTFaxEncode: rows buffer until complete, become changing-element
+   lists, and leave through the coding schemes the decoder reads.
+   Positive K codes at least every Kth row one-dimensionally; without
+   end-of-line markers the mixed rows carry no tag bits, a form Adobe
+   Distiller's coder also emits and neither decoder reads back */
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+    unsigned int bitbuf;
+    int bitcnt;
+    int k;
+    int columns;
+    int rows;
+    int blackis1;
+    int byteal;
+    int eol;
+    int eob;
+    int *ref, *cur;
+    int refcnt;
+    int curcnt;
+    unsigned char *row;
+    int rowbytes;
+    int rowpos;
+    int rowsdone;
+} Xpost_FaxEncFile;
+
+static int
+faxenc_code(Xpost_FaxEncFile *ff, const Xpost_Fax_Code *tab, int n, int run)
+{
+    int i;
+
+    for (i = 0; i < n; i++)
+        if (tab[i].run == run)
+            return bitenc_put((Xpost_BitEncBase *)ff, tab[i].code, tab[i].len);
+    return EOF;
+}
+
+static int
+faxenc_run(Xpost_FaxEncFile *ff, int run, int color)
+{
+    const Xpost_Fax_Code *tab = color ? fax_black : fax_white;
+    int n = color ? (int)(sizeof(fax_black)/sizeof(*fax_black))
+                  : (int)(sizeof(fax_white)/sizeof(*fax_white));
+    int next = (int)(sizeof(fax_ext)/sizeof(*fax_ext));
+
+    while (run >= 2624)
+    {
+        if (faxenc_code(ff, fax_ext, next, 2560) == EOF)
+            return EOF;
+        run -= 2560;
+    }
+    if (run >= 64)
+    {
+        int makeup = run & ~63;
+
+        if (makeup > 1728
+            ? faxenc_code(ff, fax_ext, next, makeup) == EOF
+            : faxenc_code(ff, tab, n, makeup) == EOF)
+            return EOF;
+        run -= makeup;
+    }
+    return faxenc_code(ff, tab, n, run);
+}
+
+static int
+faxenc_eol(Xpost_FaxEncFile *ff)
+{
+    return bitenc_put((Xpost_BitEncBase *)ff, 1, 12);
+}
+
+/* changing-element positions of the buffered row */
+static void
+faxenc_elements(Xpost_FaxEncFile *ff)
+{
+    int x, color = 0, ci = 0;
+
+    for (x = 0; x < ff->columns; x++)
+    {
+        int bit = (ff->row[x >> 3] >> (7 - (x & 7))) & 1;
+        int black = ff->blackis1 ? bit : !bit;
+
+        if (black != color)
+        {
+            ff->cur[ci++] = x;
+            color = black;
+        }
+    }
+    ff->cur[ci] = ff->cur[ci + 1] = ff->columns;
+    ff->curcnt = ci;
+}
+
+static int
+faxenc_1d(Xpost_FaxEncFile *ff)
+{
+    int pos = 0, color = 0, i = 0;
+
+    while (pos < ff->columns)
+    {
+        int next = i < ff->curcnt ? ff->cur[i] : ff->columns;
+
+        if (faxenc_run(ff, next - pos, color) == EOF)
+            return EOF;
+        pos = next;
+        color ^= 1;
+        i++;
+    }
+    return 0;
+}
+
+static int
+faxenc_2d(Xpost_FaxEncFile *ff)
+{
+    int a0 = -1, color = 0, ai = 0, ri = 0, guard = 0;
+
+    while (a0 < ff->columns)
+    {
+        int b1, b2, a1, a2;
+
+        if (++guard > 2 * ff->columns + 64)
+            return EOF;
+
+        while (ri > 0 && (ri >= ff->refcnt || ff->ref[ri - 1] > a0))
+            ri--;
+        while (ri < ff->refcnt && ff->ref[ri] <= a0)
+            ri++;
+        if ((ri ^ color) & 1)
+            ri++;
+        b1 = ri < ff->refcnt ? ff->ref[ri] : ff->columns;
+        b2 = ri + 1 < ff->refcnt ? ff->ref[ri + 1] : ff->columns;
+        while (ai < ff->curcnt && ff->cur[ai] <= a0)
+            ai++;
+        a1 = ai < ff->curcnt ? ff->cur[ai] : ff->columns;
+        a2 = ai + 1 < ff->curcnt ? ff->cur[ai + 1] : ff->columns;
+
+        if (b2 < a1)
+        {
+            /* pass: the reference run ends before the next change */
+            if (bitenc_put((Xpost_BitEncBase *)ff, 1, 4) == EOF)
+                return EOF;
+            a0 = b2;
+        }
+        else if (a1 - b1 >= -3 && a1 - b1 <= 3)
+        {
+            /* vertical: 1, 011/010, 000011/000010, 0000011/0000010 */
+            static const struct { unsigned int code; int len; }
+            vcode[7] = { {2,7}, {2,6}, {2,3}, {1,1}, {3,3}, {3,6}, {3,7} };
+            int d = a1 - b1;
+
+            if (bitenc_put((Xpost_BitEncBase *)ff,
+                           vcode[d + 3].code, vcode[d + 3].len) == EOF)
+                return EOF;
+            a0 = a1;
+            color ^= 1;
+        }
+        else
+        {
+            /* horizontal: 001 and the two runs from a0 */
+            int start = a0 < 0 ? 0 : a0;
+
+            if (bitenc_put((Xpost_BitEncBase *)ff, 1, 3) == EOF)
+                return EOF;
+            if (faxenc_run(ff, a1 - start, color) == EOF)
+                return EOF;
+            if (faxenc_run(ff, a2 - a1, !color) == EOF)
+                return EOF;
+            a0 = a2;
+        }
+    }
+    return 0;
+}
+
+static int
+faxenc_row(Xpost_FaxEncFile *ff)
+{
+    int twod, ret, *tmp;
+
+    if (ff->byteal && bitenc_pad((Xpost_BitEncBase *)ff) == EOF)
+        return EOF;
+    if (ff->k < 0)
+        twod = 1;
+    else if (ff->k == 0)
+        twod = 0;
+    else
+        twod = (ff->rowsdone % ff->k) != 0;
+    if (ff->eol && ff->k >= 0)
+    {
+        if (faxenc_eol(ff) == EOF)
+            return EOF;
+        if (ff->k > 0 &&
+            bitenc_put((Xpost_BitEncBase *)ff, !twod, 1) == EOF)
+            return EOF;
+    }
+    faxenc_elements(ff);
+    ret = twod ? faxenc_2d(ff) : faxenc_1d(ff);
+    if (ret == EOF)
+        return EOF;
+    tmp = ff->ref; ff->ref = ff->cur; ff->cur = tmp;
+    ff->refcnt = ff->curcnt;
+    ff->rowsdone++;
+    ff->rowpos = 0;
+    return 0;
+}
+
+static int
+faxenc_writech(Xpost_File *f, int c)
+{
+    Xpost_FaxEncFile *ff = (Xpost_FaxEncFile *)f;
+
+    if (ff->closed)
+        return EOF;
+    c &= 0xff;
+    ff->row[ff->rowpos++] = (unsigned char)c;
+    if (ff->rowpos == ff->rowbytes && faxenc_row(ff) == EOF)
+        return EOF;
+    return c;
+}
+
+static int
+faxenc_close(Xpost_File *f)
+{
+    Xpost_FaxEncFile *ff = (Xpost_FaxEncFile *)f;
+
+    if (!ff->closed)
+    {
+        ff->closed = 1;
+        if (ff->eob)
+        {
+            int i, n = ff->k < 0 ? 2 : 6;
+
+            /* the block marker starts a fresh byte when rows do */
+            if (ff->byteal)
+                bitenc_pad((Xpost_BitEncBase *)ff);
+            for (i = 0; i < n; i++)
+            {
+                faxenc_eol(ff);
+                if (ff->k > 0)
+                    bitenc_put((Xpost_BitEncBase *)ff, 1, 1);
+            }
+        }
+        bitenc_pad((Xpost_BitEncBase *)ff);
+    }
+    free(ff->ref);
+    free(ff->cur);
+    free(ff->row);
+    ff->ref = ff->cur = NULL;
+    ff->row = NULL;
+    return 0;
+}
+
+struct Xpost_File_Methods faxenc_methods =
+{
+    enc_readch, faxenc_writech, faxenc_close, enc_flush,
+    enc_purge, enc_unreadch, filter_tell, filter_seek
+};
+
+static Xpost_Object
+_enc_cons(Xpost_Memory_File *mem, Xpost_Object tgt, size_t size,
+          struct Xpost_File_Methods *methods, Xpost_EncBase **out)
+{
+    Xpost_File *target = xpost_file_get_file_pointer(mem, tgt);
+    Xpost_EncBase *ff;
+
+    *out = NULL;
+    if (!target)
+        return invalid;
+    ff = calloc(1, size);
+    if (!ff)
+        return invalid;
+    ff->methods.methods = methods;
+    ff->target = target;
+    *out = ff;
+    return _filter_object_cons(mem, &ff->methods);
+}
+
+Xpost_Object xpost_file_cons_filter_enc_null(Xpost_Memory_File *mem, Xpost_Object tgt)
+{
+    Xpost_EncBase *ff;
+
+    return _enc_cons(mem, tgt, sizeof *ff, &nullenc_methods, &ff);
+}
+
+Xpost_Object xpost_file_cons_filter_enc_hex(Xpost_Memory_File *mem, Xpost_Object tgt)
+{
+    Xpost_EncBase *ff;
+
+    return _enc_cons(mem, tgt, sizeof(Xpost_HexEncFile), &hexenc_methods, &ff);
+}
+
+Xpost_Object xpost_file_cons_filter_enc_a85(Xpost_Memory_File *mem, Xpost_Object tgt)
+{
+    Xpost_EncBase *ff;
+
+    return _enc_cons(mem, tgt, sizeof(Xpost_A85EncFile), &a85enc_methods, &ff);
+}
+
+Xpost_Object xpost_file_cons_filter_enc_rle(Xpost_Memory_File *mem, Xpost_Object tgt, int recsize)
+{
+    Xpost_EncBase *base;
+    Xpost_Object f = _enc_cons(mem, tgt, sizeof(Xpost_RleEncFile),
+                               &rleenc_methods, &base);
+    Xpost_RleEncFile *ff = (Xpost_RleEncFile *)base;
+
+    if (ff)
+        ff->recsize = recsize;
+    return f;
+}
+
+#ifdef HAVE_ZLIB
+Xpost_Object xpost_file_cons_filter_enc_flate(Xpost_Memory_File *mem, Xpost_Object tgt)
+{
+    Xpost_EncBase *base;
+    Xpost_Object f = _enc_cons(mem, tgt, sizeof(Xpost_FlateEncFile),
+                               &flateenc_methods, &base);
+    Xpost_FlateEncFile *ff = (Xpost_FlateEncFile *)base;
+
+    if (!ff)
+        return f;
+    if (deflateInit(&ff->strm, Z_DEFAULT_COMPRESSION) != Z_OK)
+    {
+        ff->closed = 1;
+        return invalid;
+    }
+    ff->strm.next_out = ff->out;
+    ff->strm.avail_out = sizeof(ff->out);
+    return f;
+}
+#endif
+
+Xpost_Object xpost_file_cons_filter_enc_lzw(Xpost_Memory_File *mem, Xpost_Object tgt, int early)
+{
+    Xpost_EncBase *base;
+    Xpost_Object f = _enc_cons(mem, tgt, sizeof(Xpost_LzwEncFile),
+                               &lzwenc_methods, &base);
+    Xpost_LzwEncFile *ff = (Xpost_LzwEncFile *)base;
+
+    if (!ff)
+        return f;
+    ff->early = early;
+    lzwenc_reset(ff);
+    bitenc_put((Xpost_BitEncBase *)ff, 256, 9);   /* opening clear */
+    return f;
+}
+
+Xpost_Object xpost_file_cons_filter_enc_ccitt(Xpost_Memory_File *mem,
+                                              Xpost_Object tgt,
+                                              int k, int columns, int rows,
+                                              int blackis1, int byteal,
+                                              int eol, int eob)
+{
+    Xpost_EncBase *base;
+    Xpost_Object f;
+    Xpost_FaxEncFile *ff;
+
+    if (columns < 1 || columns > (1 << 20))
+        return invalid;
+    f = _enc_cons(mem, tgt, sizeof(Xpost_FaxEncFile), &faxenc_methods, &base);
+    ff = (Xpost_FaxEncFile *)base;
+    if (!ff)
+        return f;
+    ff->k = k;
+    ff->columns = columns;
+    ff->rows = rows;
+    ff->blackis1 = blackis1;
+    ff->byteal = byteal;
+    ff->eol = eol;
+    ff->eob = eob;
+    ff->rowbytes = (columns + 7) / 8;
+    ff->ref = calloc((size_t)columns + 4, sizeof(int));
+    ff->cur = calloc((size_t)columns + 4, sizeof(int));
+    ff->row = malloc((size_t)ff->rowbytes);
+    if (!ff->ref || !ff->cur || !ff->row)
+    {
+        free(ff->ref); free(ff->cur); free(ff->row);
+        ff->closed = 1;
+        return invalid;
+    }
+    return f;
+}
+
 /* ReusableStreamDecode filter: the entire source is drained into a
    buffer at construction -- leaving the underlying file positioned
    just past the encoded data, exactly as reading it would -- and the
