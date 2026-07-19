@@ -259,9 +259,16 @@ Level 2 operators
  [X] imagemask with dict argument
  [X] setcolortransfer (recorded; painting applies the grey transfer)
  [X] currentcolortransfer
+ [X] setblackgeneration (recorded only)
+ [X] currentblackgeneration
+ [X] setundercolorremoval (recorded only)
+ [X] currentundercolorremoval
+ [X] setcolorrendering (recorded only)
+ [X] currentcolorrendering
  [X] Named Resources
- [/] makepattern (PatternType 1; every tile repaints its cell, and
-     text under a pattern colour paints the underlying colour)
+ [/] makepattern (PatternTypes 1 and 2; every tile repaints its
+     cell, and text under a pattern colour paints the underlying
+     colour)
  [X] setpattern
  [/] filter (decode filters only: ASCIIHex, ASCII85, SubFile,
      RunLength, Flate, DCT, ReusableStream; no encode filters, no LZW
@@ -271,7 +278,7 @@ Level 3 operators
 -----------------
 
  [/] shfill (ShadingTypes 2, 3, 4 and 5; sampled functions at byte
-     depths; no shading patterns)
+     depths)
  [/] composite fonts (Type 0 FMapType 9 through composefont; CIDFont
      descendants of CIDFontType 2, incremental GlyphDirectory
      delivery; cshow rebinds the composite to one-byte codes)

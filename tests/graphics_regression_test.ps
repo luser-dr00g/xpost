@@ -601,6 +601,21 @@ grestore
 4 32 inkat not (a mesh paints only its triangles) assert
 erasepage
 
+% a shading pattern (PatternType 2) paints its gradient over the
+% region the operator would have painted
+erasepage
+<< /PatternType 2
+   /Shading << /ShadingType 2 /ColorSpace /DeviceGray
+      /Coords [ 8 0 56 0 ] /Extend [ true true ]
+      /Function << /FunctionType 2 /Domain [ 0 1 ] /C0 [ 0 ] /C1 [ 1 ] /N 1 >> >>
+>> matrix makepattern setpattern
+8 8 48 48 rectfill
+10 32 inkat (a shading pattern paints its dark end) assert
+54 32 inkat not (a shading pattern lightens to its far end) assert
+4 32 inkat not (a shading pattern stays inside the fill) assert
+0 setgray
+erasepage
+
 % DCTDecode inflates a JPEG stream into image samples, layered over
 % the hexadecimal filter here as producers layer it over ASCII85; the
 % parameter-dictionary filter form is what PDF converters emit. The

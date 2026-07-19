@@ -54,7 +54,7 @@
         2 dict begin
         /pat exch def
         graphicsdict /currgstate get /patdict pat put
-        pat /PaintType get 2 eq {
+        pat /PaintType 2 copy known { get 2 eq }{ pop pop false } ifelse {
             /bs graphicsdict /currgstate get /patbase get def
             /n bs type /arraytype eq {
                 bs 0 get /Indexed eq { 1 }{
@@ -75,7 +75,7 @@
 % pattern as the colour; an uncoloured pattern takes the current
 % colour space as its underlying space, with the components beneath
 /setpattern {
-    dup /PaintType get 1 eq {
+    dup /PaintType 2 copy known { get 2 eq }{ pop pop false } ifelse not {
         [ /Pattern ] setcolorspace
     }{
         % the underlying space is the current one -- or, when that is

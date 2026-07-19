@@ -10,11 +10,17 @@
 % /Implementation
 /makepattern {
     exch
-    dup /PaintProc known 1 index /BBox known and
-    1 index /XStep known and 1 index /YStep known and
-    1 index /PaintType known and not {
-        /makepattern cvx /rangecheck signalerror
-    } if
+    dup /PatternType 2 copy known { get }{ pop pop 1 } ifelse 2 eq {
+        dup /Shading known not {
+            /makepattern cvx /rangecheck signalerror
+        } if
+    }{
+        dup /PaintProc known 1 index /BBox known and
+        1 index /XStep known and 1 index /YStep known and
+        1 index /PaintType known and not {
+            /makepattern cvx /rangecheck signalerror
+        } if
+    } ifelse
     dup length 1 add dict copy
     exch matrix currentmatrix matrix concatmatrix
     1 index exch /Implementation exch put
@@ -39,6 +45,14 @@
     /pat graphicsdict /currgstate get /patdict get def
     pat null ne {
     /pm pat /Implementation get def
+    pat /PatternType 2 copy known { get }{ pop pop 1 } ifelse 2 eq {
+        % a shading pattern: the shading paints the whole clip under
+        % the pattern space, no cells to step
+        gsave
+        pm setmatrix
+        pat /Shading get shfill
+        grestore
+    }{
     /bb pat /BBox get def
     /xs pat /XStep get def
     /ys pat /YStep get def
@@ -95,6 +109,7 @@
             } for
         } if
     } if
+    } ifelse
     } if
     end
 } bind def
@@ -102,9 +117,21 @@
 % -  .patternfill  -
 % paint the current path with the pattern colour: the path becomes
 % the clip and the pattern tiles across it
+% the region resolves to its spans unconditionally: the shading and
+% cell fills intersect against the resolved form, where a raw path
+% stored by the trivial branch of clip would not combine
+/.patternclip { % spanpoly-producing-preamble is the caller's
+    newpath
+    .polytopath
+    graphicsdict /currgstate get
+    dup /currpath get /clipregion exch put
+} bind def
+
 /.patternfill {
     gsave
-    clip
+    flattenpath
+    .fillpolyargs .clippolyargs .clipfillpoly
+    .patternclip
     .patterntile
     grestore
     newpath
@@ -112,7 +139,10 @@
 
 /.patterneofill {
     gsave
-    eoclip
+    flattenpath
+    .fillpolyargs .eospanpoly
+    .clippolyargs .clipfillpoly
+    .patternclip
     .patterntile
     grestore
     newpath
