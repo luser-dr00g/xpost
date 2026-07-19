@@ -1602,7 +1602,11 @@ filter_close(Xpost_File *f)
 static int
 filter_flush(Xpost_File *f)
 {
-    (void)f;
+    /* flushfile on an input file reads and discards to end of data
+       (PLRM): programs drain a decode filter to position the
+       underlying file just past an inline stream they skip */
+    while (f->methods->readch(f) != EOF)
+        ;
     return 0;
 }
 
