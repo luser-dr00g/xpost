@@ -1,6 +1,234 @@
 /QUIET where { pop }{ (loading color.ps...)print } ifelse
 
 
+% --- CIE-based colour spaces ---------------------------------------
+% The four CIE-based families reduce a colour to X Y Z the way the
+% language describes: per-component clamps to the declared ranges,
+% the decode procedures, and the matrix stages. The X Y Z then
+% renders to device RGB through fixed daylight primaries with the
+% white point adapted by channel scaling; rendering dictionaries
+% beyond the recorded stub take no part.
+
+% v lo hi  .cieclamp  v'
+/.cieclamp {
+    3 dict begin
+    /h exch def /l exch def
+    dup l lt { pop l } if
+    dup h gt { pop h } if
+    end
+} bind def
+
+% X Y Z whitepoint  .ciexyzrgb  r g b
+/.ciexyzrgb {
+    5 dict begin
+    /wp exch def /Z exch def /Y exch def /X exch def
+    /X X 0.9505 wp 0 get div mul def
+    /Y Y 1.0    wp 1 get div mul def
+    /Z Z 1.089  wp 2 get div mul def
+    X  3.2406 mul Y -1.5372 mul add Z -0.4986 mul add
+    X -0.9689 mul Y  1.8758 mul add Z  0.0415 mul add
+    X  0.0557 mul Y -0.2040 mul add Z  1.0570 mul add
+    3 {
+        3 -1 roll
+        dup 0 lt { pop 0 } if
+        dup 1 gt { pop 1 } if
+        0.45 exp
+    } repeat
+    end
+} bind def
+
+% L M N ciedict  .cielmnxyzrgb  r g b
+/.cielmnxyzrgb {
+    8 dict begin
+    /cd exch def /NN exch def /MM exch def /LL exch def
+    /rl cd /RangeLMN 2 copy known { get }{ pop pop [0 1 0 1 0 1] } ifelse def
+    /LL LL rl 0 get rl 1 get .cieclamp def
+    /MM MM rl 2 get rl 3 get .cieclamp def
+    /NN NN rl 4 get rl 5 get .cieclamp def
+    cd /DecodeLMN 2 copy known { get }{ pop pop null } ifelse
+    dup null ne {
+        /dl exch def
+        /LL LL dl 0 get exec def
+        /MM MM dl 1 get exec def
+        /NN NN dl 2 get exec def
+    }{ pop } ifelse
+    /ml cd /MatrixLMN 2 copy known { get }{ pop pop [1 0 0 0 1 0 0 0 1] } ifelse def
+    LL ml 0 get mul MM ml 3 get mul add NN ml 6 get mul add
+    LL ml 1 get mul MM ml 4 get mul add NN ml 7 get mul add
+    LL ml 2 get mul MM ml 5 get mul add NN ml 8 get mul add
+    cd /WhitePoint get
+    .ciexyzrgb
+    end
+} bind def
+
+% A B C ciedict  .cieabcrgb  r g b
+/.cieabcrgb {
+    8 dict begin
+    /cd exch def /CC exch def /BB exch def /AA exch def
+    /ra cd /RangeABC 2 copy known { get }{ pop pop [0 1 0 1 0 1] } ifelse def
+    /AA AA ra 0 get ra 1 get .cieclamp def
+    /BB BB ra 2 get ra 3 get .cieclamp def
+    /CC CC ra 4 get ra 5 get .cieclamp def
+    cd /DecodeABC 2 copy known { get }{ pop pop null } ifelse
+    dup null ne {
+        /da exch def
+        /AA AA da 0 get exec def
+        /BB BB da 1 get exec def
+        /CC CC da 2 get exec def
+    }{ pop } ifelse
+    /ma cd /MatrixABC 2 copy known { get }{ pop pop [1 0 0 0 1 0 0 0 1] } ifelse def
+    AA ma 0 get mul BB ma 3 get mul add CC ma 6 get mul add
+    AA ma 1 get mul BB ma 4 get mul add CC ma 7 get mul add
+    AA ma 2 get mul BB ma 5 get mul add CC ma 8 get mul add
+    cd .cielmnxyzrgb
+    end
+} bind def
+
+% A ciedict  .ciearpgb  r g b
+/.ciearpgb {
+    6 dict begin
+    /cd exch def /AA exch def
+    /ra cd /RangeA 2 copy known { get }{ pop pop [0 1] } ifelse def
+    /AA AA ra 0 get ra 1 get .cieclamp def
+    cd /DecodeA 2 copy known { get }{ pop pop null } ifelse
+    dup null ne { AA exch exec /AA exch def }{ pop } ifelse
+    /ma cd /MatrixA 2 copy known { get }{ pop pop [1 1 1] } ifelse def
+    AA ma 0 get mul
+    AA ma 1 get mul
+    AA ma 2 get mul
+    cd .cielmnxyzrgb
+    end
+} bind def
+
+% v lo hi n  .cietblpos  i0 i1 f
+% a value within its range, over a table of n steps: the bracketing
+% indices and the fraction between them
+/.cietblpos {
+    5 dict begin
+    /n exch def /hi exch def /lo exch def
+    lo hi .cieclamp
+    lo sub hi lo sub div n 1 sub mul
+    dup 0 lt { pop 0 } if
+    dup n 1 sub gt { pop n 1 sub } if
+    /p exch def
+    /i0 p floor cvi def
+    i0
+    i0 1 add dup n 1 sub gt { pop n 1 sub } if
+    p i0 sub
+    end
+} bind def
+
+% byte-fraction lo hi  .cietblval  v
+/.cietblval {
+    1 index sub mul add
+} bind def
+
+% D E F ciedict  .ciedefrgb  r g b
+/.ciedefrgb {
+    24 dict begin
+    /cd exch def /FF exch def /EE exch def /DD exch def
+    /rd cd /RangeDEF 2 copy known { get }{ pop pop [0 1 0 1 0 1] } ifelse def
+    /DD DD rd 0 get rd 1 get .cieclamp def
+    /EE EE rd 2 get rd 3 get .cieclamp def
+    /FF FF rd 4 get rd 5 get .cieclamp def
+    cd /DecodeDEF 2 copy known { get }{ pop pop null } ifelse
+    dup null ne {
+        /dd exch def
+        /DD DD dd 0 get exec def
+        /EE EE dd 1 get exec def
+        /FF FF dd 2 get exec def
+    }{ pop } ifelse
+    /rh cd /RangeHIJ 2 copy known { get }{ pop pop [0 1 0 1 0 1] } ifelse def
+    /tb cd /Table get def
+    /nh tb 0 get def /ni tb 1 get def /nj tb 2 get def
+    /tv tb 3 get def
+    DD rh 0 get rh 1 get nh .cietblpos /hf exch def /h1 exch def /h0 exch def
+    EE rh 2 get rh 3 get ni .cietblpos /if_ exch def /i1 exch def /i0 exch def
+    FF rh 4 get rh 5 get nj .cietblpos /jf exch def /j1 exch def /j0 exch def
+    /ra cd /RangeABC 2 copy known { get }{ pop pop [0 1 0 1 0 1] } ifelse def
+    % the eight surrounding table entries, weighted trilinearly by
+    % iteration -- clamped duplicate indices then weigh nothing extra
+    0 1 2 { /c exch def
+        0
+        0 1 1 { /ah exch def
+            /hh ah 0 eq { h0 }{ h1 } ifelse def
+            /hw ah 0 eq { 1 hf sub }{ hf } ifelse def
+        0 1 1 { /ai exch def
+            /ii ai 0 eq { i0 }{ i1 } ifelse def
+            /iw ai 0 eq { 1 if_ sub }{ if_ } ifelse def
+        0 1 1 { /aj exch def
+            /jj aj 0 eq { j0 }{ j1 } ifelse def
+            /jw aj 0 eq { 1 jf sub }{ jf } ifelse def
+            tv hh get ii nj mul jj add 3 mul c add get
+            hw mul iw mul jw mul add
+        } for } for } for
+        255 div ra c 2 mul get ra c 2 mul 1 add get .cietblval
+    } for
+    cd .cieabcrgb
+    end
+} bind def
+
+% D E F G ciedict  .ciedefgrgb  r g b
+/.ciedefgrgb {
+    28 dict begin
+    /cd exch def /GG exch def /FF exch def /EE exch def /DD exch def
+    /rd cd /RangeDEFG 2 copy known { get }{ pop pop [0 1 0 1 0 1 0 1] } ifelse def
+    /DD DD rd 0 get rd 1 get .cieclamp def
+    /EE EE rd 2 get rd 3 get .cieclamp def
+    /FF FF rd 4 get rd 5 get .cieclamp def
+    /GG GG rd 6 get rd 7 get .cieclamp def
+    cd /DecodeDEFG 2 copy known { get }{ pop pop null } ifelse
+    dup null ne {
+        /dd exch def
+        /DD DD dd 0 get exec def
+        /EE EE dd 1 get exec def
+        /FF FF dd 2 get exec def
+        /GG GG dd 3 get exec def
+    }{ pop } ifelse
+    /rh cd /RangeHIJK 2 copy known { get }{ pop pop [0 1 0 1 0 1 0 1] } ifelse def
+    /tb cd /Table get def
+    /nh tb 0 get def /ni tb 1 get def /nj tb 2 get def /nk tb 3 get def
+    /tv tb 4 get def
+    DD rh 0 get rh 1 get nh .cietblpos /hf exch def /h1 exch def /h0 exch def
+    EE rh 2 get rh 3 get ni .cietblpos /if_ exch def /i1 exch def /i0 exch def
+    FF rh 4 get rh 5 get nj .cietblpos /jf exch def /j1 exch def /j0 exch def
+    GG rh 6 get rh 7 get nk .cietblpos /kf exch def /k1 exch def /k0 exch def
+    /ra cd /RangeABC 2 copy known { get }{ pop pop [0 1 0 1 0 1] } ifelse def
+    0 1 2 { /c exch def
+        0
+        0 1 1 { /ah exch def
+            /hh ah 0 eq { h0 }{ h1 } ifelse def
+            /hw ah 0 eq { 1 hf sub }{ hf } ifelse def
+        0 1 1 { /ai exch def
+            /ii ai 0 eq { i0 }{ i1 } ifelse def
+            /iw ai 0 eq { 1 if_ sub }{ if_ } ifelse def
+        0 1 1 { /aj exch def
+            /jj aj 0 eq { j0 }{ j1 } ifelse def
+            /jw aj 0 eq { 1 jf sub }{ jf } ifelse def
+        0 1 1 { /ak exch def
+            /kk ak 0 eq { k0 }{ k1 } ifelse def
+            /kw ak 0 eq { 1 kf sub }{ kf } ifelse def
+            tv hh get ii get jj nk mul kk add 3 mul c add get
+            hw mul iw mul jw mul kw mul add
+        } for } for } for } for
+        255 div ra c 2 mul get ra c 2 mul 1 add get .cietblval
+    } for
+    cd .cieabcrgb
+    end
+} bind def
+
+% the family dispatch: comps [ /Family dict ]  .ciergb  r g b
+/.ciefams <<
+    /CIEBasedA /.ciearpgb cvx
+    /CIEBasedABC /.cieabcrgb cvx
+    /CIEBasedDEF /.ciedefrgb cvx
+    /CIEBasedDEFG /.ciedefgrgb cvx
+>> def
+/.ciergb {
+    dup 1 get exch 0 get
+    //.ciefams exch get exec
+} bind def
+
 /setcolorspace {
     %[ currentcolor setcolordict currentcolorspace get counttomark 2 add -1 roll
     % record the space as set (what currentcolorspace reports), then the
@@ -27,8 +255,12 @@
         dup 0 get dup /Separation eq exch /DeviceN eq or {
             2 get
         }{
+        //.ciefams 1 index 0 get known {
+            % a CIE-based colour reduces to device RGB at setcolor
+            pop /DeviceRGB
+        }{
             exit
-        } ifelse } ifelse
+        } ifelse } ifelse } ifelse
     } loop
     graphicsdict /currgstate get exch /colorspace exch put
     } ifelse
@@ -99,13 +331,20 @@
     /DeviceRGB 3
     /DeviceCMYK 4
 >> def
+/.ciecomps <<
+    /CIEBasedA 1
+    /CIEBasedABC 3
+    /CIEBasedDEF 3
+    /CIEBasedDEFG 4
+>> def
 /.ncomponents {
     currentcolorspace
     dup type /arraytype eq {
         dup 0 get /Indexed eq { pop 1 }{
         dup 0 get /Separation eq { pop 1 }{
         dup 0 get /DeviceN eq { 1 get length }{
-        0 get //.spacecomps exch get } ifelse } ifelse } ifelse
+        dup 0 get //.ciecomps exch known { 0 get //.ciecomps exch get }{
+        0 get //.spacecomps exch get } ifelse } ifelse } ifelse } ifelse
     }{
         //.spacecomps exch get
     } ifelse
@@ -169,9 +408,22 @@
         } ifelse
         graphicsdict /currgstate get /setspace graphicsdict /.sepspace get put
     } {
+    dup type /arraytype eq { //.ciefams 1 index 0 get known }{ false } ifelse
+    {
+        % a CIE-based colour: run the family pipeline down to device
+        % RGB and record it there. setcolor must not change what
+        % currentcolorspace reports, so the space is stashed and
+        % restored around the conversion
+        dup graphicsdict exch /.ciespace exch put
+        .ciergb
+        /DeviceRGB setcolorspace
+        setrgbcolor
+        graphicsdict /currgstate get /setspace graphicsdict /.ciespace get put
+    }{
         % a pattern space arrives as an array: dispatch on the family
         dup type /arraytype eq { 0 get } if
         //setcolordict exch get exec
+    } ifelse
     } ifelse
     } ifelse
 } bind def

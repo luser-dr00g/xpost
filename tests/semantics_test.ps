@@ -338,13 +338,15 @@ st.e <F0F00F0FF0F00F0F> writestring st.e closefile st.f closefile
 %     the three conventions wrote it ---
 (ab\
 cd) length 4 eq (an escaped CRLF joins the lines) assert
-(ab\cd) length 4 eq (an escaped bare CR joins the lines) assert
+(ab\
+cd) length 4 eq (an escaped bare CR joins the lines) assert
 (ab\
 cd) length 4 eq (an escaped LF joins the lines) assert
 (a
 b) dup length 3 eq exch 1 get 10 eq and
 (a raw CRLF reads as one newline) assert
-(ab) dup length 3 eq exch 1 get 10 eq and
+(a
+b) dup length 3 eq exch 1 get 10 eq and
 (a raw CR reads as one newline) assert
 
 % --- an end-of-line marker is one white-space delimiter ---
@@ -423,6 +425,37 @@ newpath 1 2 moveto 3 4 lineto
 false upath
 newpath uappend
 currentpoint 4 eq exch 3 eq and (upath round-trips the current path) assert
+
+% --- CIE-based colour reduces through its pipeline to device RGB ---
+[ /CIEBasedABC << /WhitePoint [0.9505 1.0 1.089]
+   /RangeABC [0 1 0 1 0 1]
+   /DecodeABC [ {2.2 exp} bind {2.2 exp} bind {2.2 exp} bind ]
+   /MatrixABC [ 0.4124 0.2126 0.0193 0.3576 0.7152 0.1192
+                0.1805 0.0722 0.9505 ]
+   /RangeLMN [0 0.9505 0 1 0 1.089] >> ] setcolorspace
+currentcolorspace 0 get /CIEBasedABC eq (a CIE space reports itself) assert
+0.5 0.5 0.5 setcolor
+currentrgbcolor
+0.5 sub abs 0.02 lt exch 0.5 sub abs 0.02 lt and exch 0.5 sub abs 0.02 lt and
+(a calibrated mid grey lands mid grey) assert
+1 0 0 setcolor currentrgbcolor pop pop 0.98 gt
+(a calibrated red reaches the red channel) assert
+[ /CIEBasedA << /WhitePoint [0.9505 1.0 1.089]
+   /DecodeA {2.2 exp} bind
+   /MatrixA [0.9505 1.0 1.089]
+   /RangeLMN [0 0.9505 0 1 0 1.089] >> ] setcolorspace
+0.5 setcolor currentrgbcolor
+2 { 1 index sub abs 0.005 lt (calibrated grey is neutral) assert } repeat
+0.5 sub abs 0.02 lt (and half in comes out half) assert
+[ /CIEBasedDEF << /WhitePoint [0.9505 1.0 1.089]
+   /Table [ 2 2 2 [ <000000 0000FF 00FF00 00FFFF>
+                    <FF0000 FF00FF FFFF00 FFFFFF> ] ]
+   /RangeLMN [0 0.9505 0 1 0 1.089]
+   /MatrixLMN [0.9505 0 0 0 1 0 0 0 1.089] >> ] setcolorspace
+0.5 0.5 0.5 setcolor currentrgbcolor
+0.732 sub abs 0.02 lt exch 0.732 sub abs 0.02 lt and exch 0.732 sub abs 0.02 lt and
+(the table midpoint interpolates all eight corners) assert
+/DeviceGray setcolorspace 0 setgray
 
 % --- the job server accepts exitserver ---
 countdictstack
