@@ -553,6 +553,54 @@ setpattern
 0 setgray
 erasepage
 
+% smooth shading: an axial gradient runs its function across its
+% axis, a radial one its circle family from the centre out, and a
+% free-form mesh blends its vertex colours
+/pixval { % ux uy . byte
+    transform floor cvi exch floor cvi exch
+    DEV dup /GetPix get exec
+} def
+erasepage
+gsave
+newpath 8 8 moveto 56 8 lineto 56 56 lineto 8 56 lineto closepath clip
+<< /ShadingType 2
+   /ColorSpace /DeviceGray
+   /Coords [ 8 0 56 0 ]
+   /Extend [ true true ]
+   /Function << /FunctionType 2 /Domain [ 0 1 ] /C0 [ 0 ] /C1 [ 1 ] /N 1 >>
+>> shfill
+grestore
+10 32 inkat (an axial shading starts at its first colour) assert
+54 32 inkat not (an axial shading ends at its second colour) assert
+32 32 pixval dup 90 gt exch 170 lt and
+(an axial shading blends between its ends) assert
+erasepage
+gsave
+<< /ShadingType 3
+   /ColorSpace /DeviceGray
+   /Coords [ 32 32 2 32 32 24 ]
+   /Function << /FunctionType 2 /Domain [ 0 1 ] /C0 [ 0 ] /C1 [ 1 ] /N 1 >>
+>> shfill
+grestore
+32 32 inkat (a radial shading is dark at its centre) assert
+32 53 inkat not (a radial shading lightens to its rim) assert
+12 12 inkat not (an unextended radial shading leaves the corners) assert
+erasepage
+gsave
+<< /ShadingType 4
+   /ColorSpace /DeviceGray
+   /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8
+   /Decode [ 0 64 0 64 0 1 ]
+   /DataSource <000000000000 00FFFF000000 007FFFFFFFFF>
+>> shfill
+grestore
+32 4 inkat (a mesh triangle is dark along its dark edge) assert
+32 60 inkat not (a mesh triangle lightens to its light corner) assert
+30 32 pixval dup 60 gt exch 200 lt and
+(a mesh triangle blends between its vertices) assert
+4 32 inkat not (a mesh paints only its triangles) assert
+erasepage
+
 % DCTDecode inflates a JPEG stream into image samples, layered over
 % the hexadecimal filter here as producers layer it over ASCII85; the
 % parameter-dictionary filter form is what PDF converters emit. The

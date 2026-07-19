@@ -1,0 +1,360 @@
+%!
+% Smooth shading (PLRM 4.9.3): shfill paints a shading dictionary
+% over the current clip region. The gradient resolves to a stack of
+% flat-colour fills through the ordinary paint pipeline: an axial
+% shading as bands across its axis, a radial one as circles painted
+% outside in, a triangle mesh by recursive subdivision. The band and
+% step counts follow the device size of the geometry, so the steps
+% stay within a device pixel or two.
+
+/QUIET where { pop }{ (loading shade.ps...)print } ifelse
+
+% t fndict  .fneval  c0..cn-1
+% evaluate a PostScript function dictionary at t: exponential
+% interpolation (type 2), stitching (type 3), and one-input sampled
+% (type 0, byte-aligned sample depths) functions serve the shading
+% dictionaries producers write
+/.fneval {
+    10 dict begin
+    /f exch def
+    /d0 f /Domain get 0 get def
+    /d1 f /Domain get 1 get def
+    dup d0 lt { pop d0 } if
+    dup d1 gt { pop d1 } if
+    /t exch def
+    f /FunctionType get
+    dup 2 eq {
+        pop
+        /c0 f /C0 2 copy known { get }{ pop pop [ 0.0 ] } ifelse def
+        /c1 f /C1 2 copy known { get }{ pop pop [ 1.0 ] } ifelse def
+        /tn t f /N get exp def
+        0 1 c0 length 1 sub { /i exch def
+            c0 i get
+            c1 i get c0 i get sub tn mul add
+        } for
+        c0 length
+    }{ dup 3 eq {
+        pop
+        /bs f /Bounds get def
+        /k 0 def
+        0 1 bs length 1 sub { /j exch def
+            t bs j get ge { /k j 1 add def } if
+        } for
+        /lo k 0 eq { d0 }{ bs k 1 sub get } ifelse def
+        /hi k bs length eq { d1 }{ bs k get } ifelse def
+        /e0 f /Encode get k 2 mul get def
+        /e1 f /Encode get k 2 mul 1 add get def
+        hi lo eq { e0 }{ t lo sub hi lo sub div e1 e0 sub mul e0 add } ifelse
+        f /Functions get k get .fneval
+    }{ 0 eq {
+        % sampled with one input: linear interpolation between the
+        % bracketing samples
+        /size f /Size get 0 get def
+        /bps f /BitsPerSample get def
+        bps 8 eq bps 16 eq or not { /shfill cvx /rangecheck signalerror } if
+        /rng f /Range get def
+        /nc rng length 2 idiv def
+        /ds f /DataSource get def
+        /x t d0 sub d1 d0 sub dup 0 eq { pop 1 } if div
+           size 1 sub mul def
+        /i0 x floor cvi def
+        i0 size 1 sub ge { /i0 size 2 sub def } if
+        i0 0 lt { /i0 0 def } if
+        /fr x i0 sub def
+        /max bps 8 eq { 255 }{ 65535 } ifelse def
+        0 1 nc 1 sub { /c exch def
+            /sa i0 nc mul c add def
+            /sb i0 1 add nc mul c add def
+            bps 8 eq {
+                ds sa get ds sb get
+            }{
+                ds sa 2 mul get 8 bitshift ds sa 2 mul 1 add get or
+                ds sb 2 mul get 8 bitshift ds sb 2 mul 1 add get or
+            } ifelse
+            1 index sub fr mul add max div
+            rng c 2 mul 1 add get rng c 2 mul get sub mul
+            rng c 2 mul get add
+        } for
+        nc
+    }{
+        /shfill cvx /rangecheck signalerror
+    } ifelse } ifelse } ifelse
+    end
+} def
+
+% t  .shcolor  -
+% set the colour the current shading's function gives at t; a mesh
+% shading passes components directly and skips the function
+/.shcolor {
+    shfn null eq {
+        pop
+    }{
+        shfn .fneval pop setcolor
+    } ifelse
+} def
+
+% -  .clipbig  r
+% a radius that covers the clip region from any point inside it
+/.clipbig {
+    gsave clippath flattenpath pathbbox grestore
+    3 -1 roll sub abs
+    3 1 roll sub abs
+    2 copy gt { exch } if pop
+    2 mul 1 add
+} def
+
+% shdict  .axialsh  -
+% bands across the axis, each a strip of the plane perpendicular to
+% it, painted with the function's colour at its midpoint; extended
+% ends paint half-plane caps in the end colours
+/.axialsh {
+    20 dict begin
+    /sh exch def
+    /shfn sh /Function get def
+    /co sh /Coords get def
+    /x0 co 0 get def /y0 co 1 get def
+    /x1 co 2 get def /y1 co 3 get def
+    /t0 sh /Domain 2 copy known { get 0 get }{ pop pop 0 } ifelse def
+    /t1 sh /Domain 2 copy known { get 1 get }{ pop pop 1 } ifelse def
+    /ex sh /Extend 2 copy known { get }{ pop pop [ false false ] } ifelse def
+    /dx x1 x0 sub def
+    /dy y1 y0 sub def
+    /len dx dy dtransform dup mul exch dup mul add sqrt def
+    len 0 ne {
+    /nb len round cvi 16 2 copy lt { exch } if pop
+        256 2 copy gt { exch } if pop def
+    % unit vectors along and across the axis, and a breadth that
+    % covers the clip
+    /ax dx dup mul dy dup mul add sqrt def
+    /ux dx ax div def
+    /uy dy ax div def
+    /px uy neg def
+    /py ux def
+    /big .clipbig def
+    /band { % sa sb  (fractions of the axis)  .band  -
+        6 dict begin
+        /sb exch def /sa exch def
+        newpath
+        x0 dx sa mul add px big mul add
+        y0 dy sa mul add py big mul add moveto
+        x0 dx sb mul add px big mul add
+        y0 dy sb mul add py big mul add lineto
+        x0 dx sb mul add px big mul sub
+        y0 dy sb mul add py big mul sub lineto
+        x0 dx sa mul add px big mul sub
+        y0 dy sa mul add py big mul sub lineto
+        closepath fill
+        end
+    } def
+    ex 0 get {
+        t0 .shcolor
+        big ax div neg 0 band
+    } if
+    ex 1 get {
+        t1 .shcolor
+        1 1 big ax div add band
+    } if
+    0 1 nb 1 sub { /i exch def
+        /sa i nb div def
+        /sb i 1 add nb div def
+        sa sb add 2 div t1 t0 sub mul t0 add .shcolor
+        sa sb band
+    } for
+    } if
+    end
+} def
+
+% shdict  .radialsh  -
+% the circle family painted outside in: each step fills its whole
+% circle, the next smaller covering the centre, so the last leaves
+% the gradient; an extended outer end floods the clip first and an
+% extended inner end is the innermost circle itself
+/.radialsh {
+    20 dict begin
+    /sh exch def
+    /shfn sh /Function get def
+    /co sh /Coords get def
+    /cx0 co 0 get def /cy0 co 1 get def /cr0 co 2 get def
+    /cx1 co 3 get def /cy1 co 4 get def /cr1 co 5 get def
+    /t0 sh /Domain 2 copy known { get 0 get }{ pop pop 0 } ifelse def
+    /t1 sh /Domain 2 copy known { get 1 get }{ pop pop 1 } ifelse def
+    /ex sh /Extend 2 copy known { get }{ pop pop [ false false ] } ifelse def
+    % step count from the device size of the swept ring
+    /nb cx1 cx0 sub cy1 cy0 sub dtransform dup mul exch dup mul add sqrt
+        cr1 cr0 sub 0 dtransform dup mul exch dup mul add sqrt add
+        round cvi 16 2 copy lt { exch } if pop
+        256 2 copy gt { exch } if pop def
+    /inout cr1 cr0 ge def
+    ex inout { 1 }{ 0 } ifelse get {
+        inout { t1 }{ t0 } ifelse .shcolor
+        newpath
+        inout { cx1 cy1 }{ cx0 cy0 } ifelse .clipbig 0 360 arc fill
+    } if
+    % paint from the larger circle to the smaller
+    nb -1 0 { /i exch def
+        /s i nb div def
+        inout not { /s 1 s sub def } if
+        s t1 t0 sub mul t0 add .shcolor
+        newpath
+        cx0 cx1 cx0 sub s mul add
+        cy0 cy1 cy0 sub s mul add
+        cr0 cr1 cr0 sub s mul add
+        dup 0 gt { 0 360 arc fill }{ pop pop pop } ifelse
+    } for
+    end
+} def
+
+% mesh vertex readers: the packed DataSource walks byte-aligned
+% fields through a position held in the reader dictionary
+/.mrdbyte { % - . v
+    ds dp get /dp dp 1 add def
+} def
+/.mrdbits { % nbits . v  (16 or 32, accumulated in a real)
+    0.0 exch 8 idiv { 256 mul .mrdbyte add } repeat
+} def
+/.mrddec { % k nbits . value  (field k of Decode applied)
+    dup .mrdbits
+    exch dup 8 eq { pop 255.0 }{
+         16 eq { 65535.0 }{ 4294967295.0 } ifelse } ifelse div
+    /frv exch def /kk exch def
+    dec kk 2 mul 1 add get dec kk 2 mul get sub frv mul
+    dec kk 2 mul get add
+} def
+/.mrdvertex { % - . [x y c0..cn-1]
+    [
+    0 bpc .mrddec
+    1 bpc .mrddec
+    0 1 ncomp 1 sub { /c exch def
+        c 2 add bpcm .mrddec
+    } for
+    ]
+} def
+
+% va vb vc depth  .gtri  -
+% paint a Gouraud triangle: subdivide at the edge midpoints until the
+% triangle sits within a couple of device pixels, then fill flat with
+% the corner average
+/.gmid { % va vb . vm
+    2 dict begin
+    /b exch def /a exch def
+    [ 0 1 a length 1 sub { /i exch def
+        a i get b i get add 2 div
+    } for ]
+    end
+} def
+/.gtri {
+    6 dict begin
+    /dpt exch def /vc exch def /vb exch def /va exch def
+    /dd 0 def
+    2 1 va length 1 sub { /i exch def
+        va i get vb i get sub abs dup dd gt { /dd exch def }{ pop } ifelse
+        va i get vc i get sub abs dup dd gt { /dd exch def }{ pop } ifelse
+    } for
+    dpt 0 le dd 0.015 le or {
+        % flat: fill with the corner average
+        [ 2 1 va length 1 sub { /i exch def
+            va i get vb i get add vc i get add 3 div
+        } for ] aload pop setcolor
+        newpath
+        va 0 get va 1 get moveto
+        vb 0 get vb 1 get lineto
+        vc 0 get vc 1 get lineto
+        closepath fill
+    }{
+        /mab va vb .gmid def
+        /mbc vb vc .gmid def
+        /mca vc va .gmid def
+        va mab mca dpt 1 sub .gtri
+        mab vb mbc dpt 1 sub .gtri
+        mca mbc vc dpt 1 sub .gtri
+        mab mbc mca dpt 1 sub .gtri
+    } ifelse
+    end
+} def
+
+% shdict  .meshsh  -
+% free-form (type 4) and lattice-form (type 5) triangle meshes with
+% per-vertex colours
+/.meshsh {
+    20 dict begin
+    /sh exch def
+    /shfn null def
+    /ds sh /DataSource get def
+    /dp 0 def
+    /dec sh /Decode get def
+    /bpc sh /BitsPerCoordinate get def
+    /bpcm sh /BitsPerComponent get def
+    /ncomp dec length 4 sub 2 idiv def
+    bpc 16 eq bpc 32 eq or
+    bpcm 8 eq bpcm 16 eq or and not {
+        /shfill cvx /rangecheck signalerror
+    } if
+    % subdivision depth from the mesh's device scale: two levels
+    % within a few pixels, four when triangles are large
+    /dpt 4 def
+    sh /ShadingType get 5 eq {
+        /vpr sh /VerticesPerRow get def
+        /prev null def
+        {
+            dp ds length ge { exit } if
+            /row [ vpr { .mrdvertex } repeat ] def
+            prev null ne {
+                0 1 vpr 2 sub { /i exch def
+                    prev i get prev i 1 add get row i get dpt .gtri
+                    prev i 1 add get row i get row i 1 add get dpt .gtri
+                } for
+            } if
+            /prev row def
+        } loop
+    }{
+        /va null def /vb null def /vc null def
+        {
+            dp ds length ge { exit } if
+            /flag sh /BitsPerFlag get .mrdbits cvi def
+            flag 0 eq {
+                dp ds length ge { exit } if
+                /va .mrdvertex def
+                sh /BitsPerFlag get .mrdbits pop
+                /vb .mrdvertex def
+                sh /BitsPerFlag get .mrdbits pop
+                /vc .mrdvertex def
+            }{
+                flag 1 eq {
+                    /va vb def /vb vc def
+                }{
+                    /vb vc def
+                } ifelse
+                /vc .mrdvertex def
+            } ifelse
+            va vb vc dpt .gtri
+        } loop
+    } ifelse
+    end
+} def
+
+%   shdict  shfill  -
+% paint the shading over the current clip region; the current path
+% survives untouched
+/shfill {
+    dup type /dicttype ne { /shfill cvx /typecheck signalerror } if
+    gsave
+    dup /ColorSpace get setcolorspace
+    dup /BBox 2 copy known {
+        get
+        newpath
+        dup 0 get 1 index 1 get moveto
+        dup 2 get 1 index 1 get lineto
+        dup 2 get 1 index 3 get lineto
+        dup 0 get 1 index 3 get lineto
+        pop closepath clip newpath
+    }{ pop pop } ifelse
+    dup /ShadingType get
+    dup 2 eq { pop .axialsh }{
+    dup 3 eq { pop .radialsh }{
+    dup 4 eq exch 5 eq or { .meshsh }{
+        pop /shfill cvx /rangecheck signalerror
+    } ifelse } ifelse } ifelse
+    grestore
+} def
+
+/QUIET where { pop }{ (eof shade.ps\n)print } ifelse

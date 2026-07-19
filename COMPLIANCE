@@ -267,6 +267,12 @@ Level 2 operators
      RunLength, Flate, DCT, ReusableStream; no encode filters, no LZW
      or CCITTFax)
 
+Level 3 operators
+-----------------
+
+ [/] shfill (ShadingTypes 2, 3, 4 and 5; sampled functions at byte
+     depths; no shading patterns)
+
 Display Postscript
 ------------------
 

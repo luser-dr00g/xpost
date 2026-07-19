@@ -18,6 +18,7 @@ data/path.ps \
 data/paint.ps \
 data/resource.ps \
 data/pattern.ps \
+data/shade.ps \
 data/font.ps \
 data/init.ps \
 data/prepr.ps \
@@ -59,6 +60,7 @@ data/path.ps \
 data/paint.ps \
 data/resource.ps \
 data/pattern.ps \
+data/shade.ps \
 data/font.ps \
 data/init.ps \
 data/prepr.ps \
