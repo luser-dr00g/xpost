@@ -39,7 +39,8 @@ Level 1 operators
  [X] awidthshow
  [X] kshow
  [X] stringwidth
- [/] Type-3 Fonts (no glyph caching)
+ [/] Type-3 Fonts (setcachedevice records metrics only; repeated
+     stencil masks replay from a run cache)
  [ ] font data caching
  [X] definefont for modified font properties (matrix, encoding, etc.)
  [/] base font CharStrings (keys enumerable; values are glyph indices,
@@ -232,6 +233,21 @@ Level 1 operators
  [X] currentfont
  [X] show
  [X] stringwidth
+ [X] findfont
+ [X] scalefont
+ [X] setcharwidth
+ [X] = and == (also stack, pstack, =print)
+ [X] executive (also prompt, start)
+ [X] handleerror
+ [X] run
+ [X] initgraphics
+ [X] nulldevice
+ [X] pathforall
+ [X] version
+ [ ] eexec
+ [ ] internaldict
+ [ ] cachestatus
+ [ ] setcachelimit
 
 Level 2 operators
 -----------------
@@ -274,6 +290,42 @@ Level 2 operators
      Flate, LZW, CCITTFax, DCT, ReusableStream; encode filters:
      ASCIIHex, ASCII85, Null, RunLength, Flate, LZW, CCITTFax; no
      DCTEncode)
+ [X] defineresource, findresource, resourcestatus, resourceforall,
+     undefineresource
+ [X] setglobal, currentglobal, gcheck
+ [X] gstate, setgstate, currentgstate
+ [X] packedarray (built as ordinary arrays), setpacking,
+     currentpacking
+ [X] setcmykcolor, currentcmykcolor
+ [X] setoverprint, currentoverprint (recorded only)
+ [X] setsystemparams, currentsystemparams, setuserparams,
+     currentuserparams, setdevparams, currentdevparams (accepted;
+     the parameter sets are minimal)
+ [X] deletefile, renamefile, filenameforall
+ [X] fileposition, setfileposition
+ [X] cleardictstack
+ [X] undef
+ [X] vmreclaim (a request only: collection is not implemented)
+ [X] realtime
+ [X] product, revision, serialnumber
+ [ ] languagelevel
+ [ ] undefinefont
+ [ ] rootfont
+ [ ] startjob
+ [ ] setcachedevice2
+ [ ] setcacheparams, currentcacheparams
+ [ ] user paths (upath, uappend, ufill, ueofill, ustroke,
+     ustrokepath, ucache, ucachestatus, setucacheparams, setbbox)
+ [ ] insideness testing (infill, ineofill, instroke, inufill,
+     inueofill, inustroke)
+ [ ] user objects (defineuserobject, execuserobject,
+     undefineuserobject)
+ [ ] execform
+ [ ] setstrokeadjust, currentstrokeadjust
+ [ ] shared VM (setshared, currentshared, scheck, shareddict,
+     SharedFontDirectory, GlobalFontDirectory)
+ [ ] binary object sequences (setobjectformat, currentobjectformat,
+     printobject, writeobject)
 
 Level 3 operators
 -----------------
@@ -286,6 +338,14 @@ Level 3 operators
      cshow rebinds the composite to one-byte codes)
  [X] clipsave
  [X] cliprestore
+ [ ] setsmoothness, currentsmoothness
+ [ ] findcolorrendering
+
+Extensions
+----------
+
+ [X] pdfmark (DOCINFO reaches the pdfwrite device; other mark types
+     are consumed without effect)
 
 Display Postscript
 ------------------
