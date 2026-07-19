@@ -271,8 +271,8 @@ Level 2 operators
      colour)
  [X] setpattern
  [/] filter (decode filters only: ASCIIHex, ASCII85, SubFile,
-     RunLength, Flate, LZW, DCT, ReusableStream; no encode filters,
-     no CCITTFax)
+     RunLength, Flate, LZW, CCITTFax, DCT, ReusableStream; no
+     encode filters)
 
 Level 3 operators
 -----------------

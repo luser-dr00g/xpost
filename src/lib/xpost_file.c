@@ -2034,6 +2034,526 @@ Xpost_Object xpost_file_cons_filter_lzw(Xpost_Memory_File *mem, Xpost_Object src
     return _filter_object_cons(mem, &ff->methods);
 }
 
+/* CCITTFaxDecode filter: the Group 3 and Group 4 facsimile codings
+   of ITU-T T.4 and T.6.  K selects the scheme -- zero is
+   one-dimensional Modified Huffman, negative is the purely
+   two-dimensional Group 4 coding, positive mixes the two, a tag bit
+   behind each row's end-of-line marker naming its coding.  Rows
+   decode into changing-element position lists; the two-dimensional
+   modes place each element against the previous row's list. */
+
+typedef struct
+{
+    short run;
+    unsigned char len;
+    unsigned short code;
+} Xpost_Fax_Code;
+
+static const Xpost_Fax_Code fax_white[] =
+{
+    {2,4,0x007}, {3,4,0x008}, {4,4,0x00b}, {5,4,0x00c}, {6,4,0x00e},
+    {7,4,0x00f}, {10,5,0x007}, {11,5,0x008}, {128,5,0x012}, {8,5,0x013},
+    {9,5,0x014}, {64,5,0x01b}, {13,6,0x003}, {1,6,0x007}, {12,6,0x008},
+    {192,6,0x017}, {1664,6,0x018}, {16,6,0x02a}, {17,6,0x02b}, {14,6,0x034},
+    {15,6,0x035}, {22,7,0x003}, {23,7,0x004}, {20,7,0x008}, {19,7,0x00c},
+    {26,7,0x013}, {21,7,0x017}, {28,7,0x018}, {27,7,0x024}, {18,7,0x027},
+    {24,7,0x028}, {25,7,0x02b}, {256,7,0x037}, {29,8,0x002}, {30,8,0x003},
+    {45,8,0x004}, {46,8,0x005}, {47,8,0x00a}, {48,8,0x00b}, {33,8,0x012},
+    {34,8,0x013}, {35,8,0x014}, {36,8,0x015}, {37,8,0x016}, {38,8,0x017},
+    {31,8,0x01a}, {32,8,0x01b}, {53,8,0x024}, {54,8,0x025}, {39,8,0x028},
+    {40,8,0x029}, {41,8,0x02a}, {42,8,0x02b}, {43,8,0x02c}, {44,8,0x02d},
+    {61,8,0x032}, {62,8,0x033}, {63,8,0x034}, {0,8,0x035}, {320,8,0x036},
+    {384,8,0x037}, {59,8,0x04a}, {60,8,0x04b}, {49,8,0x052}, {50,8,0x053},
+    {51,8,0x054}, {52,8,0x055}, {55,8,0x058}, {56,8,0x059}, {57,8,0x05a},
+    {58,8,0x05b}, {448,8,0x064}, {512,8,0x065}, {640,8,0x067}, {576,8,0x068},
+    {1472,9,0x098}, {1536,9,0x099}, {1600,9,0x09a}, {1728,9,0x09b}, {704,9,0x0cc},
+    {768,9,0x0cd}, {832,9,0x0d2}, {896,9,0x0d3}, {960,9,0x0d4}, {1024,9,0x0d5},
+    {1088,9,0x0d6}, {1152,9,0x0d7}, {1216,9,0x0d8}, {1280,9,0x0d9}, {1344,9,0x0da},
+    {1408,9,0x0db},
+};
+
+static const Xpost_Fax_Code fax_black[] =
+{
+    {3,2,0x002}, {2,2,0x003}, {1,3,0x002}, {4,3,0x003}, {6,4,0x002},
+    {5,4,0x003}, {7,5,0x003}, {9,6,0x004}, {8,6,0x005}, {10,7,0x004},
+    {11,7,0x005}, {12,7,0x007}, {13,8,0x004}, {14,8,0x007}, {15,9,0x018},
+    {18,10,0x008}, {64,10,0x00f}, {16,10,0x017}, {17,10,0x018}, {0,10,0x037},
+    {24,11,0x017}, {25,11,0x018}, {23,11,0x028}, {22,11,0x037}, {19,11,0x067},
+    {20,11,0x068}, {21,11,0x06c}, {52,12,0x024}, {55,12,0x027}, {56,12,0x028},
+    {59,12,0x02b}, {60,12,0x02c}, {320,12,0x033}, {384,12,0x034}, {448,12,0x035},
+    {53,12,0x037}, {54,12,0x038}, {50,12,0x052}, {51,12,0x053}, {44,12,0x054},
+    {45,12,0x055}, {46,12,0x056}, {47,12,0x057}, {57,12,0x058}, {58,12,0x059},
+    {61,12,0x05a}, {256,12,0x05b}, {48,12,0x064}, {49,12,0x065}, {62,12,0x066},
+    {63,12,0x067}, {30,12,0x068}, {31,12,0x069}, {32,12,0x06a}, {33,12,0x06b},
+    {40,12,0x06c}, {41,12,0x06d}, {128,12,0x0c8}, {192,12,0x0c9}, {26,12,0x0ca},
+    {27,12,0x0cb}, {28,12,0x0cc}, {29,12,0x0cd}, {34,12,0x0d2}, {35,12,0x0d3},
+    {36,12,0x0d4}, {37,12,0x0d5}, {38,12,0x0d6}, {39,12,0x0d7}, {42,12,0x0da},
+    {43,12,0x0db}, {640,13,0x04a}, {704,13,0x04b}, {768,13,0x04c}, {832,13,0x04d},
+    {1280,13,0x052}, {1344,13,0x053}, {1408,13,0x054}, {1472,13,0x055}, {1536,13,0x05a},
+    {1600,13,0x05b}, {1664,13,0x064}, {1728,13,0x065}, {512,13,0x06c}, {576,13,0x06d},
+    {896,13,0x072}, {960,13,0x073}, {1024,13,0x074}, {1088,13,0x075}, {1152,13,0x076},
+    {1216,13,0x077},
+};
+
+static const Xpost_Fax_Code fax_ext[] =
+{
+    {1792,11,0x008}, {1856,11,0x00c}, {1920,11,0x00d}, {1984,12,0x012}, {2048,12,0x013},
+    {2112,12,0x014}, {2176,12,0x015}, {2240,12,0x016}, {2304,12,0x017}, {2368,12,0x01c},
+    {2432,12,0x01d}, {2496,12,0x01e}, {2560,12,0x01f},
+};
+
+typedef struct Xpost_FaxFile
+{
+    Xpost_File methods;
+    Xpost_File *source;
+    int pushback;
+    int eod;
+    int k;
+    int columns;
+    int rows;
+    int blackis1;
+    int byteal;
+    int eol;
+    int eob;
+    unsigned int bitbuf;
+    int bitcnt;
+    int *ref, *cur;     /* changing-element positions, padded */
+    int refcnt;
+    unsigned char *row;
+    int rowbytes;
+    int rowpos;
+    int rowsdone;
+} Xpost_FaxFile;
+
+static int
+fax_bit(Xpost_FaxFile *ff)
+{
+    int c;
+
+    if (ff->bitcnt == 0)
+    {
+        c = xpost_file_getc(ff->source);
+        if (c == EOF)
+            return -1;
+        ff->bitbuf = (unsigned int)c;
+        ff->bitcnt = 8;
+    }
+    ff->bitcnt--;
+    return (int)(ff->bitbuf >> ff->bitcnt) & 1;
+}
+
+enum { FAX_RUN_EOL = -2, FAX_RUN_ERR = -1 };
+
+/* one complete run length of the given colour: makeup codes add to
+   a following terminating code.  An end-of-line code stands in
+   either table so fill bits and markers surface here. */
+static int
+fax_runlength(Xpost_FaxFile *ff, int color)
+{
+    int total = 0;
+
+    for (;;)
+    {
+        const Xpost_Fax_Code *tab = color ? fax_black : fax_white;
+        int n = color ? (int)(sizeof(fax_black)/sizeof(*fax_black))
+                      : (int)(sizeof(fax_white)/sizeof(*fax_white));
+        int next = (int)(sizeof(fax_ext)/sizeof(*fax_ext));
+        unsigned int code = 0;
+        int len = 0, run = FAX_RUN_ERR, i, b;
+
+        while (len < 14 && run == FAX_RUN_ERR)
+        {
+            b = fax_bit(ff);
+            if (b < 0)
+                return FAX_RUN_ERR;
+            code = code << 1 | (unsigned int)b;
+            len++;
+            if (len == 12 && code == 1)
+                return total ? FAX_RUN_ERR : FAX_RUN_EOL;
+            for (i = 0; i < n; i++)
+                if (tab[i].len == len && tab[i].code == code)
+                {
+                    run = tab[i].run;
+                    break;
+                }
+            if (run == FAX_RUN_ERR)
+                for (i = 0; i < next; i++)
+                    if (fax_ext[i].len == len && fax_ext[i].code == code)
+                    {
+                        run = fax_ext[i].run;
+                        break;
+                    }
+        }
+        if (run == FAX_RUN_ERR)
+            return FAX_RUN_ERR;
+        total += run;
+        if (run < 64)
+            return total;
+    }
+}
+
+enum
+{
+    FAX_P, FAX_H, FAX_V0,
+    FAX_VR1, FAX_VR2, FAX_VR3,
+    FAX_VL1, FAX_VL2, FAX_VL3,
+    FAX_EOL, FAX_ERR
+};
+
+static int
+fax_mode(Xpost_FaxFile *ff)
+{
+    int b, z;
+
+    if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+    if (b) return FAX_V0;
+    if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+    if (b)
+    {
+        if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+        return b ? FAX_VR1 : FAX_VL1;
+    }
+    if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+    if (b) return FAX_H;
+    if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+    if (b) return FAX_P;
+    if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+    if (b)
+    {
+        if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+        return b ? FAX_VR2 : FAX_VL2;
+    }
+    if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+    if (b)
+    {
+        if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+        return b ? FAX_VR3 : FAX_VL3;
+    }
+    /* six zeros so far: only an end-of-line marker continues this way */
+    for (z = 6; z < 64; z++)
+    {
+        if ((b = fax_bit(ff)) < 0) return FAX_ERR;
+        if (b)
+            return z >= 11 ? FAX_EOL : FAX_ERR;
+    }
+    return FAX_ERR;
+}
+
+/* consume fill bits and one end-of-line marker; -1 on anything else */
+static int
+fax_eateol(Xpost_FaxFile *ff)
+{
+    int b, z = 0;
+
+    while (z < 64)
+    {
+        b = fax_bit(ff);
+        if (b < 0)
+            return -1;
+        if (b)
+            return z >= 11 ? 0 : -1;
+        z++;
+    }
+    return -1;
+}
+
+/* the trailing block marker: two end-of-line codes close a Group 4
+   stream, six close a Group 3 one; the source then stands at the
+   next byte.  Absent or malformed trailers are left alone. */
+static void
+fax_finish(Xpost_FaxFile *ff)
+{
+    int need = ff->k < 0 ? 2 : 6;
+    int got = 0, c;
+
+    if (ff->eob)
+    {
+        while (got < need && fax_eateol(ff) == 0)
+        {
+            got++;
+            if (ff->k > 0 && got < need)
+                (void)fax_bit(ff); /* tag bit trails each marker */
+        }
+    }
+    ff->bitcnt = 0;
+    /* as the data ends, an encoding filter beneath swallows its own
+       in-band terminator producing the peeked byte; a plain byte is
+       put back untouched */
+    c = xpost_file_getc(ff->source);
+    if (c != EOF)
+        xpost_file_ungetc(ff->source, c);
+    ff->eod = 1;
+}
+
+static int
+fax_1d_row(Xpost_FaxFile *ff)
+{
+    int pos = 0, color = 0, ci = 0, run, guard = 0;
+
+    while (pos < ff->columns)
+    {
+        if (++guard > 2 * ff->columns + 64)
+            return -1;
+        /* a row holds at most one changing element per pixel; keep ci within
+           the changing-element buffer, as the two-dimensional decoder does */
+        if (ci > ff->columns)
+            return -1;
+        run = fax_runlength(ff, color);
+        if (run == FAX_RUN_EOL)
+        {
+            if (pos == 0 && ci == 0)
+                continue;   /* marker before the row */
+            return -1;
+        }
+        if (run < 0)
+            return ci == 0 && pos == 0 ? -2 : -1; /* clean EOF at a row edge */
+        pos += run;
+        if (pos > ff->columns)
+            pos = ff->columns;
+        ff->cur[ci++] = pos;
+        color ^= 1;
+    }
+    ff->cur[ci] = ff->cur[ci + 1] = ff->columns;
+    ff->refcnt = ci;
+    return 0;
+}
+
+static int
+fax_2d_row(Xpost_FaxFile *ff)
+{
+    int a0 = -1, color = 0, ci = 0, ri = 0;
+    int b1, b2, a1, r1, r2, start, mode;
+
+    while (a0 < ff->columns)
+    {
+        if (ci > ff->columns)
+            return -1;
+        /* b1: first reference change right of a0 toward the colour
+           opposite the current one; changes alternate to-black,
+           to-white from an even origin.  The left vertical modes
+           move a0 backward, so the walk goes down before up */
+        while (ri > 0 && (ri >= ff->refcnt || ff->ref[ri - 1] > a0))
+            ri--;
+        while (ri < ff->refcnt && ff->ref[ri] <= a0)
+            ri++;
+        if ((ri ^ color) & 1)
+            ri++;
+        b1 = ri < ff->refcnt ? ff->ref[ri] : ff->columns;
+        b2 = ri + 1 < ff->refcnt ? ff->ref[ri + 1] : ff->columns;
+
+        mode = fax_mode(ff);
+        switch (mode)
+        {
+        case FAX_P:
+            a0 = b2;
+            break;
+        case FAX_H:
+            start = a0 < 0 ? 0 : a0;
+            r1 = fax_runlength(ff, color);
+            r2 = r1 < 0 ? r1 : fax_runlength(ff, !color);
+            if (r1 < 0 || r2 < 0)
+                return -1;
+            if (start + r1 > ff->columns) r1 = ff->columns - start;
+            if (start + r1 + r2 > ff->columns) r2 = ff->columns - start - r1;
+            ff->cur[ci++] = start + r1;
+            ff->cur[ci++] = start + r1 + r2;
+            a0 = start + r1 + r2;
+            break;
+        case FAX_V0: case FAX_VR1: case FAX_VR2: case FAX_VR3:
+        case FAX_VL1: case FAX_VL2: case FAX_VL3:
+            a1 = b1;
+            if (mode >= FAX_VR1 && mode <= FAX_VR3)
+                a1 += mode - FAX_VR1 + 1;
+            else if (mode >= FAX_VL1)
+                a1 -= mode - FAX_VL1 + 1;
+            if (a1 < 0 || a1 > ff->columns)
+                return -1;
+            ff->cur[ci++] = a1;
+            a0 = a1;
+            color ^= 1;
+            break;
+        case FAX_EOL:
+            if (a0 < 0 && ci == 0)
+            {
+                if (ff->k < 0)      /* first of the closing pair */
+                    return -2;
+                continue;
+            }
+            return -1;
+        default:
+            return a0 < 0 && ci == 0 ? -2 : -1;
+        }
+    }
+    ff->cur[ci] = ff->cur[ci + 1] = ff->columns;
+    ff->refcnt = ci;
+    return 0;
+}
+
+static int
+fax_decoderow(Xpost_FaxFile *ff)
+{
+    int ret, twod, b, *tmp;
+    int i, ci, pos;
+
+    if (ff->rows > 0 && ff->rowsdone >= ff->rows)
+    {
+        fax_finish(ff);
+        return EOF;
+    }
+    if (ff->byteal && ff->bitcnt < 8)
+        ff->bitcnt = 0;
+    /* the mixed coding types each row by a tag bit behind an
+       end-of-line marker, so for positive K the marker is
+       structural, whatever EndOfLine says of the plain codings */
+    if (ff->k >= 0 && (ff->eol || ff->k > 0) && fax_eateol(ff) < 0)
+    {
+        if (ff->k > 0)
+            XPOST_LOG_ERR("CCITTFaxDecode: no end-of-line marker "
+                          "before row %d", ff->rowsdone);
+        ff->eod = 1;
+        return EOF;
+    }
+    if (ff->k < 0)
+        twod = 1;
+    else if (ff->k == 0)
+        twod = 0;
+    else
+    {
+        /* a tag bit rides behind each end-of-line marker */
+        b = fax_bit(ff);
+        if (b < 0)
+        {
+            ff->eod = 1;
+            return EOF;
+        }
+        twod = !b;
+    }
+
+    ret = twod ? fax_2d_row(ff) : fax_1d_row(ff);
+    if (ret == -2)  /* the stream closed at a row boundary */
+    {
+        if (ff->k < 0 && ff->eob)
+            (void)fax_eateol(ff);   /* second half of the block marker */
+        ff->bitcnt = 0;
+        b = xpost_file_getc(ff->source);
+        if (b != EOF)
+            xpost_file_ungetc(ff->source, b);
+        ff->eod = 1;
+        return EOF;
+    }
+    if (ret < 0)
+    {
+        XPOST_LOG_ERR("CCITTFaxDecode: damaged row %d", ff->rowsdone);
+        ff->eod = 1;
+        return EOF;
+    }
+
+    /* render the changing elements: runs alternate from white */
+    memset(ff->row, ff->blackis1 ? 0x00 : 0xff, (size_t)ff->rowbytes);
+    ci = ff->refcnt;
+    for (i = 0; i < ci; i += 2)
+    {
+        int to = i + 1 < ci ? ff->cur[i + 1] : ff->columns;
+        for (pos = ff->cur[i]; pos < to; pos++)
+        {
+            if (ff->blackis1)
+                ff->row[pos >> 3] |= (unsigned char)(0x80 >> (pos & 7));
+            else
+                ff->row[pos >> 3] &= (unsigned char)~(0x80 >> (pos & 7));
+        }
+    }
+
+    tmp = ff->ref; ff->ref = ff->cur; ff->cur = tmp;
+    ff->rowpos = 0;
+    ff->rowsdone++;
+    return 0;
+}
+
+static int
+fax_readch(Xpost_File *f)
+{
+    Xpost_FaxFile *ff = (Xpost_FaxFile *)f;
+    int c;
+
+    if (ff->pushback >= 0)
+    {
+        c = ff->pushback;
+        ff->pushback = -1;
+        return c;
+    }
+    if (ff->rowpos >= ff->rowbytes)
+    {
+        if (ff->eod)
+            return EOF;
+        if (fax_decoderow(ff) == EOF)
+            return EOF;
+    }
+    return ff->row[ff->rowpos++];
+}
+
+static int
+fax_close(Xpost_File *f)
+{
+    Xpost_FaxFile *ff = (Xpost_FaxFile *)f;
+
+    free(ff->ref);
+    free(ff->cur);
+    free(ff->row);
+    ff->ref = ff->cur = NULL;
+    ff->row = NULL;
+    ff->eod = 1;
+    ff->pushback = -1;
+    return 0;
+}
+
+struct Xpost_File_Methods fax_methods =
+{
+    fax_readch, filter_writech, fax_close, filter_flush,
+    filter_purge, filter_unreadch, filter_tell, filter_seek
+};
+
+Xpost_Object xpost_file_cons_filter_ccitt(Xpost_Memory_File *mem,
+                                          Xpost_Object src,
+                                          int k, int columns, int rows,
+                                          int blackis1, int byteal,
+                                          int eol, int eob)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_FaxFile *ff;
+
+    if (!source)
+        return invalid;
+    if (columns < 1 || columns > (1 << 20))
+        return invalid;
+    ff = calloc(1, sizeof *ff);
+    if (ff)
+    {
+        ff->methods.methods = &fax_methods;
+        ff->source = source;
+        ff->pushback = -1;
+        ff->k = k;
+        ff->columns = columns;
+        ff->rows = rows;
+        ff->blackis1 = blackis1;
+        ff->byteal = byteal;
+        ff->eol = eol;
+        ff->eob = eob;
+        ff->rowbytes = (columns + 7) / 8;
+        ff->ref = calloc((size_t)columns + 4, sizeof(int));
+        ff->cur = calloc((size_t)columns + 4, sizeof(int));
+        ff->row = malloc((size_t)ff->rowbytes);
+        if (!ff->ref || !ff->cur || !ff->row)
+        {
+            free(ff->ref); free(ff->cur); free(ff->row); free(ff);
+            return invalid;
+        }
+        /* the imaginary all-white line above the first row */
+        ff->refcnt = 0;
+        ff->rowpos = ff->rowbytes;
+    }
+    return _filter_object_cons(mem, &ff->methods);
+}
+
 /* ReusableStreamDecode filter: the entire source is drained into a
    buffer at construction -- leaving the underlying file positioned
    just past the encoded data, exactly as reading it would -- and the

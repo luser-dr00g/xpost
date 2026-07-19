@@ -248,6 +248,17 @@ E8646A5136A254AC16EBE62B31A6DA70BA1DEF67E81016120C8804E2E1A8F0864A28960BE663
 01>
 pop dup length 340 eq exch st.lzwsum 42450 eq and
 (EarlyChange 0 defers the wider code to the table boundary) assert
+currentfile /ASCIIHexDecode filter
+<< /K -1 /Columns 16 /Rows 4 >> /CCITTFaxDecode filter 16 string readstring
+26AE6DCCDC90C0040040>
+pop <0FFFF0FFFF0FFFF0> eq
+(CCITTFaxDecode expands the two-dimensional coding) assert
+currentfile /ASCIIHexDecode filter
+<< /K 0 /Columns 16 /Rows 4 /BlackIs1 true >> /CCITTFaxDecode filter
+16 string readstring
+35645B9CDD90C0040040040040040040>
+pop <F0000F0000F0000F> eq
+(the one-dimensional coding honours BlackIs1) assert
 
 % --- an end-of-line marker is one white-space delimiter ---
 (ab\r\ncd) token pop exch (cd) eq

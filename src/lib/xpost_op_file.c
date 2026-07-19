@@ -125,6 +125,8 @@ int xpost_op_file_filter (Xpost_Context *ctx,
         f = xpost_file_cons_filter_rsd(ctx->lo, F);
     else if (strcmp(cname, "LZWDecode") == 0)
         f = xpost_file_cons_filter_lzw(ctx->lo, F, 1);
+    else if (strcmp(cname, "CCITTFaxDecode") == 0)
+        f = xpost_file_cons_filter_ccitt(ctx->lo, F, 0, 1728, 0, 0, 0, 0, 1);
 #ifdef HAVE_ZLIB
     else if (strcmp(cname, "FlateDecode") == 0)
         f = xpost_file_cons_filter_flate(ctx->lo, F);
@@ -148,11 +150,24 @@ int xpost_op_file_filter (Xpost_Context *ctx,
     return 0;
 }
 
+static
+int _dict_int (Xpost_Context *ctx, Xpost_Object dict, const char *key, int def)
+{
+    Xpost_Object v = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, key));
+
+    if (xpost_object_get_type(v) == integertype)
+        return v.int_.val;
+    if (xpost_object_get_type(v) == booleantype)
+        return v.int_.val != 0;
+    return def;
+}
+
 /* file dict /FilterName  filter  file'
    the optional parameter dictionary form. LZWDecode reads its
-   EarlyChange switch from the dictionary; the other decode filters
-   take no parameter that changes their output here (DCTDecode reads
-   its layout from the stream itself), so it is otherwise set aside */
+   EarlyChange switch and CCITTFaxDecode its coding layout from the
+   dictionary; the other decode filters take no parameter that
+   changes their output here (DCTDecode reads its layout from the
+   stream itself), so it is otherwise set aside */
 static
 int xpost_op_file_filter_dict (Xpost_Context *ctx,
                                Xpost_Object F,
@@ -164,6 +179,28 @@ int xpost_op_file_filter_dict (Xpost_Context *ctx,
 
     namestr = xpost_name_get_string(ctx, name);
     cname = xpost_string_allocate_cstring(ctx, namestr);
+    if (cname && strcmp(cname, "CCITTFaxDecode") == 0)
+    {
+        Xpost_Object f;
+
+        free(cname);
+        if (!xpost_object_is_readable(ctx, F))
+            return invalidaccess;
+        f = xpost_file_cons_filter_ccitt(ctx->lo, F,
+                _dict_int(ctx, dict, "K", 0),
+                _dict_int(ctx, dict, "Columns", 1728),
+                _dict_int(ctx, dict, "Rows", 0),
+                _dict_int(ctx, dict, "BlackIs1", 0),
+                _dict_int(ctx, dict, "EncodedByteAlign", 0),
+                _dict_int(ctx, dict, "EndOfLine", 0),
+                _dict_int(ctx, dict, "EndOfBlock", 1));
+        if (xpost_object_get_type(f) == invalidtype)
+            return ioerror;
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= (XPOST_OBJECT_TAG_ACCESS_FILE_READ << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET);
+        xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+        return 0;
+    }
     if (cname && strcmp(cname, "LZWDecode") == 0)
     {
         Xpost_Object ec, f;
