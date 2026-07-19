@@ -964,6 +964,34 @@ int _cliptrivial(Xpost_Context *ctx)
     return 0;
 }
 
+/* -  .pathisrect  x0 y0 x1 y1 true
+                   false
+   when the current path is a single axis-aligned rectangle, its
+   device-space bounds; the clip machinery intersects two rectangles
+   directly rather than through the span pipeline */
+static
+int _pathisrect(Xpost_Context *ctx)
+{
+    Xpost_Object gstate, path;
+    real minx, miny, maxx, maxy;
+
+    gstate = _gstate(ctx);
+    if (xpost_object_get_type(gstate) == invalidtype)
+        return undefined;
+    path = xpost_dict_get(ctx, gstate, namecurrpath);
+    if (_path_is_rect(ctx, path, &minx, &miny, &maxx, &maxy))
+    {
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(minx));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(miny));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(maxx));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons(maxy));
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
+    }
+    else
+        xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+    return 0;
+}
+
 /* -  .cliprect  x0 y0 x1 y1 true
                  false
    when the clip region is a single axis-aligned rectangle, its
@@ -1866,6 +1894,8 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     INSTALL;
 
     op = xpost_operator_cons(ctx, ".cliprect", (Xpost_Op_Func)_cliprect, 5, 0);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".pathisrect", (Xpost_Op_Func)_pathisrect, 5, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, ".cliptrivial", (Xpost_Op_Func)_cliptrivial, 1, 0);
     INSTALL;

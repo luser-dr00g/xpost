@@ -66,6 +66,30 @@ def
         graphicsdict /currgstate get
         dup /currpath get /clipregion exch put
     }{
+    % two overlapping rectangles intersect to a rectangle: build it
+    % directly, so the region stays recognizable as one -- the
+    % hairline walk and the raster painters read its bounds -- rather
+    % than dissolving into pixel-band spans
+    .cliprect { .pathisrect { true }{ 4 { pop } repeat false } ifelse }
+              { false } ifelse {
+        8 dict begin
+        {/py1 /px1 /py0 /px0 /cy1 /cx1 /cy0 /cx0}{exch def}forall
+        /px0 px0 cx0 2 copy lt { exch } if pop def
+        /py0 py0 cy0 2 copy lt { exch } if pop def
+        /px1 px1 cx1 2 copy gt { exch } if pop def
+        /py1 py1 cy1 2 copy gt { exch } if pop def
+        newpath
+        px0 px1 le py0 py1 le and {
+            px0 py0 .devmoveto
+            px1 py0 .devlineto
+            px1 py1 .devlineto
+            px0 py1 .devlineto
+            closepath
+        } if
+        graphicsdict /currgstate get
+        dup /currpath get /clipregion exch put
+        end
+    }{
         % otherwise intersect span by span, as eoclip does: the
         % resulting pixel-band rectangles are winding-uniform, so
         % stacked regions of any shape combine exactly
@@ -74,6 +98,7 @@ def
         .polytopath
         graphicsdict /currgstate get
         dup /currpath get /clipregion exch put
+    } ifelse
     } ifelse
     graphicsdict /currgstate get /currpath 3 -1 roll put
 } def
