@@ -75,6 +75,7 @@ typedef struct fontdata
 typedef struct textstate
 {
     Xpost_Object encoding;  /* the font's /Encoding array, or invalid */
+    Xpost_Object charstrings; /* the font's /CharStrings dict, or invalid */
     Xpost_Object blendpix;  /* the device's BlendPix method, or invalid */
     int blend;              /* anti-alias: TextAlphaBits > 1 and BlendPix present */
     int vector;             /* the device consumes glyph outlines, not bitmaps */
@@ -287,6 +288,7 @@ textstate _text_state_get(Xpost_Context *ctx,
     Xpost_Object tab, vec, sep;
 
     ts.encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
+    ts.charstrings = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "CharStrings"));
     ts.blendpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "BlendPix"));
     tab = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "TextAlphaBits"));
     ts.blend = xpost_object_get_type(ts.blendpix) == operatortype
@@ -321,13 +323,18 @@ textstate _text_state_get(Xpost_Context *ctx,
 
 /* Map a character code to a glyph index. When the font carries an
    /Encoding array with a glyph name at this code, the name selects the
-   glyph; codes whose entry is not a name (the findfont wrapper fills
-   /Encoding with nulls), or whose name the face does not know, fall
-   back to the face's character map, preserving the plain-text
-   behaviour of an unencoded font. */
+   glyph. A Type 42 font's /CharStrings dictionary maps glyph names to
+   glyph indices and is authoritative when it holds an integer for the
+   name: subset fonts strip the sfnt's own name and character-map
+   tables and carry the name-to-index mapping only here. Otherwise the
+   name is resolved against the face's glyph names; codes whose entry
+   is not a name (the findfont wrapper fills /Encoding with nulls), or
+   whose name resolves nowhere, fall back to the face's character map,
+   preserving the plain-text behaviour of an unencoded font. */
 static
 unsigned int _glyph_index_for_char(Xpost_Context *ctx,
                                    Xpost_Object encoding,
+                                   Xpost_Object charstrings,
                                    void *face,
                                    unsigned int ch)
 {
@@ -337,9 +344,20 @@ unsigned int _glyph_index_for_char(Xpost_Context *ctx,
         Xpost_Object en = xpost_array_get(ctx, encoding, ch);
         if (xpost_object_get_type(en) == nametype)
         {
-            Xpost_Object str = xpost_name_get_string(ctx, en);
-            char *cname = xpost_string_allocate_cstring(ctx, str);
+            Xpost_Object str;
+            char *cname;
             unsigned int gi = 0;
+
+            if (xpost_object_get_type(charstrings) == dicttype)
+            {
+                Xpost_Object gid = xpost_dict_get(ctx, charstrings,
+                                                  xpost_object_cvlit(en));
+                if (xpost_object_get_type(gid) == integertype
+                 && gid.int_.val >= 0)
+                    return (unsigned int)gid.int_.val;
+            }
+            str = xpost_name_get_string(ctx, en);
+            cname = xpost_string_allocate_cstring(ctx, str);
             if (cname)
             {
                 if (strcmp(cname, ".notdef") == 0)
@@ -930,7 +948,8 @@ int _show_char(Xpost_Context *ctx,
     /* show does not kern: pair adjustment in PostScript is the
        program's business (kshow, ashow), and the reference
        interpreter advances by the glyph widths alone */
-    glyph_index = _glyph_index_for_char(ctx, ts->encoding, data.face, ch);
+    glyph_index = _glyph_index_for_char(ctx, ts->encoding, ts->charstrings,
+                                        data.face, ch);
     if (ts->vector)
     {
         if (!_show_char_outline(ctx, devdic, ts, data.face, glyph_index,
@@ -1475,6 +1494,7 @@ int _stringwidth(Xpost_Context *ctx,
     real xpos = 0, ypos = 0;
     char *ch;
     Xpost_Object encoding;
+    Xpost_Object charstrings;
 
     /* load the graphicsdict, current graphics state, and current font */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
@@ -1500,6 +1520,7 @@ int _stringwidth(Xpost_Context *ctx,
     }
     _face_setup(ctx, gs, fontdict, data.face);
     encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
+    charstrings = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "CharStrings"));
     XPOST_LOG_INFO("loaded font data from dict");
 
     /* get a c-style nul-terminated string */
@@ -1517,7 +1538,8 @@ int _stringwidth(Xpost_Context *ctx,
         long advance_x;
         long advance_y;
 
-        glyph_index = _glyph_index_for_char(ctx, encoding, data.face, (unsigned char)*ch);
+        glyph_index = _glyph_index_for_char(ctx, encoding, charstrings,
+                                            data.face, (unsigned char)*ch);
         if (!xpost_font_face_glyph_extents(data.face, glyph_index,
                                            &bx0, &by0, &bx1, &by1,
                                            &advance_x, &advance_y))
@@ -1661,6 +1683,7 @@ int _stringoutline(Xpost_Context *ctx,
     Xpost_Object privatestr;
     struct fontdata data;
     Xpost_Object encoding;
+    Xpost_Object charstrings;
     char *cstr;
     char *ch;
     outlinecollect oc;
@@ -1688,6 +1711,7 @@ int _stringoutline(Xpost_Context *ctx,
     }
     _face_setup(ctx, gs, fontdict, data.face);
     encoding = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "Encoding"));
+    charstrings = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, "CharStrings"));
 
     cstr = xpost_string_allocate_cstring(ctx, str);
     if (!cstr)
@@ -1707,7 +1731,8 @@ int _stringoutline(Xpost_Context *ctx,
         long advance_x, advance_y;
         Xpost_Font_Outline_Sink sink;
 
-        glyph_index = _glyph_index_for_char(ctx, encoding, data.face, (unsigned char)*ch);
+        glyph_index = _glyph_index_for_char(ctx, encoding, charstrings,
+                                            data.face, (unsigned char)*ch);
         sink.moveto = _oc_moveto;
         sink.lineto = _oc_lineto;
         sink.curveto = _oc_curveto;

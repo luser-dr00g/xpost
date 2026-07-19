@@ -711,6 +711,65 @@ basefont null ne {
     } if
 } ifelse
 
+% A subset Type 42 program, as document producers embed them, strips
+% the sfnt's glyph names (post format 3.0) and its character map; the
+% font dictionary's /CharStrings dictionary, mapping glyph names to
+% glyph indices, is then the only route from an /Encoding name to a
+% glyph. The embedded 660-byte program holds .notdef, a filled
+% square (glyph 1, on-curve corners only) and a filled triangle
+% (glyph 2), both 600 units wide on an advance of 800.
+12 dict begin
+    /FontType 42 def
+    /FontMatrix [1 0 0 1 0 0] def
+    /FontBBox [0 -200 800 800] def
+    /Encoding 256 array def
+    0 1 255 { Encoding exch /.notdef put } for
+    Encoding 65 /sq put
+    Encoding 66 /tri put
+    /CharStrings << /.notdef 0 /sq 1 /tri 2 >> def
+    /sfnts [
+<
+00010000000A0080000300204F532F3240F642000000012800000060636D6170000C0046
+000001940000002C676C79665D14F5C4000001C800000034686561642F39E06E000000AC
+0000003668686561064202BF000000E400000024686D747805780064000001880000000A
+6C6F6361000D001A000001C0000000086D6178700005000600000108000000206E616D65
+FBB25C27000001FC00000078706F73740003000000000274000000200001000000010000
+FBF3ACAF5F0F3CF5000303E800000000E681CE9B00000000E681CE9B0064000002BC0258
+000000030002000000000000000100000320FF38000003200064006402BC000100000000
+000000000000000000000002000100000003000400010000000000020000000000000000
+0000000000000000000302BC019000050004000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000003F3F3F3F0000
+000000000000000000000000000000000000000000000000000000000020000001F40000
+032000640064000000000002000000030000001400030001000000140004001800000002
+000200000000FFFF0000FFFF0001000000000000000D001A00010064000002BC02580003
+0000331121116402580258FDA80000010064000002BC02580002000033010164012C012C
+0258FDA80000000400360001000000000001000F000000010000000000020007000F0003
+000104090001001E00160003000104090002000E003458706F7374543432466978747572
+65526567756C617200580070006F00730074005400340032004600690078007400750072
+00650052006500670075006C006100720003000000000000000000000000000000000000
+000000000000000000000000
+>
+    ] def
+currentdict end
+{ /SubsetT42Test exch definefont } stopped
+dup (definefont accepts a subset Type 42 program) exch not exch assert
+not {
+    20 scalefont setfont
+    erasepage
+    10 16 moveto (A) show
+    countink 100 ge (a subset glyph resolves through CharStrings) assert
+    /sqink countink def
+    erasepage
+    10 16 moveto (B) show
+    countink 40 ge (a second subset name resolves through CharStrings) assert
+    countink sqink 30 sub le (the two names select distinct glyphs) assert
+    (A) stringwidth pop 16 sub abs 0.5 le (subset metrics come from the program) assert
+    erasepage
+    newpath 10 16 moveto (B) false charpath flattenpath pathbbox
+    pop exch pop exch sub 12 sub abs 1.5 le (charpath resolves subset glyphs) assert
+    erasepage
+} if
+
 % --- charpath appends glyph outlines: the path carries curves, fills
 %     with its counters intact, and clips like any other path ---
 basefont null ne {
