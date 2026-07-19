@@ -1588,6 +1588,7 @@ void setlocalconfig(Xpost_Context *ctx,
     {
         { "pgm",     "",                 "newPGMIMAGEdevice" },
         { "ppm",     "",                 "newPPMIMAGEdevice" },
+        { "pbm",     "",                 "newPBMIMAGEdevice" },
         { "null",    "",                 "newnulldevice"     },
         { "bbox",    "",                 "newbboxdevice"     },
         { "xcb",     "loadxcbdevice",    "newxcbdevice"      },
@@ -1634,6 +1635,12 @@ void setlocalconfig(Xpost_Context *ctx,
         {
             break;
         }
+    }
+    if (!device_strings[i][0])
+    {
+        XPOST_LOG_ERR("unknown device %s", devstr);
+        free(devstr);
+        return;
     }
     if (set_size == XPOST_USE_SIZE){
         snprintf(dimensions_buf, sizeof(dimensions_buf), "%d %d", width, height);

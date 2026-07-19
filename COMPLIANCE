@@ -371,7 +371,7 @@ Typical output devices
 
  [X] pgm
  [X] ppm
- [ ] pbm
+ [X] pbm
  [ ] tiff
  [X] jpeg
  [X] png (also a png with alpha)
