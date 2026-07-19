@@ -388,6 +388,28 @@ count st.cd sub 7 eq (cachestatus reports seven values) assert
 /Courier findfont dup setfont
 rootfont eq (rootfont answers with the font the program set) assert
 
+% --- user objects index into a growing table ---
+3 { 40 2 add } defineuserobject
+3 execuserobject 42 eq (a user object executes by index) assert
+25 (far) defineuserobject
+25 execuserobject (far) eq (the table grows to reach an index) assert
+3 execuserobject 42 eq (growth preserves earlier entries) assert
+3 undefineuserobject
+UserObjects 3 get null eq (undefineuserobject clears the slot) assert
+
+% --- user paths append through both forms ---
+newpath
+{ 0 0 40 40 setbbox 10 10 moveto 30 30 lineto } uappend
+currentpoint 30 eq exch 30 eq and (a self-describing path appends) assert
+newpath
+[ [0 0 20 20  5 5  1 1  1 1] <00 01 22 04> ] uappend
+currentpoint 7 eq exch 7 eq and
+(an encoded path repeats its operator by the factor less thirty-two) assert
+newpath 1 2 moveto 3 4 lineto
+false upath
+newpath uappend
+currentpoint 4 eq exch 3 eq and (upath round-trips the current path) assert
+
 % --- the job server accepts exitserver ---
 countdictstack
 { serverdict begin 0 exitserver } stopped not

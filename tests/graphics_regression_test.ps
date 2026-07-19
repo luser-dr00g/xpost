@@ -1228,6 +1228,18 @@ currentpoint pop 22 sub abs 0.5 le
 (its codes advance by the charstring width) assert
 erasepage
 
+% user paths and forms paint like their ordinary counterparts
+erasepage
+{ 10 10 40 40 setbbox 10 10 moveto 40 10 lineto 40 40 lineto closepath } ufill
+countink 300 ge (ufill paints the described region) assert
+erasepage
+/TestForm << /FormType 1 /Matrix [1 0 0 1 0 0] /BBox [0 0 20 20]
+    /PaintProc { pop 0 0 100 100 rectfill } >> def
+TestForm execform
+countink 350 ge countink 450 le and
+(execform clips its paint to the bounding box) assert
+erasepage
+
 
 % Type 3 fonts serve glyphshow through their BuildGlyph procedure, as
 % plotting tools emit them (a name-keyed CharStrings of drawing

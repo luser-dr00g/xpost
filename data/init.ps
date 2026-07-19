@@ -471,6 +471,130 @@ end % userdict
     } ifelse
 } def
 
+% index any  defineuserobject  -
+% the user-object table lives in userdict, growing as indices demand
+/defineuserobject {
+    exch
+    dup 0 lt { /defineuserobject cvx /rangecheck signalerror } if
+    userdict /UserObjects known not {
+        userdict /UserObjects 10 array put
+    } if
+    dup UserObjects length ge {
+        dup 1 add UserObjects length 2 mul 2 copy lt { exch } if pop
+        array dup 0 UserObjects putinterval
+        userdict /UserObjects 3 -1 roll put
+    } if
+    UserObjects exch 3 -1 roll put
+} def
+
+% index  execuserobject  -
+/execuserobject {
+    UserObjects exch get exec
+} def
+
+% index  undefineuserobject  -
+/undefineuserobject {
+    UserObjects exch null put
+} def
+
+% formdict  execform  -
+% paint the form: its matrix maps form space into user space, its
+% bounding box clips, and its paint procedure takes the dictionary.
+% Every execution paints afresh -- the language permits it
+/execform {
+    dup type /dicttype ne { /execform cvx /typecheck signalerror } if
+    dup /FormType 2 copy known { get 1 eq }{ pop pop false } ifelse
+    not { /execform cvx /rangecheck signalerror } if
+    gsave
+    dup /Matrix get concat
+    dup /BBox get aload pop     % form llx lly urx ury
+    2 index sub                 % form llx lly urx h
+    exch 3 index sub exch       % form llx lly w h
+    rectclip
+    dup /PaintProc get exec
+    grestore
+} def
+
+% User paths: the self-describing form is an executable array of the
+% path operators below; the encoded form pairs an operand source (a
+% number array or encoded number string) with a string of opcodes,
+% where an opcode of 32 or more repeats the following operator that
+% many fewer than its value times
+/setbbox { pop pop pop pop } def    % the box is advisory here
+/ucache {} def
+
+/.upathops [ /setbbox /moveto /rmoveto /lineto /rlineto /curveto
+             /rcurveto /arc /arcn /arct /closepath /ucache ] def
+/.upathargs [ 4 2 2 2 2 6 6 5 5 5 0 0 ] def
+
+% userpath  uappend  -
+/uappend {
+    dup xcheck {
+        exec
+    }{
+        8 dict begin
+        dup 0 get dup type /stringtype eq { .numstring2array } if
+        /args exch def
+        1 get /ops exch def
+        /ai 0 def
+        /rep 1 def
+        0 1 ops length 1 sub {
+            ops exch get
+            dup 31 gt {
+                32 sub /rep exch def
+            }{
+                /op exch def
+                rep {
+                    .upathargs op get { args ai get /ai ai 1 add def } repeat
+                    .upathops op get cvx exec
+                } repeat
+                /rep 1 def
+            } ifelse
+        } for
+        end
+    } ifelse
+} def
+
+% matrix and user path operands tell apart by shape: a matrix is a
+% six-element literal array of numbers
+/.isupmat {
+    dup type /arraytype eq
+    1 index xcheck not and
+    1 index length 6 eq and
+    { dup 0 get type dup /integertype eq exch /realtype eq or }
+    { false } ifelse
+} def
+
+/ufill { gsave newpath uappend fill grestore } def
+/ueofill { gsave newpath uappend eofill grestore } def
+/ustroke {
+    .isupmat {
+        gsave newpath exch uappend concat stroke grestore
+    }{
+        gsave newpath uappend stroke grestore
+    } ifelse
+} def
+/ustrokepath {
+    .isupmat {
+        matrix currentmatrix 3 1 roll
+        exch newpath uappend
+        concat strokepath
+        setmatrix
+    }{
+        newpath uappend strokepath
+    } ifelse
+} def
+
+% bool  upath  userpath
+% the current path, written as a user path in current user space
+/upath {
+    [ exch { /ucache cvx } if
+      pathbbox /setbbox cvx
+      { /moveto cvx }{ /lineto cvx }{ /curveto cvx }{ /closepath cvx }
+      pathforall
+    ] cvx
+} def
+
 % mark key value ... /TYPE  pdfmark  -
 % Route document metadata to a device that can carry it (the pdfwrite
 % device collects DOCINFO into its trailer); every other mark type,

@@ -246,8 +246,8 @@ Level 1 operators
  [X] version
  [X] eexec
  [X] internaldict (empty but for what programs deposit)
- [ ] cachestatus
- [ ] setcachelimit
+ [X] cachestatus (nominal figures)
+ [X] setcachelimit (accepted)
 
 Level 2 operators
 -----------------
@@ -308,22 +308,23 @@ Level 2 operators
  [X] vmreclaim (a request only: collection is not implemented)
  [X] realtime
  [X] product, revision, serialnumber
- [ ] languagelevel
- [ ] undefinefont
- [ ] rootfont
- [ ] startjob
- [ ] setcachedevice2
- [ ] setcacheparams, currentcacheparams
- [ ] user paths (upath, uappend, ufill, ueofill, ustroke,
-     ustrokepath, ucache, ucachestatus, setucacheparams, setbbox)
+ [X] languagelevel
+ [X] undefinefont
+ [X] rootfont
+ [X] startjob (job boundaries accepted; no VM encapsulation)
+ [X] setcachedevice2 (reduces to setcachedevice)
+ [X] setcacheparams, currentcacheparams (accepted; nominal figures)
+ [X] user paths (upath, uappend, ufill, ueofill, ustroke,
+     ustrokepath, setbbox; ucache is accepted, nothing is cached)
  [ ] insideness testing (infill, ineofill, instroke, inufill,
      inueofill, inustroke)
- [ ] user objects (defineuserobject, execuserobject,
+ [X] user objects (defineuserobject, execuserobject,
      undefineuserobject)
- [ ] execform
- [ ] setstrokeadjust, currentstrokeadjust
- [ ] shared VM (setshared, currentshared, scheck, shareddict,
-     SharedFontDirectory, GlobalFontDirectory)
+ [X] execform (every execution paints afresh)
+ [X] setstrokeadjust, currentstrokeadjust (recorded only)
+ [X] shared VM (setshared, currentshared, scheck, shareddict,
+     SharedFontDirectory, GlobalFontDirectory: the global-VM view
+     by other names)
  [ ] binary object sequences (setobjectformat, currentobjectformat,
      printobject, writeobject)
 
@@ -338,8 +339,8 @@ Level 3 operators
      cshow rebinds the composite to one-byte codes)
  [X] clipsave
  [X] cliprestore
- [ ] setsmoothness, currentsmoothness
- [ ] findcolorrendering
+ [X] setsmoothness, currentsmoothness (recorded only)
+ [X] findcolorrendering (names the default instance)
 
 Extensions
 ----------
