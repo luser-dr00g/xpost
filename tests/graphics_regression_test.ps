@@ -915,9 +915,38 @@ basefont null ne {
     countmid 0 gt (a stencil glyph blends its edges) assert
     countink 40 ge (its core stays solid) assert
     erasepage
-    8 8 true [ 8 30 div 0 0 8 30 div neg 4 34 ]
-    {<3C7EFFFFFFFF7E3C>} imagemask
-    countmid 0 eq (a stencil outside a glyph stays bilevel) assert
+    gsave 4 4 translate 30 30 scale
+    8 8 true [8 0 0 -8 0 8] {<3C7EFFFFFFFF7E3C>} imagemask
+    grestore
+    countink 100 ge (a stencil outside a glyph paints) assert
+    countmid 0 eq (and stays bilevel) assert
+    % asking for interpolation smooths the same mask
+    erasepage
+    gsave 4 4 translate 30 30 scale
+    << /ImageType 1 /Width 8 /Height 8 /BitsPerComponent 1
+       /Decode [1 0] /ImageMatrix [8 0 0 -8 0 8]
+       /DataSource <3C7EFFFFFFFF7E3C> /Interpolate true >> imagemask
+    grestore
+    countink 100 ge (an interpolated stencil paints) assert
+    countmid 0 gt (and ramps its edges) assert
+
+    % a sampled image magnified: stepped, the boundary between blocks
+    % jumps; interpolated, the same point blends the neighbours
+    erasepage
+    gsave 4 4 translate 40 40 scale
+    << /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8 /Decode [0 1]
+       /ImageMatrix [2 0 0 -2 0 2] /DataSource <00FF FF00> >> image
+    grestore
+    24 24 DEV dup /GetPix get exec
+    dup 60 lt exch 195 gt or (a stepped image jumps at its block boundary) assert
+    erasepage
+    gsave 4 4 translate 40 40 scale
+    << /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8 /Decode [0 1]
+       /ImageMatrix [2 0 0 -2 0 2] /DataSource <00FF FF00>
+       /Interpolate true >> image
+    grestore
+    24 24 DEV dup /GetPix get exec
+    dup 60 ge exch 195 le and (an interpolated image blends there) assert
     basefont 20 scalefont setfont
 
     % /Encoding: a re-encoded copy renders the named glyph

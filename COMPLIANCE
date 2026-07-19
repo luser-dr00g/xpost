@@ -272,7 +272,8 @@ Level 2 operators
  [X] glyphshow
  [X] colorimage
  [/] image with dict argument (ImageTypes 1, 3 and 4; Interpolate
-     unsupported)
+     smooths stencil masks and sampled images on the direct raster
+     path; masked and planar images paint stepped)
  [X] imagemask with dict argument
  [X] setcolortransfer (recorded; painting applies the grey transfer)
  [X] currentcolortransfer

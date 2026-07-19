@@ -351,6 +351,10 @@
         newpath
         24 dict begin
         {mranges mbits ncomp decode datasrc mat bits height width}{exch def}forall
+        % the dictionary image form leaves its Interpolate request in
+        % userdict for this one painting; anything else paints stepped
+        /interp userdict /.imginterp 2 copy known { get }{ pop pop false } ifelse def
+        userdict /.imginterp false put
 
         % a literal array of sources delivers each component from its
         % own plane; a single source interleaves them. The source is
@@ -481,6 +485,13 @@
             } ifelse
             bd /tlut tlut put
             bd /y 0 put
+            /interpok interp multi not and
+                mbits null eq and mranges null eq and
+                cspansv null eq and def
+            interpok {
+                bd /interp true put
+                /pbuf rowsamples string def
+            } if
             0 1 height 1 sub { /y exch def
                 multi {
                     0 1 ncomp 1 sub { /c exch def
@@ -495,7 +506,13 @@
                     .fill .rownorm
                 } ifelse
                 bd /y y put
+                interpok {
+                    y 0 eq { pbuf 0 buf putinterval } if
+                    bd /prev pbuf put
+                    bd /last y height 1 sub eq put
+                } if
                 bd .blitrow
+                interpok { pbuf 0 buf putinterval } if
             } for
         }{
         % invert into a fresh matrix: the operand matrix belongs to
@@ -736,6 +753,8 @@
         dup 1 eq {
             pop
             begin
+            currentdict /Interpolate 2 copy known { get }{ pop pop false } ifelse
+            dup type /booleantype eq { userdict /.imginterp 3 -1 roll put }{ pop } ifelse
             Width Height BitsPerComponent ImageMatrix
             % fetch through the dictionary: a procedure source fetched
             % by name would execute instead of arriving as the operand
@@ -793,7 +812,7 @@
     grestore
 } def
 
-% width height polarity matrix datasrc  .stencilmask  -
+% width height polarity matrix datasrc interp  .stencilmask  -
 % paint the current colour through a one-bit stencil: samples equal to
 % the polarity mark unit squares of image space, the rest leave the
 % page untouched. Each row of samples begins on a byte boundary.
@@ -894,7 +913,7 @@
     gsave
         newpath
         10 dict begin
-        {datasrc mat polarity height width}{exch def}forall
+        {interp datasrc mat polarity height width}{exch def}forall
         /rowbytes width 7 add 8 idiv def
         /buf rowbytes height mul string def
         /bp 0 def
@@ -923,10 +942,12 @@
         % clips: the coverage painter writes pixels directly
         /aadone false def
         paintpat not
-        graphicsdict /.inglyph 2 copy known { get }{ pop pop false } ifelse and
+        graphicsdict /.inglyph 2 copy known { get }{ pop pop false } ifelse
+        interp or and
         .cliptrivial and {
             << /buf buf /width width /height height
-               /ink ink /mat matrix currentmatrix >> .stencilaa
+               /ink ink /interp interp
+               /mat matrix currentmatrix >> .stencilaa
             { /aadone true def } if
         } if
         aadone not {
@@ -993,9 +1014,11 @@
         % fetch through the dictionary: a procedure source fetched by
         % name would execute instead of arriving as the operand
         currentdict /DataSource get .imgsource
+        currentdict /Interpolate 2 copy known { get }{ pop pop false } ifelse
+        dup type /booleantype ne { pop false } if
         end
     }{
-        .imgsource
+        .imgsource false
     } ifelse
     .stencilmask
 } def

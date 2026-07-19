@@ -1904,7 +1904,7 @@ int _stencilaa(Xpost_Context *ctx,
     Xpost_Object userdict, gd, gs, devdic, putpix;
     Xpost_Object buf, mat, o;
     textstate ts;
-    int w, h, ink, ncomp;
+    int w, h, ink, ncomp, interp = 0;
     Xpost_Object comp[4];
     double m[6];
     double fx0, fx1, fy0, fy1, xa, xb, ya, yb, full;
@@ -1948,6 +1948,8 @@ int _stencilaa(Xpost_Context *ctx,
     mat = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "mat"));
     if (xpost_object_get_type(mat) != arraytype || mat.comp_.sz != 6)
         goto refuse;
+    o = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "interp"));
+    interp = xpost_object_get_type(o) == booleantype && o.int_.val;
     for (i = 0; i < 6; i++)
     {
         o = xpost_array_get(ctx, mat, i);
@@ -2001,6 +2003,39 @@ int _stencilaa(Xpost_Context *ctx,
             if (mx0 > mx1) { t = mx0; mx0 = mx1; mx1 = t; }
             if (mx0 < 0) mx0 = 0;
             if (mx1 > w) mx1 = w;
+            /* an interpolated mask magnified past its cells ramps
+               between them: sample the field bilinearly at the pixel
+               centre instead of box-filtering within one cell */
+            if (interp && mx1 - mx0 < 1.0 && my1 - my0 < 1.0
+             && mx1 > mx0 && my1 > my0)
+            {
+                double cx = (mx0 + mx1) * 0.5 - 0.5;
+                double cy = (my0 + my1) * 0.5 - 0.5;
+                int bx = (int)floor(cx), by = (int)floor(cy);
+                double fx = cx - bx, fy = cy - by;
+                double v = 0.0;
+                int dx, dy;
+
+                for (dy = 0; dy < 2; dy++)
+                    for (dx = 0; dx < 2; dx++)
+                    {
+                        int sx = bx + dx, sy = by + dy;
+                        double wt = (dx ? fx : 1.0 - fx)
+                                  * (dy ? fy : 1.0 - fy);
+                        int bit;
+
+                        if (sx < 0 || sx >= w || sy < 0 || sy >= h)
+                            continue;
+                        bit = (bits[sy * rowbytes + sx / 8]
+                               >> (7 - (sx % 8))) & 1;
+                        if (bit == ink)
+                            v += wt;
+                    }
+                acc = v * 255.0 + 0.5;
+                cov[py * devw + px] = acc >= 255.0 ? 255
+                                    : acc <= 0.0 ? 0 : (unsigned char)acc;
+                continue;
+            }
             xi0 = (int)floor(mx0); xi1 = (int)ceil(mx1);
             for (yi = yi0; yi < yi1; yi++)
             {

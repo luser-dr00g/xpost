@@ -1583,6 +1583,58 @@ static int _pdffree(Xpost_Context *ctx, Xpost_Object devdic)
     return 0;
 }
 
+/* decode one interleaved normalized sample row to native colour,
+   one r,g,b triple per pixel (grey rides in all three), through the
+   same tables the direct path uses */
+static void
+_blit_decode_row(const unsigned char *src, int w, int ncomp,
+                 const unsigned char *lut, unsigned char *const dlut[4],
+                 const unsigned char *tlut, int cmyk, int nat, int *out)
+{
+    int x, c;
+
+    for (x = 0; x < w; x++)
+    {
+        int r = 0, g = 0, b = 0;
+
+        if (lut)
+        {
+            const unsigned char *e = lut + src[x * ncomp] * nat;
+
+            if (nat == 3) { r = e[0]; g = e[1]; b = e[2]; }
+            else r = g = b = e[0];
+        }
+        else
+        {
+            int v[4];
+
+            for (c = 0; c < ncomp; c++)
+                v[c] = dlut[c][src[x * ncomp + c]];
+            if (cmyk)
+            {
+                r = 255 - (v[0] + v[3] > 255 ? 255 : v[0] + v[3]);
+                g = 255 - (v[1] + v[3] > 255 ? 255 : v[1] + v[3]);
+                b = 255 - (v[2] + v[3] > 255 ? 255 : v[2] + v[3]);
+            }
+            else
+            {
+                r = v[0];
+                g = ncomp > 1 ? v[1] : v[0];
+                b = ncomp > 2 ? v[2] : v[0];
+            }
+            if (nat == 3)
+            {
+                r = tlut[r]; g = tlut[g]; b = tlut[b];
+            }
+            else
+                r = g = b = tlut[(r * 30 + g * 59 + b * 11) / 100];
+        }
+        out[x * 3] = r;
+        out[x * 3 + 1] = g;
+        out[x * 3 + 2] = b;
+    }
+}
+
 /* blitdict  .blitrow  -
    write one image row straight into a raster device's page buffer.
    The dictionary carries the device raster (rows: the ImgData array,
@@ -1736,6 +1788,139 @@ int _blitrow(Xpost_Context *ctx,
             if (xpost_object_get_type(o) != integertype)
                 return typecheck;
             mranges[c] = o.int_.val;
+        }
+    }
+
+    /* Interpolate: between the previous sample row and this one, each
+       device pixel takes the bilinear blend of the four surrounding
+       decoded colours, so a magnified image ramps between its samples
+       instead of stepping with them. The band between the two row
+       centres belongs to this call; the first row also owns the band
+       from its outer edge, the last also the band to its own. Masks,
+       planar sources, resolved clip spans and reductions keep the
+       stepped path. */
+    {
+        Xpost_Object io = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "interp"));
+
+        if (xpost_object_get_type(io) == booleantype && io.int_.val
+         && !mbits && !nranges && !have_cspans && !have_planes
+         && fabs(xscale) >= 1.0 && fabs(yscale) >= 1.0 && w > 0)
+        {
+            Xpost_Object po = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "prev"));
+            Xpost_Object lo = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "last"));
+            int lastrow = xpost_object_get_type(lo) == booleantype && lo.int_.val;
+
+            if (xpost_object_get_type(po) == stringtype
+             && po.comp_.sz >= (unsigned int)(w * ncomp))
+            {
+                unsigned char *prevsamp =
+                    (unsigned char *)xpost_string_get_pointer(ctx, po);
+                int *cols = malloc(sizeof(int) * (size_t)w * 6);
+                int *pc, *cc;
+                double xe0, xe1, bandlo[2], bandhi[2];
+                int band, nband;
+
+                if (!cols)
+                    return VMerror;
+                pc = cols;
+                cc = cols + w * 3;
+                _blit_decode_row(prevsamp, w, ncomp, lut, dlut, tlut, cmyk, nat, pc);
+                _blit_decode_row(buf, w, ncomp, lut, dlut, tlut, cmyk, nat, cc);
+
+                bandlo[0] = y == 0 ? yoff : yoff + (y - 0.5) * yscale;
+                bandhi[0] = yoff + (y + 0.5) * yscale;
+                nband = 1;
+                if (lastrow)
+                {
+                    bandlo[1] = bandhi[0];
+                    bandhi[1] = yoff + (y + 1) * yscale;
+                    nband = 2;
+                }
+
+                xe0 = xoff; xe1 = xoff + w * xscale;
+                if (xe0 > xe1) { t = xe0; xe0 = xe1; xe1 = t; }
+                if (xe0 < cx0) xe0 = cx0;
+                if (xe1 > cx1) xe1 = cx1;
+                if (xe0 < 0) xe0 = 0;
+                if (xe1 > devw) xe1 = devw;
+
+                for (band = 0; band < nband; band++)
+                {
+                    double blo = bandlo[band], bhi = bandhi[band];
+                    double lo = blo < bhi ? blo : bhi;
+                    double hi = blo < bhi ? bhi : blo;
+                    int *rowa = band ? cc : pc;
+                    int *rowb = cc;
+
+                    for (dy = (int)floor(lo); dy < hi; dy++)
+                    {
+                        Xpost_Object row;
+                        unsigned char *rowp = NULL;
+                        double v;
+                        int dx;
+
+                        if (dy < 0 || dy >= devh)
+                            continue;
+                        if (dy + 0.5 < cy0 || dy + 0.5 >= cy1)
+                            continue;
+                        v = bhi != blo ? (dy + 0.5 - blo) / (bhi - blo) : 0.0;
+                        if (v < 0.0 || v >= 1.0)
+                            continue;
+                        row = xpost_array_get(ctx, rows, dy);
+                        if (packed)
+                        {
+                            if (xpost_object_get_type(row) != arraytype
+                             || row.comp_.sz < (unsigned int)devw)
+                                { free(cols); return rangecheck; }
+                        }
+                        else
+                        {
+                            if (xpost_object_get_type(row) != stringtype
+                             || row.comp_.sz < (unsigned int)devw)
+                                { free(cols); return rangecheck; }
+                            rowp = (unsigned char *)xpost_string_get_pointer(ctx, row);
+                        }
+                        {
+                        double sxstep = 1.0 / xscale;
+                        double sxv = ((int)floor(xe0) + 0.5 - xoff) / xscale - 0.5;
+
+                        for (dx = (int)floor(xe0); dx < xe1;
+                             dx++, sxv += sxstep)
+                        {
+                            double f;
+                            int i0, i1, k, px[3];
+
+                            if (dx < 0 || dx >= devw)
+                                continue;
+                            i0 = (int)floor(sxv);
+                            f = sxv - i0;
+                            if (i0 < 0) { i0 = 0; f = 0.0; }
+                            if (i0 > w - 1) { i0 = w - 1; f = 0.0; }
+                            i1 = i0 + 1 > w - 1 ? w - 1 : i0 + 1;
+                            for (k = 0; k < 3; k++)
+                            {
+                                double a = rowa[i0 * 3 + k] * (1.0 - f)
+                                         + rowa[i1 * 3 + k] * f;
+                                double bl = rowb[i0 * 3 + k] * (1.0 - f)
+                                          + rowb[i1 * 3 + k] * f;
+                                double m_ = a * (1.0 - v) + bl * v;
+
+                                px[k] = (int)(m_ + 0.5);
+                                if (px[k] < 0) px[k] = 0;
+                                if (px[k] > 255) px[k] = 255;
+                            }
+                            if (packed)
+                                xpost_array_put(ctx, row, dx,
+                                    xpost_int_cons(px[0] << 16 | px[1] << 8 | px[2]));
+                            else
+                                rowp[dx] = (unsigned char)px[0];
+                        }
+                        }
+                    }
+                }
+                free(cols);
+                return 0;
+            }
         }
     }
 
