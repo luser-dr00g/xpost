@@ -75,6 +75,21 @@ currentfile xcheck not (currentfile carries the literal attribute) assert
 /cfstash currentfile def
 cfstash type /filetype eq (a stashed currentfile recalls as a file) assert
 
+% --- ReusableStreamDecode buffers its whole source at construction
+%     and replays it from any position ---
+currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter
+48656C6C6F>
+/rsdstash exch def
+rsdstash 5 string readstring pop (Hello) eq
+(a reusable stream reads its data) assert
+rsdstash resetfile
+rsdstash 5 string readstring pop (Hello) eq
+(resetfile replays a reusable stream) assert
+rsdstash 2 setfileposition
+rsdstash fileposition 2 eq (fileposition reports the reusable position) assert
+rsdstash 3 string readstring pop (llo) eq
+(setfileposition repositions a reusable stream) assert
+
 % --- resource machinery: instances per category, private categories
 %     registered by defining into /Category ---
 currentglobal true setglobal

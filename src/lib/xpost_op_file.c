@@ -121,6 +121,8 @@ int xpost_op_file_filter (Xpost_Context *ctx,
         f = xpost_file_cons_filter_hex(ctx->lo, F);
     else if (strcmp(cname, "RunLengthDecode") == 0)
         f = xpost_file_cons_filter_rle(ctx->lo, F);
+    else if (strcmp(cname, "ReusableStreamDecode") == 0)
+        f = xpost_file_cons_filter_rsd(ctx->lo, F);
 #ifdef HAVE_ZLIB
     else if (strcmp(cname, "FlateDecode") == 0)
         f = xpost_file_cons_filter_flate(ctx->lo, F);

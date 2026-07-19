@@ -1864,6 +1864,96 @@ struct Xpost_File_Methods dct_methods =
 };
 #endif
 
+/* ReusableStreamDecode filter: the entire source is drained into a
+   buffer at construction -- leaving the underlying file positioned
+   just past the encoded data, exactly as reading it would -- and the
+   buffer then serves reads any number of times: setfileposition
+   repositions it and resetfile rewinds it to the beginning, so one
+   inline stream can feed several consumers (the masked-image idiom:
+   paint the same data under different masks). */
+typedef struct Xpost_RsdFile
+{
+    Xpost_File methods;
+    unsigned char *data;
+    size_t len, pos;
+} Xpost_RsdFile;
+
+static int
+rsd_readch(Xpost_File *f)
+{
+    Xpost_RsdFile *ff = (Xpost_RsdFile *)f;
+
+    if (ff->pos >= ff->len)
+        return EOF;
+    return ff->data[ff->pos++];
+}
+
+static int
+rsd_unreadch(Xpost_File *f, int c)
+{
+    Xpost_RsdFile *ff = (Xpost_RsdFile *)f;
+
+    if (ff->pos == 0)
+        return EOF;
+    ff->pos--;
+    (void)c;
+    return 0;
+}
+
+static int
+rsd_close(Xpost_File *f)
+{
+    Xpost_RsdFile *ff = (Xpost_RsdFile *)f;
+
+    free(ff->data);
+    ff->data = NULL;
+    ff->len = ff->pos = 0;
+    return 0;
+}
+
+static void
+rsd_purge(Xpost_File *f)
+{
+    /* resetfile rewinds a reusable stream for its next consumer */
+    Xpost_RsdFile *ff = (Xpost_RsdFile *)f;
+
+    ff->pos = 0;
+}
+
+static long
+rsd_tell(Xpost_File *f)
+{
+    Xpost_RsdFile *ff = (Xpost_RsdFile *)f;
+
+    return (long)ff->pos;
+}
+
+static int
+rsd_seek(Xpost_File *f, long offset)
+{
+    Xpost_RsdFile *ff = (Xpost_RsdFile *)f;
+
+    if (offset < 0 || (size_t)offset > ff->len)
+        return -1;
+    ff->pos = (size_t)offset;
+    return 0;
+}
+
+static int
+rsd_flush(Xpost_File *f)
+{
+    Xpost_RsdFile *ff = (Xpost_RsdFile *)f;
+
+    ff->pos = ff->len;
+    return 0;
+}
+
+struct Xpost_File_Methods rsd_methods =
+{
+    rsd_readch, filter_writech, rsd_close, rsd_flush,
+    rsd_purge, rsd_unreadch, rsd_tell, rsd_seek
+};
+
 /* wrap a malloc'd filter struct in a filetype object */
 static Xpost_Object
 _filter_object_cons(Xpost_Memory_File *mem, Xpost_File *ff)
@@ -1981,6 +2071,45 @@ Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object s
     return _filter_object_cons(mem, &ff->methods);
 }
 #endif
+
+Xpost_Object xpost_file_cons_filter_rsd(Xpost_Memory_File *mem, Xpost_Object src)
+{
+    Xpost_File *source = xpost_file_get_file_pointer(mem, src);
+    Xpost_RsdFile *ff;
+    unsigned char *data = NULL;
+    size_t len = 0, cap = 0;
+    int c;
+
+    if (!source)
+        return invalid;
+    while ((c = xpost_file_getc(source)) != EOF)
+    {
+        if (len == cap)
+        {
+            unsigned char *grown;
+            cap = cap ? cap * 2 : 4096;
+            grown = realloc(data, cap);
+            if (!grown)
+            {
+                free(data);
+                return invalid;
+            }
+            data = grown;
+        }
+        data[len++] = (unsigned char)c;
+    }
+    ff = malloc(sizeof *ff);
+    if (!ff)
+    {
+        free(data);
+        return invalid;
+    }
+    ff->methods.methods = &rsd_methods;
+    ff->data = data;
+    ff->len = len;
+    ff->pos = 0;
+    return _filter_object_cons(mem, &ff->methods);
+}
 
 #ifdef HAVE_LIBJPEG
 Xpost_Object xpost_file_cons_filter_dct(Xpost_Memory_File *mem, Xpost_Object src)

@@ -191,6 +191,7 @@ Xpost_Object xpost_file_cons_filter_rle(Xpost_Memory_File *mem, Xpost_Object src
 Xpost_Object xpost_file_cons_filter_subfile(Xpost_Memory_File *mem, Xpost_Object src, int count, const char *eod, int eodlen);
 Xpost_Object xpost_file_cons_filter_flate(Xpost_Memory_File *mem, Xpost_Object src);
 Xpost_Object xpost_file_cons_filter_dct(Xpost_Memory_File *mem, Xpost_Object src);
+Xpost_Object xpost_file_cons_filter_rsd(Xpost_Memory_File *mem, Xpost_Object src);
 
 /**
  * @brief The single path-to-stream opener for disk-backed files.
