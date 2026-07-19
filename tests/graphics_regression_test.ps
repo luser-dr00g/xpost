@@ -685,6 +685,22 @@ basefont null ne {
     2 24 moveto (A) show
     wantsnap snapshot snapeq not (the base font still renders its own glyph) assert
 
+    % a base font publishes its glyph complement in /CharStrings, as
+    % re-encoding programs expect: they size tables from its length,
+    % test membership with known, and enumerate its keys
+    basefont /CharStrings known (a base font carries CharStrings) assert
+    basefont /CharStrings known {
+        basefont /CharStrings get
+        dup type /dicttype eq (CharStrings is a dictionary) assert
+        dup length 100 ge (CharStrings covers the face's glyphs) assert
+        dup /A known (CharStrings knows the alphabet) assert
+        dup /.notdef known (CharStrings knows notdef) assert
+        wcheck not (CharStrings is read-only) assert
+        /Helvetica findfont /CharStrings get
+        basefont /CharStrings get eq
+        (one CharStrings dictionary serves every copy of a face) assert
+    } if
+
     % glyphshow paints by name, bypassing the encoding, and advances
     % the current point exactly as show would
     erasepage

@@ -179,6 +179,18 @@ unsigned int xpost_font_face_glyph_index_get(void *face, char c);
 unsigned int xpost_font_face_glyph_name_index_get(void *face, const char *name);
 
 /**
+ * @brief The number of glyphs in the face, or 0 when the face carries
+ * no glyph names to enumerate them by.
+ */
+unsigned int xpost_font_face_glyph_name_count(void *face);
+
+/**
+ * @brief Copy the name of the given glyph into buf (nul-terminated).
+ * Returns 0 on a nameless glyph or a face without glyph names.
+ */
+int xpost_font_face_glyph_name_get(void *face, unsigned int gid, char *buf, int len);
+
+/**
  * @typedef Xpost_Font_Outline_Sink
  * Callbacks receiving a glyph outline decomposed into path segments.
  *

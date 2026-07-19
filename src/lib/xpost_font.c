@@ -675,6 +675,37 @@ _xpost_glyph_name_to_unicode(const char *name)
 #endif /* HAVE_FREETYPE2 */
 
 unsigned int
+xpost_font_face_glyph_name_count(void *face)
+{
+#ifdef HAVE_FREETYPE2
+    if (!FT_HAS_GLYPH_NAMES((FT_Face)face))
+        return 0;
+    return (unsigned int)((FT_Face)face)->num_glyphs;
+#else
+    (void)face;
+    return 0;
+#endif
+}
+
+int
+xpost_font_face_glyph_name_get(void *face, unsigned int gid, char *buf, int len)
+{
+#ifdef HAVE_FREETYPE2
+    if (!FT_HAS_GLYPH_NAMES((FT_Face)face))
+        return 0;
+    if (FT_Get_Glyph_Name((FT_Face)face, gid, buf, (FT_UInt)len) != 0)
+        return 0;
+    return buf[0] != '\0';
+#else
+    (void)face;
+    (void)gid;
+    (void)buf;
+    (void)len;
+    return 0;
+#endif
+}
+
+unsigned int
 xpost_font_face_glyph_name_index_get(void *face, const char *name)
 {
 #ifdef HAVE_FREETYPE2

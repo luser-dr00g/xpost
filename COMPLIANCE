@@ -42,6 +42,8 @@ Level 1 operators
  [/] Type-3 Fonts (no glyph caching)
  [ ] font data caching
  [X] definefont for modified font properties (matrix, encoding, etc.)
+ [/] base font CharStrings (keys enumerable; values are glyph indices,
+     not charstring procedures)
 
  [X] pop
  [X] exch

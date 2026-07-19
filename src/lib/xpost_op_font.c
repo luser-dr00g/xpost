@@ -116,9 +116,9 @@ int _findfont(Xpost_Context *ctx,
        font dictionaries exactly as a FontDirectory-cached dictionary
        already shares it. */
     {
-        static struct { char *name; void *face; } face_cache[32];
+        static struct { char *name; void *face; Xpost_Object charstrings; } face_cache[32];
         static int face_cache_n = 0;
-        int fi;
+        int fi, slot = -1;
         data.face = NULL;
         data.program = NULL;
         for (fi = 0; fi < face_cache_n; fi++)
@@ -126,6 +126,7 @@ int _findfont(Xpost_Context *ctx,
             if (strcmp(face_cache[fi].name, fname) == 0)
             {
                 data.face = face_cache[fi].face;
+                slot = fi;
                 break;
             }
         }
@@ -136,13 +137,54 @@ int _findfont(Xpost_Context *ctx,
             {
                 face_cache[face_cache_n].name = strdup(fname);
                 face_cache[face_cache_n].face = data.face;
-                face_cache_n++;
+                slot = face_cache_n++;
             }
         }
-    }
-    if (data.face == NULL){
-        free(fname);
-        return invalidfont;
+        if (data.face == NULL){
+            free(fname);
+            return invalidfont;
+        }
+
+        /* a base font publishes its glyph complement: programs size
+           tables from /CharStrings, test membership with known, and
+           re-encode from its keys. Synthesize the name-to-glyph-index
+           dictionary from the face's glyph names, once per face and
+           shared read-only between every dictionary the name produces,
+           in global VM so a restore cannot unwind it from under the
+           cache. The values are glyph indices, which the text
+           machinery accepts directly; a face without glyph names
+           publishes nothing. */
+        if (slot >= 0
+         && xpost_object_get_type(face_cache[slot].charstrings) == dicttype)
+        {
+            xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "CharStrings"),
+                           face_cache[slot].charstrings);
+        }
+        else
+        {
+            unsigned int nglyphs = xpost_font_face_glyph_name_count(data.face);
+            if (nglyphs)
+            {
+                Xpost_Object csdict;
+                char nbuf[128];
+                unsigned int gi;
+                unsigned int oldmode = ctx->vmmode;
+                ctx->vmmode = GLOBAL;
+                csdict = xpost_dict_cons(ctx, nglyphs);
+                for (gi = 0; gi < nglyphs; gi++)
+                    if (xpost_font_face_glyph_name_get(data.face, gi, nbuf, sizeof nbuf))
+                        xpost_dict_put(ctx, csdict,
+                                       xpost_name_cons(ctx, nbuf),
+                                       xpost_int_cons((integer)gi));
+                ctx->vmmode = oldmode;
+                csdict = xpost_object_set_access(ctx, csdict,
+                                                 XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
+                if (slot >= 0)
+                    face_cache[slot].charstrings = csdict;
+                xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "CharStrings"),
+                               csdict);
+            }
+        }
     }
 
     fontbbox = xpost_array_cons(ctx, 4);
