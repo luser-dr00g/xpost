@@ -2695,7 +2695,9 @@ a85enc_putch(Xpost_A85EncFile *ff, int c)
 {
     if (xpost_file_putc(ff->target, c) == EOF)
         return EOF;
-    if (++ff->col == 75)
+    /* Adobe Distiller breaks its output at this column, and matching
+       it makes the streams comparable byte for byte */
+    if (++ff->col == 64)
     {
         ff->col = 0;
         if (xpost_file_putc(ff->target, '\n') == EOF)
