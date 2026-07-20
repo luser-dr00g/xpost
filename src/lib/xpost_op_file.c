@@ -384,6 +384,65 @@ int xpost_op_file_filter_dict (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
         return 0;
     }
+    if (cname && strcmp(cname, "ReusableStreamDecode") == 0)
+    {
+        /* the dictionary may name a decode chain to run the source
+           through before buffering: layer each in order */
+        Xpost_Object flt = xpost_dict_get(ctx, dict,
+            xpost_name_cons(ctx, "Filter"));
+        Xpost_Object cur = F;
+        Xpost_Object first = xpost_object_cvlit(null);
+        int ret;
+
+        free(cname);
+        if (xpost_object_get_type(flt) == nametype)
+        {
+            ret = xpost_op_file_filter(ctx, cur, flt);
+            if (ret)
+                return ret;
+            cur = xpost_stack_pop(ctx->lo, ctx->os);
+            first = cur;
+        }
+        else if (xpost_object_get_type(flt) == arraytype)
+        {
+            unsigned int i;
+
+            for (i = 0; i < flt.comp_.sz; i++)
+            {
+                Xpost_Object fn = xpost_array_get(ctx, flt, i);
+
+                if (xpost_object_get_type(fn) != nametype)
+                    return typecheck;
+                ret = xpost_op_file_filter(ctx, cur, fn);
+                if (ret)
+                    return ret;
+                cur = xpost_stack_pop(ctx->lo, ctx->os);
+                if (i == 0)
+                    first = cur;
+            }
+        }
+        ret = xpost_op_file_filter(ctx, cur,
+            xpost_name_cons(ctx, "ReusableStreamDecode"));
+        if (ret)
+            return ret;
+        /* the reusable stream buffered everything its chain yields,
+           but an inner stage can reach its own end before the stage
+           against the file has consumed its end-of-data marker:
+           drain that stage so the file resumes past the encoding */
+        if (xpost_object_get_type(first) == filetype)
+        {
+            /* re-derive the pointer each read: a filter's read can
+               grow the memory file and move it */
+            for (;;)
+            {
+                Xpost_File *dr = xpost_file_get_file_pointer(ctx->lo, first);
+
+                if (!dr || xpost_file_getc(dr) == EOF)
+                    break;
+            }
+        }
+        return 0;
+    }
     free(cname);
     return xpost_op_file_filter(ctx, F, name);
 }
@@ -933,7 +992,11 @@ int xpost_op_setfileposition (Xpost_Context *ctx,
                               Xpost_Object F,
                               Xpost_Object pos)
 {
-    int ret = xpost_file_seek(xpost_file_get_file_pointer(ctx->lo, F), pos.int_.val);
+    int ret;
+
+    if (!xpost_file_get_status(ctx->lo, F))
+        return ioerror;
+    ret = xpost_file_seek(xpost_file_get_file_pointer(ctx->lo, F), pos.int_.val);
     if (ret != 0)
         return ioerror;
     return 0;

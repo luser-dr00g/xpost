@@ -316,6 +316,24 @@ st.data eq (LZWEncode round-trips through its decoder) assert
 { (0.5junk) cvr } stopped { pop pop true }{ false } ifelse
 (a glued suffix is no numeral) assert
 
+% a reusable stream built over a decode chain consumes its source
+% through the encoding's end, survives being closed -- the position
+% rewinds -- and so a program run off it can run again
+currentfile << /Filter [ /ASCIIHexDecode ] >> /ReusableStreamDecode filter
+2F73742E7273642031372064656620>
+/st.rsdp exch def
+st.rsdp cvx exec
+st.rsd 17 eq (a chained reusable stream delivers its program) assert
+userdict /st.rsd undef
+st.rsdp 0 setfileposition
+st.rsdp cvx exec
+st.rsd 17 eq (the stream runs again after its end closed it) assert
+% repositioning a closed file is an error, not a crash
+/st.f (semantics.scratch) (w) file def
+st.f (x) writestring st.f closefile
+{ st.f 0 setfileposition } stopped { pop pop true }{ false } ifelse
+(repositioning a closed file refuses) assert
+
 % binary object sequences: the writers emit the scanner's encoding,
 % gated by the object format parameter, and a sequence round-trips
 currentobjectformat 0 eq (the object format starts disabled) assert

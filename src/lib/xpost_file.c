@@ -3911,11 +3911,12 @@ rsd_unreadch(Xpost_File *f, int c)
 static int
 rsd_close(Xpost_File *f)
 {
+    /* a reusable stream survives closing: the position rewinds and
+       the data stays, so a program run off the stream -- which the
+       interpreter closes at its end -- can run again */
     Xpost_RsdFile *ff = (Xpost_RsdFile *)f;
 
-    free(ff->data);
-    ff->data = NULL;
-    ff->len = ff->pos = 0;
+    ff->pos = 0;
     return 0;
 }
 
@@ -4495,6 +4496,14 @@ int xpost_file_object_close(Xpost_Memory_File *mem,
 #endif
 
         xpost_file_close(fp);
+        /* a reusable stream survives its close -- the method rewound
+           it -- and the object stays open for the next consumer */
+        if (fp->methods == &rsd_methods)
+            return 0;
+        /* the close method released the stream's own resources; the object's
+           only pointer to the backing struct is cleared next, and file
+           entities are never collected, so free the struct here or it leaks */
+        free(fp);
         fp = NULL;
         ret = xpost_memory_put(mem, f.mark_.padw, 0, sizeof fp, &fp);
         if (!ret)
