@@ -318,7 +318,21 @@
             grestore
             stringwidth rmoveto
         }{
-            pop //show
+            pop
+            .patternactive {
+                % a pattern colour tiles through the glyph outlines:
+                % the string's outline fills through the ordinary
+                % pattern paint
+                gsave
+                dup
+                currentpoint newpath moveto
+                true charpath
+                fill
+                grestore
+                stringwidth rmoveto
+            }{
+                //show
+            } ifelse
         } ifelse
     }{
     gsave

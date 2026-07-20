@@ -283,9 +283,8 @@ Level 2 operators
  [X] setcolorrendering (recorded only)
  [X] currentcolorrendering
  [X] Named Resources
- [/] makepattern (PatternTypes 1 and 2; every tile repaints its
-     cell, and text under a pattern colour paints the underlying
-     colour)
+ [X] makepattern (every tile repaints its cell; text through a CMap
+     composite under a pattern colour paints the underlying colour)
  [X] setpattern
  [X] filter (decode filters: ASCIIHex, ASCII85, SubFile, RunLength,
      Flate, LZW, CCITTFax, DCT, ReusableStream; encode filters:

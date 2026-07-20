@@ -1010,6 +1010,27 @@ basefont null ne {
     2 24 moveto (Ag) show
     countink 10 ge (text marks pixels) assert
     countmid 0 gt (text blends its glyph edges by default) assert
+
+    % a pattern colour tiles through the glyph outlines instead of
+    % painting the underlying colour solid
+    erasepage
+    basefont 40 scalefont setfont
+    2 34 moveto (H) show
+    /pt.solid countink def
+    erasepage
+    << /PatternType 1 /PaintType 2 /TilingType 1 /BBox [0 0 4 4]
+       /XStep 4 /YStep 4 /PaintProc { pop 0 0 4 2 rectfill } >>
+    matrix makepattern
+    [/Pattern /DeviceGray] setcolorspace
+    0 exch setpattern
+    2 34 moveto (H) show
+    /pt.pat countink def
+    0 setgray
+    pt.pat 0 gt (pattern text marks the raster) assert
+    pt.pat pt.solid lt (pattern text tiles rather than floods) assert
+    pt.pat 5 mul pt.solid gt (pattern text keeps the stripes' share) assert
+    basefont 20 scalefont setfont
+
     DEV /TextAlphaBits 1 put
     erasepage
     2 24 moveto (Ag) show
