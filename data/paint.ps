@@ -136,6 +136,48 @@
     } ifelse
 } bind def
 
+% x y proc  .intest  bool
+% upath proc  .intest  bool
+% The insideness core: proc resolves the subject region -- the spans
+% the corresponding painting operator would mark -- and the probe is
+% either the device pixel holding the point or the region an aperture
+% user path encloses. The point's pixel is inset by the fill grid's
+% quantum so mere boundary contact stays outside, and insideness is
+% any span surviving the intersection. The clip does not participate:
+% the test asks about the painting operator's own marks
+/.intest {
+    4 dict begin
+    /.insp exch def
+    dup type dup /integertype eq exch /realtype eq or {
+        transform
+        floor 0.00390625 add /.iny exch def
+        floor 0.00390625 add /.inx exch def
+        [ [.inx .iny]
+          [.inx 0.9921875 add .iny]
+          [.inx 0.9921875 add .iny 0.9921875 add]
+          [.inx .iny 0.9921875 add] ]
+    }{
+        gsave newpath uappend flattenpath .fillpolyargs grestore
+    } ifelse
+    gsave .insp exec exch .clipfillpoly length 2 gt grestore
+    end
+} bind def
+
+% x y  infill  bool          x y  ineofill  bool
+% upath  infill  bool        upath  ineofill  bool
+% would fill (eofill) of the current path mark the point's pixel, or
+% any of the aperture's region
+/infill { { flattenpath .fillpolyargs } .intest } bind def
+/ineofill { { closepath flattenpath .fillpolyargs .eospanpoly } .intest } bind def
+
+% the stroke and user-path forms wrap the two above: the subject
+% becomes the current path inside a gsave -- the stroke outline fills
+% by the nonzero rule -- and the probe operands pass through beneath
+/instroke { gsave strokepath infill grestore } bind def
+/inufill { gsave newpath uappend infill grestore } bind def
+/inueofill { gsave newpath uappend ineofill grestore } bind def
+/inustroke { gsave ustrokepath infill grestore } bind def
+
 % x1 y1 x2 y2 rect  .hairsegclip  x1' y1' x2' y2' true
 %                                 false
 % the portion of the segment within the rectangle [x0 y0 x1 y1],

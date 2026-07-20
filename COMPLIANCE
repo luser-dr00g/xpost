@@ -317,8 +317,9 @@ Level 2 operators
  [X] setcacheparams, currentcacheparams
  [X] user paths (upath, uappend, ufill, ueofill, ustroke,
      ustrokepath, setbbox; ucache is accepted, nothing is cached)
- [ ] insideness testing (infill, ineofill, instroke, inufill,
-     inueofill, inustroke)
+ [X] insideness testing (infill, ineofill, instroke, inufill,
+     inueofill, inustroke; a user path without a leading setbbox is
+     accepted rather than rejected)
  [X] user objects (defineuserobject, execuserobject,
      undefineuserobject)
  [X] execform (every execution paints afresh)
