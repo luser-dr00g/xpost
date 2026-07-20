@@ -17,6 +17,16 @@ when a corpus is absent, so none of it is a build-time dependency.
 Run them from anywhere; both locate the repository themselves. With no
 arguments each acts on every corpus it knows.
 
+The build wires the evaluation in as a test, so once a corpus is fetched
+
+    meson test -C build corpus
+
+renders it and reports the per-page difference; a plain `meson test`
+runs it as part of the suite. It skips when no corpus is present or the
+comparison tools are absent, and fails only when xpost crashes or hangs
+on a program -- a rendering difference is a lead, not a failure (see
+Evaluation, below).
+
 The corpora
 -----------
 

@@ -299,6 +299,18 @@ test('error-format',
   args: [ xpost_exe ],
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 
+# Differential corpus: render whatever real-program corpora the developer has
+# fetched (tests/corpus/fetch.sh) through xpost and Ghostscript and report the
+# per-page difference. Skips when no corpus is present or the reference tools
+# are absent, so it is never a build-time dependency; fails only when xpost
+# crashes or hangs on a program.
+test('corpus',
+  find_program('tests/corpus/run-corpus-test.sh'),
+  args: [ xpost_exe ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' },
+  suite: 'corpus',
+  timeout: 1800)
+
 # Bounding-box device: render a known fill through -d bbox and check the box.
 test('bbox-device',
   find_program('tests/run-bbox-test.sh'),

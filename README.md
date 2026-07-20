@@ -55,6 +55,15 @@ A meson support has been added. To install xpost with meson, run these commands:
   ninja -C builddir install
 ```
 
+To run the test suite:
+```
+  meson test -C builddir
+```
+
+The differential corpus under `tests/corpus` is part of the suite; it
+is fetched on demand and skips until you populate it (see
+`tests/corpus/README.md`).
+
 You can install Xpost in another location:
 ```
   meson setup -Dprefix=/foo/bar builddir

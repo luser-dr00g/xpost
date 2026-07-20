@@ -61,8 +61,18 @@ evaluate_corpus() {
         fi
         "$GS" -q -sDEVICE=$gsdev -sPAPERSIZE=letter -r72 -dNOSAFER \
               -dBATCH -dNOPAUSE -o "$work/g_%d.$dev" "$src" >/dev/null 2>&1
-        xerr=$(timeout 240 "$XPOST" -d $dev -o "$work/x_%d.$dev" "$src" \
-               </dev/null 2>&1 | grep -m1 -oE 'Error: [a-zA-Z.]+' | sed 's/Error: //')
+        timeout 240 "$XPOST" -d $dev -o "$work/x_%d.$dev" "$src" \
+                </dev/null >"$work/xlog" 2>&1
+        xstatus=$?
+        xerr=$(grep -m1 -oE 'Error: [a-zA-Z.]+' "$work/xlog" | sed 's/Error: //')
+        # a signal death or a timeout is a hard regression, distinct from a
+        # controlled PostScript error (which just yields no page, below)
+        if [ "$xstatus" -ge 128 ]; then
+            echo "  $b  XPOST CRASHED (signal $((xstatus - 128)))"; continue
+        fi
+        if [ "$xstatus" = 124 ]; then
+            echo "  $b  XPOST TIMED OUT"; continue
+        fi
         ng=$(ls "$work"/g_*.$dev 2>/dev/null | wc -l)
         nx=$(ls "$work"/x_*.$dev 2>/dev/null | wc -l)
         if [ "$ng" = 0 ]; then echo "  $b  reference produced no page"; continue; fi
