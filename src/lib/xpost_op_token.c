@@ -343,17 +343,28 @@ int grok(Xpost_Context *ctx,
                                 case 't': c = '\t'; break;
                                 case 'v': c = '\v'; break;
                                 default:
-                                    if (isdigit(c))
+                                    if (c >= '0' && c <= '7')
                                     {
-                                        int t = 0, n = 0;
-                                        do {
-                                            t *= 8;
-                                            t += c - '0';
-                                            ++n;
-                                            c = next(ctx, src);
-                                        } while (isdigit(c) && n < 3);
-                                        if (!isdigit(c)) back(ctx, c, src);
-                                        c = t;
+                                        /* up to three octal digits, and
+                                           only octal ones: 8 and 9 end the
+                                           escape, and the character after
+                                           the third digit is not part of it */
+                                        int t = c - '0', n = 1;
+                                        while (n < 3)
+                                        {
+                                            int d = next(ctx, src);
+                                            if (d >= '0' && d <= '7')
+                                            {
+                                                t = t * 8 + (d - '0');
+                                                ++n;
+                                            }
+                                            else
+                                            {
+                                                if (d != EOF) back(ctx, d, src);
+                                                break;
+                                            }
+                                        }
+                                        c = t & 0xff;
                                     }
                             }
                     }

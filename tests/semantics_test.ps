@@ -316,6 +316,18 @@ st.data eq (LZWEncode round-trips through its decoder) assert
 { (0.5junk) cvr } stopped { pop pop true }{ false } ifelse
 (a glued suffix is no numeral) assert
 
+% the string scanner reads octal escapes as the reference does: at
+% most three digits, and octal digits only, so 8 and 9 and any fourth
+% digit end the escape. == relies on this to reconstruct what it
+% escaped (checked exhaustively by fuzzing, not here)
+(\3770) length 2 eq (an octal escape stops after three digits) assert
+(\0000) length 2 eq (a full three-digit octal stops at the third) assert
+(\09) length 2 eq (8 and 9 are not octal digits) assert
+(\128) length 2 eq (a non-octal digit ends the escape) assert
+(\101) 0 get 65 eq (three octal digits decode) assert
+(\377) 0 get 255 eq (the high octal value decodes) assert
+(\0) 0 get 0 eq (a one-digit octal decodes) assert
+
 % cvs of a real produces the shortest decimal that reads back to the
 % same value, in the notation the reference interpreters use: fixed
 % between 1e-4 and 1e6, scientific outside, a whole value keeping its
