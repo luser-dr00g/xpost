@@ -316,6 +316,13 @@ st.data eq (LZWEncode round-trips through its decoder) assert
 { (0.5junk) cvr } stopped { pop pop true }{ false } ifelse
 (a glued suffix is no numeral) assert
 
+% == prints arrays and procedures with single-space separators and no
+% padding inside the brackets, and its per-level scope leaves the dict
+% stack as it found it however deep the nesting goes
+countdictstack /st.dsd exch def
+[ 1 [ 2 [ 3 4 ] ] (s) /n { add } ] ==
+countdictstack st.dsd eq (== balances the dict stack when nesting) assert
+
 % the string scanner reads octal escapes as the reference does: at
 % most three digits, and octal digits only, so 8 and 9 and any fourth
 % digit end the escape. == relies on this to reconstruct what it

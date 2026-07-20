@@ -156,7 +156,6 @@ userdict begin
 
     /cvsprint {
         =string cvs tprint
-        ( ) tprint
     } def
     /tprint {
         dup length cp add rmargin gt {
@@ -170,11 +169,13 @@ userdict begin
 
     /arraytype {
         dup rcheck {
-            dup xcheck {
-                ({ ) tprint { typeprint } forall (} ) tprint
-            }{
-                ([ ) tprint { typeprint } forall (] ) tprint
-            } ifelse
+            1 dict begin
+            /first true def
+            dup xcheck /isproc exch def
+            isproc { ({) }{ ([) } ifelse tprint
+            { first { /first false def }{ ( ) tprint } ifelse typeprint } forall
+            isproc { (}) }{ (]) } ifelse tprint
+            end
         }{ pop (-array-) tprint } ifelse
     } def
     { cvsprint }
@@ -183,12 +184,12 @@ userdict begin
     /realtype exch def
 
     /invalidtype { pop (@INVALID@) tprint } def
-    /nulltype { pop (null ) tprint } def
-    /dicttype { pop (-dict- ) tprint } def
-    /filetype { pop (-file- ) tprint } def
-    /marktype { pop (-mark- ) tprint } def
-    /fonttype { pop (-font- ) tprint } def
-    /contexttype { pop (-context- ) tprint } def
+    /nulltype { pop (null) tprint } def
+    /dicttype { pop (-dict-) tprint } def
+    /filetype { pop (-file-) tprint } def
+    /marktype { pop (-mark-) tprint } def
+    /fonttype { pop (-font-) tprint } def
+    /contexttype { pop (-context-) tprint } def
 
     /nametype {
         dup xcheck not {
@@ -204,12 +205,40 @@ userdict begin
     } def
 
     /savetype {
-        pop (-savelevel- ) tprint
+        pop (-savelevel-) tprint
+    } def
+
+    % re-readable string escaping for ==: a byte becomes \\ \( \) for
+    % those three, a named escape for the five control characters that
+    % have one, its own character when printable, and \ddd octal
+    % otherwise -- so the output scans back to the same string
+    /.es1 1 string def
+    /.es3 3 string def
+    /.escbyte { % byte  .  -
+        dup 92 eq { pop (\\\\) print }{
+        dup 40 eq { pop (\\\() print }{
+        dup 41 eq { pop (\\\)) print }{
+        dup 10 eq { pop (\\n) print }{
+        dup 13 eq { pop (\\r) print }{
+        dup  9 eq { pop (\\t) print }{
+        dup  8 eq { pop (\\b) print }{
+        dup 12 eq { pop (\\f) print }{
+        dup 32 ge 1 index 127 lt and {
+            .es1 exch 0 exch put .es1 print
+        }{
+            (\\) print
+            dup 64 idiv 48 add .es3 exch 0 exch put
+            dup  8 idiv 8 mod 48 add .es3 exch 1 exch put
+            8 mod 48 add .es3 exch 2 exch put
+            .es3 print
+        } ifelse } ifelse } ifelse } ifelse } ifelse } ifelse } ifelse } ifelse } ifelse
     } def
 
     /stringtype {
         dup rcheck {
-            (\() tprint tprint (\)) tprint
+            (\() tprint
+            { .escbyte } forall
+            (\)) print
         }{
             pop (-string- ) tprint
         } ifelse

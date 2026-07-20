@@ -470,7 +470,7 @@ int AScvs (Xpost_Context *ctx,
            Xpost_Object any,
            Xpost_Object str)
 {
-    char nostringval[] = "-nostringval-";
+    char nostringval[] = "--nostringval--";
     char strue[] = "true";
     char sfalse[] = "false";
     char smark[] = "-mark-";
