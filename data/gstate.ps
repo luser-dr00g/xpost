@@ -500,7 +500,7 @@ setglobal
 /.refreshscreencell {
     DEVICE /ScreenPaint known {
         4 dict begin
-        /ht graphicsdict /currgstate get /halftone get def
+        /ht graphicsdict /currgstate get /halftone get .ht5component def
         ht null ne {
             ht /Thresholds 2 copy known { get }{ pop pop null } ifelse
             dup type /stringtype eq {
@@ -593,27 +593,28 @@ setglobal
 % the dictionary itself in the spot-function position: behind its own
 % frequency and angle for a type 1 dictionary, behind 60 and 0 for
 % any other type
-/sethalftone {
-    dup type /dicttype ne {
-        /sethalftone cvx /typecheck signalerror
+% ht  .ht5component  ht'
+% a type 5 dictionary carries one halftone per colorant: grey
+% rendering takes its grey component, or the required Default
+/.ht5component {
+    dup type /dicttype eq {
+        dup /HalftoneType 2 copy known { get }{ pop pop 0 } ifelse 5 eq {
+            dup /Gray 2 copy known { get exch pop }{ pop pop
+                dup /Default 2 copy known { get exch pop }{ pop pop } ifelse
+            } ifelse
+        } if
     } if
-    graphicsdict /currgstate get exch /halftone exch put
-    1 dict begin
-    /ht graphicsdict /currgstate get /halftone get def
-    ht /HalftoneType 2 copy known { get 1 eq }{ pop pop false } ifelse
-    ht /Frequency known and ht /Angle known and {
-        graphicsdict /currgstate get /screenfreq ht /Frequency get put
-        graphicsdict /currgstate get /screenangle ht /Angle get put
-    }{
-        graphicsdict /currgstate get /screenfreq 60 put
-        graphicsdict /currgstate get /screenangle 0 put
-    } ifelse
-    graphicsdict /currgstate get /screenproc ht put
-    % a threshold-array halftone may deliver its thresholds through a
-    % file (a filter over the program stream): sethalftone consumes
-    % that data, so read it -- into a string put back in the
-    % dictionary, where a screening device's cell can find it, or
-    % drained when it exceeds a string
+} def
+
+% ht  .htreadthresholds  -
+% a threshold-array halftone may deliver its thresholds through a
+% file (a filter over the program stream): sethalftone consumes
+% that data, so read it -- into a string put back in the
+% dictionary, where a screening device's cell can find it, or
+% drained when it exceeds a string
+/.htreadthresholds {
+    4 dict begin
+    /ht exch def
     ht /Thresholds 2 copy known {
         get dup type /filetype eq {
             /htw ht /Width 2 copy known { get }{ pop pop 0 } ifelse def
@@ -629,6 +630,36 @@ setglobal
             pop
         }{ pop } ifelse
     }{ pop pop } ifelse
+    end
+} def
+
+/sethalftone {
+    dup type /dicttype ne {
+        /sethalftone cvx /typecheck signalerror
+    } if
+    graphicsdict /currgstate get exch /halftone exch put
+    1 dict begin
+    /ht graphicsdict /currgstate get /halftone get .ht5component def
+    ht /HalftoneType 2 copy known { get 1 eq }{ pop pop false } ifelse
+    ht /Frequency known and ht /Angle known and {
+        graphicsdict /currgstate get /screenfreq ht /Frequency get put
+        graphicsdict /currgstate get /screenangle ht /Angle get put
+    }{
+        graphicsdict /currgstate get /screenfreq 60 put
+        graphicsdict /currgstate get /screenangle 0 put
+    } ifelse
+    graphicsdict /currgstate get /screenproc ht put
+    % every component of a type 5 consumes its file-borne thresholds,
+    % in the order the dictionary enumerates them; any other type is
+    % its own single component
+    graphicsdict /currgstate get /halftone get
+    dup /HalftoneType 2 copy known { get }{ pop pop 0 } ifelse 5 eq {
+        { exch pop
+          dup type /dicttype eq { .htreadthresholds }{ pop } ifelse
+        } forall
+    }{
+        .htreadthresholds
+    } ifelse
     end
     .spreadgrayscreen
 } def

@@ -1370,6 +1370,19 @@ axiseq 12 le (a rotated screen does not repeat along the axis) assert
 254 255 div .countblack 0 eq (the top threshold opens before solid white) assert
 1        .countblack 0 eq (solid white stays solid through thresholds) assert
 
+% a type 5 dictionary carries one halftone per colorant: grey
+% rendering screens through its grey component, and currenthalftone
+% answers the container itself
+<< /HalftoneType 5
+   /Gray << /HalftoneType 3 /Width 2 /Height 2 /Thresholds <0180C8FF> >>
+   /Default << /HalftoneType 1 /Frequency 60 /Angle 45
+               /SpotFunction { pop pop 0.5 } >>
+>> sethalftone
+128 255 div .countblack 32 eq
+(a type 5 halftone screens through its grey component) assert
+currenthalftone /HalftoneType get 5 eq
+(currenthalftone answers the type 5 container) assert
+
 % A two-valued spot function -- the pattern-cell idiom -- splits its
 % cell exactly at the boundary grey: the black pixels are the
 % pattern's one bits, no more and no fewer

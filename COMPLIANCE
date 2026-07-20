@@ -30,8 +30,7 @@ Level 1 operators
  [X] currentscreen
  [X] setcolorscreen
  [X] currentcolorscreen
- [X] sethalftone (a type 5 dictionary, carrying its component
-     screens, leaves the screen previously in force)
+ [X] sethalftone
  [X] currenthalftone
  [X] makefont
  [X] ashow
