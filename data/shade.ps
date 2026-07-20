@@ -82,6 +82,110 @@
     end
 } def
 
+% x y fn  .fneval2  c0..cn-1 n
+% evaluate a two-input function: a sampled function with a 2-D Size,
+% bilinear between the four bracketing samples, or an array of
+% two-input single-output functions, one per component
+/.fneval2 {
+    dup type /arraytype eq {
+        4 dict begin
+        /fa exch def /yy exch def /xx exch def
+        0 1 fa length 1 sub { /k exch def
+            xx yy fa k get .fneval2 pop
+        } for
+        fa length
+        end
+    }{
+        16 dict begin
+        /f exch def
+        /yy exch def /xx exch def
+        f /FunctionType get 0 ne { /shfill cvx /rangecheck signalerror } if
+        /d f /Domain get def
+        xx d 0 get 2 copy lt { exch } if pop d 1 get 2 copy gt { exch } if pop /xx exch def
+        yy d 2 get 2 copy lt { exch } if pop d 3 get 2 copy gt { exch } if pop /yy exch def
+        /sx f /Size get 0 get def
+        /sy f /Size get 1 get def
+        /bps f /BitsPerSample get def
+        bps 8 eq bps 16 eq or not { /shfill cvx /rangecheck signalerror } if
+        /rng f /Range get def
+        /nc rng length 2 idiv def
+        /ds f /DataSource get def
+        /mx bps 8 eq { 255.0 }{ 65535.0 } ifelse def
+        /enc f /Encode 2 copy known { get }{ pop pop
+            [ 0 sx 1 sub 0 sy 1 sub ] } ifelse def
+        /ex xx d 0 get sub d 1 get d 0 get sub dup 0 eq { pop 1 } if div
+            enc 1 get enc 0 get sub mul enc 0 get add def
+        /ey yy d 2 get sub d 3 get d 2 get sub dup 0 eq { pop 1 } if div
+            enc 3 get enc 2 get sub mul enc 2 get add def
+        ex 0 lt { /ex 0 def } if
+        ex sx 1 sub gt { /ex sx 1 sub def } if
+        ey 0 lt { /ey 0 def } if
+        ey sy 1 sub gt { /ey sy 1 sub def } if
+        /i0 ex floor cvi def
+        /j0 ey floor cvi def
+        /i1 i0 1 add sx 1 sub 2 copy gt { exch } if pop def
+        /j1 j0 1 add sy 1 sub 2 copy gt { exch } if pop def
+        /fx ex i0 sub def
+        /fy ey j0 sub def
+        /samp { % i j c . v  (sample scaled to 0..1)
+            3 dict begin
+            /c exch def
+            sx mul add nc mul c add /si exch def
+            bps 8 eq {
+                ds si get
+            }{
+                ds si 2 mul get 8 bitshift ds si 2 mul 1 add get or
+            } ifelse mx div
+            end
+        } def
+        0 1 nc 1 sub { /c exch def
+            i0 j0 c samp 1 fx sub mul i1 j0 c samp fx mul add
+            1 fy sub mul
+            i0 j1 c samp 1 fx sub mul i1 j1 c samp fx mul add
+            fy mul add
+            rng c 2 mul 1 add get rng c 2 mul get sub mul
+            rng c 2 mul get add
+        } for
+        nc
+        end
+    } ifelse
+} def
+
+% shdict  .fnsh  -
+% function-based shading (type 1): the domain rectangle, taken
+% through the optional Matrix, paints as a grid of cells a few
+% device pixels across, each filled flat with the function's colour
+% at its centre
+/.fnsh {
+    14 dict begin
+    /sh exch def
+    /fn sh /Function get def
+    /dom sh /Domain 2 copy known { get }{ pop pop [ 0 1 0 1 ] } ifelse def
+    sh /Matrix 2 copy known { get concat }{ pop pop } ifelse
+    /x0 dom 0 get def /x1 dom 1 get def
+    /y0 dom 2 get def /y1 dom 3 get def
+    /nx x1 x0 sub 0 dtransform dup mul exch dup mul add sqrt
+        3 div ceiling cvi 1 2 copy lt { exch } if pop 200 2 copy gt { exch } if pop def
+    /ny 0 y1 y0 sub dtransform dup mul exch dup mul add sqrt
+        3 div ceiling cvi 1 2 copy lt { exch } if pop 200 2 copy gt { exch } if pop def
+    /dx x1 x0 sub nx div def
+    /dy y1 y0 sub ny div def
+    0 1 nx 1 sub { /i exch def
+        0 1 ny 1 sub { /j exch def
+            /cx x0 i dx mul add def
+            /cy y0 j dy mul add def
+            cx dx 2 div add cy dy 2 div add fn .fneval2 pop setcolor
+            newpath
+            cx cy moveto
+            cx dx add cy lineto
+            cx dx add cy dy add lineto
+            cx cy dy add lineto
+            closepath fill
+        } for
+    } for
+    end
+} def
+
 % t  .shcolor  -
 % set the colour the current shading's function gives at t; a mesh
 % shading passes components directly and skips the function
@@ -230,14 +334,28 @@
     dec kk 2 mul 1 add get dec kk 2 mul get sub frv mul
     dec kk 2 mul get add
 } def
-/.mrdvertex { % - . [x y c0..cn-1]
-    [
-    0 bpc .mrddec
-    1 bpc .mrddec
-    0 1 ncomp 1 sub { /c exch def
+/.mrdpt { % - . [x y]
+    [ 0 bpc .mrddec 1 bpc .mrddec ]
+} def
+/.mrdcolor { % - . [c0..cn-1]
+    [ 0 1 ncomp 1 sub { /c exch def
         c 2 add bpcm .mrddec
-    } for
-    ]
+    } for ]
+} def
+/.mrdvertex { % - . [x y c0..cn-1]
+    [ .mrdpt aload pop .mrdcolor aload pop ]
+} def
+
+% [c0..cn-1]  .gsetcolor  -
+% set a mesh colour: components directly, or -- when the shading
+% carries a Function -- a single parametric value through it. The
+% mesh painters bind /shfn before any triangle paints
+/.gsetcolor {
+    shfn null eq {
+        aload pop setcolor
+    }{
+        0 get shfn .fneval pop setcolor
+    } ifelse
 } def
 
 % va vb vc depth  .gtri  -
@@ -264,7 +382,7 @@
         % flat: fill with the corner average
         [ 2 1 va length 1 sub { /i exch def
             va i get vb i get add vc i get add 3 div
-        } for ] aload pop setcolor
+        } for ] .gsetcolor
         newpath
         va 0 get va 1 get moveto
         vb 0 get vb 1 get lineto
@@ -288,7 +406,7 @@
 /.meshsh {
     20 dict begin
     /sh exch def
-    /shfn null def
+    /shfn sh /Function 2 copy known { get }{ pop pop null } ifelse def
     /ds sh /DataSource get def
     /dp 0 def
     /dec sh /Decode get def
@@ -342,6 +460,153 @@
     end
 } def
 
+% a0 a1 a2 a3 t  .bez1  v
+% a cubic Bezier component at parameter t
+/.bez1 {
+    5 dict begin
+    /t exch def /a3 exch def /a2 exch def /a1 exch def /a0 exch def
+    /u 1 t sub def
+    a0 u u mul u mul mul
+    a1 3 mul u u mul t mul mul add
+    a2 3 mul u t t mul mul mul add
+    a3 t t mul t mul mul add
+    end
+} def
+
+% the 4x4 control grid slot (row-major, rows pairing with u) for
+% each patch point p1..p16 in the data-stream order: the boundary
+% counterclockwise from the first corner, then the four interior
+% points
+/.pgridmap [ 0 1 2 3 7 11 15 14 13 12 8 4 5 6 10 9 ] def
+
+% [w slot w slot ...]  .pmix  [x y]
+% a weighted combination of grid points, divided by 9: the Coons
+% interior points are ninths of boundary sums
+/.pmix {
+    4 dict begin
+    /spec exch def
+    /sx 0 def /sy 0 def
+    0 2 spec length 2 sub { /i exch def
+        /w spec i get def
+        /p g spec i 1 add get get def
+        /sx sx p 0 get w mul add def
+        /sy sy p 1 get w mul add def
+    } for
+    [ sx 9 div sy 9 div ]
+    end
+} def
+
+% -  .patchpaint  -
+% paint the current 4x4 grid g with corner colours cols: collapse
+% the grid's columns at each u by .bez1, sweep the resulting curve
+% in v, and hand the cells to the Gouraud triangles with corner
+% colours blended bilinearly
+/.patchpaint {
+    10 dict begin
+    % subdivision from the device size of the boundary points
+    /mnx 9e99 def /mny 9e99 def /mxx -9e99 def /mxy -9e99 def
+    0 1 11 { .pgridmap exch get g exch get aload pop transform
+        dup mxy gt { dup /mxy exch def } if dup mny lt { dup /mny exch def } if pop
+        dup mxx gt { dup /mxx exch def } if dup mnx lt { dup /mnx exch def } if pop
+    } for
+    /n mxx mnx sub mxy mny sub 2 copy lt { exch } if pop
+       6 div ceiling cvi
+       3 2 copy lt { exch } if pop
+       12 2 copy gt { exch } if pop def
+    /verts [ 0 1 n { /iu exch def
+        /u iu n div def
+        /q [ 0 1 3 { /j exch def
+            [ g j get 0 get g j 4 add get 0 get
+              g j 8 add get 0 get g j 12 add get 0 get u .bez1
+              g j get 1 get g j 4 add get 1 get
+              g j 8 add get 1 get g j 12 add get 1 get u .bez1 ]
+        } for ] def
+        [ 0 1 n { /iv exch def
+            /v iv n div def
+            [
+            q 0 get 0 get q 1 get 0 get q 2 get 0 get q 3 get 0 get v .bez1
+            q 0 get 1 get q 1 get 1 get q 2 get 1 get q 3 get 1 get v .bez1
+            0 1 ncomp 1 sub { /c exch def
+                cols 0 get c get 1 u sub mul 1 v sub mul
+                cols 1 get c get 1 u sub mul v mul add
+                cols 2 get c get u mul v mul add
+                cols 3 get c get u mul 1 v sub mul add
+            } for
+            ]
+        } for ]
+    } for ] def
+    0 1 n 1 sub { /iu exch def
+        0 1 n 1 sub { /iv exch def
+            verts iu get iv get
+            verts iu 1 add get iv get
+            verts iu get iv 1 add get
+            3 .gtri
+            verts iu 1 add get iv get
+            verts iu 1 add get iv 1 add get
+            verts iu get iv 1 add get
+            3 .gtri
+        } for
+    } for
+    end
+} def
+
+% shdict  .patchsh  -
+% Coons (type 6) and tensor-product (type 7) patch meshes. A Coons
+% patch completes to a tensor patch by the standard interior points,
+% so one surface serves both
+/.patchsh {
+    30 dict begin
+    /sh exch def
+    /shfn sh /Function 2 copy known { get }{ pop pop null } ifelse def
+    /ds sh /DataSource get def
+    /dp 0 def
+    /dec sh /Decode get def
+    /bpc sh /BitsPerCoordinate get def
+    /bpcm sh /BitsPerComponent get def
+    /bpf sh /BitsPerFlag get def
+    /ncomp dec length 4 sub 2 idiv def
+    /tensor sh /ShadingType get 7 eq def
+    bpc 16 eq bpc 32 eq or
+    bpcm 8 eq bpcm 16 eq or and not {
+        /shfill cvx /rangecheck signalerror
+    } if
+    % pts: p1..p16 as [x y] in data order; cols: c1..c4; g: the grid
+    /pts 16 array def
+    /cols 4 array def
+    /g 16 array def
+    /np tensor { 15 }{ 11 } ifelse def
+    {
+        dp ds length ge { exit } if
+        /flag bpf .mrdbits cvi def
+        dp ds length ge { exit } if
+        flag 0 eq {
+            0 1 np { pts exch .mrdpt put } for
+            0 1 3 { cols exch .mrdcolor put } for
+        }{
+            % the shared edge is the previous patch's: its four
+            % points become p1..p4 and its two colours c1..c2
+            /oldp [ [ 3 4 5 6 ] [ 6 7 8 9 ] [ 9 10 11 0 ] ] flag 1 sub get
+                   [ exch { pts exch get } forall ] def
+            /oldc [ [ 1 2 ] [ 2 3 ] [ 3 0 ] ] flag 1 sub get
+                   [ exch { cols exch get } forall ] def
+            4 1 np { pts exch .mrdpt put } for
+            2 1 3 { cols exch .mrdcolor put } for
+            0 1 3 { /k exch def pts k oldp k get put } for
+            0 1 1 { /k exch def cols k oldc k get put } for
+        } ifelse
+        0 1 np { /k exch def g .pgridmap k get pts k get put } for
+        tensor not {
+            % the Coons interior points, as ninths of boundary sums
+            g 5 [ -4 0 6 1 6 4 -2 3 -2 12 3 13 3 7 -1 15 ] .pmix put
+            g 6 [ -4 3 6 2 6 7 -2 0 -2 15 3 4 3 14 -1 12 ] .pmix put
+            g 9 [ -4 12 6 13 6 8 -2 15 -2 0 3 1 3 11 -1 3 ] .pmix put
+            g 10 [ -4 15 6 14 6 11 -2 12 -2 3 3 2 3 8 -1 0 ] .pmix put
+        } if
+        .patchpaint
+    } loop
+    end
+} def
+
 %   shdict  shfill  -
 % paint the shading over the current clip region; the current path
 % survives untouched
@@ -359,11 +624,13 @@
         pop closepath clip newpath
     }{ pop pop } ifelse
     dup /ShadingType get
+    dup 1 eq { pop .fnsh }{
     dup 2 eq { pop .axialsh }{
     dup 3 eq { pop .radialsh }{
-    dup 4 eq exch 5 eq or { .meshsh }{
+    dup 4 eq 1 index 5 eq or { pop .meshsh }{
+    dup 6 eq exch 7 eq or { .patchsh }{
         pop /shfill cvx /rangecheck signalerror
-    } ifelse } ifelse } ifelse
+    } ifelse } ifelse } ifelse } ifelse } ifelse
     grestore
 } def
 

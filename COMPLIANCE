@@ -333,8 +333,7 @@ Level 2 operators
 Level 3 operators
 -----------------
 
- [/] shfill (ShadingTypes 2, 3, 4 and 5; sampled functions at byte
-     depths)
+ [X] shfill (sampled functions at byte depths)
  [/] composite fonts (Type 0 FMapType 9 through composefont; CIDFont
      descendants of CIDFontType 2, incremental GlyphDirectory
      delivery, and CIDFontType 0, charstrings through StartData;

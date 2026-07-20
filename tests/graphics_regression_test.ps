@@ -2003,6 +2003,113 @@ inustroke (inustroke shapes the pen by the matrix) assert
 15 11.4 { 10 10 20 12 setbbox 10 10 moveto 20 10 lineto }
 inustroke not (inustroke without the matrix keeps the pen) assert
 newpath
+
+% Smooth shading of the function-based and patch types reaches the
+% raster with each declared corner colour in its corner; a mesh
+% carrying a Function maps its parametric values through it
+/shbuf 200 string def
+/shp 0 def
+/pb { shbuf shp 3 -1 roll put /shp shp 1 add def } def
+/pw { dup 256 idiv pb 256 mod pb } def
+/ppt { % x y (user units, 0..8)
+    exch 8 div 65535 mul round cvi pw
+    8 div 65535 mul round cvi pw
+} def
+/rgbat { % x y . r g b
+    DEV2 dup /GetPix get exec
+} def
+graphicsdict /currgstate get /device DEV2 put
+matrix setmatrix
+
+% type 6: a square patch with straight edges, corners RGBY
+/shp 0 def
+0 pb
+0 0 ppt  0 8 3 div ppt  0 16 3 div ppt  0 8 ppt
+8 3 div 8 ppt  16 3 div 8 ppt  8 8 ppt
+8 16 3 div ppt  8 8 3 div ppt  8 0 ppt
+16 3 div 0 ppt  8 3 div 0 ppt
+255 pb 0 pb 0 pb   0 pb 255 pb 0 pb
+0 pb 0 pb 255 pb   255 pb 255 pb 0 pb
+DEV2 /ImgData get .zerorows
+<<
+  /ShadingType 6 /ColorSpace /DeviceRGB
+  /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8
+  /Decode [0 8 0 8 0 1 0 1 0 1]
+  /DataSource shbuf 0 shp getinterval
+>> shfill
+1 1 rgbat 100 lt exch 100 lt and exch 150 gt and
+(the Coons corner c1 is red) assert
+1 6 rgbat 100 lt exch 150 gt and exch 100 lt and
+(the Coons corner c2 is green) assert
+6 6 rgbat 150 gt exch 100 lt and exch 100 lt and
+(the Coons corner c3 is blue) assert
+6 1 rgbat 100 lt exch 150 gt and exch 150 gt and
+(the Coons corner c4 is yellow) assert
+
+% type 7: the same square as a tensor patch, interior at the thirds
+/shp 0 def
+0 pb
+0 0 ppt  0 8 3 div ppt  0 16 3 div ppt  0 8 ppt
+8 3 div 8 ppt  16 3 div 8 ppt  8 8 ppt
+8 16 3 div ppt  8 8 3 div ppt  8 0 ppt
+16 3 div 0 ppt  8 3 div 0 ppt
+8 3 div 8 3 div ppt  8 3 div 16 3 div ppt
+16 3 div 16 3 div ppt  16 3 div 8 3 div ppt
+255 pb 0 pb 0 pb   0 pb 255 pb 0 pb
+0 pb 0 pb 255 pb   255 pb 255 pb 0 pb
+DEV2 /ImgData get .zerorows
+<<
+  /ShadingType 7 /ColorSpace /DeviceRGB
+  /BitsPerCoordinate 16 /BitsPerComponent 8 /BitsPerFlag 8
+  /Decode [0 8 0 8 0 1 0 1 0 1]
+  /DataSource shbuf 0 shp getinterval
+>> shfill
+1 1 rgbat 100 lt exch 100 lt and exch 150 gt and
+(the tensor corner c1 is red) assert
+6 6 rgbat 150 gt exch 100 lt and exch 100 lt and
+(the tensor corner c3 is blue) assert
+
+% type 1: a sampled two-input function, corner samples RGBY
+DEV2 /ImgData get .zerorows
+<<
+  /ShadingType 1 /ColorSpace /DeviceRGB
+  /Domain [0 1 0 1] /Matrix [8 0 0 8 0 0]
+  /Function <<
+    /FunctionType 0 /Domain [0 1 0 1] /Range [0 1 0 1 0 1]
+    /Size [2 2] /BitsPerSample 8
+    /DataSource <ff000000ff000000ffffff00>
+  >>
+>> shfill
+0 0 rgbat 100 lt exch 100 lt and exch 150 gt and
+(the function shading corner is red) assert
+7 0 rgbat 100 lt exch 150 gt and exch 100 lt and
+(the function shading corner is green) assert
+0 7 rgbat 150 gt exch 100 lt and exch 100 lt and
+(the function shading corner is blue) assert
+7 7 rgbat 100 lt exch 150 gt and exch 150 gt and
+(the function shading corner is yellow) assert
+
+% type 5 with a Function: parametric values map through it
+/shp 0 def
+0 0 ppt 0 pb   8 0 ppt 0 pb
+0 8 ppt 255 pb 8 8 ppt 255 pb
+DEV2 /ImgData get .zerorows
+<<
+  /ShadingType 5 /ColorSpace /DeviceRGB /VerticesPerRow 2
+  /BitsPerCoordinate 16 /BitsPerComponent 8
+  /Decode [0 8 0 8 0 1]
+  /Function << /FunctionType 2 /Domain [0 1] /N 1
+               /C0 [1 0 0] /C1 [0 0 1] >>
+  /DataSource shbuf 0 shp getinterval
+>> shfill
+4 0 rgbat 100 lt exch 100 lt and exch 150 gt and
+(a Function mesh starts at C0) assert
+4 7 rgbat 150 gt exch 100 lt and exch 100 lt and
+(a Function mesh ends at C1) assert
+
+graphicsdict /currgstate get /device DEV put
+initgraphics
+
 % a font dictionary's entries carry the attributes a program reads:
 % the matrix is data, the bounding box answers executable as the
 % reference interpreters do, and the encoding is data
