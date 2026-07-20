@@ -10,13 +10,21 @@ currentglobal
 false setglobal
 userdict begin
 
-/$error 13 dict def
+/$error 16 dict def
 $error begin
     /ostackarray null def
     /newerror false def
     /command null def
     /errorname null def
     /initializing true def
+    % the standard entries the reference interpreters carry: whether
+    % an error records the stacks into $error (settable to skip the
+    % snapshot), and the extra context certain errors leave behind
+    /recordstacks true def
+    /errorinfo null def
+    /ostack null def
+    /estack null def
+    /dstack null def
 end
 /QUIET where { pop }{ ($error installed...)print } ifelse
 
@@ -25,7 +33,8 @@ end
     //$error exch /errorname exch put
     //$error exch /command exch put
     //$error /newerror true put
-    //$error /errorname get /VMerror ne {
+    //$error /errorname get /VMerror ne
+    //$error /recordstacks get and {
         //$error /ostackarray get null eq {
             //$error /estackarray 600 array put
             //$error /ostackarray 1000 array put

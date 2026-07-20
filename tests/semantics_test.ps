@@ -316,6 +316,20 @@ st.data eq (LZWEncode round-trips through its decoder) assert
 { (0.5junk) cvr } stopped { pop pop true }{ false } ifelse
 (a glued suffix is no numeral) assert
 
+% $error carries the standard entries: recordstacks (settable to skip
+% the stack snapshot) and errorinfo, both present in the reference
+$error /recordstacks known $error /errorinfo known and
+($error carries recordstacks and errorinfo) assert
+$error /recordstacks get (recordstacks defaults on) assert
+$error /ostack null put
+$error /recordstacks false put
+{ 1 (s) add } stopped pop
+$error /ostack get null eq (recordstacks off skips the snapshot) assert
+$error /recordstacks true put
+{ 1 (s) add } stopped pop
+$error /ostack get type /arraytype eq (recordstacks on takes the snapshot) assert
+$error /newerror false put
+
 % == prints arrays and procedures with single-space separators and no
 % padding inside the brackets, and its per-level scope leaves the dict
 % stack as it found it however deep the nesting goes
