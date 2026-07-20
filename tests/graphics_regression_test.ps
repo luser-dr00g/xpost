@@ -879,6 +879,51 @@ grestore
     dup type /dicttype eq { /basefont exch def } { pop } ifelse
 } if
 
+% A Type 3 glyph whose build shows text of its own leaves another
+% font current; the glyph's advances still come from its
+% setcachedevice, and the cache serves the repeat
+erasepage
+/T3Nested << /FontType 3 /FontMatrix [0.001 0 0 0.001 0 0]
+  /FontBBox [0 0 800 800]
+  /Encoding 256 array 0 1 255 { 1 index exch /.notdef put } for
+    dup 66 /nb put
+  /BuildChar { pop pop
+    700 0 0 0 700 700 setcachedevice
+    basefont null ne {
+        gsave basefont 400 scalefont setfont 0 0 moveto (l) show grestore
+    } if
+    100 100 500 500 rectfill
+  }
+>> definefont pop
+/T3Nested findfont 20 scalefont setfont
+2 24 moveto (BB) show
+currentpoint pop 2 sub 28 sub abs 1 lt
+(a glyph that shows text keeps its own advance) assert
+countink 20 ge (the nested-text glyph paints) assert
+initgraphics
+
+% A Type 3 glyph that declares setcachedevice builds once: repeats
+% replay its mask from the glyph cache, and the raster still lands
+erasepage
+/T3Count 0 def
+/T3CacheFont << /FontType 3 /FontMatrix [0.001 0 0 0.001 0 0]
+  /FontBBox [0 0 800 800]
+  /Encoding 256 array 0 1 255 { 1 index exch /.notdef put } for
+    dup 65 /sq put
+  /BuildChar {
+    pop pop
+    /T3Count T3Count 1 add def
+    800 0 0 0 700 700 setcachedevice
+    100 100 500 500 rectfill
+  }
+>> definefont pop
+/T3CacheFont findfont 16 scalefont setfont
+2 24 moveto (AAAA) show
+T3Count 1 eq (a setcachedevice glyph builds once for four shows) assert
+countink 100 ge (the cached glyph still lands on the raster) assert
+2 44 moveto (AA) show
+T3Count 1 eq (later shows replay from the cache) assert
+
 basefont null ne {
     % the glyph cache fills on first rendering and replays after:
     % a repeat show adds no entries, and the raster is unchanged

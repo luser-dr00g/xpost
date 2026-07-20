@@ -93,6 +93,17 @@
     dup /FontName known not {
         dup /FontName 3 index put
     } if
+    % a serial keys the glyph cache: derived dictionaries keep their
+    % parent's, the transform distinguishing their entries. The
+    % counter lives in userdict outright: definefont may run under
+    % any dictionary a driver prolog has begun
+    dup /.fontid known not {
+        userdict /.fontserial known not {
+            userdict /.fontserial 1 put
+        } if
+        dup /.fontid userdict /.fontserial get put
+        userdict /.fontserial userdict /.fontserial get 1 add put
+    } if
     FontDirectory exch 2 index exch put
     findfont
 } def
@@ -126,9 +137,158 @@
     /yadvance 3 2 roll put
 } def
 
+% wx wy llx lly urx ury  .t3capture  -
+% declare the glyph's metrics and turn the build's marks into a
+% coverage mask: painting swaps to a raster sized from the glyph box
+% under the transform in force, shifted onto it in device space
+/.t3capture {
+    16 dict begin
+    {ury urx lly llx wy wx}{exch def}forall
+    wx wy setcharwidth
+    llx lly transform /y0 exch def /x0 exch def
+    urx lly transform /y1 exch def /x1 exch def
+    llx ury transform /y2 exch def /x2 exch def
+    urx ury transform /y3 exch def /x3 exch def
+    /bx0 x0 x1 2 copy gt { exch } if pop
+         x2 2 copy gt { exch } if pop
+         x3 2 copy gt { exch } if pop floor cvi def
+    /bx1 x0 x1 2 copy lt { exch } if pop
+         x2 2 copy lt { exch } if pop
+         x3 2 copy lt { exch } if pop ceiling cvi def
+    /by0 y0 y1 2 copy gt { exch } if pop
+         y2 2 copy gt { exch } if pop
+         y3 2 copy gt { exch } if pop floor cvi def
+    /by1 y0 y1 2 copy lt { exch } if pop
+         y2 2 copy lt { exch } if pop
+         y3 2 copy lt { exch } if pop ceiling cvi def
+    /W bx1 bx0 sub def
+    /H by1 by0 sub def
+    W 1 ge H 1 ge and W 2048 le and H 2048 le and {
+        0 0 transform /oy exch def /ox exch def
+        /mdev W H newPGMIMAGEdevice def
+        % the compiled rasterizers, as device selection wires them
+        mdev /FillPoly /.fillpoly load put
+        mdev /FillRect /.fillrectgray load put
+        % the advances belong to the glyph, not to whatever font the
+        % build procedure leaves current: a glyph that shows text of
+        % its own retunes currfont and it never comes back before the
+        % capture is filed
+        graphicsdict /.t3cap <<
+            /mdev mdev /w W /h H /bx0 bx0 /by0 by0 /ox ox /oy oy
+            /advx wx /advy wy
+        >> put
+        graphicsdict /currgstate get /device mdev put
+        matrix currentmatrix
+        dup 4 2 copy get bx0 sub put
+        dup 5 2 copy get by0 sub put
+        setmatrix
+        initclip
+        newpath
+        1 setgray
+    } if
+    end
+} def
+
 /setcachedevice {
-    pop pop pop pop
-    setcharwidth
+    graphicsdict /.t3want 2 copy known { get }{ pop pop false } ifelse
+    graphicsdict /.t3cap 2 copy known { get }{ pop pop null } ifelse
+    null eq and {
+        .t3capture
+    }{
+        pop pop pop pop
+        setcharwidth
+    } ifelse
+} def
+
+% font code  .t3build  -
+% render a Type 3 glyph through the glyph cache: a hit replays the
+% stored mask and its advances; a miss runs the build procedure,
+% capturing its marks when it declares setcachedevice, and paints
+% the fresh entry the same way a hit does
+/.t3build {
+    10 dict begin
+    /code exch def /font exch def
+    /devmat matrix currentmatrix def
+    0 0 transform /devy exch def /devx exch def
+    % the cache serves only within a rectangular clip that holds the
+    % whole raster: a glyph crossing the clip edge builds direct,
+    % which clips its marks exactly
+    /clipok .cliprect {
+        4 array astore /cliparr exch def true
+    }{ false } ifelse def
+    clipok
+    { devx devy devmat font code cliparr .t3cachehit }
+    { false } ifelse
+    {
+        /ya exch def /xa exch def
+        graphicsdict /currgstate get /currfont get
+        dup /xadvance xa put
+        /yadvance ya put
+    }{
+    clipok not {
+        % an unhelpful clip: build direct, marks clipped by the
+        % ordinary paint pipeline
+        gsave
+        font code font /BuildChar get
+        currentdict end 4 1 roll
+        .runbuild
+        begin
+        grestore
+    }{
+        /oldwant graphicsdict /.t3want 2 copy known { get }{ pop pop false } ifelse def
+        /oldcap graphicsdict /.t3cap 2 copy known { get }{ pop pop null } ifelse def
+        gsave
+        graphicsdict /.t3want true put
+        graphicsdict /.t3cap null put
+        % the build runs outside this scope, so its defs reach the
+        % caller's dictionaries; the locals ride the operand stack
+        font code font /BuildChar get
+        currentdict end 4 1 roll
+        .runbuild
+        begin
+        /cap graphicsdict /.t3cap get def
+        cap null ne {
+            /buf cap /w get cap /h get mul string def
+            0 1 cap /h get 1 sub { /r exch def
+                buf r cap /w get mul
+                cap /mdev get /ImgData get r get
+                0 cap /w get getinterval
+                putinterval
+            } for
+            <<
+                /buf buf /w cap /w get /h cap /h get
+                /bx0 cap /bx0 get /by0 cap /by0 get
+                /ox cap /ox get /oy cap /oy get
+                /advx cap /advx get
+                /advy cap /advy get
+                /mat devmat /font font /code code
+            >> .t3cacheput
+        } if
+        graphicsdict /.t3want oldwant put
+        graphicsdict /.t3cap oldcap put
+        grestore
+        cap null ne {
+            clipok
+            { devx devy devmat font code cliparr .t3cachehit }
+            { false } ifelse
+            {
+                /ya exch def /xa exch def
+                graphicsdict /currgstate get /currfont get
+                dup /xadvance xa put
+                /yadvance ya put
+            }{
+                % past the cache ceiling: build again, painting direct
+                gsave
+                font code font /BuildChar get
+                currentdict end 4 1 roll
+                .runbuild
+                begin
+                grestore
+            } ifelse
+        } if
+    } ifelse
+    } ifelse
+    end
 } def
 
 /show {
@@ -163,9 +323,7 @@
         exch
         %pstack()=
         {
-            gsave
-                1 index /BuildChar get .runbuild
-            grestore
+            .t3build
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
             translate
@@ -201,9 +359,7 @@
         %pstack()=
         {
             dup /curcode exch def
-            gsave
-                1 index /BuildChar get .runbuild
-            grestore
+            .t3build
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
             translate
@@ -241,9 +397,7 @@
         exch
         %pstack()=
         {
-            gsave
-                1 index /BuildChar get .runbuild
-            grestore
+            .t3build
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
             translate
@@ -282,9 +436,7 @@
         %pstack()=
         {
             dup /curcode exch def
-            gsave
-                1 index /BuildChar get .runbuild
-            grestore
+            .t3build
             graphicsdict /currgstate get /currfont get
             dup /xadvance get 1 index /yadvance get
             translate
@@ -359,7 +511,7 @@
                         { /code exch def exit }{ pop } ifelse
                     } for
                     code null ne {
-                        fnt code fnt /BuildChar get .runbuild
+                        fnt code .t3build
                     } if
                 } ifelse
             grestore

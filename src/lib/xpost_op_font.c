@@ -2082,6 +2082,181 @@ refuse:
     return 0;
 }
 
+/* Type 3 glyphs cached through setcachedevice: the key is the font's
+   serial and the character code under the exact text-to-device
+   transform, quantized as the face transforms are. The store is the
+   glyph cache; the raster is a coverage mask captured from the build
+   procedure's marks. */
+
+static int
+_t3_key(Xpost_Context *ctx, Xpost_Object fontdict, Xpost_Object code,
+        Xpost_Object mat, unsigned long *k2, long m[4])
+{
+    Xpost_Object o;
+    int i;
+
+    o = xpost_dict_get(ctx, fontdict, xpost_name_cons(ctx, ".fontid"));
+    if (xpost_object_get_type(o) != integertype)
+        return 0;
+    *k2 = ((unsigned long)o.int_.val << 8) | ((unsigned long)code.int_.val & 255);
+    if (xpost_object_get_type(mat) != arraytype || mat.comp_.sz != 6)
+        return 0;
+    for (i = 0; i < 4; i++)
+    {
+        Xpost_Object el = xpost_array_get(ctx, mat, i);
+        double v = xpost_object_get_type(el) == realtype ? el.real_.val
+                 : xpost_object_get_type(el) == integertype ? (double)el.int_.val
+                 : 0.0;
+
+        m[i] = (long)(v * 0x10000L);
+    }
+    return 1;
+}
+
+/* x y mat font code cliparr  .t3cachehit  advx advy true
+                                            false
+   paint the cached glyph at the device origin (x y) in the current
+   colour and report its character-space advances; a glyph whose
+   raster leaves the clip rectangle [x0 y0 x1 y1] answers false, and
+   the direct build renders it clipped */
+static
+int _t3cachehit(Xpost_Context *ctx,
+                Xpost_Object x,
+                Xpost_Object y,
+                Xpost_Object mat,
+                Xpost_Object fontdict,
+                Xpost_Object code,
+                Xpost_Object cliparr)
+{
+    Xpost_Object userdict, gd, gs, devdic, putpix, o;
+    textstate ts;
+    unsigned long k2;
+    long m[4];
+    unsigned char *bits;
+    int rows, width, pitch, left, top;
+    long ax, ay;
+    int ncomp;
+    Xpost_Object comp[4];
+    double dx, dy;
+
+    if (!_t3_key(ctx, fontdict, code, mat, &k2, m))
+        goto refuse;
+    if (!xpost_font_cache_lookup_bits(NULL, k2, m, 0,
+                                      &bits, &rows, &width, &pitch,
+                                      &left, &top, &ax, &ay))
+        goto refuse;
+
+    userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    if (xpost_object_get_type(userdict) != dicttype)
+        goto refuse;
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
+    devdic = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "device"));
+    if (xpost_object_get_type(devdic) != dicttype)
+        goto refuse;
+
+    memset(&ts, 0, sizeof ts);
+    ts.blendpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "BlendPix"));
+    o = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "TextAlphaBits"));
+    ts.blend = (xpost_object_get_type(ts.blendpix) == operatortype
+             || (xpost_object_get_type(ts.blendpix) == arraytype
+              && xpost_object_is_exe(ts.blendpix)))
+            && xpost_object_get_type(o) == integertype
+            && o.int_.val > 1;
+    putpix = xpost_dict_get(ctx, devdic, xpost_name_cons(ctx, "PutPix"));
+
+    if (_device_color(ctx, gs, devdic, &ncomp, comp))
+        goto refuse;
+
+    dx = xpost_object_get_type(x) == realtype ? x.real_.val : (double)x.int_.val;
+    dy = xpost_object_get_type(y) == realtype ? y.real_.val : (double)y.int_.val;
+
+    {
+        double c[4];
+        int i;
+        int gx = (int)floor(dx + 0.5) + left;
+        int gy = (int)floor(dy + 0.5) - top;
+
+        if (xpost_object_get_type(cliparr) != arraytype
+         || cliparr.comp_.sz != 4)
+            goto refuse;
+        for (i = 0; i < 4; i++)
+        {
+            Xpost_Object el = xpost_array_get(ctx, cliparr, i);
+
+            c[i] = xpost_object_get_type(el) == realtype ? el.real_.val
+                 : xpost_object_get_type(el) == integertype
+                 ? (double)el.int_.val : 0.0;
+        }
+        if (gx < c[0] || gy < c[1]
+         || gx + width > c[2] || gy + rows > c[3])
+            goto refuse;
+    }
+
+    /* the answers go under the queue: the painter stacks one entry
+       per pixel above them, and each entry consumes its own operands
+       before the caller sees the boolean */
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)(ax / 65536.0)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_real_cons((real)(ay / 65536.0)));
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1));
+    _draw_bitmap(ctx, devdic, putpix, &ts,
+                 bits, rows, width, pitch,
+                 XPOST_FONT_PIXEL_MODE_GRAY,
+                 (int)floor(dx + 0.5) + left,
+                 (int)floor(dy + 0.5) - top,
+                 ncomp, comp[0], comp[1], comp[2], comp[3]);
+    return 0;
+refuse:
+    xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(0));
+    return 0;
+}
+
+/* capdict  .t3cacheput  -
+   insert a captured glyph mask: buf holds width x height coverage
+   bytes whose raster origin sits at device (bx0 by0), the glyph
+   origin was at device (ox oy), advances are character-space, and
+   mat, font and code key the entry as .t3cachehit reads it */
+static
+int _t3cacheput(Xpost_Context *ctx,
+                Xpost_Object dict)
+{
+    Xpost_Object o, buf, mat, fontdict, code;
+    unsigned long k2;
+    long m[4];
+    int w, h, bx0, by0, left, top;
+    double ox, oy, advx, advy;
+    unsigned char *bytes;
+
+#define DGET(name, var, want) do {     o = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, name));     if (xpost_object_get_type(o) != want) return typecheck;     var = o; } while (0)
+#define DNUM(name, var) do {     o = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, name));     if (xpost_object_get_type(o) == realtype) var = o.real_.val;     else if (xpost_object_get_type(o) == integertype) var = (double)o.int_.val;     else return typecheck; } while (0)
+    DGET("buf", buf, stringtype);
+    DGET("mat", mat, arraytype);
+    DGET("font", fontdict, dicttype);
+    DGET("code", code, integertype);
+    { double t; DNUM("w", t); w = (int)t; }
+    { double t; DNUM("h", t); h = (int)t; }
+    { double t; DNUM("bx0", t); bx0 = (int)t; }
+    { double t; DNUM("by0", t); by0 = (int)t; }
+    DNUM("ox", ox);
+    DNUM("oy", oy);
+    DNUM("advx", advx);
+    DNUM("advy", advy);
+#undef DGET
+#undef DNUM
+    if (w <= 0 || h <= 0 || (unsigned int)(w * h) > buf.comp_.sz)
+        return rangecheck;
+    if (!_t3_key(ctx, fontdict, code, mat, &k2, m))
+        return 0;
+    bytes = (unsigned char *)xpost_string_get_pointer(ctx, buf);
+    left = bx0 - (int)floor(ox + 0.5);
+    top = (int)floor(oy + 0.5) - by0;
+    (void)xpost_font_cache_insert_bits(NULL, k2, m, 0,
+                                       bytes, h, w, w, left, top,
+                                       (long)(advx * 65536.0),
+                                       (long)(advy * 65536.0));
+    return 0;
+}
+
 /* ciddict glypharray  .loadcidfont2  -
    assemble a working TrueType face for a CIDFontType 2 dictionary.
    The /sfnts strings supply every table but the outlines: the glyphs
@@ -3044,6 +3219,11 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".stringoutline", (Xpost_Op_Func)_stringoutline, 1, 1, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".cachestatus", (Xpost_Op_Func)_zcachestatus, 7, 0);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".t3cachehit", (Xpost_Op_Func)_t3cachehit, 0, 6,
+        floattype, floattype, arraytype, dicttype, integertype, arraytype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".t3cacheput", (Xpost_Op_Func)_t3cacheput, 0, 1, dicttype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".setcachelimit", (Xpost_Op_Func)_zsetcachelimit, 0, 1, integertype);
     INSTALL;

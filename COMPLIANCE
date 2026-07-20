@@ -39,9 +39,7 @@ Level 1 operators
  [X] awidthshow
  [X] kshow
  [X] stringwidth
- [/] Type-3 Fonts (setcachedevice records metrics only; repeated
-     stencil masks replay from a run cache; bitmap glyphs blend
-     their edges where the device blends text)
+ [X] Type-3 Fonts
  [X] font data caching
  [X] definefont for modified font properties (matrix, encoding, etc.)
  [/] base font CharStrings (keys enumerable; values are glyph indices,
