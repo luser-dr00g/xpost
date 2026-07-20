@@ -2213,6 +2213,61 @@ userdict /ci.pos get 192 eq (colorimage consumes every row's chunk) assert
 graphicsdict /currgstate get /device DEV put
 initgraphics
 
+% Interpolate reaches the planar, masked and clipped image shapes:
+% samples ramp between their neighbours while a mask still decides
+% each pixel by its nearest sample
+graphicsdict /currgstate get /device DEV2 put
+matrix setmatrix
+DEV2 /ImgData get .zerorows
+/DeviceRGB setcolorspace
+gsave
+8 8 scale
+<< /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1 0 1 0 1]
+   /Interpolate true /MultipleDataSources true
+   /DataSource [ <00 ff 00 ff> <00 00 ff ff> <80 80 80 80> ]
+>> image
+grestore
+1 4 rgbat pop pop /ip.l exch def
+6 4 rgbat pop pop /ip.r exch def
+ip.r ip.l sub 100 gt (a planar image ramps under Interpolate) assert
+4 4 rgbat pop pop dup 40 gt exch 215 lt and
+(the ramp passes through the blend) assert
+DEV2 /ImgData get .zerorows
+gsave
+8 8 scale
+<< /ImageType 3 /InterleaveType 3
+   /DataDict << /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8
+      /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1 0 1 0 1]
+      /Interpolate true
+      /DataSource <00ff00 ff0000 0000ff 00ff00> >>
+   /MaskDict << /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 1
+      /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1]
+      /DataSource <80 00> >>
+>> image
+grestore
+1 6 rgbat 5 lt exch 5 lt and exch 5 lt and
+(the masked corner stays unpainted) assert
+5 6 rgbat pop pop /ip.a exch def
+7 6 rgbat pop pop /ip.b exch def
+ip.a ip.b ne (the unmasked cells ramp rather than step) assert
+DEV2 /ImgData get .zerorows
+gsave
+newpath 0 0 moveto 8 0 lineto 0 8 lineto closepath clip
+8 8 scale
+<< /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1 0 1 0 1]
+   /Interpolate true
+   /DataSource <ff0000 00ff00 0000ff ffff00>
+>> image
+grestore
+1 1 rgbat 100 gt 3 1 roll pop pop
+(the clipped interpolated image paints inside) assert
+7 7 rgbat 5 lt exch 5 lt and exch 5 lt and
+(the clipped interpolated image spares outside) assert
+graphicsdict /currgstate get /device DEV put
+initgraphics
+
 % The TIFF device frames the rgb raster as a baseline TIFF: the
 % little-endian header, a directory whose width entry answers, and
 % one uncompressed strip of the pixels

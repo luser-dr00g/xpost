@@ -652,12 +652,26 @@
                 bd /tlutb tlutb put
             } if
             bd /y 0 put
-            /interpok interp multi not and
-                mbits null eq and mranges null eq and
-                cspansv null eq and def
+            /interpok interp def
             interpok {
                 bd /interp true put
-                /pbuf rowsamples string def
+                multi {
+                    /pbufs [ ncomp { width string } repeat ] def
+                    bd /prevs pbufs put
+                }{
+                    /pbuf rowsamples string def
+                    bd /prev pbuf put
+                } ifelse
+                % keep this row's samples for the next call's blend
+                /.keeprow {
+                    multi {
+                        0 1 ncomp 1 sub { /c exch def
+                            pbufs c get 0 bufs c get putinterval
+                        } for
+                    }{
+                        pbuf 0 buf putinterval
+                    } ifelse
+                } def
             } if
             0 1 height 1 sub { /y exch def
                 multi {
@@ -674,12 +688,11 @@
                 } ifelse
                 bd /y y put
                 interpok {
-                    y 0 eq { pbuf 0 buf putinterval } if
-                    bd /prev pbuf put
+                    y 0 eq { .keeprow } if
                     bd /last y height 1 sub eq put
                 } if
                 bd .blitrow
-                interpok { pbuf 0 buf putinterval } if
+                interpok { .keeprow } if
             } for
         }{
         % invert into a fresh matrix: the operand matrix belongs to
@@ -752,6 +765,8 @@
 /.imagetype4 {
     6 dict begin
     /d exch def
+    d /Interpolate 2 copy known { get }{ pop pop false } ifelse
+    dup type /booleantype eq { userdict /.imginterp 3 -1 roll put }{ pop } ifelse
     /itbits d /BitsPerComponent get def
     /itn .ncomponents def
     /itrange [
@@ -814,6 +829,8 @@
     /d exch def
     /md d /MaskDict get def
     /dd d /DataDict get def
+    dd /Interpolate 2 copy known { get }{ pop pop false } ifelse
+    dup type /booleantype eq { userdict /.imginterp 3 -1 roll put }{ pop } ifelse
     /il d /InterleaveType get def
     /w dd /Width get def
     /h dd /Height get def

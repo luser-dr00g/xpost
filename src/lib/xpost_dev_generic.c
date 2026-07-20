@@ -1906,7 +1906,8 @@ static int _pdffree(Xpost_Context *ctx, Xpost_Object devdic)
    one r,g,b triple per pixel (grey rides in all three), through the
    same tables the direct path uses */
 static void
-_blit_decode_row(const unsigned char *src, int w, int ncomp,
+_blit_decode_row(const unsigned char *src, unsigned char *const *planes,
+                 int w, int ncomp,
                  const unsigned char *lut, unsigned char *const dlut[4],
                  const unsigned char *tlut,
                  const unsigned char *tlr, const unsigned char *tlg,
@@ -1915,13 +1916,14 @@ _blit_decode_row(const unsigned char *src, int w, int ncomp,
 {
     int x, c;
 
+#define DECSAMP(x, c) (planes ? planes[c][x] : src[(x) * ncomp + (c)])
     for (x = 0; x < w; x++)
     {
         int r = 0, g = 0, b = 0;
 
         if (lut)
         {
-            const unsigned char *e = lut + src[x * ncomp] * nat;
+            const unsigned char *e = lut + DECSAMP(x, 0) * nat;
 
             if (nat == 3) { r = e[0]; g = e[1]; b = e[2]; }
             else r = g = b = e[0];
@@ -1931,7 +1933,7 @@ _blit_decode_row(const unsigned char *src, int w, int ncomp,
             int v[4];
 
             for (c = 0; c < ncomp; c++)
-                v[c] = dlut[c][src[x * ncomp + c]];
+                v[c] = dlut[c][DECSAMP(x, c)];
             if (cmyk)
             {
                 r = 255 - (v[0] + v[3] > 255 ? 255 : v[0] + v[3]);
@@ -1962,6 +1964,41 @@ _blit_decode_row(const unsigned char *src, int w, int ncomp,
         out[x * 3 + 1] = g;
         out[x * 3 + 2] = b;
     }
+#undef DECSAMP
+}
+
+/* collect the resolved clip spans overlapping one device row as
+   x-intervals; shared by the stepped and interpolated writers */
+static int
+_blit_row_spans(Xpost_Context *ctx, Xpost_Object cspans, int ncspans,
+                int dy, double ivl[512][2], int *nivl)
+{
+    int q;
+    double t;
+
+    *nivl = 0;
+    for (q = 0; q < ncspans && *nivl < 512; q++)
+    {
+        double qx0, qy0, qx1, qy1;
+        Xpost_Object e;
+#define QGET(i, into) do { \
+        e = xpost_array_get(ctx, cspans, q * 4 + (i)); \
+        if (xpost_object_get_type(e) == realtype) into = e.real_.val; \
+        else if (xpost_object_get_type(e) == integertype) into = e.int_.val; \
+        else return typecheck; \
+    } while (0)
+        QGET(0, qx0); QGET(1, qy0); QGET(2, qx1); QGET(3, qy1);
+#undef QGET
+        if (qy0 > qy1) { t = qy0; qy0 = qy1; qy1 = t; }
+        if (qx0 > qx1) { t = qx0; qx0 = qx1; qx1 = t; }
+        if (qy0 < dy + 1 && qy1 > dy)
+        {
+            ivl[*nivl][0] = qx0;
+            ivl[*nivl][1] = qx1;
+            (*nivl)++;
+        }
+    }
+    return 0;
 }
 
 /* blitdict  .blitrow  -
@@ -2135,30 +2172,60 @@ int _blitrow(Xpost_Context *ctx,
         }
     }
 
+    /* a screening device thresholds every grey written; the caller
+       copies the cell into the blit dictionary when the device has one */
+    htc = _ht_cell(ctx, dict, &htw, &hth);
+
     /* Interpolate: between the previous sample row and this one, each
        device pixel takes the bilinear blend of the four surrounding
        decoded colours, so a magnified image ramps between its samples
        instead of stepping with them. The band between the two row
        centres belongs to this call; the first row also owns the band
-       from its outer edge, the last also the band to its own. Masks,
-       planar sources, resolved clip spans and reductions keep the
-       stepped path. */
+       from its outer edge, the last also the band to its own. The
+       masks decide per device pixel from its nearest sample -- the
+       stepped rule -- while the colour still blends, and the resolved
+       clip spans clamp writes as they do on the stepped path;
+       reductions keep the stepped path. */
     {
         Xpost_Object io = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "interp"));
 
         if (xpost_object_get_type(io) == booleantype && io.int_.val
-         && !mbits && !nranges && !have_cspans && !have_planes
          && fabs(xscale) >= 1.0 && fabs(yscale) >= 1.0 && w > 0)
         {
-            Xpost_Object po = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "prev"));
+            Xpost_Object po = xpost_dict_get(ctx, dict,
+                xpost_name_cons(ctx, have_planes ? "prevs" : "prev"));
             Xpost_Object lo = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "last"));
             int lastrow = xpost_object_get_type(lo) == booleantype && lo.int_.val;
+            unsigned char *prevsamp = NULL;
+            unsigned char *prevplane[4] = { NULL, NULL, NULL, NULL };
+            int prevok = 0;
 
-            if (xpost_object_get_type(po) == stringtype
-             && po.comp_.sz >= (unsigned int)(w * ncomp))
+            if (have_planes)
             {
-                unsigned char *prevsamp =
-                    (unsigned char *)xpost_string_get_pointer(ctx, po);
+                if (xpost_object_get_type(po) == arraytype
+                 && po.comp_.sz >= (unsigned int)ncomp)
+                {
+                    prevok = 1;
+                    for (c = 0; c < ncomp; c++)
+                    {
+                        Xpost_Object b = xpost_array_get(ctx, po, c);
+                        if (xpost_object_get_type(b) != stringtype
+                         || b.comp_.sz < (unsigned int)w)
+                            { prevok = 0; break; }
+                        prevplane[c] = (unsigned char *)
+                            xpost_string_get_pointer(ctx, b);
+                    }
+                }
+            }
+            else if (xpost_object_get_type(po) == stringtype
+                  && po.comp_.sz >= (unsigned int)(w * ncomp))
+            {
+                prevsamp = (unsigned char *)xpost_string_get_pointer(ctx, po);
+                prevok = 1;
+            }
+
+            if (prevok)
+            {
                 int *cols = malloc(sizeof(int) * (size_t)w * 6);
                 int *pc, *cc;
                 double xe0, xe1, bandlo[2], bandhi[2];
@@ -2168,9 +2235,11 @@ int _blitrow(Xpost_Context *ctx,
                     return VMerror;
                 pc = cols;
                 cc = cols + w * 3;
-                _blit_decode_row(prevsamp, w, ncomp, lut, dlut, tlut,
+                _blit_decode_row(prevsamp, have_planes ? prevplane : NULL,
+                                 w, ncomp, lut, dlut, tlut,
                                  tlr, tlg, tlb, cmyk, nat, pc);
-                _blit_decode_row(buf, w, ncomp, lut, dlut, tlut,
+                _blit_decode_row(buf, have_planes ? plane : NULL,
+                                 w, ncomp, lut, dlut, tlut,
                                  tlr, tlg, tlb, cmyk, nat, cc);
 
                 bandlo[0] = y == 0 ? yoff : yoff + (y - 0.5) * yscale;
@@ -2212,6 +2281,15 @@ int _blitrow(Xpost_Context *ctx,
                         v = bhi != blo ? (dy + 0.5 - blo) / (bhi - blo) : 0.0;
                         if (v < 0.0 || v >= 1.0)
                             continue;
+                        if (have_cspans)
+                        {
+                            int ret = _blit_row_spans(ctx, cspans, ncspans,
+                                                      dy, ivl, &nivl);
+                            if (ret)
+                                { free(cols); return ret; }
+                            if (nivl == 0)
+                                continue;
+                        }
                         row = xpost_array_get(ctx, rows, dy);
                         if (packed)
                         {
@@ -2238,6 +2316,48 @@ int _blitrow(Xpost_Context *ctx,
 
                             if (dx < 0 || dx >= devw)
                                 continue;
+                            if (have_cspans)
+                            {
+                                int q, hit = 0;
+                                for (q = 0; q < nivl; q++)
+                                    if (dx + 1 > ivl[q][0] && dx < ivl[q][1])
+                                        { hit = 1; break; }
+                                if (!hit)
+                                    continue;
+                            }
+                            if (mbits || nranges)
+                            {
+                                /* the nearest sample decides, as the
+                                   stepped rule would paint it */
+                                int msy = band == 0 && v < 0.5 && y > 0
+                                        ? y - 1 : y;
+                                int xm = (int)floor((dx + 0.5 - xoff) / xscale);
+
+                                if (xm < 0) xm = 0;
+                                if (xm > w - 1) xm = w - 1;
+                                if (mbits
+                                 && (mbits[msy * mrowb + (xm >> 3)]
+                                     >> (7 - (xm & 7)) & 1))
+                                    continue;
+                                if (nranges)
+                                {
+                                    int inside = 1;
+
+                                    for (k = 0; k < ncomp; k++)
+                                    {
+                                        int sv = msy == y
+                                            ? (int)SAMPLE(xm, k)
+                                            : (int)(have_planes
+                                                ? prevplane[k][xm]
+                                                : prevsamp[xm * ncomp + k]);
+                                        if (sv < mranges[2 * k]
+                                         || sv > mranges[2 * k + 1])
+                                            { inside = 0; break; }
+                                    }
+                                    if (inside)
+                                        continue;
+                                }
+                            }
                             i0 = (int)floor(sxv);
                             f = sxv - i0;
                             if (i0 < 0) { i0 = 0; f = 0.0; }
@@ -2274,10 +2394,6 @@ int _blitrow(Xpost_Context *ctx,
         }
     }
 
-    /* a screening device thresholds every grey written; the caller
-       copies the cell into the blit dictionary when the device has one */
-    htc = _ht_cell(ctx, dict, &htw, &hth);
-
     ya = yoff + y * yscale;
     yb = yoff + (y + 1) * yscale;
     if (ya > yb) { t = ya; ya = yb; yb = t; }
@@ -2295,29 +2411,9 @@ int _blitrow(Xpost_Context *ctx,
             continue;
         if (have_cspans)
         {
-            int q;
-            nivl = 0;
-            for (q = 0; q < ncspans && nivl < 512; q++)
-            {
-                double qx0, qy0, qx1, qy1;
-                Xpost_Object e;
-#define QGET(i, into) do { \
-                e = xpost_array_get(ctx, cspans, q * 4 + (i)); \
-                if (xpost_object_get_type(e) == realtype) into = e.real_.val; \
-                else if (xpost_object_get_type(e) == integertype) into = e.int_.val; \
-                else return typecheck; \
-            } while (0)
-                QGET(0, qx0); QGET(1, qy0); QGET(2, qx1); QGET(3, qy1);
-#undef QGET
-                if (qy0 > qy1) { t = qy0; qy0 = qy1; qy1 = t; }
-                if (qx0 > qx1) { t = qx0; qx0 = qx1; qx1 = t; }
-                if (qy0 < dy + 1 && qy1 > dy)
-                {
-                    ivl[nivl][0] = qx0;
-                    ivl[nivl][1] = qx1;
-                    nivl++;
-                }
-            }
+            int ret = _blit_row_spans(ctx, cspans, ncspans, dy, ivl, &nivl);
+            if (ret)
+                return ret;
             if (nivl == 0)
                 continue;
         }
