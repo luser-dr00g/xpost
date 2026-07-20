@@ -2974,6 +2974,161 @@ struct Xpost_File_Methods flateenc_methods =
 };
 #endif
 
+#ifdef HAVE_LIBJPEG
+/* DCTEncode filter: interleaved samples compress to a JPEG stream on
+   the target. The parameter dictionary fixes the layout -- Columns,
+   Rows and Colors have no in-stream default -- and QFactor scales
+   the standard quantization tables, which is libjpeg's linear
+   quality scaling directly. Input short of the declared height is
+   completed with zero rows at close so the stream always ends
+   well-formed; encoder errors end the stream rather than the
+   process, through the same longjmp handler as the decoder. */
+typedef struct
+{
+    Xpost_File methods;
+    Xpost_File *target;
+    int closed;
+    struct jpeg_compress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+    jmp_buf jmp;
+    struct jpeg_destination_mgr jdst;
+    JOCTET out[4096];
+    unsigned char *row;
+    unsigned int rowbytes, rowi;
+    unsigned int rows, wrote;
+    int started;
+    int failed;
+} Xpost_DctEncFile;
+
+static void
+dctenc_error_exit(j_common_ptr cinfo)
+{
+    Xpost_DctEncFile *ff = (Xpost_DctEncFile *)cinfo->client_data;
+    char msg[JMSG_LENGTH_MAX];
+
+    (*cinfo->err->format_message)(cinfo, msg);
+    XPOST_LOG_ERR("DCTEncode: %s", msg);
+    longjmp(ff->jmp, 1);
+}
+
+static void
+dctenc_output_message(j_common_ptr cinfo)
+{
+    char msg[JMSG_LENGTH_MAX];
+
+    (*cinfo->err->format_message)(cinfo, msg);
+    XPOST_LOG_ERR("DCTEncode: %s", msg);
+}
+
+static void
+dctenc_init_destination(j_compress_ptr cinfo)
+{
+    Xpost_DctEncFile *ff = (Xpost_DctEncFile *)cinfo->client_data;
+
+    ff->jdst.next_output_byte = ff->out;
+    ff->jdst.free_in_buffer = sizeof(ff->out);
+}
+
+static boolean
+dctenc_empty_output_buffer(j_compress_ptr cinfo)
+{
+    Xpost_DctEncFile *ff = (Xpost_DctEncFile *)cinfo->client_data;
+    size_t i;
+
+    for (i = 0; i < sizeof(ff->out); i++)
+        if (xpost_file_putc(ff->target, ff->out[i]) == EOF)
+            dctenc_error_exit((j_common_ptr)cinfo);
+    ff->jdst.next_output_byte = ff->out;
+    ff->jdst.free_in_buffer = sizeof(ff->out);
+    return TRUE;
+}
+
+static void
+dctenc_term_destination(j_compress_ptr cinfo)
+{
+    Xpost_DctEncFile *ff = (Xpost_DctEncFile *)cinfo->client_data;
+    size_t i, n = sizeof(ff->out) - ff->jdst.free_in_buffer;
+
+    for (i = 0; i < n; i++)
+        if (xpost_file_putc(ff->target, ff->out[i]) == EOF)
+            dctenc_error_exit((j_common_ptr)cinfo);
+}
+
+static int
+dctenc_writech(Xpost_File *f, int c)
+{
+    Xpost_DctEncFile *ff = (Xpost_DctEncFile *)f;
+
+    if (ff->closed || ff->failed)
+        return EOF;
+    if (setjmp(ff->jmp))
+    {
+        ff->failed = 1;
+        return EOF;
+    }
+    if (!ff->started)
+    {
+        jpeg_start_compress(&ff->cinfo, TRUE);
+        ff->started = 1;
+    }
+    ff->row[ff->rowi++] = (unsigned char)c;
+    if (ff->rowi == ff->rowbytes)
+    {
+        JSAMPROW rp = ff->row;
+
+        if (ff->wrote < ff->rows)
+        {
+            jpeg_write_scanlines(&ff->cinfo, &rp, 1);
+            ff->wrote++;
+        }
+        ff->rowi = 0;
+    }
+    return c & 0xff;
+}
+
+static int
+dctenc_close(Xpost_File *f)
+{
+    Xpost_DctEncFile *ff = (Xpost_DctEncFile *)f;
+
+    if (!ff->closed)
+    {
+        ff->closed = 1;
+        if (!ff->failed && !setjmp(ff->jmp))
+        {
+            if (!ff->started)
+            {
+                jpeg_start_compress(&ff->cinfo, TRUE);
+                ff->started = 1;
+            }
+            if (ff->rowi || ff->wrote < ff->rows)
+            {
+                JSAMPROW rp = ff->row;
+
+                memset(ff->row + ff->rowi, 0, ff->rowbytes - ff->rowi);
+                while (ff->wrote < ff->rows)
+                {
+                    jpeg_write_scanlines(&ff->cinfo, &rp, 1);
+                    ff->wrote++;
+                    memset(ff->row, 0, ff->rowbytes);
+                }
+            }
+            jpeg_finish_compress(&ff->cinfo);
+        }
+        jpeg_destroy_compress(&ff->cinfo);
+        free(ff->row);
+        ff->row = NULL;
+    }
+    return 0;
+}
+
+struct Xpost_File_Methods dctenc_methods =
+{
+    enc_readch, dctenc_writech, dctenc_close, enc_flush,
+    enc_purge, enc_unreadch, filter_tell, filter_seek
+};
+#endif
+
 /* a most-significant-bit-first code writer shared by the LZW and
    CCITT encoders */
 typedef struct
@@ -3496,6 +3651,79 @@ Xpost_Object xpost_file_cons_filter_enc_ccitt(Xpost_Memory_File *mem,
     }
     return f;
 }
+
+#ifdef HAVE_LIBJPEG
+Xpost_Object xpost_file_cons_filter_enc_dct(Xpost_Memory_File *mem,
+                                            Xpost_Object tgt,
+                                            int columns,
+                                            int rows,
+                                            int colors,
+                                            double qfactor,
+                                            int colortransform,
+                                            const int *hsamp,
+                                            const int *vsamp)
+{
+    Xpost_EncBase *base;
+    Xpost_Object f;
+    Xpost_DctEncFile *ff;
+    int i;
+
+    if (columns < 1 || rows < 1 || colors < 1 || colors > 4
+        || qfactor <= 0.0)
+        return invalid;
+    f = _enc_cons(mem, tgt, sizeof(Xpost_DctEncFile),
+                  &dctenc_methods, &base);
+    ff = (Xpost_DctEncFile *)base;
+    if (!ff)
+        return f;
+    ff->cinfo.err = jpeg_std_error(&ff->jerr);
+    ff->jerr.error_exit = dctenc_error_exit;
+    ff->jerr.output_message = dctenc_output_message;
+    ff->cinfo.client_data = ff;
+    if (setjmp(ff->jmp))
+    {
+        ff->closed = 1;
+        return invalid;
+    }
+    jpeg_create_compress(&ff->cinfo);
+    ff->jdst.init_destination = dctenc_init_destination;
+    ff->jdst.empty_output_buffer = dctenc_empty_output_buffer;
+    ff->jdst.term_destination = dctenc_term_destination;
+    ff->cinfo.dest = &ff->jdst;
+    ff->cinfo.image_width = (JDIMENSION)columns;
+    ff->cinfo.image_height = (JDIMENSION)rows;
+    ff->cinfo.input_components = colors;
+    ff->cinfo.in_color_space = colors == 1 ? JCS_GRAYSCALE
+                             : colors == 3 ? JCS_RGB
+                             : colors == 4 ? JCS_CMYK
+                             : JCS_UNKNOWN;
+    jpeg_set_defaults(&ff->cinfo);
+    /* three components transform to YCbCr unless the dictionary said
+       otherwise; four stay untransformed unless it asked for YCCK.
+       The Adobe marker carries the choice to the decoder */
+    if (colors == 3 && !colortransform)
+        jpeg_set_colorspace(&ff->cinfo, JCS_RGB);
+    if (colors == 4 && colortransform)
+        jpeg_set_colorspace(&ff->cinfo, JCS_YCCK);
+    jpeg_set_linear_quality(&ff->cinfo,
+                            (int)(qfactor * 100.0 + 0.5), TRUE);
+    for (i = 0; i < colors; i++)
+    {
+        ff->cinfo.comp_info[i].h_samp_factor = hsamp[i];
+        ff->cinfo.comp_info[i].v_samp_factor = vsamp[i];
+    }
+    ff->rowbytes = (unsigned int)columns * (unsigned int)colors;
+    ff->rows = (unsigned int)rows;
+    ff->row = malloc((size_t)ff->rowbytes);
+    if (!ff->row)
+    {
+        jpeg_destroy_compress(&ff->cinfo);
+        ff->closed = 1;
+        return invalid;
+    }
+    return f;
+}
+#endif
 
 
 /* eexec decryption: the outer encryption layer of Type 1 font

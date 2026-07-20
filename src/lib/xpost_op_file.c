@@ -305,6 +305,60 @@ int xpost_op_file_filter_dict (Xpost_Context *ctx,
         xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
         return 0;
     }
+#ifdef HAVE_LIBJPEG
+    if (cname && strcmp(cname, "DCTEncode") == 0)
+    {
+        Xpost_Object f, v;
+        int hs[4] = { 1, 1, 1, 1 }, vs[4] = { 1, 1, 1, 1 };
+        int cols = _dict_int(ctx, dict, "Columns", 0);
+        int rows = _dict_int(ctx, dict, "Rows", 0);
+        int colors = _dict_int(ctx, dict, "Colors", 0);
+        int ct = _dict_int(ctx, dict, "ColorTransform", colors == 3);
+        double qf = 1.0;
+        int i;
+
+        free(cname);
+        if (!xpost_object_is_writeable(ctx, F))
+            return invalidaccess;
+        if (cols < 1 || rows < 1 || colors < 1 || colors > 4)
+            return rangecheck;
+        v = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "QFactor"));
+        if (xpost_object_get_type(v) == realtype)
+            qf = v.real_.val;
+        else if (xpost_object_get_type(v) == integertype)
+            qf = (double)v.int_.val;
+        if (qf <= 0.0)
+            return rangecheck;
+        v = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "HSamples"));
+        if (xpost_object_get_type(v) == arraytype && v.comp_.sz >= colors)
+            for (i = 0; i < colors; i++)
+            {
+                Xpost_Object e = xpost_array_get(ctx, v, i);
+
+                if (xpost_object_get_type(e) == integertype
+                    && e.int_.val >= 1 && e.int_.val <= 4)
+                    hs[i] = e.int_.val;
+            }
+        v = xpost_dict_get(ctx, dict, xpost_name_cons(ctx, "VSamples"));
+        if (xpost_object_get_type(v) == arraytype && v.comp_.sz >= colors)
+            for (i = 0; i < colors; i++)
+            {
+                Xpost_Object e = xpost_array_get(ctx, v, i);
+
+                if (xpost_object_get_type(e) == integertype
+                    && e.int_.val >= 1 && e.int_.val <= 4)
+                    vs[i] = e.int_.val;
+            }
+        f = xpost_file_cons_filter_enc_dct(ctx->lo, F, cols, rows, colors,
+                                           qf, ct, hs, vs);
+        if (xpost_object_get_type(f) == invalidtype)
+            return ioerror;
+        f.tag &= ~XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_MASK;
+        f.tag |= XPOST_OBJECT_TAG_ACCESS_FILE_WRITE << XPOST_OBJECT_TAG_DATA_FLAG_ACCESS_OFFSET;
+        xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(f));
+        return 0;
+    }
+#endif
     if (cname && (strcmp(cname, "LZWDecode") == 0
                || strcmp(cname, "LZWEncode") == 0))
     {

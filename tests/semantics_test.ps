@@ -308,6 +308,53 @@ st.data eq (LZWEncode round-trips through its decoder) assert
     (semantics.scratch) (r) file /FlateDecode filter 64 string readstring pop
     st.data eq (FlateEncode round-trips through its decoder) assert
 }{ pop } ifelse
+% DCTEncode, where the JPEG library is present: the stream carries
+% the interchange markers, a smooth ramp survives the lossy
+% round-trip within a few counts, and a colour image keeps its
+% component count
+mark
+{ /st.f (semantics.scratch) (w) file def
+  /st.e st.f << /Columns 16 /Rows 16 /Colors 1 >> /DCTEncode filter def
+} stopped { cleartomark false }{ pop true } ifelse
+{
+    /st.data 256 string def
+    0 1 255 { /i exch def
+        st.data i i 16 mod i 16 idiv add 8 mul put
+    } for
+    st.e st.data writestring st.e closefile st.f closefile
+    /st.j (semantics.scratch) (r) file 4096 string readstring pop def
+    st.j 0 get 16#FF eq st.j 1 get 16#D8 eq and
+    st.j dup length 2 sub get 16#FF eq and
+    st.j dup length 1 sub get 16#D9 eq and
+    (DCTEncode writes a JPEG interchange stream) assert
+    /st.rt 256 string def
+    (semantics.scratch) (r) file /DCTDecode filter
+    st.rt readstring pop pop
+    /st.md 0 def
+    0 1 255 { /i exch def
+        st.rt i get st.data i get sub abs
+        dup st.md gt { /st.md exch def }{ pop } ifelse
+    } for
+    st.md 8 le (a smooth ramp survives the lossy round-trip) assert
+    /st.f (semantics.scratch) (w) file def
+    /st.e st.f << /Columns 8 /Rows 8 /Colors 3 >> /DCTEncode filter def
+    /st.data 192 string def
+    0 3 189 { /i exch def
+        st.data i 10 put
+        st.data i 1 add 200 put
+        st.data i 2 add 60 put
+    } for
+    st.e st.data writestring st.e closefile st.f closefile
+    /st.rt 192 string def
+    (semantics.scratch) (r) file /DCTDecode filter
+    dup st.rt readstring pop length 192 eq
+    exch read not and
+    (a colour image keeps its component count) assert
+    st.rt 96 get 10 sub abs 6 le
+    st.rt 97 get 200 sub abs 6 le and
+    st.rt 98 get 60 sub abs 6 le and
+    (a flat colour survives the transform and quantization) assert
+} if
 /st.f (semantics.scratch) (w) file def
 /st.e st.f << /K -1 /Columns 16 /Rows 4 >> /CCITTFaxEncode filter def
 st.e <0FFFF0FFFF0FFFF0> writestring st.e closefile st.f closefile

@@ -287,10 +287,9 @@ Level 2 operators
      cell, and text under a pattern colour paints the underlying
      colour)
  [X] setpattern
- [/] filter (decode filters: ASCIIHex, ASCII85, SubFile, RunLength,
+ [X] filter (decode filters: ASCIIHex, ASCII85, SubFile, RunLength,
      Flate, LZW, CCITTFax, DCT, ReusableStream; encode filters:
-     ASCIIHex, ASCII85, Null, RunLength, Flate, LZW, CCITTFax; no
-     DCTEncode)
+     ASCIIHex, ASCII85, Null, RunLength, Flate, LZW, CCITTFax, DCT)
  [X] defineresource, findresource, resourcestatus, resourceforall,
      undefineresource
  [X] setglobal, currentglobal, gcheck
