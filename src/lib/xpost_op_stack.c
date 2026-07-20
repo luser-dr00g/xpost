@@ -142,6 +142,8 @@ int IIroll(Xpost_Context *ctx,
     if (j == 0) return 0;
 
     t = malloc((n - j) * sizeof(Xpost_Object));
+    if (!t)
+        return VMerror;
     for (i = 0; i < n-j; i++)
     {
         r = xpost_stack_topdown_fetch(ctx->lo, ctx->os, n - 1 - i);
