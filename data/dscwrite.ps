@@ -1,0 +1,96 @@
+/QUIET where { pop }{ (loading dscwrite.ps...)print } ifelse
+
+/newDSCWRITEdevice { % width height  .  IMAGE-device-dict
+    DSCWRITE dup /Create get exec
+} def
+
+% DSCWRITE writes a single-page DSC-conforming PostScript program of
+% the marks the page received, in the manner of a distiller: flat
+% path construction and painting under a prolog of short operator
+% names. It is the PDFWRITE device wearing another wrapper -- the
+% marking methods and the content accumulator are inherited whole,
+% and the prolog defines the accumulated operators as procedures, so
+% the same content serves both syntaxes. Separation colour spaces
+% are not carried across; their paints arrive in the process colours
+% the tint transform yields, which render the same.
+%
+% Emit reports the page size in points (unscaling the device
+% resolution carried in the defaultmatrix fixup, as the bbox device
+% does) and the content runs under a matrix taking the accumulator's
+% y-down device coordinates back to that page.
+
+/DSCWRITE PDFWRITE dup length 2 add dict copy def
+
+% no separation registry: paints fall back to process colours
+DSCWRITE /.registersep undef
+
+DSCWRITE /Emit { % IMAGE  .  -
+begin
+    /F /OutputFileName where { pop OutputFileName (w) file }{ (%stdout) (w) file } ifelse def
+    /.w { F exch writestring } def
+    /.wnum { % num  .  -   (two decimals at most, never exponential)
+        dup 0 lt { (-) .w neg } if
+        100 mul round cvi
+        dup 100 idiv 20 string cvs .w
+        100 mod dup 0 ne {
+            (.) .w dup 10 lt { (0) .w } if 20 string cvs .w
+        }{ pop } ifelse
+    } def
+
+    % page size in points from the resolution fixup
+    /sx 1 def /sy 1 def
+    currentdict /defaultmatrix 2 copy known {
+        get dup 0 get /sx exch def 3 get neg /sy exch def
+    }{ pop pop } ifelse
+
+    (%!PS-Adobe-3.0\n) .w
+    (%%Creator: Xpost\n) .w
+    (%%BoundingBox: 0 0 ) .w
+    width sx div ceiling cvi 20 string cvs .w ( ) .w
+    height sy div ceiling cvi 20 string cvs .w (\n) .w
+    (%%Pages: 1\n) .w
+    (%%DocumentData: Clean7Bit\n) .w
+    (%%LanguageLevel: 1\n) .w
+    (%%EndComments\n) .w
+    (%%BeginProlog\n) .w
+    (/m { moveto } bind def\n) .w
+    (/l { lineto } bind def\n) .w
+    (/c { curveto } bind def\n) .w
+    (/h { closepath } bind def\n) .w
+    (/re { 4 2 roll moveto exch dup 0 rlineto\n) .w
+    (     0 3 -1 roll rlineto neg 0 rlineto closepath } bind def\n) .w
+    (/f { fill } bind def\n) .w
+    (/S { stroke } bind def\n) .w
+    (/w { setlinewidth } bind def\n) .w
+    (/J { setlinecap } bind def\n) .w
+    (/j { setlinejoin } bind def\n) .w
+    (/M { setmiterlimit } bind def\n) .w
+    (/g { setgray } bind def\n) .w
+    (/rg { setrgbcolor } bind def\n) .w
+    (/k { setcmykcolor } bind def\n) .w
+    (/G /g load def /RG /rg load def /K /k load def\n) .w
+    (/cm { 6 array astore concat } bind def\n) .w
+    (%%EndProlog\n) .w
+    (%%Page: 1 1\n) .w
+    % the marks position themselves: the accumulator opens with the
+    % matrix taking its y-down device units to the page. A device
+    % resolution above one-to-one unscales first, so the output page
+    % stays in points
+    sx 1 ne sy 1 ne or {
+        1 sx div .wnum ( ) .w 1 sy div .wnum ( scale\n) .w
+    } if
+
+    currentdict .pdfchunks { .w } forall
+
+    (showpage\n) .w
+    (%%Trailer\n) .w
+    (%%EOF\n) .w
+    F (%stdout) (w) file ne { F closefile } if
+
+    % start the next page fresh: showpage's page clear and later
+    % marks must not stack on the emitted content (a later Emit
+    % rewrites the output with the then-current page)
+    currentdict .pdfreset
+end } put
+
+/QUIET where { pop }{ (eof dscwrite.ps\n)print } ifelse

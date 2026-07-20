@@ -1206,38 +1206,20 @@ int _writepbmrows(Xpost_Context *ctx,
     return 0;
 }
 
-/* Emit a packed-integer rgb raster as a binary P6 PPM: header, then
-   three bytes per pixel unpacked from each row's r<<16|g<<8|b
-   integers. Emitting from PostScript costs several string operations
-   per pixel, which dominates page output time. */
+/* The raster walk shared by the rgb emitters: each row's packed
+   r<<16|g<<8|b integers unpack to three bytes per pixel, written a
+   row at a time. Emitting from PostScript costs several string
+   operations per pixel, which dominates page output time. */
 static
-int _writeppmrows(Xpost_Context *ctx,
-                  Xpost_Object imgdata,
-                  Xpost_Object F)
+int _write_rgb_raster(Xpost_Context *ctx,
+                      Xpost_Object imgdata,
+                      Xpost_File *f,
+                      int width,
+                      int height)
 {
-    Xpost_File *f;
     Xpost_Object row;
     unsigned char *buf;
-    char head[32];
-    int width, height, iy, ix, hn;
-
-    if (!xpost_file_get_status(ctx->lo, F))
-        return ioerror;
-    if (!xpost_object_is_writeable(ctx, F))
-        return invalidaccess;
-    f = xpost_file_get_file_pointer(ctx->lo, F);
-
-    height = imgdata.comp_.sz;
-    if (height == 0)
-        return rangecheck;
-    row = xpost_array_get(ctx, imgdata, 0);
-    if (xpost_object_get_type(row) != arraytype)
-        return typecheck;
-    width = row.comp_.sz;
-
-    hn = snprintf(head, sizeof head, "P6\n%d %d\n255\n", width, height);
-    if (_emit_write(ctx, f, (unsigned char *)head, (size_t)hn) < 0)
-        return ioerror;
+    int iy, ix;
 
     buf = malloc((size_t)width * 3);
     if (!buf)
@@ -1269,6 +1251,69 @@ int _writeppmrows(Xpost_Context *ctx,
     }
     free(buf);
     return 0;
+}
+
+static
+int _rgb_raster_target(Xpost_Context *ctx,
+                       Xpost_Object imgdata,
+                       Xpost_Object F,
+                       Xpost_File **f,
+                       int *width,
+                       int *height)
+{
+    Xpost_Object row;
+
+    if (!xpost_file_get_status(ctx->lo, F))
+        return ioerror;
+    if (!xpost_object_is_writeable(ctx, F))
+        return invalidaccess;
+    *f = xpost_file_get_file_pointer(ctx->lo, F);
+
+    *height = imgdata.comp_.sz;
+    if (*height == 0)
+        return rangecheck;
+    row = xpost_array_get(ctx, imgdata, 0);
+    if (xpost_object_get_type(row) != arraytype)
+        return typecheck;
+    *width = row.comp_.sz;
+    return 0;
+}
+
+/* Emit a packed-integer rgb raster as a binary P6 PPM: header, then
+   the raster walk. */
+static
+int _writeppmrows(Xpost_Context *ctx,
+                  Xpost_Object imgdata,
+                  Xpost_Object F)
+{
+    Xpost_File *f;
+    char head[32];
+    int width, height, hn, ret;
+
+    ret = _rgb_raster_target(ctx, imgdata, F, &f, &width, &height);
+    if (ret)
+        return ret;
+    hn = snprintf(head, sizeof head, "P6\n%d %d\n255\n", width, height);
+    if (_emit_write(ctx, f, (unsigned char *)head, (size_t)hn) < 0)
+        return ioerror;
+    return _write_rgb_raster(ctx, imgdata, f, width, height);
+}
+
+/* Emit the raster bytes alone: a device whose format frames the
+   pixel data with its own header (TIFF) writes that itself and
+   takes the walk from here. */
+static
+int _writergbrows(Xpost_Context *ctx,
+                  Xpost_Object imgdata,
+                  Xpost_Object F)
+{
+    Xpost_File *f;
+    int width, height, ret;
+
+    ret = _rgb_raster_target(ctx, imgdata, F, &f, &width, &height);
+    if (ret)
+        return ret;
+    return _write_rgb_raster(ctx, imgdata, f, width, height);
 }
 
 /* Deflate the concatenation of an array of strings, returning the result as an
@@ -2425,6 +2470,8 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, ".writeppmrows", (Xpost_Op_Func)_writeppmrows, 0, 2,
                              arraytype, filetype); INSTALL;
     op = xpost_operator_cons(ctx, ".writepbmrows", (Xpost_Op_Func)_writepbmrows, 0, 2,
+                             arraytype, filetype); INSTALL;
+    op = xpost_operator_cons(ctx, ".writergbrows", (Xpost_Op_Func)_writergbrows, 0, 2,
                              arraytype, filetype); INSTALL;
     op = xpost_operator_cons(ctx, ".blendpixrgb", (Xpost_Op_Func)_blendpixrgb, 0, 7,
             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;

@@ -37,13 +37,23 @@ name or output-file naming scheme.
 Everything internal is original to xpost or its contributors and
 resembles no other implementation's API: the device method protocol
 (Create, Destroy, Emit, PutPix, GetPix, DrawLine, DrawRect, FillRect,
-FillPoly, FillPath, StrokePath, BlendPix, Erase), the device keys
-/nativecolorspace, /dimensions, /VectorGlyphs, /VectorSyntax,
-/.colormodels, /.registersep and /Private, the dot-prefixed internal
-operators, and the device dictionary key /OutputFileName (original to
-xpost, 2013).
+FillPoly, FillPath, StrokePath, BlendPix, PaintImage, Erase), the
+device keys /nativecolorspace, /dimensions, /VectorGlyphs,
+/VectorSyntax, /.colormodels, /.registersep and /Private, the
+dot-prefixed internal operators, and the device dictionary key
+/OutputFileName (original to xpost, 2013).
 
-Devices whose names are xpost's own choices: null, svgwrite, pgm, ppm.
+PaintImage takes a whole sampled image -- its rows, the image-to-
+device matrix, the decode ranges and the interpolation request -- so
+a device that stores images rather than pixels receives one. It is
+xpost's own method and mirrors nothing.
+
+Devices whose names are xpost's own choices: null, svgwrite,
+dscwrite, pgm, ppm, pbm, tiff. The raster names are the names of the
+formats they emit. dscwrite is named for the structuring convention
+its output follows (Adobe's Document Structuring Conventions), not
+for any other implementation's device: the ps-writing devices of
+other interpreters carry other names, deliberately not adopted.
 
 
 == 3. Deliberate compatibility names ==

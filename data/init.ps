@@ -691,10 +691,12 @@ end % userdict
         /pgm { newPGMIMAGEdevice }
         /pbm { newPBMIMAGEdevice }
         /ppm { newPPMIMAGEdevice }
+        /tiff { newTIFFIMAGEdevice }
         /null { newnulldevice }
         /bbox { newbboxdevice }
         /pdfwrite { newPDFWRITEdevice }
         /svgwrite { newSVGWRITEdevice }
+        /dscwrite { newDSCWRITEdevice }
         /png { /newpngdevice where { pop }{ loadpngdevice } ifelse newpngdevice }
         /pngalpha { /newpngalphadevice where { pop }{ loadpngalphadevice } ifelse newpngalphadevice }
         /jpeg { /newjpegdevice where { pop }{ loadjpegdevice } ifelse newjpegdevice }

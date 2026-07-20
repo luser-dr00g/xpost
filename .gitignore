@@ -67,4 +67,5 @@ visual_studio/vc14/xpost_suite/x64/
 /xpost-inst-test/
 semantics.diskf
 semantics.scratch
+graphics.scratch
 xpost-*.tar.*

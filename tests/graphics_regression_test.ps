@@ -2187,6 +2187,53 @@ exch 2 get 11 sub abs 0.01 lt and
 newpath
 <41> /Fm4 fm.w 7 (stringwidth measures without a currentpoint) assertnear
 
+% The TIFF device frames the rgb raster as a baseline TIFF: the
+% little-endian header, a directory whose width entry answers, and
+% one uncompressed strip of the pixels
+/DEVT 8 8 newTIFFIMAGEdevice def
+DEVT /OutputFileName (graphics.scratch) put
+DEVT /ImgData get .zerorows
+1 1 0 2 2 4 4 DEVT dup /FillRect get exec
+DEVT dup /Emit get exec
+/tf.h (graphics.scratch) (r) file 500 string readstring pop def
+tf.h 0 get 16#49 eq tf.h 1 get 16#49 eq and
+tf.h 2 get 42 eq and (the TIFF opens little-endian with its magic) assert
+% the directory follows the compressed strip at the patched offset
+/tf.le4 { % pos . v
+    /tf.p exch def 0
+    3 -1 0 { tf.p add tf.h exch get exch 256 mul add } for
+} def
+/tf.ifd 4 tf.le4 def
+tf.ifd 8 gt (the directory offset patches past the strip) assert
+tf.h tf.ifd 2 add 12 3 mul add get 3 eq
+tf.h tf.ifd 2 add 12 3 mul add 1 add get 1 eq and
+(the fourth directory entry is the compression tag) assert
+tf.h tf.ifd 2 add 12 3 mul add 8 add get 5 eq
+(the strip compresses with the shared coder) assert
+% decoding the strip recovers the painted pixel
+/tf.rt 192 string def
+(graphics.scratch) (r) file dup 8 setfileposition
+/LZWDecode filter tf.rt readstring pop pop
+tf.rt 2 8 mul 2 add 3 mul get 255 eq
+tf.rt 2 8 mul 2 add 3 mul 1 add get 255 eq and
+tf.rt 2 8 mul 2 add 3 mul 2 add get 0 eq and
+(the strip carries the painted pixel) assert
+
+% The distilled-ps device wraps the recorded marks in document
+% structure and a prolog naming the accumulated operators
+/DEVP 100 100 newDSCWRITEdevice def
+DEVP /OutputFileName (graphics.scratch) put
+0.5 10 10 30 20 DEVP dup /FillRect get exec
+DEVP dup /Emit get exec
+/pw.s (graphics.scratch) (r) file 4096 string readstring pop def
+pw.s (%!PS-Adobe-3.0) anchorsearch { pop pop true }{ pop false } ifelse
+(the distilled page opens with its DSC header) assert
+pw.s (re\nf\n) search { pop pop pop true }{ pop false } ifelse
+(the recorded rectangle reaches the page) assert
+pw.s (%%EOF) search { pop pop pop true }{ pop false } ifelse
+(the distilled page closes with its trailer) assert
+DEVP dup /Destroy get exec
+
 % a font dictionary's entries carry the attributes a program reads:
 % the matrix is data, the bounding box answers executable as the
 % reference interpreters do, and the encoding is data

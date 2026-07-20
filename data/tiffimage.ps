@@ -1,0 +1,93 @@
+/QUIET where { pop }{ (loading tiffimage.ps...)print } ifelse
+
+% TIFFIMAGE: the TIFF sibling of the 24-bit rgb device. The page
+% renders through the machinery it inherits and emission frames the
+% same raster bytes as a baseline TIFF: a little-endian header, one
+% image file directory, and the pixels as a single uncompressed
+% strip of rgb triplets at 72 dots per inch.
+
+/newTIFFIMAGEdevice { % width height  .  IMAGE-device-dict
+    TIFFIMAGE dup /Create get exec
+} def
+
+/TIFFIMAGE PPMIMAGE dup length 2 add dict copy def
+
+TIFFIMAGE /.writetiff { % img file
+    12 dict begin
+    {/f /a}{exch def}forall
+    /w a 0 get length def
+    /h a length def
+    /hdr 200 string def
+    /hp 0 def
+    /b1 { hdr hp 3 -1 roll put /hp hp 1 add def } def
+    /b2 { dup 256 mod b1 256 idiv b1 } def
+    /b4 { dup 65536 mod b2 65536 idiv b2 } def
+    /tg { % tag type count value
+        4 -1 roll b2 3 -1 roll b2 exch b4 b4
+    } def
+    % the directory: 12 entries (2 + 144 + 4 bytes), then the
+    % bits-per-sample triple and the two resolution rationals,
+    % 172 bytes in all at the given offset; the strip sits at 8
+    /ifdbuild { % ifd-offset compression strip-length
+        /sl exch def /cmp exch def /ifd exch def
+        /hp 0 def
+        12 b2
+        256 3 1 w tg                % ImageWidth
+        257 3 1 h tg                % ImageLength
+        258 3 3 ifd 150 add tg      % BitsPerSample, offset
+        259 3 1 cmp tg              % Compression
+        262 3 1 2 tg                % PhotometricInterpretation: RGB
+        273 4 1 8 tg                % StripOffsets
+        277 3 1 3 tg                % SamplesPerPixel
+        278 3 1 h tg                % RowsPerStrip
+        279 4 1 sl tg               % StripByteCounts
+        282 5 1 ifd 156 add tg      % XResolution, offset
+        283 5 1 ifd 164 add tg      % YResolution, offset
+        296 3 1 2 tg                % ResolutionUnit: inches
+        0 b4                        % no further directory
+        8 b2 8 b2 8 b2              % 8 bits per sample
+        72 b4 1 b4                  % 72/1 dpi
+        72 b4 1 b4
+        f hdr 0 hp getinterval writestring
+    } def
+    f (%stdout)(w) file ne {
+        % a seekable target takes the strip compressed: the directory
+        % follows the strip and its offset patches into the header
+        % once the strip's length is known
+        16#49 b1 16#49 b1 42 b2 0 b4
+        f hdr 0 8 getinterval writestring
+        /e f /LZWEncode filter def
+        a e .writergbrows
+        e closefile
+        /sl f fileposition 8 sub def
+        8 sl add 5 sl ifdbuild
+        f 4 setfileposition
+        /hp 0 def 8 sl add b4
+        f hdr 0 4 getinterval writestring
+        f closefile
+    }{
+        % the standard output cannot seek back: the strip goes
+        % uncompressed, its length known up front
+        16#49 b1 16#49 b1 42 b2 w h mul 3 mul 8 add b4
+        f hdr 0 8 getinterval writestring
+        a f .writergbrows
+        8 w h mul 3 mul add 1 w h mul 3 mul ifdbuild
+    } ifelse
+    end
+} put
+
+TIFFIMAGE /Emit {
+    begin
+        /OutputFileName where { pop
+            ImgData
+            OutputFileName .pagefilename (w) file
+            .writetiff
+        }{
+            ImgData
+            (%stdout) (w) file
+            .writetiff
+        } ifelse
+    end
+} put
+
+/QUIET where { pop }{ (eof tiffimage.ps\n)print } ifelse

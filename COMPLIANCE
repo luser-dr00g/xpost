@@ -375,12 +375,13 @@ Typical output devices
  [X] pgm
  [X] ppm
  [X] pbm
- [ ] tiff
+ [X] tiff (24-bit rgb, one uncompressed strip)
  [X] jpeg
  [X] png (also a png with alpha)
  [X] pdf (pdfwrite)
  [X] svg (svgwrite)
  [X] bounding-box
- [ ] dsc-compliant distilled ps
+ [X] dsc-compliant distilled ps (pswrite; separations arrive as
+     their process colours)
  [X] xcb
  [X] ms-windows
