@@ -65,3 +65,6 @@ visual_studio/vc14/xpost_suite/x64/
 /at-check/
 /at-rel/
 /xpost-inst-test/
+semantics.diskf
+semantics.scratch
+xpost-*.tar.*
