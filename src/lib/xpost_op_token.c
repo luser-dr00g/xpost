@@ -542,6 +542,14 @@ int grok(Xpost_Context *ctx,
                     //printf("grok: x?%d", xpost_object_is_exe(t));
                     if (ret)
                         return ret;
+                    /* the source ended inside the procedure: the
+                       scanner answers a null there and nowhere else,
+                       a literal null in the text being a name */
+                    if (xpost_object_get_type(t) == nulltype)
+                    {
+                        XPOST_LOG_ERR("end of input inside a procedure");
+                        return syntaxerror;
+                    }
                     if ((xpost_object_get_type(t) == nametype) &&
                         (xpost_dict_compare_objects(ctx, t, tail) == 0))
                         break;

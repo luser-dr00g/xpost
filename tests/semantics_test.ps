@@ -316,6 +316,21 @@ st.data eq (LZWEncode round-trips through its decoder) assert
 { (0.5junk) cvr } stopped { pop pop true }{ false } ifelse
 (a glued suffix is no numeral) assert
 
+% a source that ends inside a procedure is a syntax error, not an
+% endless scan: the scanner answers null at end of input and nowhere
+% else, a literal null in the text being a name
+/st.f (semantics.scratch) (w) file def
+st.f (1 2 { 3 4) writestring st.f closefile
+{ (semantics.scratch) (r) file cvx exec } stopped
+{ $error /errorname get /syntaxerror eq }{ false } ifelse
+(a truncated procedure ends the scan) assert
+clear
+% a complete procedure still scans and runs
+/st.f (semantics.scratch) (w) file def
+st.f (/st.tp { 6 7 add } def) writestring st.f closefile
+(semantics.scratch) (r) file cvx exec
+st.tp 13 eq (a closed procedure scans and runs) assert
+
 % a reusable stream built over a decode chain consumes its source
 % through the encoding's end, survives being closed -- the position
 % rewinds -- and so a program run off it can run again
