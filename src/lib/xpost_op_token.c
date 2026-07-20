@@ -542,36 +542,52 @@ int grok(Xpost_Context *ctx,
 
             case '{':
             { // This is the one part that makes it a recursive-descent parser
+                /* each level is a toke() frame carrying a 64 KB token buffer;
+                   cap the nesting well within the C stack and raise
+                   limitcheck beyond it. The counter unwinds on the single
+                   exit below, so scans stay balanced. */
+                enum { PROC_NEST_MAX = 100 };
+                static int depth = 0;
                 int ret;
                 Xpost_Object tail;
+
+                if (++depth > PROC_NEST_MAX)
+                {
+                    --depth;
+                    XPOST_LOG_ERR("procedure nesting too deep");
+                    return limitcheck;
+                }
                 tail = xpost_name_cons(ctx, "}");
                 xpost_stack_push(ctx->lo, ctx->os, mark);
+                ret = 0;
                 while (1)
                 {
                     Xpost_Object t;
                     ret = toke(ctx, src, next, back, &t);
-                    //printf("grok: x?%d", xpost_object_is_exe(t));
                     if (ret)
-                        return ret;
+                        break;
                     /* the source ended inside the procedure: the
                        scanner answers a null there and nowhere else,
                        a literal null in the text being a name */
                     if (xpost_object_get_type(t) == nulltype)
                     {
                         XPOST_LOG_ERR("end of input inside a procedure");
-                        return syntaxerror;
+                        ret = syntaxerror;
+                        break;
                     }
                     if ((xpost_object_get_type(t) == nametype) &&
                         (xpost_dict_compare_objects(ctx, t, tail) == 0))
                         break;
                     xpost_stack_push(ctx->lo, ctx->os, t);
                 }
-                ret = xpost_op_array_to_mark(ctx);  // ie. the /] operator
-                if (ret)
-                    return ret;
-                //return xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
-                *retval = xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
-                return 0;
+                if (ret == 0)
+                {
+                    ret = xpost_op_array_to_mark(ctx);  // ie. the /] operator
+                    if (ret == 0)
+                        *retval = xpost_object_cvx(xpost_stack_pop(ctx->lo, ctx->os));
+                }
+                --depth;
+                return ret;
             }
 
             case '/':
