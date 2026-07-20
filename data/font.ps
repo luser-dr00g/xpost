@@ -508,6 +508,12 @@
 } def
 
 /kshow {
+    % kshow steps the string one byte at a time, which a composite font
+    % cannot decode; the reference rejects it with invalidfont rather than
+    % the rangecheck the byte-wise decode would otherwise raise
+    graphicsdict /currgstate get /currfont get /FontType get 0 eq {
+        /kshow cvx /invalidfont signalerror
+    } if
     5 dict begin
         {str proc}{exch def}forall
         /font graphicsdict /currgstate get /currfont get def

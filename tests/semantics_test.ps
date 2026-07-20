@@ -643,6 +643,11 @@ end
   /Encoding [0 1] /FDepVector [ /st.cA findfont /st.cB findfont ] >> definefont pop
 /st.c8 findfont setfont
 { 5 0 <41 0E 42 43 0F 44> ashow } st.adv round cvi 56 eq (composite ashow leaves the shift bytes undelta'd) assert
+% kshow steps a string byte by byte, which a composite font cannot
+% decode, so it rejects one with invalidfont as the reference does
+mark { { pop pop } <0041 0141> kshow } stopped pop cleartomark
+$error /errorname get /invalidfont eq (kshow rejects a composite font with invalidfont) assert
+$error /newerror false put
 
 % --- CIE-based colour reduces through its pipeline to device RGB ---
 [ /CIEBasedABC << /WhitePoint [0.9505 1.0 1.089]
