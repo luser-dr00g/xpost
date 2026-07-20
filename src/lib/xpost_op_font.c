@@ -87,6 +87,483 @@ typedef struct textstate
     double septint;         /* the separation's tint */
 } textstate;
 
+/* Extract the CharStrings of a Type 1 font program on disk: the
+   values a font dictionary built by running the program would hold,
+   the charstring bytes as the RD procedure reads them, still under
+   their own charstring encryption. PFB segment headers unwrap, the
+   eexec layer decrypts from its hexadecimal or raw form, and the
+   entries parse as /name length RD <bytes> ND, whatever pair of
+   names the program chose for RD and ND. Returns a read-only
+   dictionary in global VM, or the invalid object. */
+static Xpost_Object
+_t1_charstrings_from_file(Xpost_Context *ctx, const char *path)
+{
+    Xpost_Object result = null;
+    unsigned char *raw = NULL, *flat = NULL, *plain = NULL;
+    size_t rawlen = 0, flatlen = 0, plainlen = 0;
+    size_t i, ee;
+    int ferrcode = 0;
+    FILE *fp;
+
+    fp = xpost_diskfile_fopen(path, "rb", 1, &ferrcode);
+    if (!fp)
+        return null;
+    fseek(fp, 0, SEEK_END);
+    {
+        long l = ftell(fp);
+
+        if (l <= 0 || l > (16L << 20))
+        {
+            fclose(fp);
+            return null;
+        }
+        rawlen = (size_t)l;
+    }
+    fseek(fp, 0, SEEK_SET);
+    raw = malloc(rawlen);
+    if (!raw || fread(raw, 1, rawlen, fp) != rawlen)
+    {
+        free(raw);
+        fclose(fp);
+        return null;
+    }
+    fclose(fp);
+
+    if (raw[0] == 0x80)
+    {
+        /* PFB: 0x80, type, little-endian length, payload; type 3 ends */
+        size_t off = 0;
+
+        flat = malloc(rawlen);
+        if (!flat)
+            goto out;
+        while (off + 6 <= rawlen && raw[off] == 0x80 && raw[off + 1] != 3)
+        {
+            size_t seg = (size_t)raw[off + 2]
+                       | ((size_t)raw[off + 3] << 8)
+                       | ((size_t)raw[off + 4] << 16)
+                       | ((size_t)raw[off + 5] << 24);
+
+            off += 6;
+            if (off + seg > rawlen)
+                goto out;
+            memcpy(flat + flatlen, raw + off, seg);
+            flatlen += seg;
+            off += seg;
+        }
+    }
+    else
+    {
+        flat = raw;
+        flatlen = rawlen;
+        raw = NULL;
+    }
+
+    /* the encrypted portion follows the eexec token's white space */
+    for (ee = 0; ee + 5 < flatlen; ee++)
+        if (memcmp(flat + ee, "eexec", 5) == 0)
+            break;
+    if (ee + 5 >= flatlen)
+        goto out;
+    ee += 5;
+    while (ee < flatlen && (flat[ee] == '\r' || flat[ee] == '\n'
+                         || flat[ee] == ' ' || flat[ee] == '\t'))
+        ee++;
+    {
+        int ishex = 1;
+        unsigned short r = 55665;
+        size_t n = 0;
+
+        for (i = 0; i < 4 && ee + i < flatlen; i++)
+            if (!isxdigit(flat[ee + i]))
+                ishex = 0;
+        plain = malloc(flatlen);
+        if (!plain)
+            goto out;
+        if (ishex)
+        {
+            int hi = -1;
+
+            for (i = ee; i < flatlen; i++)
+            {
+                int c = flat[i], v;
+
+                if (isdigit(c)) v = c - '0';
+                else if (c >= 'a' && c <= 'f') v = c - 'a' + 10;
+                else if (c >= 'A' && c <= 'F') v = c - 'A' + 10;
+                else continue;
+                if (hi < 0)
+                    hi = v;
+                else
+                {
+                    plain[n++] = (unsigned char)((hi << 4) | v);
+                    hi = -1;
+                }
+            }
+        }
+        else
+        {
+            memcpy(plain, flat + ee, flatlen - ee);
+            n = flatlen - ee;
+        }
+        for (i = 0; i < n; i++)
+        {
+            unsigned char c = plain[i];
+
+            plain[i] = (unsigned char)(c ^ (r >> 8));
+            r = (unsigned short)((unsigned int)(c + r) * 52845u + 22719u);
+        }
+        if (n <= 4)
+            goto out;
+        memmove(plain, plain + 4, n - 4);
+        plainlen = n - 4;
+    }
+
+    /* /CharStrings, then entries until the closing end */
+    for (i = 0; i + 12 < plainlen; i++)
+        if (memcmp(plain + i, "/CharStrings", 12) == 0)
+            break;
+    if (i + 12 >= plainlen)
+        goto out;
+    i += 12;
+    {
+        unsigned int oldmode = ctx->vmmode;
+        Xpost_Object csdict;
+        int entries = 0;
+
+        ctx->vmmode = GLOBAL;
+        csdict = xpost_dict_cons(ctx, 256);
+        while (i < plainlen && entries < 20000)
+        {
+            char namebuf[128];
+            size_t nb = 0;
+            long len = 0;
+
+            while (i < plainlen && plain[i] != '/')
+            {
+                if (i + 3 < plainlen && memcmp(plain + i, "end", 3) == 0
+                 && (i == 0 || isspace(plain[i - 1]))
+                 && (i + 3 == plainlen || isspace(plain[i + 3])))
+                    goto done;
+                i++;
+            }
+            if (i >= plainlen)
+                break;
+            i++;
+            while (i < plainlen && !isspace(plain[i]) && plain[i] != '('
+                && plain[i] != '/' && plain[i] != '{'
+                && nb + 1 < sizeof namebuf)
+                namebuf[nb++] = (char)plain[i++];
+            namebuf[nb] = 0;
+            while (i < plainlen && isspace(plain[i]))
+                i++;
+            while (i < plainlen && isdigit(plain[i]))
+                len = len * 10 + (plain[i++] - '0');
+            while (i < plainlen && isspace(plain[i]))
+                i++;
+            while (i < plainlen && !isspace(plain[i]))
+                i++;                       /* the RD name of the day */
+            i++;                           /* the single separator */
+            if (len <= 0 || len > 65535 || i + (size_t)len > plainlen
+             || nb == 0)
+                break;
+            {
+                Xpost_Object str = xpost_string_cons(ctx, (unsigned int)len,
+                                                     (char *)plain + i);
+
+                str = xpost_object_set_access(ctx, str,
+                          XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY);
+                xpost_dict_put(ctx, csdict, xpost_name_cons(ctx, namebuf),
+                               str);
+            }
+            i += (size_t)len;
+            entries++;
+        }
+done:
+        if (entries > 0)
+        {
+            csdict = xpost_object_set_access(ctx, csdict,
+                          XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
+            result = csdict;
+        }
+        ctx->vmmode = oldmode;
+    }
+out:
+    free(raw);
+    free(flat);
+    free(plain);
+    return result;
+}
+
+/* CFF INDEX and DICT walking, enough to reach the CharStrings INDEX
+   of a bare CFF or an OpenType CFF table: the glyph names come from
+   the face, so neither the charset nor the string index is read. */
+static unsigned long
+_cff_u(const unsigned char *p, int n)
+{
+    unsigned long v = 0;
+    int i;
+
+    for (i = 0; i < n; i++)
+        v = (v << 8) | p[i];
+    return v;
+}
+
+/* an INDEX at off: sets *count and *first (offset of the offset
+   array's data area); returns the offset just past the INDEX, or 0 */
+static size_t
+_cff_index(const unsigned char *d, size_t len, size_t off,
+           unsigned long *count, size_t *dataoff, int *offsz)
+{
+    unsigned long c;
+    int osz;
+    unsigned long last;
+
+    if (off + 2 > len)
+        return 0;
+    c = _cff_u(d + off, 2);
+    if (c == 0)
+    {
+        *count = 0;
+        return off + 2;
+    }
+    if (off + 3 > len)
+        return 0;
+    osz = d[off + 2];
+    if (osz < 1 || osz > 4)
+        return 0;
+    if (off + 3 + (c + 1) * osz > len)
+        return 0;
+    last = _cff_u(d + off + 3 + c * osz, osz);
+    *count = c;
+    *offsz = osz;
+    *dataoff = off + 3 + (c + 1) * osz - 1;
+    if (*dataoff + last > len)
+        return 0;
+    return *dataoff + last;
+}
+
+/* the CharStrings offset out of the first Top DICT (operator 17) */
+static unsigned long
+_cff_charstrings_offset(const unsigned char *d, size_t len)
+{
+    unsigned long count;
+    size_t dataoff = 0, off;
+    int osz = 0;
+    size_t dstart, dend;
+    double operands[48];
+    int nops = 0;
+
+    if (len < 4)
+        return 0;
+    off = d[2];                          /* header size */
+    off = _cff_index(d, len, off, &count, &dataoff, &osz);   /* Name */
+    if (!off)
+        return 0;
+    if (_cff_index(d, len, off, &count, &dataoff, &osz) == 0 || count == 0)
+        return 0;                                            /* Top DICT */
+    dstart = dataoff + _cff_u(d + off + 3, osz);
+    dend = dataoff + _cff_u(d + off + 3 + osz, osz);
+    while (dstart < dend && dstart < len)
+    {
+        int b = d[dstart];
+
+        if (b <= 21)
+        {
+            int op = b;
+
+            dstart++;
+            if (b == 12)
+            {
+                if (dstart >= len)
+                    return 0;
+                op = 1200 + d[dstart];
+                dstart++;
+            }
+            if (op == 17 && nops >= 1)
+                return (unsigned long)operands[nops - 1];
+            nops = 0;
+        }
+        else if (b >= 32 && b <= 246)
+        {
+            if (nops < 48) operands[nops++] = b - 139;
+            dstart++;
+        }
+        else if (b >= 247 && b <= 250)
+        {
+            if (dstart + 1 >= len)   /* the operand's trailing byte */
+                return 0;
+            if (nops < 48) operands[nops++] =
+                (b - 247) * 256 + d[dstart + 1] + 108;
+            dstart += 2;
+        }
+        else if (b >= 251 && b <= 254)
+        {
+            if (dstart + 1 >= len)
+                return 0;
+            if (nops < 48) operands[nops++] =
+                -((int)(b - 251) * 256) - (int)d[dstart + 1] - 108;
+            dstart += 2;
+        }
+        else if (b == 28)
+        {
+            if (dstart + 2 >= len)   /* two trailing operand bytes */
+                return 0;
+            if (nops < 48) operands[nops++] =
+                (short)_cff_u(d + dstart + 1, 2);
+            dstart += 3;
+        }
+        else if (b == 29)
+        {
+            if (dstart + 4 >= len)   /* four trailing operand bytes */
+                return 0;
+            if (nops < 48) operands[nops++] =
+                (long)_cff_u(d + dstart + 1, 4);
+            dstart += 5;
+        }
+        else if (b == 30)
+        {
+            /* a real number: nibbles to the stop code */
+            dstart++;
+            while (dstart < len)
+            {
+                int lo = d[dstart] & 15, hi = d[dstart] >> 4;
+
+                dstart++;
+                if (hi == 15 || lo == 15)
+                    break;
+            }
+            if (nops < 48) operands[nops++] = 0;
+        }
+        else
+            return 0;
+    }
+    return 0;
+}
+
+/* Publish the CharStrings of a CFF-backed face: the Type 2
+   charstring of every glyph, keyed by the face's glyph names. A bare
+   CFF file reads whole; an OpenType wrapper locates its CFF table.
+   Returns a read-only dictionary in global VM, or null. */
+static Xpost_Object
+_cff_charstrings_from_file(Xpost_Context *ctx, const char *path, void *face)
+{
+    Xpost_Object result = null;
+    unsigned char *raw = NULL;
+    const unsigned char *cff;
+    size_t rawlen = 0, cfflen;
+    unsigned long csoff, count;
+    size_t dataoff = 0;
+    int osz = 0;
+    int ferrcode = 0;
+    FILE *fp;
+
+    fp = xpost_diskfile_fopen(path, "rb", 1, &ferrcode);
+    if (!fp)
+        return null;
+    fseek(fp, 0, SEEK_END);
+    {
+        long l = ftell(fp);
+
+        if (l <= 0 || l > (32L << 20))
+        {
+            fclose(fp);
+            return null;
+        }
+        rawlen = (size_t)l;
+    }
+    fseek(fp, 0, SEEK_SET);
+    raw = malloc(rawlen);
+    if (!raw || fread(raw, 1, rawlen, fp) != rawlen)
+    {
+        free(raw);
+        fclose(fp);
+        return null;
+    }
+    fclose(fp);
+
+    cff = raw;
+    cfflen = rawlen;
+    if (rawlen > 12 && memcmp(raw, "OTTO", 4) == 0)
+    {
+        unsigned long ntab = _cff_u(raw + 4, 2), t;
+
+        cff = NULL;
+        for (t = 0; t < ntab && 12 + t * 16 + 16 <= rawlen; t++)
+        {
+            const unsigned char *e = raw + 12 + t * 16;
+
+            if (memcmp(e, "CFF ", 4) == 0)
+            {
+                unsigned long toff = _cff_u(e + 8, 4);
+                unsigned long tlen = _cff_u(e + 12, 4);
+
+                /* keep the table within the file, without a 32-bit
+                   toff+tlen wrap */
+                if (toff <= rawlen && tlen <= rawlen - toff)
+                {
+                    cff = raw + toff;
+                    cfflen = tlen;
+                }
+                break;
+            }
+        }
+        if (!cff)
+            goto out;
+    }
+    else if (raw[0] != 1)     /* not a bare CFF either */
+        goto out;
+
+    csoff = _cff_charstrings_offset(cff, cfflen);
+    if (!csoff || _cff_index(cff, cfflen, csoff, &count, &dataoff, &osz) == 0
+     || count == 0)
+        goto out;
+
+    {
+        unsigned int oldmode = ctx->vmmode;
+        Xpost_Object csdict;
+        unsigned long gid;
+        int entries = 0;
+
+        ctx->vmmode = GLOBAL;
+        csdict = xpost_dict_cons(ctx, count < 4096 ? (unsigned int)count : 4096);
+        for (gid = 0; gid < count && gid < 65535; gid++)
+        {
+            char nbuf[128];
+            unsigned long a = _cff_u(cff + csoff + 3 + gid * osz, osz);
+            unsigned long b = _cff_u(cff + csoff + 3 + (gid + 1) * osz, osz);
+
+            /* keep the glyph's data span within the font buffer: interior
+               INDEX offsets are otherwise unchecked, so an oversized or
+               non-monotonic offset must not address memory outside it */
+            if (b <= a || b - a > 65535 || b > cfflen - dataoff)
+                continue;
+            if (!xpost_font_face_glyph_name_get(face, (unsigned int)gid,
+                                                nbuf, sizeof nbuf))
+                continue;
+            {
+                Xpost_Object str = xpost_string_cons(ctx,
+                    (unsigned int)(b - a), (char *)cff + dataoff + a);
+
+                str = xpost_object_set_access(ctx, str,
+                          XPOST_OBJECT_TAG_ACCESS_EXECUTE_ONLY);
+                xpost_dict_put(ctx, csdict, xpost_name_cons(ctx, nbuf), str);
+                entries++;
+            }
+        }
+        if (entries > 0)
+        {
+            csdict = xpost_object_set_access(ctx, csdict,
+                          XPOST_OBJECT_TAG_ACCESS_READ_ONLY);
+            result = csdict;
+        }
+        ctx->vmmode = oldmode;
+    }
+out:
+    free(raw);
+    return result;
+}
+
 static
 int _findfont(Xpost_Context *ctx,
               Xpost_Object fontname)
@@ -101,6 +578,7 @@ int _findfont(Xpost_Context *ctx,
     Xpost_Object fontbboxarray[4];
     Xpost_Object sfnts_obj = null;
     int istt = 0;
+    int cffreal = 0;
 
     if (xpost_object_get_type(fontname) == nametype)
         fontstr = xpost_name_get_string(ctx, fontname);
@@ -121,7 +599,8 @@ int _findfont(Xpost_Context *ctx,
        already shares it. */
     {
         static struct { char *name; void *face; Xpost_Object charstrings;
-                        Xpost_Object sfnts; char *file; } face_cache[32];
+                        Xpost_Object sfnts; char *file; int csreal; }
+            face_cache[32];
         static int face_cache_n = 0;
         int fi, slot = -1;
         data.face = NULL;
@@ -231,12 +710,53 @@ int _findfont(Xpost_Context *ctx,
         if (slot >= 0
          && xpost_object_get_type(face_cache[slot].charstrings) == dicttype)
         {
+            if (face_cache[slot].csreal && xpost_font_face_is_cff(data.face))
+                cffreal = 1;
             xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "CharStrings"),
                            face_cache[slot].charstrings);
         }
         else
         {
-            unsigned int nglyphs = xpost_font_face_glyph_name_count(data.face);
+            unsigned int nglyphs;
+
+            /* a Type 1 program on disk yields the genuine article:
+               the charstring bytes its RD procedure reads, so the
+               dictionary holds what running the program would build;
+               a CFF face likewise publishes its Type 2 charstrings,
+               and the dictionary then states FontType 2 */
+            if (slot >= 0 && face_cache[slot].file
+             && xpost_font_face_is_type1(data.face))
+            {
+                Xpost_Object cs =
+                    _t1_charstrings_from_file(ctx, face_cache[slot].file);
+
+                if (xpost_object_get_type(cs) == dicttype)
+                {
+                    face_cache[slot].charstrings = cs;
+                    face_cache[slot].csreal = 1;
+                    xpost_dict_put(ctx, fontdict,
+                                   xpost_name_cons(ctx, "CharStrings"), cs);
+                    goto have_charstrings;
+                }
+            }
+            if (slot >= 0 && face_cache[slot].file
+             && xpost_font_face_is_cff(data.face))
+            {
+                Xpost_Object cs =
+                    _cff_charstrings_from_file(ctx, face_cache[slot].file,
+                                               data.face);
+
+                if (xpost_object_get_type(cs) == dicttype)
+                {
+                    face_cache[slot].charstrings = cs;
+                    face_cache[slot].csreal = 1;
+                    cffreal = 1;
+                    xpost_dict_put(ctx, fontdict,
+                                   xpost_name_cons(ctx, "CharStrings"), cs);
+                    goto have_charstrings;
+                }
+            }
+            nglyphs = xpost_font_face_glyph_name_count(data.face);
             if (nglyphs)
             {
                 Xpost_Object csdict;
@@ -258,6 +778,7 @@ int _findfont(Xpost_Context *ctx,
                 xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "CharStrings"),
                                csdict);
             }
+have_charstrings: ;
         }
     }
 
@@ -277,7 +798,7 @@ int _findfont(Xpost_Context *ctx,
        character space, and scalefont and makefont concatenate onto
        FontMatrix in dictionary copies */
     xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontType"),
-                   xpost_int_cons(istt ? 42 : 1));
+                   xpost_int_cons(istt ? 42 : cffreal ? 2 : 1));
     {
         /* the constructors answer executable objects; a font's matrix
            is data, so it says so at its construction, as
@@ -613,7 +1134,8 @@ void _face_setup(Xpost_Context *ctx,
         Xpost_Object cft = xpost_dict_get(ctx, fontdict,
                                           xpost_name_cons(ctx, "CIDFontType"));
         real qem = q;
-        if ((xpost_object_get_type(ft) == integertype && ft.int_.val == 1)
+        if ((xpost_object_get_type(ft) == integertype
+             && (ft.int_.val == 1 || ft.int_.val == 2))
          || (xpost_object_get_type(cft) == integertype && cft.int_.val == 0))
         {
             /* a Type 1 character-space unit is usually a thousandth
@@ -1781,7 +2303,7 @@ _t1_encrypt(unsigned char *data, size_t n)
         unsigned char c = p ^ (r >> 8);
 
         data[i] = c;
-        r = (unsigned short)((c + r) * 52845 + 22719);
+        r = (unsigned short)((unsigned int)(c + r) * 52845u + 22719u);
     }
 }
 
@@ -1917,7 +2439,7 @@ int _loadfont1(Xpost_Context *ctx,
             unsigned char cc = (unsigned char)(sec[j] ^ (r >> 8));
 
             t[j] = cc;
-            r = (unsigned short)((cc + r) * 52845 + 22719);
+            r = (unsigned short)((unsigned int)(cc + r) * 52845u + 22719u);
         }
         for (j = 0; j < 4; j++)
             if (!( (t[j] >= '0' && t[j] <= '9')

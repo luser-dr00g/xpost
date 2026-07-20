@@ -913,10 +913,17 @@ basefont null ne {
         basefont /FontMatrix get 0 get 1.0 sub abs 0.0001 lt
         (Type 42 character space is the em) assert
     }{
-        basefont /FontType get 1 eq
-        (a base font states Type 1 or Type 42) assert
+        basefont /FontType get dup 1 eq exch 2 eq or
+        (a base font states its backing program's type) assert
         basefont /FontMatrix get 0 get 0.001 sub abs 0.0001 lt
-        (Type 1 character space is a thousandth of the em) assert
+        (Type 1 and 2 character space is a thousandth of the em) assert
+        basefont /FontType get 2 eq basefont /CharStrings known and {
+            basefont /CharStrings get {
+                exch pop type /stringtype eq
+                (a Type 2 base font holds its charstrings) assert
+                exit
+            } forall
+        } if
     } ifelse
 } if
 

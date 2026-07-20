@@ -666,6 +666,32 @@ xpost_font_face_is_truetype(void *face)
 #endif
 }
 
+int
+xpost_font_face_is_type1(void *face)
+{
+#ifdef HAVE_FREETYPE2
+    const char *fmt = FT_Get_Font_Format((FT_Face)face);
+
+    return fmt && strcmp(fmt, "Type 1") == 0;
+#else
+    (void)face;
+    return 0;
+#endif
+}
+
+int
+xpost_font_face_is_cff(void *face)
+{
+#ifdef HAVE_FREETYPE2
+    const char *fmt = FT_Get_Font_Format((FT_Face)face);
+
+    return fmt && strcmp(fmt, "CFF") == 0;
+#else
+    (void)face;
+    return 0;
+#endif
+}
+
 void
 xpost_font_face_free(void *face)
 {
