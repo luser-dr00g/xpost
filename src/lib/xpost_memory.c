@@ -440,7 +440,10 @@ xpost_memory_file_grow(Xpost_Memory_File *mem,
 #endif
         /* common error case closes the three possible hanging error cases */
         XPOST_LOG_ERR("%d unable to grow memory", VMerror);
-        ret = 0;
+        /* leave the existing mapping in place: publishing the failed base
+           (MAP_FAILED or NULL) would turn a recoverable VMerror into a wild
+           dereference on the very next memory access */
+        return 0;
     }
     mem->base = (unsigned char *)tmp;
     mem->max = sz;
@@ -810,7 +813,9 @@ xpost_memory_get(Xpost_Memory_File *mem,
 {
     CHECK_VALID_ENT(ent,mem,0)
 
-    if (offset * sz + sz > mem->table.tab[ent].sz)
+    /* offset is an index added to the composite's base; compute the bound in
+       64 bits so offset*sz cannot wrap a 32-bit unsigned past the check */
+    if ((unsigned long long)offset * sz + sz > mem->table.tab[ent].sz)
     {
         XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
                 offset, sz, mem->table.tab[ent].sz);
@@ -832,7 +837,7 @@ xpost_memory_put(Xpost_Memory_File *mem,
 {
     CHECK_VALID_ENT(ent,mem,0)
 
-    if (offset * sz + sz > mem->table.tab[ent].sz)
+    if ((unsigned long long)offset * sz + sz > mem->table.tab[ent].sz)
     {
         XPOST_LOG_ERR("%d out of bounds memory %u * %u > %u", rangecheck,
                 offset, sz, mem->table.tab[ent].sz);
