@@ -58,6 +58,15 @@
 static
 int Zsave(Xpost_Context *ctx)
 {
+    unsigned int vs;
+
+    /* each object's mark records the save level (as level+1) in an 8-bit
+       field, so the save stack cannot exceed 255 levels without aliasing
+       another level's bookkeeping */
+    if (xpost_memory_table_get_addr(ctx->lo,
+            XPOST_MEMORY_TABLE_SPECIAL_SAVE_STACK, &vs)
+        && xpost_stack_count(ctx->lo, vs) >= 255)
+        return limitcheck;
     if (!xpost_stack_push(ctx->lo, ctx->os, xpost_save_create_snapshot_object(ctx->lo)))
         return stackoverflow;
     return 0;
