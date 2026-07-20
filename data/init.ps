@@ -518,10 +518,10 @@ end % userdict
 % paint the form: its matrix maps form space into user space, its
 % bounding box clips, and its paint procedure takes the dictionary.
 % Every execution paints afresh -- the language permits it
-/execform {
-    dup type /dicttype ne { /execform cvx /typecheck signalerror } if
-    dup /FormType 2 copy known { get 1 eq }{ pop pop false } ifelse
-    not { /execform cvx /rangecheck signalerror } if
+% formdict  .execformdirect  -
+% paint the form afresh: its matrix concatenates, its bounding box
+% clips, and the paint procedure runs with the dictionary at hand
+/.execformdirect {
     gsave
     dup /Matrix get concat
     dup /BBox get aload pop     % form llx lly urx ury
@@ -530,6 +530,135 @@ end % userdict
     rectclip
     dup /PaintProc get exec
     grestore
+} def
+
+% formdict  .execformbox  bx by w h
+% the device pixel box holding the form's bounding box under the
+% current transformation and the form's own matrix
+/.execformbox {
+    8 dict begin
+    /fd exch def
+    gsave
+    fd /Matrix get concat
+    /mnx 9e99 def /mny 9e99 def /mxx -9e99 def /mxy -9e99 def
+    fd /BBox get aload pop
+    /ury exch def /urx exch def /lly exch def /llx exch def
+    [ [llx lly] [urx lly] [urx ury] [llx ury] ] {
+        aload pop transform
+        dup mxy gt { dup /mxy exch def } if
+        dup mny lt { dup /mny exch def } if pop
+        dup mxx gt { dup /mxx exch def } if
+        dup mnx lt { dup /mnx exch def } if pop
+    } forall
+    grestore
+    mnx floor mny floor
+    mxx ceiling mnx floor sub cvi
+    mxy ceiling mny floor sub cvi
+    end
+} def
+
+% formdict  execform  -
+% Paint a form. On a raster page the output is cached: the paint
+% runs once over a black ground and once over white in an offscreen
+% raster of the device's own class, pixels that agree are the form's
+% own marks -- painting is opaque, so a pixel the paint left alone
+% still shows its ground -- and later executions under the same
+% linear transformation copy the marks straight onto the page,
+% quantized to the pixel grid. Blended glyph edges differ between
+% the grounds and stay uncovered, keeping the page's own background
+% there. The cache serves within a rectangular clip that holds the
+% whole raster; anything else -- a vector or screening device, an
+% unwritable dictionary, an oversized raster -- paints afresh. A
+% form's own execform calls run inside its capture, so nested forms
+% cache independently.
+/execform {
+    dup type /dicttype ne { /execform cvx /typecheck signalerror } if
+    dup /FormType 2 copy known { get 1 eq }{ pop pop false } ifelse
+    not { /execform cvx /rangecheck signalerror } if
+    DEVICE /ImgData known
+    DEVICE /ScreenPaint known not and
+    1 index wcheck and
+    not {
+        .execformdirect
+    }{
+        20 dict begin
+        /fd exch def
+        fd /.formid known not {
+            userdict /.formserial 2 copy known { get }{ pop pop 1 } ifelse
+            fd /.formid 2 index put
+            userdict /.formserial 3 -1 roll 1 add put
+        } if
+        % the key: the form and the transformation's linear part on a
+        % thousandth grid; the position quantizes at replay
+        /cm matrix currentmatrix def
+        /key fd /.formid get 20 string cvs
+        [ cm 0 get cm 1 get cm 2 get cm 3 get ] {
+            1000 mul round cvi 20 string cvs
+            exch (:) strcat exch strcat
+        } forall def
+        /fc userdict /.formcache 2 copy known { get }{
+            pop pop 8 dict userdict /.formcache 2 index put
+        } ifelse def
+        fd .execformbox
+        /fh exch def /fw exch def /fby exch def /fbx exch def
+        fc key known not {
+            fw 0 gt fh 0 gt and fw fh mul 4194304 le and {
+                /rgbdev DEVICE /nativecolorspace get /DeviceRGB eq def
+                /mdev fw fh
+                    rgbdev { newPPMIMAGEdevice }{ newPGMIMAGEdevice } ifelse
+                def
+                mdev /FillPoly /.fillpoly load put
+                mdev /FillRect
+                    rgbdev { /.fillrectrgb }{ /.fillrectgray } ifelse
+                    load put
+                % blended glyph edges would differ between the two
+                % grounds and fall out of the coverage; bilevel text
+                % keeps every glyph pixel deterministic
+                mdev /TextAlphaBits 1 put
+                gsave
+                graphicsdict /currgstate get /device mdev put
+                /cm2 cm matrix copy def
+                cm2 4 cm 4 get fbx sub put
+                cm2 5 cm 5 get fby sub put
+                cm2 setmatrix
+                initclip
+                rgbdev { 0 0 0 0 0 fw fh mdev .fillrectrgb }
+                       { 0 0 0 fw fh mdev .fillrectgray } ifelse
+                fd .execformdirect
+                /rowsa [ mdev /ImgData get {
+                    dup type /stringtype eq
+                        { dup length string copy }
+                        { dup length array copy } ifelse
+                } forall ] def
+                rgbdev { 1 1 1 0 0 fw fh mdev .fillrectrgb }
+                       { 1 0 0 fw fh mdev .fillrectgray } ifelse
+                fd .execformdirect
+                grestore
+                fc length 8 ge {
+                    userdict /.formcache 8 dict put
+                    /fc userdict /.formcache get def
+                } if
+                fc key <<
+                    /rows mdev /ImgData get
+                    /mask rowsa mdev /ImgData get .formmask
+                >> put
+            } if
+        } if
+        fc key known
+        { .cliprect {
+              /cy1 exch def /cx1 exch def /cy0 exch def /cx0 exch def
+              fbx cx0 ge fby cy0 ge and
+              fbx fw add cx1 le and fby fh add cy1 le and
+          }{ false } ifelse }
+        { false } ifelse
+        {
+            /fe fc key get def
+            fe /rows get fe /mask get fbx fby DEVICE .blitform
+        }{
+            fd .execformdirect
+        } ifelse
+        end
+    } ifelse
 } def
 
 % User paths: the self-describing form is an executable array of the

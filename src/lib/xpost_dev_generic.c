@@ -1155,6 +1155,169 @@ int _base64(Xpost_Context *ctx, Xpost_Object S)
     return 0;
 }
 
+
+/* Compare two captures of the same painting, one over a black ground
+   and one over white: pixels that agree were painted (opaquely, the
+   only kind of painting there is) and set their bit in the coverage
+   mask, one row string per raster row, most significant bit first.
+   Rows are grey strings or packed-integer arrays alike. */
+static
+int _formmask(Xpost_Context *ctx,
+              Xpost_Object rowsa,
+              Xpost_Object rowsb)
+{
+    Xpost_Object maskarr, rowa, rowb, mrow;
+    unsigned int h, y, w, x;
+
+    h = rowsa.comp_.sz;
+    if (rowsb.comp_.sz != h)
+        return rangecheck;
+    maskarr = xpost_array_cons(ctx, h);
+    if (xpost_object_get_type(maskarr) == nulltype)
+        return VMerror;
+    for (y = 0; y < h; y++)
+    {
+        unsigned char *mp;
+
+        rowa = xpost_array_get(ctx, rowsa, y);
+        rowb = xpost_array_get(ctx, rowsb, y);
+        if (xpost_object_get_type(rowa) != xpost_object_get_type(rowb)
+         || rowa.comp_.sz != rowb.comp_.sz)
+            return typecheck;
+        w = rowa.comp_.sz;
+        mrow = xpost_string_cons(ctx, (w + 7) / 8, NULL);
+        if (xpost_object_get_type(mrow) == nulltype)
+            return VMerror;
+        mp = (unsigned char *)xpost_string_get_pointer(ctx, mrow);
+        memset(mp, 0, (w + 7) / 8);
+        if (xpost_object_get_type(rowa) == stringtype)
+        {
+            unsigned char *pa = (unsigned char *)xpost_string_get_pointer(ctx, rowa);
+            unsigned char *pb = (unsigned char *)xpost_string_get_pointer(ctx, rowb);
+
+            for (x = 0; x < w; x++)
+                if (pa[x] == pb[x])
+                    mp[x / 8] |= 0x80 >> (x % 8);
+        }
+        else if (xpost_object_get_type(rowa) == arraytype)
+        {
+            for (x = 0; x < w; x++)
+            {
+                Xpost_Object a = xpost_array_get(ctx, rowa, x);
+                Xpost_Object b = xpost_array_get(ctx, rowb, x);
+
+                if (xpost_object_get_type(a) == integertype
+                 && xpost_object_get_type(b) == integertype
+                 && a.int_.val == b.int_.val)
+                    mp[x / 8] |= 0x80 >> (x % 8);
+            }
+        }
+        else
+            return typecheck;
+        xpost_array_put(ctx, maskarr, y, mrow);
+    }
+    xpost_stack_push(ctx->lo, ctx->os, maskarr);
+    return 0;
+}
+
+/* Put a device row through its save-copy once, before any pointer
+   into memory is taken for the pixel loop. Writing an array element
+   saves the array at the current level first, which allocates, and
+   the coding rule for device operators is that no pointer survives an
+   allocation. Touching element zero with its own value hoists that
+   copy out of the loop, so the row's storage stays put while the
+   loop writes it. */
+static void
+_row_presave(Xpost_Context *ctx, Xpost_Object row)
+{
+    if (xpost_object_get_type(row) == arraytype && row.comp_.sz > 0)
+        xpost_array_put(ctx, row, 0, xpost_array_get(ctx, row, 0));
+}
+
+/* Replay a captured raster: covered pixels copy onto the device page
+   at the integer offset, clipped to the device bounds; the caller
+   gates on the clip region holding the whole raster. Grey rows copy
+   into grey rows, packed integers into packed integers. */
+static
+int _blitform(Xpost_Context *ctx,
+              Xpost_Object rows,
+              Xpost_Object mask,
+              Xpost_Object oxo,
+              Xpost_Object oyo,
+              Xpost_Object devdic)
+{
+    Xpost_Object imgdata, srow, mrow, drow;
+    int ox, oy, devh, y, x, w, h;
+
+    imgdata = xpost_dict_get(ctx, devdic, nameImgData);
+    if (xpost_object_get_type(imgdata) != arraytype)
+        return undefined;
+    devh = imgdata.comp_.sz;
+    ox = xpost_object_get_type(oxo) == realtype ? (int)floor(oxo.real_.val + 0.5) : oxo.int_.val;
+    oy = xpost_object_get_type(oyo) == realtype ? (int)floor(oyo.real_.val + 0.5) : oyo.int_.val;
+    h = rows.comp_.sz;
+    if (mask.comp_.sz < (unsigned int)h)
+        return rangecheck;
+    for (y = 0; y < h; y++)
+    {
+        int dy = oy + y;
+        unsigned char *mp;
+
+        if (dy < 0 || dy >= devh)
+            continue;
+        srow = xpost_array_get(ctx, rows, y);
+        mrow = xpost_array_get(ctx, mask, y);
+        drow = xpost_array_get(ctx, imgdata, dy);
+        if (xpost_object_get_type(mrow) != stringtype)
+            return typecheck;
+        w = srow.comp_.sz;
+        if (mrow.comp_.sz < (unsigned int)((w + 7) / 8))
+            return rangecheck;
+        mp = (unsigned char *)xpost_string_get_pointer(ctx, mrow);
+        if (xpost_object_get_type(srow) == stringtype
+         && xpost_object_get_type(drow) == stringtype)
+        {
+            unsigned char *sp = (unsigned char *)xpost_string_get_pointer(ctx, srow);
+            unsigned char *dp = (unsigned char *)xpost_string_get_pointer(ctx, drow);
+            int dw = drow.comp_.sz;
+
+            for (x = 0; x < w; x++)
+            {
+                int dx = ox + x;
+
+                if (dx < 0 || dx >= dw)
+                    continue;
+                if (mp[x / 8] >> (7 - (x % 8)) & 1)
+                    dp[dx] = sp[x];
+            }
+        }
+        else if (xpost_object_get_type(srow) == arraytype
+              && xpost_object_get_type(drow) == arraytype)
+        {
+            int dw = drow.comp_.sz;
+
+            for (x = 0; x < w; x++)
+            {
+                int dx = ox + x;
+
+                if (dx < 0 || dx >= dw)
+                    continue;
+                /* the mask byte is read before the write: putting into
+                   an array saves it at the current level first, which
+                   allocates, and no pointer into memory survives an
+                   allocation */
+                mp = (unsigned char *)xpost_string_get_pointer(ctx, mrow);
+                if (mp[x / 8] >> (7 - (x % 8)) & 1)
+                    xpost_array_put(ctx, drow, dx,
+                                    xpost_array_get(ctx, srow, x));
+            }
+        }
+        else
+            return typecheck;
+    }
+    return 0;
+}
+
 /* Set every pixel of a packed-integer raster (an array of row arrays)
    to integer zero. Devices call this once from Create; initialising
    each element from PostScript costs an interpreter loop per pixel. */
@@ -2342,6 +2505,7 @@ int _blitrow(Xpost_Context *ctx,
                             if (xpost_object_get_type(row) != arraytype
                              || row.comp_.sz < (unsigned int)devw)
                                 { free(cols); return rangecheck; }
+                            _row_presave(ctx, row);
                         }
                         else
                         {
@@ -2469,6 +2633,7 @@ int _blitrow(Xpost_Context *ctx,
             if (xpost_object_get_type(row) != arraytype
              || row.comp_.sz < (unsigned int)devw)
                 return rangecheck;
+            _row_presave(ctx, row);
         }
         else
         {
@@ -2610,6 +2775,10 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
                              numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".zerorows", (Xpost_Op_Func)_zerorows, 0, 1, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".base64", (Xpost_Op_Func)_base64, 1, 1, stringtype); INSTALL;
+    op = xpost_operator_cons(ctx, ".formmask", (Xpost_Op_Func)_formmask, 1, 2,
+                             arraytype, arraytype); INSTALL;
+    op = xpost_operator_cons(ctx, ".blitform", (Xpost_Op_Func)_blitform, 0, 5,
+                             arraytype, arraytype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".writeppmrows", (Xpost_Op_Func)_writeppmrows, 0, 2,
                              arraytype, filetype); INSTALL;
     op = xpost_operator_cons(ctx, ".writepbmrows", (Xpost_Op_Func)_writepbmrows, 0, 2,

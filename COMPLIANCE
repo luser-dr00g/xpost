@@ -320,7 +320,9 @@ Level 2 operators
      accepted rather than rejected)
  [X] user objects (defineuserobject, execuserobject,
      undefineuserobject)
- [X] execform (every execution paints afresh)
+ [X] execform (output cached on raster pages, keyed by the form and
+     the transformation; a vector or screening page, or an
+     unwritable dictionary, paints afresh)
  [X] setstrokeadjust, currentstrokeadjust (recorded only)
  [X] shared VM (setshared, currentshared, scheck, shareddict,
      SharedFontDirectory, GlobalFontDirectory: the global-VM view
