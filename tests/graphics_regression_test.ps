@@ -2187,6 +2187,32 @@ exch 2 get 11 sub abs 0.01 lt and
 newpath
 <41> /Fm4 fm.w 7 (stringwidth measures without a currentpoint) assertnear
 
+% colorimage pulls its procedure source once per row, not once for
+% the image: the last row's colour arrives only if every call
+% happened (a bare name fetch once ran the procedure and left its
+% first chunk standing in for the whole image)
+graphicsdict /currgstate get /device DEV2 put
+matrix setmatrix
+DEV2 /ImgData get .zerorows
+/ci.data 192 string def
+0 1 167 { ci.data exch 0 put } for
+168 1 191 { ci.data exch dup 168 sub 3 mod 1 eq { 255 }{ 0 } ifelse put } for
+userdict /ci.pos 0 put
+gsave
+8 8 scale
+8 8 8 [8 0 0 -8 0 8]
+{ ci.data userdict /ci.pos get 24 getinterval
+  userdict /ci.pos 2 copy get 24 add put }
+false 3 colorimage
+grestore
+userdict /ci.pos get 192 eq (colorimage consumes every row's chunk) assert
+4 0 rgbat 100 lt exch 150 gt and exch 100 lt and
+(the last row's colour reaches the raster) assert
+4 7 rgbat 100 lt exch 100 lt and exch 100 lt and
+(the first row stays its own colour) assert
+graphicsdict /currgstate get /device DEV put
+initgraphics
+
 % The TIFF device frames the rgb raster as a baseline TIFF: the
 % little-endian header, a directory whose width entry answers, and
 % one uncompressed strip of the pixels

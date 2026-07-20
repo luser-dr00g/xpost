@@ -973,7 +973,10 @@
     nc 4 eq { /DeviceCMYK }{
     nc 3 eq { /DeviceRGB }{ /DeviceGray } ifelse } ifelse
     setcolorspace
-    srcs //.identdecode nc get nc
+    % the source loads through the dictionary, never by name: an
+    % executable array is a procedure and a bare lookup would run it,
+    % leaving its first chunk standing in for the whole image
+    currentdict /srcs get //.identdecode nc get nc
     end
     null null .imagepaintm
     grestore
