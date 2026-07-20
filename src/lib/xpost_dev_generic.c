@@ -93,6 +93,11 @@ char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
 
     filenamestr = xpost_dict_get(ctx, devdic,
                                  xpost_name_cons(ctx, "OutputFileName"));
+    /* a device dict without a string OutputFileName -- e.g. after a program
+       switches devices with setpagedevice, which records the name in userdict
+       rather than the device dict -- must not be read as a string */
+    if (xpost_object_get_type(filenamestr) != stringtype)
+        return NULL;
     filename = malloc(filenamestr.comp_.sz + 1);
     if (filename)
     {
