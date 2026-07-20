@@ -308,6 +308,14 @@ st.data eq (LZWEncode round-trips through its decoder) assert
     (semantics.scratch) (r) file /FlateDecode filter 64 string readstring pop
     st.data eq (FlateEncode round-trips through its decoder) assert
 }{ pop } ifelse
+% cvi and cvr read their string operands with the scanner's token
+% semantics: leading white space and anything past the numeral's end
+% are ignored, and a token that is not a numeral refuses
+(0.5\n) cvr 0.5 (cvr ignores what follows the numeral) assertnear
+(  16 pt) cvi 16 eq (cvi skips leading space and trailing text) assert
+{ (0.5junk) cvr } stopped { pop pop true }{ false } ifelse
+(a glued suffix is no numeral) assert
+
 % binary object sequences: the writers emit the scanner's encoding,
 % gated by the object format parameter, and a sequence round-trips
 currentobjectformat 0 eq (the object format starts disabled) assert

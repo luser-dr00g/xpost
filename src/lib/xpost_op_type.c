@@ -174,8 +174,22 @@ int Ncvi(Xpost_Context *ctx,
     return 0;
 }
 
-/* helper function: interpret the whole string as a PostScript numeral
-   (decimal or radix form); returns 0 on success or an error code */
+/* a numeral token's end: white space, a delimiter, or the string's */
+static
+int _num_token_end(char c)
+{
+    return c == '\0' || c == ' ' || c == '\t' || c == '\n'
+        || c == '\r' || c == '\f'
+        || c == '(' || c == ')' || c == '<' || c == '>'
+        || c == '[' || c == ']' || c == '{' || c == '}'
+        || c == '/' || c == '%';
+}
+
+/* helper function: read a PostScript numeral (decimal or radix form)
+   from the string with the scanner's token semantics -- leading
+   white space skipped, the token must be a complete numeral, and
+   whatever follows its end is ignored; returns 0 on success or an
+   error code */
 static
 int _string_to_number(const char *t,
                       double *out)
@@ -184,6 +198,10 @@ int _string_to_number(const char *t,
     long base;
     double num;
 
+    while (*t == ' ' || *t == '\t' || *t == '\n'
+        || *t == '\r' || *t == '\f')
+        t++;
+
     /* radix numeral, e.g. 16#ff */
     errno = 0;
     base = strtol(t, &end, 10);
@@ -191,11 +209,11 @@ int _string_to_number(const char *t,
     {
         long v;
         const char *p = end + 1;
-        if (*p == '\0')
+        if (_num_token_end(*p))
             return typecheck;
         errno = 0;
         v = strtol(p, &end, (int)base);
-        if (*end != '\0')
+        if (!_num_token_end(*end))
             return typecheck;
         if (errno == ERANGE)
             return limitcheck;
@@ -205,7 +223,7 @@ int _string_to_number(const char *t,
 
     errno = 0;
     num = strtod(t, &end);
-    if (end == t || *end != '\0')
+    if (end == t || !_num_token_end(*end))
         return typecheck;
     if (errno == ERANGE)
         return limitcheck;
