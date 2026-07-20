@@ -359,6 +359,15 @@
 
 /widthshow {
     graphicsdict /currgstate get /currfont get
+    dup /FontType get 0 eq {
+        % a composite font: add the delta after the character whose full
+        % (multi-byte) code matches, as the ordinary composite show walks it
+        7 dict begin
+        /fnt exch def /str exch def /mchar exch def /cdy exch def /cdx exch def
+        /.showhook { mchar eq { cdx cdy rmoveto } if } def
+        fnt str .showtype0
+        end
+    }{
     dup /FontType get 3 ne {
         pop
         4 2 roll dtransform
@@ -373,7 +382,7 @@
         newpath
         dup /FontMatrix get
         dup concat
-        cx cy 3 2 roll dtransform /cy exch def /cx exch def
+        cx cy 3 2 roll idtransform /cy exch def /cx exch def
         exch
         %pstack()=
         {
@@ -394,10 +403,20 @@
     itransform moveto
 
     } ifelse
+    } ifelse
 } def
 
 /ashow {
     graphicsdict /currgstate get /currfont get
+    dup /FontType get 0 eq {
+        % a composite font decodes to descendant glyphs; walk it with the
+        % ordinary composite show and add the delta after each character
+        6 dict begin
+        /fnt exch def /str exch def /ady exch def /adx exch def
+        /.showhook { pop adx ady rmoveto } def
+        fnt str .showtype0
+        end
+    }{
     dup /FontType get 3 ne {
         pop
         3 1 roll dtransform
@@ -412,7 +431,7 @@
         newpath
         dup /FontMatrix get
         dup concat
-        dx dy 3 2 roll dtransform /dy exch def /dx exch def
+        dx dy 3 2 roll idtransform /dy exch def /dx exch def
         exch
         %pstack()=
         {
@@ -430,10 +449,21 @@
     itransform moveto
 
     } ifelse
+    } ifelse
 } def
 
 /awidthshow {
     graphicsdict /currgstate get /currfont get
+    dup /FontType get 0 eq {
+        % a composite font: the ashow delta after every character, plus the
+        % widthshow delta after the character whose full code matches
+        9 dict begin
+        /fnt exch def /str exch def /ady exch def /adx exch def
+        /mchar exch def /cdy exch def /cdx exch def
+        /.showhook { adx ady rmoveto mchar eq { cdx cdy rmoveto } if } def
+        fnt str .showtype0
+        end
+    }{
     dup /FontType get 3 ne {
         pop
         5 1 roll dtransform
@@ -441,7 +471,9 @@
         5 2 roll
         //awidthshow
     }{
-    7 2 roll
+    % bring the operands (cx cy char ax ay string font) into the order the
+    % binding expects: string font ax ay cx cy char, top-down char cy cx ay ax
+    7 2 roll 5 2 roll
     5 dict begin
     {charcode cy cx dy dx}{exch def}forall
     gsave
@@ -449,8 +481,8 @@
         newpath
         dup /FontMatrix get
         dup concat
-        dup dx dy 3 2 roll dtransform /dy exch def /dx exch def
-        cx cy 3 2 roll dtransform /cy exch def /cx exch def
+        dup dx dy 3 2 roll idtransform /dy exch def /dx exch def
+        cx cy 3 2 roll idtransform /cy exch def /cx exch def
         exch
         %pstack()=
         {
@@ -471,6 +503,7 @@
     end
     itransform moveto
 
+    } ifelse
     } ifelse
 } def
 

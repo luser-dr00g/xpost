@@ -314,8 +314,14 @@ currentdict /c undef
 % code paints as a one-byte show under the selected descendant, so
 % any descendant kind -- including a nested composite -- renders
 % through the ordinary dispatch
+% code  .showhook  -
+% called after each composite character paints, with the character's
+% full (multi-byte, big-endian) code. The spacing show operators bind
+% it to advance the pen by their delta; plain show leaves it a no-op.
+/.showhook { pop } def
+
 /.showfmap {
-    10 dict begin
+    12 dict begin
     /str exch def /fnt exch def
     /dc fnt /Encoding get length array def
     /cs 1 string def
@@ -333,6 +339,9 @@ currentdict /c undef
             graphicsdict /currgstate get /currfont dc curf get put
             cs show
             graphicsdict /currgstate get /currfont fnt put
+            /fc 0 def
+            0 1 w 1 sub { str p 3 -1 roll add get fc 256 mul add /fc exch def } for
+            fc .showhook
         } if
         /p p w add def
     } loop
@@ -411,6 +420,9 @@ currentdict /c undef
             } ifelse
         } if
         gid .glyphshowidx
+        /fc 0 def
+        0 1 w 1 sub { str p 3 -1 roll add get fc 256 mul add /fc exch def } for
+        fc .showhook
         /p p w add def
     } loop
     graphicsdict /currgstate get /currfont fnt put

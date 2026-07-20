@@ -604,6 +604,46 @@ false upath
 newpath uappend
 currentpoint 4 eq exch 3 eq and (upath round-trips the current path) assert
 
+% --- ashow/widthshow/awidthshow add their spacing deltas in user space
+%     for a Type 3 font (per-char advances verified against Distiller) ---
+/st.boxfont 10 dict def st.boxfont begin
+  /FontType 3 def /FontMatrix [0.001 0 0 0.001 0 0] def
+  /FontBBox [0 0 1000 1000] def
+  /Encoding 256 array def 0 1 255 { Encoding exch /.notdef put } for
+  Encoding 65 /boxA put
+  /CharProcs 2 dict def CharProcs /.notdef {} put
+  CharProcs /boxA { 700 0 setcharwidth } put
+  /BuildChar { exch begin Encoding exch get CharProcs exch get gsave exec grestore end } def
+end
+/st.boxfont st.boxfont definefont 100 scalefont setfont
+/st.adv { gsave 0 0 moveto exec currentpoint pop grestore } def  % proc . x-advance
+{ (AAAA) show } st.adv round cvi 280 eq (plain show advances by the glyph widths) assert
+{ 40 0 (AAAA) ashow } st.adv round cvi 440 eq (ashow adds ax in user space) assert
+{ 60 0 65 (AAAA) widthshow } st.adv round cvi 520 eq (widthshow adds cx in user space) assert
+{ 30 0 65 20 0 (AAAA) awidthshow } st.adv round cvi 480 eq (awidthshow adds ax and cx in user space) assert
+{ 30 0 66 20 0 (AAAA) awidthshow } st.adv round cvi 360 eq (awidthshow keys cx on the char code) assert
+
+% --- the spacing show family also carries through composite (FMapType)
+%     fonts: each character decodes to a descendant, then advances; the
+%     advances were verified against Distiller ---
+/st.cA << /FontType 3 /FontMatrix matrix /FontBBox [0 0 0 0]
+  /Encoding 256 array 0 1 255 { 1 index exch /.notdef put } for
+  /BuildChar { pop pop 7 0 setcharwidth } bind >> definefont pop
+/st.cB << /FontType 3 /FontMatrix matrix /FontBBox [0 0 0 0]
+  /Encoding 256 array 0 1 255 { 1 index exch /.notdef put } for
+  /BuildChar { pop pop 11 0 setcharwidth } bind >> definefont pop
+/st.c2 << /FontType 0 /FMapType 2 /FontMatrix matrix
+  /Encoding [0 1] /FDepVector [ /st.cA findfont /st.cB findfont ] >> definefont pop
+/st.c2 findfont setfont
+{ <0041 0141> show } st.adv round cvi 18 eq (composite show sums descendant widths) assert
+{ 5 0 <0041 0141> ashow } st.adv round cvi 28 eq (composite ashow adds the delta per character) assert
+{ 5 0 65 <0041 0141> widthshow } st.adv round cvi 23 eq (composite widthshow matches the full character code) assert
+{ 5 0 65 3 0 <0041 0141> awidthshow } st.adv round cvi 29 eq (composite awidthshow adds both deltas) assert
+/st.c8 << /FontType 0 /FMapType 8 /FontMatrix matrix
+  /Encoding [0 1] /FDepVector [ /st.cA findfont /st.cB findfont ] >> definefont pop
+/st.c8 findfont setfont
+{ 5 0 <41 0E 42 43 0F 44> ashow } st.adv round cvi 56 eq (composite ashow leaves the shift bytes undelta'd) assert
+
 % --- CIE-based colour reduces through its pipeline to device RGB ---
 [ /CIEBasedABC << /WhitePoint [0.9505 1.0 1.089]
    /RangeABC [0 1 0 1 0 1]
