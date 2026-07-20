@@ -182,7 +182,12 @@ Xpost_Object xpost_object_get_interval(Xpost_Object a,
                       integer off,
                       integer sz)
 {
-    if (sz - off > a.comp_.sz)
+    /* the interval [off, off+sz) must lie within the composite. Compare
+       without overflow: off and sz are non-negative and comp_.sz is small,
+       so require off <= comp_.sz and sz <= comp_.sz - off. */
+    if (off < 0 || sz < 0
+        || (unsigned)off > a.comp_.sz
+        || (unsigned)sz > a.comp_.sz - (unsigned)off)
         return invalid; /* should be interpreted as a rangecheck error */
     a.comp_.off += off;
     a.comp_.sz = sz;
