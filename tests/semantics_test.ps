@@ -308,6 +308,43 @@ st.data eq (LZWEncode round-trips through its decoder) assert
     (semantics.scratch) (r) file /FlateDecode filter 64 string readstring pop
     st.data eq (FlateEncode round-trips through its decoder) assert
 }{ pop } ifelse
+% binary object sequences: the writers emit the scanner's encoding,
+% gated by the object format parameter, and a sequence round-trips
+currentobjectformat 0 eq (the object format starts disabled) assert
+{ (x) 0 printobject } stopped { pop pop true }{ false } ifelse
+(a disabled format refuses the writers) assert
+2 setobjectformat
+currentobjectformat 2 eq (setobjectformat records the format) assert
+/st.f (semantics.scratch) (w) file def
+/st.arr 6 array def
+st.arr 0 42 put
+st.arr 1 3.25 put
+st.arr 2 (hi) put
+st.arr 3 /nm put
+st.arr 4 [ true null ] put
+st.arr 5 mark put
+st.f st.arr 7 writeobject
+st.f closefile
+/st.b (semantics.scratch) (r) file 200 string readstring pop def
+st.b 0 get 16#81 eq st.b 1 get 1 eq and
+(the sequence heads with its format and count) assert
+st.b 2 get st.b 3 get 256 mul add st.b length eq
+(the header length spans the sequence) assert
+st.b 5 get 7 eq (the tag rides the top-level record) assert
+(semantics.scratch) (r) file token
+{
+    0 get
+    dup 0 get 42 eq
+    1 index 1 get 3.25 sub abs 0.001 lt and
+    1 index 2 get (hi) eq and
+    1 index 3 get /nm eq and
+    1 index 4 get dup 0 get true eq exch 1 get null eq and and
+    1 index 5 get mark eq and
+    exch pop
+}{ false } ifelse
+(a sequence round-trips through the scanner) assert
+0 setobjectformat
+
 % DCTEncode, where the JPEG library is present: the stream carries
 % the interchange markers, a smooth ramp survives the lossy
 % round-trip within a few counts, and a colour image keeps its

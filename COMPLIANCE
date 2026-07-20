@@ -325,8 +325,9 @@ Level 2 operators
  [X] shared VM (setshared, currentshared, scheck, shareddict,
      SharedFontDirectory, GlobalFontDirectory: the global-VM view
      by other names)
- [ ] binary object sequences (setobjectformat, currentobjectformat,
-     printobject, writeobject)
+ [X] binary object sequences (setobjectformat, currentobjectformat,
+     printobject, writeobject; the native-real formats carry their
+     reals in the sequence's byte order, as deployed writers do)
 
 Level 3 operators
 -----------------

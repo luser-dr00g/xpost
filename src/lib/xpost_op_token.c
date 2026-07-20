@@ -856,7 +856,6 @@ int bt_seq_object(Xpost_Context *ctx,
                   unsigned int base,
                   unsigned int recoff,
                   int le,
-                  int natreal,
                   int depth,
                   Xpost_Object *retval)
 {
@@ -888,16 +887,13 @@ int bt_seq_object(Xpost_Context *ctx,
         case 1:  /* integer */
             obj = xpost_int_cons((integer)(int)value);
             break;
-        case 2:  /* real */
+        case 2:  /* real: the native-real formats travel in the
+                    sequence's byte order all the same, as the
+                    deployed writers have it */
             {
                 float f;
 
-                if (natreal)
-                    /* native reals travel in the native byte order,
-                       independent of the header order */
-                    memcpy(&f, p + 4, 4);
-                else
-                    memcpy(&f, &value, 4);
+                memcpy(&f, &value, 4);
                 obj = xpost_real_cons((real)f);
             }
             break;
@@ -961,7 +957,7 @@ int bt_seq_object(Xpost_Context *ctx,
                 {
                     Xpost_Object el;
 
-                    ret = bt_seq_object(ctx, buf, buflen, base, base + value + i * 8, le, natreal, depth + 1, &el);
+                    ret = bt_seq_object(ctx, buf, buflen, base, base + value + i * 8, le, depth + 1, &el);
                     if (ret)
                         return ret;
                     xpost_array_put(ctx, obj, i, el);
@@ -994,7 +990,6 @@ int bt_sequence(Xpost_Context *ctx,
                 Xpost_Object *retval)
 {
     int le = (t == 129) || (t == 131);
-    int natreal = (t == 130) || (t == 131);
     unsigned char hdr[8];
     unsigned int count, length, hdrlen;
     unsigned char *buf;
@@ -1047,7 +1042,7 @@ int bt_sequence(Xpost_Context *ctx,
     {
         Xpost_Object el;
 
-        ret = bt_seq_object(ctx, buf, length, hdrlen, hdrlen + i * 8, le, natreal, 0, &el);
+        ret = bt_seq_object(ctx, buf, length, hdrlen, hdrlen + i * 8, le, 0, &el);
         if (ret)
         {
             free(buf);

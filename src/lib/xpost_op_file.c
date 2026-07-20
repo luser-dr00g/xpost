@@ -975,6 +975,322 @@ int xpost_op_string_print (Xpost_Context *ctx,
     return 0;
 }
 
+
+/* Binary object sequences (PLRM 3.14.6), the writing half of the
+   scanner's reader: a header names the format, one top-level record
+   carries the operand and its tag, subsidiary records and text
+   follow, every offset relative to the records' start. The object
+   format parameter chooses the number representation; disabled (the
+   default) the writers refuse with undefined. */
+
+static
+int _objfmt_get(Xpost_Context *ctx)
+{
+    Xpost_Object ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+    Xpost_Object v = xpost_dict_get(ctx, ud,
+        xpost_name_cons(ctx, ".objectformat"));
+
+    return xpost_object_get_type(v) == integertype ? v.int_.val : 0;
+}
+
+static
+int xpost_op_int_setobjectformat(Xpost_Context *ctx,
+                                 Xpost_Object n)
+{
+    Xpost_Object ud = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
+
+    if (n.int_.val < 0 || n.int_.val > 4)
+        return rangecheck;
+    return xpost_dict_put(ctx, ud,
+        xpost_name_cons(ctx, ".objectformat"), n);
+}
+
+static
+int xpost_op_currentobjectformat(Xpost_Context *ctx)
+{
+    if (!xpost_stack_push(ctx->lo, ctx->os,
+                          xpost_int_cons(_objfmt_get(ctx))))
+        return stackoverflow;
+    return 0;
+}
+
+static
+int _bos_measure(Xpost_Context *ctx,
+                 Xpost_Object o,
+                 int depth,
+                 unsigned int *recs,
+                 unsigned int *data)
+{
+    unsigned int i;
+    int ret;
+
+    if (depth > 32)
+        return limitcheck;
+    switch (xpost_object_get_type(o))
+    {
+        case nulltype:
+        case integertype:
+        case realtype:
+        case booleantype:
+        case marktype:
+            *recs += 8;
+            return 0;
+        case nametype:
+        {
+            Xpost_Object str = xpost_name_get_string(ctx, o);
+
+            if (str.comp_.sz > 127)
+                return limitcheck;
+            *recs += 8;
+            *data += str.comp_.sz;
+            return 0;
+        }
+        case stringtype:
+            *recs += 8;
+            *data += o.comp_.sz;
+            return 0;
+        case arraytype:
+            *recs += 8;
+            for (i = 0; i < o.comp_.sz; i++)
+            {
+                ret = _bos_measure(ctx, xpost_array_get(ctx, o, i),
+                                   depth + 1, recs, data);
+                if (ret)
+                    return ret;
+            }
+            return 0;
+        default:
+            return typecheck;
+    }
+}
+
+typedef struct
+{
+    Xpost_Context *ctx;
+    unsigned char *buf;
+    unsigned int base;      /* records' start: the header length */
+    unsigned int nextrec;   /* free record space, relative to base */
+    unsigned int nextdata;  /* free text space, relative to base */
+    int le;
+} Bos;
+
+static void
+_bos_put16(const Bos *b, unsigned char *p, unsigned int v)
+{
+    if (b->le) { p[0] = v & 0xff; p[1] = (v >> 8) & 0xff; }
+    else       { p[0] = (v >> 8) & 0xff; p[1] = v & 0xff; }
+}
+
+static void
+_bos_put32(const Bos *b, unsigned char *p, unsigned int v)
+{
+    if (b->le)
+    {
+        p[0] = v & 0xff; p[1] = (v >> 8) & 0xff;
+        p[2] = (v >> 16) & 0xff; p[3] = (v >> 24) & 0xff;
+    }
+    else
+    {
+        p[0] = (v >> 24) & 0xff; p[1] = (v >> 16) & 0xff;
+        p[2] = (v >> 8) & 0xff; p[3] = v & 0xff;
+    }
+}
+
+static
+int _bos_emit(Bos *b,
+              Xpost_Object o,
+              int tag,
+              unsigned int recoff)
+{
+    unsigned char *p = b->buf + b->base + recoff;
+    unsigned char x = xpost_object_is_exe(o) ? 0x80 : 0;
+    unsigned int i;
+    int ret;
+
+    p[1] = (unsigned char)tag;
+    switch (xpost_object_get_type(o))
+    {
+        case nulltype:
+            p[0] = 0;
+            break;
+        case marktype:
+            p[0] = 10;
+            break;
+        case integertype:
+            p[0] = 1;
+            _bos_put32(b, p + 4, (unsigned int)o.int_.val);
+            break;
+        case booleantype:
+            p[0] = 4;
+            _bos_put32(b, p + 4, o.int_.val ? 1 : 0);
+            break;
+        case realtype:
+            /* the native-real formats travel in the sequence's byte
+               order all the same: the deployed writers agree on that
+               reading of native, and interchange follows them */
+            p[0] = 2;
+            {
+                float f = (float)o.real_.val;
+                unsigned int v;
+
+                memcpy(&v, &f, 4);
+                _bos_put32(b, p + 4, v);
+            }
+            break;
+        case nametype:
+        {
+            Xpost_Object str = xpost_name_get_string(b->ctx, o);
+
+            p[0] = 3 | x;
+            _bos_put16(b, p + 2, str.comp_.sz);
+            _bos_put32(b, p + 4, b->nextdata);
+            memcpy(b->buf + b->base + b->nextdata,
+                   xpost_string_get_pointer(b->ctx, str), str.comp_.sz);
+            b->nextdata += str.comp_.sz;
+            break;
+        }
+        case stringtype:
+            p[0] = 5 | x;
+            _bos_put16(b, p + 2, o.comp_.sz);
+            _bos_put32(b, p + 4, b->nextdata);
+            if (o.comp_.sz)
+                memcpy(b->buf + b->base + b->nextdata,
+                       xpost_string_get_pointer(b->ctx, o), o.comp_.sz);
+            b->nextdata += o.comp_.sz;
+            break;
+        case arraytype:
+        {
+            unsigned int block = b->nextrec;
+
+            p[0] = 9 | x;
+            _bos_put16(b, p + 2, o.comp_.sz);
+            _bos_put32(b, p + 4, block);
+            b->nextrec += o.comp_.sz * 8;
+            for (i = 0; i < o.comp_.sz; i++)
+            {
+                ret = _bos_emit(b, xpost_array_get(b->ctx, o, i),
+                                0, block + i * 8);
+                if (ret)
+                    return ret;
+            }
+            break;
+        }
+        default:
+            return typecheck;
+    }
+    return 0;
+}
+
+/* build the sequence for one top-level object; the caller frees */
+static
+int _bos_build(Xpost_Context *ctx,
+               Xpost_Object o,
+               int tag,
+               unsigned char **out,
+               unsigned int *outlen)
+{
+    Bos b;
+    unsigned int recs = 0, data = 0, hdrlen, total;
+    int fmt = _objfmt_get(ctx);
+    int ret;
+
+    if (fmt < 1 || fmt > 4)
+        return undefined;
+    if (tag < 0 || tag > 255)
+        return rangecheck;
+    ret = _bos_measure(ctx, o, 0, &recs, &data);
+    if (ret)
+        return ret;
+    hdrlen = 4 + recs + data <= 65535 ? 4 : 8;
+    total = hdrlen + recs + data;
+    b.ctx = ctx;
+    b.buf = calloc(total, 1);
+    if (!b.buf)
+        return VMerror;
+    b.base = hdrlen;
+    b.nextrec = 8;
+    b.nextdata = recs;
+    b.le = fmt == 2 || fmt == 4;
+    b.buf[0] = (unsigned char)(127 + fmt);
+    if (hdrlen == 4)
+    {
+        b.buf[1] = 1;
+        _bos_put16(&b, b.buf + 2, total);
+    }
+    else
+    {
+        b.buf[1] = 0;
+        _bos_put16(&b, b.buf + 2, 1);
+        _bos_put32(&b, b.buf + 4, total);
+    }
+    ret = _bos_emit(&b, o, tag, 0);
+    if (ret)
+    {
+        free(b.buf);
+        return ret;
+    }
+    *out = b.buf;
+    *outlen = total;
+    return 0;
+}
+
+/* obj tag  printobject  -
+   write obj's binary object sequence to the standard output */
+static
+int xpost_op_any_printobject(Xpost_Context *ctx,
+                             Xpost_Object o,
+                             Xpost_Object tag)
+{
+    unsigned char *buf;
+    unsigned int len;
+    int ret = _bos_build(ctx, o, tag.int_.val, &buf, &len);
+
+    if (ret)
+        return ret;
+    if (ctx->stdout_fn)
+    {
+        if (ctx->stdout_fn(ctx->stdout_user, (char *)buf, len) != len)
+            ret = ioerror;
+    }
+    else if (fwrite(buf, 1, len, stdout) != len)
+        ret = ioerror;
+    free(buf);
+    return ret;
+}
+
+/* file obj tag  writeobject  -
+   write obj's binary object sequence to file */
+static
+int xpost_op_any_writeobject(Xpost_Context *ctx,
+                             Xpost_Object F,
+                             Xpost_Object o,
+                             Xpost_Object tag)
+{
+    Xpost_File *f;
+    unsigned char *buf;
+    unsigned int len;
+    int ret;
+
+    if (!xpost_file_get_status(ctx->lo, F))
+        return ioerror;
+    if (!xpost_object_is_writeable(ctx, F))
+        return invalidaccess;
+    ret = _bos_build(ctx, o, tag.int_.val, &buf, &len);
+    if (ret)
+        return ret;
+    f = xpost_file_get_file_pointer(ctx->lo, F);
+    {
+        int d = _divert_output(ctx, f, (char *)buf, len);
+
+        if (d < 0)
+            ret = ioerror;
+        else if (!d && xpost_file_write((char *)buf, 1, (int)len, f) != (int)len)
+            ret = ioerror;
+    }
+    free(buf);
+    return ret;
+}
+
 /* bool  echo  -
    enable/disable terminal echoing of input characters */
 static
@@ -1207,11 +1523,15 @@ int xpost_oper_init_file_ops (Xpost_Context *ctx,
     /* =: see init.ps
      * ==: see init.ps
      * stack: see init.ps
-     * pstack: see init.ps
-     * printobject
-     * writeobject
-     * setobjectformat
-     * currentobjectformat */
+     * pstack: see init.ps */
+    op = xpost_operator_cons(ctx, "printobject", (Xpost_Op_Func)xpost_op_any_printobject, 0, 2, anytype, integertype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "writeobject", (Xpost_Op_Func)xpost_op_any_writeobject, 0, 3, filetype, anytype, integertype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "setobjectformat", (Xpost_Op_Func)xpost_op_int_setobjectformat, 0, 1, integertype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, "currentobjectformat", (Xpost_Op_Func)xpost_op_currentobjectformat, 1, 0);
+    INSTALL;
     op = xpost_operator_cons(ctx, "echo", (Xpost_Op_Func)xpost_op_bool_echo, 0, 1, booleantype);
     INSTALL;
 
