@@ -45,27 +45,9 @@ begin
 end } put
 
 PBMIMAGE /.writepbm { % img file
-    8 dict begin
+    2 dict begin
     {/f /a}{exch def}forall
-    /w a 0 get length def
-    /rb w 7 add 8 idiv def
-    /buf rb string def
-    f (P4\n) writestring
-    f w =string cvs writestring
-    f ( ) writestring
-    f a length =string cvs writestring
-    f (\n) writestring
-    a {
-        /row exch def
-        0 1 rb 1 sub { buf exch 0 put } for
-        0 1 w 1 sub { /x exch def
-            row x get 128 lt {
-                buf x 8 idiv 2 copy get
-                16#80 x 8 mod neg bitshift or put
-            } if
-        } for
-        f buf writestring
-    } forall
+    a f .writepbmrows
     f (%stdout)(w)file ne {
         f closefile
     } if

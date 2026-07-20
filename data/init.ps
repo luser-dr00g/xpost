@@ -772,6 +772,11 @@ end % userdict
             DEVICE /nativecolorspace get /DeviceGray eq {
                 DEVICE /FillRect /.fillrectgray load put
             } if
+            DEVICE /nativecolorspace get /DeviceRGB eq {
+                DEVICE /FillRect get type /operatortype ne {
+                    DEVICE /FillRect /.fillrectrgb load put
+                } if
+            } if
         } if
 
         % remaining keys are device features

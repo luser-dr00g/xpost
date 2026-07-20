@@ -63,12 +63,9 @@ DATA_DIR(/qsort.ps)strcat run
         currentglobal true setglobal
         /ImgData height array def
         0 1 height 1 sub {
-            ImgData exch width array
-            0 1 width 1 sub {
-                2 copy 0 put pop
-            } for
-            put
+            ImgData exch width array put
         } for
+        ImgData .zerorows
         setglobal
     currentdict
     end } bind
@@ -438,49 +435,11 @@ DATA_DIR(/qsort.ps)strcat run
 
     end } bind %FillPoly
 
-    /.printppm { % dump PGM format to stdout
-        (P3\n)=only
-        dup 0 get length =only %w
-        ( )=only
-        dup length =only %h
-        (\n)=only
-        (255\n)=only %max
-        {
-            {
-                dup -16 bitshift =only( )=only
-                dup -8 bitshift 16#ff and =only( )=only
-                16#ff and =only( )=only
-            }forall
-            (\n)=only
-        }forall %data
-        (\n)=only
-    } bind
 
-    /.writeppm { % img (filename)
+    /.writeppm { % img file
         2 dict begin
         {/f /a}{exch def}forall
-        f (P3\n) writestring
-        f a 0 get length =string cvs writestring
-        f ( ) writestring
-        f a length =string cvs writestring
-        f (\n255\n) writestring
-        a {
-            {
-                dup -16 bitshift
-                =string cvs dup length exch
-                    f exch writestring
-                    neg 4 add { f ( ) writestring } repeat
-                dup -8 bitshift 16#ff and
-                =string cvs dup length exch
-                    f exch writestring
-                    neg 4 add { f ( ) writestring } repeat
-                16#ff and
-                =string cvs dup length exch
-                    f exch writestring
-                    neg 4 add { f ( ) writestring } repeat
-            } forall
-            f (\n) writestring
-        } forall
+        a f .writeppmrows
         f (%stdout)(w) file ne {
             f closefile
         } if

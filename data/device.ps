@@ -36,6 +36,13 @@ DEVICE begin
         currentdict /nativecolorspace get /DeviceGray eq {
             /FillRect /.fillrectgray load def
         } if
+        % packed-integer rgb devices (PPMIMAGE) likewise -- unless the
+        % device brought a compiled FillRect of its own (the png family)
+        currentdict /nativecolorspace get /DeviceRGB eq {
+            currentdict /FillRect get type /operatortype ne {
+                /FillRect /.fillrectrgb load def
+            } if
+        } if
     } if
 end
 

@@ -1305,6 +1305,21 @@ matrix setmatrix
 0 0 DEV2 dup /GetPix get exec
 60 lt exch 195 gt and exch 195 gt and
 (per-channel transfers reach the colour raster) assert
+
+% The compiled colour rect fill and raster zeroing write the packed
+% rows as PutPix would: channels scaled by 255 and truncated,
+% inclusive end coordinates, untouched pixels left alone
+DEV2 /ImgData get .zerorows
+0.5 0.25 1 1 1 5 2 DEV2 .fillrectrgb
+1 1 DEV2 dup /GetPix get exec
+255 eq exch 63 eq and exch 127 eq and
+(colour FillRect packs truncated channels) assert
+6 3 DEV2 dup /GetPix get exec
+255 eq exch 63 eq and exch 127 eq and
+(colour FillRect ends inclusively) assert
+7 4 DEV2 dup /GetPix get exec
+0 eq exch 0 eq and exch 0 eq and
+(zeroed raster outside the fill) assert
 {} settransfer
 0 setgray
 graphicsdict /currgstate get /device DEV put

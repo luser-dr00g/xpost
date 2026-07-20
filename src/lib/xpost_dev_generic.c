@@ -32,6 +32,7 @@
 # include <config.h>
 #endif
 
+#include <stdio.h> /* snprintf */
 #include <stdlib.h> /* abs */
 #include <stddef.h>
 
@@ -54,6 +55,7 @@
 #include "xpost_string.h" /* get/put values in strings */
 #include "xpost_array.h"
 #include "xpost_name.h" /* create names */
+#include "xpost_file.h" /* raster emission */
 
 #include "xpost_operator.h" /* create operators */
 #include "xpost_op_dict.h" /* call xpost_op_any_load operator for convenience */
@@ -960,6 +962,72 @@ int _fillrectgray(Xpost_Context *ctx,
     return 0;
 }
 
+/* Fill a rectangle of a packed-integer rgb device (each row an array
+   of r<<16|g<<8|b). Mirrors PPMIMAGE PutPix handling: each channel
+   scaled by 255 and truncated, coordinates floored, negative extents
+   normalised, inclusive end coordinates, and bounds clipping. The rgb
+   devices render continuous tone, so no halftone cell applies. */
+static
+int _fillrectrgb(Xpost_Context *ctx,
+                 Xpost_Object r,
+                 Xpost_Object g,
+                 Xpost_Object b,
+                 Xpost_Object x,
+                 Xpost_Object y,
+                 Xpost_Object w,
+                 Xpost_Object h,
+                 Xpost_Object devdic)
+{
+    Xpost_Object imgdata, row;
+    double dx, dy, dw, dh;
+    int height, iy, ix, iy0, iy1, ix0, ix1;
+    int packed;
+
+    imgdata = xpost_dict_get(ctx, devdic, nameImgData);
+    if (xpost_object_get_type(imgdata) != arraytype)
+        return undefined;
+    height = imgdata.comp_.sz;
+
+    packed = ((int)((xpost_object_get_type(r) == realtype
+                     ? r.real_.val : (double)r.int_.val) * 255.0) << 16)
+           | ((int)((xpost_object_get_type(g) == realtype
+                     ? g.real_.val : (double)g.int_.val) * 255.0) << 8)
+           |  (int)((xpost_object_get_type(b) == realtype
+                     ? b.real_.val : (double)b.int_.val) * 255.0);
+
+    dx = xpost_object_get_type(x) == realtype ? x.real_.val : (double)x.int_.val;
+    dy = xpost_object_get_type(y) == realtype ? y.real_.val : (double)y.int_.val;
+    dw = xpost_object_get_type(w) == realtype ? w.real_.val : (double)w.int_.val;
+    dh = xpost_object_get_type(h) == realtype ? h.real_.val : (double)h.int_.val;
+
+    /* normalise negative extents, then form inclusive end coords */
+    if (dw < 0) { dw = -dw; dx -= dw; }
+    if (dh < 0) { dh = -dh; dy -= dh; }
+    ix0 = (int)floor(dx);
+    iy0 = (int)floor(dy);
+    ix1 = (int)floor(dx + dw);
+    iy1 = (int)floor(dy + dh);
+
+    /* clip rows to the device */
+    if (iy0 < 0) iy0 = 0;
+    if (iy1 > height - 1) iy1 = height - 1;
+
+    for (iy = iy0; iy <= iy1; iy++)
+    {
+        int width, cx0, cx1;
+        row = xpost_array_get(ctx, imgdata, iy);
+        if (xpost_object_get_type(row) != arraytype)
+            return undefined;
+        width = row.comp_.sz;
+        cx0 = ix0 < 0 ? 0 : ix0;
+        cx1 = ix1 > width - 1 ? width - 1 : ix1;
+        for (ix = cx0; ix <= cx1; ix++)
+            xpost_array_put(ctx, row, ix, xpost_int_cons(packed));
+    }
+
+    return 0;
+}
+
 /* Blend a coverage-weighted pixel for grayscale array-of-strings devices:
    dst += (val - dst) * cov / 255. The text operators use this for glyph
    edge pixels when the device renders anti-aliased text. */
@@ -1038,6 +1106,168 @@ int _blendpixrgb(Xpost_Context *ctx,
     dg += ((sg - dg) * c + 127) / 255;
     db += ((sb - db) * c + 127) / 255;
     xpost_array_put(ctx, row, ix, xpost_int_cons(dr << 16 | dg << 8 | db));
+    return 0;
+}
+
+/* Set every pixel of a packed-integer raster (an array of row arrays)
+   to integer zero. Devices call this once from Create; initialising
+   each element from PostScript costs an interpreter loop per pixel. */
+static
+int _zerorows(Xpost_Context *ctx, Xpost_Object imgdata)
+{
+    int iy, ix;
+
+    for (iy = 0; iy < imgdata.comp_.sz; iy++)
+    {
+        Xpost_Object row = xpost_array_get(ctx, imgdata, iy);
+        if (xpost_object_get_type(row) != arraytype)
+            return typecheck;
+        for (ix = 0; ix < row.comp_.sz; ix++)
+            xpost_array_put(ctx, row, ix, xpost_int_cons(0));
+    }
+    return 0;
+}
+
+/* Write bytes to an emission target, routing through the registered
+   stdout/stderr handler when one has claimed the stream, as the
+   writestring operator does. */
+static
+int _emit_write(Xpost_Context *ctx, Xpost_File *f,
+                const unsigned char *buf, size_t len)
+{
+    FILE *stream = xpost_file_stdio_stream_get(f);
+
+    if (stream == stdout && ctx->stdout_fn)
+        return ctx->stdout_fn(ctx->stdout_user, (const char *)buf, len) == len ? 0 : -1;
+    if (stream == stderr && ctx->stderr_fn)
+        return ctx->stderr_fn(ctx->stderr_user, (const char *)buf, len) == len ? 0 : -1;
+    return xpost_file_write((const char *)buf, 1, (int)len, f) == (int)len ? 0 : -1;
+}
+
+/* Emit a grayscale array-of-strings raster as a binary P4 PBM:
+   header, then each row's bytes thresholded at half coverage (black
+   below 128) and packed most significant bit first. */
+static
+int _writepbmrows(Xpost_Context *ctx,
+                  Xpost_Object imgdata,
+                  Xpost_Object F)
+{
+    Xpost_File *f;
+    Xpost_Object row;
+    unsigned char *buf;
+    char head[32];
+    int width, height, rb, iy, ix, hn;
+
+    if (!xpost_file_get_status(ctx->lo, F))
+        return ioerror;
+    if (!xpost_object_is_writeable(ctx, F))
+        return invalidaccess;
+    f = xpost_file_get_file_pointer(ctx->lo, F);
+
+    height = imgdata.comp_.sz;
+    if (height == 0)
+        return rangecheck;
+    row = xpost_array_get(ctx, imgdata, 0);
+    if (xpost_object_get_type(row) != stringtype)
+        return typecheck;
+    width = row.comp_.sz;
+    rb = (width + 7) / 8;
+
+    hn = snprintf(head, sizeof head, "P4\n%d %d\n", width, height);
+    if (_emit_write(ctx, f, (unsigned char *)head, (size_t)hn) < 0)
+        return ioerror;
+
+    buf = malloc((size_t)rb);
+    if (!buf)
+        return VMerror;
+    for (iy = 0; iy < height; iy++)
+    {
+        const unsigned char *p;
+
+        row = xpost_array_get(ctx, imgdata, iy);
+        if (xpost_object_get_type(row) != stringtype
+            || row.comp_.sz != width)
+        {
+            free(buf);
+            return typecheck;
+        }
+        p = (unsigned char *)xpost_string_get_pointer(ctx, row);
+        memset(buf, 0, (size_t)rb);
+        for (ix = 0; ix < width; ix++)
+            if (p[ix] < 128)
+                buf[ix / 8] |= 0x80 >> (ix % 8);
+        if (_emit_write(ctx, f, buf, (size_t)rb) < 0)
+        {
+            free(buf);
+            return ioerror;
+        }
+    }
+    free(buf);
+    return 0;
+}
+
+/* Emit a packed-integer rgb raster as a binary P6 PPM: header, then
+   three bytes per pixel unpacked from each row's r<<16|g<<8|b
+   integers. Emitting from PostScript costs several string operations
+   per pixel, which dominates page output time. */
+static
+int _writeppmrows(Xpost_Context *ctx,
+                  Xpost_Object imgdata,
+                  Xpost_Object F)
+{
+    Xpost_File *f;
+    Xpost_Object row;
+    unsigned char *buf;
+    char head[32];
+    int width, height, iy, ix, hn;
+
+    if (!xpost_file_get_status(ctx->lo, F))
+        return ioerror;
+    if (!xpost_object_is_writeable(ctx, F))
+        return invalidaccess;
+    f = xpost_file_get_file_pointer(ctx->lo, F);
+
+    height = imgdata.comp_.sz;
+    if (height == 0)
+        return rangecheck;
+    row = xpost_array_get(ctx, imgdata, 0);
+    if (xpost_object_get_type(row) != arraytype)
+        return typecheck;
+    width = row.comp_.sz;
+
+    hn = snprintf(head, sizeof head, "P6\n%d %d\n255\n", width, height);
+    if (_emit_write(ctx, f, (unsigned char *)head, (size_t)hn) < 0)
+        return ioerror;
+
+    buf = malloc((size_t)width * 3);
+    if (!buf)
+        return VMerror;
+    for (iy = 0; iy < height; iy++)
+    {
+        row = xpost_array_get(ctx, imgdata, iy);
+        if (xpost_object_get_type(row) != arraytype
+            || row.comp_.sz != width)
+        {
+            free(buf);
+            return typecheck;
+        }
+        for (ix = 0; ix < width; ix++)
+        {
+            Xpost_Object pix = xpost_array_get(ctx, row, ix);
+            int packed = xpost_object_get_type(pix) == integertype
+                       ? pix.int_.val : 0;
+
+            buf[ix * 3]     = (unsigned char)((packed >> 16) & 0xff);
+            buf[ix * 3 + 1] = (unsigned char)((packed >> 8) & 0xff);
+            buf[ix * 3 + 2] = (unsigned char)(packed & 0xff);
+        }
+        if (_emit_write(ctx, f, buf, (size_t)width * 3) < 0)
+        {
+            free(buf);
+            return ioerror;
+        }
+    }
+    free(buf);
     return 0;
 }
 
@@ -2188,6 +2418,14 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
             numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".blendpixgray", (Xpost_Op_Func)_blendpixgray, 0, 5,
             numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".fillrectrgb", (Xpost_Op_Func)_fillrectrgb, 0, 8,
+                             numbertype, numbertype, numbertype, numbertype,
+                             numbertype, numbertype, numbertype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".zerorows", (Xpost_Op_Func)_zerorows, 0, 1, arraytype); INSTALL;
+    op = xpost_operator_cons(ctx, ".writeppmrows", (Xpost_Op_Func)_writeppmrows, 0, 2,
+                             arraytype, filetype); INSTALL;
+    op = xpost_operator_cons(ctx, ".writepbmrows", (Xpost_Op_Func)_writepbmrows, 0, 2,
+                             arraytype, filetype); INSTALL;
     op = xpost_operator_cons(ctx, ".blendpixrgb", (Xpost_Op_Func)_blendpixrgb, 0, 7,
             numbertype, numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".flatecompress", (Xpost_Op_Func)_flatecompress, 2, 1, arraytype); INSTALL;

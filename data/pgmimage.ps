@@ -396,33 +396,17 @@ DATA_DIR(/qsort.ps)strcat run
 
     end } %FillPoly
 
-    /.printpgm { % dump PGM format to stdout
-        (P2\n)=only
-        dup 0 get length =only %w
-        ( )=only
-        dup length =only %h
-        (\n)=only
-        (255\n)=only %max
-        {{=only( )=only}forall(\n)=only}forall %data
-        (\n)=only
-    }
 
-    /.writepgm { % img (filename)
+    % raw (binary) format: each row string is already the raster bytes
+    /.writepgm { % img file
         2 dict begin
         {/f /a}{exch def}forall
-        f (P2\n) writestring
+        f (P5\n) writestring
         f a 0 get length =string cvs writestring
         f ( ) writestring
         f a length =string cvs writestring
         f (\n255\n) writestring
-        a {
-            {
-                =string cvs dup length exch
-                    f exch writestring
-                    neg 4 add { f ( ) writestring } repeat
-            } forall
-            f (\n) writestring
-        } forall
+        a { f exch writestring } forall
         f (%stdout)(w)file ne {
             f closefile
         } if
