@@ -532,10 +532,19 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
                 --es_top->top; \
                 if (es_top->top == 0 && \
                     (unsigned char *)es_top != ctx->lo->base + ctx->es) \
+                { \
+                    /* the drop can retreat the top segment: the cached \
+                       pointer must follow, or a later slot write lands \
+                       above the live top and is silently lost */ \
                     es_root->prevseg = es_top->prevseg; \
+                    es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg); \
+                } \
             } \
             else \
+            { \
                 (void)xpost_stack_pop(ctx->lo, ctx->es); \
+                es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg); \
+            } \
             have_tail = 0; \
         } \
     } while (0)

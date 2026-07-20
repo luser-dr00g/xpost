@@ -963,6 +963,33 @@ countink 100 ge (the cached glyph still lands on the raster) assert
 2 44 moveto (AA) show
 T3Count 1 eq (later shows replay from the cache) assert
 
+% A cache replay defers one paint call per glyph pixel through the
+% execution stack: a big glyph walks it across a segment boundary,
+% where a device method ending in a conditional once lost its
+% parked continuation (the bilevel device's screening PutPix)
+/DEV4 64 64 newPBMIMAGEdevice def
+DEV4 begin
+    /defaultmatrix [ 1 0 0 -1 0 64 ] def
+    /FillPoly /.fillpoly load def
+    /FillRect /.fillrectgray load def
+end
+graphicsdict /currgstate get /device DEV4 put
+matrix setmatrix
+0 setgray
+/T3CacheFont findfont 64 scalefont setfont
+4 6 moveto (A) show      % build and capture
+4 6 moveto (A) show      % replay through the deferred queue
+/t3big.ink 0 def
+0 1 63 { /yy exch def 0 1 63 { /xx exch def
+    xx yy DEV4 dup /GetPix get exec 128 lt {
+        /t3big.ink t3big.ink 1 add def
+    } if
+} for } for
+t3big.ink 1000 gt
+(a big cached glyph replays intact across an exec segment boundary) assert
+graphicsdict /currgstate get /device DEV put
+initgraphics
+
 basefont null ne {
     % the glyph cache fills on first rendering and replays after:
     % a repeat show adds no entries, and the raster is unchanged
