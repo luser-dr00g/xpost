@@ -61,6 +61,283 @@ static FcConfig *_xpost_font_fc_config = NULL;
 static FT_Library _xpost_font_ft_library = NULL;
 #endif
 
+/* The glyph cache: rendered glyph rasters keyed by their full
+   rendering inputs -- the face (or, for glyphs painted by procedure,
+   the font), the glyph selector, and the exact fixed-point transform
+   and base size in force -- so a hit replays the very bytes a fresh
+   rasterization would produce. Entries link into a recency list and
+   hash by key; the store answers cachestatus and honours the byte
+   ceiling of setcachelimit, glyphs above it rendering uncached. */
+
+#define GCACHE_BUCKETS 512
+
+typedef struct Xpost_Glyph_Entry
+{
+    const void *k1;            /* face, or the procedure font's key */
+    unsigned long k2;          /* glyph index or character selector */
+    long m[4];                 /* the 16.16 transform in force */
+    long size;                 /* the base size the face serves */
+    unsigned char *bits;
+    int rows, width, pitch;
+    char pixel_mode;
+    int left, top;
+    long advance_x, advance_y;
+    size_t bytes;
+    struct Xpost_Glyph_Entry *hnext;
+    struct Xpost_Glyph_Entry *lprev, *lnext; /* recency list */
+} Xpost_Glyph_Entry;
+
+static Xpost_Glyph_Entry *gcache_hash[GCACHE_BUCKETS];
+static Xpost_Glyph_Entry *gcache_head = NULL, *gcache_tail = NULL;
+static long gcache_bsize = 0;     /* bytes held */
+static long gcache_csize = 0;     /* glyphs held */
+static long gcache_bmax = 1048576;
+static long gcache_cmax = 4096;
+static long gcache_mmax = 4096;
+static long gcache_blimit = 32768;
+
+/* the transform and size in force per live face, recorded as they
+   are installed: together with the glyph index they key the cache */
+#define GCACHE_FACES 64
+static struct { const void *face; long m[4]; long size; }
+    gcache_state[GCACHE_FACES];
+static int gcache_nstate = 0;
+
+static const Xpost_Glyph_Entry *gcache_serving = NULL;
+
+static unsigned int
+gcache_hashkey(const void *k1, unsigned long k2, const long m[4], long size)
+{
+    unsigned long h = (unsigned long)(size_t)k1;
+
+    h = h * 31 + k2;
+    h = h * 31 + (unsigned long)m[0];
+    h = h * 31 + (unsigned long)m[1];
+    h = h * 31 + (unsigned long)m[2];
+    h = h * 31 + (unsigned long)m[3];
+    h = h * 31 + (unsigned long)size;
+    return (unsigned int)(h % GCACHE_BUCKETS);
+}
+
+static void
+gcache_state_set(const void *face, const long *m, const long *size)
+{
+    int i, slot = -1;
+
+    for (i = 0; i < gcache_nstate; i++)
+        if (gcache_state[i].face == face)
+            { slot = i; break; }
+    if (slot < 0)
+    {
+        if (gcache_nstate < GCACHE_FACES)
+            slot = gcache_nstate++;
+        else
+            slot = 0;
+        gcache_state[slot].face = face;
+        gcache_state[slot].m[0] = 65536; gcache_state[slot].m[1] = 0;
+        gcache_state[slot].m[2] = 0;     gcache_state[slot].m[3] = 65536;
+        gcache_state[slot].size = 0;
+    }
+    if (m)
+        memcpy(gcache_state[slot].m, m, 4 * sizeof(long));
+    if (size)
+        gcache_state[slot].size = *size;
+}
+
+static int
+gcache_state_get(const void *face, long m[4], long *size)
+{
+    int i;
+
+    for (i = 0; i < gcache_nstate; i++)
+        if (gcache_state[i].face == face)
+        {
+            memcpy(m, gcache_state[i].m, 4 * sizeof(long));
+            *size = gcache_state[i].size;
+            return 1;
+        }
+    m[0] = 65536; m[1] = 0; m[2] = 0; m[3] = 65536;
+    *size = 0;
+    return 0;
+}
+
+static Xpost_Glyph_Entry *
+gcache_find(const void *k1, unsigned long k2, const long m[4], long size)
+{
+    Xpost_Glyph_Entry *e;
+
+    for (e = gcache_hash[gcache_hashkey(k1, k2, m, size)]; e; e = e->hnext)
+        if (e->k1 == k1 && e->k2 == k2 && e->size == size
+         && e->m[0] == m[0] && e->m[1] == m[1]
+         && e->m[2] == m[2] && e->m[3] == m[3])
+            return e;
+    return NULL;
+}
+
+static void
+gcache_bump(Xpost_Glyph_Entry *e)
+{
+    if (gcache_head == e)
+        return;
+    if (e->lprev) e->lprev->lnext = e->lnext;
+    if (e->lnext) e->lnext->lprev = e->lprev;
+    if (gcache_tail == e) gcache_tail = e->lprev;
+    e->lprev = NULL;
+    e->lnext = gcache_head;
+    if (gcache_head) gcache_head->lprev = e;
+    gcache_head = e;
+    if (!gcache_tail) gcache_tail = e;
+}
+
+static void
+gcache_drop(Xpost_Glyph_Entry *e)
+{
+    Xpost_Glyph_Entry **pp =
+        &gcache_hash[gcache_hashkey(e->k1, e->k2, e->m, e->size)];
+
+    while (*pp && *pp != e)
+        pp = &(*pp)->hnext;
+    if (*pp)
+        *pp = e->hnext;
+    if (e->lprev) e->lprev->lnext = e->lnext;
+    if (e->lnext) e->lnext->lprev = e->lprev;
+    if (gcache_head == e) gcache_head = e->lnext;
+    if (gcache_tail == e) gcache_tail = e->lprev;
+    gcache_bsize -= (long)e->bytes;
+    gcache_csize--;
+    if (gcache_serving == e)
+        gcache_serving = NULL;
+    free(e->bits);
+    free(e);
+}
+
+static Xpost_Glyph_Entry *
+gcache_insert(const void *k1, unsigned long k2, const long m[4], long size,
+              const unsigned char *bits, int rows, int width, int pitch,
+              char pixel_mode, int left, int top,
+              long advance_x, long advance_y)
+{
+    size_t bytes = (size_t)(pitch < 0 ? -pitch : pitch) * (size_t)rows;
+    Xpost_Glyph_Entry *e;
+    unsigned int b;
+
+    if (bytes == 0 || (long)bytes > gcache_blimit)
+        return NULL;
+    e = calloc(1, sizeof *e);
+    if (!e)
+        return NULL;
+    e->bits = malloc(bytes);
+    if (!e->bits)
+    {
+        free(e);
+        return NULL;
+    }
+    memcpy(e->bits, bits, bytes);
+    e->k1 = k1; e->k2 = k2;
+    memcpy(e->m, m, 4 * sizeof(long));
+    e->size = size;
+    e->rows = rows; e->width = width; e->pitch = pitch;
+    e->pixel_mode = pixel_mode;
+    e->left = left; e->top = top;
+    e->advance_x = advance_x; e->advance_y = advance_y;
+    e->bytes = bytes;
+    b = gcache_hashkey(k1, k2, m, size);
+    e->hnext = gcache_hash[b];
+    gcache_hash[b] = e;
+    e->lnext = gcache_head;
+    if (gcache_head) gcache_head->lprev = e;
+    gcache_head = e;
+    if (!gcache_tail) gcache_tail = e;
+    gcache_bsize += (long)bytes;
+    gcache_csize++;
+    while ((gcache_bsize > gcache_bmax || gcache_csize > gcache_cmax)
+           && gcache_tail && gcache_tail != e)
+        gcache_drop(gcache_tail);
+    return e;
+}
+
+void
+xpost_font_cache_status(long *bsize, long *bmax, long *msize, long *mmax,
+                        long *csize, long *cmax, long *blimit)
+{
+    const Xpost_Glyph_Entry *e, *f;
+    long combos = 0;
+
+    /* distinct face-and-transform combinations held */
+    for (e = gcache_head; e; e = e->lnext)
+    {
+        for (f = gcache_head; f != e; f = f->lnext)
+            if (f->k1 == e->k1 && f->size == e->size
+             && f->m[0] == e->m[0] && f->m[1] == e->m[1]
+             && f->m[2] == e->m[2] && f->m[3] == e->m[3])
+                break;
+        if (f == e)
+            combos++;
+    }
+    *bsize = gcache_bsize; *bmax = gcache_bmax;
+    *msize = combos;       *mmax = gcache_mmax;
+    *csize = gcache_csize; *cmax = gcache_cmax;
+    *blimit = gcache_blimit;
+}
+
+void
+xpost_font_cache_setlimit(long blimit)
+{
+    if (blimit >= 0)
+        gcache_blimit = blimit;
+}
+
+void
+xpost_font_cache_setparams(long bmax, long lower, long upper)
+{
+    (void)lower;   /* the compression threshold: rasters stay flat */
+    if (bmax > 0)
+        gcache_bmax = bmax;
+    if (upper > 0)
+        gcache_blimit = upper;
+    while ((gcache_bsize > gcache_bmax || gcache_csize > gcache_cmax)
+           && gcache_tail)
+        gcache_drop(gcache_tail);
+}
+
+int
+xpost_font_cache_lookup_bits(const void *k1, unsigned long k2,
+                             const long m[4], long size,
+                             unsigned char **bits, int *rows, int *width,
+                             int *pitch, int *left, int *top,
+                             long *advance_x, long *advance_y)
+{
+    Xpost_Glyph_Entry *e = gcache_find(k1, k2, m, size);
+
+    if (!e)
+        return 0;
+    gcache_bump(e);
+    *bits = e->bits;
+    *rows = e->rows; *width = e->width; *pitch = e->pitch;
+    *left = e->left; *top = e->top;
+    *advance_x = e->advance_x; *advance_y = e->advance_y;
+    return 1;
+}
+
+int
+xpost_font_cache_insert_bits(const void *k1, unsigned long k2,
+                             const long m[4], long size,
+                             const unsigned char *bits, int rows, int width,
+                             int pitch, int left, int top,
+                             long advance_x, long advance_y)
+{
+    return gcache_insert(k1, k2, m, size, bits, rows, width, pitch,
+                         8 /* gray */, left, top, advance_x, advance_y)
+           != NULL;
+}
+
+static void
+gcache_clear(void)
+{
+    while (gcache_tail)
+        gcache_drop(gcache_tail);
+}
+
 int
 xpost_font_init(void)
 {
@@ -103,6 +380,7 @@ xpost_font_quit(void)
 #endif
 
 #ifdef HAVE_FREETYPE2
+    gcache_clear();
     FT_Done_FreeType(_xpost_font_ft_library);
 #endif
 }
@@ -365,8 +643,22 @@ void
 xpost_font_face_free(void *face)
 {
 #ifdef HAVE_FREETYPE2
+    Xpost_Glyph_Entry *e, *next;
+    int i;
+
     if (!face)
         return;
+
+    /* the address may be reissued: no stale rasters may answer it */
+    for (e = gcache_head; e; e = next)
+    {
+        next = e->lnext;
+        if (e->k1 == face)
+            gcache_drop(e);
+    }
+    for (i = 0; i < gcache_nstate; i++)
+        if (gcache_state[i].face == face)
+            gcache_state[i].face = NULL;
 
     FT_Done_Face(face);
 #else
@@ -409,12 +701,22 @@ xpost_font_face_scale(void *face, real scale)
             (FT_Long)(base * 64.0 * 65536.0 / f->units_per_EM + 0.5);
         req.horiResolution = 0;
         req.vertResolution = 0;
-        if (FT_Request_Size(f, &req) == 0)
+        if (FT_Request_Size(f, &req) == 0
+         || FT_Set_Char_Size(f, 0, (FT_F26Dot6)(base * 64 + 0.5),
+                             72, 72) == 0)
+        {
+            long sz = (long)(base * 64.0 + 0.5);
+
+            gcache_state_set(face, NULL, &sz);
             return base;
-        if (FT_Set_Char_Size(f, 0, (FT_F26Dot6)(base * 64 + 0.5), 72, 72) == 0)
-            return base;
+        }
     }
     FT_Set_Char_Size(f, 0, (FT_F26Dot6)(scale * 64 + 0.5), 72, 72);
+    {
+        long sz = (long)(scale * 64.0 + 0.5);
+
+        gcache_state_set(face, NULL, &sz);
+    }
     return scale;
 #else
     (void)face;
@@ -436,6 +738,13 @@ xpost_font_face_transform(void *face, float *mat)
     //pen.x = (FT_F26Dot6)(mat[4] * 64.0);
     //pen.y = (FT_F26Dot6)(mat[5] * 64.0);
     FT_Set_Transform((FT_Face)face, &matrix, 0);
+    {
+        long m[4];
+
+        m[0] = (long)matrix.xx; m[1] = (long)matrix.xy;
+        m[2] = (long)matrix.yx; m[3] = (long)matrix.yy;
+        gcache_state_set(face, m, NULL);
+    }
 #else
     (void)face;
     (void)mat;
@@ -950,6 +1259,18 @@ xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
 {
 #ifdef HAVE_FREETYPE2
     FT_Error err;
+    long m[4], size;
+
+    /* a cached raster stands in for the rasterization whole: the key
+       carries every input the rasterizer would see, so the replay is
+       the same bytes */
+    gcache_state_get(face, m, &size);
+    gcache_serving = gcache_find(face, glyph_index, m, size);
+    if (gcache_serving)
+    {
+        gcache_bump((Xpost_Glyph_Entry *)gcache_serving);
+        return 1;
+    }
 
     err = FT_Load_Glyph(face, glyph_index, FT_LOAD_FORCE_AUTOHINT);
     if (!err)
@@ -957,16 +1278,28 @@ xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
         if (((FT_Face)face)->glyph->format != FT_GLYPH_FORMAT_BITMAP)
         {
             err = FT_Render_Glyph(((FT_Face)face)->glyph, FT_RENDER_MODE_NORMAL);
-            if (!err)
-                return 1;
-            else
+            if (err)
             {
                 XPOST_LOG_ERR("Can not render  non bitmap glyph (error : %d)", err);
                 return 0;
             }
         }
-        else
-            return 1;
+        {
+            FT_GlyphSlot slot = ((FT_Face)face)->glyph;
+            long ax, ay;
+
+            _glyph_linear_advance((FT_Face)face, &ax, &ay);
+            gcache_serving = gcache_insert(face, glyph_index, m, size,
+                                           slot->bitmap.buffer,
+                                           (int)slot->bitmap.rows,
+                                           (int)slot->bitmap.width,
+                                           slot->bitmap.pitch,
+                                           (char)slot->bitmap.pixel_mode,
+                                           slot->bitmap_left,
+                                           slot->bitmap_top,
+                                           ax, ay);
+        }
+        return 1;
     }
     else
     {
@@ -978,14 +1311,25 @@ xpost_font_face_glyph_render(void *face, unsigned int glyph_index)
     (void)glyph_index;
     return 0;
 #endif
-
-    return 0;
 }
 
 void
 xpost_font_face_glyph_buffer_get(void *face, unsigned char **buffer, int *rows, int *width, int *pitch, char *pixel_mode, int *left, int *top, long *advance_x, long *advance_y)
 {
 #ifdef HAVE_FREETYPE2
+    if (gcache_serving)
+    {
+        *buffer = gcache_serving->bits;
+        *rows = gcache_serving->rows;
+        *width = gcache_serving->width;
+        *pitch = gcache_serving->pitch;
+        *pixel_mode = gcache_serving->pixel_mode;
+        *left = gcache_serving->left;
+        *top = gcache_serving->top;
+        *advance_x = gcache_serving->advance_x;
+        *advance_y = gcache_serving->advance_y;
+        return;
+    }
     *buffer = ((FT_Face)face)->glyph->bitmap.buffer;
     *rows = ((FT_Face)face)->glyph->bitmap.rows;
     *width = ((FT_Face)face)->glyph->bitmap.width;

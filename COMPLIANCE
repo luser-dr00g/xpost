@@ -42,7 +42,7 @@ Level 1 operators
  [/] Type-3 Fonts (setcachedevice records metrics only; repeated
      stencil masks replay from a run cache; bitmap glyphs blend
      their edges where the device blends text)
- [ ] font data caching
+ [X] font data caching
  [X] definefont for modified font properties (matrix, encoding, etc.)
  [/] base font CharStrings (keys enumerable; values are glyph indices,
      not charstring procedures)
@@ -247,8 +247,8 @@ Level 1 operators
  [X] version
  [X] eexec
  [X] internaldict (empty but for what programs deposit)
- [X] cachestatus (nominal figures)
- [X] setcachelimit (accepted)
+ [X] cachestatus
+ [X] setcachelimit
 
 Level 2 operators
 -----------------
@@ -317,7 +317,7 @@ Level 2 operators
  [X] rootfont
  [X] startjob (job boundaries accepted; no VM encapsulation)
  [X] setcachedevice2 (reduces to setcachedevice)
- [X] setcacheparams, currentcacheparams (accepted; nominal figures)
+ [X] setcacheparams, currentcacheparams
  [X] user paths (upath, uappend, ufill, ueofill, ustroke,
      ustrokepath, setbbox; ucache is accepted, nothing is cached)
  [ ] insideness testing (infill, ineofill, instroke, inufill,

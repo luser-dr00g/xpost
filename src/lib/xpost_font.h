@@ -242,6 +242,25 @@ int xpost_font_face_glyph_outline(void *face, unsigned int glyph_index, const Xp
  */
 int xpost_font_face_glyph_render(void *face, unsigned int glyph_index);
 
+/* the glyph cache behind the rendering pair: status and limits for
+   the cache operators, and keyed raster entry points for glyphs
+   painted by procedure rather than by face */
+void xpost_font_cache_status(long *bsize, long *bmax, long *msize,
+                             long *mmax, long *csize, long *cmax,
+                             long *blimit);
+void xpost_font_cache_setlimit(long blimit);
+void xpost_font_cache_setparams(long bmax, long lower, long upper);
+int xpost_font_cache_lookup_bits(const void *k1, unsigned long k2,
+                                 const long m[4], long size,
+                                 unsigned char **bits, int *rows, int *width,
+                                 int *pitch, int *left, int *top,
+                                 long *advance_x, long *advance_y);
+int xpost_font_cache_insert_bits(const void *k1, unsigned long k2,
+                                 const long m[4], long size,
+                                 const unsigned char *bits, int rows,
+                                 int width, int pitch, int left, int top,
+                                 long advance_x, long advance_y);
+
 /**
  * @brief Report a glyph outline's ink extent and advance without
  * rasterizing, in 26.6 glyph space (y-up around the pen).

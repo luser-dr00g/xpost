@@ -621,12 +621,40 @@
     pop pop pop pop setcachedevice
 } def
 
-% the glyph cache the language describes is not a resource under
-% program control here: the status answers are nominal
-/cachestatus { 0 32768 0 4096 0 512 32768 } def
-/setcachelimit { pop } def
-/setcacheparams { cleartomark } def
-/currentcacheparams { mark 32768 4 32768 } def
+% the glyph cache: rendered rasters replay across shows, and the
+% operators read and set the store itself
+/cachestatus { .cachestatus } def
+/setcachelimit {
+    dup type /integertype ne { cvi } if .setcachelimit
+} def
+% mark [size [lower]] upper  setcacheparams  -
+% the interpreter takes the operands it knows from the top and
+% ignores any deeper ones
+/setcacheparams {
+    counttomark 3 ge {
+        3 dict begin
+        /up exch cvi def /lo exch cvi def /sz exch cvi def
+        sz lo up .setcacheparams
+        end
+    }{ counttomark 2 eq {
+        3 dict begin
+        /up exch cvi def /lo exch cvi def
+        0 lo up .setcacheparams
+        end
+    }{ counttomark 1 eq {
+        cvi 0 exch 0 exch .setcacheparams
+    } if } ifelse } ifelse
+    cleartomark
+} def
+/currentcacheparams {
+    % of the seven status figures, report bmax, a nominal lower
+    % threshold, and the per-glyph ceiling
+    2 dict begin
+    mark cachestatus
+    /bl exch def pop pop pop pop
+    exch pop 4 bl
+    end
+} def
 /setucacheparams { cleartomark } def
 /ucachestatus { mark 0 32768 0 4096 32768 } def
 

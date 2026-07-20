@@ -880,9 +880,22 @@ grestore
 } if
 
 basefont null ne {
-    % anti-aliased by default: glyph edges blend, cores stay solid
+    % the glyph cache fills on first rendering and replays after:
+    % a repeat show adds no entries, and the raster is unchanged
+    /gc.pre cachestatus 7 array astore def
     erasepage
     basefont 20 scalefont setfont
+    2 24 moveto (Ag) show
+    /gc.mid cachestatus 7 array astore def
+    gc.mid 4 get gc.pre 4 get gt (a show fills the glyph cache) assert
+    gc.mid 0 get gc.pre 0 get gt (cached glyphs account their bytes) assert
+    erasepage
+    2 24 moveto (Ag) show
+    cachestatus 7 array astore 4 get gc.mid 4 get eq
+    (a repeat show replays from the cache) assert
+
+    % anti-aliased by default: glyph edges blend, cores stay solid
+    erasepage
     2 24 moveto (Ag) show
     countink 10 ge (text marks pixels) assert
     countmid 0 gt (text blends its glyph edges by default) assert

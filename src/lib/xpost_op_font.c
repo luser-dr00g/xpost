@@ -2945,6 +2945,54 @@ int _stringoutline(Xpost_Context *ctx,
     return 0;
 }
 
+/* -  .cachestatus  bsize bmax msize mmax csize cmax blimit
+   the glyph cache's actual figures */
+static
+int _zcachestatus(Xpost_Context *ctx)
+{
+    long v[7];
+
+    xpost_font_cache_status(&v[0], &v[1], &v[2], &v[3], &v[4], &v[5], &v[6]);
+    {
+        int i;
+
+        for (i = 0; i < 7; i++)
+            if (!xpost_stack_push(ctx->lo, ctx->os,
+                                  xpost_int_cons((integer)v[i])))
+                return stackoverflow;
+    }
+    return 0;
+}
+
+/* num  .setcachelimit  -
+   the byte ceiling above which a glyph renders uncached */
+static
+int _zsetcachelimit(Xpost_Context *ctx, Xpost_Object n)
+{
+    (void)ctx;
+    if (n.int_.val < 0)
+        return rangecheck;
+    xpost_font_cache_setlimit((long)n.int_.val);
+    return 0;
+}
+
+/* size lower upper  .setcacheparams  -
+   the cache's byte capacity and per-glyph ceiling; the middle
+   operand, a compression threshold, is accepted and recorded nowhere
+   since rasters stay flat */
+static
+int _zsetcacheparams(Xpost_Context *ctx,
+                     Xpost_Object size,
+                     Xpost_Object lower,
+                     Xpost_Object upper)
+{
+    (void)ctx;
+    xpost_font_cache_setparams((long)size.int_.val,
+                               (long)lower.int_.val,
+                               (long)upper.int_.val);
+    return 0;
+}
+
 int xpost_oper_init_font_ops(Xpost_Context *ctx,
                              Xpost_Object sd)
 {
@@ -2994,6 +3042,13 @@ int xpost_oper_init_font_ops(Xpost_Context *ctx,
     op = xpost_operator_cons(ctx, "stringwidth", (Xpost_Op_Func)_stringwidth, 2, 1, stringtype);
     INSTALL;
     op = xpost_operator_cons(ctx, ".stringoutline", (Xpost_Op_Func)_stringoutline, 1, 1, stringtype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".cachestatus", (Xpost_Op_Func)_zcachestatus, 7, 0);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".setcachelimit", (Xpost_Op_Func)_zsetcachelimit, 0, 1, integertype);
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".setcacheparams", (Xpost_Op_Func)_zsetcacheparams, 0, 3,
+        integertype, integertype, integertype);
     INSTALL;
 
     /* xpost_dict_dump_memory (ctx->gl, sd); fflush(NULL);
