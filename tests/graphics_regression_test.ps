@@ -2110,6 +2110,62 @@ DEV2 /ImgData get .zerorows
 graphicsdict /currgstate get /device DEV put
 initgraphics
 
+% Byte-mapped composite fonts: each mapping hands the declared
+% descendant the right code, shown by the descendants' distinct
+% advances and by the codes cshow reports
+/FmA << /FontType 3 /FontMatrix matrix /FontBBox [0 0 0 0]
+  /Encoding 256 array 0 1 255 { 1 index exch /.notdef put } for
+  /BuildChar { pop pop 7 0 setcharwidth } bind
+>> definefont pop
+/FmB << /FontType 3 /FontMatrix matrix /FontBBox [0 0 0 0]
+  /Encoding 256 array 0 1 255 { 1 index exch /.notdef put } for
+  /BuildChar { pop pop 11 0 setcharwidth } bind
+>> definefont pop
+/fm.desc [ /FmA findfont /FmB findfont ] def
+/fm.w { % string composite . wx
+    findfont setfont stringwidth pop
+} def
+/Fm2 << /FontType 0 /FMapType 2 /FontMatrix matrix
+        /Encoding [0 1] /FDepVector fm.desc >> definefont pop
+<0041 0141> /Fm2 fm.w 18 (an 8/8 code selects by its first byte) assertnear
+/Fm4 << /FontType 0 /FMapType 4 /FontMatrix matrix
+        /Encoding [0 1] /FDepVector fm.desc >> definefont pop
+<41 C1> /Fm4 fm.w 18 (a 1/7 code selects by its top bit) assertnear
+/Fm5 << /FontType 0 /FMapType 5 /FontMatrix matrix
+        /Encoding [0 1] /FDepVector fm.desc >> definefont pop
+<0041 00C1> /Fm5 fm.w 18 (a 9/7 code selects by its top nine bits) assertnear
+/Fm6 << /FontType 0 /FMapType 6 /FontMatrix matrix /SubsVector <003497>
+        /Encoding [0 1 0] /FDepVector fm.desc >> definefont pop
+<33 41> /Fm6 fm.w 18 (SubsVector codes select by their range) assertnear
+<CB> /Fm6 fm.w 7 (a code past every range lands one font beyond) assertnear
+% cshow reports the decoded codes with the descendant's widths
+/Fm2 findfont setfont
+mark { pop exch } <0041 0142> cshow ]
+dup length 4 eq
+1 index 1 get 65 eq and
+1 index 3 get 66 eq and
+1 index 0 get 7 sub abs 0.01 lt and
+exch 2 get 11 sub abs 0.01 lt and
+(cshow reports byte-mapped codes and widths) assert
+% the modal mappings: an escape or shift selects for what follows,
+% and the selection resets at each show operation
+/Fm3 << /FontType 0 /FMapType 3 /FontMatrix matrix /EscChar 255
+        /Encoding [0 1] /FDepVector fm.desc >> definefont pop
+<41 FF01 42 43> /Fm3 fm.w 29 (an escape selects for the rest) assertnear
+<41 42> /Fm3 fm.w 14 (the selection resets between shows) assertnear
+<FF01 41 FF00 42> /Fm3 fm.w 18 (escapes switch back and forth) assertnear
+/fm.e300 300 array 0 1 299 { 1 index exch 0 put } for
+    dup 257 1 put def
+/Fm7 << /FontType 0 /FMapType 7 /FontMatrix matrix /EscChar 255
+        /Encoding fm.e300 /FDepVector fm.desc >> definefont pop
+<FFFF01 41 42> /Fm7 fm.w 22 (a doubled escape reaches past 255) assertnear
+/Fm8 << /FontType 0 /FMapType 8 /FontMatrix matrix
+        /Encoding [0 1] /FDepVector fm.desc >> definefont pop
+<41 0E 42 43 0F 44> /Fm8 fm.w 36 (shift bytes toggle the two fonts) assertnear
+% stringwidth needs no currentpoint of its own
+newpath
+<41> /Fm4 fm.w 7 (stringwidth measures without a currentpoint) assertnear
+
 % a font dictionary's entries carry the attributes a program reads:
 % the matrix is data, the bounding box answers executable as the
 % reference interpreters do, and the encoding is data

@@ -333,10 +333,12 @@ Level 3 operators
 -----------------
 
  [X] shfill (sampled functions at byte depths)
- [/] composite fonts (Type 0 FMapType 9 through composefont; CIDFont
-     descendants of CIDFontType 2, incremental GlyphDirectory
-     delivery, and CIDFontType 0, charstrings through StartData;
-     cshow rebinds the composite to one-byte codes)
+ [X] composite fonts (FMapTypes 2 through 8 over any descendants,
+     and FMapType 9 through composefont with CIDFont descendants of
+     CIDFontType 2, incremental GlyphDirectory delivery, and
+     CIDFontType 0, charstrings through StartData; escapes select
+     within one modal level; cshow rebinds a CMap composite to
+     one-byte codes)
  [X] clipsave
  [X] cliprestore
  [X] setsmoothness, currentsmoothness (recorded only)

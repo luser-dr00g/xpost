@@ -544,7 +544,11 @@
 /.glyphbytes { % str p -> w
     graphicsdict /currgstate get /currfont get
     dup /FontType get 0 eq {
-        /CMap get .cmapnext exch pop
+        dup /FMapType get 9 eq {
+            /CMap get .cmapnext exch pop
+        }{
+            0 .fmapnext 3 1 roll pop pop
+        } ifelse
     }{
         pop pop pop 1
     } ifelse
@@ -610,14 +614,14 @@
     graphicsdict /currgstate get /currfont get
     dup /FontType get dup 3 eq exch 0 eq or not { pop //stringwidth }{
     pop
+    % the measurement needs no currentpoint of its own: the string
+    % shows from the origin on the null device and the point it
+    % reaches is the advance
     gsave
         nulldevice
-        currentpoint 3 2 roll
+        0 0 moveto
         show
-        currentpoint % x0 y0 x1 y1
-        3 2 roll sub % x0 x1 y1-y0
-        3 1 roll exch sub % y1-y0 x1-x0
-        exch
+        currentpoint
     grestore
     } ifelse
 } def

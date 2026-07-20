@@ -209,13 +209,148 @@ currentdict /c undef
     end
 } def
 
+% str p fnt fidx0  .fmapnext  fidx code w
+% decode one character of a byte-mapped composite font: the font
+% selector, the code for the selected font, and the bytes consumed.
+% 8/8 splits two bytes, 1/7 and 9/7 split the top bit or nine of a
+% one- or two-byte code, and the SubsVector mapping walks its ranges
+% -- the leading byte gives the code width less one, each following
+% width-sized big-endian entry one range -- subtracting until the
+% code falls within one. The modal mappings thread their selection:
+% fidx0 is the selector in force, escape sequences (doubled under a
+% double-escape mapping to reach past 255) and shift bytes replace
+% it and belong to the code that follows, and a string ending inside
+% a prefix answers a code of -1, which paints nothing. Bytes past
+% the string's end read as zero
+/.fmapnext {
+    12 dict begin
+    /fidx exch def /fnt exch def /p exch def /str exch def
+    /p0 p def
+    /nb { % i . byte  (zero past the end)
+        dup str length lt { str exch get }{ pop 0 } ifelse
+    } def
+    /fm fnt /FMapType get def
+    /code -1 def
+    fm 2 eq {
+        /fidx p nb def
+        /code p 1 add nb def
+        /p p 2 add def
+    }{ fm 4 eq {
+        /fidx p nb -7 bitshift def
+        /code p nb 127 and def
+        /p p 1 add def
+    }{ fm 5 eq {
+        /fidx p nb 1 bitshift p 1 add nb -7 bitshift add def
+        /code p 1 add nb 127 and def
+        /p p 2 add def
+    }{ fm 6 eq {
+        /sv fnt /SubsVector get def
+        /wd sv 0 get 1 add def
+        /nr sv length 1 sub wd idiv def
+        /t 0 def
+        0 1 wd 1 sub { p add nb t 256 mul add /t exch def } for
+        /fidx 0 def
+        {
+            fidx nr ge { exit } if
+            /rs 0 def
+            0 1 wd 1 sub { fidx wd mul add 1 add sv exch get
+                          rs 256 mul add /rs exch def } for
+            t rs lt { exit } if
+            /t t rs sub def
+            /fidx fidx 1 add def
+        } loop
+        /code t def
+        /p p wd add def
+    }{ fm 3 eq fm 7 eq or {
+        /esc fnt /EscChar 2 copy known { get }{ pop pop 255 } ifelse def
+        {
+            p str length ge { exit } if
+            p nb esc ne {
+                /code p nb def
+                /p p 1 add def
+                exit
+            } if
+            /fidx p 1 add nb def
+            /p p 2 add def
+            fm 7 eq fidx esc eq and {
+                /fidx p nb 256 add def
+                /p p 1 add def
+            } if
+        } loop
+    }{ fm 8 eq {
+        /si fnt /ShiftIn 2 copy known { get }{ pop pop 15 } ifelse def
+        /so fnt /ShiftOut 2 copy known { get }{ pop pop 14 } ifelse def
+        {
+            p str length ge { exit } if
+            p nb si eq { /fidx 0 def /p p 1 add def }{
+            p nb so eq { /fidx 1 def /p p 1 add def }{
+                /code p nb def
+                /p p 1 add def
+                exit
+            } ifelse } ifelse
+        } loop
+    }{
+        /show cvx /rangecheck signalerror
+    } ifelse } ifelse } ifelse } ifelse } ifelse } ifelse
+    fidx code p p0 sub
+    end
+} def
+
+% fnt fidx  .fmapdesc  font'
+% the descendant the font selector names through Encoding, with its
+% matrix carried through the composite's
+/.fmapdesc {
+    3 dict begin
+    /fidx exch def /fnt exch def
+    /desc fnt /FDepVector get fnt /Encoding get fidx get get def
+    desc dup length dict copy
+    dup /FontMatrix desc /FontMatrix get
+        fnt /FontMatrix get matrix concatmatrix put
+    end
+} def
+
+% fnt str  .showfmap  -
+% paint a string through a byte-mapped composite font: each decoded
+% code paints as a one-byte show under the selected descendant, so
+% any descendant kind -- including a nested composite -- renders
+% through the ordinary dispatch
+/.showfmap {
+    10 dict begin
+    /str exch def /fnt exch def
+    /dc fnt /Encoding get length array def
+    /cs 1 string def
+    /p 0 def
+    /curf 0 def
+    {
+        p str length ge { exit } if
+        str p fnt curf .fmapnext
+        /w exch def /code exch def /curf exch def
+        code 0 ge {
+            dc curf get null eq {
+                dc curf fnt curf .fmapdesc put
+            } if
+            cs 0 code put
+            graphicsdict /currgstate get /currfont dc curf get put
+            cs show
+            graphicsdict /currgstate get /currfont fnt put
+        } if
+        /p p w add def
+    } loop
+    end
+} def
+
 % font str  .showtype0  -
-% paint a string through a composite font: each code decodes to a
-% CID, the CID maps to a glyph index through the descendant's CIDMap
-% (GDBytes bytes per entry, across the array of segments), and the
-% glyph paints by index under the descendant's face carried through
-% the composite's matrix
+% paint a string through a composite font: a CMap-mapped font (the
+% FMapType 9 of composefont) decodes each code to a CID, the CID
+% maps to a glyph index through the descendant's CIDMap (GDBytes
+% bytes per entry, across the array of segments), and the glyph
+% paints by index under the descendant's face carried through the
+% composite's matrix; the byte-mapped FMapTypes decode and dispatch
+% per descendant instead
 /.showtype0 {
+    1 index /FMapType get 9 ne {
+        .showfmap
+    }{
     20 dict begin
     /str exch def
     /fnt exch def
@@ -280,6 +415,7 @@ currentdict /c undef
     } loop
     graphicsdict /currgstate get /currfont fnt put
     end
+    } ifelse
 } def
 
 % a one-byte identity CMap: cshow's procedure sees the descendant
@@ -299,6 +435,37 @@ currentdict /c undef
 /cshow {
     graphicsdict /currgstate get /currfont get
     dup /FontType get 0 eq {
+    dup /FMapType get 9 ne {
+        % a byte-mapped composite: the procedure runs with the
+        % selected descendant current, as the mapping chose it
+        20 dict begin
+        /fnt exch def /str exch def /proc exch def
+        /dc fnt /Encoding get length array def
+        /p 0 def
+        /curf 0 def
+        {
+            p str length ge { exit } if
+            str p fnt curf .fmapnext
+            /w exch def /code exch def /curf exch def
+            code 0 ge {
+                dc curf get null eq {
+                    dc curf fnt curf .fmapdesc put
+                } if
+                /cs 1 string dup 0 code put def
+                gsave
+                    nulldevice
+                    graphicsdict /currgstate get /currfont dc curf get put
+                    0 0 moveto cs show currentpoint
+                grestore
+                /wy exch def /wx exch def
+                graphicsdict /currgstate get /currfont dc curf get put
+                code wx wy proc
+                graphicsdict /currgstate get /currfont fnt put
+            } if
+            /p p w add def
+        } loop
+        end
+    }{
         20 dict begin
         /fnt exch def /str exch def /proc exch def
         /cm fnt /CMap get def
@@ -322,6 +489,7 @@ currentdict /c undef
             /p p w add def
         } loop
         end
+    } ifelse
     }{
         20 dict begin
         /fnt exch def /str exch def /proc exch def
