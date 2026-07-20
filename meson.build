@@ -292,6 +292,13 @@ test('graphics-regression',
   args: [ xpost_exe, files('tests/graphics_regression_test.ps') ],
   env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
 
+# Error reporting: a top-level job error prints the standard Adobe error line
+# and flush notice; a clean quit or a caught error prints neither.
+test('error-format',
+  find_program('tests/run-error-format-test.sh'),
+  args: [ xpost_exe ],
+  env: { 'XPOST_DATA_DIR': meson.current_source_dir() / 'data' })
+
 # Bounding-box device: render a known fill through -d bbox and check the box.
 test('bbox-device',
   find_program('tests/run-bbox-test.sh'),
