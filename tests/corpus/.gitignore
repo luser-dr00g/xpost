@@ -1,0 +1,14 @@
+# Each corpus lives in its own directory here. The programs it holds
+# are fetched or copied from their own source and are not committed --
+# they belong to others, or are generated (see README.md). The small
+# per-corpus prelude that lets a corpus run (e.g. ghostscript/prelude)
+# is committed; a large generated one (bwipp/prelude, the barcode
+# resource) is not.
+*/*.ps
+*/*.eps
+*/*.ppm
+*/*.pbm
+*/*.pgm
+*/*.png
+bwipp/prelude
+.work/
