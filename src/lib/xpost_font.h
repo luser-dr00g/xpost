@@ -129,6 +129,8 @@ void xpost_font_face_get_bbox(void *face, Xpost_Object *bboxarray, real em);
  * @see xpost_font_face_new_from_name()
  */
 int xpost_font_face_units(void *face);
+int xpost_font_face_is_truetype(void *face);
+const char *xpost_font_face_last_file(void);
 void xpost_font_face_free(void *face);
 
 /**

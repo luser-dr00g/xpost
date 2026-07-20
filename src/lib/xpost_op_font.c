@@ -47,6 +47,7 @@
 #include "xpost_object.h"
 #include "xpost_stack.h"
 #include "xpost_font.h"
+#include "xpost_file.h"
 #include "xpost_save.h"
 #include "xpost_context.h"
 #include "xpost_error.h"
@@ -98,6 +99,8 @@ int _findfont(Xpost_Context *ctx,
     char *fname;
     Xpost_Object fontbbox;
     Xpost_Object fontbboxarray[4];
+    Xpost_Object sfnts_obj = null;
+    int istt = 0;
 
     if (xpost_object_get_type(fontname) == nametype)
         fontstr = xpost_name_get_string(ctx, fontname);
@@ -117,7 +120,8 @@ int _findfont(Xpost_Context *ctx,
        font dictionaries exactly as a FontDirectory-cached dictionary
        already shares it. */
     {
-        static struct { char *name; void *face; Xpost_Object charstrings; } face_cache[32];
+        static struct { char *name; void *face; Xpost_Object charstrings;
+                        Xpost_Object sfnts; char *file; } face_cache[32];
         static int face_cache_n = 0;
         int fi, slot = -1;
         data.face = NULL;
@@ -136,6 +140,10 @@ int _findfont(Xpost_Context *ctx,
             data.face = xpost_font_face_new_from_name(fname);
             if (data.face != NULL && face_cache_n < 32)
             {
+                const char *ff = xpost_font_face_last_file();
+
+                face_cache[face_cache_n].file = ff ? strdup(ff) : NULL;
+                face_cache[face_cache_n].sfnts = null;
                 face_cache[face_cache_n].name = strdup(fname);
                 face_cache[face_cache_n].face = data.face;
                 slot = face_cache_n++;
@@ -155,6 +163,71 @@ int _findfont(Xpost_Context *ctx,
            cache. The values are glyph indices, which the text
            machinery accepts directly; a face without glyph names
            publishes nothing. */
+        istt = xpost_font_face_is_truetype(data.face);
+        /* a TrueType-backed dictionary is a Type 42 font outright:
+           publish the program as sfnts, chunked under the string
+           limit, read once per face and shared between every
+           dictionary the name produces. Only a plain sfnt file
+           qualifies: a compressed wrapper or a collection is not
+           the program a Type 42 dictionary carries, and such a
+           face keeps the Type 1 presentation */
+        if (istt && slot >= 0)
+        {
+            if (xpost_object_get_type(face_cache[slot].sfnts) != arraytype
+             && face_cache[slot].file)
+            {
+                int ferrcode = 0;
+                FILE *fp = xpost_diskfile_fopen(face_cache[slot].file,
+                                                "rb", 1, &ferrcode);
+
+                if (fp)
+                {
+                    long len;
+                    unsigned char magic[4] = { 0, 0, 0, 0 };
+                    int plain;
+
+                    plain = fread(magic, 1, 4, fp) == 4
+                         && ((magic[0] == 0 && magic[1] == 1
+                           && magic[2] == 0 && magic[3] == 0)
+                          || memcmp(magic, "true", 4) == 0);
+                    fseek(fp, 0, SEEK_END);
+                    len = ftell(fp);
+                    fseek(fp, 0, SEEK_SET);
+                    if (plain && len > 0)
+                    {
+                        int nchunks = (int)((len + 65531) / 65532);
+                        unsigned int oldmode = ctx->vmmode;
+                        Xpost_Object arr;
+                        int ci;
+                        unsigned char *cbuf = malloc(65532);
+
+                        ctx->vmmode = GLOBAL;
+                        arr = xpost_array_cons(ctx, nchunks);
+                        for (ci = 0; ci < nchunks && cbuf; ci++)
+                        {
+                            long rem = len - (long)ci * 65532;
+                            size_t want = rem > 65532 ? 65532 : (size_t)rem;
+                            Xpost_Object str;
+
+                            if (fread(cbuf, 1, want, fp) != want)
+                                break;
+                            str = xpost_string_cons(ctx, (unsigned int)want,
+                                                    (char *)cbuf);
+                            xpost_array_put(ctx, arr, ci, str);
+                        }
+                        free(cbuf);
+                        if (cbuf && ci == nchunks)
+                            face_cache[slot].sfnts = arr;
+                        ctx->vmmode = oldmode;
+                    }
+                    fclose(fp);
+                }
+            }
+            if (xpost_object_get_type(face_cache[slot].sfnts) != arraytype)
+                istt = 0;
+            sfnts_obj = face_cache[slot].sfnts;
+        }
+
         if (slot >= 0
          && xpost_object_get_type(face_cache[slot].charstrings) == dicttype)
         {
@@ -188,28 +261,37 @@ int _findfont(Xpost_Context *ctx,
         }
     }
 
-    fontbbox = xpost_array_cons(ctx, 4);
-    xpost_font_face_get_bbox(data.face, fontbboxarray, 1000.0);
+    /* executable, as the reference interpreters answer it */
+    fontbbox = xpost_object_cvx(xpost_array_cons(ctx, 4));
+    xpost_font_face_get_bbox(data.face, fontbboxarray, istt ? 1.0 : 1000.0);
     xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
 		     xpost_object_get_ent(fontbbox),
 		     0, 4 * sizeof(Xpost_Object), fontbboxarray);
     xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontBBox"), fontbbox);
 
-    /* the base font follows the Type 1 convention: character space
-       holds 1000 units per em and FontMatrix maps it to one text-space
-       unit, so FontBBox above is in the same 1000-unit space (programs
-       read the pair together, e.g. FontBBox dtransformed through
-       FontMatrix). scalefont and makefont concatenate onto this in
-       dictionary copies, and the text operators derive the face's
-       pixel scale from it */
+    /* the dictionary states what backs it: a TrueType program makes
+       a Type 42 font, its character space one unit to the em and its
+       CharStrings naming glyph indices, as the type defines; any
+       other face keeps the Type 1 dictionary conventions, character
+       space a thousand units to the em. FontBBox shares the
+       character space, and scalefont and makefont concatenate onto
+       FontMatrix in dictionary copies */
+    xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontType"),
+                   xpost_int_cons(istt ? 42 : 1));
     {
-        Xpost_Object fontmatrix = xpost_array_cons(ctx, 6);
+        /* the constructors answer executable objects; a font's matrix
+           is data, so it says so at its construction, as
+           doc/NEWINTERNALS asks of every composite made here */
+        Xpost_Object fontmatrix = xpost_object_cvlit(xpost_array_cons(ctx, 6));
+        real diag = istt ? 1.0f : 0.001f;
         int mi;
         for (mi = 0; mi < 6; mi++)
             xpost_array_put(ctx, fontmatrix, mi,
-                            xpost_real_cons(mi == 0 || mi == 3 ? 0.001f : 0.0f));
+                            xpost_real_cons(mi == 0 || mi == 3 ? diag : 0.0f));
         xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "FontMatrix"), fontmatrix);
     }
+    if (istt && xpost_object_get_type(sfnts_obj) == arraytype)
+        xpost_dict_put(ctx, fontdict, xpost_name_cons(ctx, "sfnts"), sfnts_obj);
 
     xpost_memory_put(xpost_context_select_memory(ctx, privatestr),
             xpost_object_get_ent(privatestr), 0, sizeof data, &data);
@@ -274,7 +356,8 @@ int _loadfont42(Xpost_Context *ctx,
         return invalidfont;
     }
 
-    fontbbox = xpost_array_cons(ctx, 4);
+    /* executable, as the reference interpreters answer it */
+    fontbbox = xpost_object_cvx(xpost_array_cons(ctx, 4));
     /* a Type 42 dictionary maps one em to one character-space unit */
     xpost_font_face_get_bbox(data.face, fontbboxarray, 1.0);
     xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
@@ -1651,7 +1734,8 @@ int _loadcidfont0(Xpost_Context *ctx,
         return invalidfont;
     }
 
-    fontbbox = xpost_array_cons(ctx, 4);
+    /* executable, as the reference interpreters answer it */
+    fontbbox = xpost_object_cvx(xpost_array_cons(ctx, 4));
     xpost_font_face_get_bbox(data.face, fontbboxarray, 1000.0);
     xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
                      xpost_object_get_ent(fontbbox),
@@ -1863,7 +1947,8 @@ int _loadfont1(Xpost_Context *ctx,
         return invalidfont;
     }
 
-    fontbbox = xpost_array_cons(ctx, 4);
+    /* executable, as the reference interpreters answer it */
+    fontbbox = xpost_object_cvx(xpost_array_cons(ctx, 4));
     xpost_font_face_get_bbox(data.face, fontbboxarray, 1000.0);
     xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
                      xpost_object_get_ent(fontbbox),
@@ -2499,7 +2584,8 @@ int _loadcidfont2(Xpost_Context *ctx,
         return invalidfont;
     }
 
-    fontbbox = xpost_array_cons(ctx, 4);
+    /* executable, as the reference interpreters answer it */
+    fontbbox = xpost_object_cvx(xpost_array_cons(ctx, 4));
     xpost_font_face_get_bbox(data.face, fontbboxarray, 1.0);
     xpost_memory_put(xpost_context_select_memory(ctx, fontbbox),
                      xpost_object_get_ent(fontbbox),

@@ -453,8 +453,8 @@ false setglobal
     /Palatino-Roman (URW Palladio L)
 >> def
 
-% For the moment, we consider any fonts handled by FreeType to be Type 1.
-% The FontDirectory will merely hold defined Type 3 fonts.
+% The FontDirectory holds defined fonts; findfont dictionaries for
+% host faces state the type of the program that backs them.
 /FontDirectory
 <<
 >> def
@@ -466,12 +466,9 @@ end % userdict
     FontDirectory 1 index known {
         FontDirectory exch get
     }{
-        {   % try the operator
+        {   % try the operator, which states FontType, FontMatrix
+            % and FontBBox for the face behind the name
             //findfont
-            dup /FontType 1 put
-            % a fresh matrix per dictionary, following the Type 1
-            % convention: 1000 character-space units to the em
-            dup /FontMatrix [ 0.001 0.0 0.0 0.001 0.0 0.0 ] put
             % a text font's built-in encoding is the standard one; a
             % fresh copy, so a program re-encoding in place cannot
             % touch the shared array. A face without standard glyph

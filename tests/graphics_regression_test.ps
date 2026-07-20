@@ -902,6 +902,24 @@ currentpoint pop 2 sub 28 sub abs 1 lt
 countink 20 ge (the nested-text glyph paints) assert
 initgraphics
 
+% a base font dictionary states the type of the program behind it,
+% and its conventions follow: a Type 42 font carries its program in
+% sfnts over a unit character space, a Type 1 dictionary a
+% thousandth
+basefont null ne {
+    basefont /FontType get 42 eq {
+        basefont /sfnts known
+        (a Type 42 base font carries its program in sfnts) assert
+        basefont /FontMatrix get 0 get 1.0 sub abs 0.0001 lt
+        (Type 42 character space is the em) assert
+    }{
+        basefont /FontType get 1 eq
+        (a base font states Type 1 or Type 42) assert
+        basefont /FontMatrix get 0 get 0.001 sub abs 0.0001 lt
+        (Type 1 character space is a thousandth of the em) assert
+    } ifelse
+} if
+
 % A Type 3 glyph that declares setcachedevice builds once: repeats
 % replay its mask from the glyph cache, and the raster still lands
 erasepage
@@ -1863,6 +1881,18 @@ grestore
 14 32 inkat (ring clip admits the band on the other axis) assert
 32 32 inkat not (ring clip excludes the hole) assert
 32 4 inkat not (ring clip excludes outside the outer circle) assert
+
+% a font dictionary's entries carry the attributes a program reads:
+% the matrix is data, the bounding box answers executable as the
+% reference interpreters do, and the encoding is data
+basefont null ne {
+    basefont /FontMatrix get xcheck not
+    (a font matrix is literal) assert
+    basefont /FontBBox get xcheck
+    (a font bounding box is executable) assert
+    basefont /Encoding get xcheck not
+    (a font encoding is literal) assert
+} if
 
 count 0 eq (operand stack is balanced) assert
 faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse

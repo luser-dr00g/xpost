@@ -47,7 +47,12 @@
         } stopped {
             /definefont cvx /invalidfont signalerror
         } if
+        % a re-encoded copy of a findfont dictionary already holds a
+        % working face in /Private and shares it; a program-borne
+        % dictionary assembles one from its sfnts
+        dup /Private known not {
         dup .loadfont42
+        } if
     }{
     dup 1 eq 2 index /CharStrings known and
     2 index /Private 2 copy known { get type /dicttype eq }{ pop pop false } ifelse and {

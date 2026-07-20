@@ -46,6 +46,7 @@
 # include FT_FREETYPE_H
 # include FT_OUTLINE_H
 # include FT_BBOX_H
+# include FT_FONT_FORMATS_H
 #endif
 
 #include "xpost.h"
@@ -543,6 +544,17 @@ _xpost_font_face_filename_and_index_get(const char *name, int *idx)
 }
 #endif
 
+static char *_xpost_font_last_file = NULL;
+
+/* the file behind the face most recently opened by name: the caller
+   reads the program itself (a Type 42 dictionary publishes it as
+   sfnts) */
+const char *
+xpost_font_face_last_file(void)
+{
+    return _xpost_font_last_file;
+}
+
 void *
 xpost_font_face_new_from_name(const char *name)
 {
@@ -553,6 +565,8 @@ xpost_font_face_new_from_name(const char *name)
     int idx;
 
     filename = _xpost_font_face_filename_and_index_get(name, &idx);
+    free(_xpost_font_last_file);
+    _xpost_font_last_file = NULL;
     if (!filename)
         return NULL;
 
@@ -570,7 +584,7 @@ xpost_font_face_new_from_name(const char *name)
         return NULL;
     }
 
-    free(filename);
+    _xpost_font_last_file = filename;
 
     return face;
 #else
@@ -633,6 +647,19 @@ xpost_font_face_units(void *face)
     FT_Face f = face;
 
     return f->units_per_EM > 0 ? f->units_per_EM : 0;
+#else
+    (void)face;
+    return 0;
+#endif
+}
+
+int
+xpost_font_face_is_truetype(void *face)
+{
+#ifdef HAVE_FREETYPE2
+    const char *fmt = FT_Get_Font_Format((FT_Face)face);
+
+    return fmt && strcmp(fmt, "TrueType") == 0;
 #else
     (void)face;
     return 0;
