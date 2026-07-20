@@ -322,25 +322,42 @@ setglobal
     dup /screenproc get /bluescreenproc exch put
 } def
 
-% sample a spot function across its halftone cell, one call per
-% device pixel the cell spans: the language evaluates the spot
-% function when the screen is installed, and programs lean on the
-% side effects (the classic pattern-cell idiom counts its bits
-% there), so the calls must happen even though rendering stays
-% continuous tone
-/.samplespot { % freq proc  .  -
-    4 dict begin
-    /proc exch def
-    /freq exch def
-    /n DEVICE /defaultmatrix get 0 get abs 72 mul freq div
-       round cvi dup 1 lt { pop 1 } if dup 64 gt { pop 64 } if def
-    0 1 n 1 sub { /i exch def
-        0 1 n 1 sub { /j exch def
-            % restore the operand depth around the call: only the
-            % side effects are wanted, whatever the procedure leaves
+% freq ang proc  .samplespot  -
+% evaluate a spot function across its halftone cell, once for each
+% pixel of the cell the screen actually renders through, sampled at
+% that pixel's centre. The language calls the spot when the screen is
+% installed and programs lean on the side effects -- the classic
+% pattern-cell idiom builds its cell there -- so the sampling must
+% cover the whole cell even though rendering itself stays continuous
+% tone. It shares the cell geometry with the rendered threshold cell,
+% so the number of calls and the arguments match what paint later
+% sees, rather than collapsing to one sample where the cell spans a
+% single device pixel.
+/.samplespot {
+    14 dict begin
+    /proc exch def /ang exch def /freq exch def
+    freq ang .screenlattice
+    /quad exch def /q exch def /L exch def /b exch def /a exch def
+    /.clamparg {
+        dup -0.999 lt { pop -0.999 } if
+        dup 0.999 gt { pop 0.999 } if
+    } def
+    0 1 L 1 sub { /y exch def
+        0 1 L 1 sub { /x exch def
+            /xs x 0.5071 add def
+            /ys y 0.4877 add def
+            /m1 a xs mul b ys mul add q div floor def
+            /m2 a ys mul b xs mul sub q div floor def
+            /xc a m1 0.5 add mul b m2 0.5 add mul sub floor 0.5 add def
+            /yc b m1 0.5 add mul a m2 0.5 add mul add floor 0.5 add def
+            % restore the operand depth around the call: only the side
+            % effects are wanted, whatever the procedure leaves
             count /d0 exch def
-            i 0.5 add n div 2 mul 1 sub
-            j 0.5 add n div 2 mul 1 sub
+            a xs xc sub mul b ys yc sub mul add q div 2 mul
+            dup 1 ge { 2 sub } if dup -1 lt { 2 add } if .clamparg
+            a ys yc sub mul b xs xc sub mul sub q div 2 mul
+            dup 1 ge { 2 sub } if dup -1 lt { 2 add } if .clamparg
+            quad { exch neg } repeat
             proc
             count d0 sub dup 0 gt { { pop } repeat }{ pop } ifelse
         } for
@@ -367,14 +384,24 @@ setglobal
 /.gcd { % m n .gcd g
     { dup 0 eq { pop exit } if exch 1 index mod } loop
 } def
-/.installscreencell {
-    20 dict begin
-    /proc exch def /ang exch def /freq exch def
+
+% freq ang  .screenlattice  a b L q quad
+% the rotated integer lattice the screen tiles the device plane with:
+% the angle becomes the nearest rational tangent b/a whose cell
+% diagonal sits near the requested frequency. (a,b) and (-b,a) are the
+% lattice vectors, L the side of the repeating tile of L*L pixels,
+% q = a*a + b*b, and quad the whole quarter turns folded out of the
+% angle -- the lattice needs the angle only modulo ninety degrees, but
+% the spot pattern need not share the cell's symmetry, so the quarter
+% turns rotate the spot's argument instead. An axis-aligned screen
+% falls out as b = 0. The spot evaluation at install time and the
+% rendered threshold cell both build from this, so they sample the
+% same points.
+/.screenlattice {
+    12 dict begin
+    /ang exch def /freq exch def
     /n DEVICE /defaultmatrix get 0 get abs 72 mul freq div
        round cvi dup 2 lt { pop 2 } if dup 48 gt { pop 48 } if def
-    % the lattice needs the angle only modulo ninety degrees, but the
-    % spot pattern need not have the cell's symmetry: the whole
-    % quarter turns rotate the spot's argument instead
     /th ang 90 div dup floor sub 90 mul def
     /quad ang 90 div floor cvi 4 mod dup 0 lt { 4 add } if def
     /besta n def /bestb 0 def /bestscore 1e9 def
@@ -399,6 +426,14 @@ setglobal
     /a besta def /b bestb def
     /q a dup mul b dup mul add def
     /L q a abs b abs .gcd idiv def
+    a b L q quad
+    end
+} def
+/.installscreencell {
+    20 dict begin
+    /proc exch def /ang exch def /freq exch def
+    freq ang .screenlattice
+    /quad exch def /q exch def /L exch def /b exch def /a exch def
     /vals L L mul array def
     % arguments stay strictly inside (-1 1) whatever their sign: a
     % program may fold a negation into its spot, and the closed end
@@ -556,8 +591,9 @@ setglobal
     graphicsdict /currgstate get /halftone null put
     .spreadgrayscreen
     graphicsdict /currgstate get /screenfreq get dup 0 gt {
+        graphicsdict /currgstate get /screenangle get
         graphicsdict /currgstate get /screenproc get
-        dup xcheck { .samplespot }{ pop pop } ifelse
+        dup xcheck { .samplespot }{ pop pop pop } ifelse
     }{ pop } ifelse
 } def
 

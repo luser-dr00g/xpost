@@ -789,6 +789,26 @@ exch /Frequency get 12 eq and
 (a screen-set state synthesizes a type 1 dictionary) assert
 grestore
 
+% --- setscreen evaluates the spot function across the whole halftone
+%     cell it renders through, not one sample: the call count follows
+%     the cell and grows as a coarser screen's cell does ---
+gsave
+/st.spotcount { % freq . count
+    /st.sc [0] def
+    dup 0 { pop pop st.sc 0 st.sc 0 get 1 add put } setscreen
+    st.sc 0 get
+} def
+60 st.spotcount 1 gt (setscreen samples the spot across its cell, not once) assert
+5 st.spotcount 60 st.spotcount gt (a coarser screen's larger cell takes more spot samples) assert
+/st.inrange [true] def
+30 0 {
+    dup abs 1 gt { st.inrange 0 false put } if
+    exch dup abs 1 gt { st.inrange 0 false put } if
+    add
+} setscreen
+st.inrange 0 get (the spot function sees arguments within [-1,1]) assert
+grestore
+
 % --- colour transfer functions record and round-trip ---
 gsave
 { 1 exch sub } { dup mul } { sqrt } { 2 div } setcolortransfer
