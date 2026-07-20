@@ -518,6 +518,41 @@
         } ifelse
         /mrow width 7 add 8 idiv def
 
+        % a device that consumes whole images -- the vector writers --
+        % takes the sample rows and the image-to-device matrix and
+        % paints nothing here; the masked forms keep the painting path
+        DEVICE /PaintImage known
+        mbits null eq and mranges null eq and {
+            /m mat matrix invertmatrix matrix currentmatrix
+               matrix concatmatrix def
+            /allrows height array def
+            0 1 height 1 sub { /y exch def
+                multi {
+                    0 1 ncomp 1 sub { /c exch def
+                        /datasrc srcs c get def
+                        /pend pends c get def
+                        /rawrow rawrows c get def
+                        /buf bufs c get def
+                        .fill .rownorm
+                        pends c pend put
+                    } for
+                    /irow width ncomp mul string def
+                    0 1 width 1 sub { /x exch def
+                        0 1 ncomp 1 sub { /c exch def
+                            irow x ncomp mul c add
+                            bufs c get x get put
+                        } for
+                    } for
+                    allrows y irow put
+                }{
+                    .fill .rownorm
+                    allrows y buf dup length string copy put
+                } ifelse
+            } for
+            width height ncomp m allrows decode interp
+            DEVICE dup /PaintImage get exec
+        }{
+
         % per-component decode as base + sample x scale over 0..255
         /dbase ncomp array def
         /dscale ncomp array def
@@ -739,6 +774,7 @@
                 } if
             } for
         } for
+        } ifelse
         } ifelse
 
         end

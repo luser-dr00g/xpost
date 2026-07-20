@@ -67,6 +67,7 @@
     begin
         /.docinfo 8 dict def    % document metadata from DOCINFO pdfmarks
         currentdict .pdfinit    % create the content accumulator (outside VM)
+        /.pdfimages 0 array def
         % first content op: the device matrix mapping device coords to PDF
         % user space (y-up). Part of the content so it compresses with the rest.
         (1 0 0 -1 0 ) .put height .pdfnumstr .put ( cm\n) .put
@@ -384,6 +385,36 @@
         currentdict .pdffillpath
     end }
 
+    % w h ncomp mat rows decode interp IMAGE . -  ; take a whole sampled
+    % image: the rows (one interleaved 8-bit string per row) file as
+    % an image XObject Emit writes, and the content paints it through
+    % the unit square under the image-to-device matrix, the decode
+    % ranges carried in the object for the consumer to apply
+    /PaintImage {
+    begin {piint pidec pirows pim pinc pih piw}{exch def}forall
+        /piidx .pdfimages length def
+        /.pdfimages [ .pdfimages aload pop
+            << /w piw /h pih /nc pinc /rows pirows /dec pidec
+               /int piint >> ] def
+        (q\n) .put
+        % a rectangular clip region travels with the paint; the
+        % painting operators arrive pre-clipped, images cannot
+        .cliprect {
+            /picy1 exch def /picx1 exch def /picy0 exch def /picx0 exch def
+            picx0 .pdfnum ( ) .put picy0 .pdfnum ( ) .put
+            picx1 picx0 sub .pdfnum ( ) .put
+            picy1 picy0 sub .pdfnum ( re\nW n\n) .put
+        } if
+        [ piw 0 0 pih neg 0 pih ] pim matrix concatmatrix
+        dup 0 get .pdfnum ( ) .put
+        dup 1 get .pdfnum ( ) .put
+        dup 2 get .pdfnum ( ) .put
+        dup 3 get .pdfnum ( ) .put
+        dup 4 get .pdfnum ( ) .put
+        5 get .pdfnum ( cm\n) .put
+        (/Im) .put piidx 20 string cvs .put ( Do\nQ\n) .put
+    end }
+
     % r g b IMAGE . -  ; stroke the current path as one content-stream
     % path with the device-space line width and the graphics state's
     % cap, join and miter limit, so joints between segments are drawn
@@ -430,8 +461,9 @@
         % objects 1-4 are fixed; the separations' function objects
         % follow the content as 5..4+n, and Info comes last
         /nseps currentdict .pdfsepcount def
+        /nimg .pdfimages length def
         /haveinfo .docinfo length 0 gt def
-        /nobj 4 nseps add haveinfo { 1 add } if def
+        /nobj 4 nseps add nimg add haveinfo { 1 add } if def
 
         (%PDF-1.4\n) .w
         /off1 BytePos def
@@ -451,6 +483,15 @@
             } for
             ( >>) .w
         } if
+        nimg 0 gt {
+            ( /XObject <<) .w
+            0 1 nimg 1 sub {
+                /.imi exch def
+                ( /Im) .w .imi 20 string cvs .w
+                ( ) .w .imi 5 add nseps add 20 string cvs .w ( 0 R) .w
+            } for
+            ( >>) .w
+        } if
         ( >> >>\nendobj\n) .w
         /off4 BytePos def
         (4 0 obj\n<< /Length ) .w clen 20 string cvs .w
@@ -465,6 +506,40 @@
             .sepi 5 add 20 string cvs .w ( 0 obj\n) .w
             .sepi currentdict .pdfsepget exch pop .w
             (\nendobj\n) .w
+        } for
+        /offimgs nimg array def
+        0 1 nimg 1 sub {
+            /.imi exch def
+            /.ime .pdfimages .imi get def
+            offimgs .imi BytePos put
+            .ime /rows get .flatecompress /.imf exch def /.imc exch def
+            /.imlen 0 def
+            .imc { length .imlen add /.imlen exch def } forall
+            .imi 5 add nseps add 20 string cvs .w ( 0 obj\n) .w
+            (<< /Type /XObject /Subtype /Image /Width ) .w
+            .ime /w get 20 string cvs .w
+            ( /Height ) .w .ime /h get 20 string cvs .w
+            ( /BitsPerComponent 8 /ColorSpace ) .w
+            .ime /nc get dup 1 eq { pop (/DeviceGray) }{
+                4 eq { (/DeviceCMYK) }{ (/DeviceRGB) } ifelse } ifelse .w
+            % identity ranges go without saying
+            /.imid true def
+            0 2 .ime /dec get length 2 sub {
+                /.imk exch def
+                .ime /dec get .imk get 0 ne
+                .ime /dec get .imk 1 add get 1 ne or { /.imid false def } if
+            } for
+            .imid not {
+                ( /Decode [) .w
+                .ime /dec get { .pdfnumstr .w ( ) .w } forall
+                (]) .w
+            } if
+            .ime /int get { ( /Interpolate true) .w } if
+            ( /Length ) .w .imlen 20 string cvs .w
+            .imf { ( /Filter /FlateDecode) .w } if
+            ( >>\nstream\n) .w
+            .imc { .w } forall
+            (\nendstream\nendobj\n) .w
         } for
         haveinfo {
             /offinfo BytePos def
@@ -491,6 +566,7 @@
         off3 .woff ( 00000 n \n) .w
         off4 .woff ( 00000 n \n) .w
         offfuncs { .woff ( 00000 n \n) .w } forall
+        offimgs { .woff ( 00000 n \n) .w } forall
         haveinfo { offinfo .woff ( 00000 n \n) .w } if
         (trailer\n<< /Size ) .w nobj 1 add 20 string cvs .w
         ( /Root 1 0 R) .w
@@ -503,6 +579,7 @@
         % marks must not stack on the emitted content (a later Emit
         % rewrites the output with the then-current page)
         currentdict .pdfreset
+        /.pdfimages 0 array def
         (1 0 0 -1 0 ) .put height .pdfnumstr .put ( cm\n) .put
     end }
 >> def

@@ -142,6 +142,98 @@
         } forall
     } bind
 
+    % w h ncomp mat rows decode interp IMAGE . -  ; take a whole sampled
+    % image as an embedded bitmap: the samples decode to rgb, pack as
+    % a bottom-up 24-bit BMP, and ride a base64 data URI under the
+    % image-to-device matrix
+    /PaintImage {
+    begin {siint sidec sirows sim sinc sih siw}{exch def}forall
+        % per-component decode tables to bytes
+        /siluts [ 0 1 sinc 1 sub { /c exch def
+            /silt 256 string def
+            0 1 255 { /v exch def
+                silt v
+                v 255 div
+                sidec c 2 mul 1 add get sidec c 2 mul get sub mul
+                sidec c 2 mul get add
+                255 mul round cvi
+                dup 0 lt { pop 0 } if dup 255 gt { pop 255 } if
+                put
+            } for silt
+        } for ] def
+        /sipad siw 3 mul 3 add cvi 4 idiv 4 mul siw 3 mul sub def
+        /sirowb siw 3 mul sipad add def
+        /sisz 54 sirowb sih mul add def
+        (<image transform="matrix\() .put
+        sim 0 get .svgnum (,) .put sim 1 get .svgnum (,) .put
+        sim 2 get .svgnum (,) .put sim 3 get .svgnum (,) .put
+        sim 4 get .svgnum (,) .put sim 5 get .svgnum
+        (\)" x="0" y="0" width=") .put siw .svgnum
+        (" height=") .put sih .svgnum
+        (" preserveAspectRatio="none" image-rendering=") .put
+        siint { ("auto") }{ ("pixelated") } ifelse .put
+        ( href="data:image/bmp;base64,) .put
+        % header: BITMAPFILEHEADER + BITMAPINFOHEADER, little-endian
+        /sihdr 54 string def
+        /sip 0 def
+        /sb1 { sihdr sip 3 -1 roll put /sip sip 1 add def } def
+        /sb2 { dup 256 mod sb1 256 idiv sb1 } def
+        /sb4 { dup 65536 mod sb2 65536 idiv sb2 } def
+        66 sb1 77 sb1 sisz sb4 0 sb4 54 sb4
+        40 sb4 siw sb4 sih sb4 1 sb2 24 sb2 0 sb4
+        sirowb sih mul sb4 2835 sb4 2835 sb4 0 sb4 0 sb4
+        % accumulate bmp bytes into 48000-byte chunks and base64 each;
+        % a partial flush keeps a three-byte alignment so the padding
+        % appears only at the very end
+        /sibuf 48000 string def
+        /sibp 0 def
+        /siflush {
+            /sic sibp 3 idiv 3 mul def
+            sic 0 gt {
+                sibuf 0 sic getinterval .base64 .put
+                sibuf 0 sibuf sic sibp sic sub getinterval putinterval
+                /sibp sibp sic sub def
+            } if
+        } def
+        /siput { % str
+            dup length sibp add 48000 gt { siflush } if
+            sibuf sibp 2 index putinterval
+            length sibp add /sibp exch def
+        } def
+        sihdr siput
+        /sirow sirowb string def
+        sih 1 sub -1 0 { /y exch def
+            /sr sirows y get def
+            0 1 siw 1 sub { /x exch def
+                sinc 1 eq {
+                    /sv siluts 0 get sr x get get def
+                    sirow x 3 mul sv put
+                    sirow x 3 mul 1 add sv put
+                    sirow x 3 mul 2 add sv put
+                }{ sinc 4 eq {
+                    /sk siluts 3 get sr x 4 mul 3 add get get def
+                    sirow x 3 mul
+                        255 siluts 2 get sr x 4 mul 2 add get get sk add
+                        dup 255 gt { pop 255 } if sub put
+                    sirow x 3 mul 1 add
+                        255 siluts 1 get sr x 4 mul 1 add get get sk add
+                        dup 255 gt { pop 255 } if sub put
+                    sirow x 3 mul 2 add
+                        255 siluts 0 get sr x 4 mul get get sk add
+                        dup 255 gt { pop 255 } if sub put
+                }{
+                    sirow x 3 mul siluts 2 get sr x 3 mul 2 add get get put
+                    sirow x 3 mul 1 add siluts 1 get sr x 3 mul 1 add get get put
+                    sirow x 3 mul 2 add siluts 0 get sr x 3 mul get get put
+                } ifelse } ifelse
+            } for
+            sirow siput
+        } for
+        sibp 0 gt { sibuf 0 sibp getinterval .base64 .put } if
+        /sibp 0 def
+        ("/>\n) .put
+    end }
+
     % r g b IMAGE . -  ; fill the current path as one path element with
     % curves preserved (the flattening fill goes through FillPoly
     % instead), subpaths closed implicitly by the nonzero fill rule --

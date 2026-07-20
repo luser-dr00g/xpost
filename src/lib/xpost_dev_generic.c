@@ -1109,6 +1109,52 @@ int _blendpixrgb(Xpost_Context *ctx,
     return 0;
 }
 
+/* Encode a string's bytes as base64, RFC 4648 alphabet with padding;
+   the output string allocates in local VM. The caller chunks input
+   at a multiple of three bytes below the string limit. */
+static
+int _base64(Xpost_Context *ctx, Xpost_Object S)
+{
+    static const char abc[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const unsigned char *in;
+    unsigned int n = S.comp_.sz, on, i, o;
+    Xpost_Object out;
+    char *op;
+
+    on = (n + 2) / 3 * 4;
+    if (on > 65535)
+        return rangecheck;
+    out = xpost_string_cons(ctx, on, NULL);
+    if (xpost_object_get_type(out) == nulltype)
+        return VMerror;
+    in = (unsigned char *)xpost_string_get_pointer(ctx, S);
+    op = xpost_string_get_pointer(ctx, out);
+    for (i = 0, o = 0; i + 2 < n; i += 3, o += 4)
+    {
+        unsigned int v = (in[i] << 16) | (in[i + 1] << 8) | in[i + 2];
+
+        op[o] = abc[v >> 18];
+        op[o + 1] = abc[(v >> 12) & 63];
+        op[o + 2] = abc[(v >> 6) & 63];
+        op[o + 3] = abc[v & 63];
+    }
+    if (i < n)
+    {
+        unsigned int v = in[i] << 16;
+        int two = i + 1 < n;
+
+        if (two)
+            v |= in[i + 1] << 8;
+        op[o] = abc[v >> 18];
+        op[o + 1] = abc[(v >> 12) & 63];
+        op[o + 2] = two ? abc[(v >> 6) & 63] : '=';
+        op[o + 3] = '=';
+    }
+    xpost_stack_push(ctx->lo, ctx->os, xpost_object_cvlit(out));
+    return 0;
+}
+
 /* Set every pixel of a packed-integer raster (an array of row arrays)
    to integer zero. Devices call this once from Create; initialising
    each element from PostScript costs an interpreter loop per pixel. */
@@ -2563,6 +2609,7 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
                              numbertype, numbertype, numbertype, numbertype,
                              numbertype, numbertype, numbertype, dicttype); INSTALL;
     op = xpost_operator_cons(ctx, ".zerorows", (Xpost_Op_Func)_zerorows, 0, 1, arraytype); INSTALL;
+    op = xpost_operator_cons(ctx, ".base64", (Xpost_Op_Func)_base64, 1, 1, stringtype); INSTALL;
     op = xpost_operator_cons(ctx, ".writeppmrows", (Xpost_Op_Func)_writeppmrows, 0, 2,
                              arraytype, filetype); INSTALL;
     op = xpost_operator_cons(ctx, ".writepbmrows", (Xpost_Op_Func)_writepbmrows, 0, 2,

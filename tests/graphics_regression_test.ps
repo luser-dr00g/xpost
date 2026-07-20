@@ -2315,6 +2315,44 @@ pw.s (%%EOF) search { pop pop pop true }{ pop false } ifelse
 (the distilled page closes with its trailer) assert
 DEVP dup /Destroy get exec
 
+% The vector writers take whole sampled images: the pdf device files
+% an image object the page references, and the svg device embeds the
+% bitmap as a data URI; both leave the masked forms to the painters
+/DEVV 100 100 newPDFWRITEdevice def
+DEVV /OutputFileName (graphics.scratch) put
+graphicsdict /currgstate get /device DEVV put
+matrix setmatrix
+gsave 10 10 translate 40 40 scale
+<< /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1]
+   /DataSource <11 55 aa ee> >> image
+grestore
+DEVV dup /Emit get exec
+/vw.s (graphics.scratch) (r) file 4096 string readstring pop def
+vw.s (%PDF-1.4) anchorsearch { pop pop true }{ pop false } ifelse
+(the pdf page opens with its header) assert
+vw.s (/Subtype /Image) search { pop pop pop true }{ pop false } ifelse
+(the sampled image files as an image object) assert
+vw.s (/XObject) search { pop pop pop true }{ pop false } ifelse
+(the page resources reference the image) assert
+DEVV dup /Destroy get exec
+/DEVW 100 100 newSVGWRITEdevice def
+DEVW /OutputFileName (graphics.scratch) put
+graphicsdict /currgstate get /device DEVW put
+matrix setmatrix
+gsave 10 10 translate 40 40 scale
+<< /ImageType 1 /Width 2 /Height 2 /BitsPerComponent 8
+   /ImageMatrix [2 0 0 -2 0 2] /Decode [0 1]
+   /DataSource <11 55 aa ee> >> image
+grestore
+DEVW dup /Emit get exec
+/vw.s (graphics.scratch) (r) file 4096 string readstring pop def
+vw.s (data:image/bmp;base64,) search { pop pop pop true }{ pop false } ifelse
+(the svg page embeds the bitmap as a data URI) assert
+DEVW dup /Destroy get exec
+graphicsdict /currgstate get /device DEV put
+initgraphics
+
 % a font dictionary's entries carry the attributes a program reads:
 % the matrix is data, the bounding box answers executable as the
 % reference interpreters do, and the encoding is data
