@@ -927,6 +927,20 @@ basefont null ne {
     } ifelse
 } if
 
+% a hairline's round and projecting caps reach half the width past
+% the segment ends; a butt cap adds nothing
+erasepage
+0.9 setlinewidth
+0 setlinecap
+newpath 10.2 40 moveto 20.2 40 lineto stroke
+/capbutt countink def
+erasepage
+2 setlinecap
+newpath 10.2 40 moveto 20.2 40 lineto stroke
+countink capbutt gt (a projecting cap lengthens a hairline) assert
+0 setlinecap
+1 setlinewidth
+
 % A Type 3 glyph that declares setcachedevice builds once: repeats
 % replay its mask from the glyph cache, and the raster still lands
 erasepage

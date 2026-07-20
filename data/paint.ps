@@ -175,6 +175,28 @@
     end
 } bind def
 
+% x1 y1 x2 y2  .hairext  x1' y1' x2' y2'
+% lengthen the segment by the stored half-width at each end: the cap
+% of a stroke within a pixel's width, round and projecting alike
+/.hairext {
+    userdict /.hairhw get dup 0 le { pop }{
+        8 dict begin
+        /hw exch def
+        {/y2 /x2 /y1 /x1}{exch def}forall
+        /dx x2 x1 sub def
+        /dy y2 y1 sub def
+        /len dx dup mul dy dup mul add sqrt def
+        len 0 gt {
+            /ux dx len div hw mul def
+            /uy dy len div hw mul def
+            x1 ux sub y1 uy sub x2 ux add y2 uy add
+        }{
+            x1 y1 x2 y2
+        } ifelse
+        end
+    } ifelse
+} def
+
 % -  stroke  -
 % draw line along current path
 % A device with a StrokePath method consumes the whole path itself
@@ -205,7 +227,12 @@
     % clip region before plotting it: a complex clip takes the outline
     % fill below, whose span intersection is exact for any region
     currentlinewidth 0 dtransform
-    dup mul exch dup mul exch add sqrt 1 le
+    dup mul exch dup mul exch add sqrt
+    % a butt cap adds nothing; round and projecting reach half the
+    % width past each segment end
+    userdict /.hairhw
+    2 index 2 div currentlinecap 0 eq { pop 0 } if put
+    1 le
     .cliprect { 4 array astore }{ null } ifelse
     userdict /.hairrect 3 -1 roll put
     userdict /.hairrect get null ne and {
@@ -218,6 +245,7 @@
         }
         {          % ... xN-1 yN-1 xN yN
             4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
+            .hairext
             userdict /.hairrect get .hairsegclip {
                 [ currentcolordict DEVICE /nativecolorspace get get exec
                 .applytransfer
@@ -232,6 +260,7 @@
         {}
         {            % x0 y0 xN yN
             4 2 roll % xN yN x0 y0
+            .hairext
             userdict /.hairrect get .hairsegclip {
                 [ currentcolordict DEVICE /nativecolorspace get get exec
                 .applytransfer

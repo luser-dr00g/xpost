@@ -20,7 +20,7 @@ Level 1 operators
  [X] eoclip
  [X] setlinejoin
  [X] currentlinejoin
- [X] setlinecap (hairline strokes draw uncapped)
+ [X] setlinecap
  [X] currentlinecap
  [X] image (12-bit samples render at the raster's 8-bit depth)
  [X] imagemask
