@@ -316,6 +316,26 @@ st.data eq (LZWEncode round-trips through its decoder) assert
 { (0.5junk) cvr } stopped { pop pop true }{ false } ifelse
 (a glued suffix is no numeral) assert
 
+% cvs of a real produces the shortest decimal that reads back to the
+% same value, in the notation the reference interpreters use: fixed
+% between 1e-4 and 1e6, scientific outside, a whole value keeping its
+% .0. It once emitted full binary-float precision, and a large value
+% corrupted a digit.
+/st.cvsr { 40 string cvs } def
+3.14159 st.cvsr (3.14159) eq (a real formats to the shortest decimal) assert
+0.001 st.cvsr (0.001) eq (a small real keeps fixed notation) assert
+2.5 st.cvsr (2.5) eq (no trailing zeros) assert
+100000.0 st.cvsr (100000.0) eq (a whole real keeps its point below 1e6) assert
+1e6 st.cvsr (1e+06) eq (a large real turns scientific at 1e6) assert
+1e-5 st.cvsr (1e-05) eq (a tiny real turns scientific below 1e-4) assert
+0.0001 st.cvsr (0.0001) eq (1e-4 is the last fixed magnitude) assert
+% every formatted real reads back to the value it came from
+/st.roundtrips true def
+[ 3.14159 0.001 2.5 100000.0 0.5 0.1 42.0 1e10 1e-5 ] {
+    dup st.cvsr cvr ne { /st.roundtrips false def } if
+} forall
+st.roundtrips (a formatted real reads back to itself) assert
+
 % a source that ends inside a procedure is a syntax error, not an
 % endless scan: the scanner answers null at end of input and nowhere
 % else, a literal null in the text being a name

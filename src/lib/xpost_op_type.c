@@ -399,8 +399,10 @@ int conv_real (real num,
                char *s,
                int n)
 {
-    int off = 0;
-    real integ, frac;
+    char buf[40];
+    double d = (double)num;
+    int prec, e, len;
+
     if (n == 0) return -1;
     if (isinf(num))
     {
@@ -414,20 +416,54 @@ int conv_real (real num,
         memcpy(s, "nan", 3);
         return 3;
     }
-    if (num < 0)
+    if (d == 0.0)
     {
-        num = (real)fabs(num);
-        s[off++] = '-';
+        if (n < 3) return -1;
+        memcpy(s, "0.0", 3);
+        return 3;
     }
-    integ = (real)floor(num);
-    frac = num - integ;
-    off += conv_integ(integ, s+off, n);
-    s[off++] = '.';
-    off += conv_frac(frac, s+off, n-off);
-    return off;
-}
 
-/* any string  cvs  string
+    /* the shortest decimal that reads back to the same value, as the
+       reference interpreters produce. Find the fewest significant
+       digits whose round trip is exact, take the decimal exponent from
+       that same scientific rendering (not from log10, which rounds the
+       wrong way at the powers of ten), then present it as the
+       reference does: fixed notation while the magnitude sits between
+       1e-4 and 1e6, scientific outside that band. A fixed value that
+       comes out whole gains a ".0" so it scans back as a real. */
+    for (prec = 1; prec < 17; prec++)
+    {
+        snprintf(buf, sizeof buf, "%.*e", prec - 1, d);
+        if ((real)strtod(buf, NULL) == num)
+            break;
+    }
+    {
+        char *ep = strchr(buf, 'e');
+        e = ep ? atoi(ep + 1) : 0;
+    }
+
+    if (e >= -4 && e < 6)
+    {
+        int dec = prec - 1 - e;
+        if (dec < 0) dec = 0;
+        snprintf(buf, sizeof buf, "%.*f", dec, d);
+        if (dec == 0)
+        {
+            len = (int)strlen(buf);
+            if (len + 2 < (int)sizeof buf)
+            { buf[len] = '.'; buf[len + 1] = '0'; buf[len + 2] = 0; }
+        }
+    }
+    else
+    {
+        snprintf(buf, sizeof buf, "%.*e", prec - 1, d);
+    }
+
+    len = (int)strlen(buf);
+    if (len > n) return -1;
+    memcpy(s, buf, len);
+    return len;
+}/* any string  cvs  string
    convert any object to string representation */
 static
 int AScvs (Xpost_Context *ctx,
