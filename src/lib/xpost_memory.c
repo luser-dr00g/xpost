@@ -474,23 +474,29 @@ xpost_memory_file_alloc(Xpost_Memory_File *mem,
         return 0;
     }
 
-    adr = mem->used;
+    /* 8-align every allocation so structs stored in the file -- dict
+       headers, name-tree nodes, operator signatures, objects -- are read
+       and written at their natural alignment (the file base is already
+       aligned). The bytes skipped before an aligned address are padding
+       within the file; entities are located by their recorded address, not
+       by walking the file, so the gap is harmless. */
+    adr = (mem->used + 7u) & ~7u;
 
     if (sz)
     {
-        if ((size_t)sz + mem->used >= mem->max)
+        if ((size_t)adr + sz >= mem->max)
         {
-            if (!xpost_memory_file_grow(mem, sz))
+            if (!xpost_memory_file_grow(mem, (adr - mem->used) + sz))
             {
                 XPOST_LOG_ERR("%d unable to allocate memory", VMerror);
                 return 0;
             }
         }
 
-        mem->used += sz;
         memset(mem->base + adr, 0, sz);
     }
 
+    mem->used = adr + sz;
     *retaddr = adr;
     //XPOST_LOG_INFO("allocated %u bytes at %u in %s", sz, adr, mem->fname);
     return 1;
