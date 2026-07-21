@@ -381,7 +381,7 @@ int _putpix(Xpost_Context *ctx,
 
 /* C fast-path for the base-class per-pixel FillRect. erasepage clears the
    whole page through FillRect, so this is on the hot path for every page. */
-int _fillrect(Xpost_Context *ctx,
+static int _fillrect(Xpost_Context *ctx,
               Xpost_Object red,
               Xpost_Object green,
               Xpost_Object blue,

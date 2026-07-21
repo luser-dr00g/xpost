@@ -294,7 +294,7 @@ int Sforall(Xpost_Context *ctx,
 
 /* continue a string forall: es holds (from the top) the remaining
    interval, the literal proc, and the sentinel */
-int xpost_op_string_forall_iterate(Xpost_Context *ctx)
+static int xpost_op_string_forall_iterate(Xpost_Context *ctx)
 {
     Xpost_Object S, P;
     integer val;

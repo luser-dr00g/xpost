@@ -313,7 +313,7 @@ int xpost_op_array_proc_forall(Xpost_Context *ctx,
 
 /* continue an array forall: es holds (from the top) the remaining
    interval, the literal proc, and the sentinel */
-int xpost_op_array_forall_iterate(Xpost_Context *ctx)
+static int xpost_op_array_forall_iterate(Xpost_Context *ctx)
 {
     Xpost_Object A, P, element;
     Xpost_Stack *es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);

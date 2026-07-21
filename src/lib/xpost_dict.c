@@ -864,8 +864,6 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
         Xpost_Object d,
         Xpost_Object k)
 {
-    ++ctx->namebind_gen;
-
     dicrec *e;
     unsigned int ad;
     dichead *dp;
@@ -874,6 +872,8 @@ int xpost_dict_undef_memory(Xpost_Context *ctx,
     unsigned int hashnull;
     unsigned int i;
     unsigned int j;
+
+    ++ctx->namebind_gen;
 
     if (!xpost_save_ent_is_saved(mem, xpost_object_get_ent(d)))
         if (!xpost_save_save_ent(mem, dicttype, 0, xpost_object_get_ent(d)))

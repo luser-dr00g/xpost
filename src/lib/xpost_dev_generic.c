@@ -2144,7 +2144,7 @@ _blit_decode_row(const unsigned char *src, unsigned char *const *planes,
         }
         else
         {
-            int v[4];
+            int v[4] = { 0, 0, 0, 0 };
 
             for (c = 0; c < ncomp; c++)
                 v[c] = dlut[c][DECSAMP(x, c)];
@@ -2476,12 +2476,12 @@ int _blitrow(Xpost_Context *ctx,
                 for (band = 0; band < nband; band++)
                 {
                     double blo = bandlo[band], bhi = bandhi[band];
-                    double lo = blo < bhi ? blo : bhi;
-                    double hi = blo < bhi ? bhi : blo;
+                    double clo = blo < bhi ? blo : bhi;
+                    double chi = blo < bhi ? bhi : blo;
                     int *rowa = band ? cc : pc;
                     int *rowb = cc;
 
-                    for (dy = (int)floor(lo); dy < hi; dy++)
+                    for (dy = (int)floor(clo); dy < chi; dy++)
                     {
                         Xpost_Object row;
                         unsigned char *rowp = NULL;

@@ -384,11 +384,14 @@ int evalload(Xpost_Context *ctx, Xpost_Object n)
                 if (key >= ctx->namecache_size)
                 {
                     unsigned int nsz = ctx->namecache_size ? ctx->namecache_size : 4096;
+                    unsigned int *ngen;
+                    Xpost_Object *nval;
+
                     while (nsz <= key) nsz *= 2;
-                    unsigned int *ngen = realloc(ctx->namecache_gen,
-                                                 nsz * sizeof(unsigned int));
-                    Xpost_Object *nval = realloc(ctx->namecache_val,
-                                                 nsz * sizeof(Xpost_Object));
+                    ngen = realloc(ctx->namecache_gen,
+                                   nsz * sizeof(unsigned int));
+                    nval = realloc(ctx->namecache_val,
+                                   nsz * sizeof(Xpost_Object));
                     if (ngen)
                         ctx->namecache_gen = ngen;
                     if (nval)
