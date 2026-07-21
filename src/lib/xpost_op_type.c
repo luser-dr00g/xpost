@@ -189,7 +189,7 @@ int Scvi(Xpost_Context *ctx,
         free(t);
         return limitcheck;
     }
-    if (dbl >= LONG_MAX || dbl <= LONG_MIN){
+    if (dbl >= (double)LONG_MAX || dbl <= (double)LONG_MIN){
         free(t);
         return limitcheck;
     }
