@@ -68,14 +68,22 @@
     flattenpath
     % subpaths merged into one point list, separated by null, so that
     % FillPoly scans them together and interior subpaths produce holes.
-    % A non-trivial clip region intersects span-by-span in the same
-    % scan-conversion the fill itself uses: exact for any region the
-    % nonzero rule can describe (disjoint windows, concave boundaries,
-    % counters), where the half-plane clipper serves only convex ones
-    .fillpolyargs
+    % A rectangular clip region is a single convex window: clip the fill
+    % polygon against it geometrically, so it stays whole rectangles
+    % rather than dissolving into per-scanline bands -- which a vector
+    % device would otherwise emit as one subpath per row. A disjoint or
+    % concave clip region has no single convex half-plane set, so it
+    % intersects span-by-span in the fill's own scan-conversion, exact
+    % for any region the nonzero rule can describe.
     .cliptrivial not {
-        .clippolyargs .clipfillpoly
-    } if
+        .cliprect { pop pop pop pop true }{ false } ifelse {
+            doclip .fillpolyargs
+        }{
+            .fillpolyargs .clippolyargs .clipfillpoly
+        } ifelse
+    }{
+        .fillpolyargs
+    } ifelse
     /DEBUGFILL where { pop
         (fill)=
         pstack()=
