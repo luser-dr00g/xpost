@@ -383,8 +383,16 @@ int main(int argc, char *argv[])
                     }
 
                 }
-                defs = realloc(defs, ++num_defs * sizeof *defs);
-                defs[num_defs-1] = strdup(define);
+                {
+                    char **tmp = realloc(defs, (num_defs + 1) * sizeof *defs);
+                    if (!tmp)
+                    {
+                        XPOST_LOG_ERR("out of memory");
+                        goto quit_xpost;
+                    }
+                    defs = tmp;
+                    defs[num_defs++] = strdup(define);
+                }
             }
             else if ((!strncmp(argv[i], "-I", 2)) ||
                      (!strcmp(argv[i], "--include")))
