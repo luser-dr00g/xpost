@@ -1340,8 +1340,12 @@ void _draw_bitmap(Xpost_Context *ctx,
     int i, j;
     const unsigned char *tmp;
     unsigned int pix;
+    Xpost_Object exec_name;
 
     tmp = buffer;
+    /* interned once: re-interning it for every set pixel dominates the
+       glyph loop when putpix is a procedure rather than an operator */
+    exec_name = xpost_name_cons(ctx, "exec");
     XPOST_LOG_INFO("bitmap rows = %d, bitmap width = %d", rows, width);
     XPOST_LOG_INFO("bitmap pitch = %d", pitch);
     XPOST_LOG_INFO("bitmap pixel_mode = %d", pixel_mode);
@@ -1400,8 +1404,7 @@ void _draw_bitmap(Xpost_Context *ctx,
                 else
                 {
                     xpost_stack_push(ctx->lo, ctx->os, putpix);
-                    xpost_stack_push(ctx->lo, ctx->es,
-                                     xpost_name_cons(ctx, "exec"));
+                    xpost_stack_push(ctx->lo, ctx->es, exec_name);
                 }
             }
         }
