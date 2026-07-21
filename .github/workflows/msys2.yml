@@ -15,9 +15,9 @@ jobs:
       matrix:
         config:
           - msystem: mingw32
-            install: base-devel git mingw-w64-i686-toolchain mingw-w64-i686-autotools mingw-w64-i686-libjpeg-turbo mingw-w64-i686-libpng mingw-w64-i686-freetype mingw-w64-i686-fontconfig
+            install: base-devel git mingw-w64-i686-toolchain mingw-w64-i686-libjpeg-turbo mingw-w64-i686-libpng mingw-w64-i686-freetype mingw-w64-i686-fontconfig mingw-w64-i686-meson mingw-w64-i686-ninja
           - msystem: mingw64
-            install: base-devel git  mingw-w64-x86_64-toolchain mingw-w64-x86_64-autotools mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libpng mingw-w64-x86_64-freetype mingw-w64-x86_64-fontconfig mingw-w64-x86_64-check mingw-w64-x86_64-meson mingw-w64-x86_64-ninja
+            install: base-devel git mingw-w64-x86_64-toolchain mingw-w64-x86_64-libjpeg-turbo mingw-w64-x86_64-libpng mingw-w64-x86_64-freetype mingw-w64-x86_64-fontconfig mingw-w64-x86_64-meson mingw-w64-x86_64-ninja
     name: msys2 - ${{ matrix.config.msystem }}
     runs-on: windows-latest
     defaults:
@@ -31,14 +31,6 @@ jobs:
         update: true
         install: ${{ matrix.config.install }}
     - name: meson
-      if: matrix.config.msystem == 'mingw64'
       run: meson setup builddir
     - name: meson test
-      if: matrix.config.msystem == 'mingw64'
       run: meson test -C builddir --print-errorlogs
-    - name: configure
-      run: autoreconf -vif && ./configure --with-tests=regular
-    - name: configure
-      run: make V=1
-    - name: test
-      run: make check

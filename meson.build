@@ -42,6 +42,22 @@ config_h = configuration_data()
 
 cc = meson.get_compiler('c')
 
+# Strict warning set matching the autotools build. warning_level=2 already
+# supplies -Wall -Wextra; these add the rest of the coverage. Unrecognised
+# flags are filtered out per compiler, so the list stays portable across gcc,
+# clang and mingw.
+strict_warnings = [
+  '-Wshadow',
+  '-Wdeclaration-after-statement',
+  '-Wmissing-prototypes',
+  '-Wstrict-prototypes',
+  '-Wpointer-arith',
+  '-Wwrite-strings',
+  '-Winline',
+  '-Wno-missing-field-initializers',
+]
+add_project_arguments(cc.get_supported_arguments(strict_warnings), language: 'c')
+
 # Release builds enable link-time optimization by default: it inlines the hot
 # cross-translation-unit interpreter accessors and is the single largest
 # speedup. debug and debugoptimized builds stay LTO-free for fast compiles, so

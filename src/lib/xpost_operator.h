@@ -64,8 +64,20 @@
 
 /**
  * @brief a "generic" function pointer for operator functions
+ *
+ * The argument list is deliberately left unspecified: every operator has a
+ * different concrete signature, and each is cast to this one type and invoked
+ * through it. A (void) prototype would forbid those calls, so the empty list
+ * is required here and -Wstrict-prototypes is suppressed only at this site.
  */
+#if defined(__GNUC__)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 typedef int (*Xpost_Op_Func)();
+#if defined(__GNUC__)
+# pragma GCC diagnostic pop
+#endif
 
 /**
  * @brief operator signature structure

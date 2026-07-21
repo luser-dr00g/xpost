@@ -15,18 +15,12 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get -qq update
-        sudo apt install build-essential libpng-dev libjpeg-dev libfreetype6-dev libfontconfig1-dev check meson ninja-build
+        sudo apt install build-essential libpng-dev libjpeg-dev libfreetype6-dev libfontconfig1-dev meson ninja-build
     - name: meson
       run: meson setup builddir
     - name: ninja
       run: ninja -C builddir
     - name: meson test
       run: meson test -C builddir --print-errorlogs
-    - name: configure
-      run: autoreconf -vif && ./configure --with-tests=regular
-    - name: make
-      run: make V=1
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: meson dist
+      run: meson dist -C builddir
