@@ -262,6 +262,7 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
             }
 
             objmem = xpost_context_select_memory(ctx, o);
+            if (!objmem) return 0;
             if (objmem != mem) {
                 if (!markall)
                     break;
@@ -273,7 +274,6 @@ int _xpost_garbage_mark_object(Xpost_Context *ctx,
                         ent);
                 return 0;
             }
-            if (!objmem) return 0;
             if (!_xpost_garbage_ent_is_marked(objmem, ent, &ret))
                 return 0;
             if (!ret) {
