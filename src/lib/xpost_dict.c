@@ -217,7 +217,9 @@ unsigned int hash(Xpost_Object k)
                 | (k.comp_.tag & XPOST_OBJECT_TAG_DATA_FLAG_BANK))
                 << 1) /* ignore flags (except BANK!) */
             + (k.comp_.sz << 3)
-            + (xpost_object_get_ent(k) << 7)
+            /* get_ent is -1 for a non-composite key; shift it as unsigned
+               so the mix is defined (same bits, no signed-shift UB) */
+            + ((unsigned int)xpost_object_get_ent(k) << 7)
             + (k.comp_.off << 5);
     /* h = xpost_object_get_type(k); /\* test collisions. *\/ */
     /* mix bits so the modulo by the table size spreads keys across
@@ -392,9 +394,13 @@ int dicgrow(Xpost_Context *ctx,
     xpost_memory_table_get_addr(mem, xpost_object_get_ent(d), &ad);
     dp = (void *)(mem->base + ad);
     sz = DICTABN(dp->sz);
-    tp = (void *)(mem->base + ad + sizeof(dichead)); /* copy data */
     for (i = 0; i < sz; i++)
     {
+        /* xpost_dict_put_memory below can grow -- and so relocate -- the
+           memory file, which leaves a table pointer cached across the call
+           dangling. Re-derive it from the current base each iteration; ad,
+           the source dict's own offset, does not move. */
+        tp = (void *)(mem->base + ad + sizeof(dichead));
         if (xpost_object_get_type(tp[i].key) != nulltype)
         {
             xpost_dict_put_memory(ctx, mem, n, tp[i].key, tp[i].value);
