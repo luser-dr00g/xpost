@@ -464,13 +464,17 @@ static
 int xpost_op_stop(Xpost_Context *ctx)
 {
     Xpost_Object f = xpost_bool_cons(0);
-    int c = xpost_stack_count(ctx->lo, ctx->es);
     Xpost_Object x;
-    while (c--)
+    /* Unwind the exec stack to the nearest enclosing stopped context --
+       the false that `stopped` pushed. Pop straight to it: counting the
+       whole stack first to bound the loop is O(depth) yet the marker is
+       usually a few frames down, and an emptied stack (the pop yields
+       invalidtype) is itself the no-context case handled below. */
+    for (;;)
     {
         x = xpost_stack_pop(ctx->lo, ctx->es);
         if (xpost_object_get_type(x) == invalidtype)
-            return execstackunderflow;
+            break;
         if(xpost_dict_compare_objects(ctx, f, x) == 0) {
             if (!xpost_stack_push(ctx->lo, ctx->os, xpost_bool_cons(1)))
                 return stackoverflow;
