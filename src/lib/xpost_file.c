@@ -4252,7 +4252,9 @@ int statementedit(FILE *in, FILE **out)
 {
     FILE *fp;
     int c;
-    char nest[MAXNEST] = {0}; /* any of {(< waiting for matching >)} */
+    char nest[MAXNEST + 1] = {0}; /* any of {(< waiting for matching >)};
+                                     one past MAXNEST holds the level that
+                                     tips over the limit until it is rejected */
     int defer = -1; /* defer is a flag (-1 == false)
                        and an index into nest[] */
 
@@ -4274,7 +4276,7 @@ int statementedit(FILE *in, FILE **out)
     {
         if (defer > -1)
         {
-            if (defer > MAXNEST)
+            if (defer >= MAXNEST)
             {
                 return syntaxerror;
             }
