@@ -138,6 +138,7 @@ int _stack_float(Xpost_Context *ctx)
             return stackunderflow;
         case integertype:
             xpost_stack_topdown_replace(ctx->lo, ctx->os, 0, s0 = _promote_integer_to_real(s0));
+            /* fallthrough */
         case realtype:
             return 0;
         default:
@@ -214,6 +215,7 @@ int _stack_float_float(Xpost_Context *ctx)
             return stackunderflow;
         case integertype:
             xpost_stack_topdown_replace(ctx->lo, ctx->os, 0, s0 = _promote_integer_to_real(s0));
+            /* fallthrough */
         case realtype:
             s1 = xpost_stack_topdown_fetch(ctx->lo, ctx->os, 1);
             switch(xpost_object_get_type(s1))
@@ -222,6 +224,7 @@ int _stack_float_float(Xpost_Context *ctx)
                     return stackunderflow;
                 case integertype:
                     xpost_stack_topdown_replace(ctx->lo, ctx->os, 1, s1 = _promote_integer_to_real(s1));
+                    /* fallthrough */
                 case realtype:
                     return 0;
                 default:
@@ -716,7 +719,7 @@ int xpost_operator_exec(Xpost_Context *ctx,
     switch(sp[i].in)
     {
         case 0:
-            ret = sp[i].fp(ctx); break;
+            ret = ((int(*)(Xpost_Context*))sp[i].fp)(ctx); break;
         case 1:
             ret = ((int(*)(Xpost_Context*,Xpost_Object))sp[i].fp)
                 (ctx, hold->data[0]); break;

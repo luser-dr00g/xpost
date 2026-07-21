@@ -154,7 +154,7 @@ unsigned xpost_save_ent_is_saved(Xpost_Memory_File *mem,
        cannot be confused with an object's birth stamp, which equals its
        birth count and is therefore <= sav.lev for anything protectable. */
     return llev <= sav.save_.lev ?
-        (tlev == sav.save_.lev + 1) : 1;
+        (tlev == sav.save_.lev + 1u) : 1;
 }
 
 /* make a clone of ent, return new ent */

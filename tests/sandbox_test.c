@@ -65,7 +65,7 @@ int main(void)
     char readable[600];
     char outside[600];
     char evilres[600];  /* a resource tree outside the permitted set */
-    char prog[900];
+    char prog[1400];
     FILE *w;
 #ifndef _WIN32
     char escape[600];   /* a symlink inside the tree that points out of it */

@@ -695,7 +695,7 @@ static void _verify_push(Xpost_Context *ctx, Xpost_Object o,
         return;
     m = xpost_context_select_memory(ctx, o);
     bank = (m == ctx->gl);
-    ent = (t == filetype) ? o.mark_.padw : xpost_object_get_ent(o);
+    ent = (t == filetype) ? (unsigned int)o.mark_.padw : (unsigned int)xpost_object_get_ent(o);
     seen = bank ? _vseen_gl : _vseen_lo;
     if (ent >= (bank ? _vseen_gl_n : _vseen_lo_n)) return;
     if (seen[ent]) return;
@@ -732,8 +732,9 @@ static void _verify_stack(Xpost_Context *ctx, Xpost_Memory_File *mem,
 
 static void _verify_reachability(Xpost_Context *ctx, Xpost_Memory_File *mem)
 {
-    unsigned int head = 0, ad;
+    unsigned int head = 0;
     int bad = 0;
+    (void)mem;
     _vq_n = 0;
     _vseen_lo_n = ctx->lo->table.nextent; _vseen_gl_n = ctx->gl->table.nextent;
     _vseen_lo = calloc(_vseen_lo_n, 1); _vseen_gl = calloc(_vseen_gl_n, 1);

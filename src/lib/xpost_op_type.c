@@ -245,7 +245,7 @@ int Scvi(Xpost_Context *ctx,
     free(t);
     if (ret)
         return ret;
-    if (dbl >= LONG_MAX || dbl <= LONG_MIN)
+    if (dbl >= (double)LONG_MAX || dbl <= (double)LONG_MIN)
         return limitcheck;
 
     xpost_stack_push(ctx->lo, ctx->os, xpost_int_cons((long)dbl));
@@ -357,40 +357,6 @@ int NRScvrs(Xpost_Context *ctx,
         str.comp_.sz = n;
     xpost_stack_push(ctx->lo, ctx->os, str);
     return 0;
-}
-
-/* helper function: fill string with integer */
-static
-int conv_integ(real num,
-               char *s,
-               int n)
-{
-    int off;
-    if (num < 10)
-    {
-        *s = ((int)num) + '0';
-        return 1;
-    }
-    off = conv_integ((real)(num/10), s, n);
-    if ((off == n) || (off == -1)) return -1;
-    s[off] = (((int)num)%10) + '0';
-    return off + 1;
-}
-
-/* helper function: fill string with fraction */
-static
-int conv_frac (real num,
-               char *s,
-               int n)
-{
-    real integ, frac;
-    num *= 10;
-    integ = (real)floor(num);
-    frac = num - integ;
-    *s = (int)integ + '0';
-    //if (num == 0.0) return 1;
-    if (num < 0.0001) return 1;
-    return 1 + conv_frac(frac, s+1, n-1);
 }
 
 /* helper function: fill string with real decimal representation */

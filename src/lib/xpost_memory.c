@@ -332,7 +332,7 @@ xpost_memory_file_grow(Xpost_Memory_File *mem,
     }
 
     XPOST_LOG_INFO("grow memory file%s%s (old: %d  new: %d)",
-                   mem->fname ? " for " : "", mem->fname ? mem->fname : "",
+                   mem->fname[0] ? " for " : "", mem->fname[0] ? mem->fname : "",
                    mem->max, sz);
 
 #ifdef _WIN32
@@ -538,7 +538,7 @@ xpost_memory_file_dump(const Xpost_Memory_File *mem)
 
     if ((u-1)%16 != 0)
     { /* did not print in the last iteration of the loop */
-        for (v = u; u%16 != 0; v++)
+        for (v = u; v%16 != 0; v++)
         {
             XPOST_LOG_DUMP("   ");
         }
