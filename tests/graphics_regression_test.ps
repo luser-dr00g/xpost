@@ -1131,11 +1131,12 @@ basefont null ne {
     2 24 moveto (A) show
     wantsnap snapshot snapeq not (the base font still renders its own glyph) assert
 
-    % a base font publishes its glyph complement in /CharStrings, as
-    % re-encoding programs expect: they size tables from its length,
-    % test membership with known, and enumerate its keys
-    basefont /CharStrings known (a base font carries CharStrings) assert
-    basefont /CharStrings known {
+    % a Type 1 or CFF base font publishes its glyph complement in
+    % /CharStrings, as re-encoding programs expect: they size tables from
+    % its length, test membership with known, and enumerate its keys. A
+    % TrueType (Type 42) face carries its glyphs in the sfnt instead.
+    basefont /FontType get dup 1 eq exch 2 eq or {
+        basefont /CharStrings known (a base font carries CharStrings) assert
         basefont /CharStrings get
         dup type /dicttype eq (CharStrings is a dictionary) assert
         dup length 100 ge (CharStrings covers the face's glyphs) assert

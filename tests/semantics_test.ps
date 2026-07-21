@@ -82,9 +82,12 @@ currentfile /ASCIIHexDecode filter /ReusableStreamDecode filter
 /rsdstash exch def
 rsdstash 5 string readstring pop (Hello) eq
 (a reusable stream reads its data) assert
-rsdstash resetfile
-rsdstash 5 string readstring pop (Hello) eq
-(resetfile replays a reusable stream) assert
+/resetfile where {
+    pop
+    rsdstash resetfile
+    rsdstash 5 string readstring pop (Hello) eq
+    (resetfile replays a reusable stream) assert
+} if
 rsdstash 2 setfileposition
 rsdstash fileposition 2 eq (fileposition reports the reusable position) assert
 rsdstash 3 string readstring pop (llo) eq
