@@ -149,7 +149,12 @@ int _stack_float(Xpost_Context *ctx)
 static
 int _stack_any(Xpost_Context *ctx)
 {
-    if (xpost_stack_count(ctx->lo, ctx->os) >= 1)
+    Xpost_Stack *os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
+    Xpost_Stack *os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
+    /* at least one operand without walking the whole stack: the top
+       segment holds one, or a full segment sits below it (only the top
+       segment is ever partial) -- counting is O(n) in the stack depth */
+    if (os_top->top >= 1 || os_top != os_root)
         return 0;
     return stackunderflow;
 }
@@ -265,7 +270,11 @@ int _stack_number_number(Xpost_Context *ctx)
 static
 int _stack_any_any(Xpost_Context *ctx)
 {
-    if (xpost_stack_count(ctx->lo, ctx->os) >= 2)
+    Xpost_Stack *os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
+    Xpost_Stack *os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
+    /* at least two operands in O(1): two in the top segment, or a full
+       segment (never partial) below it */
+    if (os_top->top >= 2 || os_top != os_root)
         return 0;
     return stackunderflow;
 }
@@ -613,13 +622,16 @@ int xpost_operator_exec(Xpost_Context *ctx,
     op = optab[opcode];
     sp = (void *)(ctx->gl->base + op.sigadr);
 
-    /* signatures take at most 8 args, so when the top segment holds
-       that many the exact count (a full segment walk) is not needed */
+    /* signatures take at most 8 args, so ct only needs to reach 8; no
+       full segment walk is needed. The top segment settles it: 8 or more
+       in it, or -- when a full segment (never partial) sits below it --
+       at least SEGMENT_SIZE, likewise >= 8. Only a lone segment can hold
+       fewer, and then its own top is the count. */
     os_root = (Xpost_Stack *)(ctx->lo->base + ctx->os);
     os_top = (Xpost_Stack *)(ctx->lo->base + os_root->prevseg);
     ct = (os_top->top >= 8) ? 8
         : (os_top == os_root) ? (int)os_top->top
-        : xpost_stack_count(ctx->lo, ctx->os);
+        : 8;
     if (op.n == 0)
     {
         XPOST_LOG_ERR("operator has no signatures");
