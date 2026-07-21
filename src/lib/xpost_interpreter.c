@@ -1256,9 +1256,6 @@ int eval(Xpost_Context *ctx)
     Xpost_Stack *es_top;
     Xpost_Object_Type type;
 
-    if (!validate_context(ctx))
-        return unregistered;
-
     /* pop the next object, directly off the top segment when possible */
     es_root = (Xpost_Stack *)(ctx->lo->base + ctx->es);
     es_top = (Xpost_Stack *)(ctx->lo->base + es_root->prevseg);
@@ -1480,6 +1477,12 @@ int mainloop(Xpost_Context *ctx)
 ctxswitch:
     xpost_ctx = ctx = _switch_context(ctx);
     itpdata->cid = ctx->id;
+
+    /* the context's memory pointers are fixed for the life of a run;
+       validate them once when a context becomes current rather than
+       before every evaluation step */
+    if (!validate_context(ctx))
+        return unregistered;
 
     while(!ctx->quit)
     {
