@@ -209,13 +209,20 @@ _xpost_log_fprint_cb(FILE *stream,
 
     s = vsnprintf(NULL, 0, fmt, args);
     if (s == -1)
+    {
+        va_end(args_copy);
         return;
+    }
 
     str = (char *)malloc((s + 2) * sizeof(char));
     if (!str)
+    {
+        va_end(args_copy);
         return;
+    }
 
     s = vsnprintf(str, s + 1, fmt, args_copy);
+    va_end(args_copy);
     if (s == -1)
     {
         free(str);
@@ -384,14 +391,22 @@ xpost_log_print_dump(Xpost_Log_Level level,
     va_copy(args_copy, args);
 
     s = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
     if (s == -1)
+    {
+        va_end(args_copy);
         return;
+    }
 
     str = (char *)malloc((s + 2) * sizeof(char));
     if (!str)
+    {
+        va_end(args_copy);
         return;
+    }
 
     s = vsnprintf(str, s + 1, fmt, args_copy);
+    va_end(args_copy);
     if (s == -1)
     {
         free(str);
@@ -409,6 +424,4 @@ xpost_log_print_dump(Xpost_Log_Level level,
 
     if ((int)res != (s + 1))
         fprintf(stderr, "ERROR: %s(): want to write %d bytes, %d written\n", __func__, s + 1, res);
-
-    va_end(args);
 }
