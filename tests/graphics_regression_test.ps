@@ -1909,15 +1909,18 @@ countink 20 gt (full-black cmyk text marks the page) assert
 
 % --- font identity: scalefont and makefont build dictionaries ---
 % scaling a font returns a new dictionary carrying the size in its
-% FontMatrix and leaves the operand font untouched. The base follows
-% the Type 1 convention (0.001: 1000 character-space units per em),
-% so the scaled copy carries size/1000
-/Helvetica-Bold findfont dup 13 scalefont
+% FontMatrix and leaves the operand font untouched. Read the operand's
+% own base scale rather than assume one, so the check holds whichever
+% face the name resolves to (a Type 1's 0.001 or a TrueType face's em
+% scale): the copy carries the size times that base.
+/Helvetica-Bold findfont
+dup /FontMatrix get 0 get /basefm exch def
+dup 13 scalefont
 2 copy eq not (scalefont returns a new dictionary) assert
 exch /FontMatrix get 0 get
-0.001 (scalefont leaves the operand font unscaled) assertnear
+basefm (scalefont leaves the operand font unscaled) assertnear
 /FontMatrix get 0 get
-0.013 (scalefont carries the size in the copy's FontMatrix) assertnear
+basefm 13 mul (scalefont carries the size in the copy's FontMatrix) assertnear
 
 % two sizes of one face coexist: measuring through one dictionary must
 % not disturb the other
