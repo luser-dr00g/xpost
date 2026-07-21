@@ -257,7 +257,26 @@ xpost_fopen_errno(int e)
 static FILE *
 xpost_raw_fopen(const char *path, const char *mode, int *err)
 {
-    FILE *fp = fopen(path, mode);
+    char bmode[8];
+    FILE *fp;
+
+    /* PostScript files are binary byte streams; force binary mode so that
+       Windows text translation -- CRLF rewriting and a 0x1A byte read as
+       end-of-file -- cannot corrupt or truncate them. On POSIX 'b' is a
+       no-op. */
+    if (!strchr(mode, 'b'))
+    {
+        size_t n = strlen(mode);
+
+        if (n + 1 < sizeof bmode)
+        {
+            memcpy(bmode, mode, n);
+            bmode[n] = 'b';
+            bmode[n + 1] = '\0';
+            mode = bmode;
+        }
+    }
+    fp = fopen(path, mode);
 
     if (!fp)
     {
