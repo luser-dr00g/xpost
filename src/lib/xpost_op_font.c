@@ -37,6 +37,7 @@
 #include <stddef.h>
 
 #include <assert.h>
+#include <ctype.h> /* isdigit, isxdigit, isspace */
 #include <math.h> /* sqrt */
 #include <stdio.h>
 #include <string.h>
