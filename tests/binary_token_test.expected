@@ -365,4 +365,9 @@ sysname 252: ERR/undefined
 sysname 253: ERR/undefined
 sysname 254: ERR/undefined
 sysname 255: ERR/undefined
+hibyte literal name: S=n/÷  F=n/÷ 
+hibyte embedded in name: S=n/a÷b  F=n/a÷b 
+hibyte two in one name: S=n/Ã·  F=n/Ã· 
+hibyte 160 literal name: S=n/   F=n/  
+hibyte name defines and loads: S=i123  F=i123 
 BINARY-TOKEN-CORPUS-DONE

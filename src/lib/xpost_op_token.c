@@ -115,9 +115,11 @@ int isdel(int c)
 static
 int isreg(int c)
 {
-    /* bytes in the binary-token range delimit the token they follow,
-       exactly as whitespace or a delimiter would (PLRM 3.14.2) */
-    return (c != EOF) && (c < 128) && (!isspace(c)) && (!isdel(c));
+    /* bytes in the binary-token range 128..159 delimit the token they
+       follow, exactly as whitespace or a delimiter would (PLRM 3.14.2);
+       bytes 160..255 are regular characters and may appear in names */
+    return (c != EOF) && !(c >= 128 && c <= 159) &&
+           (c >= 128 || (!isspace(c) && !isdel(c)));
 }
 
 //int isxdigit (int c) { return strchr("0123456789ABCDEFabcdef", c) != NULL; }
@@ -1296,7 +1298,7 @@ int toke(Xpost_Context *ctx,
         *retval = null;
         return 0;
     }
-    if ((unsigned char)buf[0] >= 128)
+    if ((unsigned char)buf[0] >= 128 && (unsigned char)buf[0] <= 159)
         return binary_token(ctx, (unsigned char)buf[0], src, next, retval);
     if (!isdel(*buf))
         sta += puff(ctx, buf + 1, NBUF - 1, src, next, back);

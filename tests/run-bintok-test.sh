@@ -20,8 +20,10 @@ trap 'rm -f "$scratch" "$job" "$out"' EXIT
 
 { echo "/SCRATCH ($scratch) def"; cat "$corpus"; echo quit; } > "$job"
 
+# -a: name tokens may carry bytes 160..255, which would otherwise trip
+# grep's binary-file heuristic and truncate the stream
 "$xpost" -q -d null "$job" </dev/null 2>/dev/null \
-    | grep -v '^Xpost\|^Copyright\|WARRANTY\|COPYING\|^PS' > "$out"
+    | grep -av '^Xpost\|^Copyright\|WARRANTY\|COPYING\|^PS' > "$out"
 
 # --strip-trailing-cr: the golden may be checked out with CRLF on a host that
 # translates line endings, while the interpreter emits LF

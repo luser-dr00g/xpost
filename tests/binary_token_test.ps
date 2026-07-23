@@ -256,5 +256,13 @@
     end
 } for
 
+% --- bytes 160..255 are regular characters, not binary-token leads
+%     (PLRM 3.14.2 reserves 128..159): they scan into names ---
+(hibyte literal name) <2FF7> case
+(hibyte embedded in name) <2F61F762> case
+(hibyte two in one name) <2FC3B7> case
+(hibyte 160 literal name) <2FA0> case
+(hibyte name defines and loads) <2FC3B7203132332064656620C3B7> case
+
 (BINARY-TOKEN-CORPUS-DONE\n) print
 flush
