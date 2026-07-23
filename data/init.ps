@@ -1032,6 +1032,32 @@ end % userdict
             }{ pop pop } ifelse
         }{ pop } ifelse
     } forall
+    % With the standard operators now operator-typed, freeze the
+    % machinery's own references to them: bind substitutes an
+    % operator wherever a name in a loaded procedure currently
+    % resolves to one, so a program's later redefinition governs
+    % what the program calls, never what the machinery calls.
+    % Names holding procedures or dictionaries stay dynamic -- bind
+    % passes them by. One level of dictionary descent reaches the
+    % procedure tables: the wrapped implementations, the device
+    % makers, the graphics state template, the error handlers.
+    /.bindone { % value  .bindone  -
+        dup type /arraytype eq 1 index xcheck and { bind } if pop
+    } def
+    /.bindscope { % dict  .bindscope  -
+        dup { exch pop .bindone } forall
+        { exch pop
+            dup type /dicttype eq {
+                { exch pop .bindone } forall
+            }{ pop } ifelse
+        } forall
+    } def
+    systemdict .bindscope
+    userdict .bindscope
+    graphicsdict .bindscope
+    errordict .bindscope
+    userdict /.bindone undef
+    userdict /.bindscope undef
         userdict /GRAPHICS_LOADED true put
         /QUIET where { pop }{ (graphics loaded, calling initgraphics\n)print } ifelse
         userdict /USEDRAWLINE true put

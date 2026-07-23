@@ -2444,9 +2444,11 @@ basefont null ne {
 /fill load type /operatortype eq (fill loads as an operator) assert
 /show load type /operatortype eq (show loads as an operator) assert
 gsave
+/bnd.st userdict /stroke get def
 /stroke { 2 2 scale stroke } bind def
 newpath 10 10 moveto 20 20 lineto stroke
-userdict /stroke undef
+userdict /stroke userdict /bnd.st get put
+userdict /bnd.st undef
 true (a bound self-redefinition of stroke terminates) assert
 grestore
 
@@ -2532,6 +2534,22 @@ gsave 100 100 moveto
 grestore
 iso.c 2 eq (a cshow procedure runs per character on the caller's stacks) assert
 userdict /iso.c undef
+
+% --- the machinery's internal references are frozen: a program
+% shadowing a core operator name reaches only its own calls ---
+userdict /exch 99 put
+gsave
+{ 100 100 moveto (a) show
+  newpath 10 10 moveto 20 20 lineto stroke } stopped not
+grestore
+userdict /exch undef
+(text and stroking survive a shadowed exch) assert
+/iso.g userdict /gsave get def
+userdict /gsave (shadowed) put
+{ newpath 30 30 moveto 40 40 lineto 30 40 lineto closepath eofill } stopped not
+userdict /gsave userdict /iso.g get put
+(painting survives a shadowed gsave) assert
+userdict /iso.g undef
 gsave
 { 10 10 8 [10 0 0 -10 0 10]
   { /pend (x) def /rawrow 5 def /got 99 def <00112233445566778899> }
