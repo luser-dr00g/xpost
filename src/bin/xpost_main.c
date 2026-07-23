@@ -567,12 +567,19 @@ int main(int argc, char *argv[])
         xpost_path_control_engage();
     }
 
-    xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file, 0);
-    xpost_destroy(ctx);
+    {
+        Xpost_Run_Status status;
 
-    xpost_quit();
+        status = xpost_run(ctx, XPOST_INPUT_FILENAME, ps_file, 0);
+        xpost_destroy(ctx);
 
-    return EXIT_SUCCESS;
+        xpost_quit();
+
+        /* a job that ended in an uncaught error is a failed job,
+           whatever was flushed or rendered along the way */
+        return status == XPOST_RUN_COMPLETE || status == XPOST_RUN_YIELDED
+             ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
 
   quit_xpost:
     xpost_quit();

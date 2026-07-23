@@ -303,7 +303,8 @@ end
 /.handlejoberror {
     $error /newerror get
     handleerror
-    { (%%[ Flushing: rest of job \(to end-of-file\) will be ignored ]%%\n)
+    { .rundied
+      (%%[ Flushing: rest of job \(to end-of-file\) will be ignored ]%%\n)
       print flush } if
 } def
 

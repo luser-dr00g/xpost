@@ -31,4 +31,10 @@ out=$("$xpost" -q --no-sandbox -d null "$tmp".caught.ps </dev/null 2>&1)
 printf '%s\n' "$out" | grep -Fq 'Flushing' && exit 1
 printf '%s\n' "$out" | grep -Fq 'done' || exit 1
 
+# 4. process exit status: an uncaught error is a failed job; a clean
+#    job and a job that catches its own error succeed
+"$xpost" -q --no-sandbox -d null "$tmp".err.ps </dev/null >/dev/null 2>&1 && exit 1
+"$xpost" -q --no-sandbox -d null "$tmp".ok.ps </dev/null >/dev/null 2>&1 || exit 1
+"$xpost" -q --no-sandbox -d null "$tmp".caught.ps </dev/null >/dev/null 2>&1 || exit 1
+
 exit 0
