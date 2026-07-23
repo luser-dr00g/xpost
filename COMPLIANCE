@@ -237,7 +237,9 @@ Level 1 operators
  [X] setcharwidth
  [X] = and == (also stack, pstack, =print)
  [X] executive (also prompt, start)
- [X] handleerror
+ [X] handleerror (an error out of a procedure-implemented operator
+     restores the stacks to their depths at the call; operands the
+     procedure had already consumed are not pushed back)
  [X] run
  [X] initgraphics
  [X] nulldevice

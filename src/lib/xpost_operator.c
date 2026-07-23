@@ -702,11 +702,33 @@ int xpost_operator_exec(Xpost_Context *ctx,
     if (op.n == 0)
     {
         /* a wrapped operator carries no C signatures: it runs its
-           recorded procedure, which checks its own operands */
+           recorded procedure, which checks its own operands. The
+           call's frame rides the exec stack beneath the procedure --
+           the operator and the operand and dict depths at the call,
+           under a finish marker that carries them off when the
+           procedure completes. An unwind that discards the marker
+           discards the record with it, and the error path reads the
+           live records straight off the stack to name this operator
+           and put the stack depths back (see _onerror) */
         if (xpost_object_get_type(op.proc) == arraytype)
         {
-            if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(op.proc)))
-                return execstackoverflow;
+            Xpost_Object fr[5];
+            int k;
+
+            fr[0] = xpost_int_cons((integer)opcode);
+            fr[1] = xpost_int_cons(xpost_stack_count(ctx->lo, ctx->os));
+            fr[2] = xpost_int_cons(xpost_stack_count(ctx->lo, ctx->ds));
+            fr[3] = xpost_operator_cons_opcode(ctx->opcode_shortcuts.wrapdone);
+            fr[4] = xpost_object_cvx(op.proc);
+            for (k = 0; k < 5; k++)
+            {
+                if (!xpost_stack_push(ctx->lo, ctx->es, fr[k]))
+                {
+                    while (k--)
+                        (void)xpost_stack_pop(ctx->lo, ctx->es);
+                    return execstackoverflow;
+                }
+            }
             return 0;
         }
         XPOST_LOG_ERR("operator has no signatures");

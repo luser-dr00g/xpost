@@ -502,6 +502,20 @@ int xpost_op_rundied(Xpost_Context *ctx)
     return 0;
 }
 
+/* -  wrap.done  -
+   the finish marker of a wrapped-operator call: the recorded
+   procedure ran to completion, so the frame beneath the marker --
+   the dict and operand depths at the call and the operator itself
+   -- leaves the exec stack with it */
+static
+int xpost_op_wrapdone(Xpost_Context *ctx)
+{
+    (void)xpost_stack_pop(ctx->lo, ctx->es);
+    (void)xpost_stack_pop(ctx->lo, ctx->es);
+    (void)xpost_stack_pop(ctx->lo, ctx->es);
+    return 0;
+}
+
 /* name proc  .wrapop  operator
    install an operator that runs the procedure. A procedure that
    implements a standard operator becomes indistinguishable from a
@@ -622,6 +636,8 @@ int xpost_oper_init_control_ops (Xpost_Context *ctx,
     ctx->opcode_shortcuts.repeatcont = op.mark_.padw;
     op = xpost_operator_cons(ctx, "loop.iterate", (Xpost_Op_Func)xpost_op_loop_iterate, 0, 0);
     ctx->opcode_shortcuts.loopcont = op.mark_.padw;
+    op = xpost_operator_cons(ctx, "wrap.done", (Xpost_Op_Func)xpost_op_wrapdone, 0, 0);
+    ctx->opcode_shortcuts.wrapdone = op.mark_.padw;
     op = xpost_operator_cons(ctx, "exit", (Xpost_Op_Func)xpost_op_exit, 0, 0);
     INSTALL;
     op = xpost_operator_cons(ctx, "stop", (Xpost_Op_Func)xpost_op_stop, 0, 0);

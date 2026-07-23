@@ -1363,6 +1363,84 @@ void _onerror(Xpost_Context *ctx,
         }
     }
 
+    /* An error leaving a wrapped operator is the operator's error.
+       Each live call left its frame on the exec stack -- the operator
+       and the operand and dict depths at the call, under the finish
+       marker -- so the frames above the nearest stopped context are
+       exactly the calls the coming stop will unwind out of: the
+       innermost names the command, and the stacks go back to their
+       depths at the calls -- dropping what the calls part-way pushed,
+       though what they had already consumed stays consumed. A call
+       whose frame sits below the stopped context is left alone: its
+       procedure keeps running and its stacks are its own business. */
+    {
+        Xpost_Object fmark = xpost_bool_cons(0);
+        int esn = xpost_stack_count(ctx->lo, ctx->es);
+        int found = 0;
+        int minos = 0, minds = 0;
+        unsigned int cmdop = 0;
+        int i;
+
+        for (i = 0; i < esn; i++)
+        {
+            Xpost_Object x = xpost_stack_topdown_fetch(ctx->lo, ctx->es, i);
+
+            if (xpost_dict_compare_objects(ctx, fmark, x) == 0)
+                break; /* the coming stop unwinds to here */
+            if (xpost_object_get_type(x) == operatortype &&
+                x.mark_.padw == (unsigned int)ctx->opcode_shortcuts.wrapdone &&
+                i + 3 < esn)
+            {
+                Xpost_Object dso = xpost_stack_topdown_fetch(ctx->lo, ctx->es, i + 1);
+                Xpost_Object oso = xpost_stack_topdown_fetch(ctx->lo, ctx->es, i + 2);
+                Xpost_Object opo = xpost_stack_topdown_fetch(ctx->lo, ctx->es, i + 3);
+
+                if (xpost_object_get_type(dso) == integertype &&
+                    xpost_object_get_type(oso) == integertype &&
+                    xpost_object_get_type(opo) == integertype)
+                {
+                    if (!found)
+                    {
+                        found = 1;
+                        cmdop = (unsigned int)opo.int_.val;
+                        minos = (int)oso.int_.val;
+                        minds = (int)dso.int_.val;
+                    }
+                    else
+                    {
+                        if ((int)oso.int_.val < minos)
+                            minos = (int)oso.int_.val;
+                        if ((int)dso.int_.val < minds)
+                            minds = (int)dso.int_.val;
+                    }
+                    i += 3;
+                }
+            }
+        }
+        if (found)
+        {
+            int oscount, dscount;
+
+            ctx->currentobject = xpost_operator_cons_opcode(cmdop);
+            oscount = xpost_stack_count(ctx->lo, ctx->os);
+            while (oscount > minos)
+            {
+                (void)xpost_stack_pop(ctx->lo, ctx->os);
+                --oscount;
+            }
+            dscount = xpost_stack_count(ctx->lo, ctx->ds);
+            if (dscount > minds && minds >= 3)
+            {
+                ++ctx->namebind_gen; /* visibility changes */
+                while (dscount > minds)
+                {
+                    (void)xpost_stack_pop(ctx->lo, ctx->ds);
+                    --dscount;
+                }
+            }
+        }
+    }
+
     /* printf("1\n"); */
     sd = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 0);
 

@@ -98,6 +98,7 @@ struct _Xpost_Context {
         int itransform;
         int rotate;
         int concatmatrix;
+        int wrapdone;
     } opcode_shortcuts;  /**< opcodes for internal use, to avoid lookups */
 
     Xpost_Object currentobject;  /**< currently-executing object, for error() */
