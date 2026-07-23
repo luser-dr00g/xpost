@@ -39,10 +39,11 @@
     begin {/height /width}{exch def}forall
     % the page dimensions are points and need not be integral; adopt the
     % exact values when the page device machinery published them
-    /.exactpagedims where { pop
-        /width .exactpagedims 0 get def
-        /height .exactpagedims 1 get def
-    } if
+    graphicsdict /.exactpagedims 2 copy known {
+        get
+        dup 0 get /width exch def
+        1 get /height exch def
+    }{ pop pop } ifelse
     currentdict end
     dup /.copydict get exec
     begin

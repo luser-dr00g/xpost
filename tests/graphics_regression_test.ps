@@ -2550,6 +2550,24 @@ userdict /gsave (shadowed) put
 userdict /gsave userdict /iso.g get put
 (painting survives a shadowed gsave) assert
 userdict /iso.g undef
+
+% --- the machinery's data roots and state are its own: a program may
+% take the names graphicsdict, DEVICE and =string for itself, and it
+% finds no machinery state in userdict to disturb ---
+5 dict begin
+/graphicsdict (mine) def
+/DEVICE 42 def
+/=string 7 def
+{ newpath 10 10 moveto 40 40 lineto stroke
+  100 100 moveto (a) show
+  gsave 20 20 10 10 rectfill grestore } stopped not
+end
+(painting survives shadowed graphicsdict, DEVICE and =string) assert
+userdict /.wrappedprocs known not
+userdict /.imginterp known not and
+userdict /.fontserial known not and
+userdict /.hairhw known not and
+(the machinery keeps its state out of userdict) assert
 gsave
 { 10 10 8 [10 0 0 -10 0 10]
   { /pend (x) def /rawrow 5 def /got 99 def <00112233445566778899> }

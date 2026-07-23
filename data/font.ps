@@ -100,14 +100,14 @@
     } if
     % a serial keys the glyph cache: derived dictionaries keep their
     % parent's, the transform distinguishing their entries. The
-    % counter lives in userdict outright: definefont may run under
-    % any dictionary a driver prolog has begun
+    % counter lives in graphicsdict, addressed outright: definefont
+    % may run under any dictionary a driver prolog has begun
     dup /.fontid known not {
-        userdict /.fontserial known not {
-            userdict /.fontserial 1 put
+        graphicsdict /.fontserial known not {
+            graphicsdict /.fontserial 1 put
         } if
-        dup /.fontid userdict /.fontserial get put
-        userdict /.fontserial userdict /.fontserial get 1 add put
+        dup /.fontid graphicsdict /.fontserial get put
+        graphicsdict /.fontserial graphicsdict /.fontserial get 1 add put
     } if
     FontDirectory exch 2 index exch put
     findfont

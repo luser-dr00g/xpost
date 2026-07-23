@@ -1384,7 +1384,7 @@ int _pathbbox(Xpost_Context *ctx)
     /* fetch the CTM and build its inverse; on any irregularity fall
        back to the raw device-space box rather than erroring */
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, ".graphicsdict"));
     gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
     psmat = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currmatrix"));
     if (xpost_object_get_type(psmat) == arraytype && psmat.comp_.sz == 6)
@@ -1838,7 +1838,7 @@ int xpost_oper_init_path_ops(Xpost_Context *ctx,
     //xpost_memory_table_get_addr(ctx->gl, XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
     //optab = (void *)(ctx->gl->base + optadr);
 
-    if (xpost_object_get_type((namegraphicsdict = xpost_name_cons(ctx, "graphicsdict"))) == invalidtype)
+    if (xpost_object_get_type((namegraphicsdict = xpost_name_cons(ctx, ".graphicsdict"))) == invalidtype)
         return VMerror;
     if (xpost_object_get_type((namecurrgstate = xpost_name_cons(ctx, "currgstate"))) == invalidtype)
         return VMerror;

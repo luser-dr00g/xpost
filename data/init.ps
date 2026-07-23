@@ -112,6 +112,11 @@ serverdict /exitserver {
 
 %(2\n)print
 /=string 128 string def
+% the scratch string serves every cvs in the machinery: as an operator
+% pushing it, procedures binding as they load freeze the reference,
+% and a program may take the name for itself
+/.=stringproc [ //=string ] cvx def
+/=string dup /.=stringproc load .wrapop def
 /=print {
     dup type /stringtype ne {
         //=string cvs
@@ -626,9 +631,9 @@ end % userdict
         20 dict begin
         /fd exch def
         fd /.formid known not {
-            userdict /.formserial 2 copy known { get }{ pop pop 1 } ifelse
+            graphicsdict /.formserial 2 copy known { get }{ pop pop 1 } ifelse
             fd /.formid 2 index put
-            userdict /.formserial 3 -1 roll 1 add put
+            graphicsdict /.formserial 3 -1 roll 1 add put
         } if
         % the key: the form and the transformation's linear part on a
         % thousandth grid; the position quantizes at replay
@@ -638,8 +643,8 @@ end % userdict
             1000 mul round cvi 20 string cvs
             exch (:) strcat exch strcat
         } forall def
-        /fc userdict /.formcache 2 copy known { get }{
-            pop pop 8 dict userdict /.formcache 2 index put
+        /fc graphicsdict /.formcache 2 copy known { get }{
+            pop pop 8 dict graphicsdict /.formcache 2 index put
         } ifelse def
         fd .execformbox
         /fh exch def /fw exch def /fby exch def /fbx exch def
@@ -677,8 +682,8 @@ end % userdict
                 fd .execformdirect
                 grestore
                 fc length 8 ge {
-                    userdict /.formcache 8 dict put
-                    /fc userdict /.formcache get def
+                    graphicsdict /.formcache 8 dict put
+                    /fc graphicsdict /.formcache get def
                 } if
                 fc key <<
                     /rows mdev /ImgData get
@@ -898,7 +903,8 @@ end % userdict
         ifelse def
         pd { merged 3 1 roll put } forall
         /dev merged /OutputDevice 2 copy known { get }{ pop pop
-            /.outputdevice where { pop .outputdevice }{ /pgm } ifelse
+            graphicsdict /.outputdevice 2 copy known
+            { get }{ pop pop /pgm } ifelse
         } ifelse def
         .devicemakers dev known not {
             end /setpagedevice cvx /rangecheck signalerror
@@ -931,23 +937,27 @@ end % userdict
             } if
         } if
 
-        userdict /.exactpagedims [pwf phf] put
-        userdict /DEVICE pw ph .devicemakers dev get exec put
-        userdict /.exactpagedims undef
+        graphicsdict /.exactpagedims [pwf phf] put
+        % the new device builds under its own local name -- DEVICE
+        % everywhere means the accessor reading the graphics state,
+        % and the machinery's frozen references to it must not see
+        % the half-configured newcomer
+        /newdev pw ph .devicemakers dev get exec def
+        graphicsdict /.exactpagedims undef
 
         % post-construction fixups, as the initial device receives.
         % The flip translate must match the height the device adopted,
         % or marks sit offset within a fractional page.
-        DEVICE /defaultmatrix
-            [ sx 0 0 sy neg 0 DEVICE /height 2 copy known { get }{ pop pop ph } ifelse ] put
-        DEVICE /NoOutput known not {
-            DEVICE /FillPoly /.fillpoly load put
-            DEVICE /nativecolorspace get /DeviceGray eq {
-                DEVICE /FillRect /.fillrectgray load put
+        newdev /defaultmatrix
+            [ sx 0 0 sy neg 0 newdev /height 2 copy known { get }{ pop pop ph } ifelse ] put
+        newdev /NoOutput known not {
+            newdev /FillPoly /.fillpoly load put
+            newdev /nativecolorspace get /DeviceGray eq {
+                newdev /FillRect /.fillrectgray load put
             } if
-            DEVICE /nativecolorspace get /DeviceRGB eq {
-                DEVICE /FillRect get type /operatortype ne {
-                    DEVICE /FillRect /.fillrectrgb load put
+            newdev /nativecolorspace get /DeviceRGB eq {
+                newdev /FillRect get type /operatortype ne {
+                    newdev /FillRect /.fillrectrgb load put
                 } if
             } if
         } if
@@ -959,7 +969,7 @@ end % userdict
             2 index /HWResolution eq or
             2 index /OutputFile eq or
             2 index /PageOffset eq or
-            { pop pop }{ DEVICE 3 1 roll put } ifelse
+            { pop pop }{ newdev 3 1 roll put } ifelse
         } forall
         merged /OutputDevice dev put
         userdict /.pagedevice merged put
@@ -967,18 +977,18 @@ end % userdict
         % a device declaring support for the requested process colour
         % model adopts it as its native space; the colour pipeline then
         % delivers that model's components to the marking methods
-        DEVICE /ProcessColorModel 2 copy known {
-            get DEVICE /.colormodels 2 copy known {
+        newdev /ProcessColorModel 2 copy known {
+            get newdev /.colormodels 2 copy known {
                 get 1 index known {
-                    DEVICE /nativecolorspace 3 -1 roll put
+                    newdev /nativecolorspace 3 -1 roll put
                 }{ pop } ifelse
             }{ pop pop pop } ifelse
         }{ pop pop } ifelse
 
         % the template and the live gstate carry the device; painting
         % and the defaultmatrix operator resolve it through them
-        gstatetemplate /device DEVICE put
-        graphicsdict /currgstate get /device DEVICE put
+        gstatetemplate /device newdev put
+        graphicsdict /currgstate get /device newdev put
         initgraphics
         off aload pop translate
         end
@@ -1000,7 +1010,7 @@ end % userdict
     % executable arrays promote; the procedures stay defed in
     % .wrappedprocs, keeping them inside the collector's view (the
     % operator table is outside it).
-    userdict /.wrappedprocs 128 dict put
+    graphicsdict /.wrappedprocs 128 dict put
     [
         /fill /eofill /stroke /strokepath /rectfill /rectstroke
         /ufill /ueofill /ustroke /ustrokepath /uappend /upath
@@ -1026,7 +1036,7 @@ end % userdict
         dup userdict exch known {
             dup userdict exch get
             dup type /arraytype eq 1 index xcheck and {
-                userdict /.wrappedprocs get 2 index 2 index put
+                graphicsdict /.wrappedprocs get 2 index 2 index put
                 1 index exch .wrapop
                 userdict 3 1 roll put
             }{ pop pop } ifelse

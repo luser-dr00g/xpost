@@ -18,6 +18,17 @@ userdict begin
         /gstackarray 100 array
         /gptr -1
     >> def
+    % The machinery reaches its state dictionary and its device
+    % through operators, promoted here before any machinery file
+    % loads: every procedure binding as it loads freezes these
+    % references, and a program may take either name for itself.
+    % The implementation procedures anchor under reserved names so
+    % the collector keeps them.
+    /.graphicsdict graphicsdict def   % the C operators' direct road in
+    /.graphicsdictproc [ //graphicsdict ] cvx def
+    /graphicsdict dup /.graphicsdictproc load .wrapop def
+    /.DEVICEproc { graphicsdict /currgstate get /device get } bind def
+    /DEVICE dup /.DEVICEproc load .wrapop def
 
     %breakhere
     DATA_DIR (/device.ps) strcat run %loads and uses (/image.ps)
@@ -31,8 +42,6 @@ userdict begin
     DATA_DIR (/pattern.ps) strcat run
     DATA_DIR (/shade.ps) strcat run
 
-graphicsdict /currgstate get /device DEVICE put
-/DEVICE { graphicsdict /currgstate get /device get } def
 
 % The graphics machinery is implemented in PostScript and runs in the
 % middle of user programs, whose dictionaries are then on the dict

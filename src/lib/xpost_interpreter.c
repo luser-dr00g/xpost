@@ -1773,8 +1773,8 @@ void setlocalconfig(Xpost_Context *ctx,
         { NULL, NULL, NULL }
     };
     const char *strtemplate = "currentglobal false setglobal "
-                        "%s userdict /DEVICE %s %s put "
-                        "userdict /.outputdevice /%s put "
+                        "%s graphicsdict /currgstate get /device %s %s put "
+                        "graphicsdict /.outputdevice /%s put "
                         "setglobal";
     Xpost_Object namenewdev;
     Xpost_Object newdevstr;
@@ -2325,9 +2325,15 @@ run:
     }
 
     XPOST_LOG_INFO("destroying device");
+    /* the device lives in the graphics state; the DEVICE name is an
+       accessor operator and no longer holds the dictionary itself */
     device = xpost_dict_get(ctx,
             xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2),
-            xpost_name_cons(ctx, "DEVICE"));
+            xpost_name_cons(ctx, ".graphicsdict"));
+    if (xpost_object_get_type(device) == dicttype)
+        device = xpost_dict_get(ctx, device, xpost_name_cons(ctx, "currgstate"));
+    if (xpost_object_get_type(device) == dicttype)
+        device = xpost_dict_get(ctx, device, xpost_name_cons(ctx, "device"));
     XPOST_LOG_INFO("device type=%s", xpost_object_type_names[xpost_object_get_type(device)]);
     /*xpost_operator_dump(ctx, 1); // is this pointer value constant? */
     if (xpost_object_get_type(device) == arraytype){

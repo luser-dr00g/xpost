@@ -231,7 +231,7 @@
 % lengthen the segment by the stored half-width at each end: the cap
 % of a stroke within a pixel's width, round and projecting alike
 /.hairext {
-    userdict /.hairhw get dup 0 le { pop }{
+    graphicsdict /.hairhw get dup 0 le { pop }{
         8 dict begin
         /hw exch def
         {/y2 /x2 /y1 /x1}{exch def}forall
@@ -282,12 +282,12 @@
     dup mul exch dup mul exch add sqrt
     % a butt cap adds nothing; round and projecting reach half the
     % width past each segment end
-    userdict /.hairhw
+    graphicsdict /.hairhw
     2 index 2 div currentlinecap 0 eq { pop 0 } if put
     1 le
     .cliprect { 4 array astore }{ null } ifelse
-    userdict /.hairrect 3 -1 roll put
-    userdict /.hairrect get null ne and {
+    graphicsdict /.hairrect 3 -1 roll put
+    graphicsdict /.hairrect get null ne and {
         flattenpath
         dashpath
         mark
@@ -298,7 +298,7 @@
         {          % ... xN-1 yN-1 xN yN
             4 copy % ... xN-1 yN-1 xN yN xN-1 yN-1 xN yN
             .hairext
-            userdict /.hairrect get .hairsegclip {
+            graphicsdict /.hairrect get .hairsegclip {
                 [ currentcolordict DEVICE /nativecolorspace get get exec
                 .applytransfer
                 counttomark 5 add -4 roll
@@ -313,7 +313,7 @@
         {            % x0 y0 xN yN
             4 2 roll % xN yN x0 y0
             .hairext
-            userdict /.hairrect get .hairsegclip {
+            graphicsdict /.hairrect get .hairsegclip {
                 [ currentcolordict DEVICE /nativecolorspace get get exec
                 .applytransfer
                 counttomark 5 add -4 roll
@@ -509,8 +509,8 @@
         {mranges mbits ncomp decode datasrc mat bits height width}{exch def}forall
         % the dictionary image form leaves its Interpolate request in
         % userdict for this one painting; anything else paints stepped
-        /interp userdict /.imginterp 2 copy known { get }{ pop pop false } ifelse def
-        userdict /.imginterp false put
+        /interp graphicsdict /.imginterp 2 copy known { get }{ pop pop false } ifelse def
+        graphicsdict /.imginterp false put
 
         % a literal array of sources delivers each component from its
         % own plane; a single source interleaves them. The source is
@@ -817,7 +817,7 @@
     6 dict begin
     /d exch def
     d /Interpolate 2 copy known { get }{ pop pop false } ifelse
-    dup type /booleantype eq { userdict /.imginterp 3 -1 roll put }{ pop } ifelse
+    dup type /booleantype eq { graphicsdict /.imginterp 3 -1 roll put }{ pop } ifelse
     /itbits d /BitsPerComponent get def
     /itn .ncomponents def
     /itrange [
@@ -881,7 +881,7 @@
     /md d /MaskDict get def
     /dd d /DataDict get def
     dd /Interpolate 2 copy known { get }{ pop pop false } ifelse
-    dup type /booleantype eq { userdict /.imginterp 3 -1 roll put }{ pop } ifelse
+    dup type /booleantype eq { graphicsdict /.imginterp 3 -1 roll put }{ pop } ifelse
     /il d /InterleaveType get def
     /w dd /Width get def
     /h dd /Height get def
@@ -989,7 +989,7 @@
             pop
             begin
             currentdict /Interpolate 2 copy known { get }{ pop pop false } ifelse
-            dup type /booleantype eq { userdict /.imginterp 3 -1 roll put }{ pop } ifelse
+            dup type /booleantype eq { graphicsdict /.imginterp 3 -1 roll put }{ pop } ifelse
             Width Height BitsPerComponent ImageMatrix
             % fetch through the dictionary: a procedure source fetched
             % by name would execute instead of arriving as the operand

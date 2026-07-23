@@ -72,7 +72,7 @@ Xpost_Object _get_ctm(Xpost_Context *ctx)
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
     if (xpost_object_get_type(userdict) != dicttype)
         return invalid;
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, ".graphicsdict"));
     gs = xpost_dict_get(ctx, gd, xpost_name_cons(ctx, "currgstate"));
     psctm = xpost_dict_get(ctx, gs, xpost_name_cons(ctx, "currmatrix"));
 
@@ -203,7 +203,7 @@ int _default_matrix(Xpost_Context *ctx,
     Xpost_Object defmat;
 
     userdict = xpost_stack_bottomup_fetch(ctx->lo, ctx->ds, 2);
-    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, "graphicsdict"));
+    gd = xpost_dict_get(ctx, userdict, xpost_name_cons(ctx, ".graphicsdict"));
     if (xpost_object_get_type(gd) == invalidtype)
         return undefined;
     XPOST_LOG_INFO("loaded graphicsdict");
