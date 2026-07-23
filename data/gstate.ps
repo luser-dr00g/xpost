@@ -334,7 +334,7 @@ setglobal
 % sees, rather than collapsing to one sample where the cell spans a
 % single device pixel.
 /.samplespot {
-    14 dict begin
+    18 dict begin
     /proc exch def /ang exch def /freq exch def
     freq ang .screenlattice
     /quad exch def /q exch def /L exch def /b exch def /a exch def
@@ -342,7 +342,30 @@ setglobal
         dup -0.999 lt { pop -0.999 } if
         dup 0.999 gt { pop 0.999 } if
     } def
+    % the spot procedure must run against the caller's dictionaries
+    % and operand stack: programs define counters through it and
+    % harvest whatever it leaves behind. Each call's own result is
+    % consumed, the way the screen machinery consumes it -- but only
+    % when the procedure left one, so a procedure with no result
+    % cannot cost the caller a stack entry. So the calls may not run
+    % under this private dict, and no loop bookkeeping may sit on the
+    % operand stack while they run: compile each row of samples into
+    % a program and run them after the dict ends. Per sample the
+    % program notes the operand depth in graphicsdict, pushes x y,
+    % runs the procedure, and pops one value if the depth grew
+    /pexec /exec load def
+    /pget /get load def
+    /pput /put load def
+    /psub /sub load def
+    /pgt /gt load def
+    /pif /if load def
+    /pcount /count load def
+    /ppopproc [ /pop load ] cvx def
+    /gd graphicsdict def
+    /allrows L 2 mul array def
     0 1 L 1 sub { /y exch def
+        /row L 19 mul array def
+        /i 0 def
         0 1 L 1 sub { /x exch def
             /xs x 0.5071 add def
             /ys y 0.4877 add def
@@ -350,19 +373,40 @@ setglobal
             /m2 a ys mul b xs mul sub q div floor def
             /xc a m1 0.5 add mul b m2 0.5 add mul sub floor 0.5 add def
             /yc b m1 0.5 add mul a m2 0.5 add mul add floor 0.5 add def
-            % restore the operand depth around the call: only the side
-            % effects are wanted, whatever the procedure leaves
-            count /d0 exch def
             a xs xc sub mul b ys yc sub mul add q div 2 mul
             dup 1 ge { 2 sub } if dup -1 lt { 2 add } if .clamparg
             a ys yc sub mul b xs xc sub mul sub q div 2 mul
             dup 1 ge { 2 sub } if dup -1 lt { 2 add } if .clamparg
             quad { exch neg } repeat
-            proc
-            count d0 sub dup 0 gt { { pop } repeat }{ pop } ifelse
+            % row: gd /.ssd0 count 2 sub put  x y proc exec
+            %      count gd /.ssd0 get sub 0 gt {pop} if
+            row i 7 add 3 -1 roll put
+            row i 6 add 3 -1 roll put
+            row i currentdict /gd get put
+            row i 1 add /.ssd0 put
+            row i 2 add currentdict /pcount get put
+            row i 3 add 2 put
+            row i 4 add currentdict /psub get put
+            row i 5 add currentdict /pput get put
+            row i 8 add currentdict /proc get put
+            row i 9 add currentdict /pexec get put
+            row i 10 add currentdict /pcount get put
+            row i 11 add currentdict /gd get put
+            row i 12 add /.ssd0 put
+            row i 13 add currentdict /pget get put
+            row i 14 add currentdict /psub get put
+            row i 15 add 0 put
+            row i 16 add currentdict /pgt get put
+            row i 17 add currentdict /ppopproc get put
+            row i 18 add currentdict /pif get put
+            /i i 19 add def
         } for
+        allrows y 2 mul currentdict /row get cvx put
+        allrows y 2 mul 1 add currentdict /pexec get put
     } for
+    currentdict /allrows get cvx
     end
+    exec
 } def
 
 % The threshold cell of a screening device. A bilevel device that

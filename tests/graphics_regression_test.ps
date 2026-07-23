@@ -807,6 +807,17 @@ gsave
     add
 } setscreen
 st.inrange 0 get (the spot function sees arguments within [-1,1]) assert
+% the spot procedure runs against the caller's stacks: its defs land
+% in the caller's dictionaries, and what it leaves beyond its result
+% survives on the operand stack (a result-less procedure loses nothing)
+/st.spotdefs 0 def
+60 0 { pop pop /st.spotdefs st.spotdefs 1 add def 1 } setscreen
+st.spotdefs 0 gt (the spot procedure defines into the caller's dictionaries) assert
+count /st.d0 exch def
+60 0 { 1 } setscreen
+count st.d0 sub /st.res exch def
+st.res { pop } repeat
+st.res 0 gt (values the spot procedure leaves survive on the operand stack) assert
 grestore
 
 % --- colour transfer functions record and round-trip ---

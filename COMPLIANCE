@@ -26,7 +26,8 @@ Level 1 operators
  [X] imagemask
  [X] settransfer
  [X] currenttransfer
- [X] setscreen
+ [X] setscreen (a spot procedure that leaves no result loses nothing
+     from the caller's stack, where the reference interpreters error)
  [X] currentscreen
  [X] setcolorscreen
  [X] currentcolorscreen
