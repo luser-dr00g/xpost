@@ -502,6 +502,27 @@ int xpost_op_rundied(Xpost_Context *ctx)
     return 0;
 }
 
+/* name proc  .wrapop  operator
+   install an operator that runs the procedure. A procedure that
+   implements a standard operator becomes indistinguishable from a
+   C-coded one: load answers operatortype and bind substitutes it.
+   The procedure must stay reachable elsewhere; the operator table
+   is outside the collector's view. */
+static
+int xpost_op_wrapop(Xpost_Context *ctx,
+                    Xpost_Object name,
+                    Xpost_Object proc)
+{
+    Xpost_Object o;
+
+    o = xpost_operator_cons_wrapped(ctx, name, proc);
+    if (xpost_object_get_type(o) != operatortype)
+        return unregistered;
+    if (!xpost_stack_push(ctx->lo, ctx->os, o))
+        return stackoverflow;
+    return 0;
+}
+
 /* any  stopped  bool
    establish context for catching stop */
 static
@@ -608,6 +629,8 @@ int xpost_oper_init_control_ops (Xpost_Context *ctx,
         return VMerror;
     xpost_dict_put(ctx, sd, xpost_name_cons(ctx, ".rundied"),
         xpost_operator_cons(ctx, ".rundied", (Xpost_Op_Func)xpost_op_rundied, 0, 0));
+    INSTALL;
+    op = xpost_operator_cons(ctx, ".wrapop", (Xpost_Op_Func)xpost_op_wrapop, 1, 2, nametype, proctype);
     INSTALL;
     op = xpost_operator_cons(ctx, "stopped", (Xpost_Op_Func)xpost_op_any_stopped, 0, 1, anytype);
     INSTALL;

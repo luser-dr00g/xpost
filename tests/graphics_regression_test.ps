@@ -2436,6 +2436,20 @@ basefont null ne {
     basefont /Encoding get xcheck not
     (a font encoding is literal) assert
 } if
+% --- procedure-implemented standard operators stand as operators ---
+% load answers operatortype for them, so bind substitutes them and the
+% classic self-redefinition idiom captures the standard behaviour
+% instead of recursing into the new definition
+/stroke load type /operatortype eq (stroke loads as an operator) assert
+/fill load type /operatortype eq (fill loads as an operator) assert
+/show load type /operatortype eq (show loads as an operator) assert
+gsave
+/stroke { 2 2 scale stroke } bind def
+newpath 10 10 moveto 20 20 lineto stroke
+userdict /stroke undef
+true (a bound self-redefinition of stroke terminates) assert
+grestore
+
 count 0 eq (operand stack is balanced) assert
 faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse
 flush

@@ -992,6 +992,46 @@ end % userdict
             << /PageSize [ DEVICE /dimensions get aload pop ] >>
         } ifelse
     } def
+    % Promote the procedure-implemented standard operators to real
+    % operators: load answers operatortype for them and bind
+    % substitutes them, so the classic self-redefinition idiom
+    % /stroke { 1 2 scale stroke } bind def captures the standard
+    % behaviour instead of recursing into itself. Only names holding
+    % executable arrays promote; the procedures stay defed in
+    % .wrappedprocs, keeping them inside the collector's view (the
+    % operator table is outside it).
+    userdict /.wrappedprocs 128 dict put
+    [
+        /fill /eofill /stroke /strokepath /rectfill /rectstroke
+        /ufill /ueofill /ustroke /ustrokepath /uappend /upath
+        /infill /ineofill /instroke /inufill /inueofill /inustroke
+        /clip /eoclip /initclip /rectclip /clippath
+        /flattenpath /pathbbox /reversepath
+        /show /ashow /widthshow /awidthshow /kshow /cshow
+        /xshow /yshow /xyshow /glyphshow /stringwidth /charpath
+        /definefont /undefinefont /scalefont /makefont /setfont
+        /selectfont /findfont /composefont
+        /setcachedevice /setcachedevice2 /setcharwidth
+        /setscreen /currentscreen /setcolorscreen /currentcolorscreen
+        /sethalftone /currenthalftone
+        /settransfer /currenttransfer /setcolortransfer /currentcolortransfer
+        /setgray /setrgbcolor /sethsbcolor /setcmykcolor /setcolor /setcolorspace
+        /currentgray /currentrgbcolor /currenthsbcolor /currentcmykcolor
+        /currentcolor /currentcolorspace
+        /image /imagemask /colorimage
+        /shfill /makepattern /setpattern
+        /showpage /copypage /erasepage /setpagedevice /currentpagedevice
+        /nulldevice /gsave /grestore /grestoreall /initgraphics
+    ] {
+        dup userdict exch known {
+            dup userdict exch get
+            dup type /arraytype eq 1 index xcheck and {
+                userdict /.wrappedprocs get 2 index 2 index put
+                1 index exch .wrapop
+                userdict 3 1 roll put
+            }{ pop pop } ifelse
+        }{ pop } ifelse
+    } forall
         userdict /GRAPHICS_LOADED true put
         /QUIET where { pop }{ (graphics loaded, calling initgraphics\n)print } ifelse
         userdict /USEDRAWLINE true put

@@ -106,6 +106,8 @@ typedef struct Xpost_Operator
     unsigned name;   /* name-stack index of operator's name */
     int n;           /* number of signatures */
     unsigned sigadr; /* memory address of array of signatures */
+    Xpost_Object proc; /* procedure a wrapped operator runs (n == 0);
+                          the null object otherwise */
 } Xpost_Operator;
 
 
@@ -128,7 +130,7 @@ enum typepat
 /**
  * @brief constant size of optab structure
  */
-#define MAXOPS 300
+#define MAXOPS 512
 
 /**
  * @brief initial size of systemdict (which then grows, automatically)
@@ -160,6 +162,19 @@ Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
                                  int out,
                                  int in,
                                  ...);
+
+/**
+ * @brief construct an operator that runs a procedure
+ *
+ * Installs a fresh operator-table entry under the given name whose
+ * execution pushes the procedure on the execution stack. A procedure
+ * that implements a standard operator becomes indistinguishable from
+ * one coded in C: load answers operatortype and bind substitutes it.
+ * The caller must keep the procedure reachable by the collector.
+ */
+Xpost_Object xpost_operator_cons_wrapped(Xpost_Context *ctx,
+                                         Xpost_Object name,
+                                         Xpost_Object proc);
 
 /**
  * @brief execute an operator

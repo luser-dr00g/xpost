@@ -453,6 +453,7 @@ Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
             op.name = nm.mark_.padw;
             op.n = 1;
             op.sigadr = adr;
+            op.proc = null;
             optab[opcode] = op;
             ++_xpost_noops;
             si = 0;
@@ -537,6 +538,72 @@ Xpost_Object xpost_operator_cons(Xpost_Context *ctx,
     o.tag = operatortype;
     o.mark_.padw = opcode;
     return o;
+}
+
+Xpost_Object xpost_operator_cons_wrapped(Xpost_Context *ctx,
+                                         Xpost_Object name,
+                                         Xpost_Object proc)
+{
+    Xpost_Operator *optab;
+    Xpost_Operator op;
+    Xpost_Object nm;
+    Xpost_Object str;
+    char buf[128];
+    unsigned int len;
+    unsigned int optadr;
+    unsigned vmmode;
+    int opcode;
+    int ret;
+
+    if (xpost_object_get_type(proc) != arraytype)
+        return null;
+
+    str = xpost_name_get_string(ctx, name);
+    if (xpost_object_get_type(str) != stringtype)
+        return null;
+    len = str.comp_.sz;
+    if (len > sizeof buf - 1)
+        len = sizeof buf - 1;
+    memcpy(buf, xpost_string_get_pointer(ctx, str), len);
+    buf[len] = '\0';
+
+    ret = xpost_memory_table_get_addr(ctx->gl,
+                                      XPOST_MEMORY_TABLE_SPECIAL_OPERATOR_TABLE, &optadr);
+    if (!ret)
+    {
+        XPOST_LOG_ERR("cannot load optab!");
+        return null;
+    }
+
+    if (_xpost_noops == MAXOPS-1)
+    {
+        XPOST_LOG_ERR("optab too small in xpost_operator.h");
+        XPOST_LOG_ERR("operator %s NOT installed", buf);
+        return null;
+    }
+
+    /* the optab records names by their global index: a locally
+       interned name with the same numeric index would alias a
+       different operator entirely */
+    vmmode = ctx->vmmode;
+    ctx->vmmode = GLOBAL;
+    nm = xpost_name_cons_global(ctx, buf);
+    ctx->vmmode = vmmode;
+    if (xpost_object_get_type(nm) == invalidtype)
+        return invalid;
+
+    /* always a fresh entry: the name may already denote a C operator,
+       which lookups by name must keep finding */
+    opcode = _xpost_noops;
+    optab = (void *)(ctx->gl->base + optadr);
+    op.name = nm.mark_.padw;
+    op.n = 0;
+    op.sigadr = 0;
+    op.proc = proc;
+    optab[opcode] = op;
+    ++_xpost_noops;
+
+    return xpost_operator_cons_opcode(opcode);
 }
 
 /* clear hold and pop n objects from opstack to hold stack.
@@ -634,6 +701,14 @@ int xpost_operator_exec(Xpost_Context *ctx,
         : 8;
     if (op.n == 0)
     {
+        /* a wrapped operator carries no C signatures: it runs its
+           recorded procedure, which checks its own operands */
+        if (xpost_object_get_type(op.proc) == arraytype)
+        {
+            if (!xpost_stack_push(ctx->lo, ctx->es, xpost_object_cvx(op.proc)))
+                return execstackoverflow;
+            return 0;
+        }
         XPOST_LOG_ERR("operator has no signatures");
         return unregistered;
     }
