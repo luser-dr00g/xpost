@@ -94,11 +94,19 @@ xpost_init(void)
     l = strlen(_xpost_lib_dir);
     memcpy(tmp1, _xpost_lib_dir, l);
     memcpy(tmp1 + l, "/../share/xpost", sizeof("/../share/xpost"));
-    /* An uninstalled build has no <libdir>/../share/xpost, which is not fatal:
-       the interpreter's init.ps search falls back to XPOST_DATA_DIR and to
-       data/ relative paths (see setlocalconfig), so leave _xpost_data_dir
-       unset and carry on rather than failing to initialise. */
+    /* An uninstalled build has no <libdir>/../share/xpost: try the
+       source tree's data directory next, relative to the built library
+       (build/src/lib and src/lib/.libs both sit three levels below the
+       tree root), so the built interpreter runs from any directory.
+       A miss is not fatal -- the interpreter's init.ps search verifies
+       each candidate and falls back to XPOST_DATA_DIR and to data/
+       relative paths (see setlocalconfig). */
     _xpost_data_dir = xpost_realpath(tmp1);
+    if (!_xpost_data_dir)
+    {
+        memcpy(tmp1 + l, "/../../../data", sizeof("/../../../data"));
+        _xpost_data_dir = xpost_realpath(tmp1);
+    }
 
     if (!xpost_memory_init())
         return --_xpost_init_count;
