@@ -145,6 +145,10 @@ struct _Xpost_Context {
     char run_error_name[48];  /**< error that ended the last run ("" if none) */
     char run_error_info[128]; /**< errorinfo detail for the same ("" if none) */
     int run_uncaught;         /**< an error unwound past every stopped context */
+    int es_over;              /**< the exec-stack ceiling has been reported;
+                                   holds off a re-raise until depth recedes */
+    int os_over;              /**< likewise for the operand stack */
+    int ds_over;              /**< likewise for the dictionary stack */
 
     unsigned int es_run_base; /**< exec-stack depth at xpost_run entry;
                                     a completed run is truncated back to

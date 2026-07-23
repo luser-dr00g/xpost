@@ -304,6 +304,59 @@ void xpost_interpreter_exit(Xpost_Interpreter *itpptr)
 typedef
 int evalfunc(Xpost_Context *ctx, Xpost_Object t);
 
+/* The stacks grow by VM segments without any structural bound, so a
+   runaway loop or recursion would grind through memory rather than
+   fail. Execution past these depths raises the stack's overflow
+   error, checked at the two places depth accumulates: evalarray's
+   internal procedure call and the interpreter loop. A latch per
+   stack raises once per crossing, so the error machinery runs (and
+   the program recovers) above the ceiling without retriggering it,
+   and rearms when the depth recedes. The ceilings sit far beyond any
+   legitimate job's depth while keeping the error path's walk over
+   the stacks cheap. The exec ceiling leaves room for the
+   deferred-paint queues the devices stage there: a vector device
+   decomposes a large fill into very many queued spans. */
+#define XPOST_EXEC_STACK_LIMIT 1000000
+#define XPOST_OPER_STACK_LIMIT 1000000
+#define XPOST_DICT_STACK_LIMIT 5000
+
+/* raise a stack's overflow error on crossing its ceiling; 0 if every
+   stack is within bounds or already reported */
+static int _stack_ceilings(Xpost_Context *ctx)
+{
+    if (ctx->es_over == 0)
+    {
+        if (xpost_stack_count(ctx->lo, ctx->es) > XPOST_EXEC_STACK_LIMIT)
+        {
+            ctx->es_over = 1;
+            return execstackoverflow;
+        }
+    }
+    else if (xpost_stack_count(ctx->lo, ctx->es) <= XPOST_EXEC_STACK_LIMIT)
+        ctx->es_over = 0;
+    if (ctx->os_over == 0)
+    {
+        if (xpost_stack_count(ctx->lo, ctx->os) > XPOST_OPER_STACK_LIMIT)
+        {
+            ctx->os_over = 1;
+            return stackoverflow;
+        }
+    }
+    else if (xpost_stack_count(ctx->lo, ctx->os) <= XPOST_OPER_STACK_LIMIT)
+        ctx->os_over = 0;
+    if (ctx->ds_over == 0)
+    {
+        if (xpost_stack_count(ctx->lo, ctx->ds) > XPOST_DICT_STACK_LIMIT)
+        {
+            ctx->ds_over = 1;
+            return dictstackoverflow;
+        }
+    }
+    else if (xpost_stack_count(ctx->lo, ctx->ds) <= XPOST_DICT_STACK_LIMIT)
+        ctx->ds_over = 0;
+    return 0;
+}
+
 /* quit the interpreter */
 static
 int evalquit(Xpost_Context *ctx, Xpost_Object t)
@@ -970,7 +1023,18 @@ int evalarray(Xpost_Context *ctx, Xpost_Object a)
                     else if (xpost_object_get_type(x) == arraytype)
                     {
                         /* a procedure call: continue stepping it here,
-                           leaving the current interval behind on es */
+                           leaving the current interval behind on es.
+                           Recursion deepens the stacks through this
+                           site without ever surfacing to the
+                           interpreter loop, so the ceilings are kept
+                           here */
+                        int over = _stack_ceilings(ctx);
+                        if (over)
+                        {
+                            ctx->currentobject = b;
+                            EVALARRAY_SYNC_SLOT();
+                            return over;
+                        }
                         EVALARRAY_SYNC_SLOT();
                         have_tail = 0;
                         a = x;
@@ -1551,6 +1615,7 @@ Xpost_Context *_switch_context(Xpost_Context *ctx)
 int mainloop(Xpost_Context *ctx)
 {
     int ret;
+    unsigned int evalcount = 0;
 
 ctxswitch:
     xpost_ctx = ctx = _switch_context(ctx);
@@ -1572,6 +1637,15 @@ ctxswitch:
             ctx->lo->garbage_collect_pending = 0;
             if (ctx->lo->garbage_collect_is_installed)
                 (void)ctx->lo->garbage_collect(ctx->lo, 1, 1);
+        }
+        if ((++evalcount & 1023) == 0)
+        {
+            int over = _stack_ceilings(ctx);
+            if (over)
+            {
+                _onerror(ctx, over);
+                continue;
+            }
         }
         ret = eval(ctx);
         if (ret)

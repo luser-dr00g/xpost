@@ -2480,6 +2480,36 @@ countdictstack /ep.dd exch def
 { ep.d } stopped pop
 countdictstack ep.dd eq (the dict depth at the call comes back) assert
 
+% --- runaway recursion meets the execution-stack ceiling ---
+% a procedure that calls itself without limit, and a wrapped operator
+% doing the same, raise a catchable execstackoverflow instead of
+% consuming memory without bound
+/eso.p { eso.p 1 pop } def
+{ eso.p } stopped
+(runaway procedure recursion is caught) assert
+$error /errorname get 32 string cvs (execstackoverflow) eq
+(runaway procedure recursion raises execstackoverflow) assert
+/eso.w /eso.w { eso.w } .wrapop def
+{ eso.w } stopped
+(runaway wrapped recursion is caught) assert
+$error /errorname get 32 string cvs (execstackoverflow) eq
+(runaway wrapped recursion raises execstackoverflow) assert
+% the other stacks have ceilings too: a loop pushing operands without
+% bound overflows the operand stack, one beginning dicts without end
+% overflows the dictionary stack, and both errors are catchable
+{ { 1 } loop } stopped
+(a runaway operand-pushing loop is caught) assert
+$error /errorname get 32 string cvs (stackoverflow) eq
+(a runaway operand-pushing loop raises stackoverflow) assert
+clear
+countdictstack /eso.dd exch def
+{ { 1 dict begin } loop } stopped
+(a runaway dict-begin loop is caught) assert
+$error /errorname get 32 string cvs (dictstackoverflow) eq
+(a runaway dict-begin loop raises dictstackoverflow) assert
+countdictstack eso.dd sub { end } repeat
+clear % the interrupted loop's pending operands
+
 count 0 eq (operand stack is balanced) assert
 faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse
 flush
