@@ -118,7 +118,9 @@
     .patternactive { .patterneofill }{
     DEVICE /FillPath known .cliptrivial and {
         graphicsdict /currgstate get /.eorule true put
-        fill
+        % this implementation's own fill, immune to a program's
+        % redefinition of the name (which may itself invoke eofill)
+        //fill exec
         graphicsdict /currgstate get /.eorule false put
     }{
         closepath
@@ -326,7 +328,7 @@
         flushpage
     }{
         strokepath
-        fill
+        //fill exec
     } ifelse
 
     newpath

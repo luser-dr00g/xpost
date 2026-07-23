@@ -274,3 +274,22 @@ if command -v gs >/dev/null 2>&1; then
     rm -rf "$platedir"
     echo "gs separation plates OK"
 fi
+
+# a program's redefinition of fill must not capture the machinery's
+# internal references: eofill on a vector device resolves through the
+# nonzero fill, and a redefined fill that itself invokes eofill would
+# otherwise recurse without bound
+recps=$(mktemp)
+cat > "$recps" <<'EOF'
+<< /OutputDevice /pdfwrite /OutputFile (/dev/null) /PageSize [100 100] >> setpagedevice
+/fill { 0.5 setgray eofill } def
+newpath 10 10 moveto 80 10 lineto 45 80 lineto closepath eofill
+(eofill-under-redefined-fill OK\n) print
+showpage
+<< /OutputDevice /null >> setpagedevice
+quit
+EOF
+out=$("$xpost" -q -d null -o /dev/null "$recps" </dev/null 2>&1)
+rm -f "$recps"
+printf '%s\n' "$out" | grep -q 'eofill-under-redefined-fill OK' || { echo "FAIL: eofill under a redefined fill"; exit 1; }
+echo "eofill under redefined fill OK"
