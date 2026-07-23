@@ -2510,6 +2510,46 @@ $error /errorname get 32 string cvs (dictstackoverflow) eq
 countdictstack eso.dd sub { end } repeat
 clear % the interrupted loop's pending operands
 
+% --- machinery runs a program's procedures on the program's stacks ---
+% a callback's defs reach the program's dictionaries, and names the
+% machinery uses privately (str, proc, i, pend...) are out of reach:
+% defining them in a callback must not corrupt the machinery
+/Courier findfont 10 scalefont setfont
+gsave
+100 100 moveto
+{ pop pop /str (mine) def /proc 7 def /iso.k true def } (ab) kshow
+grestore
+iso.k (a kshow procedure runs on the caller's stacks) assert
+str (mine) eq (a kshow procedure's defs reach the caller) assert
+userdict /str undef userdict /proc undef userdict /iso.k undef
+count /iso.kd exch def
+gsave 100 100 moveto { pop pop (k) } (abc) kshow grestore
+count iso.kd sub 2 eq (a kshow procedure's stack results survive) assert
+pop pop
+/iso.c 0 def
+gsave 100 100 moveto
+{ pop pop pop /iso.c iso.c 1 add def } (ab) cshow
+grestore
+iso.c 2 eq (a cshow procedure runs per character on the caller's stacks) assert
+userdict /iso.c undef
+gsave
+{ 10 10 8 [10 0 0 -10 0 10]
+  { /pend (x) def /rawrow 5 def /got 99 def <00112233445566778899> }
+  image } stopped not
+(an image source defining the row pump's names completes) assert
+grestore
+userdict /pend undef userdict /rawrow undef userdict /got undef
+gsave
+<< /PatternType 1 /PaintType 1 /TilingType 1
+   /BBox [0 0 10 10] /XStep 10 /YStep 10
+   /PaintProc { pop /i 999 def /pat (mine) def /iso.p true def
+                newpath 0 0 moveto 5 0 lineto 5 5 lineto closepath fill }
+>> matrix makepattern setpattern
+newpath 0 0 moveto 30 0 lineto 30 30 lineto 0 30 lineto closepath fill
+grestore
+iso.p (a pattern paint procedure runs on the caller's stacks) assert
+userdict /i undef userdict /pat undef userdict /iso.p undef
+
 count 0 eq (operand stack is balanced) assert
 faildict /n get 0 eq { (SUCCESS\n) print } { faildict /n get =print ( failures\n) print } ifelse
 flush

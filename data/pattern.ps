@@ -103,7 +103,11 @@
                     }{
                         0 setgray
                     } ifelse
-                    pat dup /PaintProc get exec
+                    % the paint procedure runs on the caller's stacks:
+                    % its defs are its own, out of this dict's names
+                    currentdict
+                    pat dup /PaintProc get
+                    end exec begin
                     grestore
                 } for
             } for

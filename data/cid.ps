@@ -444,6 +444,28 @@ currentdict /c undef
 % by the CMap first, and while the procedure runs the current font
 % is the composite rebound to one-byte codes, so a show of the
 % code's byte inside the procedure paints the glyph the code named.
+% font charstring  .cshmeasure  wx wy
+% the character's advance in the font, measured without marking;
+% stack-pure, so a compiled program can run it with a caller's
+% leavings below its operands
+/.cshmeasure {
+    gsave
+    nulldevice
+    exch graphicsdict /currgstate get /currfont 3 -1 roll put
+    0 0 moveto show currentpoint
+    grestore
+} def
+
+% font  .cshsetfont  -
+/.cshsetfont { graphicsdict /currgstate get /currfont 3 -1 roll put } def
+
+% cshow's walks compile into programs that run after the private dict
+% ends, so the procedure executes on the caller's stacks with no
+% machinery state live anywhere: no names for its defs to collide
+% with, its defs reaching the caller's dictionaries, its stack
+% leavings preserved -- every compiled operand is pushed just before
+% its consumer. The helper procedures embed at scan time as arrays,
+% which the programs push and exec as data.
 /cshow {
     graphicsdict /currgstate get /currfont get
     dup /FontType get 0 eq {
@@ -452,9 +474,11 @@ currentdict /c undef
         % selected descendant current, as the mapping chose it
         20 dict begin
         /fnt exch def /str exch def /proc exch def
+        /exe /exec load def
         /dc fnt /Encoding get length array def
         /p 0 def
         /curf 0 def
+        [
         {
             p str length ge { exit } if
             str p fnt curf .fmapnext
@@ -463,61 +487,60 @@ currentdict /c undef
                 dc curf get null eq {
                     dc curf fnt curf .fmapdesc put
                 } if
-                /cs 1 string dup 0 code put def
-                gsave
-                    nulldevice
-                    graphicsdict /currgstate get /currfont dc curf get put
-                    0 0 moveto cs show currentpoint
-                grestore
-                /wy exch def /wx exch def
-                graphicsdict /currgstate get /currfont dc curf get put
-                code wx wy proc
-                graphicsdict /currgstate get /currfont fnt put
+                code
+                dc curf get
+                1 string dup 0 code put
+                //.cshmeasure currentdict /exe get
+                dc curf get //.cshsetfont currentdict /exe get
+                currentdict /proc get currentdict /exe get
+                currentdict /fnt get //.cshsetfont currentdict /exe get
             } if
             /p p w add def
         } loop
+        ] cvx
         end
+        exec
     }{
         20 dict begin
         /fnt exch def /str exch def /proc exch def
+        /exe /exec load def
         /cm fnt /CMap get def
         /bw fnt dup length 1 add dict copy def
         bw /CMap //.bytecmap put
         /p 0 def
+        [
         {
             p str length ge { exit } if
             str p cm .cmapnext
             /w exch def /cid exch def
-            /cs 1 string dup 0 cid 255 and put def
-            gsave
-                nulldevice
-                graphicsdict /currgstate get /currfont bw put
-                0 0 moveto cs show currentpoint
-            grestore
-            /wy exch def /wx exch def
-            graphicsdict /currgstate get /currfont bw put
-            cid wx wy proc
-            graphicsdict /currgstate get /currfont fnt put
+            cid
+            currentdict /bw get
+            1 string dup 0 cid 255 and put
+            //.cshmeasure currentdict /exe get
+            currentdict /bw get //.cshsetfont currentdict /exe get
+            currentdict /proc get currentdict /exe get
+            currentdict /fnt get //.cshsetfont currentdict /exe get
             /p p w add def
         } loop
+        ] cvx
         end
+        exec
     } ifelse
     }{
-        20 dict begin
+        10 dict begin
         /fnt exch def /str exch def /proc exch def
-        /p 0 def
-        {
-            p str length ge { exit } if
-            /cs str p 1 getinterval def
-            gsave
-                nulldevice
-                0 0 moveto cs show currentpoint
-            grestore
-            /wy exch def /wx exch def
-            cs 0 get wx wy proc
-            /p p 1 add def
-        } loop
+        /exe /exec load def
+        [
+        0 1 str length 1 sub { /p exch def
+            str p get
+            currentdict /fnt get
+            str p 1 getinterval
+            //.cshmeasure currentdict /exe get
+            currentdict /proc get currentdict /exe get
+        } for
+        ] cvx
         end
+        exec
     } ifelse
 } def
 

@@ -507,6 +507,11 @@
     } ifelse
 } def
 
+% kshow's compiled program paints through the implementation's own
+% show, captured here while the name still holds this file's
+% procedure -- an array, which a compiled program pushes as data
+/.kshowshow /show load def
+
 /kshow {
     % kshow steps the string one byte at a time, which a composite font
     % cannot decode; the reference rejects it with invalidfont rather than
@@ -514,25 +519,35 @@
     graphicsdict /currgstate get /currfont get /FontType get 0 eq {
         /kshow cvx /invalidfont signalerror
     } if
-    5 dict begin
-        {str proc}{exch def}forall
-        /font graphicsdict /currgstate get /currfont get def
-        str length 0 gt { str length 1 eq {
-            str show
-        }{
-            str 0 1 getinterval % str<0..+1>
-            dup 0 get exch      % str[0] str<0..+1>
-            show
-            1 1 str length 1 sub { % str[N-1] N
-                str exch 1 getinterval
-                dup 0 get exch % str[N-1] str[N] str<N..+1>
-                3 1 roll       % str<N..+1>  str[N-1] str[N]
-                proc
-                dup 0 get exch  % str[N]  str<N..+1>
-                show  % str[N]
+    % The walk compiles into a program here and the program runs after
+    % this dict ends, so the kerning procedure executes on the caller's
+    % stacks with no machinery state live anywhere: there are no names
+    % for a program's defs to collide with, its defs reach the caller's
+    % dictionaries, and whatever it leaves on the operand stack stays --
+    % every compiled operand is pushed just before its consumer, so the
+    % procedure's leavings never shift one.
+    8 dict begin
+        /str exch def /proc exch def
+        /exe /exec load def
+        /n str length def
+        [
+        n 0 gt {
+            str 0 1 getinterval
+            //.kshowshow
+            currentdict /exe get
+            1 1 n 1 sub { /i exch def
+                str i 1 sub get
+                str i get
+                currentdict /proc get
+                currentdict /exe get
+                str i 1 getinterval
+                //.kshowshow
+                currentdict /exe get
             } for
-        } ifelse } if
+        } if
+        ] cvx
     end
+    exec
 } def
 
 %   name  glyphshow  -

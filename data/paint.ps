@@ -353,7 +353,12 @@
     /got 0 def
     {
         got rawrow length ge { exit } if
-        pend length 0 eq { /pend datasrc def } if
+        % run the source on the caller's stacks: its defs are its own
+        % business, and the row dict's names stay out of its reach
+        pend length 0 eq {
+            currentdict currentdict /datasrc get end exec exch begin
+            /pend exch def
+        } if
         pend length 0 eq {
             got 1 rawrow length 1 sub { rawrow exch 0 put } for
             exit
@@ -1152,7 +1157,8 @@
         /bp 0 def
         { % collect the sample data
             bp buf length ge {exit} if
-            datasrc
+            % the source runs on the caller's stacks (see .fill)
+            currentdict currentdict /datasrc get end exec exch begin
             dup length 0 eq {pop exit} if
             dup length bp add buf length gt {
                 0 buf length bp sub getinterval

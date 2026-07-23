@@ -337,7 +337,9 @@ Level 2 operators
 Level 3 operators
 -----------------
 
- [X] shfill (sampled functions at byte depths)
+ [X] shfill (sampled functions at byte depths; FunctionTypes 0, 2 and
+     3 -- the type 4 calculator functions rangecheck, and functions of
+     more than one input are served by type 0 only)
  [X] composite fonts (FMapTypes 2 through 8 over any descendants,
      and FMapType 9 through composefont with CIDFont descendants of
      CIDFontType 2, incremental GlyphDirectory delivery, and
