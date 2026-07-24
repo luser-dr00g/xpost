@@ -96,7 +96,16 @@ xpost_init(void)
     memcpy(tmp1 + l, "/../share/xpost", sizeof("/../share/xpost"));
     _xpost_data_dir = xpost_realpath(tmp1);
     if (!_xpost_data_dir)
-        return --_xpost_init_count;
+    {
+        /* An uninstalled library has no ../share/xpost neighbour for
+           realpath() to resolve. Keep the unresolved path, as
+           GetFullPathName() does on Windows: the interpreter probes
+           several candidate directories for init.ps and passes over
+           those that do not exist. */
+        _xpost_data_dir = strdup(tmp1);
+        if (!_xpost_data_dir)
+            return --_xpost_init_count;
+    }
 
     if (!xpost_memory_init())
         return --_xpost_init_count;
