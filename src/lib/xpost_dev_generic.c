@@ -347,6 +347,8 @@ int _fillpoly(Xpost_Context *ctx,
 
     /* extract polygon vertices from ps array */
     points = malloc(poly.comp_.sz * sizeof *points);
+    if (!points)
+        return VMerror;
     for (i = 0; i < poly.comp_.sz; i++)
     {
         Xpost_Object pair, x, y;
@@ -378,7 +380,21 @@ int _fillpoly(Xpost_Context *ctx,
             maxy = points[i].y;
     }
 
-    intersections = calloc((int)(maxy - miny), 2 * 2 * sizeof *intersections);
+    /* an empty or flat polygon spans no scanlines and paints nothing;
+       an empty one would also leave the bounding box at its sentinel
+       values, making the allocation count below hugely negative */
+    if (maxy - miny < 1)
+    {
+        free(points);
+        return 0;
+    }
+
+    intersections = calloc((size_t)(maxy - miny), 2 * 2 * sizeof *intersections);
+    if (!intersections)
+    {
+        free(points);
+        return VMerror;
+    }
 
     /* intersect polygon edges with scanlines */
     for (i = 0, j = 0; i < poly.comp_.sz - 1; i++)
