@@ -316,7 +316,7 @@ int evalquit(Xpost_Context *ctx)
 static
 int evalpop(Xpost_Context *ctx)
 {
-    if (!xpost_object_get_type(xpost_stack_pop(ctx->lo, ctx->es)) == invalidtype)
+    if (xpost_object_get_type(xpost_stack_pop(ctx->lo, ctx->es)) == invalidtype)
         return stackunderflow;
     return 0;
 }

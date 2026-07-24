@@ -375,6 +375,9 @@ int _getpix(Xpost_Context *ctx,
     Xpost_Object privatestr;
     PrivateData private;
 
+    (void)x;
+    (void)y;
+
     /* load private data struct from string */
     privatestr = xpost_dict_get(ctx, devdic, namePrivate);
     if (xpost_object_get_type(privatestr) == invalidtype)
