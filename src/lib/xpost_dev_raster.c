@@ -379,6 +379,88 @@ int _putpix(Xpost_Context *ctx,
     return 0;
 }
 
+/* C fast-path for the base-class per-pixel FillRect. erasepage clears the
+   whole page through FillRect, so this is on the hot path for every page. */
+static
+int _fillrect(Xpost_Context *ctx,
+              Xpost_Object red,
+              Xpost_Object green,
+              Xpost_Object blue,
+              Xpost_Object x,
+              Xpost_Object y,
+              Xpost_Object w,
+              Xpost_Object h,
+              Xpost_Object devdic)
+{
+    Xpost_Object privatestr;
+    PrivateData private;
+    int ix, iy, x0, y0, x1, y1, r, g, b, stride;
+
+    /* fold as PutPix does: colours scaled to 0..255, coords truncated */
+    r = (int)(xpost_object_get_type(red)   == realtype ? red.real_.val   * 255.0 : red.int_.val   * 255);
+    g = (int)(xpost_object_get_type(green) == realtype ? green.real_.val * 255.0 : green.int_.val * 255);
+    b = (int)(xpost_object_get_type(blue)  == realtype ? blue.real_.val  * 255.0 : blue.int_.val  * 255);
+    x0 = xpost_object_get_type(x) == realtype ? (int)x.real_.val : x.int_.val;
+    y0 = xpost_object_get_type(y) == realtype ? (int)y.real_.val : y.int_.val;
+    x1 = xpost_object_get_type(w) == realtype ? (int)w.real_.val : w.int_.val;
+    y1 = xpost_object_get_type(h) == realtype ? (int)h.real_.val : h.int_.val;
+
+    /* normalise negative extents, then form inclusive end coords */
+    if (x1 < 0) { x1 = -x1; x0 -= x1; }
+    if (y1 < 0) { y1 = -y1; y0 -= y1; }
+    x1 += x0;
+    y1 += y0;
+
+    privatestr = xpost_dict_get(ctx, devdic, namePrivate);
+    if (xpost_object_get_type(privatestr) == invalidtype)
+        return undefined;
+    xpost_memory_get(xpost_context_select_memory(ctx, privatestr),
+                     xpost_object_get_ent(privatestr), 0,
+                     sizeof(private), &private);
+
+    /* clip to device bounds */
+    if (x0 < 0) x0 = 0;
+    if (y0 < 0) y0 = 0;
+    if (x1 > private.buf->width  - 1) x1 = private.buf->width  - 1;
+    if (y1 > private.buf->height - 1) y1 = private.buf->height - 1;
+    stride = private.buf->width;
+
+#define RASTER_FILLRECT(TYPE, SET) \
+    do { \
+        TYPE pix; \
+        SET \
+        for (iy = y0; iy <= y1; iy++) \
+        { \
+            TYPE *row = (TYPE *)private.buf->data + (size_t)iy * stride; \
+            for (ix = x0; ix <= x1; ix++) \
+                row[ix] = pix; \
+        } \
+    } while (0)
+
+    switch (private.pixelformat)
+    {
+        case BGRA:
+            RASTER_FILLRECT(Xpost_Raster_BGRA_Pixel,
+                pix.blue = b; pix.green = g; pix.red = r; pix.alpha = 255;);
+            break;
+        case BGR:
+            RASTER_FILLRECT(Xpost_Raster_BGR_Pixel,
+                pix.blue = b; pix.green = g; pix.red = r;);
+            break;
+        case ARGB:
+            RASTER_FILLRECT(Xpost_Raster_ARGB_Pixel,
+                pix.alpha = 255; pix.red = r; pix.green = g; pix.blue = b;);
+            break;
+        case RGB:
+            RASTER_FILLRECT(Xpost_Raster_RGB_Pixel,
+                pix.red = r; pix.green = g; pix.blue = b;);
+            break;
+    }
+#undef RASTER_FILLRECT
+
+    return 0;
+}
+
 #endif
 
 static
@@ -595,6 +677,14 @@ int loadrasterdevicecont(Xpost_Context *ctx,
                              numbertype, numbertype,
                              dicttype);
     ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "PutPix"), op);
+    if (ret)
+        return ret;
+
+    op = xpost_operator_cons(ctx, "rasterFillRect", (Xpost_Op_Func)_fillrect, 0, 8,
+                             numbertype, numbertype, numbertype,
+                             numbertype, numbertype, numbertype, numbertype,
+                             dicttype);
+    ret = xpost_dict_put(ctx, classdic, xpost_name_cons(ctx, "FillRect"), op);
     if (ret)
         return ret;
 #endif

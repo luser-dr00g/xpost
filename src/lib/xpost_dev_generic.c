@@ -73,6 +73,7 @@ static Xpost_Object nameexec;
 static Xpost_Object namerepeat;
 static Xpost_Object namecvx;
 static Xpost_Object nameRbracket;
+static Xpost_Object nameImgData;
 
 char *xpost_device_get_filename(Xpost_Context *ctx, Xpost_Object devdic)
 {
@@ -524,6 +525,69 @@ int _fillpoly(Xpost_Context *ctx,
     return 0;
 }
 
+/* Fast FillRect for grayscale (DeviceGray) array-of-strings devices such as
+   PGMIMAGE. Writes the ImgData row strings directly rather than looping over
+   PutPix in PostScript; erasepage clears the whole page through FillRect, so
+   the per-pixel interpreter overhead otherwise dominates page emission.
+   Mirrors PGMIMAGE's FillRect/PutPix handling exactly: value scaled by 255 and
+   truncated to a byte, coordinates floored, negative extents normalised,
+   inclusive end coordinates, and bounds clipping (rows via ImgData length,
+   columns via each row string's length). */
+static
+int _fillrectgray(Xpost_Context *ctx,
+                  Xpost_Object val,
+                  Xpost_Object x,
+                  Xpost_Object y,
+                  Xpost_Object w,
+                  Xpost_Object h,
+                  Xpost_Object devdic)
+{
+    Xpost_Object imgdata, row;
+    double dx, dy, dw, dh;
+    int height, iy, iy0, iy1, ix0, ix1;
+    unsigned char b;
+
+    imgdata = xpost_dict_get(ctx, devdic, nameImgData);
+    if (xpost_object_get_type(imgdata) != arraytype)
+        return undefined;
+    height = imgdata.comp_.sz;
+
+    /* value -> byte, matching PGMIMAGE PutPix "255 mul cvi put" */
+    b = (unsigned char)(int)((xpost_object_get_type(val) == realtype
+                              ? val.real_.val : (double)val.int_.val) * 255.0);
+
+    dx = xpost_object_get_type(x) == realtype ? x.real_.val : (double)x.int_.val;
+    dy = xpost_object_get_type(y) == realtype ? y.real_.val : (double)y.int_.val;
+    dw = xpost_object_get_type(w) == realtype ? w.real_.val : (double)w.int_.val;
+    dh = xpost_object_get_type(h) == realtype ? h.real_.val : (double)h.int_.val;
+
+    /* normalise negative extents, then form inclusive end coords */
+    if (dw < 0) { dw = -dw; dx -= dw; }
+    if (dh < 0) { dh = -dh; dy -= dh; }
+    ix0 = (int)floor(dx);
+    iy0 = (int)floor(dy);
+    ix1 = (int)floor(dx + dw);
+    iy1 = (int)floor(dy + dh);
+
+    /* clip rows to the device */
+    if (iy0 < 0) iy0 = 0;
+    if (iy1 > height - 1) iy1 = height - 1;
+
+    for (iy = iy0; iy <= iy1; iy++)
+    {
+        int width, cx0, cx1;
+        row = xpost_array_get(ctx, imgdata, iy);
+        width = row.comp_.sz;
+        cx0 = ix0 < 0 ? 0 : ix0;
+        cx1 = ix1 > width - 1 ? width - 1 : ix1;
+        if (cx0 <= cx1)
+            memset(xpost_string_get_pointer(ctx, row) + cx0, b,
+                   (size_t)(cx1 - cx0 + 1));
+    }
+
+    return 0;
+}
+
 int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
                                        Xpost_Object sd)
 {
@@ -538,7 +602,11 @@ int xpost_oper_init_generic_device_ops(Xpost_Context *ctx,
 
     op = xpost_operator_cons(ctx, ".yxsort", (Xpost_Op_Func)_yxsort, 0, 1, arraytype); INSTALL;
     op = xpost_operator_cons(ctx, ".fillpoly", (Xpost_Op_Func)_fillpoly, 0, 2, arraytype, dicttype); INSTALL;
+    op = xpost_operator_cons(ctx, ".fillrectgray", (Xpost_Op_Func)_fillrectgray, 0, 6,
+            numbertype, numbertype, numbertype, numbertype, numbertype, dicttype); INSTALL;
     if (xpost_object_get_type((namewidth = xpost_name_cons(ctx, "width"))) == invalidtype)
+        return VMerror;
+    if (xpost_object_get_type((nameImgData = xpost_name_cons(ctx, "ImgData"))) == invalidtype)
         return VMerror;
     if (xpost_object_get_type((namenativecolorspace = xpost_name_cons(ctx, "nativecolorspace"))) == invalidtype)
         return VMerror;
